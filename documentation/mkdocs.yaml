@@ -85,7 +85,6 @@ nav:
       - Quickstart: user-guide/identity/quickstart.md
     - Built-in Tools:
       - Quickstart Browser Sandbox: user-guide/builtin-tools/quickstart-browser.md
-      # Remove this line if you don't create the file
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
     - Observability:
       - Quickstart: user-guide/observability/quickstart.md
