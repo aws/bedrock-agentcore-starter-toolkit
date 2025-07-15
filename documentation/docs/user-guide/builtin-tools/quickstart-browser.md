@@ -6,7 +6,7 @@ The Amazon Bedrock AgentCore Browser Sandbox provides a secure environment for i
 
 Before using the browser sandbox, ensure you have:
 
-- Necessary permissions in your IAM role
+- An AWS account with appropriate permissions
 - Python 3.10+ installed
 
 ## Install the SDK
@@ -17,7 +17,7 @@ pip install bedrock-agentcore
 
 ## Create a Browser Session
 
-The bedrock-agentcore SDK provides a convenient way to create browser sessions using the default managed browser `aws.browser.v1`:
+The bedrock-agentcore SDK provides a convenient way to create browser sessions using the managed browser `aws.browser.v1`:
 
 ```python
 from bedrock_agentcore.tools.browser_client import browser_session
