@@ -1,10 +1,10 @@
-site_name: Amazon Bedrock AgentCore SDK
-site_description: Documentation for Amazon Bedrock AgentCore SDK, primitives for building and running AI agents
+site_name: Amazon Bedrock AgentCore
+site_description: Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents
 site_dir: site
 site_url: ""
 use_directory_urls: false
 
-repo_url: https://github.com/aws/bedrock-agentcore-sdk-python
+repo_url: https://github.com/aws/bedrock-agentcore-starter-toolkit
 
 theme:
   name: material
@@ -43,7 +43,9 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.tabbed
   - pymdownx.details
-  - pymdownx.emoji
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - tables
   - pymdownx.superfences:
       custom_fences:
@@ -53,6 +55,12 @@ markdown_extensions:
   - toc:
       title: On this page
       permalink: true
+  - attr_list
+  - md_in_html
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
 
 extra_css:
   - stylesheets/extra.css
@@ -62,7 +70,7 @@ extra_javascript:
 
 nav:
   - User Guide:
-    - Welcome: README.md
+    - Welcome: index.md
     - Runtime:
       - Quickstart: user-guide/runtime/quickstart.md
       - Overview: user-guide/runtime/overview.md
@@ -77,6 +85,8 @@ nav:
       - Quickstart: user-guide/identity/quickstart.md
     - Built-in Tools:
       - Quickstart Browser Sandbox: user-guide/builtin-tools/quickstart-browser.md
+      # Remove this line if you don't create the file
+      - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
     - Observability:
       - Quickstart: user-guide/observability/quickstart.md
   - Examples:
@@ -108,7 +118,8 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [../BedrockAgentcoreSdkPython/src, ../BedrockAgentcoreStarterToolkit/src]
+          # Update these paths to match your actual directory structure
+          paths: ["../src", "../../bedrock-agentcore-sdk-python/src"]
           options:
             docstring_style: google
             show_root_heading: true

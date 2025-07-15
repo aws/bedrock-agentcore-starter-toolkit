@@ -4,7 +4,7 @@
       "strict": true,
       "contexts": [
         "Test Suite / Python 3.10",
-        "Test Suite / Python 3.11", 
+        "Test Suite / Python 3.11",
         "Test Suite / Python 3.12",
         "Test Suite / Python 3.13",
         "TruffleHog Secret Scan",

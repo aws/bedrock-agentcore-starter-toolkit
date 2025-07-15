@@ -27,16 +27,16 @@ fi
 apply_branch_protection() {
     local branch=$1
     local config=$2
-    
+
     echo "Applying protection rules to branch: $branch"
-    
+
     curl -X PUT \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Accept: application/vnd.github.v3+json" \
         -H "Content-Type: application/json" \
         -d "$config" \
         "$API_URL/$branch/protection"
-    
+
     echo "Branch protection applied to $branch"
 }
 
