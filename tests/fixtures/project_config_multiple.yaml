@@ -1,0 +1,45 @@
+default_agent: chat-agent
+agents:
+  chat-agent:
+    name: chat-agent
+    entrypoint: chat.py
+    aws:
+      region: us-east-1
+      account: "123456789012"
+      execution_role: arn:aws:iam::123456789012:role/ChatRole
+      ecr_repository: null
+      ecr_auto_create: true
+      network_configuration:
+        network_mode: PUBLIC
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: CHAT123
+      agent_arn: arn:aws:bedrock:us-east-1:123456789012:agent/CHAT123
+      agent_session_id: chat-session-123
+    container_runtime: docker
+    authorizer_configuration:
+      customJWTAuthorizer:
+        discoveryUrl: https://auth.example.com/.well-known/openid_configuration
+        allowedClients:
+          - client1
+          - client2
+  code-assistant:
+    name: code-assistant
+    entrypoint: code.py
+    aws:
+      region: us-west-2
+      account: "123456789012"
+      execution_role: arn:aws:iam::123456789012:role/CodeRole
+      ecr_repository: arn:aws:ecr:us-west-2:123456789012:repository/code-assistant
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PRIVATE
+      observability:
+        enabled: false
+    bedrock_agentcore:
+      agent_id: CODE456
+      agent_arn: arn:aws:bedrock:us-west-2:123456789012:agent/CODE456
+      agent_session_id: code-session-456
+    container_runtime: podman
+    authorizer_configuration: null

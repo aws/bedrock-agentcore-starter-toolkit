@@ -1,0 +1,21 @@
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: us-west-2
+      account: "123456789012"
+      execution_role: arn:aws:iam::123456789012:role/TestRole
+      ecr_repository: null
+      ecr_auto_create: true
+      network_configuration:
+        network_mode: PUBLIC
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: null
+      agent_arn: null
+      agent_session_id: null
+    container_runtime: docker
+    authorizer_configuration: null

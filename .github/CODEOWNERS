@@ -1,0 +1,28 @@
+# Code ownership for automatic PR review assignments
+
+# Default owners for everything in the repo
+* @aws/bedrock-agentcore-team
+
+# Python source code
+/src/ @aws/bedrock-agentcore-team
+
+# Tests
+/tests/ @aws/bedrock-agentcore-team
+/tests_integ/ @aws/bedrock-agentcore-team
+
+# Documentation
+/documentation/ @aws/bedrock-agentcore-team
+*.md @aws/bedrock-agentcore-team
+
+# Configuration files
+pyproject.toml @aws/bedrock-agentcore-team
+.pre-commit-config.yaml @aws/bedrock-agentcore-team
+*.yaml @aws/bedrock-agentcore-team
+*.yml @aws/bedrock-agentcore-team
+
+# GitHub configuration
+/.github/ @aws/bedrock-agentcore-team
+
+# Security-sensitive files
+SECURITY.md @aws/bedrock-agentcore-team
+/.github/workflows/*security*.yml @aws/bedrock-agentcore-team

@@ -1,0 +1,132 @@
+site_name: Amazon Bedrock AgentCore SDK
+site_description: Documentation for Amazon Bedrock AgentCore SDK, primitives for building and running AI agents
+site_dir: site
+site_url: ""
+use_directory_urls: false
+
+repo_url: https://github.com/aws/bedrock-agentcore-sdk-python
+
+theme:
+  name: material
+  custom_dir: overrides
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      primary: custom
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      primary: custom
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.code.select
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.highlight
+  - pymdownx.tabbed
+  - pymdownx.details
+  - pymdownx.emoji
+  - tables
+  - pymdownx.superfences:
+      custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      title: On this page
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+
+nav:
+  - User Guide:
+    - Welcome: README.md
+    - Runtime:
+      - Quickstart: user-guide/runtime/quickstart.md
+      - Overview: user-guide/runtime/overview.md
+      - Async Processing: user-guide/runtime/async.md
+      - Notebook: user-guide/runtime/notebook.md
+    - Gateway:
+      - Quickstart: user-guide/gateway/quickstart.md
+      - Overview: user-guide/gateway/overview.md
+    - Memory:
+      - Quickstart: user-guide/memory/quickstart.md
+    - Identity:
+      - Quickstart: user-guide/identity/quickstart.md
+    - Built-in Tools:
+      - Quickstart Browser Sandbox: user-guide/builtin-tools/quickstart-browser.md
+    - Observability:
+      - Quickstart: user-guide/observability/quickstart.md
+  - Examples:
+    - Overview: examples/README.md
+    - Session Management: examples/session-management.md
+    - Async Processing: examples/async-processing.md
+    - Gateway Integration: examples/gateway-integration.md
+  - Contribute ❤️: https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md
+  - API Reference:
+    - Bedrock AgentCore SDK:
+      - Runtime: api-reference/runtime.md
+      - Memory: api-reference/memory.md
+      - Built-in Tools: api-reference/tools.md
+    - Bedrock AgentCore Starter Toolkit:
+      - Runtime CLI: api-reference/runtime-cli.md
+
+exclude_docs: |
+  node_modules
+  .venv
+  _dependencies
+
+plugins:
+  - search
+  - privacy
+  - macros
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../BedrockAgentcoreSdkPython/src, ../BedrockAgentcoreStarterToolkit/src]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+  version:
+    provider: mike
+
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn

@@ -1,0 +1,59 @@
+FROM public.ecr.aws/docker/library/python:{{ python_version }}-slim
+WORKDIR /app
+
+# Install system dependencies if needed
+{% if system_packages %}
+RUN apt-get update && apt-get install -y \
+    {% for package in system_packages %}{{ package }} {% endfor %}\
+    && rm -rf /var/lib/apt/lists/*
+{% endif %}
+
+# Copy entire project (respecting .dockerignore)
+COPY . .
+
+# Install dependencies
+{% if has_current_package %}
+# Install current directory as package
+RUN python -m pip install --no-cache-dir -e .
+{% endif %}
+
+{% if dependencies_file %}
+{% if dependencies_install_path %}
+# Install from pyproject.toml directory
+RUN python -m pip install --no-cache-dir {{ dependencies_install_path }}
+{% else %}
+# Install from requirements file
+RUN python -m pip install --no-cache-dir -r {{ dependencies_file }}
+{% endif %}
+{% endif %}
+
+{% if has_wheelhouse %}
+# Install from wheelhouse
+RUN python -m pip install --no-cache-dir --force-reinstall ./wheelhouse/*.whl
+{% endif %}
+
+# Set AWS region environment variable
+{% if aws_region %}
+ENV AWS_REGION={{ aws_region }}
+ENV AWS_DEFAULT_REGION={{ aws_region }}
+{% endif %}
+
+# Signal that this is running in Docker for host binding logic
+ENV DOCKER_CONTAINER=1
+
+{% if observability_enabled %}
+RUN python -m pip install aws_opentelemetry_distro_genai_beta>=0.1.2
+{% endif %}
+
+# Create non-root user
+RUN useradd -m -u 1000 bedrock_agentcore
+USER bedrock_agentcore
+
+EXPOSE 8080
+
+# Use the full module path
+{% if observability_enabled %}
+CMD ["opentelemetry-instrument", "python", "-m", "{{ agent_module_path }}"]
+{% else %}
+CMD ["python", "-m", "{{ agent_module_path }}"]
+{% endif %}

@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      test_pypi:
+        description: 'Publish to Test PyPI'
+        required: true
+        type: boolean
+        default: true
+      pypi:
+        description: 'Publish to PyPI'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.pypi == 'true' && 'pypi' || 'testpypi' }}
+      url: ${{ github.event.inputs.pypi == 'true' && 'https://pypi.org/p/bedrock-agentcore-starter-toolkit' || 'https://test.pypi.org/p/bedrock-agentcore-starter-toolkit' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      
+    - name: Create virtual environment
+      run: uv venv
+      
+    - name: Install build dependencies
+      run: |
+        source .venv/bin/activate
+        uv pip install build twine
+        
+    - name: Verify version
+      run: |
+        source .venv/bin/activate
+        VERSION=$(grep -oP 'version = "\K[^"]+' pyproject.toml)
+        echo "Package version: $VERSION"
+        echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+        
+        if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" != "$TAG_VERSION" ]]; then
+            echo "Error: Package version ($VERSION) does not match tag version ($TAG_VERSION)"
+            exit 1
+          fi
+        fi
+        
+    - name: Build package
+      run: |
+        source .venv/bin/activate
+        python -m build
+        
+    - name: Check package
+      run: |
+        source .venv/bin/activate
+        twine check dist/* || true
+        
+    - name: Generate checksums
+      run: |
+        cd dist
+        sha256sum * > SHA256SUMS
+        cd ..
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-packages
+        path: dist/
+        
+    - name: Publish to Test PyPI
+      if: github.event.inputs.test_pypi == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+        
+    - name: Test installation from Test PyPI
+      if: github.event.inputs.test_pypi == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
+      run: |
+        python -m venv test-install
+        source test-install/bin/activate
+        
+        # Wait for package to be available
+        sleep 60
+        
+        # Install from Test PyPI with staging dependency
+        pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ bedrock-agentcore-starter-toolkit==${{ env.PACKAGE_VERSION }} || true
+        
+        # Test imports
+        python -c "from bedrock_agentcore_starter_toolkit import Runtime" || true
+        agentcore --help || true
+        
+    - name: Publish to PyPI
+      if: github.event.inputs.pypi == 'true'
+      uses: pypa/gh-action-pypi-publish@release/v1
+      
+    - name: Create GitHub Release
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/*
+          dist/SHA256SUMS
+        body: |
+          ## BedrockAgentCore Starter Toolkit ${{ env.PACKAGE_VERSION }}
+          
+          ### Installation
+          ```bash
+          pip install bedrock-agentcore-starter-toolkit==${{ env.PACKAGE_VERSION }}
+          ```
+          
+          ### Changelog
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+        draft: false
+        prerelease: ${{ contains(env.PACKAGE_VERSION, 'rc') || contains(env.PACKAGE_VERSION, 'beta') || contains(env.PACKAGE_VERSION, 'alpha') }}
