@@ -26,12 +26,12 @@ from bedrock_agentcore.tools.code_interpreter_client import code_session
 with code_session("us-west-2") as client:
     # The session is automatically created and managed
     print(f"Code interpreter session created")
-    
+
     # List files in the session
     result = client.invoke("listFiles")
     for event in result["stream"]:
         print(event["result"]["content"])
-    
+
 # The session is automatically closed when exiting the context manager
 ```
 
@@ -52,7 +52,7 @@ try:
     result = client.invoke("listFiles")
     for event in result["stream"]:
         print(event["result"]["content"])
-    
+
 finally:
     # Always close the session when done
     client.stop()
@@ -115,17 +115,17 @@ When asked about code, algorithms, or calculations, write Python code to verify 
 @tool
 def execute_python(code: str) -> str:
     """Execute Python code in the code interpreter."""
-    
+
     # Show the code being executed
     print("\nExecuting Python code:")
     print(code)
-    
+
     # Execute the code
     response = code_client.invoke("executeCode", {"language": "python", "code": code})
-    
+
     # Process the streaming results
     output = []
-    
+
     for event in response["stream"]:
         if "result" in event and "content" in event["result"]:
             content = event["result"]["content"]
@@ -139,16 +139,16 @@ def demo():
     """Main function demonstrating the code interpreter agent"""
     try:
         code_client.start()
-        
+
         # Create the agent with the execute_python tool
         agent = Agent(
             tools=[execute_python],
             system_prompt=SYSTEM_PROMPT,
         )
-        
+
         prompt = "Calculate the first 10 Fibonacci numbers."
         print(f"\nPrompt: {prompt}\n")
-        
+
         response = agent(prompt)
         # Print the response
         print("\nAgent Response:")

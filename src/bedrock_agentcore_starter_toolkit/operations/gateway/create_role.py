@@ -15,14 +15,15 @@ from ...operations.gateway.constants import (
 )
 
 
-def create_gateway_execution_role(session: Session, logger: logging.Logger) -> str:
+def create_gateway_execution_role(
+    session: Session, logger: logging.Logger, role_name: str = "AgentCoreGatewayExecutionRole"
+) -> str:
     """Create the Gateway execution role.
 
     :param logger: the logger to use.
     :return: the role ARN.
     """
     iam = session.client("iam")
-    role_name = "AgentCoreGatewayExecutionRole"
     # Create the role
     try:
         role = iam.create_role(
@@ -35,7 +36,7 @@ def create_gateway_execution_role(session: Session, logger: logging.Logger) -> s
                 iam_client=iam,
                 role_name=role_name,
                 policy_name=policy_name,
-                policy_document=policy,
+                policy_document=json.dumps(policy),
             )
         for policy_arn in POLICIES:
             _attach_policy(iam_client=iam, role_name=role_name, policy_arn=policy_arn)

@@ -68,13 +68,13 @@ AGENTCORE_FULL_ACCESS = {
             "Sid": "GetSecretValue",
             "Effect": "Allow",
             "Action": ["secretsmanager:GetSecretValue"],
-            "Resource": ["*"],
+            "Resource": "*",
         },
         {
             "Sid": "LambdaInvokeAccess",
             "Effect": "Allow",
             "Action": ["lambda:InvokeFunction"],
-            "Resource": ["arn:aws:lambda:*:*:function:*"],
+            "Resource": "arn:aws:lambda:*:*:function:*",
         },
     ],
 }
