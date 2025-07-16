@@ -97,6 +97,7 @@ nav:
   - API Reference:
     - Bedrock AgentCore SDK:
       - Runtime: api-reference/runtime.md
+      - Identity: api-reference/identity.md
       - Memory: api-reference/memory.md
       - Built-in Tools: api-reference/tools.md
     - Bedrock AgentCore Starter Toolkit:
