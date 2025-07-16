@@ -49,7 +49,7 @@ async def on_auth_url(url: str):
 
 
 @requires_access_token(
-    provider_name="Google3",  # replace with your own credential provider name
+    provider_name="Google4",  # replace with your own credential provider name
     scopes=["https://www.googleapis.com/auth/userinfo.email"],
     auth_flow="USER_FEDERATION",
     on_auth_url=on_auth_url,
