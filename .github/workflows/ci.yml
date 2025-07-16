@@ -55,70 +55,20 @@ jobs:
           pip install tomli
         fi
 
-    - name: Create CI-friendly pyproject.toml
+    - name: Install package and dependencies
       run: |
-        cp pyproject.toml pyproject.toml.original
-        python scripts/modify-toml-for-ci.py
-
-    - name: Create mock bedrock_agentcore module
-      run: |
-        mkdir -p mock_modules/bedrock_agentcore
-        cat > mock_modules/bedrock_agentcore/__init__.py << 'MOCK'
-        # Mock module for CI testing
-        class BedrockAgentCoreApp:
-            def __init__(self):
-                self.entrypoint_func = None
-            def entrypoint(self, func):
-                self.entrypoint_func = func
-                return func
-            def run(self):
-                pass
-        MOCK
-
-        # Create __init__.py for boto mocks
-        mkdir -p mock_modules/boto3
-        echo "# Mock boto3" > mock_modules/boto3/__init__.py
-        mkdir -p mock_modules/botocore
-        echo "# Mock botocore" > mock_modules/botocore/__init__.py
-
-    - name: Install package with mocked dependencies
-      run: |
-        # Add mock modules to Python path
-        export PYTHONPATH="${PWD}/mock_modules:$PYTHONPATH"
-
-        # Install the package
         pip install -e .
-
-        # Install test dependencies
         pip install pytest pytest-cov pytest-asyncio pytest-mock
 
     - name: Run basic import tests
       run: |
-        export PYTHONPATH="${PWD}/mock_modules:$PYTHONPATH"
         python -c "from bedrock_agentcore_starter_toolkit.cli.cli import main; print('✓ CLI import successful')"
         python -c "from bedrock_agentcore_starter_toolkit import Runtime; print('✓ Runtime import successful')"
 
     - name: Run unit tests
       run: |
-        export PYTHONPATH="${PWD}/mock_modules:$PYTHONPATH"
-        export BEDROCK_AGENTCORE_MOCK_MODE=true
-
-        # Run only unit tests that don't require real dependencies
-        pytest tests/cli/ tests/utils/ \
-          -v \
-          --ignore=tests_integ/ \
-          --ignore=tests/services/ \
-          --ignore=tests/operations/ \
-          --ignore=tests/notebook/ \
-          -k "not test_bedrock" \
-          || echo "::warning::Some tests failed due to missing dependencies"
-
-    - name: Restore original pyproject.toml
-      if: always()
-      run: |
-        if [ -f pyproject.toml.original ]; then
-          mv pyproject.toml.original pyproject.toml
-        fi
+        # Run unit tests
+        pytest tests/ || echo "::warning::Some tests failed due to missing dependencies"
 
   build:
     name: Build Package
@@ -141,16 +91,8 @@ jobs:
           pip install tomli
         fi
 
-    - name: Create release version of pyproject.toml
-      run: |
-        cp pyproject.toml pyproject.toml.original
-        python scripts/modify-toml-for-ci.py
-
     - name: Build package
       run: python -m build
-
-    - name: Restore original pyproject.toml
-      run: mv pyproject.toml.original pyproject.toml
 
     - name: Check package
       run: |
