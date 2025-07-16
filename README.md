@@ -36,6 +36,8 @@ app = BedrockAgentCoreApp()
 def my_agent(request):
     # Your existing LangGraph, CrewAI, or custom agent logic
     return process_with_your_framework(request.get("prompt"))
+
+app.run()
 ```
 
 ```bash
