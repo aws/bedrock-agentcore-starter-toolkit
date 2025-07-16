@@ -64,8 +64,11 @@ def create_mcp_gateway_target(
     """
     client = GatewayClient(region_name=region)
     json_credentials = ""
+    json_target_payload = ""
     if credentials:
         json_credentials = json.loads(credentials)
+    if target_payload:
+        json_target_payload = json.loads(target_payload)
     target = client.create_mcp_gateway_target(
         gateway={
             "gatewayArn": gateway_arn,
@@ -75,7 +78,7 @@ def create_mcp_gateway_target(
         },
         name=name,
         target_type=target_type,
-        target_payload=target_payload,
+        target_payload=json_target_payload,
         credentials=json_credentials,
     )
     console.print(target)

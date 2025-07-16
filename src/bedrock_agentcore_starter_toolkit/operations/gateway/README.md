@@ -11,18 +11,6 @@ Bedrock AgentCore Gateway is a primitive within the Bedrock AgentCore SDK that e
 ### Using the CLI (Recommended)
 
 ```bash
-# Create a Gateway with Lambda target
-agentcore create_mcp_gateway \
-  --name my-gateway \
-  --target arn:aws:lambda:us-west-2:123:function:MyFunction \
-  --execution-role arn:aws:iam::123:role/BedrockAgentCoreGatewayRole
-
-# Short form
-agentcore create_mcp_gateway \
-  -n my-gateway \
-  -t arn:aws:lambda:us-west-2:123:function:MyFunction \
-  -r BedrockAgentCoreGatewayRole
-
 # Create a Gateway to use with targets defined in OpenAPI or Smithy
 agentcore create_mcp_gateway \
 --region us-west-2 \
@@ -42,9 +30,9 @@ agentcore create_mcp_gateway_target \
 --gateway-arn arn:aws:bedrock-agentcore:us-east-1:123:gateway/gateway-id \
 --gateway-url https://gateway-id.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp \
 --role-arn arn:aws:iam::123:role/BedrockAgentCoreGatewayRole \
---target-type openApiSchema
+--target-type openApiSchema \
 --credentials "{\"api_key\": \"Bearer 123234bc\", \"credential_location\": \"HEADER\", \"credential_parameter_name\": \"Authorization\"}" \
---target-payload "{\"s3\": \"s3://mybucket/openApiSchema.json\"}}"
+--target-payload "{\"s3\": { \"uri\": \"s3://openapischemas/sample-openapi-schema.json\", \"bucketOwnerAccountId\": \"012345678912\"}}"
 
 # Create a Gateway Target with OpenAPI target (OAuth with credential provider)
 agentcore create_mcp_gateway_target \
@@ -52,9 +40,9 @@ agentcore create_mcp_gateway_target \
 --gateway-arn arn:aws:bedrock-agentcore:us-east-1:123:gateway/gateway-id \
 --gateway-url https://gateway-id.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp \
 --role-arn arn:aws:iam::123:role/BedrockAgentCoreGatewayRole \
---target-type openApiSchema
+--target-type openApiSchema \
 --credentials "{\"oauth2_provider_config\": { \"customOauth2ProviderConfig\": {\"oauthDiscovery\" : {\"authorizationServerMetadata\" : {\"issuer\" : \"<issuer>\",\"authorizationEndpoint\" : \"<authorizationEndpoint>\",\"tokenEndpoint\" : \"<tokenEndpoint>\"}},\"clientId\" : \"<clientId>\",\"clientSecret\" : \"<clientSecret>\" }}}" \
---target-payload "{\"s3\": \"s3://mybucket/openApiSchema.json\"}}"
+--target-payload "{\"s3\": { \"uri\": \"s3://openapischemas/sample-openapi-schema.json\", \"bucketOwnerAccountId\": \"012345678912\"}}"
 ```
 
 The CLI automatically:
