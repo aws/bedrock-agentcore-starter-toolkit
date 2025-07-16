@@ -122,7 +122,7 @@ gateway = client.create_mcp_gateway(
     name="my-gateway",
     roleArn="arn:aws:iam::123:role/BedrockAgentCoreGatewayExecutionRole",
     authorizer_config=cognito_result['authorizer_config'],
-    enable_semantic_search=True 
+    enable_semantic_search=True
 )
 ```
 
