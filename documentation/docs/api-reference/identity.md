@@ -8,7 +8,7 @@ Memory management for Bedrock AgentCore SDK.
     options:
       heading_level: 3
 
-## Annotations
+## Decorators
 
 ::: bedrock_agentcore.identity
     options:
