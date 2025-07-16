@@ -26,22 +26,22 @@ def my_local_agent(query):
     # Your carefully crafted agent logic
     return agent.process(query)
 
-# Deploy to Bedrock AgentCore  
+# Deploy to Bedrock AgentCore
 from bedrock_agentcore import BedrockAgentCoreApp
 app = BedrockAgentCoreApp()
 
-@app.entrypoint  
+@app.entrypoint
 def production_agent(request):
     return my_local_agent(request['query'])  # Same logic, enterprise platform
 
 production_agent.run()  # Ready to run on Bedrock AgentCore
 ```
 
-**What you get with Bedrock AgentCore:**   
-- ✅ **Keep your agent logic** - Works with LangGraph, CrewAI, Autogen, custom frameworks.  
-- ✅ **Zero infrastructure management** - No servers, containers, or scaling concerns.   
-- ✅ **Enterprise-grade platform** - Built-in auth, memory, observability, security.   
-- ✅ **Production-ready deployment** - Reliable, scalable, compliant hosting.   
+**What you get with Bedrock AgentCore:**
+- ✅ **Keep your agent logic** - Works with LangGraph, CrewAI, Autogen, custom frameworks.
+- ✅ **Zero infrastructure management** - No servers, containers, or scaling concerns.
+- ✅ **Enterprise-grade platform** - Built-in auth, memory, observability, security.
+- ✅ **Production-ready deployment** - Reliable, scalable, compliant hosting.
 
 Your function is now a production-ready API server with health monitoring, streaming support, and AWS integration.
 
