@@ -195,7 +195,7 @@ class GatewayClient:
         :param credentials: credentials to use in setting up this target.
         :return: the credential provider config.
         """
-        acps = self.session.client(service_name="agentcredentialprovider")
+        acps = self.session.client(service_name="bedrock-agentcore-control")
         if "api_key" in credentials:
             self.logger.info("Creating credential provider")
             credential_provider = acps.create_api_key_credential_provider(
