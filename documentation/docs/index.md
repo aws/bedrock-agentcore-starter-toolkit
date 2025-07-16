@@ -15,20 +15,33 @@ Amazon Bedrock AgentCore is a comprehensive platform for deploying and operating
 !!! warning "Preview Status"
     Amazon Bedrock AgentCore is currently in preview release. APIs may change as we refine the platform.
 
-## Transform Any Function Into a Production API in 3 Lines
-
-Bedrock AgentCore allows you to transform your existing AI agent code into a production-ready HTTP API with just 3 lines of code:
+## 🚀 From Local Development to Bedrock AgentCore
 
 ```python
-from bedrock_agentcore.runtime import BedrockAgentCoreApp  # +1
-app = BedrockAgentCoreApp()                                # +2
+# Your existing agent (any framework)
+from langgraph import StateGraph
+# or CrewAI, Autogen, custom logic - doesn't matter
 
-@app.entrypoint                                           # +3
-def invoke(payload):  # ← Your function stays EXACTLY the same
-    user_message = payload.get("prompt", "Hello")
-    response = agent(user_message)
-    return response
+def my_local_agent(query):
+    # Your carefully crafted agent logic
+    return agent.process(query)
+
+# Deploy to Bedrock AgentCore  
+from bedrock_agentcore import BedrockAgentCoreApp
+app = BedrockAgentCoreApp()
+
+@app.entrypoint  
+def production_agent(request):
+    return my_local_agent(request['query'])  # Same logic, enterprise platform
+
+production_agent.run()  # Ready to run on Bedrock AgentCore
 ```
+
+**What you get with Bedrock AgentCore:**   
+- ✅ **Keep your agent logic** - Works with LangGraph, CrewAI, Autogen, custom frameworks.  
+- ✅ **Zero infrastructure management** - No servers, containers, or scaling concerns.   
+- ✅ **Enterprise-grade platform** - Built-in auth, memory, observability, security.   
+- ✅ **Production-ready deployment** - Reliable, scalable, compliant hosting.   
 
 Your function is now a production-ready API server with health monitoring, streaming support, and AWS integration.
 

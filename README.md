@@ -4,15 +4,15 @@
   </h1>
 
   <h2>
-    Transform any function into a production API in 3 lines. Your code stays unchanged.
+    Deploy your local AI agent to Bedrock AgentCore with zero infrastructure
   </h2>
 
   <div align="center">
     <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/graphs/commit-activity"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/aws/bedrock-agentcore-starter-toolkit"/></a>
     <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/issues"><img alt="GitHub open issues" src="https://img.shields.io/github/issues/aws/bedrock-agentcore-starter-toolkit"/></a>
-    <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/pulls"><img alt="GitHub open pull requests" src="https://img.shields.io/github/issues-pr/aws/bedrock-agentcore-starter-toolkit"/></a>
+    <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/pulls"><img alt="GitHub open pull requests" src="https://img.shields.io/github/issues-pr/bedrock-agentcore-starter-toolkit"/></a>
     <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/aws/bedrock-agentcore-starter-toolkit"/></a>
-    <a href="https://pypi.org/project/bedrock-agentcore"><img alt="PyPI version" src="https://img.shields.io/pypi/v/bedrock-agentcore-starter-toolkit"/></a>
+    <a href="https://pypi.org/project/bedrock-agentcore-starter-toolkit"><img alt="PyPI version" src="https://img.shields.io/pypi/v/bedrock-agentcore-starter-toolkit"/></a>
     <a href="https://python.org"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/bedrock-agentcore-starter-toolkit"/></a>
   </div>
 
@@ -20,11 +20,65 @@
     <a href="https://github.com/aws/bedrock-agentcore-sdk-python">Python SDK</a>
     ◆ <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit">Starter Toolkit</a>
     ◆ <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples">Samples</a>
+    ◆ <a href="https://discord.gg/bedrockagentcore-preview">Discord</a>
   </p>
 </div>
 
+## 🚀 From Local Development to Bedrock AgentCore
 
-## About Amazon Bedrock AgentCore
+```python
+# Build your agent with the SDK
+from bedrock_agentcore import BedrockAgentCoreApp
+
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def my_agent(request):
+    # Your existing LangGraph, CrewAI, or custom agent logic
+    return process_with_your_framework(request.get("prompt"))
+```
+
+```bash
+# Deploy with the Starter Toolkit
+agentcore configure --entrypoint my_agent.py
+agentcore launch  # Ready to run on Bedrock AgentCore
+agentcore invoke '{"prompt": "tell me a fact"}'
+```
+
+**What you get with the Starter Toolkit:**
+- ✅ **Keep your agent logic** - Works with any SDK-built agent
+- ✅ **Zero infrastructure management** - No servers, containers, or scaling concerns
+- ✅ **One-command deployment** - From local development to enterprise platform
+- ✅ **Production-ready hosting** - Reliable, scalable, compliant Bedrock AgentCore deployment
+
+## ⚠️ Preview Status
+
+Bedrock AgentCore Starter Toolkit is currently in public preview. APIs may change as we refine the SDK.
+
+## 🛠️ Deployment & Management Tools
+
+**Simple Configuration**
+```bash
+# Configure your agent for deployment
+agentcore configure --entrypoint my_agent.py --name my-production-agent
+
+# Check deployment status
+agentcore status
+
+# Invoke your deployed agent
+agentcore invoke '{"prompt": "Hello from Bedrock AgentCore!"}'
+```
+
+**Enterprise Platform Services**
+- 🚀 **Runtime** - Serverless deployment and scaling with fast cold starts
+- 🧠 **Memory** - Persistent knowledge with event and semantic memory
+- 🔗 **Gateway** - Transform existing APIs and Lambda functions into MCP tools
+- 🔐 **Identity** - Secure authentication and access management
+- 💻 **Code Interpreter** - Secure code execution in isolated sandbox environments
+- 🌐 **Browser** - Fast, secure cloud-based browser for web automation
+- 📊 **Observability** - Real-time monitoring and tracing with OpenTelemetry support
+
+## 📚 About Amazon Bedrock AgentCore
 
 Amazon Bedrock AgentCore enables you to deploy and operate highly effective agents securely, at scale using any framework and model. With AgentCore, developers can accelerate AI agents into production with enterprise-grade scale, reliability, and security. The platform provides:
 
@@ -33,30 +87,8 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly effective agen
 - **Any Model Support**: Not locked into specific models
 - **Enterprise Security**: Built-in identity, isolation, and access controls
 
-!!! warning "Preview"
+## 📝 License & Contributing
 
-    Amazon Bedrock AgentCore Starter Toolkit is currently in preview release. APIs may change as we refine the platform and Starter Toolkit.
-
-## Platform Services Integration
-
-The Starter Toolkit provides seamless access to Amazon Bedrock AgentCore services:
-
-🚀 **AgentCore Runtime** - Serverless deployment and scaling for dynamic AI agents with fast cold starts and framework flexibility.
-🧠 **AgentCore Memory** - Persistent knowledge with event and semantic memory for cross-session continuity.
-💻 **AgentCore Code Interpreter** - Secure code execution in isolated sandbox environments with multi-language support.
-🌐 **AgentCore Browser** -  Fast, secure cloud-based browser for automated web interaction at enterprise scale.
-🔗 **AgentCore Gateway** - Transform existing APIs and Lambda functions into fully-managed MCP tools.
-📊 **AgentCore Observability** - Real-time monitoring and tracing with OpenTelemetry support for production insights.
-🔐 **AgentCore Identity** - Secure authentication and access management for AWS services and third-party integrations.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-Apache 2.0 License. See [LICENSE.txt](LICENSE.txt).
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+- **License:** Apache 2.0 - see [LICENSE.txt](LICENSE.txt)
+- **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Security:** Report vulnerabilities via [SECURITY.md](SECURITY.md)
