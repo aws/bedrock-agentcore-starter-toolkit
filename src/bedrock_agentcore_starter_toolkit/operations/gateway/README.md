@@ -210,7 +210,7 @@ token = client.get_access_token_for_cognito(cognito_result['client_info'])
 # List tools
 async with httpx.AsyncClient() as http:
     response = await http.post(
-        gateway.get_mcp_url(),
+        gateway['gatewayUrl'],
         headers={"Authorization": f"Bearer {token}"},
         json={
             "jsonrpc": "2.0",
@@ -223,7 +223,7 @@ async with httpx.AsyncClient() as http:
 
 # Invoke a tool
 response = await http.post(
-    gateway.get_mcp_url(),
+    gateway['gatewayUrl'],
     headers={"Authorization": f"Bearer {token}"},
     json={
         "jsonrpc": "2.0",
