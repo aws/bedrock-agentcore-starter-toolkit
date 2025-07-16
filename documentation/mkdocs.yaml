@@ -101,7 +101,7 @@ nav:
       - Memory: api-reference/memory.md
       - Built-in Tools: api-reference/tools.md
     - Bedrock AgentCore Starter Toolkit:
-      - Runtime CLI: api-reference/runtime-cli.md
+      - AgentCore CLI: api-reference/cli.md
 
 exclude_docs: |
   node_modules

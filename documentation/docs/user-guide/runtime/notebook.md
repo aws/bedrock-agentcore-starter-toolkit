@@ -2,7 +2,7 @@
 
 !!! warning "Local Testing Only"
 
-    The notebook interface is intended for **local development and testing only**. It has rough edges and is not recommended for production use. For production deployment, use the [AgentCore CLI](../../api-reference/runtime-cli.md) instead.
+    The notebook interface is intended for **local development and testing only**. It has rough edges and is not recommended for production use. For production deployment, use the Boto3 SDK instead.
 
 The AgentCore Runtime provides basic Jupyter notebook support for quick experimentation and testing.
 

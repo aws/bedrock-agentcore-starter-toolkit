@@ -109,3 +109,7 @@
     /* Override the font color in dark mode - text is too light */
     --md-default-fg-color: rgb(240, 246, 252)
 }
+
+[data-md-color-scheme="slate"] .md-button {
+  color: rgb(140, 140, 140) !important;
+}
