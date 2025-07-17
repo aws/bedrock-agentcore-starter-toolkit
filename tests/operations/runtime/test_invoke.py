@@ -419,8 +419,98 @@ class TestInvokeBedrockAgentCore:
             updated_agent = updated_config.get_agent_config("test-agent")
             assert updated_agent.oauth_configuration == {"workload_name": "auto-created-workload-123"}
 
-            # Verify result
-            assert result.response == {"response": "workload creation test"}
+        # Verify result
+        assert result.response == {"response": "workload creation test"}
+
+
+class TestHandleSessionId:
+    """Test _handle_session_id functionality."""
+
+    def test_handle_session_id_with_provided_session_id(self):
+        """Test _handle_session_id when session_id is provided."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import _handle_session_id
+
+        # Create agent config
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+
+        provided_session_id = "custom-session-123"
+
+        # Test with local=False
+        result = _handle_session_id(agent_config, local=False, session_id=provided_session_id)
+
+        assert result == provided_session_id
+        assert agent_config.bedrock_agentcore.agent_session_id == provided_session_id
+
+        # Test with local=True
+        result = _handle_session_id(agent_config, local=True, session_id=provided_session_id)
+
+        assert result == provided_session_id
+        assert agent_config.bedrock_agentcore.local_session_id == provided_session_id
+
+    def test_handle_session_id_without_provided_session_id(self):
+        """Test _handle_session_id when session_id is None."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import _handle_session_id
+
+        # Create agent config with existing local_session_id
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_session_id="existing-agent-session", local_session_id="existing-local-session"
+            ),
+        )
+
+        result = _handle_session_id(agent_config, local=True, session_id=None)
+        assert result == "existing-local-session"
+        assert agent_config.bedrock_agentcore.local_session_id == "existing-local-session"
+
+        result = _handle_session_id(agent_config, local=False, session_id=None)
+        assert result == "existing-agent-session"
+        assert agent_config.bedrock_agentcore.agent_session_id == "existing-agent-session"
+
+    def test_handle_session_id_overwrite(self):
+        """Test _handle_session_id overwrites existing session_id when new one is provided."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import _handle_session_id
+
+        # Create agent config with existing session IDs
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_session_id="old-agent-session", local_session_id="old-local-session"
+            ),
+        )
+
+        new_session_id = "new-session-override"
+
+        # Test overwriting agent session ID
+        result = _handle_session_id(agent_config, local=False, session_id=new_session_id)
+
+        assert result == new_session_id
+        assert agent_config.bedrock_agentcore.agent_session_id == new_session_id
+        # Local session should remain unchanged
+        assert agent_config.bedrock_agentcore.local_session_id == "old-local-session"
+
+        # Test overwriting local session ID
+        result = _handle_session_id(agent_config, local=True, session_id=new_session_id)
+
+        assert result == new_session_id
+        assert agent_config.bedrock_agentcore.local_session_id == new_session_id
+        # Agent session should remain the new value from previous test
+        assert agent_config.bedrock_agentcore.agent_session_id == new_session_id
 
 
 class TestGetWorkloadName:

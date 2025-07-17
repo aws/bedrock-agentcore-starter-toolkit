@@ -144,6 +144,24 @@ def launch_bedrock_agentcore(
 
     # Update the project config and save
     project_config.agents[agent_config.name] = agent_config
+
+    # reset session id when deploying to cloud
+    if not local:
+        existing_session_id = None
+        if agent_config.bedrock_agentcore.agent_session_id:
+            # existing session ID exists in runtime
+            existing_session_id = agent_config.bedrock_agentcore.agent_session_id
+            agent_config.bedrock_agentcore.agent_session_id = None
+        if existing_session_id:
+            if agent_config.bedrock_agentcore.agent_arn:
+                log.info("------------------------------------------------------------")
+                log.info(
+                    "Session ID will be reset to connect to the updated agent. "
+                    "The previous agent remains accessible via the original session ID: %s",
+                    existing_session_id,
+                )
+                log.info("------------------------------------------------------------")
+
     save_config(project_config, config_path)
 
     log.info("Agent created/updated: %s", agent_arn)

@@ -58,7 +58,8 @@ class BedrockAgentCoreDeploymentInfo(BaseModel):
 
     agent_id: Optional[str] = Field(default=None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
-    agent_session_id: Optional[str] = Field(default=None, description="Session ID for invocations")
+    agent_session_id: Optional[str] = Field(default=None, description="Session ID for invocations in runtime")
+    local_session_id: Optional[str] = Field(default=None, description="Session ID for invocations in local mode")
 
 
 class BedrockAgentCoreAgentSchema(BaseModel):

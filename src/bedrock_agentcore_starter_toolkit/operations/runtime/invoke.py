@@ -9,7 +9,7 @@ from bedrock_agentcore.services.identity import IdentityClient
 
 from ...services.runtime import BedrockAgentCoreClient, generate_session_id
 from ...utils.runtime.config import load_config, save_config
-from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
+from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .models import InvokeResult
 
 log = logging.getLogger(__name__)
@@ -37,15 +37,7 @@ def invoke_bedrock_agentcore(
         raise ValueError("Region not configured.")
 
     agent_arn = agent_config.bedrock_agentcore.agent_arn
-
-    # Handle session ID
-    if not session_id:
-        session_id = agent_config.bedrock_agentcore.agent_session_id
-        if not session_id:
-            session_id = generate_session_id()
-
-    # Save session ID for reuse
-    agent_config.bedrock_agentcore.agent_session_id = session_id
+    session_id = _handle_session_id(agent_config, local_mode, session_id)
 
     # Update project config and save
     project_config.agents[agent_config.name] = agent_config
@@ -127,3 +119,23 @@ def _get_workload_name(
     save_config(project_config, project_config_path)
 
     return workload_name
+
+
+def _handle_session_id(
+    agent_config: BedrockAgentCoreAgentSchema, local: Optional[bool], session_id: Optional[str]
+) -> str:
+    if not session_id:
+        if local:
+            session_id = agent_config.bedrock_agentcore.local_session_id
+        else:
+            session_id = agent_config.bedrock_agentcore.agent_session_id
+
+        if not session_id:
+            session_id = generate_session_id()
+
+    if local:
+        agent_config.bedrock_agentcore.local_session_id = session_id
+    else:
+        agent_config.bedrock_agentcore.agent_session_id = session_id
+
+    return session_id
