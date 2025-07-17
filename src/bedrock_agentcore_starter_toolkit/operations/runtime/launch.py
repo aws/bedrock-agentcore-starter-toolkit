@@ -149,18 +149,17 @@ def launch_bedrock_agentcore(
     if not local:
         existing_session_id = None
         if agent_config.bedrock_agentcore.agent_session_id:
-            # existing session ID exists in runtime
+            # session ID exists in runtime
             existing_session_id = agent_config.bedrock_agentcore.agent_session_id
             agent_config.bedrock_agentcore.agent_session_id = None
         if existing_session_id:
-            if agent_config.bedrock_agentcore.agent_arn:
-                log.info("------------------------------------------------------------")
-                log.info(
-                    "Session ID will be reset to connect to the updated agent. "
-                    "The previous agent remains accessible via the original session ID: %s",
-                    existing_session_id,
-                )
-                log.info("------------------------------------------------------------")
+            log.info("------------------------------------------------------------")
+            log.info(
+                "Session ID will be reset to connect to the updated agent. "
+                "The previous agent remains accessible via the original session ID: %s",
+                existing_session_id,
+            )
+            log.info("------------------------------------------------------------")
 
     save_config(project_config, config_path)
 
