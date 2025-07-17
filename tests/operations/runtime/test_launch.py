@@ -273,3 +273,109 @@ class TestLaunchBedrockAgentCore:
         ):
             with pytest.raises(ValueError, match="ECR repository not configured"):
                 launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_cloud_with_existing_session_id(self, mock_boto3_clients, mock_container_runtime, tmp_path, caplog):
+        """Test cloud deployment with existing session ID - should reset session ID and log message."""
+        import logging
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        # Create config file with existing session ID
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        existing_session_id = "existing-session-12345"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="existing-agent-id",
+                agent_session_id=existing_session_id,  # Set existing session ID
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Create a test agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            caplog.at_level(logging.INFO),
+        ):
+            launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify that the log message about session ID reset was generated
+            session_reset_logs = [record for record in caplog.records if existing_session_id in record.message]
+            assert len(session_reset_logs) == 1
+            assert "Session ID will be reset to connect to the updated agent." in session_reset_logs[0].message
+
+            # Verify that the session ID was reset to None in the saved config
+            updated_config = load_config(config_path)
+            updated_agent_config = updated_config.get_agent_config("test-agent")
+            assert updated_agent_config.bedrock_agentcore.agent_session_id is None
+
+    def test_launch_local_with_existing_session_id(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test local deployment with existing session ID - should not reset session ID."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        # Create config file with existing session ID
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        existing_runtime_session_id = "existing-runtime-session-12345"
+        existing_local_session_id = "existing-local-session-67890"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="existing-agent-id",
+                agent_session_id=existing_runtime_session_id,
+                local_session_id=existing_local_session_id,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Create a test agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+        ):
+            launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify that the session ID was not reset to None in the saved config
+            agent_config = load_config(config_path).get_agent_config("test-agent")
+            assert agent_config.bedrock_agentcore.agent_session_id == existing_runtime_session_id
+            assert agent_config.bedrock_agentcore.local_session_id == existing_local_session_id
