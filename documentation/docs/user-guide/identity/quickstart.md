@@ -30,7 +30,6 @@ identity_client = IdentityClient("us-east-1")
 # Create workload identity
 workload_identity = identity_client.create_workload_identity(
     name="my-research-agent",
-    description="Research agent that accesses Google Drive and web search"
 )
 
 print(f"Workload Identity ARN: {workload_identity['workloadIdentityArn']}")
@@ -41,8 +40,7 @@ You can also use the AWS CLI:
 
 ```bash
 aws bedrock-agentcore create-workload-identity \
-    --agent-name "my-research-agent" \
-    --description "Research agent that accesses Google Drive and web search"
+    --name "my-research-agent"
 ```
 
 ## Configure Credential Providers
@@ -54,11 +52,13 @@ Credential providers define how your agent accesses external services:
 ```python
 # Configure Google OAuth2 provider
 google_provider = identity_client.create_oauth2_credential_provider(req={
-    "resourceCredentialProviderName": "Google Workspace",
-    "providerType": "OAuth2",
-    "googleOAuth2Config": {
-        "clientId": "your-google-client-id",
-        "clientSecretArn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:google-client-secret"
+    "name": "myGoogleCredentialProvider",
+    "credentialProviderVendor": "GoogleOauth2",
+    "oauth2ProviderConfigInput": {
+        "googleOauth2ProviderConfig": {
+            "clientId": "your-google-client-id",
+            "clientSecret": "your-google-client-secret"
+        }
     }
 })
 ```
@@ -68,8 +68,8 @@ google_provider = identity_client.create_oauth2_credential_provider(req={
 ```python
 # Configure API key provider
 perplexity_provider = identity_client.create_api_key_credential_provider(req={
-    "resourceCredentialProviderName": "Perplexity AI",
-    "apiKeyArn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:perplexity-api-key"
+    "name": "myPerplexityAPIKeyCredentialProvider",
+    "apiKey": "myApiKey"
 })
 ```
 
@@ -117,7 +117,7 @@ class ResearchAgent:
         """Search the web using Perplexity AI"""
         # Get API key from identity service
         api_key = await self.identity_client.get_api_key(
-            provider_name="perplexity-provider",
+            provider_name="myPerplexityAPIKeyCredentialProvider",
             agent_identity_token=self.workload_token
         )
 
@@ -146,7 +146,7 @@ class ResearchAgent:
         try:
             # Get OAuth2 access token from identity service
             access_token = await self.identity_client.get_token(
-                provider_name="google-provider",
+                provider_name="myGoogleCredentialProvider",
                 scopes=["https://www.googleapis.com/auth/drive.file"],
                 agent_identity_token=self.workload_token,
                 auth_flow="USER_FEDERATION",
