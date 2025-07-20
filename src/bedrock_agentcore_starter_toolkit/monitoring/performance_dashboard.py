@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .metrics_collector import MetricsCollector
+from .utils import validate_agent_id, sanitize_dashboard_name, sanitize_log_group_name
 
 
 class PerformanceDashboard:
@@ -20,8 +21,13 @@ class PerformanceDashboard:
 
     def create_agent_dashboard(self, agent_id: str, dashboard_name: Optional[str] = None) -> str:
         """Create a comprehensive dashboard for an agent."""
+        # Validate agent ID for security
+        is_valid, error = validate_agent_id(agent_id)
+        if not is_valid:
+            raise ValueError(f"Invalid agent ID: {error}")
+            
         if not dashboard_name:
-            dashboard_name = f"BedrockAgentCore-{agent_id}"
+            dashboard_name = sanitize_dashboard_name(agent_id)
 
         dashboard_body = self._build_dashboard_config(agent_id)
         
@@ -99,7 +105,7 @@ class PerformanceDashboard:
                     "type": "log",
                     "x": 0, "y": 12, "width": 24, "height": 6,
                     "properties": {
-                        "query": f"SOURCE '/aws/bedrock-agentcore/runtimes/{agent_id}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+                        "query": f"SOURCE '{sanitize_log_group_name(agent_id)}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
                         "region": self.region,
                         "title": "Recent Errors",
                         "view": "table"
@@ -110,7 +116,12 @@ class PerformanceDashboard:
 
     def get_dashboard_url(self, agent_id: str) -> str:
         """Get URL for existing dashboard."""
-        dashboard_name = f"BedrockAgentCore-{agent_id}"
+        # Validate agent ID for security
+        is_valid, error = validate_agent_id(agent_id)
+        if not is_valid:
+            raise ValueError(f"Invalid agent ID: {error}")
+            
+        dashboard_name = sanitize_dashboard_name(agent_id)
         return f"https://{self.region}.console.aws.amazon.com/cloudwatch/home?region={self.region}#dashboards:name={dashboard_name}"
 
     def generate_performance_report(self, agent_id: str, hours: int = 24) -> Dict:

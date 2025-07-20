@@ -7,6 +7,8 @@ from typing import Dict, List, Optional
 import boto3
 from botocore.exceptions import ClientError
 
+from .utils import validate_agent_id, sanitize_log_group_name
+
 
 class MetricsCollector:
     """Collects and aggregates performance metrics from CloudWatch."""
@@ -19,6 +21,11 @@ class MetricsCollector:
 
     def collect_agent_metrics(self, agent_id: str, hours: int = 1) -> Dict:
         """Collect comprehensive metrics for an agent."""
+        # Validate agent ID for security
+        is_valid, error = validate_agent_id(agent_id)
+        if not is_valid:
+            raise ValueError(f"Invalid agent ID: {error}")
+            
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(hours=hours)
         
@@ -61,7 +68,7 @@ class MetricsCollector:
 
     def _get_error_metrics(self, agent_id: str, start_time: datetime, end_time: datetime) -> Dict:
         """Get error rate and failure metrics."""
-        log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}"
+        log_group = sanitize_log_group_name(agent_id)
         
         try:
             # Query error logs

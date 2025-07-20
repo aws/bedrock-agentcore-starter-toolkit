@@ -9,6 +9,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .metrics_collector import MetricsCollector
+from .utils import validate_agent_id, sanitize_log_group_name
 
 
 class OperationalInsights:
@@ -22,7 +23,12 @@ class OperationalInsights:
 
     def analyze_conversation_patterns(self, agent_id: str, hours: int = 24) -> Dict:
         """Analyze conversation patterns and user behavior."""
-        log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}"
+        # Validate agent ID for security
+        is_valid, error = validate_agent_id(agent_id)
+        if not is_valid:
+            raise ValueError(f"Invalid agent ID: {error}")
+            
+        log_group = sanitize_log_group_name(agent_id)
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(hours=hours)
         
