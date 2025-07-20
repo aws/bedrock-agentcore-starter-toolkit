@@ -1,0 +1,1 @@
+when you use git to make issue or PR, pls use the running github mcp server, it's the best approach
