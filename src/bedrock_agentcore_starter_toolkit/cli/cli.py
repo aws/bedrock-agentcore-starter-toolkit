@@ -7,6 +7,7 @@ from rich.logging import RichHandler
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from .common import console
+from .monitoring.commands import monitoring_app
 from .runtime.commands import configure_app, invoke, launch, status
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False)
@@ -28,6 +29,9 @@ app.add_typer(configure_app)
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.add_typer(gateway_app, name="gateway")
+
+# monitoring
+app.add_typer(monitoring_app, name="monitor")
 
 
 def main():
