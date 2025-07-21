@@ -5,7 +5,7 @@ import platform
 import subprocess  # nosec B404 - Required for container runtime operations
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, NamedTuple
 
 from jinja2 import Template
 
@@ -13,6 +13,14 @@ from ...cli.common import _handle_warn
 from .entrypoint import detect_dependencies, get_python_version
 
 log = logging.getLogger(__name__)
+
+
+class RuntimeStatus(NamedTuple):
+    """Runtime detection status with detailed error information."""
+    available: bool
+    error_type: str
+    return_code: int
+    error_message: str
 
 
 class ContainerRuntime:
@@ -31,27 +39,120 @@ class ContainerRuntime:
         self.available_runtimes = ["finch", "docker", "podman"]
 
         if runtime_type == "auto":
+            runtime_statuses = {}
             for runtime in self.available_runtimes:
-                if self._is_runtime_installed(runtime):
+                status = self._detect_runtime_status(runtime)
+                runtime_statuses[runtime] = status
+                if status.available:
                     self.runtime = runtime
                     break
             else:
-                raise RuntimeError("No container runtime found. Please install Docker, Finch, or Podman.")
+                error_msg = self._generate_enhanced_error_message(runtime_statuses)
+                raise RuntimeError(error_msg)
         elif runtime_type in self.available_runtimes:
-            if self._is_runtime_installed(runtime_type):
+            status = self._detect_runtime_status(runtime_type)
+            if status.available:
                 self.runtime = runtime_type
             else:
-                raise RuntimeError(f"{runtime_type.capitalize()} is not installed")
+                raise RuntimeError(status.error_message)
         else:
             raise ValueError(f"Unsupported runtime: {runtime_type}")
 
     def _is_runtime_installed(self, runtime: str) -> bool:
-        """Check if runtime is installed."""
+        """Check if runtime is installed (legacy method for compatibility)."""
+        status = self._detect_runtime_status(runtime)
+        return status.available
+    
+    def _detect_runtime_status(self, runtime: str) -> RuntimeStatus:
+        """Detect runtime status with detailed error information."""
         try:
-            result = subprocess.run([runtime, "version"], capture_output=True, check=False)  # nosec B603
-            return result.returncode == 0
-        except (FileNotFoundError, OSError):
-            return False
+            result = subprocess.run(
+                [runtime, "version"], 
+                capture_output=True, 
+                text=True,
+                check=False,
+                timeout=10
+            )  # nosec B603
+            
+            if result.returncode == 0:
+                return RuntimeStatus(True, "success", 0, "")
+            
+            # Analyze different failure modes
+            stderr_lower = result.stderr.lower()
+            
+            if result.returncode == 1:
+                if "permission denied" in stderr_lower or "connect to the docker daemon socket" in stderr_lower:
+                    return RuntimeStatus(
+                        False, 
+                        "permission_denied", 
+                        1,
+                        f"Permission denied accessing {runtime}. Try: sudo usermod -aG docker $USER && newgrp docker"
+                    )
+                elif ("daemon" in stderr_lower and "not running" in stderr_lower) or "is the docker daemon running" in stderr_lower:
+                    return RuntimeStatus(
+                        False,
+                        "daemon_not_running",
+                        1, 
+                        f"{runtime.capitalize()} daemon is not running. Try: sudo systemctl start docker"
+                    )
+                else:
+                    return RuntimeStatus(
+                        False,
+                        "runtime_error", 
+                        result.returncode,
+                        f"{runtime.capitalize()} error: {result.stderr.strip()}"
+                    )
+            
+            return RuntimeStatus(
+                False,
+                "unknown_error",
+                result.returncode,
+                f"{runtime.capitalize()} returned code {result.returncode}: {result.stderr.strip()}"
+            )
+            
+        except FileNotFoundError:
+            return RuntimeStatus(
+                False,
+                "not_found",
+                127,
+                f"{runtime.capitalize()} is not installed or not in PATH"
+            )
+        except subprocess.TimeoutExpired:
+            return RuntimeStatus(
+                False,
+                "timeout",
+                124,
+                f"{runtime.capitalize()} command timed out"
+            )
+        except OSError as e:
+            return RuntimeStatus(
+                False,
+                "os_error",
+                -1,
+                f"OS error running {runtime}: {e}"
+            )
+    
+    def _generate_enhanced_error_message(self, runtime_statuses: dict) -> str:
+        """Generate enhanced error message based on runtime detection results."""
+        if not runtime_statuses:
+            return "No container runtimes checked"
+        
+        # Generate detailed error message
+        error_parts = []
+        for runtime_name, status in runtime_statuses.items():
+            if status.error_type == "not_found":
+                error_parts.append(f"• {runtime_name.capitalize()}: Not installed")
+            elif status.error_type == "permission_denied":
+                error_parts.append(f"• {runtime_name.capitalize()}: {status.error_message}")
+            elif status.error_type == "daemon_not_running":
+                error_parts.append(f"• {runtime_name.capitalize()}: {status.error_message}")
+            else:
+                error_parts.append(f"• {runtime_name.capitalize()}: {status.error_message}")
+        
+        header = "Container runtime detection failed:\n"
+        footer = "\nFor installation help, see: https://docs.docker.com/engine/install/"
+        
+        return header + "\n".join(error_parts) + footer
 
     def get_name(self) -> str:
         """Get runtime name."""
