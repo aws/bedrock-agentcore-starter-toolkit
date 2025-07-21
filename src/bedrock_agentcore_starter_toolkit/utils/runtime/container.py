@@ -285,7 +285,11 @@ class ContainerRuntime:
     def _execute_command(self, cmd: List[str]) -> Tuple[bool, List[str]]:
         """Execute command and capture output."""
         try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)  # nosec B603
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding="utf-8", bufsize=1
+            )  # nosec B603
 
             output_lines = []
             if process.stdout:
