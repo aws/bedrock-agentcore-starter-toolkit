@@ -144,7 +144,6 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
     # Ensure file is within project directory for Docker context
     try:
         relative_path = explicit_path.relative_to(package_dir.resolve())
-        file_path = str(relative_path)
     except ValueError:
         raise ValueError(
             f"Requirements file must be within project directory. File: {explicit_path}, Project: {package_dir}"
@@ -155,14 +154,26 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
     install_path = None
 
     if file_type == "pyproject":
-        if "/" in file_path:
+        if len(relative_path.parts) > 1:
             # pyproject.toml in subdirectory - install from that directory
-            install_path = str(Path(file_path).parent)
+            install_path = Path(relative_path).parent
         else:
             # pyproject.toml in root - install from current directory
-            install_path = "."
+            install_path = Path(".")
 
-    return DependencyInfo(file=file_path, type=file_type, resolved_path=str(explicit_path), install_path=install_path)
+    # Get POSIX strings for file and install path
+    file_path = relative_path.as_posix()
+    install_path = install_path and install_path.as_posix()
+
+    # Maintain local format for explicit path
+    explicit_path = str(explicit_path)
+
+    return DependencyInfo(
+        file=file_path,
+        type=file_type,
+        resolved_path=explicit_path,
+        install_path=install_path
+    )
 
 
 def validate_requirements_file(build_dir: Path, requirements_file: str) -> DependencyInfo:

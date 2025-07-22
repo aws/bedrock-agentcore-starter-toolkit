@@ -260,3 +260,51 @@ dependencies = ["bedrock_agentcore", "requests"]
         deps = detect_dependencies(tmp_path, explicit_file="requirements.txt")
         assert deps.is_requirements
         assert not deps.is_root_package  # Should be False for requirements files
+
+    def test_windows_path_delimiters_converted_to_posix_for_dockerfile(self, tmp_path):
+        """
+        Test that Windows path delimiters are converted to Posix for Dockerfile compatibility.
+        Dockerfile paths must use forward slashes, so Windows backslashes need to be converted.
+        """
+        req_file, pyproject_file = self._setup_for_posix_conversion_tests(tmp_path)
+
+        # Test requirements.txt with Windows path delimiters
+        deps = detect_dependencies(tmp_path, explicit_file="dir\\subdir\\requirements.txt")
+        assert deps.file == "dir/subdir/requirements.txt"  # Should be Posix style
+        assert deps.resolved_path == str(req_file.resolve())  # Should maintain Windows style
+
+        # Test pyproject.toml with Windows path delimiters
+        deps = detect_dependencies(tmp_path, explicit_file="dir\\subdir\\pyproject.toml")
+        assert deps.file == "dir/subdir/pyproject.toml"  # Should be Posix style
+        assert deps.install_path == "dir/subdir"  # Should be Posix style
+        assert deps.resolved_path == str(pyproject_file.resolve())  # Should maintain Windows style
+
+    def test_posix_path_delimiters_maintained_for_dockerfile(self, tmp_path):
+        """Test that Posix path delimiters are maintained for Dockerfile compatibility."""
+        # Create nested directory structure
+        req_file, pyproject_file = self._setup_for_posix_conversion_tests(tmp_path)
+
+        # Test requirements.txt with Posix path delimiters
+        deps = detect_dependencies(tmp_path, explicit_file="dir/subdir/requirements.txt")
+        assert deps.file == "dir/subdir/requirements.txt"  # Should maintain Posix style
+        assert deps.resolved_path == str(req_file.resolve())  # Should maintain Posix style
+
+        # Test pyproject.toml with Posix path delimiters
+        deps = detect_dependencies(tmp_path, explicit_file="dir/subdir/pyproject.toml")
+        assert deps.file == "dir/subdir/pyproject.toml"  # Should maintain Posix style
+        assert deps.install_path == "dir/subdir"  # Should maintain Posix style
+        assert deps.resolved_path == str(pyproject_file.resolve())  # Should maintain Posix style
+
+    @staticmethod
+    def _setup_for_posix_conversion_tests(tmp_path):
+        # Create requirements,txt and pyproject.toml in nested directory structure
+        subdir = tmp_path / "dir" / "subdir"
+        subdir.mkdir(parents=True)
+
+        req_file = subdir / "requirements.txt"
+        req_file.write_text("bedrock_agentcore\nrequests")
+
+        pyproject_file = subdir / "pyproject.toml"
+        pyproject_file.write_text("[project]\ndependencies = ['bedrock_agentcore']")
+
+        return req_file, pyproject_file
