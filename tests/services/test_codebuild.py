@@ -115,8 +115,7 @@ class TestCodeBuildService:
 
         # Should not specify LocationConstraint for us-east-1
         mock_clients["s3"].create_bucket.assert_called_once_with(
-            Bucket="bedrock-agentcore-codebuild-sources-123456789012-us-east-1",
-            CreateBucketConfiguration={"LocationConstraint": "us-east-1"},
+            Bucket="bedrock-agentcore-codebuild-sources-123456789012-us-east-1"
         )
 
     @patch("os.walk")
