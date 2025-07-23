@@ -9,7 +9,7 @@ from bedrock_agentcore import BedrockAgentCoreApp
 
 @pytest.fixture
 def mock_boto3_clients(monkeypatch):
-    """Mock AWS clients (STS, ECR, BedrockAgentCore)."""
+    """Mock AWS clients (STS, ECR, BedrockAgentCore) and MemoryClient."""
     # Mock STS client
     mock_sts = Mock()
     mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
@@ -54,6 +54,24 @@ def mock_boto3_clients(monkeypatch):
     mock_bedrock_agentcore.exceptions = Mock()
     mock_bedrock_agentcore.exceptions.ResourceNotFoundException = Exception
 
+    mock_bedrock_agentcore.create_memory.return_value = {
+        "memory": {
+            "arn": "arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/test-memory-id-12345678",
+            "id": "test-memory-id-12345678",
+            "name": "test_agent_memory_12345678",
+            "status": "ACTIVE",
+        }
+    }
+
+    mock_bedrock_agentcore.get_memory.return_value = {
+        "memory": {
+            "arn": "arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/test-memory-id-12345678",
+            "id": "test-memory-id-12345678",
+            "name": "test_agent_memory_12345678",
+            "status": "ACTIVE",
+        }
+    }
+
     # Mock boto3.client calls
     def mock_client(service_name, **kwargs):
         if service_name == "sts":
@@ -74,7 +92,12 @@ def mock_boto3_clients(monkeypatch):
     monkeypatch.setattr("boto3.client", mock_client)
     monkeypatch.setattr("boto3.Session", lambda *args, **kwargs: mock_session)
 
-    return {"sts": mock_sts, "ecr": mock_ecr, "bedrock_agentcore": mock_bedrock_agentcore, "session": mock_session}
+    return {
+        "sts": mock_sts,
+        "ecr": mock_ecr,
+        "bedrock_agentcore": mock_bedrock_agentcore,
+        "session": mock_session,
+    }
 
 
 @pytest.fixture
