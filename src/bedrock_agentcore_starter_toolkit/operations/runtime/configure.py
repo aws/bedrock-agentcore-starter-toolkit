@@ -146,13 +146,13 @@ def configure_bedrock_agentcore(
         log.debug("Config path: %s", config_path)
 
     # Convert to POSIX for cross-platform compatibility
-    entrypoint_path = entrypoint_path.as_posix()
+    entrypoint_path_str = entrypoint_path.as_posix()
 
     # Determine entrypoint format
     if bedrock_agentcore_name:
-        entrypoint = f"{entrypoint_path}:{bedrock_agentcore_name}"
+        entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}"
     else:
-        entrypoint = entrypoint_path
+        entrypoint = entrypoint_path_str
 
     if verbose:
         log.debug("Using entrypoint format: %s", entrypoint)

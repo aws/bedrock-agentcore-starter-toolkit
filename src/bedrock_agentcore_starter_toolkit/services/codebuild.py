@@ -47,8 +47,7 @@ class CodeBuildService:
                 self.s3_client.create_bucket(Bucket=bucket_name)
             else:
                 self.s3_client.create_bucket(
-                    Bucket=bucket_name,
-                    CreateBucketConfiguration={"LocationConstraint": region}
+                    Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": region}
                 )
 
             # Set lifecycle to cleanup old builds

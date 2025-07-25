@@ -168,12 +168,7 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
     # Maintain local format for explicit path
     explicit_path = str(explicit_path)
 
-    return DependencyInfo(
-        file=file_path,
-        type=file_type,
-        resolved_path=explicit_path,
-        install_path=install_path
-    )
+    return DependencyInfo(file=file_path, type=file_type, resolved_path=explicit_path, install_path=install_path)
 
 
 def validate_requirements_file(build_dir: Path, requirements_file: str) -> DependencyInfo:
