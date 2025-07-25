@@ -4,9 +4,26 @@ Let's get your first AI agent running on Amazon Bedrock AgentCore in just a few 
 
 ## What You Need
 
-- An AWS account
+### Prerequisites
+
+- An AWS account with the following permissions:
+  - **AgentCore Full Access**: `AmazonBedrockAgentCoreFullAccess` managed policy
+  - **Bedrock Access** (one of the following):
+    - **Option 1 (Development)**: `AmazonBedrockFullAccess` managed policy
+    - **Option 2 (Production Recommended)**: Custom policy with scoped permissions for specific models
+  - **Caller permissions**: [See detailed policy here](permissions.md#developercaller-permissions)
 - Python 3.10+ installed
 - 5 minutes of your time ⏰
+
+### Development Environment Considerations
+
+**For SageMaker Notebooks, Cloud9, or other cloud environments:**
+- Use the `--codebuild` flag for deployment (no Docker required)
+- CodeBuild handles ARM64 container builds automatically
+
+**For local development:**
+- Docker Desktop (for standard deployment)
+- Or use `--codebuild` flag to avoid Docker requirements
 
 ## Step 1: Install the SDK
 
@@ -66,7 +83,7 @@ You should see something like: `{"result": "Hello! I'm here to help you with any
 
 ## Step 4: Deploy to AWS
 
-Ready to deploy to the cloud? First, install the starter toolkit and set up your project:
+Ready to deploy to the cloud? The toolkit makes this incredibly simple with **automatic role creation**!
 
 ```bash
 # Install the starter toolkit
@@ -76,24 +93,62 @@ pip install bedrock-agentcore-starter-toolkit
 echo "bedrock-agentcore
 strands-agents" > requirements.txt
 
-# Configure your agent
-agentcore configure -e my_agent.py -er <AGENT_IAM_EXECUTION_ROLE>
+# 🎯 Configure your agent - roles are auto-created!
+agentcore configure -e my_agent.py
 
-# Deploy to AWS
-agentcore launch -cb
+# 🚀 Deploy to AWS with CodeBuild (perfect for SageMaker notebooks!)
+agentcore launch --codebuild
 
-# Test your deployed agent
+# 🎉 Test your deployed agent
 agentcore invoke '{"prompt": "tell me a joke"}'
 ```
 
-## 🎯 What Just Happened?
+### ✨ What Just Happened?
 
-1. **BedrockAgentCoreApp** - This wraps your function into an HTTP service
-2. **@app.entrypoint** - This decorator tells AgentCore "this is my main function"
-3. **Local Testing** - Your agent runs on `http://localhost:8080`
-4. **Cloud Deploy** - The toolkit packages everything and deploys to AWS
+The toolkit automatically handled all the complex setup:
 
-## 🆘 Quick Troubleshooting
+1. **🔐 Auto-Created Execution Role**: The toolkit created `AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}` with all required permissions
+2. **🏗️ CodeBuild Resources**: ARM64 build environment and CodeBuild role configured automatically
+3. **📦 ECR Repository**: Container registry created automatically
+
+### 🎯 Key Benefits of Auto-Creation
+
+**🚀 Zero Configuration Required**
+- No need to manually create IAM roles
+- No need to configure trust policies
+- No need to attach permissions policies
+
+**📱 Perfect for SageMaker Notebooks**
+- No Docker installation needed
+- ARM64 builds handled in the cloud
+- Works seamlessly in managed environments
+
+### 🔧 Advanced Configuration (Optional)
+
+**If you prefer to use existing roles:**
+```bash
+# Use existing execution role
+agentcore configure -e my_agent.py -er arn:aws:iam::123456789012:role/MyExistingRole
+
+# Use existing ECR repository
+agentcore configure -e my_agent.py -ecr my-existing-repo
+```
+
+**For local development and testing:**
+```bash
+# Local development (runs locally)
+agentcore launch --local
+```
+
+**For standard cloud deployment:**
+```bash
+# Standard cloud deployment (requires local Docker)
+agentcore launch
+```
+
+> **💡 Pro Tip**: The auto-creation feature is perfect for getting started quickly, especially in SageMaker notebooks, Cloud9, or any environment where you want to focus on building your agent rather than managing infrastructure!
+
+##  Quick Troubleshooting
 
 **Port 8080 already in use?**
 - Stop other services or use a different port

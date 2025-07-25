@@ -15,6 +15,7 @@ from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .create_role import get_or_create_runtime_execution_role
 from .models import LaunchResult
 
@@ -137,7 +138,14 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
 
 
 def _deploy_to_bedrock_agentcore(
-    agent_config, project_config, config_path, agent_name, ecr_uri, region, env_vars=None, auto_update_on_conflict=False
+    agent_config: BedrockAgentCoreAgentSchema,
+    project_config: BedrockAgentCoreConfigSchema,
+    config_path: Path,
+    agent_name: str,
+    ecr_uri: str,
+    region: str,
+    env_vars: Optional[dict] = None,
+    auto_update_on_conflict: bool = False,
 ):
     """Deploy agent to Bedrock AgentCore with retry logic for role validation."""
     log.info("Deploying to Bedrock AgentCore...")
@@ -214,6 +222,16 @@ def _deploy_to_bedrock_agentcore(
     # Update the config
     agent_config.bedrock_agentcore.agent_id = agent_id
     agent_config.bedrock_agentcore.agent_arn = agent_arn
+
+    # Reset session id if present
+    existing_session_id = agent_config.bedrock_agentcore.agent_session_id
+    if existing_session_id is not None:
+        log.warning(
+            "⚠️ Session ID will be reset to connect to the updated agent. "
+            "The previous agent remains accessible via the original session ID: %s",
+            existing_session_id,
+        )
+        agent_config.bedrock_agentcore.agent_session_id = None
 
     # Update the project config and save
     project_config.agents[agent_config.name] = agent_config

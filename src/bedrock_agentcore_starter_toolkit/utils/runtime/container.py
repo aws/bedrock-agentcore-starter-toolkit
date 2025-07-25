@@ -41,7 +41,10 @@ class ContainerRuntime:
             if self._is_runtime_installed(runtime_type):
                 self.runtime = runtime_type
             else:
-                raise RuntimeError(f"{runtime_type.capitalize()} VM not found. Please ensure VM is running.")
+                raise RuntimeError(
+                    f"{runtime_type.capitalize()} VM not found. "
+                    f"Please ensure VM is running with '{runtime_type} version'."
+                )
         else:
             raise ValueError(f"Unsupported runtime: {runtime_type}")
 

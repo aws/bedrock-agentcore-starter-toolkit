@@ -380,3 +380,225 @@ bedrock_agentcore:
 
             mock_status.assert_called_once_with(config_path)
             assert result.config.name == "test-agent"
+
+    def test_invoke_unicode_payload(self, tmp_path):
+        """Test invoke with Unicode characters in payload."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+
+        # Create a config file with AWS fields and deployment info for invoke
+        config_text = """
+name: test-agent
+platform: linux/amd64
+entrypoint: test_agent.py
+container_runtime: docker
+aws:
+  execution_role: arn:aws:iam::123456789012:role/TestRole
+  region: us-west-2
+  account: '123456789012'
+bedrock_agentcore:
+  agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id
+"""
+        config_path.write_text(config_text)
+
+        unicode_payload = {
+            "message": "Hello, 你好, नमस्ते, مرحبا, Здравствуйте",
+            "emoji": "Hello! 👋 How are you? 😊 Having a great day! 🌟",
+            "technical": "File: test_文件.py → Status: ✅ Success",
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.invoke_bedrock_agentcore"
+            ) as mock_invoke,  # Patch in bedrock_agentcore.py module
+        ):
+            mock_result = Mock()
+            mock_result.response = {"result": "success", "processed_unicode": True}
+            mock_invoke.return_value = mock_result
+
+            response = bedrock_agentcore.invoke(unicode_payload)
+
+            # Verify the payload was passed correctly with Unicode characters
+            mock_invoke.assert_called_once_with(
+                config_path=config_path,
+                payload=unicode_payload,
+                session_id=None,
+                bearer_token=None,
+                local_mode=False,
+                user_id=None,
+            )
+            assert response == {"result": "success", "processed_unicode": True}
+
+    def test_invoke_unicode_response(self, tmp_path):
+        """Test invoke with Unicode characters in response."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+
+        # Create a config file with AWS fields and deployment info for invoke
+        config_text = """
+name: test-agent
+platform: linux/amd64
+entrypoint: test_agent.py
+container_runtime: docker
+aws:
+  execution_role: arn:aws:iam::123456789012:role/TestRole
+  region: us-west-2
+  account: '123456789012'
+bedrock_agentcore:
+  agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id
+"""
+        config_path.write_text(config_text)
+
+        unicode_response = {
+            "message": "नमस्ते! मैं आपसे हिंदी में बात कर सकता हूं",
+            "greeting": "こんにちは！元気ですか？",
+            "emoji_response": "処理完了！ ✅ 成功しました 🎉",
+            "mixed": "English + 中文 + العربية = 🌍",
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.invoke_bedrock_agentcore"
+            ) as mock_invoke,  # Patch in bedrock_agentcore.py module
+        ):
+            mock_result = Mock()
+            mock_result.response = unicode_response
+            mock_invoke.return_value = mock_result
+
+            response = bedrock_agentcore.invoke({"message": "hello"})
+
+            # Verify Unicode response is properly returned
+            assert response == unicode_response
+            assert response["message"] == "नमस्ते! मैं आपसे हिंदी में बात कर सकता हूं"
+            assert response["greeting"] == "こんにちは！元気ですか？"
+            assert response["emoji_response"] == "処理完了！ ✅ 成功しました 🎉"
+            assert response["mixed"] == "English + 中文 + العربية = 🌍"
+
+    def test_invoke_unicode_mixed_content(self, tmp_path):
+        """Test invoke with mixed Unicode and ASCII content."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+
+        # Create a config file with AWS fields and deployment info for invoke
+        config_text = """
+name: test-agent
+platform: linux/amd64
+entrypoint: test_agent.py
+container_runtime: docker
+aws:
+  execution_role: arn:aws:iam::123456789012:role/TestRole
+  region: us-west-2
+  account: '123456789012'
+bedrock_agentcore:
+  agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id
+"""
+        config_path.write_text(config_text)
+
+        mixed_payload = {
+            "english": "Hello World",
+            "chinese": "你好世界",
+            "numbers": "123456789",
+            "symbols": "!@#$%^&*()",
+            "emoji": "😊🌟✨",
+            "mixed_sentence": "Processing file_名前.txt with status: ✅ Success!",
+        }
+
+        mixed_response = {
+            "status": "processed",
+            "input_language_detected": "mixed: EN+ZH+emoji",
+            "output": "Successfully processed: 文件_名前.txt ✅",
+            "emoji_count": 3,
+            "languages": ["English", "中文", "日本語"],
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.invoke_bedrock_agentcore"
+            ) as mock_invoke,  # Patch in bedrock_agentcore.py module
+        ):
+            mock_result = Mock()
+            mock_result.response = mixed_response
+            mock_invoke.return_value = mock_result
+
+            response = bedrock_agentcore.invoke(mixed_payload)
+
+            # Verify mixed content is properly handled
+            mock_invoke.assert_called_once_with(
+                config_path=config_path,
+                payload=mixed_payload,
+                session_id=None,
+                bearer_token=None,
+                local_mode=False,
+                user_id=None,
+            )
+            assert response == mixed_response
+            assert response["output"] == "Successfully processed: 文件_名前.txt ✅"
+            assert response["languages"] == ["English", "中文", "日本語"]
+
+    def test_invoke_unicode_edge_cases(self, tmp_path):
+        """Test invoke with Unicode edge cases."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+
+        # Create a config file with AWS fields and deployment info for invoke
+        config_text = """
+name: test-agent
+platform: linux/amd64
+entrypoint: test_agent.py
+container_runtime: docker
+aws:
+  execution_role: arn:aws:iam::123456789012:role/TestRole
+  region: us-west-2
+  account: '123456789012'
+bedrock_agentcore:
+  agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id
+"""
+        config_path.write_text(config_text)
+
+        edge_case_payload = {
+            "empty_unicode": "",
+            "whitespace_unicode": "   ",
+            "special_chars": "™€£¥©®",
+            "combining_chars": "é̂ñ̃",  # Characters with combining diacritics
+            "rtl_text": "مرحبا بكم في العالم",  # Right-to-left text
+            "zero_width": "hello\u200bzero\u200bwidth",  # Zero-width space
+            "high_unicode": "𝐇𝐞𝐥𝐥𝐨",  # High Unicode points
+            "mixed_emoji": "🏳️‍🌈🏴‍☠️👨‍👩‍👧‍👦",  # Composite emoji
+        }
+
+        edge_case_response = {
+            "processed_successfully": True,
+            "detected_issues": [],
+            "normalized_text": "hello zero width",
+            "rtl_detected": True,
+            "emoji_sequences": 3,
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.invoke_bedrock_agentcore"
+            ) as mock_invoke,  # Patch in bedrock_agentcore.py module
+        ):
+            mock_result = Mock()
+            mock_result.response = edge_case_response
+            mock_invoke.return_value = mock_result
+
+            response = bedrock_agentcore.invoke(edge_case_payload)
+
+            # Verify edge cases are properly handled
+            mock_invoke.assert_called_once_with(
+                config_path=config_path,
+                payload=edge_case_payload,
+                session_id=None,
+                bearer_token=None,
+                local_mode=False,
+                user_id=None,
+            )
+            assert response == edge_case_response
+            assert response["processed_successfully"] is True
+            assert response["rtl_detected"] is True
+            assert response["emoji_sequences"] == 3

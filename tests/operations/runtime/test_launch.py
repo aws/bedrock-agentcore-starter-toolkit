@@ -676,6 +676,145 @@ class TestLaunchBedrockAgentCore:
             mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.assert_not_called()
             mock_boto3_clients["bedrock_agentcore"].update_agent_runtime.assert_not_called()
 
+    def test_launch_cloud_with_existing_session_id_reset(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test that session ID gets reset when deploying to cloud."""
+        # Create config file with existing session ID
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        existing_session_id = "existing-session-123"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_session_id=existing_session_id  # Pre-existing session ID
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Create a test agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Mock IAM client response for role validation
+        mock_iam_client = MagicMock()
+        mock_iam_client.get_role.return_value = {
+            "Role": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
+                }
+            }
+        }
+        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify warning log was emitted about session ID reset
+            mock_log.warning.assert_called_with(
+                "⚠️ Session ID will be reset to connect to the updated agent. "
+                "The previous agent remains accessible via the original session ID: %s",
+                existing_session_id,
+            )
+
+        # Verify the session ID was reset to None in the config
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.agents["test-agent"]
+        assert updated_agent.bedrock_agentcore.agent_session_id is None
+
+    def test_launch_cloud_without_existing_session_id_no_reset(
+        self, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that no session ID reset occurs when no session ID exists."""
+        # Create config file without existing session ID
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_session_id=None  # No existing session ID
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Create a test agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Mock IAM client response for role validation
+        mock_iam_client = MagicMock()
+        mock_iam_client.get_role.return_value = {
+            "Role": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
+                }
+            }
+        }
+        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify NO warning log was emitted about session ID reset
+            mock_log.warning.assert_not_called()
+
+        # Verify the session ID remains None in the config
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.agents["test-agent"]
+        assert updated_agent.bedrock_agentcore.agent_session_id is None
+
 
 class TestEnsureExecutionRole:
     """Test _ensure_execution_role functionality."""

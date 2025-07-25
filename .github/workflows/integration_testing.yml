@@ -68,6 +68,7 @@ jobs:
       - name: Run integration tests
         env:
           AWS_REGION: us-west-2
+          AGENTCORE_TEST_ROLE: AgentExecutionRole
         id: tests
         run: |
           pytest tests_integ/cli -s --log-cli-level=INFO

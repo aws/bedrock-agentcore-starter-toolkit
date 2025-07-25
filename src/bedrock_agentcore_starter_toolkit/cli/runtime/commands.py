@@ -484,7 +484,14 @@ def invoke(
 
         # Display payload
         console.print("[bold]Payload:[/bold]")
-        console.print(Syntax(json.dumps(payload_data, indent=2), "json", background_color="default", word_wrap=True))
+        console.print(
+            Syntax(
+                json.dumps(payload_data, indent=2, ensure_ascii=False),
+                "json",
+                background_color="default",
+                word_wrap=True,
+            )
+        )
 
         # Invoke
         result = invoke_bedrock_agentcore(
@@ -500,7 +507,10 @@ def invoke(
         console.print("\n[bold]Response:[/bold]")
         console.print(
             Syntax(
-                json.dumps(result.response, indent=2, default=str), "json", background_color="default", word_wrap=True
+                json.dumps(result.response, indent=2, default=str, ensure_ascii=False),
+                "json",
+                background_color="default",
+                word_wrap=True,
             )
         )
 
@@ -639,7 +649,10 @@ def status(
         else:  # full json verbose output
             console.print(
                 Syntax(
-                    json.dumps(status_json, indent=2, default=str), "json", background_color="default", word_wrap=True
+                    json.dumps(status_json, indent=2, default=str, ensure_ascii=False),
+                    "json",
+                    background_color="default",
+                    word_wrap=True,
                 )
             )
 
