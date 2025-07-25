@@ -53,7 +53,7 @@ def invoke_bedrock_agentcore(
 
     # Convert payload to string if needed
     if isinstance(payload, dict):
-        payload_str = json.dumps(payload)
+        payload_str = json.dumps(payload, ensure_ascii=False)
     else:
         payload_str = str(payload)
 

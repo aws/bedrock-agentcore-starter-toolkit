@@ -1994,3 +1994,165 @@ agents:
                 mock_status.assert_called_once_with(config_file, None)
             finally:
                 os.chdir(original_cwd)
+
+    def test_invoke_command_unicode_payload(self, tmp_path):
+        """Test invoke command with Unicode characters in payload."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        unicode_payload = {
+            "message": "Hello, 你好, नमस्ते, مرحبا, Здравствуйте",
+            "emoji": "Hello! 👋 How are you? 😊 Having a great day! 🌟",
+            "technical": "File: test_文件.py → Status: ✅ Success",
+        }
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "success"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["invoke", json.dumps(unicode_payload, ensure_ascii=False)])
+
+                assert result.exit_code == 0
+                # Verify Unicode characters are properly displayed in payload
+                assert "你好" in result.stdout
+                assert "नमस्ते" in result.stdout
+                assert "👋" in result.stdout
+                assert "✅" in result.stdout
+
+                # Verify the payload was passed correctly
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["payload"] == unicode_payload
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_command_unicode_response(self, tmp_path):
+        """Test invoke command with Unicode characters in response."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        unicode_response = {
+            "message": "नमस्ते! मैं आपसे हिंदी में बात कर सकता हूं",
+            "greeting": "こんにちは！元気ですか？",
+            "emoji_response": "処理完了！ ✅ 成功しました 🎉",
+            "mixed": "English + 中文 + العربية = 🌍",
+        }
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = unicode_response
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
+
+                assert result.exit_code == 0
+                # Verify Unicode characters are properly displayed in response
+                assert "नमस्ते" in result.stdout
+                assert "こんにちは" in result.stdout
+                assert "✅" in result.stdout
+                assert "🎉" in result.stdout
+                assert "العربية" in result.stdout
+                assert "🌍" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_command_mixed_unicode_ascii(self, tmp_path):
+        """Test invoke command with mixed Unicode and ASCII content."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        mixed_payload = {
+            "english": "Hello World",
+            "chinese": "你好世界",
+            "numbers": "123456789",
+            "symbols": "!@#$%^&*()",
+            "emoji": "😊🌟✨",
+            "mixed_sentence": "Processing file_名前.txt with status: ✅ Success!",
+        }
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "mixed_content_processed"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["invoke", json.dumps(mixed_payload, ensure_ascii=False)])
+
+                assert result.exit_code == 0
+                # Verify mixed content is properly displayed
+                assert "Hello World" in result.stdout
+                assert "你好世界" in result.stdout
+                assert "😊🌟✨" in result.stdout
+                assert "file_名前.txt" in result.stdout
+                assert "✅" in result.stdout
+
+                # Verify the payload was passed correctly
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["payload"] == mixed_payload
+            finally:
+                os.chdir(original_cwd)
