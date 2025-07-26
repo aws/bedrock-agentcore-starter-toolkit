@@ -18,7 +18,7 @@ def _handle_error(message: str, exception: Optional[Exception] = None) -> NoRetu
         raise typer.Exit(1)
 
 
-def _handle_warn(message: str) -> NoReturn:
+def _handle_warn(message: str) -> None:
     """Handle errors with consistent formatting and exit."""
     console.print(f"⚠️  {message}", new_line_start=True, style="bold yellow underline")
 
