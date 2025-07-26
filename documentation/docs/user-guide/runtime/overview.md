@@ -265,3 +265,62 @@ agentcore invoke '{"prompt": "Hello world"}'
 agentcore invoke '{"prompt": "Remember this"}' --session-id "test-session"
 agentcore invoke '{"prompt": "Hello"}' --bearer-token "your-jwt-token"
 ```
+
+## Deployment Options
+
+The AgentCore Runtime SDK provides flexible deployment options to accommodate different development environments:
+
+### Development Environment Recommendations
+
+#### SageMaker Notebooks & Cloud Environments
+For cloud-based development environments like SageMaker notebooks, Cloud9, or other managed environments:
+
+```bash
+# Recommended deployment method
+agentcore launch --codebuild
+```
+
+**Benefits:**
+- No Docker installation required
+- ARM64 architecture builds
+- Integrated with AWS services
+- Consistent build environment
+- Perfect for notebook-based development workflows
+
+#### Local Development
+For local development and testing:
+
+```bash
+# Local development (runs locally)
+agentcore launch --local
+```
+
+**Benefits:**
+- Full local testing capabilities
+- Immediate feedback during development
+- Complete control over build environment
+
+### Deployment Modes
+
+#### Standard Cloud Deployment
+- Uses local Docker for container builds
+- Pushes ARM64 images to ECR
+- Deploys to Bedrock AgentCore
+
+```bash
+# Standard cloud deployment (requires local Docker)
+agentcore launch
+```
+
+#### CodeBuild Deployment
+- Uses AWS CodeBuild for ARM64 container builds
+- Automatically handles Docker build process
+- Pushes to ECR and deploys to AgentCore
+- Ideal for environments without Docker
+
+#### ECR Push Only
+```bash
+agentcore launch --push-ecr
+```
+- Builds and pushes to ECR without deployment
+- Useful for CI/CD pipelines or manual deployment workflows
