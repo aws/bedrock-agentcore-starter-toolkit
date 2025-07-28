@@ -1,5 +1,7 @@
 """Container runtime management for Bedrock AgentCore SDK."""
 
+import datetime
+import difflib
 import logging
 import platform
 import subprocess  # nosec B404 - Required for container runtime operations
@@ -73,8 +75,24 @@ class ContainerRuntime:
         aws_region: Optional[str] = None,
         enable_observability: bool = True,
         requirements_file: Optional[str] = None,
+        overwrite_existing: bool = False,
+        backup_existing: bool = True,
     ) -> Path:
-        """Generate Dockerfile from template."""
+        """Generate Dockerfile from template.
+
+        Args:
+            agent_path: Path to agent module file
+            output_dir: Directory to write Dockerfile
+            agent_name: Name of agent variable in entrypoint
+            aws_region: AWS region
+            enable_observability: Whether to enable AWS OpenTelemetry
+            requirements_file: Optional path to requirements file
+            overwrite_existing: If True, overwrite existing Dockerfile without prompting
+            backup_existing: If True, backup existing Dockerfile before overwriting
+
+        Returns:
+            Path to created or existing Dockerfile
+        """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 
@@ -132,8 +150,104 @@ class ContainerRuntime:
         }
 
         dockerfile_path = output_dir / "Dockerfile"
-        dockerfile_path.write_text(template.render(**context))
+        new_content = template.render(**context)
+
+        # Check if Dockerfile already exists
+        if dockerfile_path.exists() and not overwrite_existing:
+            existing_content = dockerfile_path.read_text()
+
+            print(f"\nExisting Dockerfile found at {dockerfile_path}")
+            print("Choose an option:")
+            print("1. Overwrite existing Dockerfile")
+            print("2. Skip (keep existing Dockerfile)")
+            print("3. Backup existing and generate new Dockerfile")
+            print("4. Show diff and decide")
+
+            # Get user choice
+            while True:
+                choice = input("\nEnter your choice (1-4): ").strip()
+
+                if choice == "1":
+                    # Overwrite
+                    log.info("Overwriting existing Dockerfile")
+                    break
+                elif choice == "2":
+                    # Skip
+                    log.info("Keeping existing Dockerfile")
+                    return dockerfile_path
+                elif choice == "3":
+                    # Backup and overwrite
+                    if backup_existing:
+                        self._backup_dockerfile(dockerfile_path)
+                    break
+                elif choice == "4":
+                    # Show diff and decide again
+                    self._show_dockerfile_diff(existing_content, new_content)
+                    continue
+                else:
+                    print("Invalid choice. Please enter a number between 1-4.")
+
+        # Create backup if needed (for option 1 with backup_existing=True)
+        if dockerfile_path.exists() and backup_existing and not overwrite_existing:
+            self._backup_dockerfile(dockerfile_path)
+
+        # Write the new Dockerfile
+        dockerfile_path.write_text(new_content)
         return dockerfile_path
+
+    def _backup_dockerfile(self, dockerfile_path: Path) -> Path:
+        """Create a timestamped backup of a Dockerfile.
+
+        Args:
+            dockerfile_path: Path to the Dockerfile to backup
+
+        Returns:
+            Path to the backup file
+        """
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = dockerfile_path.with_suffix(f".bak.{timestamp}")
+
+        # Handle backup file collision
+        counter = 1
+        while backup_path.exists():
+            backup_path = dockerfile_path.with_suffix(f".bak.{timestamp}.{counter}")
+            counter += 1
+
+        # Create the backup
+        backup_path.write_text(dockerfile_path.read_text())
+        log.info("Backed up existing Dockerfile to %s", backup_path)
+        return backup_path
+
+    def _show_dockerfile_diff(self, old_content: str, new_content: str) -> None:
+        """Show a diff between existing and new Dockerfile content.
+
+        Args:
+            old_content: Existing Dockerfile content
+            new_content: New Dockerfile content to be generated
+        """
+        old_lines = old_content.splitlines()
+        new_lines = new_content.splitlines()
+
+        print("\n===== Dockerfile Diff =====")
+        print("--- Existing Dockerfile")
+        print("+++ New Dockerfile")
+        print("\n")
+
+        for line in difflib.unified_diff(old_lines, new_lines, lineterm="", n=3):
+            if line.startswith("+"):
+                # Added line
+                print(f"\033[92m{line}\033[0m")  # Green
+            elif line.startswith("-"):
+                # Removed line
+                print(f"\033[91m{line}\033[0m")  # Red
+            elif line.startswith("@@"):
+                # Line information
+                print(f"\033[96m{line}\033[0m")  # Cyan
+            else:
+                # Context line
+                print(line)
+
+        print("\n===== End of Diff =====\n")
 
     def _ensure_dockerignore(self, project_dir: Path) -> None:
         """Create .dockerignore if it doesn't exist."""
