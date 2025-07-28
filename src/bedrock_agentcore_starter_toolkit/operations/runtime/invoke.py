@@ -67,7 +67,7 @@ def invoke_bedrock_agentcore(
         )["workloadAccessToken"]
 
         # TODO: store and read port config of local running container
-        client = LocalBedrockAgentCoreClient("http://0.0.0.0:8080")
+        client = LocalBedrockAgentCoreClient("http://127.0.0.1:8080")
         response = client.invoke_endpoint(session_id, payload_str, workload_access_token)
 
     else:
