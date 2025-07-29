@@ -266,32 +266,30 @@ agentcore invoke '{"prompt": "Remember this"}' --session-id "test-session"
 agentcore invoke '{"prompt": "Hello"}' --bearer-token "your-jwt-token"
 ```
 
-## Deployment Options
+## Launch
 
 The AgentCore Runtime SDK provides flexible deployment options to accommodate different development environments:
 
 ### Development Environment Recommendations
 
-#### SageMaker Notebooks & Cloud Environments
-For cloud-based development environments like SageMaker notebooks, Cloud9, or other managed environments:
-
+#### ✅ Recommended: CodeBuild Deployment (Default)
 ```bash
-# Recommended deployment method
-agentcore launch --codebuild
+# Default deployment method (no flags needed)
+agentcore launch
 ```
 
 **Benefits:**
-- No Docker installation required
-- ARM64 architecture builds
-- Integrated with AWS services
-- Consistent build environment
-- Perfect for notebook-based development workflows
+- **No Docker installation required** - builds ARM64 containers in the cloud
+- **Zero local setup** - just AWS credentials needed
+- **Consistent builds** - standardized ARM64 environment
+- **Perfect for managed environments** - works in environment sucah SageMaker Notebooks
+- **Integrated with AWS services** - seamless ECR and AgentCore integration
 
-#### Local Development
-For local development and testing:
+#### Local Development & Testing
+**Perfect for:** Local development, rapid iteration, debugging
 
 ```bash
-# Local development (runs locally)
+# Local development (runs locally, requires Docker/Finch/Podman)
 agentcore launch --local
 ```
 
@@ -299,28 +297,38 @@ agentcore launch --local
 - Full local testing capabilities
 - Immediate feedback during development
 - Complete control over build environment
+- **Note:** Requires Docker/Finch/Podman installation
 
 ### Deployment Modes
 
-#### Standard Cloud Deployment
-- Uses local Docker for container builds
-- Pushes ARM64 images to ECR
-- Deploys to Bedrock AgentCore
+#### CodeBuild Cloud Deployment (Default)
+- ✅ **Recommended approach**
+- Uses AWS CodeBuild for ARM64 container builds
+- **No local Docker required**
+- Pushes to ECR and deploys to AgentCore
 
 ```bash
-# Standard cloud deployment (requires local Docker)
+# Default deployment (CodeBuild in the cloud)
 agentcore launch
 ```
 
-#### CodeBuild Deployment
-- Uses AWS CodeBuild for ARM64 container builds
-- Automatically handles Docker build process
-- Pushes to ECR and deploys to AgentCore
-- Ideal for environments without Docker
+#### Local Build Cloud Deployment
+- Uses local Docker for container builds
+- Pushes ARM64 images to ECR
+- Deploys to Bedrock AgentCore
+- **Requires Docker/Finch/Podman installed**
+
+```bash
+# Local Docker build deployment (requires Docker/Finch/Podman)
+agentcore launch --local-build
+```
 
 #### ECR Push Only
-```bash
-agentcore launch --push-ecr
-```
 - Builds and pushes to ECR without deployment
-- Useful for CI/CD pipelines or manual deployment workflows
+- Useful manual deployment workflows
+- Can use either CodeBuild (default) or local Docker (`--local-build`)
+
+```bash
+agentcore launch --push-ecr        # Uses CodeBuild (default)
+agentcore launch --push-ecr --local-build  # Uses local Docker
+```

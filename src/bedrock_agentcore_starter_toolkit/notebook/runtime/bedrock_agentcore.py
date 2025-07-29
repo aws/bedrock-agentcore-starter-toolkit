@@ -141,7 +141,17 @@ class Runtime:
             LaunchResult with deployment details
         """
         if not self._config_path:
+            log.warning("Configuration required before launching")
+            log.info("Call .configure() first to set up your agent")
+            log.info("Example: runtime.configure(entrypoint='my_agent.py')")
             raise ValueError("Must configure before launching. Call .configure() first.")
+
+        # Inform user about deployment mode
+        if local:
+            log.info("Local mode requires Docker/Finch/Podman installation")
+            log.info("Alternative: Use .launch() without local=True for CodeBuild deployment")
+        else:
+            log.info("Using CodeBuild for cloud deployment (no local Docker required)")
 
         # Validate mutually exclusive options
         exclusive_options = [local, push_ecr, use_codebuild]
@@ -213,6 +223,12 @@ class Runtime:
             Response from the Bedrock AgentCore endpoint
         """
         if not self._config_path:
+            log.warning("Agent not configured and deployed")
+            log.info("Required workflow: .configure() → .launch() → .invoke()")
+            log.info("Example:")
+            log.info("  runtime.configure(entrypoint='my_agent.py')")
+            log.info("  runtime.launch()")
+            log.info("  runtime.invoke({'message': 'Hello'})")
             raise ValueError("Must configure and launch first.")
 
         result = invoke_bedrock_agentcore(
@@ -232,6 +248,9 @@ class Runtime:
             StatusResult with configuration, agent, and endpoint status
         """
         if not self._config_path:
+            log.warning("Configuration not found")
+            log.info("Call .configure() first to set up your agent")
+            log.info("Example: runtime.configure(entrypoint='my_agent.py')")
             raise ValueError("Must configure first. Call .configure() first.")
 
         result = get_status(self._config_path)

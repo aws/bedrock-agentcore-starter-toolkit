@@ -46,11 +46,11 @@ agentcore configure -e my_agent.py
 agentcore configure -e my_agent.py
 ```
 
-**Auto-Creation with CodeBuild Deployment:**
+**Auto-Creation with Default Deployment:**
 ```bash
-# Perfect for SageMaker notebooks
+# Uses CodeBuild by default
 agentcore configure -e my_agent.py
-agentcore launch --codebuild
+agentcore launch
 ```
 
 **Mixed Approach:**
@@ -249,7 +249,7 @@ The toolkit uses AWS CodeBuild for ARM64 container builds, especially useful in 
 The Runtime Execution Role is an IAM role that AgentCore Runtime assumes to run an agent. Replace the following:
 
 - `region` with the AWS Region that you are using
-- `accountId` with your AWS account ID  
+- `accountId` with your AWS account ID
 - `agentName` with the name of your agent. You'll need to decide the agent name before creating the role and AgentCore Runtime.
 
 ### Permissions Policy

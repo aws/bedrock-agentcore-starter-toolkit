@@ -29,19 +29,39 @@ class ContainerRuntime:
         """
         runtime_type = runtime_type or self.DEFAULT_RUNTIME
         self.available_runtimes = ["finch", "docker", "podman"]
+        self.runtime = None
+        self.has_local_runtime = False
 
         if runtime_type == "auto":
             for runtime in self.available_runtimes:
                 if self._is_runtime_installed(runtime):
                     self.runtime = runtime
+                    self.has_local_runtime = True
                     break
             else:
-                raise RuntimeError("No container runtime found. Please install Docker, Finch, or Podman.")
+                # Convert hard error to warning - suggest CodeBuild instead
+                _handle_warn(
+                    "⚠️  No container runtime found (Docker/Finch/Podman not installed)\n"
+                    "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
+                    "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                    "💡 For local builds, please install Docker, Finch, or Podman"
+                )
+                self.runtime = "none"
+                self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
             if self._is_runtime_installed(runtime_type):
                 self.runtime = runtime_type
+                self.has_local_runtime = True
             else:
-                raise RuntimeError(f"{runtime_type.capitalize()} is not installed")
+                # Convert hard error to warning - suggest CodeBuild instead
+                _handle_warn(
+                    f"⚠️  {runtime_type.capitalize()} is not installed\n"
+                    "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
+                    "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                    f"💡 For local builds, please install {runtime_type.capitalize()}"
+                )
+                self.runtime = "none"
+                self.has_local_runtime = False
         else:
             raise ValueError(f"Unsupported runtime: {runtime_type}")
 
@@ -190,6 +210,14 @@ class ContainerRuntime:
 
     def build(self, dockerfile_dir: Path, tag: str, platform: Optional[str] = None) -> Tuple[bool, List[str]]:
         """Build container image."""
+        if not self.has_local_runtime:
+            return False, [
+                "No container runtime available for local build",
+                "💡 Recommendation: Use CodeBuild for building containers in the cloud",
+                "💡 Run 'agentcore launch' (default) for CodeBuild deployment",
+                "💡 For local builds, please install Docker, Finch, or Podman",
+            ]
+
         if not dockerfile_dir.exists():
             return False, [f"Directory not found: {dockerfile_dir}"]
 
@@ -212,6 +240,14 @@ class ContainerRuntime:
             port: Port to expose (default: 8080)
             env_vars: Additional environment variables to pass to container
         """
+        if not self.has_local_runtime:
+            raise RuntimeError(
+                "No container runtime available for local run\n"
+                "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
+                "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                "💡 For local runs, please install Docker, Finch, or Podman"
+            )
+
         container_name = f"{tag.split(':')[0]}-{int(time.time())}"
         cmd = [self.runtime, "run", "-it", "--rm", "-p", f"{port}:8080", "--name", container_name]
 

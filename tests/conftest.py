@@ -115,6 +115,7 @@ def mock_container_runtime(monkeypatch):
     # Create a mock runtime object with all required attributes and methods
     mock_runtime = Mock(spec=ContainerRuntime)
     mock_runtime.runtime = "docker"
+    mock_runtime.has_local_runtime = True  # Add the new attribute
     mock_runtime.get_name.return_value = "Docker"
     mock_runtime.build.return_value = (True, ["Successfully built test-image"])
     mock_runtime.login.return_value = True

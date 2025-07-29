@@ -19,31 +19,146 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
 )
 
 
+# Test Helper Functions
+def create_test_config(
+    tmp_path,
+    agent_name="test-agent",
+    entrypoint="test_agent.py",
+    region="us-west-2",
+    account="123456789012",
+    execution_role=None,
+    execution_role_auto_create=False,
+    ecr_repository=None,
+    ecr_auto_create=False,
+    agent_id=None,
+    agent_session_id=None,
+):
+    """Create a test configuration with customizable parameters."""
+    config_path = tmp_path / ".bedrock_agentcore.yaml"
+    agent_config = BedrockAgentCoreAgentSchema(
+        name=agent_name,
+        entrypoint=entrypoint,
+        container_runtime="docker",
+        aws=AWSConfig(
+            region=region,
+            account=account,
+            execution_role=execution_role,
+            execution_role_auto_create=execution_role_auto_create,
+            ecr_repository=ecr_repository,
+            ecr_auto_create=ecr_auto_create,
+            network_configuration=NetworkConfiguration(),
+            observability=ObservabilityConfig(),
+        ),
+        bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+            agent_id=agent_id,
+            agent_session_id=agent_session_id,
+        ),
+    )
+    project_config = BedrockAgentCoreConfigSchema(default_agent=agent_name, agents={agent_name: agent_config})
+    save_config(project_config, config_path)
+    return config_path
+
+
+def create_test_agent_file(tmp_path, filename="test_agent.py", content="# test agent"):
+    """Create a test agent file."""
+    agent_file = tmp_path / filename
+    agent_file.write_text(content)
+    return agent_file
+
+
+class MockAWSClientFactory:
+    """Factory for creating consistent AWS client mocks."""
+
+    def __init__(self, account="123456789012", region="us-west-2"):
+        self.account = account
+        self.region = region
+        self._setup_clients()
+
+    def _setup_clients(self):
+        """Setup all AWS service client mocks."""
+        # IAM Client Mock
+        self.iam_client = MagicMock()
+        self.iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": f"arn:aws:iam::{self.account}:role/TestRole",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
+                },
+            }
+        }
+
+        # CodeBuild Client Mock
+        self.codebuild_client = MagicMock()
+        self.codebuild_client.batch_get_builds.return_value = {
+            "builds": [{"buildStatus": "SUCCEEDED", "currentPhase": "COMPLETED"}]
+        }
+        self.codebuild_client.create_project.return_value = {}
+        self.codebuild_client.start_build.return_value = {"build": {"id": "build-123"}}
+
+        # S3 Client Mock
+        self.s3_client = MagicMock()
+        self.s3_client.head_bucket.return_value = {}
+        self.s3_client.upload_file.return_value = {}
+
+        # STS Client Mock
+        self.sts_client = MagicMock()
+        self.sts_client.get_caller_identity.return_value = {"Account": self.account}
+
+    def get_client(self, service_name):
+        """Get a mock client for the specified service."""
+        clients = {
+            "iam": self.iam_client,
+            "codebuild": self.codebuild_client,
+            "s3": self.s3_client,
+            "sts": self.sts_client,
+        }
+        return clients.get(service_name, MagicMock())
+
+    def setup_full_session_mock(self, mock_boto3_clients):
+        """Setup the complete session mock with all AWS clients."""
+        mock_session = mock_boto3_clients["session"]
+        mock_session.client.side_effect = self.get_client
+        mock_session.region_name = self.region
+
+    def setup_session_mock(self, mock_boto3_clients):
+        """Setup the session mock to use our client factory (legacy method)."""
+        self.setup_full_session_mock(mock_boto3_clients)
+
+
+def assert_codebuild_workflow_called(mock_factory):
+    """Assert that CodeBuild workflow was properly executed."""
+    mock_factory.codebuild_client.create_project.assert_called()
+    mock_factory.codebuild_client.start_build.assert_called()
+    mock_factory.codebuild_client.batch_get_builds.assert_called()
+
+
+def assert_config_updated_with_role(config_path, expected_role_arn):
+    """Assert that config was updated with the expected execution role."""
+    from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+    updated_config = load_config(config_path)
+    updated_agent = list(updated_config.agents.values())[0]
+    assert updated_agent.aws.execution_role == expected_role_arn
+    assert updated_agent.aws.execution_role_auto_create is False
+
+
+def assert_no_agent_deployment_calls(mock_boto3_clients):
+    """Assert that no agent deployment calls were made (for ECR-only tests)."""
+    mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_not_called()
+    mock_boto3_clients["bedrock_agentcore"].update_agent_runtime.assert_not_called()
+
+
 class TestLaunchBedrockAgentCore:
     """Test launch_bedrock_agentcore functionality."""
 
     def test_launch_local_mode(self, mock_container_runtime, tmp_path):
         """Test local deployment."""
-        # Create config file
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
 
-        # Patch ContainerRuntime in the launch module
         with patch(
             "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
             return_value=mock_container_runtime,
@@ -55,138 +170,68 @@ class TestLaunchBedrockAgentCore:
         assert result.tag == "bedrock_agentcore-test-agent:latest"
         assert result.port == 8080
         assert hasattr(result, "runtime")
-
-        # Verify build was called
         mock_container_runtime.build.assert_called_once()
 
     def test_launch_cloud_with_ecr_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment with ECR creation."""
-        # Create config file with auto-create ECR
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_auto_create=True,
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_auto_create=True,
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
+        create_test_agent_file(tmp_path)
 
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
-
-        # Mock the build to return success
-        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
-
-        # Mock IAM client response for role validation
-        mock_iam_client = MagicMock()
-        mock_iam_client.get_role.return_value = {
-            "Role": {
-                "AssumeRolePolicyDocument": {
-                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
-            }
-        }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.services.ecr.create_ecr_repository") as mock_create_ecr,
-            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr") as mock_deploy_ecr,
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr,
             patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_or_create_runtime_execution_role"
+            ) as mock_create_role,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
-            mock_deploy_ecr.return_value = (
-                "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent:latest"
-            )
+            mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
 
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            # Verify cloud mode result
-            assert result.mode == "cloud"
+            # Verify codebuild mode result
+            assert result.mode == "codebuild"
             assert hasattr(result, "agent_arn")
             assert hasattr(result, "agent_id")
             assert hasattr(result, "ecr_uri")
+            assert hasattr(result, "codebuild_id")
 
-            # Verify ECR creation was called
-            mock_create_ecr.assert_called_once()
+            # Verify CodeBuild workflow was executed
+            assert_codebuild_workflow_called(mock_factory)
 
     def test_launch_cloud_existing_agent(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test updating existing agent."""
-        # Create config file with existing agent
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="023456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(agent_id="existing-agent-id"),
+        config_path = create_test_config(
+            tmp_path,
+            account="023456789012",
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            agent_id="existing-agent-id",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
+        create_test_agent_file(tmp_path)
 
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory(account="023456789012")
+        mock_factory.setup_session_mock(mock_boto3_clients)
 
-        # Mock the build to return success
-        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
-
-        # Mock IAM client response for role validation
-        mock_iam_client = MagicMock()
-        mock_iam_client.get_role.return_value = {
-            "Role": {
-                "AssumeRolePolicyDocument": {
-                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
-            }
-        }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
-
-        with (
-            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
-        ):
+        with patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository"):
             result = launch_bedrock_agentcore(config_path, local=False)
 
             # Verify update was called (not create)
             mock_boto3_clients["bedrock_agentcore"].update_agent_runtime.assert_called_once()
-            assert result.mode == "cloud"
+            assert result.mode == "codebuild"
 
     def test_launch_build_failure(self, mock_container_runtime, tmp_path):
         """Test error handling for build failures."""
-        # Create config file
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
 
         # Mock build failure
         mock_container_runtime.build.return_value = (False, ["Error: build failed", "Missing dependency"])
@@ -207,44 +252,81 @@ class TestLaunchBedrockAgentCore:
 
     def test_launch_invalid_config(self, tmp_path):
         """Test validation errors."""
-        # Create incomplete config (missing entrypoint)
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="",  # Invalid empty entrypoint
-            aws=AWSConfig(network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
+        config_path = create_test_config(tmp_path, entrypoint="")  # Invalid empty entrypoint
+        create_test_agent_file(tmp_path)
 
         with pytest.raises(ValueError, match="Invalid configuration"):
             launch_bedrock_agentcore(config_path, local=False)
 
-    def test_launch_push_ecr_only(self, mock_boto3_clients, mock_container_runtime, tmp_path):
-        """Test push_ecr_only mode."""
-        # Create config file
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+    def test_launch_push_ecr_only_local_build(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test push_ecr_only mode with local build."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
+        create_test_agent_file(tmp_path)
 
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_boto3_clients["session"].client.return_value = mock_factory.iam_client
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=False)
+
+            # Verify push_ecr_only mode result
+            assert result.mode == "push-ecr"
+            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert hasattr(result, "ecr_uri")
+            assert hasattr(result, "build_output")
+
+    def test_launch_push_ecr_only_codebuild_mode(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test push_ecr_only mode with CodeBuild (default)."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr:
+            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo"
+
+            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=True)
+
+            # Verify push_ecr_only CodeBuild mode result
+            assert result.mode == "push-ecr"
+            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert hasattr(result, "ecr_uri")
+            assert hasattr(result, "codebuild_id")
+            assert hasattr(result, "build_output")
+
+            # Verify CodeBuild workflow was executed
+            assert_codebuild_workflow_called(mock_factory)
+            # Verify no agent deployment occurred
+            assert_no_agent_deployment_calls(mock_boto3_clients)
+
+    def test_launch_local_build_cloud_deployment(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test local build with cloud deployment (use_codebuild=False)."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -253,9 +335,10 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
         mock_boto3_clients["session"].client.return_value = mock_iam_client
@@ -267,38 +350,78 @@ class TestLaunchBedrockAgentCore:
                 return_value=mock_container_runtime,
             ),
         ):
-            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True)
+            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=False, use_codebuild=False)
 
-            # Verify push_ecr_only mode result
-            assert result.mode == "push-ecr"
+            # Verify local build with cloud deployment
+            assert result.mode == "cloud"
             assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
             assert hasattr(result, "ecr_uri")
             assert hasattr(result, "build_output")
 
+            # Verify local build was used (not CodeBuild)
+            mock_container_runtime.build.assert_called_once()
+            mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_called_once()
+
+    def test_launch_push_ecr_codebuild_no_docker_succeeds(self, mock_boto3_clients, tmp_path):
+        """Test push_ecr_only with CodeBuild succeeds even without Docker."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.iam_client.get_role.return_value = {
+            "Role": {"Arn": "arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreSDKCodeBuild-us-west-2-test"}
+        }
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr,
+        ):
+            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo"
+
+            # Should succeed even without Docker since it uses CodeBuild
+            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=True)
+
+            assert result.mode == "push-ecr"
+            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert hasattr(result, "codebuild_id")
+            mock_factory.codebuild_client.start_build.assert_called_once()
+
+    def test_launch_push_ecr_local_build_no_docker_error(self, tmp_path):
+        """Test push_ecr_only with local build fails without Docker."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+
+        # Create a mock runtime without Docker available
+        mock_runtime_no_docker = MagicMock()
+        mock_runtime_no_docker.runtime = "none"
+        mock_runtime_no_docker.has_local_runtime = False  # No Docker available
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_runtime_no_docker,
+        ):
+            with pytest.raises(RuntimeError, match="Cannot build locally - no container runtime available"):
+                launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=False)
+
     def test_launch_missing_ecr_repository(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test error when ECR repository not configured."""
-        # Create config file without ECR repository
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_auto_create=False,  # No auto-create and no ECR repository
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_auto_create=False,  # No auto-create and no ECR repository
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -307,9 +430,10 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
         mock_boto3_clients["session"].client.return_value = mock_iam_client
@@ -323,28 +447,12 @@ class TestLaunchBedrockAgentCore:
 
     def test_launch_cloud_with_execution_role_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment with execution role auto-creation."""
-        # Create config file with execution role auto-create enabled
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role_auto_create=True,  # Enable auto-creation
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role_auto_create=True,  # Enable auto-creation
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -356,12 +464,16 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
 
         with (
             patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
@@ -375,7 +487,7 @@ class TestLaunchBedrockAgentCore:
         ):
             mock_get_or_create_role.return_value = created_role_arn
 
-            result = launch_bedrock_agentcore(config_path, local=False)
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify execution role creation was called
             mock_get_or_create_role.assert_called_once()
@@ -403,29 +515,13 @@ class TestLaunchBedrockAgentCore:
         """Test cloud deployment with existing execution role (no auto-creation)."""
         existing_role_arn = "arn:aws:iam::123456789012:role/existing-test-role"
 
-        # Create config file with existing execution role
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role=existing_role_arn,
-                execution_role_auto_create=True,  # Should be ignored since role exists
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role=existing_role_arn,
+            execution_role_auto_create=True,  # Should be ignored since role exists
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -434,9 +530,10 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": existing_role_arn,
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
         mock_boto3_clients["session"].client.return_value = mock_iam_client
@@ -451,7 +548,7 @@ class TestLaunchBedrockAgentCore:
                 return_value=mock_container_runtime,
             ),
         ):
-            result = launch_bedrock_agentcore(config_path, local=False)
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify execution role creation was NOT called (role already exists)
             mock_create_role.assert_not_called()
@@ -470,28 +567,12 @@ class TestLaunchBedrockAgentCore:
 
     def test_launch_missing_execution_role_no_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test error when execution role not configured and auto-create disabled."""
-        # Create config file without execution role and auto-create disabled
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role_auto_create=False,  # No auto-create and no execution role
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role_auto_create=False,  # No auto-create and no execution role
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -510,28 +591,12 @@ class TestLaunchBedrockAgentCore:
         self, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test graceful handling of ConflictException when agent already exists."""
-        # Create config file without agent_id (simulating first deployment after agent already exists)
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),  # No agent_id set
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -540,12 +605,17 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.iam_client = mock_iam_client  # Use provided IAM client
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
 
         # Mock ConflictException on create, then successful list and update
         from botocore.exceptions import ClientError
@@ -583,7 +653,9 @@ class TestLaunchBedrockAgentCore:
                 return_value=mock_container_runtime,
             ),
         ):
-            result = launch_bedrock_agentcore(config_path, local=False, auto_update_on_conflict=True)
+            result = launch_bedrock_agentcore(
+                config_path, local=False, auto_update_on_conflict=True, use_codebuild=False
+            )
 
             # Verify that create was attempted first
             mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_called_once()
@@ -614,28 +686,12 @@ class TestLaunchBedrockAgentCore:
         self, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test ConflictException when auto_update_on_conflict is disabled."""
-        # Create config file
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -644,12 +700,17 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.iam_client = mock_iam_client  # Use provided IAM client
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
 
         # Mock ConflictException on create
         from botocore.exceptions import ClientError
@@ -678,31 +739,14 @@ class TestLaunchBedrockAgentCore:
 
     def test_launch_cloud_with_existing_session_id_reset(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test that session ID gets reset when deploying to cloud."""
-        # Create config file with existing session ID
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
         existing_session_id = "existing-session-123"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
-                agent_session_id=existing_session_id  # Pre-existing session ID
-            ),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            agent_session_id=existing_session_id,  # Pre-existing session ID
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -711,12 +755,17 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.iam_client = mock_iam_client  # Use provided IAM client
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
 
         with (
             patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
@@ -726,7 +775,7 @@ class TestLaunchBedrockAgentCore:
             ),
             patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
         ):
-            result = launch_bedrock_agentcore(config_path, local=False)
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify deployment succeeded
             assert result.mode == "cloud"
@@ -751,30 +800,13 @@ class TestLaunchBedrockAgentCore:
         self, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test that no session ID reset occurs when no session ID exists."""
-        # Create config file without existing session ID
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            container_runtime="docker",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role="arn:aws:iam::123456789012:role/TestRole",
-                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
-                agent_session_id=None  # No existing session ID
-            ),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            agent_session_id=None,  # No existing session ID
         )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Create a test agent file
-        agent_file = tmp_path / "test_agent.py"
-        agent_file.write_text("# test agent")
+        create_test_agent_file(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -783,12 +815,17 @@ class TestLaunchBedrockAgentCore:
         mock_iam_client = MagicMock()
         mock_iam_client.get_role.return_value = {
             "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
                     "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
-                }
+                },
             }
         }
-        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.iam_client = mock_iam_client  # Use provided IAM client
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
 
         with (
             patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
@@ -798,7 +835,7 @@ class TestLaunchBedrockAgentCore:
             ),
             patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
         ):
-            result = launch_bedrock_agentcore(config_path, local=False)
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify deployment succeeded
             assert result.mode == "cloud"
@@ -815,31 +852,55 @@ class TestLaunchBedrockAgentCore:
         updated_agent = updated_config.agents["test-agent"]
         assert updated_agent.bedrock_agentcore.agent_session_id is None
 
+    def test_launch_local_mode_no_docker_runtime(self, tmp_path):
+        """Test local mode when Docker is not available."""
+        config_path = create_test_config(tmp_path)
+
+        # Create a mock runtime without Docker available
+        mock_runtime_no_docker = MagicMock()
+        mock_runtime_no_docker.runtime = "none"
+        mock_runtime_no_docker.has_local_runtime = False  # No Docker available
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_runtime_no_docker,
+        ):
+            with pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"):
+                launch_bedrock_agentcore(config_path, local=True)
+
+    def test_launch_push_ecr_no_docker_runtime(self, tmp_path):
+        """Test push ECR mode when Docker is not available."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+
+        # Create a mock runtime without Docker available
+        mock_runtime_no_docker = MagicMock()
+        mock_runtime_no_docker.runtime = "none"
+        mock_runtime_no_docker.has_local_runtime = False  # No Docker available
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_runtime_no_docker,
+        ):
+            with pytest.raises(RuntimeError, match="Cannot build locally - no container runtime available"):
+                launch_bedrock_agentcore(config_path, push_ecr_only=True, use_codebuild=False)
+
 
 class TestEnsureExecutionRole:
     """Test _ensure_execution_role functionality."""
 
     def test_ensure_execution_role_auto_create_success(self, mock_boto3_clients, tmp_path):
         """Test successful execution role auto-creation."""
-        # Create agent config with auto-create enabled
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role_auto_create=True,
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
+        config_path = create_test_config(tmp_path, execution_role_auto_create=True)
 
-        # Create project config
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        # Load the config to get the agent and project configs
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        save_config(project_config, config_path)
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
 
         # Role name will use random suffix, so we can't predict the exact name
         created_role_arn = "arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreRuntimeSDKServiceRole-abc123xyz9"
@@ -882,24 +943,17 @@ class TestEnsureExecutionRole:
         """Test when execution role already exists (no auto-creation needed)."""
         existing_role_arn = "arn:aws:iam::123456789012:role/existing-role"
 
-        # Create agent config with existing role
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role=existing_role_arn,
-                execution_role_auto_create=True,  # Should be ignored
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        config_path = create_test_config(
+            tmp_path,
+            execution_role=existing_role_arn,
+            execution_role_auto_create=True,  # Should be ignored
         )
 
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        # Load the config to get the agent and project configs
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
 
         # Mock IAM client response for role validation
         mock_iam_client = MagicMock()
@@ -936,23 +990,13 @@ class TestEnsureExecutionRole:
 
     def test_ensure_execution_role_no_role_no_auto_create(self, tmp_path):
         """Test error when no execution role and auto-create disabled."""
-        # Create agent config without role and auto-create disabled
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role_auto_create=False,
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
+        config_path = create_test_config(tmp_path, execution_role_auto_create=False)
 
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        # Load the config to get the agent and project configs
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
 
         with pytest.raises(ValueError, match="Execution role not configured and auto-create not enabled"):
             _ensure_execution_role(
@@ -966,23 +1010,13 @@ class TestEnsureExecutionRole:
 
     def test_ensure_execution_role_creation_failure(self, tmp_path):
         """Test error handling when role creation fails."""
-        # Create agent config with auto-create enabled
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="test_agent.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                execution_role_auto_create=True,
-                network_configuration=NetworkConfiguration(),
-                observability=ObservabilityConfig(),
-            ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-        )
+        config_path = create_test_config(tmp_path, execution_role_auto_create=True)
 
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        # Load the config to get the agent and project configs
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
 
         with patch(
             "bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_or_create_runtime_execution_role"
