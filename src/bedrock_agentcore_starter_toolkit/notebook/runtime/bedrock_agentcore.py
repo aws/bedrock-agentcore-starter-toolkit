@@ -161,7 +161,7 @@ class Runtime:
         if local:
             log.info("🏠 Local mode: building and running locally")
             log.info("   • Build and run container locally")
-            log.info("   • Requires Docker/Finch/Podman to be installed") 
+            log.info("   • Requires Docker/Finch/Podman to be installed")
             log.info("   • Perfect for development and testing")
         elif local_build:
             log.info("🔧 Local build mode: building locally, deploying to cloud (NEW OPTION!)")
@@ -173,7 +173,7 @@ class Runtime:
             log.info("🚀 CodeBuild mode: building in cloud (RECOMMENDED - DEFAULT)")
             log.info("   • Build ARM64 containers in the cloud with CodeBuild")
             log.info("   • No local Docker required")
-            
+
             # Show deployment options hint for first-time notebook users
             log.info("💡 Available deployment modes:")
             log.info("   • runtime.launch()                           → CodeBuild (current)")
@@ -197,7 +197,9 @@ class Runtime:
             error_msg = str(e)
             if "docker" in error_msg.lower() or "container runtime" in error_msg.lower():
                 if local or local_build:
-                    enhanced_msg = f"Docker/Finch/Podman is required for {'local' if local else 'local-build'} mode.\n\n"
+                    enhanced_msg = (
+                        f"Docker/Finch/Podman is required for {'local' if local else 'local-build'} mode.\n\n"
+                    )
                     enhanced_msg += "Options to fix this:\n"
                     enhanced_msg += "1. Install Docker/Finch/Podman and try again\n"
                     enhanced_msg += "2. Use CodeBuild mode instead: runtime.launch() - no Docker required\n\n"
@@ -238,7 +240,7 @@ class Runtime:
 
         # For notebook interface, clear verbose build output to keep output clean
         # especially for local_build mode where build logs can be very verbose
-        if local_build and hasattr(result, 'build_output'):
+        if local_build and hasattr(result, "build_output"):
             result.build_output = None
 
         return result
@@ -297,37 +299,37 @@ class Runtime:
         result = get_status(self._config_path)
         log.info("Retrieved Bedrock AgentCore status for: %s", self.name or "Bedrock AgentCore")
         return result
-    
+
     def help_deployment_modes(self):
         """Display information about available deployment modes and migration guidance."""
         print("\n🚀 Bedrock AgentCore Deployment Modes:")
         print("=" * 50)
-        
+
         print("\n1. 📦 CodeBuild Mode (RECOMMENDED - DEFAULT)")
         print("   Usage: runtime.launch()")
         print("   • Build ARM64 containers in the cloud with CodeBuild")
         print("   • No local Docker/Finch/Podman required")
         print("   • ✅ Works in SageMaker Notebooks, Cloud9, laptops")
-        
+
         print("\n2. 🏠 Local Development Mode")
         print("   Usage: runtime.launch(local=True)")
         print("   • Build and run container locally")
         print("   • Requires Docker/Finch/Podman installation")
         print("   • Perfect for development and testing")
         print("   • Fast iteration and debugging")
-        
+
         print("\n3. 🔧 Local Build Mode (NEW!)")
         print("   Usage: runtime.launch(local_build=True)")
         print("   • Build container locally with Docker")
-        print("   • Deploy to Bedrock AgentCore cloud runtime") 
+        print("   • Deploy to Bedrock AgentCore cloud runtime")
         print("   • Requires Docker/Finch/Podman installation")
         print("   • Use when you need custom build control")
-        
+
         print("\n📋 Migration Guide:")
         print("   • CodeBuild is now the default (no code changes needed)")
         print("   • Previous --code-build flag is deprecated")
         print("   • local_build=True option for hybrid workflows")
-        
+
         print("\n💡 Quick Start:")
         print("   runtime.configure(entrypoint='my_agent.py')")
         print("   runtime.launch()  # Uses CodeBuild by default")

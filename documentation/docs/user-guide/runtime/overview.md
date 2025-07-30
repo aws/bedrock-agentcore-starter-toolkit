@@ -32,7 +32,7 @@ The Runtime SDK is a comprehensive Python framework that bridges the gap between
 
 **BedrockAgentCoreApp** - HTTP service wrapper with:
 - `/invocations` endpoint for agent logic
-- `/ping` endpoint for health checks  
+- `/ping` endpoint for health checks
 - Built-in logging, error handling, and session management
 
 **Key Decorators:**
@@ -213,11 +213,11 @@ async def handler(event):
 @app.entrypoint
 def handler(event):
     task_id = app.add_async_task("data_processing", {"batch": 100})
-    
+
     def background_work():
         time.sleep(30)
         app.complete_async_task(task_id)
-    
+
     threading.Thread(target=background_work, daemon=True).start()
     return {"task_id": task_id}
 ```

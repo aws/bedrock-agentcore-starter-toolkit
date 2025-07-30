@@ -758,7 +758,6 @@ class TestLaunchBedrockAgentCore:
                 launch_bedrock_agentcore(config_path, local=True)
 
 
-
 class TestEnsureExecutionRole:
     """Test _ensure_execution_role functionality."""
 

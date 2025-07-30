@@ -1144,8 +1144,6 @@ agents:
         assert result.exit_code == 1
         assert "cannot be used together" in result.stdout
 
-
-
     def test_launch_command_local_build_success(self, tmp_path):
         """Test launch command with --local-build for cloud deployment."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
@@ -1697,7 +1695,6 @@ agents:
                 mock_validate.assert_called_once_with("requirements.txt")
         finally:
             os.chdir(original_cwd)
-
 
     def test_launch_command_with_env_vars(self, tmp_path):
         """Test launch command with environment variables."""

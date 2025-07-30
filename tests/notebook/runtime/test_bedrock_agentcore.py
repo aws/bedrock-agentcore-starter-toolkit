@@ -674,3 +674,39 @@ bedrock_agentcore:
             assert response["processed_successfully"] is True
             assert response["rtl_detected"] is True
             assert response["emoji_sequences"] == 3
+
+    def test_help_deployment_modes(self, capsys):
+        """Test help_deployment_modes displays deployment information."""
+        bedrock_agentcore = Runtime()
+
+        # Call the help method
+        bedrock_agentcore.help_deployment_modes()
+
+        # Capture the printed output
+        captured = capsys.readouterr()
+
+        # Minimal checks for coverage - verify key deployment modes are mentioned
+        assert "CodeBuild Mode" in captured.out
+        assert "Local Development Mode" in captured.out
+        assert "Local Build Mode" in captured.out
+        assert "runtime.launch()" in captured.out
+
+    def test_launch_docker_error_local_mode(self, tmp_path):
+        """Test launch handles Docker-related RuntimeError in local mode."""
+        bedrock_agentcore = Runtime()
+        bedrock_agentcore._config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.launch_bedrock_agentcore"
+            ) as mock_launch,
+        ):
+            mock_launch.side_effect = RuntimeError("docker command not found")
+
+            with pytest.raises(RuntimeError) as exc_info:
+                bedrock_agentcore.launch(local=True)
+
+            # Verify the enhanced error message
+            error_msg = str(exc_info.value)
+            assert "Docker/Finch/Podman is required for local mode" in error_msg
+            assert "Use CodeBuild mode instead: runtime.launch()" in error_msg
