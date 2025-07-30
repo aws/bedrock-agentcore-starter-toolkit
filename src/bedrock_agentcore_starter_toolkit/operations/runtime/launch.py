@@ -251,7 +251,6 @@ def launch_bedrock_agentcore(
     config_path: Path,
     agent_name: Optional[str] = None,
     local: bool = False,
-    push_ecr_only: bool = False,
     use_codebuild: bool = True,
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
@@ -262,7 +261,6 @@ def launch_bedrock_agentcore(
         config_path: Path to BedrockAgentCore configuration file
         agent_name: Name of agent to launch (for project configurations)
         local: Whether to run locally
-        push_ecr_only: Whether to only build and push to ECR without deploying
         use_codebuild: Whether to use CodeBuild for ARM64 builds
         env_vars: Environment variables to pass to local container (dict of key-value pairs)
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
@@ -274,19 +272,8 @@ def launch_bedrock_agentcore(
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
-    # Handle push ECR only mode first (before CodeBuild routing)
-    if push_ecr_only:
-        if use_codebuild:
-            return _launch_with_codebuild_ecr_only(
-                config_path=config_path,
-                agent_name=agent_config.name,
-                agent_config=agent_config,
-                project_config=project_config,
-            )
-        # Continue with local build + ECR push workflow below
-
-    # Handle CodeBuild deployment (but not for local mode or push_ecr_only with codebuild)
-    elif use_codebuild and not local:
+    # Handle CodeBuild deployment (but not for local mode)
+    if use_codebuild and not local:
         return _launch_with_codebuild(
             config_path=config_path,
             agent_name=agent_config.name,
@@ -296,7 +283,7 @@ def launch_bedrock_agentcore(
         )
 
     # Log which agent is being launched
-    mode = "locally" if local else "to ECR only" if push_ecr_only else "to cloud"
+    mode = "locally" if local else "to cloud"
     log.info("Launching Bedrock AgentCore agent '%s' %s", agent_config.name, mode)
 
     # Validate configuration
@@ -308,21 +295,22 @@ def launch_bedrock_agentcore(
     runtime = ContainerRuntime(agent_config.container_runtime)
 
     # Check if we need local runtime for this operation
-    if (local or push_ecr_only) and not runtime.has_local_runtime:
-        if local:
-            raise RuntimeError(
-                "Cannot run locally - no container runtime available\n"
-                "💡 Recommendation: Use CodeBuild for cloud deployment\n"
-                "💡 Run 'agentcore launch' (without --local) for CodeBuild deployment\n"
-                "💡 For local runs, please install Docker, Finch, or Podman"
-            )
-        else:  # push_ecr_only
-            raise RuntimeError(
-                "Cannot build locally - no container runtime available\n"
-                "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                "💡 Run 'agentcore launch' (without --push-ecr) for CodeBuild deployment\n"
-                "💡 For local builds, please install Docker, Finch, or Podman"
-            )
+    if local and not runtime.has_local_runtime:
+        raise RuntimeError(
+            "Cannot run locally - no container runtime available\n"
+            "💡 Recommendation: Use CodeBuild for cloud deployment\n"
+            "💡 Run 'agentcore launch' (without --local) for CodeBuild deployment\n"
+            "💡 For local runs, please install Docker, Finch, or Podman"
+        )
+
+    # Check if we need local runtime for local-build mode (cloud deployment with local build)
+    if not local and not use_codebuild and not runtime.has_local_runtime:
+        raise RuntimeError(
+            "Cannot build locally - no container runtime available\n"
+            "💡 Recommendation: Use CodeBuild for cloud deployment (no Docker needed)\n"
+            "💡 Run 'agentcore launch' (without --local-build) for CodeBuild deployment\n"
+            "💡 For local builds, please install Docker, Finch, or Podman"
+        )
 
     # Get build context - always use project root (where config and Dockerfile are)
     build_dir = config_path.parent
@@ -378,15 +366,6 @@ def launch_bedrock_agentcore(
     deploy_to_ecr(tag, repo_name, region, runtime)
 
     log.info("Image uploaded to ECR: %s", ecr_uri)
-
-    # If push_ecr_only, return early
-    if push_ecr_only:
-        return LaunchResult(
-            mode="push-ecr",
-            tag=tag,
-            ecr_uri=ecr_uri,
-            build_output=output,
-        )
 
     # Step 4: Deploy agent (with retry logic for role readiness)
     agent_id, agent_arn = _deploy_to_bedrock_agentcore(
@@ -489,40 +468,6 @@ def _execute_codebuild_workflow(
         log.info("✅ ECR-only build completed (project configuration not saved)")
 
     return build_id, ecr_uri, region, account_id
-
-
-def _launch_with_codebuild_ecr_only(
-    config_path: Path,
-    agent_name: str,
-    agent_config,
-    project_config,
-) -> LaunchResult:
-    """Launch using CodeBuild for ARM64 builds - ECR push only (no agent deployment)."""
-    log.info(
-        "Starting CodeBuild ARM64 ECR-only build for agent '%s' to account %s (%s)",
-        agent_name,
-        agent_config.aws.account,
-        agent_config.aws.region,
-    )
-
-    # Execute shared CodeBuild workflow with ECR-only mode
-    build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(
-        config_path=config_path,
-        agent_name=agent_name,
-        agent_config=agent_config,
-        project_config=project_config,
-        ecr_only=True,
-    )
-
-    log.info("ECR-only deployment completed successfully - Image: %s:latest", ecr_uri)
-
-    return LaunchResult(
-        mode="push-ecr",
-        tag=f"bedrock_agentcore-{agent_name}:latest",
-        codebuild_id=build_id,
-        ecr_uri=ecr_uri,
-        build_output=[f"CodeBuild {build_id} completed successfully"],
-    )
 
 
 def _launch_with_codebuild(

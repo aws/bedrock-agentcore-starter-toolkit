@@ -128,15 +128,14 @@ aws:
             mock_launch.assert_called_once_with(
                 config_path,
                 local=True,
-                push_ecr_only=False,
-                use_codebuild=False,
+                use_codebuild=False,  # Local mode doesn't use CodeBuild
                 auto_update_on_conflict=False,
                 env_vars=None,
             )
             assert result.mode == "local"
 
-    def test_launch_cloud(self, tmp_path):
-        """Test cloud launch."""
+    def test_launch_local_build(self, tmp_path):
+        """Test local build mode (build locally, deploy to cloud)."""
         bedrock_agentcore = Runtime()
         config_path = tmp_path / ".bedrock_agentcore.yaml"
         bedrock_agentcore._config_path = config_path
@@ -164,20 +163,41 @@ aws:
             mock_result.agent_arn = "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id"
             mock_launch.return_value = mock_result
 
-            result = bedrock_agentcore.launch()
+            result = bedrock_agentcore.launch(local_build=True)
 
             mock_launch.assert_called_once_with(
                 config_path,
                 local=False,
-                push_ecr_only=False,
-                use_codebuild=False,
+                use_codebuild=False,  # Local build mode doesn't use CodeBuild
                 auto_update_on_conflict=False,
                 env_vars=None,
             )
             assert result.mode == "cloud"
 
-    def test_launch_push_ecr(self, tmp_path):
-        """Test ECR push only."""
+    def test_launch_mutually_exclusive_flags(self, tmp_path):
+        """Test that local and local_build flags are mutually exclusive."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+
+        # Create a config file
+        config_text = """
+name: test-agent
+platform: linux/amd64
+entrypoint: test_agent.py
+container_runtime: docker
+aws:
+  execution_role: arn:aws:iam::123456789012:role/TestRole
+  region: us-west-2
+  account: '123456789012'
+"""
+        config_path.write_text(config_text)
+
+        with pytest.raises(ValueError, match="Cannot use both 'local' and 'local_build' flags together"):
+            bedrock_agentcore.launch(local=True, local_build=True)
+
+    def test_launch_cloud(self, tmp_path):
+        """Test cloud launch (default CodeBuild mode)."""
         bedrock_agentcore = Runtime()
         config_path = tmp_path / ".bedrock_agentcore.yaml"
         bedrock_agentcore._config_path = config_path
@@ -201,21 +221,20 @@ aws:
             ) as mock_launch,  # Patch in bedrock_agentcore.py module
         ):
             mock_result = Mock()
-            mock_result.mode = "push-ecr"
-            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test"
+            mock_result.mode = "codebuild"  # Default mode is CodeBuild
+            mock_result.agent_arn = "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id"
             mock_launch.return_value = mock_result
 
-            result = bedrock_agentcore.launch(push_ecr=True)
+            result = bedrock_agentcore.launch()
 
             mock_launch.assert_called_once_with(
                 config_path,
                 local=False,
-                push_ecr_only=True,
-                use_codebuild=False,
+                use_codebuild=True,  # Default mode uses CodeBuild
                 auto_update_on_conflict=False,
                 env_vars=None,
             )
-            assert result.mode == "push-ecr"
+            assert result.mode == "codebuild"
 
     def test_launch_with_auto_update_on_conflict(self, tmp_path):
         """Test launch with auto_update_on_conflict parameter."""
@@ -242,7 +261,7 @@ aws:
             ) as mock_launch,
         ):
             mock_result = Mock()
-            mock_result.mode = "cloud"
+            mock_result.mode = "codebuild"  # Default mode is CodeBuild
             mock_result.agent_arn = "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id"
             mock_launch.return_value = mock_result
 
@@ -252,12 +271,65 @@ aws:
             mock_launch.assert_called_once_with(
                 config_path,
                 local=False,
-                push_ecr_only=False,
-                use_codebuild=False,
+                use_codebuild=True,  # Default mode uses CodeBuild
                 auto_update_on_conflict=True,
                 env_vars=None,
             )
-            assert result.mode == "cloud"
+            assert result.mode == "codebuild"
+
+    def test_configure_with_disable_otel(self, tmp_path):
+        """Test configure with disable_otel parameter."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.configure_bedrock_agentcore"
+            ) as mock_configure,
+        ):
+            mock_result = Mock()
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_configure.return_value = mock_result
+
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                disable_otel=True,
+            )
+
+            # Verify configure was called with enable_observability=False
+            mock_configure.assert_called_once()
+            args, kwargs = mock_configure.call_args
+            assert kwargs["enable_observability"] is False
+
+    def test_configure_default_otel(self, tmp_path):
+        """Test configure with default OTEL setting (enabled)."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.configure_bedrock_agentcore"
+            ) as mock_configure,
+        ):
+            mock_result = Mock()
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_configure.return_value = mock_result
+
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                # disable_otel not specified, should default to False
+            )
+
+            # Verify configure was called with enable_observability=True (default)
+            mock_configure.assert_called_once()
+            args, kwargs = mock_configure.call_args
+            assert kwargs["enable_observability"] is True
 
     def test_invoke_without_config(self):
         """Test invoke fails when not configured."""

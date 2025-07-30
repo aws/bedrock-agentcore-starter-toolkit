@@ -188,8 +188,7 @@ agents:
                     config_path=config_file,
                     agent_name=None,
                     local=False,
-                    push_ecr_only=False,
-                    use_codebuild=True,
+                    use_codebuild=False,  # Should be False due to --local-build
                     env_vars=None,
                     auto_update_on_conflict=False,
                 )
@@ -461,7 +460,6 @@ agents:
                     config_path=config_file,
                     agent_name=None,
                     local=False,
-                    push_ecr_only=False,
                     use_codebuild=True,
                     env_vars=None,
                     auto_update_on_conflict=False,
@@ -1141,107 +1139,12 @@ agents:
 
     def test_launch_command_mutually_exclusive_options(self):
         """Test launch command with mutually exclusive options."""
-        # Test local and push-ecr together (not allowed)
-        result = self.runner.invoke(app, ["launch", "--local", "--push-ecr"])
-        assert result.exit_code == 1
-        assert "cannot be used together" in result.stdout
-
         # Test local and local-build together (not allowed)
         result = self.runner.invoke(app, ["launch", "--local", "--local-build"])
         assert result.exit_code == 1
         assert "cannot be used together" in result.stdout
 
-    def test_launch_command_allows_push_ecr_with_local_build(self):
-        """Test that --push-ecr and --local-build can be used together."""
-        # This combination should be allowed - no error expected, just missing config file
-        result = self.runner.invoke(app, ["launch", "--push-ecr", "--local-build"])
-        # Should fail due to missing config file, not validation error
-        assert result.exit_code == 1
-        assert ".bedrock_agentcore.yaml not found" in result.stdout
 
-    def test_launch_command_push_ecr_codebuild_success(self, tmp_path):
-        """Test launch command with --push-ecr using CodeBuild (default)."""
-        config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_content = """
-default_agent: test-agent
-agents:
-  test-agent:
-    name: test-agent
-    entrypoint: test.py
-"""
-        config_file.write_text(config_content.strip())
-
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
-            mock_result = Mock()
-            mock_result.mode = "push-ecr"
-            mock_result.tag = "bedrock_agentcore-test-agent"
-            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test"
-            mock_result.codebuild_id = "build-123"
-            mock_launch.return_value = mock_result
-
-            original_cwd = Path.cwd()
-            os.chdir(tmp_path)
-
-            try:
-                result = self.runner.invoke(app, ["launch", "--push-ecr"])
-                assert result.exit_code == 0
-                assert "ECR Push Successful!" in result.stdout
-                assert "CodeBuild + ECR push only" not in result.stdout  # Should use default CodeBuild
-
-                # Verify the core function was called with correct parameters
-                mock_launch.assert_called_once_with(
-                    config_path=config_file,
-                    agent_name=None,
-                    local=False,
-                    push_ecr_only=True,
-                    use_codebuild=True,  # Should default to True
-                    env_vars=None,
-                    auto_update_on_conflict=False,
-                )
-            finally:
-                os.chdir(original_cwd)
-
-    def test_launch_command_push_ecr_local_build_success(self, tmp_path):
-        """Test launch command with --push-ecr --local-build combination."""
-        config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_content = """
-default_agent: test-agent
-agents:
-  test-agent:
-    name: test-agent
-    entrypoint: test.py
-"""
-        config_file.write_text(config_content.strip())
-
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
-            mock_result = Mock()
-            mock_result.mode = "push-ecr"
-            mock_result.tag = "bedrock_agentcore-test-agent"
-            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test"
-            mock_result.build_output = ["Successfully built test-image"]
-            mock_launch.return_value = mock_result
-
-            original_cwd = Path.cwd()
-            os.chdir(tmp_path)
-
-            try:
-                result = self.runner.invoke(app, ["launch", "--push-ecr", "--local-build"])
-                assert result.exit_code == 0
-                assert "ECR Push Successful!" in result.stdout
-                assert "push-ecr" in result.stdout
-
-                # Verify the core function was called with correct parameters
-                mock_launch.assert_called_once_with(
-                    config_path=config_file,
-                    agent_name=None,
-                    local=False,
-                    push_ecr_only=True,
-                    use_codebuild=False,  # Should be False due to --local-build
-                    env_vars=None,
-                    auto_update_on_conflict=False,
-                )
-            finally:
-                os.chdir(original_cwd)
 
     def test_launch_command_local_build_success(self, tmp_path):
         """Test launch command with --local-build for cloud deployment."""
@@ -1279,7 +1182,6 @@ agents:
                     config_path=config_file,
                     agent_name=None,
                     local=False,
-                    push_ecr_only=False,
                     use_codebuild=False,  # Should be False due to --local-build
                     env_vars=None,
                     auto_update_on_conflict=False,
@@ -1288,20 +1190,25 @@ agents:
                 os.chdir(original_cwd)
 
     def test_launch_help_text_updated(self):
-        """Test that help text reflects new behavior."""
+        """Test that help text reflects the three simplified launch modes."""
         result = self.runner.invoke(app, ["launch", "--help"])
         assert result.exit_code == 0
 
-        # Check that push-ecr help text mentions CodeBuild as default - be more flexible with line wrapping
-        assert "Build and push to ECR only" in result.stdout
-        assert "default: CodeBuild" in result.stdout
-        # Check for the key parts separately to handle line wrapping
-        assert "--local-build" in result.stdout
-        assert "or use" in result.stdout
+        # Check that old flags are no longer in help text
+        assert "--push-ecr" not in result.stdout
+        assert "--codebuild" not in result.stdout
+        assert "Build and push to ECR only" not in result.stdout
 
-        # Check that local-build help text mentions Docker requirement - be flexible with line wrapping
-        assert "Build container locally" in result.stdout
-        assert "Docker instead of CodeBuild" in result.stdout
+        # Check that the three modes are clearly described
+        assert "DEFAULT (no flags): CodeBuild + cloud runtime (RECOMMENDED)" in result.stdout
+        assert "--local: Local build + local runtime" in result.stdout
+        assert "--local-build: Local build + cloud runtime" in result.stdout
+
+        # Check that remaining options are present
+        assert "--local" in result.stdout
+        assert "--local-build" in result.stdout
+
+        # Check that Docker requirements are mentioned for local modes
         assert "requires Docker/Finch/Podman" in result.stdout
 
     def test_launch_missing_config(self, tmp_path):
@@ -1791,44 +1698,6 @@ agents:
         finally:
             os.chdir(original_cwd)
 
-    def test_launch_command_push_ecr_success(self, tmp_path):
-        """Test launch command in push-ecr mode."""
-        config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_content = """
-default_agent: test-agent
-agents:
-  test-agent:
-    name: test-agent
-    entrypoint: test.py
-"""
-        config_file.write_text(config_content.strip())
-
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
-            mock_result = Mock()
-            mock_result.mode = "push-ecr"
-            mock_result.tag = "bedrock_agentcore-test-agent"
-            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test"
-            mock_launch.return_value = mock_result
-
-            original_cwd = Path.cwd()
-            os.chdir(tmp_path)
-
-            try:
-                result = self.runner.invoke(app, ["launch", "--push-ecr"])
-                assert result.exit_code == 0
-                assert "ECR Push Successful!" in result.stdout
-                assert "123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest" in result.stdout
-                mock_launch.assert_called_once_with(
-                    config_path=config_file,
-                    agent_name=None,
-                    local=False,
-                    push_ecr_only=True,
-                    use_codebuild=True,
-                    env_vars=None,
-                    auto_update_on_conflict=False,
-                )
-            finally:
-                os.chdir(original_cwd)
 
     def test_launch_command_with_env_vars(self, tmp_path):
         """Test launch command with environment variables."""
@@ -1928,7 +1797,6 @@ agents:
                     config_path=config_file,
                     agent_name=None,
                     local=False,
-                    push_ecr_only=False,
                     use_codebuild=True,
                     env_vars=None,
                     auto_update_on_conflict=False,

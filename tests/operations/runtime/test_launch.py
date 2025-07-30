@@ -258,67 +258,6 @@ class TestLaunchBedrockAgentCore:
         with pytest.raises(ValueError, match="Invalid configuration"):
             launch_bedrock_agentcore(config_path, local=False)
 
-    def test_launch_push_ecr_only_local_build(self, mock_boto3_clients, mock_container_runtime, tmp_path):
-        """Test push_ecr_only mode with local build."""
-        config_path = create_test_config(
-            tmp_path,
-            execution_role="arn:aws:iam::123456789012:role/TestRole",
-            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-        )
-        create_test_agent_file(tmp_path)
-
-        # Mock the build to return success
-        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
-
-        # Setup mock AWS clients
-        mock_factory = MockAWSClientFactory()
-        mock_boto3_clients["session"].client.return_value = mock_factory.iam_client
-
-        with (
-            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
-        ):
-            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=False)
-
-            # Verify push_ecr_only mode result
-            assert result.mode == "push-ecr"
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
-            assert hasattr(result, "ecr_uri")
-            assert hasattr(result, "build_output")
-
-    def test_launch_push_ecr_only_codebuild_mode(self, mock_boto3_clients, mock_container_runtime, tmp_path):
-        """Test push_ecr_only mode with CodeBuild (default)."""
-        config_path = create_test_config(
-            tmp_path,
-            execution_role="arn:aws:iam::123456789012:role/TestRole",
-            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-        )
-        create_test_agent_file(tmp_path)
-
-        # Setup mock AWS clients
-        mock_factory = MockAWSClientFactory()
-        mock_factory.setup_session_mock(mock_boto3_clients)
-
-        with patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr:
-            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo"
-
-            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=True)
-
-            # Verify push_ecr_only CodeBuild mode result
-            assert result.mode == "push-ecr"
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
-            assert hasattr(result, "ecr_uri")
-            assert hasattr(result, "codebuild_id")
-            assert hasattr(result, "build_output")
-
-            # Verify CodeBuild workflow was executed
-            assert_codebuild_workflow_called(mock_factory)
-            # Verify no agent deployment occurred
-            assert_no_agent_deployment_calls(mock_boto3_clients)
-
     def test_launch_local_build_cloud_deployment(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test local build with cloud deployment (use_codebuild=False)."""
         config_path = create_test_config(
@@ -350,7 +289,7 @@ class TestLaunchBedrockAgentCore:
                 return_value=mock_container_runtime,
             ),
         ):
-            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=False, use_codebuild=False)
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify local build with cloud deployment
             assert result.mode == "cloud"
@@ -363,56 +302,6 @@ class TestLaunchBedrockAgentCore:
             # Verify local build was used (not CodeBuild)
             mock_container_runtime.build.assert_called_once()
             mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_called_once()
-
-    def test_launch_push_ecr_codebuild_no_docker_succeeds(self, mock_boto3_clients, tmp_path):
-        """Test push_ecr_only with CodeBuild succeeds even without Docker."""
-        config_path = create_test_config(
-            tmp_path,
-            execution_role="arn:aws:iam::123456789012:role/TestRole",
-            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-        )
-        create_test_agent_file(tmp_path)
-
-        # Setup mock AWS clients
-        mock_factory = MockAWSClientFactory()
-        mock_factory.iam_client.get_role.return_value = {
-            "Role": {"Arn": "arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreSDKCodeBuild-us-west-2-test"}
-        }
-        mock_factory.setup_full_session_mock(mock_boto3_clients)
-
-        with (
-            patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr,
-        ):
-            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo"
-
-            # Should succeed even without Docker since it uses CodeBuild
-            result = launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=True)
-
-            assert result.mode == "push-ecr"
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
-            assert hasattr(result, "codebuild_id")
-            mock_factory.codebuild_client.start_build.assert_called_once()
-
-    def test_launch_push_ecr_local_build_no_docker_error(self, tmp_path):
-        """Test push_ecr_only with local build fails without Docker."""
-        config_path = create_test_config(
-            tmp_path,
-            execution_role="arn:aws:iam::123456789012:role/TestRole",
-            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-        )
-        create_test_agent_file(tmp_path)
-
-        # Create a mock runtime without Docker available
-        mock_runtime_no_docker = MagicMock()
-        mock_runtime_no_docker.runtime = "none"
-        mock_runtime_no_docker.has_local_runtime = False  # No Docker available
-
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_runtime_no_docker,
-        ):
-            with pytest.raises(RuntimeError, match="Cannot build locally - no container runtime available"):
-                launch_bedrock_agentcore(config_path, local=False, push_ecr_only=True, use_codebuild=False)
 
     def test_launch_missing_ecr_repository(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test error when ECR repository not configured."""
@@ -868,25 +757,6 @@ class TestLaunchBedrockAgentCore:
             with pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"):
                 launch_bedrock_agentcore(config_path, local=True)
 
-    def test_launch_push_ecr_no_docker_runtime(self, tmp_path):
-        """Test push ECR mode when Docker is not available."""
-        config_path = create_test_config(
-            tmp_path,
-            execution_role="arn:aws:iam::123456789012:role/TestRole",
-            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
-        )
-
-        # Create a mock runtime without Docker available
-        mock_runtime_no_docker = MagicMock()
-        mock_runtime_no_docker.runtime = "none"
-        mock_runtime_no_docker.has_local_runtime = False  # No Docker available
-
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_runtime_no_docker,
-        ):
-            with pytest.raises(RuntimeError, match="Cannot build locally - no container runtime available"):
-                launch_bedrock_agentcore(config_path, push_ecr_only=True, use_codebuild=False)
 
 
 class TestEnsureExecutionRole:

@@ -39,12 +39,12 @@ class ContainerRuntime:
                     self.has_local_runtime = True
                     break
             else:
-                # Convert hard error to warning - suggest CodeBuild instead
+                # Informational message - default CodeBuild deployment works fine
                 _handle_warn(
-                    "⚠️  No container runtime found (Docker/Finch/Podman not installed)\n"
-                    "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                    "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
-                    "💡 For local builds, please install Docker, Finch, or Podman"
+                    "ℹ️  No container engine found (Docker/Finch/Podman not installed)\n"
+                    "✅ Default deployment uses CodeBuild (no container engine needed)\n"
+                    "💡 Run 'agentcore launch' for cloud-based building and deployment\n"
+                    "💡 For local builds, install Docker, Finch, or Podman"
                 )
                 self.runtime = "none"
                 self.has_local_runtime = False
@@ -63,7 +63,22 @@ class ContainerRuntime:
                 self.runtime = "none"
                 self.has_local_runtime = False
         else:
-            raise ValueError(f"Unsupported runtime: {runtime_type}")
+            if runtime_type == "none":
+                raise ValueError(
+                    "No supported container engine found.\n\n"
+                    "AgentCore requires one of the following container engines for local builds:\n"
+                    "• Docker (any recent version, including Docker Desktop)\n"
+                    "• Finch (Amazon's open-source container engine)\n"
+                    "• Podman (compatible alternative to Docker)\n\n"
+                    "To install:\n"
+                    "• Docker: https://docs.docker.com/get-docker/\n"
+                    "• Finch: https://github.com/runfinch/finch\n"
+                    "• Podman: https://podman.io/getting-started/installation\n\n"
+                    "Alternative: Use CodeBuild for cloud-based building (no container engine needed):\n"
+                    "  agentcore launch  # Uses CodeBuild (default)"
+                )
+            else:
+                raise ValueError(f"Unsupported runtime: {runtime_type}")
 
     def _is_runtime_installed(self, runtime: str) -> bool:
         """Check if runtime is installed."""

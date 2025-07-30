@@ -1,87 +1,8 @@
 # AgentCore Runtime SDK Overview
 
-The Amazon Bedrock AgentCore Runtime SDK transforms your Python functions into production-ready AI agents that can be deployed, scaled, and managed in the cloud. At its core, the SDK provides `BedrockAgentCoreApp` - a powerful HTTP service wrapper that handles all the complexity of agent deployment while letting you focus on your agent's logic.
+The Amazon Bedrock AgentCore Runtime SDK transforms your Python functions into production-ready AI agents with built-in HTTP service wrapper, session management, and complete deployment workflows.
 
-## What is the AgentCore Runtime SDK?
-
-The Runtime SDK is a comprehensive Python framework that bridges the gap between your AI agent code and Amazon Bedrock AgentCore's managed infrastructure. It provides HTTP service wrapper, decorator-based programming, session management, authentication integration, streaming support, async task management, and complete local development tools.
-
-## Core SDK Components
-
-### BedrockAgentCoreApp: The Foundation
-
-`BedrockAgentCoreApp` extends Starlette to provide an agent-optimized web server with built-in endpoints:
-
-- **`/invocations`** - Main endpoint for processing agent requests
-- **`/ping`** - Health check endpoint with status reporting
-- **Built-in logging** - Request tracking with correlation IDs
-- **Error handling** - Automatic error formatting and status codes
-- **Concurrency control** - Request limiting and thread pool management
-
-```python
-from bedrock_agentcore import BedrockAgentCoreApp
-
-# Initialize with optional debug mode
-app = BedrockAgentCoreApp(debug=True)
-```
-
-### Core Decorators
-
-The SDK uses a decorator-based approach that makes agent development intuitive:
-
-#### @app.entrypoint - Main Agent Function
-
-The fundamental decorator that registers your primary agent logic:
-
-```python
-@app.entrypoint
-def invoke(payload):
-    """Process requests synchronously"""
-    user_message = payload.get("prompt", "Hello")
-    # Your agent logic here
-    return {"result": "Response"}
-
-# Async version for streaming
-@app.entrypoint
-async def invoke_async(payload):
-    """Process requests asynchronously with streaming"""
-    user_message = payload.get("prompt", "Hello")
-    # Can yield for streaming responses
-    yield {"chunk": "Partial response"}
-```
-
-#### @app.ping - Custom Health Checks
-
-Override default health status logic:
-
-```python
-from bedrock_agentcore.runtime.models import PingStatus
-
-@app.ping
-def custom_health():
-    """Custom health logic"""
-    if system_busy():
-        return PingStatus.HEALTHY_BUSY
-    return PingStatus.HEALTHY
-```
-
-#### @app.async_task - Background Processing
-
-Automatically track long-running operations:
-
-```python
-@app.async_task
-async def background_processing():
-    """Automatically tracked async task"""
-    await asyncio.sleep(30)  # Status becomes HEALTHY_BUSY
-    return "completed"       # Status returns to HEALTHY
-```
-
-## Agent Development Patterns
-
-### Synchronous Agents
-
-Perfect for quick, deterministic responses:
+## Quick Start
 
 ```python
 from bedrock_agentcore import BedrockAgentCoreApp
@@ -89,24 +10,78 @@ from bedrock_agentcore import BedrockAgentCoreApp
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
-def simple_agent(payload):
-    """Basic request-response agent"""
-    prompt = payload.get("prompt", "")
-
-    # Simple processing logic
-    if "weather" in prompt.lower():
-        return {"result": "It's sunny today!"}
-
-    return {"result": f"You said: {prompt}"}
+def my_agent(payload):
+    return {"result": f"Hello {payload.get('name', 'World')}!"}
 
 if __name__ == "__main__":
     app.run()
 ```
 
+```bash
+# Configure and deploy your agent
+agentcore configure --entrypoint my_agent.py
+agentcore launch
+agentcore invoke '{"name": "Alice"}'
+```
+
+## What is the AgentCore Runtime SDK?
+
+The Runtime SDK is a comprehensive Python framework that bridges the gap between your AI agent code and Amazon Bedrock AgentCore's managed infrastructure. It provides HTTP service wrapper, decorator-based programming, session management, authentication integration, streaming support, async task management, and complete local development tools.
+
+## Core Components
+
+**BedrockAgentCoreApp** - HTTP service wrapper with:
+- `/invocations` endpoint for agent logic
+- `/ping` endpoint for health checks  
+- Built-in logging, error handling, and session management
+
+**Key Decorators:**
+- `@app.entrypoint` - Define your agent's main logic
+- `@app.ping` - Custom health checks
+- `@app.async_task` - Background processing
+
+## Deployment Modes
+
+### 🚀 Cloud Build (RECOMMENDED)
+```bash
+agentcore configure --entrypoint my_agent.py
+agentcore launch                    # Uses CodeBuild - no Docker needed
+```
+- **No Docker required** - builds in the cloud
+- **Production-ready** - standardized ARM64 containers
+- **Works everywhere** - SageMaker Notebooks, Cloud9, laptops
+
+### 💻 Local Development
+```bash
+agentcore launch --local           # Build and run locally
+```
+- **Fast iteration** - immediate feedback and debugging
+- **Requires:** Docker, Finch, or Podman
+
+### 🔧 Hybrid Build
+```bash
+agentcore launch --local-build     # Build locally, deploy to cloud
+```
+- **Custom builds** with cloud deployment
+- **Requires:** Docker, Finch, or Podman
+
+## Agent Development Patterns
+
+### Synchronous Agents
+```python
+from bedrock_agentcore import BedrockAgentCoreApp
+
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def simple_agent(payload):
+    prompt = payload.get("prompt", "")
+    if "weather" in prompt.lower():
+        return {"result": "It's sunny today!"}
+    return {"result": f"You said: {prompt}"}
+```
+
 ### Streaming Agents
-
-For real-time, dynamic responses that build over time:
-
 ```python
 from strands import Agent
 from bedrock_agentcore import BedrockAgentCoreApp
@@ -138,12 +113,11 @@ if __name__ == "__main__":
 - **Real-time Processing**: Immediate response chunks as they're available
 
 ### Framework Integration
-
 The SDK works seamlessly with popular AI frameworks:
 
 **Strands Integration:**
 ```python
-from strands import Agent, tool
+from strands import Agent
 from bedrock_agentcore import BedrockAgentCoreApp
 
 agent = Agent(tools=[your_tools])
@@ -151,11 +125,9 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def strands_agent(payload):
-    """Strands-powered agent"""
     result = agent(payload.get("prompt"))
     return {"result": result.message}
 ```
-
 **Custom Framework Integration:**
 ```python
 @app.entrypoint
@@ -170,7 +142,10 @@ async def custom_framework_agent(payload):
 
 ## Session Management
 
-The SDK provides built-in session handling for stateful conversations with automatic session creation and management, 15-minute timeout, cross-invocation context persistence, and complete session isolation for security:
+Built-in session handling with automatic creation, 15-minute timeout, and cross-invocation persistence:
+
+```python
+from bedrock_agentcore.runtime.context import RequestContext
 
 ```python
 from bedrock_agentcore.runtime.context import RequestContext
@@ -189,12 +164,15 @@ def session_aware_agent(payload, context: RequestContext):
 ```
 
 ```bash
+# CLI session management
 # Using AgentCore CLI with session management
 agentcore invoke '{"prompt": "Hello, remember this conversation"}' --session-id "conversation-123"
+
 agentcore invoke '{"prompt": "What did I say earlier?"}' --session-id "conversation-123"
 ```
 
-## Authentication and Authorization
+## Authentication & Authorization
+
 
 The SDK integrates with AgentCore's identity services providing automatic AWS credential validation (IAM SigV4) by default or JWT Bearer tokens for OAuth-compatible authentication:
 
@@ -206,129 +184,88 @@ agentcore configure --entrypoint my_agent.py \
 
 ## Asynchronous Processing
 
-For long-running operations, the SDK provides comprehensive async support with automatic task tracking that transitions agent status to HEALTHY_BUSY during processing, or fine-grained manual control:
+AgentCore Runtime supports asynchronous processing for long-running tasks. Your agent can start background work and immediately respond to users, with automatic health status management.
 
+### Key Features
+
+**Automatic Status Management:**
+- Agent status changes to "HealthyBusy" during background processing
+- Returns to "Healthy" when tasks complete
+- Sessions automatically terminate after 15 minutes of inactivity
+
+**Three Processing Approaches:**
+
+1. **Async Task Decorator (Recommended)**
 ```python
-# Automatic task tracking
 @app.async_task
-async def long_running_task():
-    """Automatically tracked - agent status becomes BUSY"""
-    await process_large_dataset()
-    return "completed"
+async def background_work():
+    await process_data()  # Status becomes "HealthyBusy"
+    return "done"
 
 @app.entrypoint
-async def start_processing(payload):
-    """Start background task"""
-    asyncio.create_task(long_running_task())
-    return {"status": "Processing started in background"}
-
-# Manual task management
-@app.entrypoint
-def manual_task_control(payload):
-    """Manual async task management"""
-    task_id = app.add_async_task("data_processing", {"batch_size": 1000})
-
-    def background_work():
-        time.sleep(60)
-        app.complete_async_task(task_id)
-
-    threading.Thread(target=background_work, daemon=True).start()
-    return {"task_id": task_id, "status": "started"}
+async def handler(event):
+    asyncio.create_task(background_work())
+    return {"status": "started"}
 ```
+
+2. **Manual Task Management**
+```python
+@app.entrypoint
+def handler(event):
+    task_id = app.add_async_task("data_processing", {"batch": 100})
+    
+    def background_work():
+        time.sleep(30)
+        app.complete_async_task(task_id)
+    
+    threading.Thread(target=background_work, daemon=True).start()
+    return {"task_id": task_id}
+```
+
+3. **Custom Ping Handler**
+```python
+@app.ping
+def custom_status():
+    if processing_data or system_busy():
+        return PingStatus.HEALTHY_BUSY
+    return PingStatus.HEALTHY
+```
+
+**Common Use Cases:**
+- Data processing that takes minutes or hours
+- File uploads and conversions
+- External API calls with retries
+- Batch operations and reports
+
+See the [Async Processing Guide](async.md) for detailed examples and testing strategies.
 
 ## Local Development
 
-The SDK provides a complete local development environment with debug mode for additional capabilities and comprehensive logging with automatic request correlation:
-
+### Debug Mode
 ```python
-# Development server with debug mode
-app = BedrockAgentCoreApp(debug=True)
+app = BedrockAgentCoreApp(debug=True)  # Enhanced logging
 
 if __name__ == "__main__":
-    app.run()  # Default port 8080, auto-detects Docker vs local
-
-# Custom logging
-import logging
-logger = logging.getLogger("my_agent")
-
-@app.entrypoint
-def my_agent(payload):
-    logger.info("Processing request: %s", payload)
-    # Your logic here
+    app.run()  # Auto-detects Docker vs local
 ```
 
+### Complete Development Workflow
 ```bash
-# Configure and test locally using AgentCore CLI
-agentcore configure --entrypoint my_agent.py --name my-agent
+# 1. Configure
+agentcore configure --entrypoint my_agent.py
+
+# 2. Develop locally
 agentcore launch --local
-agentcore invoke '{"prompt": "Hello world"}'
-agentcore invoke '{"prompt": "Remember this"}' --session-id "test-session"
-agentcore invoke '{"prompt": "Hello"}' --bearer-token "your-jwt-token"
-```
 
-## Launch
+# 3. Test
+agentcore invoke '{"prompt": "Hello"}'
+agentcore invoke '{"prompt": "Remember this"}' --session-id "test"
 
-The AgentCore Runtime SDK provides flexible deployment options to accommodate different development environments:
-
-### Development Environment Recommendations
-
-#### ✅ Recommended: CodeBuild Deployment (Default)
-```bash
-# Default deployment method (no flags needed)
+# 4. Deploy to cloud
 agentcore launch
+
+# 5. Monitor
+agentcore status
 ```
 
-**Benefits:**
-- **No Docker installation required** - builds ARM64 containers in the cloud
-- **Zero local setup** - just AWS credentials needed
-- **Consistent builds** - standardized ARM64 environment
-- **Perfect for managed environments** - works in environment sucah SageMaker Notebooks
-- **Integrated with AWS services** - seamless ECR and AgentCore integration
-
-#### Local Development & Testing
-**Perfect for:** Local development, rapid iteration, debugging
-
-```bash
-# Local development (runs locally, requires Docker/Finch/Podman)
-agentcore launch --local
-```
-
-**Benefits:**
-- Full local testing capabilities
-- Immediate feedback during development
-- Complete control over build environment
-- **Note:** Requires Docker/Finch/Podman installation
-
-### Deployment Modes
-
-#### CodeBuild Cloud Deployment (Default)
-- ✅ **Recommended approach**
-- Uses AWS CodeBuild for ARM64 container builds
-- **No local Docker required**
-- Pushes to ECR and deploys to AgentCore
-
-```bash
-# Default deployment (CodeBuild in the cloud)
-agentcore launch
-```
-
-#### Local Build Cloud Deployment
-- Uses local Docker for container builds
-- Pushes ARM64 images to ECR
-- Deploys to Bedrock AgentCore
-- **Requires Docker/Finch/Podman installed**
-
-```bash
-# Local Docker build deployment (requires Docker/Finch/Podman)
-agentcore launch --local-build
-```
-
-#### ECR Push Only
-- Builds and pushes to ECR without deployment
-- Useful manual deployment workflows
-- Can use either CodeBuild (default) or local Docker (`--local-build`)
-
-```bash
-agentcore launch --push-ecr        # Uses CodeBuild (default)
-agentcore launch --push-ecr --local-build  # Uses local Docker
-```
+The AgentCore Runtime SDK provides everything needed to build, test, and deploy production-ready AI agents with minimal setup and maximum flexibility.

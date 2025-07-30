@@ -2,6 +2,19 @@
 
 Get your AI agent running on Amazon Bedrock AgentCore in 3 simple steps.
 
+## Prerequisites
+
+Before starting, make sure you have:
+
+- **AWS Account** with credentials configured (`aws configure`)
+- **Python 3.10+** installed
+- **AWS Permissions**:
+  - `AmazonBedrockAgentCoreFullAccess` managed policy
+  - `AmazonBedrockFullAccess` managed policy
+  - **Caller permissions**: [See detailed policy here](permissions.md#developercaller-permissions)
+- **Model Access**: Anthropic Claude 4.0 enabled in [Amazon Bedrock console](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html)
+
+
 ## Step 1: Install and Create Your Agent
 
 ```bash
@@ -71,19 +84,6 @@ agentcore invoke '{"prompt": "tell me a joke"}'
 🎉 **Congratulations!** Your agent is now running on Amazon Bedrock AgentCore!
 
 ---
-
-## Prerequisites
-
-Before starting, make sure you have:
-
-- **AWS Account** with credentials configured (`aws configure`)
-- **Python 3.10+** installed
-- **AWS Permissions**:
-  - `AmazonBedrockAgentCoreFullAccess` managed policy
-  - `AmazonBedrockFullAccess` managed policy
-  - **Caller permissions**: [See detailed policy here](permissions.md#developercaller-permissions)
-- **Model Access**: Anthropic Claude 4.0 enabled in [Amazon Bedrock console](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html)
-
 > **💡 Tip**: The toolkit auto-creates IAM roles and ECR repositories - no manual setup needed!
 
 ---
@@ -105,7 +105,7 @@ lsof -ti:8080 | xargs kill -9
 
 **"Docker not found" warnings**
 - ✅ **Ignore this!** Default deployment uses CodeBuild (no Docker needed)
-- Only install Docker if you want to use `--local` flag
+- Only install Docker/Finch/Podman if you want to use `--local` or `--local-build` flags
 
 **"Model access denied"**
 - Enable Anthropic Claude 4.0 in the [Bedrock console](https://console.aws.amazon.com/bedrock/)
@@ -128,28 +128,32 @@ lsof -ti:8080 | xargs kill -9
 <details>
 <summary>🔧 Click to expand advanced configuration options</summary>
 
-### Local Development
+### Deployment Modes
+
+Choose the right deployment approach for your needs:
+
+**🚀 Default: CodeBuild + Cloud Runtime (RECOMMENDED)**
 ```bash
-# Run locally for development (requires Docker)
-agentcore launch --local
+agentcore launch  # Uses CodeBuild (no Docker needed)
 ```
+Perfect for production, managed environments, teams without Docker
+
+**💻 Local Development**
+```bash
+agentcore launch --local  # Build and run locally (requires Docker/Finch/Podman)
+```
+Perfect for development, rapid iteration, debugging
+
+**🔧 Hybrid: Local Build + Cloud Runtime**
+```bash
+agentcore launch --local-build  # Build locally, deploy to cloud (requires Docker/Finch/Podman)
+```
+Perfect for teams with Docker expertise needing build customization
 
 ### Custom Roles
 ```bash
 # Use existing IAM role
 agentcore configure -e my_agent.py --execution-role arn:aws:iam::123456789012:role/MyRole
-```
-
-### Local Docker Build
-```bash
-# Build locally, deploy to AWS (requires Docker)
-agentcore launch --local-build
-```
-
-### Environment-Specific Deployment
-```bash
-# Perfect for SageMaker Notebooks, Cloud9
-agentcore launch  # Uses CodeBuild (default, no Docker needed)
 ```
 
 </details>
