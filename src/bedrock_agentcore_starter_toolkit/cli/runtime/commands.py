@@ -355,7 +355,7 @@ def launch(
 
             # Show deployment options hint for first-time users
             console.print("[dim]💡 Deployment options:[/dim]")
-            console.print("[dim]   • agentcore launch                 → CodeBuild (current)[/dim]")
+            console.print("[dim]   • agentcore launch                → CodeBuild (current)[/dim]")
             console.print("[dim]   • agentcore launch --local        → Local development[/dim]")
             console.print("[dim]   • agentcore launch --local-build  → Local build + cloud deploy[/dim]\n")
 
