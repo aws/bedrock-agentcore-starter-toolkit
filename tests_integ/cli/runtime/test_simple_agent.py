@@ -61,7 +61,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         )
 
         launch_invocation = CommandInvocation(
-            command=["launch", "--auto-update-on-conflict", "--codebuild"],  # github actions run on amd64
+            command=["launch", "--auto-update-on-conflict"],
             user_input=[],
             validator=lambda result: self.validate_launch(result),
         )
