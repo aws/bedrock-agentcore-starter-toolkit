@@ -46,11 +46,11 @@ agentcore configure -e my_agent.py
 agentcore configure -e my_agent.py
 ```
 
-**Auto-Creation with CodeBuild Deployment:**
+**Auto-Creation with Default Deployment:**
 ```bash
-# Perfect for SageMaker notebooks
+# Uses CodeBuild by default
 agentcore configure -e my_agent.py
-agentcore launch --codebuild
+agentcore launch
 ```
 
 **Mixed Approach:**

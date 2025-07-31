@@ -326,7 +326,7 @@ class TestHttpBedrockAgentCoreClient:
             assert params["qualifier"] == "DEFAULT"
 
             # Check timeout
-            assert call_args[1]["timeout"] == 100
+            assert call_args[1]["timeout"] == 900
 
             # Verify response
             assert result["response"] == "data: response content\n\n"
@@ -536,7 +536,7 @@ class TestLocalBedrockAgentCoreClient:
             assert body == {"message": "hello"}
 
             # Check timeout
-            assert call_args[1]["timeout"] == 100
+            assert call_args[1]["timeout"] == 900
             assert call_args[1]["stream"] is True
 
             # Verify response handling

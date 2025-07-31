@@ -128,7 +128,19 @@ class BedrockAgentCoreClient:
             if error_code == "ConflictException":
                 if not auto_update_on_conflict:
                     self.logger.error("Agent '%s' already exists and auto_update_on_conflict is disabled", agent_name)
-                    raise
+                    # Create a more helpful error message
+                    raise ClientError(
+                        {
+                            "Error": {
+                                "Code": "ConflictException",
+                                "Message": (
+                                    f"Agent '{agent_name}' already exists. To update the existing agent, "
+                                    "use the --auto-update-on-conflict flag with the launch command."
+                                ),
+                            }
+                        },
+                        "CreateAgentRuntime",
+                    ) from e
 
                 self.logger.info("Agent '%s' already exists, searching for existing agent...", agent_name)
 
@@ -428,7 +440,7 @@ class HttpBedrockAgentCoreClient:
                 params={"qualifier": endpoint_name},
                 headers=headers,
                 json=body,
-                timeout=100,
+                timeout=900,
                 stream=True,
             )
             return _handle_http_response(response)
@@ -466,7 +478,7 @@ class LocalBedrockAgentCoreClient:
 
         try:
             # Make request with timeout
-            response = requests.post(url, headers=headers, json=body, timeout=100, stream=True)
+            response = requests.post(url, headers=headers, json=body, timeout=900, stream=True)
             return _handle_http_response(response)
         except requests.exceptions.RequestException as e:
             self.logger.error("Failed to invoke agent endpoint: %s", str(e))

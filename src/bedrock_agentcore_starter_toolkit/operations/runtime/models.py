@@ -27,7 +27,7 @@ class ConfigureResult(BaseModel):
 class LaunchResult(BaseModel):
     """Result of launch operation."""
 
-    mode: str = Field(..., description="Launch mode: local, push-ecr, cloud, or codebuild")
+    mode: str = Field(..., description="Launch mode: local, cloud, or codebuild")
     tag: str = Field(..., description="Docker image tag")
     env_vars: Optional[Dict[str, str]] = Field(default=None, description="Environment variables for local deployment")
 

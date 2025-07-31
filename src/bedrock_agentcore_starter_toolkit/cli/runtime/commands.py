@@ -262,35 +262,102 @@ def launch(
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
-    local: bool = typer.Option(False, "--local", "-l", help="Run locally"),
-    push_ecr: bool = typer.Option(False, "--push-ecr", "-p", help="Build and push to ECR only (no deployment)"),
-    codebuild: bool = typer.Option(False, "--codebuild", "-cb", help="Use CodeBuild for ARM64 builds"),
+    local: bool = typer.Option(
+        False, "--local", "-l", help="Build locally and run container locally - requires Docker/Finch/Podman"
+    ),
+    local_build: bool = typer.Option(
+        False,
+        "--local-build",
+        "-lb",
+        help="Build locally and deploy to cloud runtime - requires Docker/Finch/Podman",
+    ),
     auto_update_on_conflict: bool = typer.Option(
-        False, "--auto-update-on-conflict", help="Enable automatic update when agent already exists"
+        False,
+        "--auto-update-on-conflict",
+        "-auc",
+        help="Automatically update existing agent instead of failing with ConflictException",
     ),
     envs: List[str] = typer.Option(  # noqa: B008
         None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
     ),
+    code_build: bool = typer.Option(
+        False,
+        "--code-build",
+        help="[DEPRECATED] CodeBuild is now the default. Use no flags for CodeBuild deployment.",
+        hidden=True,
+    ),
 ):
-    """Launch Bedrock AgentCore locally or to cloud."""
+    """Launch Bedrock AgentCore with three deployment modes.
+
+    🚀 DEFAULT (no flags): CodeBuild + cloud runtime (RECOMMENDED)
+       - Build ARM64 containers in the cloud with CodeBuild
+       - Deploy to Bedrock AgentCore runtime
+       - No local Docker required
+       - CHANGED: CodeBuild is now the default (previously required --code-build flag)
+
+    💻 --local: Local build + local runtime
+       - Build container locally and run locally
+       - requires Docker/Finch/Podman
+       - For local development and testing
+
+    🔧 --local-build: Local build + cloud runtime
+       - Build container locally with Docker
+       - Deploy to Bedrock AgentCore runtime
+       - requires Docker/Finch/Podman
+       - Use when you need custom build control but want cloud deployment
+
+    MIGRATION GUIDE:
+    - OLD: agentcore launch --code-build  →  NEW: agentcore launch
+    - OLD: agentcore launch --local       →  NEW: agentcore launch --local (unchanged)
+    - NEW: agentcore launch --local-build (build locally + deploy to cloud)
+    """
+    # Handle deprecated --code-build flag
+    if code_build:
+        console.print("[yellow]⚠️  DEPRECATION WARNING: --code-build flag is deprecated[/yellow]")
+        console.print("[yellow]   CodeBuild is now the default deployment method[/yellow]")
+        console.print("[yellow]   MIGRATION: Simply use 'agentcore launch' (no flags needed)[/yellow]")
+        console.print("[yellow]   This flag will be removed in a future version[/yellow]\n")
+
     # Validate mutually exclusive options
-    if sum([local, push_ecr, codebuild]) > 1:
-        _handle_error("Error: --local, --push-ecr, and --codebuild cannot be used together")
+    if sum([local, local_build, code_build]) > 1:
+        _handle_error("Error: --local, --local-build, and --code-build cannot be used together")
 
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
     try:
-        # Show launch mode
+        # Show launch mode with enhanced migration guidance
         if local:
             mode = "local"
-        elif push_ecr:
-            mode = "push-ecr"
-        elif codebuild:
+            console.print(f"[cyan]🏠 Launching Bedrock AgentCore ({mode} mode)...[/cyan]")
+            console.print("[dim]   • Build and run container locally[/dim]")
+            console.print("[dim]   • Requires Docker/Finch/Podman to be installed[/dim]")
+            console.print("[dim]   • Perfect for development and testing[/dim]\n")
+        elif local_build:
+            mode = "local-build"
+            console.print(f"[cyan]🔧 Launching Bedrock AgentCore ({mode} mode - NEW!)...[/cyan]")
+            console.print("[dim]   • Build container locally with Docker[/dim]")
+            console.print("[dim]   • Deploy to Bedrock AgentCore cloud runtime[/dim]")
+            console.print("[dim]   • Requires Docker/Finch/Podman to be installed[/dim]")
+            console.print("[dim]   • Use when you need custom build control[/dim]\n")
+        elif code_build:
+            # Handle deprecated flag - treat as default
             mode = "codebuild"
+            console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
+            console.print("[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]")
+            console.print("[dim]   • No local Docker required[/dim]")
+            console.print("[dim]   • Production-ready deployment[/dim]\n")
         else:
-            mode = "cloud"
+            mode = "codebuild"
+            console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
+            console.print("[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]")
+            console.print("[dim]   • No local Docker required (DEFAULT behavior)[/dim]")
+            console.print("[dim]   • Production-ready deployment[/dim]\n")
 
-        console.print(f"[cyan]Launching Bedrock AgentCore ({mode} mode)...[/cyan]\n")
+            # Show deployment options hint for first-time users
+            console.print("[dim]💡 Deployment options:[/dim]")
+            console.print("[dim]   • agentcore launch                → CodeBuild (current)[/dim]")
+            console.print("[dim]   • agentcore launch --local        → Local development[/dim]")
+            console.print("[dim]   • agentcore launch --local-build  → Local build + cloud deploy[/dim]\n")
 
         # Use the operations module
         with console.status("[bold]Launching Bedrock AgentCore...[/bold]"):
@@ -304,13 +371,12 @@ def launch(
                     key, value = env_var.split("=", 1)
                     env_vars[key] = value
 
-            # Call the operation
+            # Call the operation - CodeBuild is now default, unless --local-build is specified
             result = launch_bedrock_agentcore(
                 config_path=config_path,
                 agent_name=agent,
                 local=local,
-                push_ecr_only=push_ecr,
-                use_codebuild=codebuild,
+                use_codebuild=not local_build,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
             )
@@ -329,20 +395,6 @@ def launch(
                 result.runtime.run_local(result.tag, result.port, result.env_vars)
             except KeyboardInterrupt:
                 console.print("\n[yellow]Stopped[/yellow]")
-
-        elif result.mode == "push-ecr":
-            _print_success(f"Image pushed to ECR: [cyan]{result.ecr_uri}:latest[/cyan]")
-            console.print(
-                Panel(
-                    f"[green]ECR Push Successful![/green]\n\n"
-                    f"Image: [cyan]{result.tag}[/cyan]\n"
-                    f"ECR URI: [cyan]{result.ecr_uri}:latest[/cyan]\n\n"
-                    f"Your image is now available in ECR.\n"
-                    f"Run [cyan]agentcore launch[/cyan] to deploy to Bedrock AgentCore.",
-                    title="Push to ECR Complete",
-                    border_style="green",
-                )
-            )
 
         elif result.mode == "codebuild":
             _print_success(f"CodeBuild completed: [cyan]{result.codebuild_id}[/cyan]")
@@ -386,13 +438,22 @@ def launch(
                 )
             )
 
-        else:  # cloud mode
+        else:  # cloud mode (either CodeBuild default or local-build)
             _print_success(f"Image pushed to ECR: [cyan]{result.ecr_uri}:latest[/cyan]")
 
             # Show deployment success panel
             agent_name = result.tag.split(":")[0].replace("bedrock_agentcore-", "")
+
+            # Determine deployment type for panel title
+            if local_build:
+                title = "Local Build Deployment Complete"
+                deployment_type = "Local Docker Build Deployment Successful!"
+            else:
+                title = "CodeBuild Deployment Complete"
+                deployment_type = "CodeBuild Deployment Successful!"
+
             deploy_panel = (
-                f"[green]Deployment Successful![/green]\n\n"
+                f"[green]{deployment_type}[/green]\n\n"
                 f"Agent Name: {agent_name}\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
                 f"ECR URI: [cyan]{result.ecr_uri}[/cyan]\n\n"
@@ -420,7 +481,7 @@ def launch(
             console.print(
                 Panel(
                     deploy_panel,
-                    title="Bedrock AgentCore Deployed",
+                    title=title,
                     border_style="green",
                 )
             )
@@ -515,9 +576,19 @@ def invoke(
         )
 
     except FileNotFoundError:
-        _handle_error(".bedrock_agentcore.yaml not found. Run 'bedrock_agentcore configure --entrypoint <file>' first")
+        console.print("[red].bedrock_agentcore.yaml not found[/red]")
+        console.print("Run the following commands to get started:")
+        console.print("  1. agentcore configure --entrypoint your_agent.py")
+        console.print("  2. agentcore launch")
+        console.print('  3. agentcore invoke \'{"message": "Hello"}\'')
+        raise typer.Exit(1) from None
     except ValueError as e:
         if "not deployed" in str(e):
+            console.print("[yellow]Agent not deployed yet[/yellow]")
+            console.print("Deploy your agent first:")
+            console.print("  agentcore launch                    # Deploy to AWS (recommended)")
+            console.print("  agentcore launch --local            # Run locally")
+            console.print("Then check status: agentcore status")
             _handle_error("Bedrock AgentCore not deployed. Run 'bedrock_agentcore launch' first", e)
         else:
             _handle_error(f"Invocation failed: {e}", e)
@@ -657,7 +728,12 @@ def status(
             )
 
     except FileNotFoundError:
-        _handle_error(".bedrock_agentcore.yaml not found. Run 'bedrock_agentcore configure --entrypoint <file>' first")
+        console.print("[yellow]Configuration not found[/yellow]")
+        console.print("Run the following commands to get started:")
+        console.print("  1. agentcore configure --entrypoint your_agent.py")
+        console.print("  2. agentcore launch")
+        console.print('  3. agentcore invoke \'{"message": "Hello"}\'')
+        raise typer.Exit(1) from None
     except ValueError as e:
         _handle_error(f"Status failed: {e}", e)
     except Exception as e:
