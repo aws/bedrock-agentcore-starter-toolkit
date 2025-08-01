@@ -517,8 +517,7 @@ class TestHandleLambdaTargetCreation:
 
             # Verify return value structure
             expected_result = {
-                "targetConfiguration": {"mcp": {"lambda": {"lambdaArn": lambda_arn, "toolSchema": LAMBDA_CONFIG}}},
-                "credentialProviderConfigurations": [{"credentialProviderType": "GATEWAY_IAM_ROLE"}],
+                "targetConfiguration": {"mcp": {"lambda": {"lambdaArn": lambda_arn, "toolSchema": LAMBDA_CONFIG}}}
             }
             assert result == expected_result
 

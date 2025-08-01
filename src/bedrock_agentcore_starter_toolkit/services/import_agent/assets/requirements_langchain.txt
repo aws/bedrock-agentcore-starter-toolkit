@@ -1,0 +1,9 @@
+bedrock-agentcore
+bedrock-agentcore-starter-toolkit
+langchain
+langchain-aws
+langchain-community
+langchain-mcp-adapters
+langgraph
+inputimeout
+opentelemetry-instrumentation-langchain

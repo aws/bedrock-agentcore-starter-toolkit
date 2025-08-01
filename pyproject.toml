@@ -37,11 +37,17 @@ dependencies = [
     "urllib3>=1.26.0",
     "pyyaml>=6.0.2",
     "requests>=2.25.0",
-    "rich>=14.0.0,<15.0.0",
+    "rich>=13.0.0",
     "toml>=0.10.2",
     "typer>=0.16.0",
     "typing-extensions>=4.13.2,<5.0.0",
     "uvicorn>=0.34.2",
+    "autopep8>=2.3.2",
+    "prance>=25.4.8.0",
+    "ruamel-yaml>=0.18.14",
+    "questionary>=2.1.0",
+    "openapi-spec-validator>=0.7.2",
+    "py-openapi-schema-to-json-schema>=0.0.3",
 ]
 
 [project.scripts]
@@ -106,6 +112,10 @@ source = ["src"]
 context = "thread"
 parallel = true
 concurrency = ["thread", "multiprocessing"]
+omit = [
+    "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
+    "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
+]
 
 [tool.coverage.report]
 show_missing = true
