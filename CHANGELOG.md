@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.4] - 2025-08-06
+
+### Changes
+
+- uncommentprod pypi release (e28dd93)
+- fix: pass version correctly between jobs (aa9a3a2)
+- fix: pass version correctly between jobs (d4388e4)
+- fix: pass version correctly between jobs (fe35111)
+- fix: temporarily skip tests for release testing (be41650)
+- fix: workflow conditions for test/build/publish (a2447e9)
+- add automated release workflows TestPyPI (365ed32)
+- add automated release workflows TestPyPI (795df10)
+- fail github action when unit tests fail (#94) (79f78a8)
+
 ## [0.1.3] - 2025-08-01
 
 ### BREAKING CHANGES
