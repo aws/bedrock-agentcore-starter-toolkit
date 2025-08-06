@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.4] - 2025-08-06
+
+Added a utility to import from Bedrock Agents -> Bedrock AgentCore. Developers can generate and deploy a Langchain/Strands + AgentCore agent from a selected Bedrock Agent. The output agent leverages AgentCore primitives such as Gateway, Observability, Memory, and Code Interpreter. Added documentation on usage and design of this utility. This utility does not introduce any breaking changes. It is aimed towards Bedrock Agents customers who want to try a code-first, extensible approach with AgentCore.
+
 ## [0.1.3] - 2025-08-01
 
 ### BREAKING CHANGES
