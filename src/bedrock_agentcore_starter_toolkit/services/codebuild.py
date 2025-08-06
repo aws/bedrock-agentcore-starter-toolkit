@@ -109,6 +109,7 @@ class CodeBuildService:
                 return f"s3://{bucket_name}/{s3_key}"
 
             finally:
+                temp_zip.close()
                 os.unlink(temp_zip.name)
 
     def _normalize_s3_location(self, source_location: str) -> str:
