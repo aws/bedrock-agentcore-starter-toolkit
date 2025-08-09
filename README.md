@@ -45,9 +45,11 @@ app.run()
 agentcore configure --entrypoint my_agent.py
 agentcore launch  # Ready to run on Bedrock AgentCore
 agentcore invoke '{"prompt": "tell me a fact"}'
+agentcore destroy
 ```
 
 **What you get with the Starter Toolkit:**
+
 - ✅ **Keep your agent logic** - Works with any SDK-built agent
 - ✅ **Zero infrastructure management** - No servers, containers, or scaling concerns
 - ✅ **One-command deployment** - From local development to enterprise platform
@@ -60,6 +62,7 @@ Bedrock AgentCore Starter Toolkit is currently in public preview. APIs may chang
 ## 🛠️ Deployment & Management Tools
 
 **Simple Configuration**
+
 ```bash
 # Configure your agent for deployment
 agentcore configure --entrypoint my_agent.py --name my-production-agent
@@ -72,6 +75,7 @@ agentcore invoke '{"prompt": "Hello from Bedrock AgentCore!"}'
 ```
 
 **Enterprise Platform Services**
+
 - 🚀 **Runtime** - Serverless deployment and scaling with fast cold starts
 - 🧠 **Memory** - Persistent knowledge with event and semantic memory
 - 🔗 **Gateway** - Transform existing APIs and Lambda functions into MCP tools
