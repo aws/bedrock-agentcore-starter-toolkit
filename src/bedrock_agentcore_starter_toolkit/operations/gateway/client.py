@@ -7,6 +7,7 @@ import urllib.parse
 import uuid
 from typing import Any, Dict, Optional
 
+import requests
 import boto3
 import urllib3
 
@@ -455,3 +456,28 @@ class GatewayClient:
                 raise GatewaySetupException(f"Failed to get test token: {e}") from e
             except Exception as e:
                 raise GatewaySetupException(f"Failed to get test token: {e}") from e
+
+    def get_access_token_for_auth0(self, client_info: Dict[str, Any]) -> str:
+        """Get Auth0 token using client credentials flow for Auth0.
+
+        :param client_info: credentials and context needed to get the access token.
+        :return: the access token.
+        """
+        self.logger.info("Fetching test token from Auth0...")
+        token_endpoint = client_info["token_endpoint"]
+
+        payload = {
+            "client_id": client_info["client_id"],
+            "client_secret": client_info["client_secret"],
+            "audience": client_info["audience"],
+            "grant_type": "client_credentials"
+        }
+
+        headers = {"content-type": "application/json"}
+
+        try:
+            response = requests.post(token_endpoint, json=payload, headers=headers)
+            response.raise_for_status()  # Raises exception for bad status codes
+            return response.json()["access_token"]
+        except requests.exceptions.RequestException as e:
+            raise GatewaySetupException(f"Failed to get test token: {e}") from e

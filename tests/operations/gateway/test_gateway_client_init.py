@@ -5,6 +5,7 @@ import logging
 from unittest.mock import Mock, call, patch
 
 import pytest
+import requests
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
@@ -924,3 +925,98 @@ class TestGetAccessTokenForCognito:
 
         with pytest.raises(GatewaySetupException, match="Failed to get test token"):
             self.client.get_access_token_for_cognito(self.client_info)
+
+
+class TestGetAccessTokenForAuth0:
+    """Test get_access_token_for_auth0 method."""
+
+    def setup_method(self):
+        """Setup test fixtures."""
+        with patch("boto3.client"), patch("boto3.Session"):
+            self.client = GatewayClient()
+            self.client.logger = Mock()
+
+        self.client_info = {
+            "client_id": "test-client-id",
+            "client_secret": "test-client-secret",
+            "audience": "https://api.example.com",
+            "token_endpoint": "https://test-tenant.auth0.com/oauth/token",
+        }
+
+    @patch("requests.post")
+    def test_get_access_token_for_auth0_success(self, mock_post):
+        """Test successful token retrieval from Auth0."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "access_token": "test-access-token-123",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+        }
+        mock_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_response
+
+        result = self.client.get_access_token_for_auth0(self.client_info)
+
+        # Verify requests.post was called correctly
+        expected_payload = {
+            "client_id": "test-client-id",
+            "client_secret": "test-client-secret",
+            "audience": "https://api.example.com",
+            "grant_type": "client_credentials"
+        }
+        expected_headers = {"content-type": "application/json"}
+
+        mock_post.assert_called_once_with(
+            self.client_info["token_endpoint"],
+            json=expected_payload,
+            headers=expected_headers,
+        )
+
+        # Verify return value
+        assert result == "test-access-token-123"
+
+    @patch("requests.post")
+    def test_get_access_token_for_auth0_http_error(self, mock_post):
+        """Test token retrieval when HTTP request fails."""
+        # Mock HTTP error response
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("400 Bad Request")
+        mock_post.return_value = mock_response
+
+        with pytest.raises(GatewaySetupException, match="Failed to get test token"):
+            self.client.get_access_token_for_auth0(self.client_info)
+
+    @patch("requests.post")
+    def test_get_access_token_for_auth0_connection_error(self, mock_post):
+        """Test token retrieval when connection fails."""
+        # Mock connection error
+        mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
+
+        with pytest.raises(GatewaySetupException, match="Failed to get test token"):
+            self.client.get_access_token_for_auth0(self.client_info)
+
+    @patch("requests.post")
+    def test_get_access_token_for_auth0_timeout_error(self, mock_post):
+        """Test token retrieval when request times out."""
+        # Mock timeout error
+        mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
+
+        with pytest.raises(GatewaySetupException, match="Failed to get test token"):
+            self.client.get_access_token_for_auth0(self.client_info)
+
+    @patch("requests.post")
+    def test_get_access_token_for_auth0_invalid_response(self, mock_post):
+        """Test token retrieval when response doesn't contain access_token."""
+        # Mock response without access_token
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            # Missing access_token
+        }
+        mock_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_response
+
+        with pytest.raises(KeyError):
+            self.client.get_access_token_for_auth0(self.client_info)
