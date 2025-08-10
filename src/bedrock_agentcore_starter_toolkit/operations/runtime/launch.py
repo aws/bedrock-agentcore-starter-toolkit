@@ -363,7 +363,7 @@ def launch_bedrock_agentcore(
     ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, bedrock_agentcore_name, region)
 
     # Deploy to ECR
-    repo_name = ecr_uri.split("/")[-1]
+    repo_name = "/".join(ecr_uri.split("/")[1:])
     deploy_to_ecr(tag, repo_name, region, runtime)
 
     log.info("Image uploaded to ECR: %s", ecr_uri)
