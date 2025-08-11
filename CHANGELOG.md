@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6] - 2025-08-11
+
+Updated SDK dependency to >=0.1.2 for improved thread pool handling and concurrency fixes
+
+### Dependencies
+- Updated to bedrock-agentcore SDK v0.1.2
+
 ## [0.1.5] - 2025-08-08
 
 ### Changes
