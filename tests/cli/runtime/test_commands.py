@@ -2177,3 +2177,240 @@ agents:
                 assert call_args.kwargs["payload"] == mixed_payload
             finally:
                 os.chdir(original_cwd)
+
+    def test_destroy_command_dry_run(self, tmp_path):
+        """Test destroy command with dry run."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            mock_agent_config.bedrock_agentcore.agent_id = "test-agent-id"
+            mock_agent_config.aws.ecr_repository = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test"
+            mock_agent_config.aws.execution_role = "arn:aws:iam::123456789012:role/test-role"
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Mock destroy result
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.dry_run = True
+            mock_result.resources_removed = [
+                "AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test (DRY RUN)",
+                "ECR images in repository: test (DRY RUN)",
+                "CodeBuild project: bedrock-agentcore-test-agent-builder (DRY RUN)",
+            ]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_destroy.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--dry-run"])
+
+                assert result.exit_code == 0
+                assert "Dry run completed" in result.stdout
+                assert "Resources That Would Be Destroyed" in result.stdout
+                assert "DRY RUN" in result.stdout
+
+                # Verify destroy was called with dry_run=True
+                call_args = mock_destroy.call_args
+                assert call_args.kwargs["dry_run"] is True
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_force(self, tmp_path):
+        """Test destroy command with force flag."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Mock destroy result
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.dry_run = False
+            mock_result.resources_removed = ["AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_destroy.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--force"])
+
+                assert result.exit_code == 0
+                assert "Successfully destroyed resources" in result.stdout
+                assert "Resources Successfully Destroyed" in result.stdout
+
+                # Verify destroy was called with force=True
+                call_args = mock_destroy.call_args
+                assert call_args.kwargs["force"] is True
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_undeployed_agent(self, tmp_path):
+        """Test destroy command on undeployed agent."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+        ):
+            # Mock project config with undeployed agent
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = None  # Not deployed
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy"])
+
+                assert result.exit_code == 0
+                assert "Agent is not deployed, nothing to destroy" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_specific_agent(self, tmp_path):
+        """Test destroy command with specific agent."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: agent1
+agents:
+  agent1:
+    name: agent1
+    entrypoint: agent1.py
+  agent2:
+    name: agent2
+    entrypoint: agent2.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config and agent config for agent2
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "agent2"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Mock destroy result
+            mock_result = Mock()
+            mock_result.agent_name = "agent2"
+            mock_result.dry_run = True
+            mock_result.resources_removed = ["AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/agent2"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_destroy.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--agent", "agent2", "--dry-run"])
+
+                assert result.exit_code == 0
+                assert "agent2" in result.stdout
+
+                # Verify correct agent was targeted
+                call_args = mock_destroy.call_args
+                assert call_args.kwargs["agent_name"] == "agent2"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_nonexistent_agent(self, tmp_path):
+        """Test destroy command with nonexistent agent."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+        ):
+            # Mock project config
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = None  # Agent not found
+            mock_load_config.return_value = mock_project_config
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--agent", "nonexistent"])
+
+                assert result.exit_code == 1
+                assert "not found" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_no_config(self, tmp_path):
+        """Test destroy command without configuration file."""
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)  # Directory without .bedrock_agentcore.yaml
+
+        try:
+            result = self.runner.invoke(app, ["destroy"])
+
+            assert result.exit_code == 1
+            assert ".bedrock_agentcore.yaml not found" in result.stdout
+        finally:
+            os.chdir(original_cwd)
