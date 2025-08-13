@@ -147,9 +147,6 @@ Built-in session handling with automatic creation, 15-minute timeout, and cross-
 ```python
 from bedrock_agentcore.runtime.context import RequestContext
 
-```python
-from bedrock_agentcore.runtime.context import RequestContext
-
 @app.entrypoint
 def session_aware_agent(payload, context: RequestContext):
     """Agent with session awareness"""
