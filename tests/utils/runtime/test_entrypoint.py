@@ -8,7 +8,6 @@ import pytest
 from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import (
     detect_dependencies,
     get_python_version,
-    handle_requirements_file,
     parse_entrypoint,
     validate_requirements_file,
 )
@@ -32,71 +31,6 @@ class TestParseEntrypoint:
         """Test parsing entrypoint with non-existent file."""
         with pytest.raises(ValueError, match="File not found"):
             parse_entrypoint("nonexistent.py")
-
-
-class TestHandleRequirementsFile:
-    """Test handle_requirements_file function."""
-
-    def test_handle_requirements_file_with_file(self, tmp_path):
-        """Test with provided requirements file."""
-        req_file = tmp_path / "requirements.txt"
-        req_file.write_text("requests==2.25.1")
-
-        with patch(
-            "bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.validate_requirements_file"
-        ) as mock_validate:
-            mock_deps = Mock()
-            mock_validate.return_value = mock_deps
-
-            result = handle_requirements_file(str(req_file), tmp_path)
-            assert result == str(req_file)
-            mock_validate.assert_called_once_with(tmp_path, str(req_file))
-
-    def test_handle_requirements_file_validation_fails(self, tmp_path):
-        """Test with invalid requirements file."""
-        with patch(
-            "bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.validate_requirements_file",
-            side_effect=ValueError("Invalid file"),
-        ):
-            with pytest.raises(ValueError, match="Invalid file"):
-                handle_requirements_file("invalid.txt", tmp_path)
-
-    def test_handle_requirements_file_auto_detect_found(self, tmp_path):
-        """Test auto-detection when dependencies are found."""
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.detect_dependencies") as mock_detect:
-            mock_deps = Mock()
-            mock_deps.found = True
-            mock_deps.file = "requirements.txt"
-            mock_detect.return_value = mock_deps
-
-            result = handle_requirements_file(None, tmp_path)
-            assert result is None  # Should return None to let operations handle it
-            mock_detect.assert_called_once_with(tmp_path)
-
-    def test_handle_requirements_file_auto_detect_not_found(self, tmp_path):
-        """Test auto-detection when no dependencies are found."""
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.detect_dependencies") as mock_detect:
-            mock_deps = Mock()
-            mock_deps.found = False
-            mock_detect.return_value = mock_deps
-
-            result = handle_requirements_file(None, tmp_path)
-            assert result is None
-            mock_detect.assert_called_once_with(tmp_path)
-
-    def test_handle_requirements_file_default_build_dir(self):
-        """Test with default build directory."""
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.Path.cwd") as mock_cwd:
-            mock_cwd.return_value = Path("/current/dir")
-
-            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.detect_dependencies") as mock_detect:
-                mock_deps = Mock()
-                mock_deps.found = False
-                mock_detect.return_value = mock_deps
-
-                result = handle_requirements_file(None, None)
-                assert result is None
-                mock_detect.assert_called_once_with(Path("/current/dir"))
 
 
 class TestDependencies:

@@ -32,47 +32,6 @@ def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
     return file_path, file_name
 
 
-def handle_requirements_file(
-    requirements_file: Optional[str] = None, build_dir: Optional[Path] = None
-) -> Optional[str]:
-    """Handle requirements file selection and validation.
-
-    Args:
-        requirements_file: Optional path to requirements file
-        build_dir: Build directory, defaults to current directory
-
-    Returns:
-        Validated requirements file path or None
-
-    Raises:
-        ValueError: If specified requirements file is invalid
-    """
-    if build_dir is None:
-        build_dir = Path.cwd()
-
-    if requirements_file:
-        log.info("Validating requirements file: %s", requirements_file)
-        # Validate provided requirements file
-        try:
-            deps = validate_requirements_file(build_dir, requirements_file)
-            log.info("Requirements file validated: %s", requirements_file)
-            return requirements_file
-        except (FileNotFoundError, ValueError) as e:
-            log.error("Requirements file validation failed: %s", e)
-            raise ValueError(str(e)) from e
-
-    # Auto-detect dependencies (no validation needed, just detection)
-    log.info("Auto-detecting dependencies in: %s", build_dir)
-    deps = detect_dependencies(build_dir)
-
-    if deps.found:
-        log.info("Dependencies detected: %s", deps.file)
-        return None  # Let operations handle the detected file
-    else:
-        log.info("No dependency files found")
-        return None  # No file found or specified
-
-
 @dataclass
 class DependencyInfo:
     """Information about project dependencies."""
