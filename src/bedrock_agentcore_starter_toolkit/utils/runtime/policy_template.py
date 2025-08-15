@@ -53,7 +53,7 @@ def render_execution_policy_template(region: str, account_id: str, agent_name: s
         "account_id": account_id,
         "agent_name": agent_name,
     }
-    return _render_template("execution_role_policy.json.j2", variables)
+    return _render_template("execution_role_policy_bedrock.json.j2", variables)
 
 
 def validate_rendered_policy(policy_json: str) -> Dict:
