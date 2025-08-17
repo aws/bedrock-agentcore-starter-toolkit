@@ -83,7 +83,6 @@ nav:
       - Configuration: user-guide/import-agent/configuration.md
     - Gateway:
       - Quickstart: user-guide/gateway/quickstart.md
-      - Overview: user-guide/gateway/overview.md
     - Memory:
       - Quickstart: user-guide/memory/quickstart.md
     - Identity:
