@@ -20,6 +20,7 @@ from ...operations.runtime import (
     validate_agent_name,
 )
 from ...utils.runtime.entrypoint import parse_entrypoint
+from ...utils.runtime.port_config import get_local_port
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
@@ -385,7 +386,8 @@ def launch(
         if result.mode == "local":
             _print_success(f"Docker image built: {result.tag}")
             _print_success("Ready to run locally")
-            console.print("Starting server at http://localhost:8080")
+            local_port = get_local_port()
+            console.print(f"Starting server at http://localhost:{local_port}")
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             if result.runtime is None or result.port is None:
