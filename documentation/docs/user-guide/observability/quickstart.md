@@ -20,8 +20,8 @@ Before starting, make sure you have:
 - **AWS Account** with credentials configured (`aws configure`) with model access enabled to the Foundation Model you would like to use.
 - **Python 3.10+** installed
 - **Enable transaction search** on Amazon CloudWatch. First-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces.
-- **Add the OpenTelemetry library** Include aws-opentelemetry-distro (ADOT) in your requirements.txt file.
-- Ensure that your framework is configured to emit traces (eg. strands-agents[otel] package), you may sometimes need to include <your-agent-framework-auto-instrumentor> # e.g., opentelemetry-instrumentation-langchain
+- **Add the OpenTelemetry library** Include `aws-opentelemetry-distro` (ADOT) in your requirements.txt file.
+- Ensure that your framework is configured to emit traces (eg. `strands-agents[otel]` package), you may sometimes need to include `<your-agent-framework-auto-instrumentor>` # e.g., `opentelemetry-instrumentation-langchain`
 
 
 AgentCore Observability offers two ways to configure monitoring to match different infrastructure needs:
@@ -111,7 +111,7 @@ launch_result = agentcore_runtime.launch()
 launch_result
 ```
 
-In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automaticcally instruments your agent invocation using Open Telemetry. Now, you can invoke your agent and see the Traces, sessions and metrics on GenAI Obsrvability dashboard on Amazon Cloudwatch. 
+In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automaticcally instruments your agent invocation using Open Telemetry. Now, you can invoke your agent using the command shown below and see the Traces, sessions and metrics on GenAI Obsrvability dashboard on Amazon Cloudwatch. 
 
 ```python
 invoke_response = agentcore_runtime.invoke({"prompt": "How is the weather now?"})
