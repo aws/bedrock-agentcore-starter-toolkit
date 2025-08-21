@@ -53,9 +53,11 @@ agentcore launch                    # Uses CodeBuild - no Docker needed
 
 ### 💻 Local Development
 ```bash
-agentcore launch --local           # Build and run locally
+agentcore launch --local           # Build and run locally (port 8080)
+AGENTCORE_RUNTIME_LOCAL_PORT=9000 agentcore launch --local  # Custom port
 ```
 - **Fast iteration** - immediate feedback and debugging
+- **Flexible ports** - avoid conflicts with `AGENTCORE_RUNTIME_LOCAL_PORT`
 - **Requires:** Docker, Finch, or Podman
 
 ### 🔧 Hybrid Build
@@ -263,6 +265,22 @@ agentcore launch
 
 # 5. Monitor
 agentcore status
+```
+
+### Custom Port Configuration
+```bash
+# Use custom port for local development
+export AGENTCORE_RUNTIME_LOCAL_PORT=9000
+agentcore launch --local
+
+# Test with custom port
+curl -X POST http://localhost:9000/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello"}'
+
+# Run multiple agents simultaneously
+AGENTCORE_RUNTIME_LOCAL_PORT=8081 agentcore launch --local &  # Agent 1
+AGENTCORE_RUNTIME_LOCAL_PORT=8082 agentcore launch --local &  # Agent 2
 ```
 
 The AgentCore Runtime SDK provides everything needed to build, test, and deploy production-ready AI agents with minimal setup and maximum flexibility.

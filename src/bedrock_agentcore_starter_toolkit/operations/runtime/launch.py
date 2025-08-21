@@ -15,6 +15,7 @@ from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.port_config import get_local_port
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .create_role import get_or_create_runtime_execution_role
 from .models import LaunchResult
@@ -342,7 +343,7 @@ def launch_bedrock_agentcore(
         return LaunchResult(
             mode="local",
             tag=tag,
-            port=8080,
+            port=get_local_port(),
             runtime=runtime,
             env_vars=env_vars,
         )

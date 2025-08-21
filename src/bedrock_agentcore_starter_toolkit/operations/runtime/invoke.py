@@ -9,6 +9,7 @@ from bedrock_agentcore.services.identity import IdentityClient
 
 from ...services.runtime import BedrockAgentCoreClient, generate_session_id
 from ...utils.runtime.config import load_config, save_config
+from ...utils.runtime.port_config import get_local_port
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
 from .models import InvokeResult
 
@@ -66,8 +67,9 @@ def invoke_bedrock_agentcore(
             workload_name=workload_name, user_token=bearer_token, user_id=user_id
         )["workloadAccessToken"]
 
-        # TODO: store and read port config of local running container
-        client = LocalBedrockAgentCoreClient("http://0.0.0.0:8080")
+        # Use configurable port for local container connection
+        local_port = get_local_port()
+        client = LocalBedrockAgentCoreClient(f"http://0.0.0.0:{local_port}")
         response = client.invoke_endpoint(session_id, payload_str, workload_access_token)
 
     else:
