@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 
 [[package]]
@@ -106,6 +106,7 @@ dependencies = [
     { name = "prompt-toolkit" },
     { name = "py-openapi-schema-to-json-schema" },
     { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "questionary" },
     { name = "requests" },
@@ -150,6 +151,7 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = ">=3.0.51" },
     { name = "py-openapi-schema-to-json-schema", specifier = ">=0.0.3" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "questionary", specifier = ">=2.1.0" },
     { name = "requests", specifier = ">=2.25.0" },
