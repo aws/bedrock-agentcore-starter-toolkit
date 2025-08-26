@@ -98,7 +98,7 @@ def get_or_create_runtime_execution_role(
                 trust_policy_json = render_trust_policy_template(region, account_id)
                 trust_policy = validate_rendered_policy(trust_policy_json)
 
-                # Render the execution policy (Bedrock access) template
+                # Render the execution policy template
                 execution_policy_json = render_execution_policy_template(region, account_id, agent_name)
                 execution_policy = validate_rendered_policy(execution_policy_json)
 
@@ -115,7 +115,7 @@ def get_or_create_runtime_execution_role(
                 logger.info("✓ Role created: %s", role_arn)
 
                 # Create and attach the inline execution policy
-                policy_name = f"BedrockAgentCoreRuntimeBedrockAccessPolicy-{agent_name}"
+                policy_name = f"BedrockAgentCoreRuntimeExecutionPolicy-{agent_name}"
 
                 _attach_inline_policy(
                     iam_client=iam,
@@ -124,14 +124,6 @@ def get_or_create_runtime_execution_role(
                     policy_document=json.dumps(execution_policy),
                     logger=logger,
                 )
-
-                # Attach Bedrock AgentCore Full Access policy
-                bedrock_agentcore_policy_arn = "arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess"
-                iam.attach_role_policy(
-                    RoleName=role_name,
-                    PolicyArn=bedrock_agentcore_policy_arn,
-                )
-                logger.info("✓ Attached Bedrock AgentCore Full Access policy: %s", bedrock_agentcore_policy_arn)
 
                 logger.info("✓ Execution policy attached: %s", policy_name)
                 logger.info("Role creation complete and ready for use with Bedrock AgentCore")
