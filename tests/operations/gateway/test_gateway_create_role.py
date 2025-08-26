@@ -254,7 +254,7 @@ class TestAttachPolicy:
         """Test that providing policy document without name raises exception."""
         policy_document = {"Version": "2012-10-17"}
 
-        with pytest.raises(Exception, match="Must specify both policy document and policy name or just a policy arn"):
+        with pytest.raises(Exception, match="Must specify both policy document and policy name, or just a policy arn"):
             _attach_policy(iam_client=self.mock_iam_client, role_name=self.role_name, policy_document=policy_document)
 
         # Verify no AWS calls were made
@@ -265,7 +265,7 @@ class TestAttachPolicy:
         """Test that providing policy name without document raises exception."""
         policy_name = "TestPolicy"
 
-        with pytest.raises(Exception, match="Must specify both policy document and policy name or just a policy arn"):
+        with pytest.raises(Exception, match="Must specify both policy document and policy name, or just a policy arn"):
             _attach_policy(iam_client=self.mock_iam_client, role_name=self.role_name, policy_name=policy_name)
 
         # Verify no AWS calls were made
@@ -274,7 +274,7 @@ class TestAttachPolicy:
 
     def test_attach_policy_no_parameters_raises_exception(self):
         """Test that providing no policy parameters raises exception."""
-        with pytest.raises(Exception, match="Must specify both policy document and policy name or just a policy arn"):
+        with pytest.raises(Exception, match="Must specify both policy document and policy name, or just a policy arn"):
             _attach_policy(iam_client=self.mock_iam_client, role_name=self.role_name)
 
         # Verify no AWS calls were made
@@ -410,6 +410,42 @@ class TestAttachPolicy:
         # Verify attach_role_policy was called
         self.mock_iam_client.attach_role_policy.assert_called_once_with(
             RoleName=self.role_name, PolicyArn=created_policy_arn
+        )
+
+    def test_attach_policy_with_existing_full_access_policy(self):
+        """Test attaching a preexisting full access policy."""
+        policy_name = "BedrockAgentCoreGatewayStarterFullAccess"
+        existing_policy_arn = "arn:aws:iam::123456789012:policy/BedrockAgentCoreGatewayStarterFullAccess"
+
+        # Mock ClientError on create_policy
+        client_error = ClientError(
+            error_response={"Error": {
+                "Code": "EntityAlreadyExists", 
+                "Message": f"Policy {policy_name} already exists"
+            }},
+            operation_name="CreatePolicy",
+        )
+        self.mock_iam_client.create_policy.side_effect = client_error
+
+        # Mock paginator
+        self.mock_iam_client.get_paginator.return_value.paginate.return_value = [
+            {"Policies": [{"Arn": existing_policy_arn, "PolicyName": policy_name}]}
+        ]
+
+        _attach_policy(
+            iam_client=self.mock_iam_client,
+            role_name=self.role_name,
+            policy_document=AGENTCORE_FULL_ACCESS,
+            policy_name=policy_name,
+        )
+
+        # Verify paginator was called
+        self.mock_iam_client.get_paginator.assert_called_once_with("list_policies")
+        self.mock_iam_client.get_paginator().paginate.assert_called_once_with(Scope="Local")
+    
+        # Verify attach_role_policy was called
+        self.mock_iam_client.attach_role_policy.assert_called_once_with(
+            RoleName=self.role_name, PolicyArn=existing_policy_arn
         )
 
     def test_attach_policy_with_aws_managed_policies(self):
