@@ -114,9 +114,7 @@
         "bedrock-agentcore:GetResourceApiKey"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:apikeycredentialprovider/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/apikeycredentialprovider/*",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
       ]
@@ -128,9 +126,7 @@
         "bedrock-agentcore:GetResourceOauth2Token"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:oauth2credentialprovider/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/oauth2credentialprovider/*",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
       ]
@@ -145,7 +141,6 @@
         "bedrock-agentcore:GetWorkloadIdentity"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity/*",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
       ]
