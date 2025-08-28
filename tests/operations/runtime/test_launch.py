@@ -168,7 +168,7 @@ class TestLaunchBedrockAgentCore:
         # Verify local mode result
         assert result.mode == "local"
         assert result.tag == "bedrock_agentcore-test-agent:latest"
-        assert result.port == 8080
+        assert result.port == 8080  # Default port when env var not set
         assert hasattr(result, "runtime")
         mock_container_runtime.build.assert_called_once()
 
@@ -797,6 +797,30 @@ class TestLaunchBedrockAgentCore:
             mock_launch_with_codebuild.assert_called_once()
             # Check that env_vars parameter was passed to _launch_with_codebuild
             assert mock_launch_with_codebuild.call_args.kwargs["env_vars"] == test_env_vars
+
+    def test_launch_local_mode_custom_port(self, mock_container_runtime, tmp_path, monkeypatch):
+        """Test local deployment with custom port from environment variable."""
+        # Set custom port via environment variable
+        monkeypatch.setenv("AGENTCORE_RUNTIME_LOCAL_PORT", "9000")
+        
+        config_path = create_test_config(tmp_path)
+
+        # Mock successful build
+        mock_container_runtime.build.return_value = (True, ["Build successful"])
+        mock_container_runtime.has_local_runtime = True
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+        # Verify local mode result uses custom port
+        assert result.mode == "local"
+        assert result.tag == "bedrock_agentcore-test-agent:latest"
+        assert result.port == 9000  # Custom port from environment variable
+        assert hasattr(result, "runtime")
+        mock_container_runtime.build.assert_called_once()
 
 
 class TestEnsureExecutionRole:
