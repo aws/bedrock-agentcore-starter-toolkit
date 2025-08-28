@@ -4,6 +4,7 @@ import typer
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from ..utils.logging_config import setup_toolkit_logging
+from .create.commands import create_app
 from .import_agent.commands import import_agent
 from .runtime.commands import configure_app, invoke, launch, status
 
@@ -23,6 +24,9 @@ app.add_typer(configure_app)
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.add_typer(gateway_app, name="gateway")
+
+# create
+app.add_typer(create_app)
 
 
 def main():
