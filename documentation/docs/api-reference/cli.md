@@ -58,6 +58,10 @@ Options:
 
 - `--local, -l`: Run locally
 
+- `--detach, -d`: Run in detached mode (background) - only works with --local
+
+- `--log-file TEXT`: Redirect logs to file (implies --detach) - only works with --local
+
 - `--push-ecr, -p`: Build and push to ECR only (no deployment)
 
 - `--env, -env TEXT`: Environment variables for agent (format: KEY=VALUE)
@@ -177,6 +181,13 @@ agentcore launch
 # Run locally
 agentcore launch --local
 
+# Run locally in background (detached mode)
+agentcore launch --local --detach
+agentcore launch --local -d
+
+# Run locally with custom log file (auto-detaches)
+agentcore launch --local --log-file my-agent.log
+
 # Launch with environment variables
 agentcore launch --env API_KEY=abc123 --env DEBUG=true
 ```
@@ -238,4 +249,59 @@ agentcore import-agent \
 
 # AgentCore Primitive Opt-out
 agentcore import-agent --disable-gateway --disable-memory --disable-code-interpreter --disable-observability
+```
+
+## Common Issues and Solutions
+
+### Detach Mode Validation Errors
+
+**Error**: `--detach can only be used with --local`
+```bash
+# ❌ Invalid - detach without local
+agentcore launch --detach
+
+# ✅ Correct - detach with local
+agentcore launch --local --detach
+```
+
+**Error**: `--log-file can only be used with --local`
+```bash
+# ❌ Invalid - log-file without local
+agentcore launch --log-file agent.log
+
+# ✅ Correct - log-file with local
+agentcore launch --local --log-file agent.log
+```
+
+### Terminal Blocking Issues
+
+**Problem**: Agent blocks terminal, can't run other commands
+
+**Solution**: Use detach mode
+```bash
+# Instead of this (blocks terminal)
+agentcore launch --local
+
+# Use this (runs in background)
+agentcore launch --local --detach
+```
+
+### Background Process Management
+
+**Check if agent is running**:
+```bash
+# Look for Python processes running your agent
+ps aux | grep "my_agent.py"
+
+# Check port 8080 usage
+lsof -i :8080
+```
+
+**Stop background agent**:
+```bash
+# Find and stop the process
+pkill -f "my_agent.py"
+
+# Or kill by port
+lsof -ti:8080 | xargs kill
 ```

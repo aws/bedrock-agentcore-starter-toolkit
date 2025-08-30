@@ -35,6 +35,8 @@ Amazon Bedrock AgentCore includes the following modular Services that you can us
 ## 🚀 Amazon Bedrock AgentCore Runtime
 AgentCore Runtime is a secure, serverless runtime purpose-built for deploying and scaling dynamic AI agents and tools using any open-source framework including LangGraph, CrewAI, and Strands Agents, any protocol, and any model. Runtime was built to work for agentic workloads with industry-leading extended runtime support, fast cold starts, true session isolation, built-in identity, and support for multi-modal payloads. Developers can focus on innovation while Amazon Bedrock AgentCore Runtime handles infrastructure and security -- accelerating time-to-market
 
+**Key Features**: Zero-infrastructure deployment, local development with background mode for AI IDEs, streaming support, session management, and comprehensive observability.
+
 **[Runtime Quick Start](documentation/docs/user-guide/runtime/quickstart.md)**
 
 ## 🧠 Amazon Bedrock AgentCore Memory

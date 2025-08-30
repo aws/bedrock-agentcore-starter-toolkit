@@ -53,9 +53,13 @@ agentcore launch                    # Uses CodeBuild - no Docker needed
 
 ### 💻 Local Development
 ```bash
-agentcore launch --local           # Build and run locally
+agentcore launch --local           # Build and run locally (foreground)
+agentcore launch --local --detach  # Build and run in background
+agentcore launch --local -d        # Short form for detach mode
 ```
 - **Fast iteration** - immediate feedback and debugging
+- **Background mode** - run agents without blocking terminal (perfect for AI IDEs)
+- **Custom logging** - redirect logs to files for debugging
 - **Requires:** Docker, Finch, or Podman
 
 ### 🔧 Hybrid Build
@@ -252,7 +256,8 @@ if __name__ == "__main__":
 agentcore configure --entrypoint my_agent.py
 
 # 2. Develop locally
-agentcore launch --local
+agentcore launch --local           # Foreground mode for debugging
+agentcore launch --local --detach  # Background mode for AI IDEs
 
 # 3. Test
 agentcore invoke '{"prompt": "Hello"}'
@@ -263,6 +268,30 @@ agentcore launch
 
 # 5. Monitor
 agentcore status
+```
+
+### Local Development Best Practices
+
+**For Interactive Development:**
+```bash
+# Use foreground mode for debugging and immediate feedback
+agentcore launch --local
+```
+
+**For AI IDEs and Terminal Reuse:**
+```bash
+# Use detach mode to free up terminal for other tasks
+agentcore launch --local --detach
+
+# Or with custom log file for debugging
+agentcore launch --local --log-file debug.log
+```
+
+**For Continuous Development:**
+```bash
+# Start agent in background, continue development work
+agentcore launch --local -d
+# Terminal is now free for git, testing, etc.
 ```
 
 The AgentCore Runtime SDK provides everything needed to build, test, and deploy production-ready AI agents with minimal setup and maximum flexibility.

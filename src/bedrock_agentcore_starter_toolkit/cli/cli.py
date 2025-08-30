@@ -19,6 +19,8 @@ app.command("launch")(launch)
 app.command("import-agent")(import_agent)
 app.add_typer(configure_app)
 
+# Note: Process management commands (ps, stop, logs) will be added in future PRs
+
 # gateway
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)

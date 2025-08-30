@@ -2177,3 +2177,125 @@ agents:
                 assert call_args.kwargs["payload"] == mixed_payload
             finally:
                 os.chdir(original_cwd)
+
+    def test_launch_detach_validation(self):
+        """Test that --detach flag validation works correctly."""
+        # Test --detach without --local (should fail)
+        result = self.runner.invoke(app, ["launch", "--detach"])
+        assert result.exit_code == 1
+        assert "--detach can only be used with --local" in result.stdout
+
+    def test_launch_log_file_validation(self):
+        """Test that --log-file flag validation works correctly."""
+        # Test --log-file without --local (should fail)
+        result = self.runner.invoke(app, ["launch", "--log-file", "test.log"])
+        assert result.exit_code == 1
+        assert "--log-file can only be used with --local" in result.stdout
+
+    def test_launch_detach_help_text(self):
+        """Test that detach mode is documented in help text."""
+        result = self.runner.invoke(app, ["launch", "--help"])
+        assert result.exit_code == 0
+        assert "--detach" in result.stdout
+        assert "--log-file" in result.stdout
+        assert "Docker-style detached mode" in result.stdout
+        assert "Run in detached mode (background)" in result.stdout
+
+    def test_launch_local_with_detach_flags(self, tmp_path):
+        """Test launch command with --local --detach flags."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+            mock_result = Mock()
+            mock_result.mode = "local"
+            mock_result.tag = "bedrock_agentcore-test-agent:latest"
+            mock_result.port = 8080
+            mock_result.runtime = Mock()
+            mock_result.env_vars = {}
+            mock_launch.return_value = mock_result
+
+            # Mock LocalProcessManager
+            with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.LocalProcessManager") as mock_manager_class:
+                mock_manager = Mock()
+                mock_agent = Mock()
+                mock_agent.name = "test-agent"
+                mock_agent.pid = 12345
+                mock_agent.port = 8080
+                mock_agent.log_file = "/tmp/test.log"
+                mock_manager.start_agent.return_value = mock_agent
+                mock_manager_class.return_value = mock_manager
+
+                original_cwd = Path.cwd()
+                os.chdir(tmp_path)
+
+                try:
+                    result = self.runner.invoke(app, ["launch", "--local", "--detach"])
+                    assert result.exit_code == 0
+                    assert "Agent started in detached mode" in result.stdout
+                    assert "PID: 12345" in result.stdout
+                    assert "Port: 8080" in result.stdout
+
+                    # Verify the core function was called with correct parameters
+                    mock_launch.assert_called_once()
+                    call_kwargs = mock_launch.call_args.kwargs
+                    assert call_kwargs["local"] is True
+
+                    # Verify process manager was used
+                    mock_manager.start_agent.assert_called_once()
+                finally:
+                    os.chdir(original_cwd)
+
+    def test_launch_local_with_log_file(self, tmp_path):
+        """Test launch command with --local --log-file (should imply --detach)."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+            mock_result = Mock()
+            mock_result.mode = "local"
+            mock_result.tag = "bedrock_agentcore-test-agent:latest"
+            mock_result.port = 8080
+            mock_result.runtime = Mock()
+            mock_result.env_vars = {}
+            mock_launch.return_value = mock_result
+
+            # Mock LocalProcessManager
+            with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.LocalProcessManager") as mock_manager_class:
+                mock_manager = Mock()
+                mock_agent = Mock()
+                mock_agent.name = "test-agent"
+                mock_agent.pid = 12345
+                mock_agent.port = 8080
+                mock_agent.log_file = "/tmp/custom.log"
+                mock_manager.start_agent.return_value = mock_agent
+                mock_manager_class.return_value = mock_manager
+
+                original_cwd = Path.cwd()
+                os.chdir(tmp_path)
+
+                try:
+                    result = self.runner.invoke(app, ["launch", "--local", "--log-file", "custom.log"])
+                    assert result.exit_code == 0
+                    assert "Agent started in detached mode" in result.stdout
+
+                    # Verify process manager was called with log file
+                    mock_manager.start_agent.assert_called_once()
+                    call_kwargs = mock_manager.start_agent.call_args.kwargs
+                    assert call_kwargs["log_file"] == "custom.log"
+                finally:
+                    os.chdir(original_cwd)
