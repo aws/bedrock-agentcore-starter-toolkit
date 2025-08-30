@@ -43,7 +43,14 @@ def _handle_aws_response(response) -> dict:
         try:
             events = []
             for event in response.get("response", []):
-                events.append(event)
+                if isinstance(event, bytes):
+                    decoded_event = event.decode('utf-8')
+                    try:
+                        events.append(json.loads(decoded_event))
+                    except json.JSONDecodeError:
+                        events.append(decoded_event)
+                else:
+                    events.append(event)
         except Exception as e:
             events = [f"Error reading EventStream: {e}"]
 
