@@ -271,6 +271,17 @@ def launch(
         "-lb",
         help="Build locally and deploy to cloud runtime - requires Docker/Finch/Podman",
     ),
+    detach: bool = typer.Option(
+        False,
+        "--detach",
+        "-d",
+        help="Run in detached mode (background) - only works with --local",
+    ),
+    log_file: Optional[str] = typer.Option(
+        None,
+        "--log-file",
+        help="Redirect logs to file (implies --detach for --local mode)",
+    ),
     auto_update_on_conflict: bool = typer.Option(
         False,
         "--auto-update-on-conflict",
@@ -287,7 +298,7 @@ def launch(
         hidden=True,
     ),
 ):
-    """Launch Bedrock AgentCore with three deployment modes.
+    """Launch Bedrock AgentCore with multiple deployment modes.
 
     🚀 DEFAULT (no flags): CodeBuild + cloud runtime (RECOMMENDED)
        - Build ARM64 containers in the cloud with CodeBuild
@@ -306,10 +317,16 @@ def launch(
        - requires Docker/Finch/Podman
        - Use when you need custom build control but want cloud deployment
 
+    🐳 --local --detach: Docker-style detached mode (NEW!)
+       - Run local agent in background (detached mode)
+       - Agent runs independently of terminal session
+       - Use --log-file to redirect output to file
+
     MIGRATION GUIDE:
     - OLD: agentcore launch --code-build  →  NEW: agentcore launch
     - OLD: agentcore launch --local       →  NEW: agentcore launch --local (unchanged)
     - NEW: agentcore launch --local-build (build locally + deploy to cloud)
+    - NEW: agentcore launch --local --detach (Docker-style background mode)
     """
     # Handle deprecated --code-build flag
     if code_build:
@@ -321,6 +338,17 @@ def launch(
     # Validate mutually exclusive options
     if sum([local, local_build, code_build]) > 1:
         _handle_error("Error: --local, --local-build, and --code-build cannot be used together")
+    
+    # Validate detach and log-file options
+    if detach and not local:
+        _handle_error("Error: --detach can only be used with --local")
+    
+    if log_file and not local:
+        _handle_error("Error: --log-file can only be used with --local")
+    
+    # If log_file is specified, imply detach mode
+    if log_file and local:
+        detach = True
 
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
@@ -385,16 +413,55 @@ def launch(
         if result.mode == "local":
             _print_success(f"Docker image built: {result.tag}")
             _print_success("Ready to run locally")
-            console.print("Starting server at http://localhost:8080")
-            console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             if result.runtime is None or result.port is None:
                 _handle_error("Unable to launch locally")
 
-            try:
-                result.runtime.run_local(result.tag, result.port, result.env_vars)
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Stopped[/yellow]")
+            if detach:
+                # Run in detached mode
+                from ...utils.runtime.local_process_manager import LocalProcessManager
+                
+                process_manager = LocalProcessManager()
+                
+                # Determine agent name
+                from ...utils.runtime.config import load_config
+                project_config = load_config(config_path)
+                agent_config = project_config.get_agent_config(agent)
+                agent_name = agent_config.name
+                
+                try:
+                    local_agent = process_manager.start_agent(
+                        name=agent_name,
+                        runtime=result.runtime,
+                        tag=result.tag,
+                        port=result.port,
+                        env_vars=result.env_vars,
+                        log_file=log_file,
+                        config_path=str(config_path),
+                    )
+                    
+                    console.print(f"[green]✅ Agent started in detached mode[/green]")
+                    console.print(f"[cyan]Agent Name:[/cyan] {local_agent.name}")
+                    console.print(f"[cyan]PID:[/cyan] {local_agent.pid}")
+                    console.print(f"[cyan]Port:[/cyan] {local_agent.port}")
+                    console.print(f"[cyan]Server:[/cyan] http://localhost:{local_agent.port}")
+                    if local_agent.log_file:
+                        console.print(f"[cyan]Logs:[/cyan] {local_agent.log_file}")
+                    
+                    console.print(f"\n[dim]Agent is running in background (PID: {local_agent.pid})[/dim]")
+                    console.print(f"[dim]Process management commands will be added in future releases[/dim]")
+                
+                except RuntimeError as e:
+                    _handle_error(str(e))
+            else:
+                # Run in foreground mode (existing behavior)
+                console.print("Starting server at http://localhost:8080")
+                console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
+                
+                try:
+                    result.runtime.run_local(result.tag, result.port, result.env_vars)
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Stopped[/yellow]")
 
         elif result.mode == "codebuild":
             _print_success(f"CodeBuild completed: [cyan]{result.codebuild_id}[/cyan]")
