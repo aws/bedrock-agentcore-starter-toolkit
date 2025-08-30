@@ -19,41 +19,44 @@ def test_process_manager():
     print("Testing LocalProcessManager...")
     
     # Create a test process manager
-    test_dir = Path("/tmp/test_agentcore")
-    process_manager = LocalProcessManager(test_dir)
-    
-    print(f"✅ Created process manager with state dir: {test_dir}")
-    
-    # Test creating a mock agent process
-    mock_agent = LocalAgentProcess(
-        name="test-agent",
-        pid=12345,
-        port=8080,
-        log_file="/tmp/test.log",
-    )
-    
-    print(f"✅ Created mock agent: {mock_agent.name} (PID: {mock_agent.pid})")
-    
-    # Test serialization
-    agent_dict = mock_agent.to_dict()
-    restored_agent = LocalAgentProcess.from_dict(agent_dict)
-    
-    assert restored_agent.name == mock_agent.name
-    assert restored_agent.pid == mock_agent.pid
-    assert restored_agent.port == mock_agent.port
-    
-    print("✅ Serialization/deserialization works")
-    
-    # Test state management
-    agents = [mock_agent]
-    process_manager._save_state(agents)
-    loaded_agents = process_manager._load_state()
-    
-    # Note: The loaded agents will be empty because PID 12345 doesn't exist
-    # This is expected behavior - only running processes are kept
-    print(f"✅ State management works (loaded {len(loaded_agents)} running agents)")
-    
-    print("🎉 All tests passed!")
+    import tempfile
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_dir = Path(temp_dir) / "test_agentcore"
+        process_manager = LocalProcessManager(test_dir)
+        
+        print(f"✅ Created process manager with state dir: {test_dir}")
+        
+        # Test creating a mock agent process
+        log_file = Path(temp_dir) / "test.log"
+        mock_agent = LocalAgentProcess(
+            name="test-agent",
+            pid=12345,
+            port=8080,
+            log_file=str(log_file),
+        )
+        
+        print(f"✅ Created mock agent: {mock_agent.name} (PID: {mock_agent.pid})")
+        
+        # Test serialization
+        agent_dict = mock_agent.to_dict()
+        restored_agent = LocalAgentProcess.from_dict(agent_dict)
+        
+        assert restored_agent.name == mock_agent.name
+        assert restored_agent.pid == mock_agent.pid
+        assert restored_agent.port == mock_agent.port
+        
+        print("✅ Serialization/deserialization works")
+        
+        # Test state management
+        agents = [mock_agent]
+        process_manager._save_state(agents)
+        loaded_agents = process_manager._load_state()
+        
+        # Note: The loaded agents will be empty because PID 12345 doesn't exist
+        # This is expected behavior - only running processes are kept
+        print(f"✅ State management works (loaded {len(loaded_agents)} running agents)")
+        
+        print("🎉 All tests passed!")
 
 
 def test_cli_imports():

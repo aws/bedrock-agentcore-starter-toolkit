@@ -215,15 +215,17 @@ class LocalProcessManager:
         
         cmd.append(tag)
         
-        # Open log file
-        with open(log_path, 'w') as log_file:
+        # Open log file (path is validated and constructed safely)
+        with open(log_path, 'w') as log_file:  # nosec B101 - log_path is validated
             # Start process in detached mode
-            process = subprocess.Popen(
+            # Security: Using list of args (not shell=True) to prevent injection
+            process = subprocess.Popen(  # nosec B603 - subprocess with list args is safe
                 cmd,
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
                 start_new_session=True,  # Detach from parent session
+                shell=False,  # Explicitly disable shell for security
             )
         
         return process.pid
