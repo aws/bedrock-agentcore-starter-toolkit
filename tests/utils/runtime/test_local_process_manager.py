@@ -552,8 +552,8 @@ class TestLocalProcessManager:
         custom_time = "2025-01-01T12:00:00Z"
         agent = LocalAgentProcess("test-agent", 12345, 8080, started_at=custom_time)
         assert agent.started_at == custom_time
-    def
- test_save_state_io_error(self):
+
+    def test_save_state_io_error(self):
         """Test save_state handles IO errors gracefully."""
         # Create agent
         agent = LocalAgentProcess("test-agent", os.getpid(), 8080)
