@@ -20,6 +20,7 @@ from ...operations.runtime import (
     validate_agent_name,
 )
 from ...utils.runtime.entrypoint import parse_entrypoint
+from ...utils.runtime.local_process_manager import LocalProcessManager
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
@@ -419,8 +420,6 @@ def launch(
 
             if detach:
                 # Run in detached mode
-                from ...utils.runtime.local_process_manager import LocalProcessManager
-                
                 process_manager = LocalProcessManager()
                 
                 # Determine agent name
