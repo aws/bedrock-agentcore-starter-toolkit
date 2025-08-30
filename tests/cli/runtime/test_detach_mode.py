@@ -175,8 +175,7 @@ if __name__ == "__main__":
     print("  2. Check running agents: ps aux | grep agentcore")
     print("  3. Stop agent: pkill -f 'agentcore'")
 
-de
-f test_edge_cases():
+def test_edge_cases():
     """Test edge cases and error conditions."""
     
     print("Testing edge cases...")
