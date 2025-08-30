@@ -598,3 +598,229 @@ class TestHandleStreamingResponse:
             mock_console.print.assert_any_call("This is a streaming response", end="", style="bold cyan")
             mock_console.print.assert_any_call("Final chunk", end="", style="bold cyan")
             mock_console.print.assert_any_call()  # Final newline call
+
+
+class TestHandleAwsResponseUnicode:
+    """Test _handle_aws_response functionality with Unicode/multibyte character support."""
+
+    def test_handle_aws_response_with_byte_strings_chinese(self):
+        """Test handling of Chinese characters in byte string responses."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Chinese text: "你好世界" (Hello World)
+        chinese_text = "你好世界"
+        chinese_bytes = chinese_text.encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [chinese_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify the byte string was properly decoded
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == chinese_text
+
+    def test_handle_aws_response_with_byte_strings_japanese(self):
+        """Test handling of Japanese characters in byte string responses."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Japanese text: "こんにちは" (Hello)
+        japanese_text = "こんにちは"
+        japanese_bytes = japanese_text.encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [japanese_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify the byte string was properly decoded
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == japanese_text
+
+    def test_handle_aws_response_with_byte_strings_korean(self):
+        """Test handling of Korean characters in byte string responses."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Korean text: "안녕하세요" (Hello)
+        korean_text = "안녕하세요"
+        korean_bytes = korean_text.encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [korean_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify the byte string was properly decoded
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == korean_text
+
+    def test_handle_aws_response_with_json_byte_strings(self):
+        """Test handling of JSON content in byte strings."""
+        import json
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # JSON with Chinese characters
+        json_data = {"message": "你好世界", "status": "success"}
+        json_bytes = json.dumps(json_data, ensure_ascii=False).encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [json_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify the JSON was properly parsed
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == json_data
+
+    def test_handle_aws_response_with_mixed_event_types(self):
+        """Test handling of mixed event types (bytes, strings, dicts)."""
+        import json
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Mix of different event types
+        chinese_bytes = "你好".encode('utf-8')
+        json_bytes = '{"key": "值"}'.encode('utf-8')
+        string_event = "regular string"
+        dict_event = {"existing": "dict"}
+        
+        response = {
+            "contentType": "application/json",
+            "response": [chinese_bytes, json_bytes, string_event, dict_event]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify all events were handled correctly
+        assert "response" in result
+        assert len(result["response"]) == 4
+        assert result["response"][0] == "你好"  # Decoded Chinese
+        assert result["response"][1] == {"key": "值"}  # Parsed JSON with Chinese
+        assert result["response"][2] == "regular string"  # Unchanged string
+        assert result["response"][3] == {"existing": "dict"}  # Unchanged dict
+
+    def test_handle_aws_response_with_invalid_json_bytes(self):
+        """Test handling of byte strings that contain invalid JSON."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Invalid JSON with Chinese characters
+        invalid_json_text = "你好世界 - this is not valid JSON"
+        invalid_json_bytes = invalid_json_text.encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [invalid_json_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify it falls back to plain text
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == invalid_json_text
+
+    def test_handle_aws_response_backward_compatibility(self):
+        """Test that existing string and dict events still work (backward compatibility)."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        response = {
+            "contentType": "application/json",
+            "response": [
+                "existing string event",
+                {"existing": "dict event"},
+                ["existing", "list", "event"]
+            ]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify existing behavior is unchanged
+        assert "response" in result
+        assert len(result["response"]) == 3
+        assert result["response"][0] == "existing string event"
+        assert result["response"][1] == {"existing": "dict event"}
+        assert result["response"][2] == ["existing", "list", "event"]
+
+    def test_handle_aws_response_streaming_unchanged(self):
+        """Test that streaming responses are not affected by the Unicode fix."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Mock streaming response
+        mock_stream_response = Mock()
+        
+        response = {
+            "contentType": "text/event-stream",
+            "response": mock_stream_response
+        }
+        
+        with patch("bedrock_agentcore_starter_toolkit.services.runtime._handle_streaming_response") as mock_handler:
+            mock_handler.return_value = {"streaming": "result"}
+            
+            result = _handle_aws_response(response)
+            
+            # Verify streaming handler was called
+            mock_handler.assert_called_once_with(mock_stream_response)
+            assert result == {"streaming": "result"}
+
+    def test_handle_aws_response_error_handling(self):
+        """Test error handling in _handle_aws_response with Unicode content."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Response that will cause an error during iteration
+        response = {
+            "contentType": "application/json",
+            "response": Exception("Processing error")
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify error is handled gracefully
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert "Error reading EventStream" in result["response"][0]
+
+    def test_handle_aws_response_empty_response(self):
+        """Test handling of empty response list."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        response = {
+            "contentType": "application/json",
+            "response": []
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify empty response is handled correctly
+        assert "response" in result
+        assert result["response"] == []
+
+    def test_handle_aws_response_emoji_and_special_chars(self):
+        """Test handling of emojis and special Unicode characters."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import _handle_aws_response
+        
+        # Text with emojis and special characters
+        emoji_text = "Hello 👋 World 🌍 测试 🧪"
+        emoji_bytes = emoji_text.encode('utf-8')
+        
+        response = {
+            "contentType": "application/json",
+            "response": [emoji_bytes]
+        }
+        
+        result = _handle_aws_response(response)
+        
+        # Verify emojis and special characters are preserved
+        assert "response" in result
+        assert len(result["response"]) == 1
+        assert result["response"][0] == emoji_text
