@@ -539,7 +539,7 @@ class BaseBedrockTranslator:
                     input_model_name = "None"
 
                 func_desc = method_spec.get("description", method_spec.get("summary", "No Description Provided."))
-                func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                 schema_code_strands = (
                     f"inputSchema={input_model_name}.model_json_schema()" if input_model_name != "None" else ""
@@ -656,7 +656,7 @@ class BaseBedrockTranslator:
             func_name = func.get("name", "")
             clean_func_name = clean_variable_name(func_name)
             func_desc = func.get("description", "").replace('"', '\\"')
-            func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}" + (
+            func_desc += f"\nThis tool is part of the group of tools called {action_group_name}" + (
                 f" (description: {action_group_desc})" if action_group_desc else ""
             )
 
@@ -787,7 +787,7 @@ class BaseBedrockTranslator:
         try:
             while True:
                 try:
-                    query = inputimeout("\\nEnter your question (or 'exit' to quit): ", timeout={self.idle_timeout})
+                    query = inputimeout("\nEnter your question (or 'exit' to quit): ", timeout={self.idle_timeout})
 
                     if query.lower() == "exit":
                         break
@@ -797,24 +797,24 @@ class BaseBedrockTranslator:
                         print("  Error:" + str(result.get('error', {{}})))
                         continue
 
-                    print(f"\\nResponse: {{result.get('response', 'No response provided')}}")
+                    print(f"\nResponse: {{result.get('response', 'No response provided')}}")
 
                     if result["sources"]:
                         print(f"  Sources: {{', '.join(set(result.get('sources', [])))}}")
 
                     if result["tools_used"]:
                         tools_used.update(result.get('tools_used', []))
-                        print(f"\\n  Tools Used: {{', '.join(tools_used)}}")
+                        print(f"\n  Tools Used: {{', '.join(tools_used)}}")
 
                     tools_used.clear()
                 except KeyboardInterrupt:
-                    print("\\n\\nExiting...")
+                    print("\n\nExiting...")
                     break
                 except TimeoutOccurred:
-                    print("\\n\\nNo input received in the last {0} seconds. Exiting...")
+                    print("\n\nNo input received in the last {0} seconds. Exiting...")
                     break
         except Exception as e:
-            print("\\n\\nError: {{}}".format(e))
+            print("\n\nError: {{}}".format(e))
         finally:
             {memory_code}
             print("Session ended.")
@@ -841,7 +841,7 @@ class BaseBedrockTranslator:
     interpreter.auto_run = True
     interpreter.messages = []
     interpreter.anonymized_telemetry = False
-    interpreter.system_message += "USER NOTES: DO NOT give further clarification or remarks on the code, or ask the user any questions. DO NOT write long running code that awaits user input. Remember that you can write to files using cat. Remember to keep track of your current working directory. Output the code you wrote so that the parent agent calling you can use it as part of a larger answer. \\n" + interpreter.system_message
+    interpreter.system_message += "USER NOTES: DO NOT give further clarification or remarks on the code, or ask the user any questions. DO NOT write long running code that awaits user input. Remember that you can write to files using cat. Remember to keep track of your current working directory. Output the code you wrote so that the parent agent calling you can use it as part of a larger answer. \n" + interpreter.system_message
 
     @tool
     def code_tool(original_question: str) -> str:
@@ -1079,7 +1079,7 @@ class BaseBedrockTranslator:
 
             # Gathering sources from the response
             sources = []
-            urls = re.findall(r'(?:https?://|www\.)(?:[a-zA-Z0-9\-]+\.)+[a-zA-Z]{{2,}}(?:/[^/\s]*)*', response_content)
+            urls = re.findall(r'(?:https?://|www\\.)(?:[a-zA-Z0-9\\-]+\\.)+[a-zA-Z]{{2,}}(?:/[^/\\s]*)*', response_content)
             source_tags = re.findall(r"<source>(.*?)</source>", response_content)
             sources.extend(urls)
             sources.extend(source_tags)
@@ -1202,7 +1202,7 @@ class BaseBedrockTranslator:
                         func_desc = method_spec.get(
                             "description", method_spec.get("summary", "No Description Provided.")
                         )
-                        func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                        func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                         # Convert AG OpenAPI Schema to JSON Schema
 
@@ -1319,7 +1319,7 @@ class BaseBedrockTranslator:
                     }
 
                     func_desc = func_spec.get("description", "No Description Provided.")
-                    func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                    func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                     func_parameters = func.get("parameters", {})
 
