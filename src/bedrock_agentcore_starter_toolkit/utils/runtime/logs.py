@@ -14,8 +14,10 @@ def get_agent_log_paths(agent_id: str, endpoint_name: Optional[str] = None) -> T
         Tuple of (runtime_log_group, otel_log_group)
     """
     endpoint_name = endpoint_name or "DEFAULT"
-    runtime_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}"
-    otel_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}/runtime-logs"
+    runtime_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}/runtime-logs"
+    otel_log_group = (
+        f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}/otel-rt-logs --log-stream-names otel-rt-logs"
+    )
     return runtime_log_group, otel_log_group
 
 

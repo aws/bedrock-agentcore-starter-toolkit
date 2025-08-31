@@ -6,7 +6,6 @@ import os
 import tempfile
 import time
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -99,9 +98,8 @@ class CodeBuildService:
                             file_path = Path(root) / file
                             zipf.write(file_path, file_rel_path)
 
-                # Create agent-organized S3 key: agentname/timestamp.zip
-                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-                s3_key = f"{agent_name}/{timestamp}.zip"
+                # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
+                s3_key = f"{agent_name}/source.zip"
 
                 self.s3_client.upload_file(temp_zip.name, bucket_name, s3_key)
 
@@ -228,26 +226,29 @@ class CodeBuildService:
                     self.logger.error("❌ Build failed during %s phase", current_phase)
                 raise RuntimeError(f"CodeBuild failed with status: {status}")
 
-            time.sleep(5)
+            time.sleep(1)
 
         total_duration = time.time() - build_start_time
         minutes, seconds = divmod(int(total_duration), 60)
         raise TimeoutError(f"CodeBuild timed out after {minutes}m {seconds}s (current phase: {current_phase})")
 
     def _get_arm64_buildspec(self, ecr_repository_uri: str) -> str:
-        """Get optimized buildspec for ARM64 Docker - native build with parallel ECR auth."""
+        """Get buildspec for ARM64 Docker - sequential with validation for reliability."""
         return f"""
 version: 0.2
 phases:
   build:
     commands:
-      - echo "Starting parallel Docker build and ECR auth..."
+      - echo "Starting Docker build..."
       - echo Build started on `date`
-      - docker build -t bedrock-agentcore-arm64 . &
+      - docker build -t bedrock-agentcore-arm64 .
+      - echo "Verifying Docker image was created..."
+      - docker images bedrock-agentcore-arm64:latest
+      - echo "Docker build completed successfully"
+      - echo "Starting ECR authentication..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION |
-        docker login --username AWS --password-stdin {ecr_repository_uri} &
-      - wait
-      - echo "Both build and auth completed successfully"
+        docker login --username AWS --password-stdin {ecr_repository_uri}
+      - echo "ECR authentication completed successfully"
       - docker tag bedrock-agentcore-arm64:latest {ecr_repository_uri}:latest
   post_build:
     commands:

@@ -16,13 +16,15 @@ setup_toolkit_logging(mode="cli")
 app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("launch")(launch)
-app.command("import-agent")(import_agent)
 app.add_typer(configure_app)
 
 # gateway
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.add_typer(gateway_app, name="gateway")
+
+# import-agent
+app.command("import-agent")(import_agent)
 
 
 def main():

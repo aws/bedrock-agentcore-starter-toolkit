@@ -77,10 +77,6 @@ nav:
       - Permissions: user-guide/runtime/permissions.md
       - Async Processing: user-guide/runtime/async.md
       - Notebook: user-guide/runtime/notebook.md
-    - Import Agent:
-      - Overview: user-guide/import-agent/overview.md
-      - Quickstart: user-guide/import-agent/quickstart.md
-      - Configuration: user-guide/import-agent/configuration.md
     - Gateway:
       - Quickstart: user-guide/gateway/quickstart.md
     - Memory:
@@ -92,6 +88,10 @@ nav:
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
     - Observability:
       - Quickstart: user-guide/observability/quickstart.md
+    - Import Agent:
+      - Quickstart: user-guide/import-agent/quickstart.md
+      - Overview: user-guide/import-agent/overview.md
+      - Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
     - Session Management: examples/session-management.md

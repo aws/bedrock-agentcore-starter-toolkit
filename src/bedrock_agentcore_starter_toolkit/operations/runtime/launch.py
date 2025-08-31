@@ -101,15 +101,6 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
     # Step 1: Check if we already have a role in config
     if execution_role_arn:
         log.info("Using execution role from config: %s", execution_role_arn)
-
-        # Step 2: Basic validation for existing roles
-        if not _validate_execution_role(execution_role_arn, session):
-            raise ValueError(
-                f"Execution role {execution_role_arn} has invalid trust policy. "
-                "Ensure it allows bedrock-agentcore.amazonaws.com service to assume the role."
-            )
-
-        log.info("✅ Execution role validation passed: %s", execution_role_arn)
         return execution_role_arn
 
     # Step 3: Create role if needed (idempotent)
@@ -431,18 +422,28 @@ def _execute_codebuild_workflow(
     log.info("Preparing CodeBuild project and uploading source...")
     codebuild_service = CodeBuildService(session)
 
-    codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
-        account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
-    )
+    # Use cached CodeBuild role from config if available
+    if hasattr(agent_config, "codebuild") and agent_config.codebuild.execution_role:
+        log.info("Using CodeBuild role from config: %s", agent_config.codebuild.execution_role)
+        codebuild_execution_role = agent_config.codebuild.execution_role
+    else:
+        codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
+            account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
+        )
 
     source_location = codebuild_service.upload_source(agent_name=agent_name)
 
-    project_name = codebuild_service.create_or_update_project(
-        agent_name=agent_name,
-        ecr_repository_uri=ecr_uri,
-        execution_role=codebuild_execution_role,
-        source_location=source_location,
-    )
+    # Use cached project name from config if available
+    if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:
+        log.info("Using CodeBuild project from config: %s", agent_config.codebuild.project_name)
+        project_name = agent_config.codebuild.project_name
+    else:
+        project_name = codebuild_service.create_or_update_project(
+            agent_name=agent_name,
+            ecr_repository_uri=ecr_uri,
+            execution_role=codebuild_execution_role,
+            source_location=source_location,
+        )
 
     # Execute CodeBuild
     log.info("Starting CodeBuild build (this may take several minutes)...")
@@ -475,13 +476,6 @@ def _launch_with_codebuild(
     env_vars: Optional[dict] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
-    log.info(
-        "Starting CodeBuild ARM64 deployment for agent '%s' to account %s (%s)",
-        agent_name,
-        agent_config.aws.account,
-        agent_config.aws.region,
-    )
-
     # Execute shared CodeBuild workflow with full deployment mode
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(
         config_path=config_path,

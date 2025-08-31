@@ -343,7 +343,7 @@ class BedrockAgentCoreClient:
             except Exception as e:
                 if "ResourceNotFoundException" not in str(e):
                     raise
-            time.sleep(2)
+            time.sleep(1)
         return (
             f"Endpoint is taking longer than {max_wait} seconds to be ready, "
             f"please check status and try to invoke after some time"
