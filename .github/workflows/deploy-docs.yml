@@ -18,12 +18,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Fetch all history for proper versioning
 
       - name: Checkout SDK repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: aws/bedrock-agentcore-sdk-python
           path: bedrock-agentcore-sdk-python

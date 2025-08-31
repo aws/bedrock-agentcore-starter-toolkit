@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -206,7 +206,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: release/v${{ needs.prepare-release.outputs.version }}
 
@@ -241,7 +241,7 @@ jobs:
     if: needs.prepare-release.result == 'success'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: release/v${{ needs.prepare-release.outputs.version }}
 
@@ -370,7 +370,7 @@ jobs:
       url: https://pypi.org/project/bedrock-agentcore-starter-toolkit/
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
