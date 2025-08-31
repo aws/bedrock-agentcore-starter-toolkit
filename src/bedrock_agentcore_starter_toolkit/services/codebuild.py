@@ -233,28 +233,39 @@ class CodeBuildService:
         raise TimeoutError(f"CodeBuild timed out after {minutes}m {seconds}s (current phase: {current_phase})")
 
     def _get_arm64_buildspec(self, ecr_repository_uri: str) -> str:
-        """Get buildspec for ARM64 Docker - sequential with validation for reliability."""
+        """Get optimized buildspec with parallel ECR authentication."""
         return f"""
 version: 0.2
 phases:
   build:
     commands:
-      - echo "Starting Docker build..."
-      - echo Build started on `date`
-      - docker build -t bedrock-agentcore-arm64 .
-      - echo "Verifying Docker image was created..."
-      - docker images bedrock-agentcore-arm64:latest
-      - echo "Docker build completed successfully"
-      - echo "Starting ECR authentication..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION |
-        docker login --username AWS --password-stdin {ecr_repository_uri}
-      - echo "ECR authentication completed successfully"
+      - echo "Starting parallel Docker build and ECR authentication..."
+      - |
+        docker build -t bedrock-agentcore-arm64 . &
+        BUILD_PID=$!
+        aws ecr get-login-password --region $AWS_DEFAULT_REGION | \\
+        docker login --username AWS --password-stdin {ecr_repository_uri} &
+        AUTH_PID=$!
+        echo "Waiting for Docker build to complete..."
+        wait $BUILD_PID
+        if [ $? -ne 0 ]; then
+          echo "Docker build failed"
+          exit 1
+        fi
+        echo "Waiting for ECR authentication to complete..."
+        wait $AUTH_PID
+        if [ $? -ne 0 ]; then
+          echo "ECR authentication failed"
+          exit 1
+        fi
+        echo "Both build and auth completed successfully"
+      - echo "Tagging image..."
       - docker tag bedrock-agentcore-arm64:latest {ecr_repository_uri}:latest
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing ARM64 image to ECR...
+      - echo "Pushing ARM64 image to ECR..."
       - docker push {ecr_repository_uri}:latest
+      - echo "Build completed at $(date)"
 """
 
     def _parse_dockerignore(self) -> List[str]:

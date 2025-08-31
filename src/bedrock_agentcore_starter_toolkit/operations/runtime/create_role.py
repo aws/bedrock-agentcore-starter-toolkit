@@ -395,7 +395,7 @@ def get_or_create_codebuild_execution_role(
             logger.info("Waiting for IAM role propagation...")
             import time
 
-            time.sleep(15)
+            time.sleep(10)
 
             logger.info("CodeBuild execution role creation complete: %s", role_arn)
             return role_arn

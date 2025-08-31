@@ -276,7 +276,7 @@ class TestCodeBuildService:
                 codebuild_service.wait_for_completion("test-build-id", timeout=1)
 
     def test_get_arm64_buildspec(self, codebuild_service):
-        """Test ARM64 buildspec generation - native build with sequential ECR auth."""
+        """Test ARM64 buildspec generation - native build with parallel ECR auth."""
         buildspec = codebuild_service._get_arm64_buildspec("test-ecr-uri")
 
         assert "version: 0.2" in buildspec
@@ -287,14 +287,25 @@ class TestCodeBuildService:
         assert "docker buildx build" not in buildspec
         assert "linux/arm64" not in buildspec
 
-        # Verify sequential operations with validation
-        assert "Starting Docker build..." in buildspec
-        assert "docker build -t bedrock-agentcore-arm64 ." in buildspec
-        assert "Verifying Docker image was created..." in buildspec
-        assert "docker images bedrock-agentcore-arm64:latest" in buildspec
-        assert "Starting ECR authentication..." in buildspec
+        # Verify parallel operations with multi-line shell block
+        assert "Starting parallel Docker build and ECR authentication..." in buildspec
+        assert "- |" in buildspec  # Multi-line block syntax
+        assert "docker build -t bedrock-agentcore-arm64 . &" in buildspec
+        assert "BUILD_PID=$!" in buildspec
         assert "aws ecr get-login-password" in buildspec
-        assert "ECR authentication completed successfully" in buildspec
+        assert "AUTH_PID=$!" in buildspec
+
+        # Verify explicit error handling
+        assert "wait $BUILD_PID" in buildspec
+        assert "if [ $? -ne 0 ]; then" in buildspec
+        assert "Docker build failed" in buildspec
+        assert "wait $AUTH_PID" in buildspec
+        assert "ECR authentication failed" in buildspec
+        assert "Both build and auth completed successfully" in buildspec
+
+        # Verify final steps
+        assert "Tagging image..." in buildspec
+        assert "docker tag bedrock-agentcore-arm64:latest" in buildspec
 
     def test_parse_dockerignore_existing_file(self, codebuild_service):
         """Test parsing existing .dockerignore file."""
