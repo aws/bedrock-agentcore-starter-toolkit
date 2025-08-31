@@ -152,7 +152,7 @@ class CodeBuildService:
             "environment": {
                 "type": "ARM_CONTAINER",  # ARM64 images require ARM_CONTAINER environment type
                 "image": "aws/codebuild/amazonlinux2-aarch64-standard:3.0",
-                "computeType": "BUILD_GENERAL1_LARGE",  # 4 vCPUs, 7GB RAM for faster builds
+                "computeType": "BUILD_GENERAL1_MEDIUM",  # 4 vCPUs, 7GB RAM - optimal for I/O workloads
                 "privilegedMode": True,  # Required for Docker
             },
             "serviceRole": execution_role,
@@ -235,24 +235,19 @@ class CodeBuildService:
         raise TimeoutError(f"CodeBuild timed out after {minutes}m {seconds}s (current phase: {current_phase})")
 
     def _get_arm64_buildspec(self, ecr_repository_uri: str) -> str:
-        """Get optimized buildspec for ARM64 Docker."""
+        """Get optimized buildspec for ARM64 Docker - native build with parallel ECR auth."""
         return f"""
 version: 0.2
 phases:
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION |
-        docker login --username AWS --password-stdin {ecr_repository_uri}
-      - export DOCKER_BUILDKIT=1
-      - export BUILDKIT_PROGRESS=plain
   build:
     commands:
+      - echo "Starting parallel Docker build and ECR auth..."
       - echo Build started on `date`
-      - echo Building ARM64 Docker image with BuildKit processing...
-      - export DOCKER_BUILDKIT=1
-      - docker buildx create --name arm64builder --use || true
-      - docker buildx build --platform linux/arm64 --load -t bedrock-agentcore-arm64 .
+      - docker build -t bedrock-agentcore-arm64 . &
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION |
+        docker login --username AWS --password-stdin {ecr_repository_uri} &
+      - wait
+      - echo "Both build and auth completed successfully"
       - docker tag bedrock-agentcore-arm64:latest {ecr_repository_uri}:latest
   post_build:
     commands:

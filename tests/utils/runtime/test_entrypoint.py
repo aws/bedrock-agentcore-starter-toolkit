@@ -1,8 +1,5 @@
 """Tests for Bedrock AgentCore utility functions."""
 
-from pathlib import Path
-from unittest.mock import Mock, patch
-
 import pytest
 
 from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import (

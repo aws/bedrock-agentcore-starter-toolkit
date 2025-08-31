@@ -281,14 +281,23 @@ class TestCodeBuildService:
                 codebuild_service.wait_for_completion("test-build-id", timeout=1)
 
     def test_get_arm64_buildspec(self, codebuild_service):
-        """Test ARM64 buildspec generation."""
+        """Test ARM64 buildspec generation - native build with parallel ECR auth."""
         buildspec = codebuild_service._get_arm64_buildspec("test-ecr-uri")
 
         assert "version: 0.2" in buildspec
-        assert "linux/arm64" in buildspec
         assert "test-ecr-uri" in buildspec
-        assert "DOCKER_BUILDKIT=1" in buildspec
-        assert "docker buildx build" in buildspec
+
+        # Verify native Docker build (no buildx)
+        assert "docker build -t bedrock-agentcore-arm64 ." in buildspec
+        assert "docker buildx build" not in buildspec
+        assert "linux/arm64" not in buildspec
+
+        # Verify parallel operations
+        assert "docker build -t bedrock-agentcore-arm64 . &" in buildspec
+        assert "aws ecr get-login-password" in buildspec
+        assert "&" in buildspec  # Background execution
+        assert "wait" in buildspec  # Synchronization point
+        assert "Both build and auth completed successfully" in buildspec
 
     def test_parse_dockerignore_existing_file(self, codebuild_service):
         """Test parsing existing .dockerignore file."""
@@ -487,7 +496,7 @@ node_modules
 
         assert call_args["environment"]["type"] == "ARM_CONTAINER"
         assert call_args["environment"]["image"] == "aws/codebuild/amazonlinux2-aarch64-standard:3.0"
-        assert call_args["environment"]["computeType"] == "BUILD_GENERAL1_LARGE"
+        assert call_args["environment"]["computeType"] == "BUILD_GENERAL1_MEDIUM"
         assert call_args["environment"]["privilegedMode"] is True
 
     def test_iam_role_permissions(self, codebuild_service, mock_clients):

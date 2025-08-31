@@ -1,20 +1,23 @@
-FROM public.ecr.aws/docker/library/python:{{ python_version }}-slim
+FROM ghcr.io/astral-sh/uv:python{{ python_version }}-bookworm-slim
 WORKDIR /app
+
+# Configure UV for container environment
+ENV UV_SYSTEM_PYTHON=1 UV_COMPILE_BYTECODE=1
 
 {% if dependencies_file %}
 {% if dependencies_install_path %}
 COPY {{ dependencies_install_path }} {{ dependencies_install_path }}
 # Install from pyproject.toml directory
-RUN pip install {{ dependencies_install_path }}
+RUN uv pip install {{ dependencies_install_path }}
 {% else %}
 COPY {{ dependencies_file }} {{ dependencies_file }}
 # Install from requirements file
-RUN pip install -r {{ dependencies_file }}
+RUN uv pip install -r {{ dependencies_file }}
 {% endif %}
 {% endif %}
 
 {% if observability_enabled %}
-RUN pip install aws-opentelemetry-distro>=0.10.1
+RUN uv pip install aws-opentelemetry-distro>=0.10.1
 {% endif %}
 
 # Set AWS region environment variable
