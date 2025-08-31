@@ -48,6 +48,7 @@ dependencies = [
     "questionary>=2.1.0",
     "openapi-spec-validator>=0.7.2",
     "py-openapi-schema-to-json-schema>=0.0.3",
+    "python-dotenv>=1.1.1",
 ]
 
 [project.scripts]
@@ -115,6 +116,10 @@ concurrency = ["thread", "multiprocessing"]
 omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
+    "src/bedrock_agentcore_starter_toolkit/services/create/base_agent_create.py", # Base class not tested directly
+    "src/bedrock_agentcore_starter_toolkit/services/create/strands_create.py", # Strands creation not tested directly
+    "src/bedrock_agentcore_starter_toolkit/services/create/utils.py", # Utils are not tested directly
+    "src/bedrock_agentcore_starter_toolkit/cli/create/commands.py", # CLI requires user input to test
 ]
 
 [tool.coverage.report]
