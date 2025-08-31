@@ -98,6 +98,15 @@ agentcore invoke '{"prompt": "tell me a joke"}'
 lsof -ti:8080 | xargs kill -9
 ```
 
+**"Terminal blocked by local agent"**
+```bash
+# Use detach mode to run agent in background
+agentcore launch --local --detach
+
+# Or redirect logs to file (auto-detaches)
+agentcore launch --local --log-file agent.log
+```
+
 **"Permission denied" errors**
 - Verify AWS credentials: `aws sts get-caller-identity`
 - Check you have the required managed policies attached
@@ -141,8 +150,15 @@ Perfect for production, managed environments, teams without Docker
 **💻 Local Development**
 ```bash
 agentcore launch --local  # Build and run locally (requires Docker/Finch/Podman)
+
+# NEW: Background mode for AI IDEs and terminal reuse
+agentcore launch --local --detach  # Run in background (Docker-style)
+agentcore launch --local -d        # Short form
+
+# NEW: Custom log files
+agentcore launch --local --log-file my-agent.log  # Redirect logs (implies --detach)
 ```
-Perfect for development, rapid iteration, debugging
+Perfect for development, rapid iteration, debugging, AI IDE integration
 
 **🔧 Hybrid: Local Build + Cloud Runtime**
 ```bash
