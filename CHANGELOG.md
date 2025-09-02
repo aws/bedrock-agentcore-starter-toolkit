@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.8] - 2025-09-02
+
+### Changes
+
+- chore/cb latency optimization (#146) (3523bfa)
+- chore(deps): update mkdocstrings-python requirement (#133) (8b8afb5)
+- Release vv0.1.7 (b473e38)
+
 ## [0.1.7] - 2025-08-28
 
 - Enhanced execution role permissions - Added relevant permissions for Runtime, Memory and Identity services to auto-created execution role (#132)
