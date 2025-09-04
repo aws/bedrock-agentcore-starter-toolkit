@@ -40,9 +40,9 @@ def clean_variable_name(text):
     cleaned = cleaned.lower()
     cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = cleaned.strip()
-    cleaned = cleaned.replace(" ", "_")
+    cleaned = cleaned.replace(" ", "-")
     if cleaned and cleaned[0].isdigit():
-        cleaned = f"_{cleaned}"
+        cleaned = f"--{cleaned}"
 
     if not cleaned:
         cleaned = "variable"

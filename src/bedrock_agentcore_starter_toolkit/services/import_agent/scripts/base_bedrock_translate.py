@@ -1323,7 +1323,7 @@ class BaseBedrockTranslator:
                         "lambdaRegion": end_lambda_arn.split(":")[3] if end_lambda_arn else "us-west-2",
                     }
 
-                    func_desc = func_spec.get("description", "No Description Provided.")
+                    func_desc = func.get("description", "No Description Provided.")
                     func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                     func_parameters = func.get("parameters", {})
