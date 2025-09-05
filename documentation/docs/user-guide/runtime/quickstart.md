@@ -66,6 +66,11 @@ python my_agent.py
 curl -X POST http://localhost:8080/invocations \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello!"}'
+
+# If using custom port (e.g., AGENTCORE_RUNTIME_LOCAL_PORT=9000):
+# curl -X POST http://localhost:9000/invocations \
+#   -H "Content-Type: application/json" \
+#   -d '{"prompt": "Hello!"}'
 ```
 
 ✅ **Success**: You should see a response like `{"result": "Hello! I'm here to help..."}`
@@ -94,8 +99,26 @@ agentcore invoke '{"prompt": "tell me a joke"}'
 
 **"Port 8080 already in use"**
 ```bash
-# Find and stop the process using port 8080
+# Option 1: Find and stop the process using port 8080
 lsof -ti:8080 | xargs kill -9
+
+# Option 2: Use a different port (recommended)
+export AGENTCORE_RUNTIME_LOCAL_PORT=9000
+agentcore launch --local
+
+# Option 3: One-time custom port
+AGENTCORE_RUNTIME_LOCAL_PORT=3000 agentcore launch --local
+```
+
+**Multiple local agents**
+```bash
+# Run multiple agents on different ports
+AGENTCORE_RUNTIME_LOCAL_PORT=8081 agentcore launch --local  # Agent 1
+AGENTCORE_RUNTIME_LOCAL_PORT=8082 agentcore launch --local  # Agent 2
+
+# Test each agent
+curl -X POST http://localhost:8081/invocations -H "Content-Type: application/json" -d '{"prompt": "Hello Agent 1"}'
+curl -X POST http://localhost:8082/invocations -H "Content-Type: application/json" -d '{"prompt": "Hello Agent 2"}'
 ```
 
 **"Permission denied" errors**
@@ -143,6 +166,22 @@ Perfect for production, managed environments, teams without Docker
 agentcore launch --local  # Build and run locally (requires Docker/Finch/Podman)
 ```
 Perfect for development, rapid iteration, debugging
+
+**Custom Port Configuration**
+```bash
+# Run on custom port (useful when 8080 is in use)
+export AGENTCORE_RUNTIME_LOCAL_PORT=9000
+agentcore launch --local
+
+# Test with custom port
+curl -X POST http://localhost:9000/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello!"}'
+
+# Or configure and launch in one command
+AGENTCORE_RUNTIME_LOCAL_PORT=9000 agentcore launch --local
+```
+The `AGENTCORE_RUNTIME_LOCAL_PORT` environment variable accepts any valid port (1-65535)
 
 **🔧 Hybrid: Local Build + Cloud Runtime**
 ```bash
