@@ -375,6 +375,28 @@ class BedrockAgentCoreClient:
             endpointName=endpoint_name,
         )
 
+    def delete_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> Dict:
+        """Delete agent runtime endpoint.
+
+        Args:
+            agent_id: Agent ID to delete endpoint for
+            endpoint_name: Endpoint name, defaults to "DEFAULT"
+
+        Returns:
+            Response containing the deletion status
+        """
+        self.logger.info("Deleting agent runtime endpoint '%s' for agent ID: %s", endpoint_name, agent_id)
+        try:
+            response = self.client.delete_agent_runtime_endpoint(
+                agentRuntimeId=agent_id,
+                endpointName=endpoint_name,
+            )
+            self.logger.info("Successfully initiated deletion of endpoint '%s' for agent ID: %s", endpoint_name, agent_id)
+            return response
+        except Exception as e:
+            self.logger.error("Failed to delete endpoint '%s' for agent ID '%s': %s", endpoint_name, agent_id, str(e))
+            raise
+
     def invoke_endpoint(
         self,
         agent_arn: str,

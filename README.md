@@ -40,6 +40,7 @@ AgentCore Runtime is a secure, serverless runtime purpose-built for deploying an
 ## 🧠 Amazon Bedrock AgentCore Memory
 AgentCore Memory makes it easy for developers to build context aware agents by eliminating complex memory infrastructure management while providing full control over what the AI agent remembers. Memory provides industry-leading accuracy along with support for both short-term memory for multi-turn conversations and long-term memory that can be shared across agents and sessions.
 
+
 **[Memory Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/memory/quickstart.html)**
 
 ## 🔗 Amazon Bedrock AgentCore Gateway
@@ -51,7 +52,6 @@ Amazon Bedrock AgentCore Gateway acts as a managed Model Context Protocol (MCP) 
 AgentCore Code Interpreter tool enables agents to securely execute code in isolated sandbox environments. It offers advanced configuration support and seamless integration with popular frameworks. Developers can build powerful agents for complex workflows and data analysis while meeting enterprise security requirements.
 
 **[Code Interpreter Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/builtin-tools/quickstart-code-interpreter.html)**
-
 
 ## 🌐 Amazon Bedrock AgentCore Browser
 AgentCore Browser tool provides a fast, secure, cloud-based browser runtime to enable AI agents to interact with websites at scale. It provides enterprise-grade security, comprehensive observability features, and automatically scales— all without infrastructure management overhead.

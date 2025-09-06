@@ -21,3 +21,4 @@ documentation/site
 documentation/.cache
 .agentcore.yaml
 output*/
+.serena/
