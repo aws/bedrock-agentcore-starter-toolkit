@@ -638,7 +638,7 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
 
                 assert result.exit_code == 1
-                assert "Agent Not Deployed" in result.stdout
+                assert "Agent not deployed - run 'agentcore launch' to deploy" in result.stdout
                 assert "agentcore launch" in result.stdout
             finally:
                 os.chdir(original_cwd)
@@ -661,8 +661,7 @@ agents:
                 result = self.runner.invoke(app, ["invoke", "invalid-json"])
 
                 assert result.exit_code == 1
-                assert "Invocation Failed" in result.stdout
-                assert "Invalid payload format" in result.stdout
+                assert "Invocation failed: Invalid payload format" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -691,12 +690,8 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"prompt": "Hello"}'])
 
                 assert result.exit_code == 1
-                assert "Invocation Failed" in result.stdout
-                assert "Connection timeout" in result.stdout
+                assert "Invocation failed: Connection timeout" in result.stdout
                 assert "Logs:" in result.stdout
-                assert "Debug Commands:" in result.stdout
-                assert "agentcore status" in result.stdout
-                assert "agentcore launch" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -718,8 +713,7 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
 
                 assert result.exit_code == 1
-                assert "Invocation Failed" in result.stdout
-                assert "Network timeout during invocation" in result.stdout
+                assert "Invocation failed: Network timeout during invocation" in result.stdout
             finally:
                 os.chdir(original_cwd)
 

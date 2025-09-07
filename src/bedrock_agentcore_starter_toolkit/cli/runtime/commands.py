@@ -618,12 +618,8 @@ def invoke(
             user_id=user_id,
             local_mode=local_mode,
         )
-
-        # Show consistent info panel
         agent_display = config.name if config else (agent or "unknown")
         _show_invoke_info_panel(agent_display, result, config)
-
-        # Show success response
         if result.response:
             content = result.response
             if isinstance(content, dict) and "response" in content:
@@ -639,35 +635,23 @@ def invoke(
         _show_configuration_not_found_panel()
         raise typer.Exit(1) from None
     except ValueError as e:
-        # Show consistent info panel even for errors
         try:
             agent_display = config.name if config else (agent or "unknown")
             agent_config = config
         except NameError:
-            # config not defined yet, fallback to agent name
             agent_display = agent or "unknown"
             agent_config = None
         _show_invoke_info_panel(agent_display, invoke_result=None, config=agent_config)
         if "not deployed" in str(e):
-            _show_error_response(
-                "Agent Not Deployed\n\n"
-                "Your agent needs to be deployed before you can invoke it.\n\n"
-                "Next Steps:\n"
-                "   agentcore launch              # Deploy to AWS (recommended)\n"
-                "   agentcore launch --local      # Run locally\n\n"
-                "Check Status:\n"
-                "   agentcore status"
-            )
+            _show_error_response("Agent not deployed - run 'agentcore launch' to deploy")
         else:
-            _show_error_response(f"Invocation Failed: {str(e)}")
+            _show_error_response(f"Invocation failed: {str(e)}")
         raise typer.Exit(1) from e
     except Exception as e:
-        # Try to get config for consistent panel display
         try:
-            agent_config = config  # Use existing config if available
+            agent_config = config
             agent_name = config.name if config else (agent or "unknown")
         except (NameError, AttributeError):
-            # Fallback if config not available
             try:
                 from ...utils.runtime.config import load_config
 
@@ -678,32 +662,29 @@ def invoke(
                 agent_config = None
                 agent_name = agent or "unknown"
 
-        _show_invoke_info_panel(agent_name, invoke_result=None, config=agent_config)
-        error_msg = f"Invocation Failed: {str(e)}\n\nError Details:\n{str(e)}"
-        if agent_config and hasattr(agent_config, "bedrock_agentcore") and agent_config.bedrock_agentcore.agent_id:
-            try:
-                from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
+        from ...operations.runtime.models import InvokeResult
 
-                runtime_logs, _ = get_agent_log_paths(agent_config.bedrock_agentcore.agent_id)
-                follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
+        request_id = getattr(e, "response", {}).get("ResponseMetadata", {}).get("RequestId")
+        effective_session = session_id or (
+            agent_config.bedrock_agentcore.agent_session_id
+            if agent_config and hasattr(agent_config, "bedrock_agentcore")
+            else None
+        )
 
-                error_msg += (
-                    f"\n\nDebug Commands:\n"
-                    f"   {follow_cmd}\n"
-                    f"   {since_cmd}\n\n"
-                    f"Next Steps:\n"
-                    f"   agentcore status     # Check agent status\n"
-                    f"   agentcore launch      # Redeploy if needed"
-                )
-            except Exception:
-                error_msg += (
-                    "\n\nNext Steps:\n"
-                    "   agentcore status     # Check agent status\n"
-                    "   agentcore launch      # Redeploy if needed"
-                )
-        else:
-            error_msg += "\n\nNext Steps:\n   agentcore status\n   agentcore launch"
-        _show_error_response(error_msg)
+        error_result = (
+            InvokeResult(
+                response={"ResponseMetadata": {"RequestId": request_id}} if request_id else {},
+                session_id=effective_session or "unknown",
+                agent_arn=agent_config.bedrock_agentcore.agent_arn
+                if agent_config and hasattr(agent_config, "bedrock_agentcore")
+                else None,
+            )
+            if (request_id or effective_session or agent_config)
+            else None
+        )
+
+        _show_invoke_info_panel(agent_name, invoke_result=error_result, config=agent_config)
+        _show_error_response(f"Invocation failed: {str(e)}")
         raise typer.Exit(1) from e
 
 
