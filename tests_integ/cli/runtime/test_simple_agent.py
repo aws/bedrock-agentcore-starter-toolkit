@@ -30,7 +30,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
 
                 @app.entrypoint
                 async def agent_invocation(payload):
-                    return agent(payload.get("message"))
+                    return agent(payload.get("prompt"))
 
                 app.run()
             """).strip()
@@ -71,7 +71,9 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         )
 
         invoke_invocation = CommandInvocation(
-            command=["invoke", "tell me a joke"], user_input=[], validator=lambda result: self.validate_invoke(result)
+            command=["invoke", '{"prompt": "tell me a joke"}'],
+            user_input=[],
+            validator=lambda result: self.validate_invoke(result),
         )
 
         return [configure_invocation, launch_invocation, status_invocation, invoke_invocation]
