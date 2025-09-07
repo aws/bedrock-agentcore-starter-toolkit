@@ -253,7 +253,7 @@ def configure(
 
         console.print(
             Panel(
-                f"✅ [green]Configuration Complete[/green]\n\n"
+                f"[green]Configuration Complete[/green]\n\n"
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Runtime: [cyan]{result.runtime}[/cyan]\n"
@@ -268,7 +268,7 @@ def configure(
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
-                title="✅ Configuration Success",
+                title="Configuration Success",
                 border_style="bright_blue",
             )
         )
@@ -452,22 +452,20 @@ def launch(
             console.print(
                 Panel(
                     deploy_panel,
-                    title="✅ Deployment Success",
+                    title="Deployment Success",
                     border_style="bright_blue",
                 )
             )
 
         else:  # cloud mode (either CodeBuild default or local-build)
-            # Show deployment success panel
             agent_name = result.tag.split(":")[0].replace("bedrock_agentcore-", "")
 
-            # Determine deployment type for panel title
             if local_build:
-                title = "✅ Local Build Success"
+                title = "Local Build Success"
                 deployment_type = "✅ [green]Local Build Deployment Successful![/green]"
                 icon = "🔧"
             else:
-                title = "✅ Deployment Success"
+                title = "Deployment Success"
                 deployment_type = "✅ [green]Deployment Successful![/green]"
                 icon = "🚀"
 
@@ -483,7 +481,6 @@ def launch(
                 f'   [cyan]agentcore invoke \'{{"prompt": "Hello"}}\'[/cyan]'
             )
 
-            # Add log information if we have agent_id
             if result.agent_id:
                 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
 
@@ -518,6 +515,54 @@ def launch(
         raise
 
 
+def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
+    """Show consistent panel with invoke information (session, request_id, arn, logs)."""
+    info_lines = []
+    # Session ID
+    if invoke_result and invoke_result.session_id:
+        info_lines.append(f"Session: [cyan]{invoke_result.session_id}[/cyan]")
+    # Request ID
+    if invoke_result and isinstance(invoke_result.response, dict):
+        request_id = invoke_result.response.get("ResponseMetadata", {}).get("RequestId")
+        if request_id:
+            info_lines.append(f"Request ID: [cyan]{request_id}[/cyan]")
+    # Agent ARN
+    if invoke_result and invoke_result.agent_arn:
+        info_lines.append(f"ARN: [cyan]{invoke_result.agent_arn}[/cyan]")
+    # CloudWatch logs (if we have config with agent_id)
+    if config and hasattr(config, "bedrock_agentcore") and config.bedrock_agentcore.agent_id:
+        try:
+            from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
+
+            runtime_logs, _ = get_agent_log_paths(config.bedrock_agentcore.agent_id)
+            follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
+            info_lines.append(f"Logs: {follow_cmd}")
+            info_lines.append(f"      {since_cmd}")
+        except Exception:
+            pass  # nosec B110
+    panel_content = "\n".join(info_lines) if info_lines else "Invoke information unavailable"
+    console.print(
+        Panel(
+            panel_content,
+            title=f"{agent_name}",
+            border_style="bright_blue",
+            padding=(0, 1),
+        )
+    )
+
+
+def _show_success_response(content):
+    """Show success response content below panel."""
+    if content:
+        console.print("\n[bold]Response:[/bold]")
+        console.print(content)
+
+
+def _show_error_response(error_msg: str):
+    """Show error message in red below panel."""
+    console.print(f"\n[red]{error_msg}[/red]")
+
+
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
     agent: Optional[str] = typer.Option(
@@ -544,7 +589,7 @@ def invoke(
         try:
             payload_data = json.loads(payload)
         except json.JSONDecodeError:
-            payload_data = {"message": payload}
+            payload_data = {"prompt": payload}
 
         # Handle bearer token - only use if auth config is defined in .bedrock_agentcore.yaml
         final_bearer_token = None
@@ -563,17 +608,6 @@ def invoke(
                 "[yellow]Warning: Bearer token provided but OAuth is not configured in .bedrock_agentcore.yaml[/yellow]"
             )
 
-        # Display payload
-        console.print("[bold]Payload:[/bold]")
-        console.print(
-            Syntax(
-                json.dumps(payload_data, indent=2, ensure_ascii=False),
-                "json",
-                background_color="default",
-                word_wrap=True,
-            )
-        )
-
         # Invoke
         result = invoke_bedrock_agentcore(
             config_path=config_path,
@@ -584,109 +618,92 @@ def invoke(
             user_id=user_id,
             local_mode=local_mode,
         )
-        console.print(f"Session ID: [cyan]{result.session_id}[/cyan]")
-        if result.response != {}:
-            console.print("\n[bold]Response:[/bold]")
-            console.print(
-                Syntax(
-                    json.dumps(result.response, indent=2, default=str, ensure_ascii=False),
-                    "json",
-                    background_color="default",
-                    word_wrap=True,
-                )
-            )
+
+        # Show consistent info panel
+        agent_display = config.name if config else (agent or "unknown")
+        _show_invoke_info_panel(agent_display, result, config)
+
+        # Show success response
+        if result.response:
+            content = result.response
+            if isinstance(content, dict) and "response" in content:
+                content = content["response"]
+            if isinstance(content, list):
+                if len(content) == 1:
+                    content = content[0]
+                else:
+                    content = "".join(content)
+            _show_success_response(content)
 
     except FileNotFoundError:
         _show_configuration_not_found_panel()
         raise typer.Exit(1) from None
     except ValueError as e:
-        if "not deployed" in str(e):
-            console.print(
-                Panel(
-                    "⚠️ [yellow]Agent Not Deployed[/yellow]\n\n"
-                    "Your agent needs to be deployed before you can invoke it.\n\n"
-                    "[bold]Next Steps:[/bold]\n"
-                    "   [cyan]agentcore launch[/cyan]              # Deploy to AWS (recommended)\n"
-                    "   [cyan]agentcore launch --local[/cyan]      # Run locally\n\n"
-                    "[bold]Check Status:[/bold]\n"
-                    "   [cyan]agentcore status[/cyan]",
-                    title="⚠️ Deployment Required",
-                    border_style="bright_blue",
-                )
-            )
-            raise typer.Exit(1) from e
-        else:
-            console.print(
-                Panel(
-                    f"❌ [red]Invocation Failed[/red]\n\n"
-                    f"Error: {str(e)}\n\n"
-                    f"[bold]Next Steps:[/bold]\n"
-                    f"   [cyan]agentcore status[/cyan]          # Check agent status\n"
-                    f"   [cyan]agentcore launch[/cyan]           # Redeploy if needed",
-                    title="❌ Invocation Error",
-                    border_style="bright_blue",
-                )
-            )
-            raise typer.Exit(1) from e
-    except Exception as e:
-        # Build consolidated error panel with agent context
+        # Show consistent info panel even for errors
         try:
-            project_config = load_config(config_path)
-            config = project_config.get_agent_config(agent)
+            agent_display = config.name if config else (agent or "unknown")
+            agent_config = config
+        except NameError:
+            # config not defined yet, fallback to agent name
+            agent_display = agent or "unknown"
+            agent_config = None
+        _show_invoke_info_panel(agent_display, invoke_result=None, config=agent_config)
+        if "not deployed" in str(e):
+            _show_error_response(
+                "Agent Not Deployed\n\n"
+                "Your agent needs to be deployed before you can invoke it.\n\n"
+                "Next Steps:\n"
+                "   agentcore launch              # Deploy to AWS (recommended)\n"
+                "   agentcore launch --local      # Run locally\n\n"
+                "Check Status:\n"
+                "   agentcore status"
+            )
+        else:
+            _show_error_response(f"Invocation Failed: {str(e)}")
+        raise typer.Exit(1) from e
+    except Exception as e:
+        # Try to get config for consistent panel display
+        try:
+            agent_config = config  # Use existing config if available
             agent_name = config.name if config else (agent or "unknown")
+        except (NameError, AttributeError):
+            # Fallback if config not available
+            try:
+                from ...utils.runtime.config import load_config
 
-            # Build consolidated panel content
-            panel_content = f"❌ [red]Runtime Error:[/red] {str(e)}\n\n[bold]Error Details:[/bold]\n{str(e)}\n\n"
+                fallback_project_config = load_config(config_path)
+                agent_config = fallback_project_config.get_agent_config(agent)
+                agent_name = agent_config.name if agent_config else (agent or "unknown")
+            except Exception:
+                agent_config = None
+                agent_name = agent or "unknown"
 
-            # Add CloudWatch logs if available
-            if config and config.bedrock_agentcore.agent_id:
-                try:
-                    from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
+        _show_invoke_info_panel(agent_name, invoke_result=None, config=agent_config)
+        error_msg = f"Invocation Failed: {str(e)}\n\nError Details:\n{str(e)}"
+        if agent_config and hasattr(agent_config, "bedrock_agentcore") and agent_config.bedrock_agentcore.agent_id:
+            try:
+                from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
 
-                    runtime_logs, otel_logs = get_agent_log_paths(config.bedrock_agentcore.agent_id)
-                    follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
+                runtime_logs, _ = get_agent_log_paths(agent_config.bedrock_agentcore.agent_id)
+                follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
 
-                    panel_content += (
-                        f"📋 [cyan]CloudWatch Logs:[/cyan]\n"
-                        f"   {runtime_logs}\n"
-                        f"   {otel_logs}\n\n"
-                        f"💡 [dim]Debug Commands:[/dim]\n"
-                        f"   {follow_cmd}\n"
-                        f"   {since_cmd}\n\n"
-                    )
-                except Exception:  # nosec B110
-                    # If log retrieval fails, continue without logs section
-                    pass
-
-            # Add next steps
-            panel_content += (
-                "[bold]Next Steps:[/bold]\n"
-                "   [cyan]agentcore status[/cyan]     # Check agent status\n"
-                "   [cyan]agentcore launch[/cyan]      # Redeploy if needed"
-            )
-
-            console.print(
-                Panel(
-                    panel_content,
-                    title=f"❌ Invocation Failed: {agent_name}",
-                    border_style="bright_blue",
+                error_msg += (
+                    f"\n\nDebug Commands:\n"
+                    f"   {follow_cmd}\n"
+                    f"   {since_cmd}\n\n"
+                    f"Next Steps:\n"
+                    f"   agentcore status     # Check agent status\n"
+                    f"   agentcore launch      # Redeploy if needed"
                 )
-            )
-
-        except Exception:
-            # Fallback to basic error if config loading fails
-            console.print(
-                Panel(
-                    f"❌ [red]Invocation Failed[/red]\n\n"
-                    f"Error: {str(e)}\n\n"
-                    f"[bold]Next Steps:[/bold]\n"
-                    f"   [cyan]agentcore status[/cyan]\n"
-                    f"   [cyan]agentcore launch[/cyan]",
-                    title="❌ Invocation Failed",
-                    border_style="bright_blue",
+            except Exception:
+                error_msg += (
+                    "\n\nNext Steps:\n"
+                    "   agentcore status     # Check agent status\n"
+                    "   agentcore launch      # Redeploy if needed"
                 )
-            )
-
+        else:
+            error_msg += "\n\nNext Steps:\n   agentcore status\n   agentcore launch"
+        _show_error_response(error_msg)
         raise typer.Exit(1) from e
 
 
@@ -724,7 +741,7 @@ def status(
                             f"Your agent is configured but not yet launched.\n\n"
                             f"[bold]Next Steps:[/bold]\n"
                             f"   [cyan]agentcore launch[/cyan]",
-                            title=f"📊 Agent Status: {status_json['config']['name']}",
+                            title=f"Agent Status: {status_json['config']['name']}",
                             border_style="bright_blue",
                         )
                     )
@@ -736,11 +753,9 @@ def status(
                     # Determine overall status
                     endpoint_status = endpoint_data.get("status", "Unknown") if endpoint_data else "Not Ready"
                     if endpoint_status == "READY":
-                        status_text = "✅ Ready - Agent deployed and endpoint available"
-                        status_icon = "✅"
+                        status_text = "Ready - Agent deployed and endpoint available"
                     else:
-                        status_text = "🔄 Deploying - Agent created, endpoint starting"
-                        status_icon = "🔄"
+                        status_text = "Deploying - Agent created, endpoint starting"
 
                     # Build consolidated panel with logs
                     panel_content = (
@@ -795,7 +810,7 @@ def status(
                     console.print(
                         Panel(
                             panel_content,
-                            title=f"{status_icon} Agent Status: {status_json['config']['name']}",
+                            title=f"Agent Status: {status_json['config']['name']}",
                             border_style="bright_blue",
                         )
                     )

@@ -30,7 +30,7 @@ def invoke_bedrock_agentcore(
     agent_config = project_config.get_agent_config(agent_name)
     # Log which agent is being invoked
     mode = "locally" if local_mode else "via cloud endpoint"
-    log.info("Invoking BedrockAgentCore agent '%s' %s", agent_config.name, mode)
+    log.debug("Invoking BedrockAgentCore agent '%s' %s", agent_config.name, mode)
 
     region = agent_config.aws.region
     if not region:

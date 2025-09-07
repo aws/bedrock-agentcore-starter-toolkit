@@ -9,6 +9,7 @@ from bedrock_agentcore_starter_toolkit.services.runtime import (
     BedrockAgentCoreClient,
     HttpBedrockAgentCoreClient,
     LocalBedrockAgentCoreClient,
+    _handle_aws_response,
     _handle_streaming_response,
     generate_session_id,
 )
@@ -594,7 +595,37 @@ class TestHandleStreamingResponse:
 
             # Verify console.print was called for each JSON chunk + final newline
             assert mock_console.print.call_count == 4  # 3 chunks + 1 final newline
-            mock_console.print.assert_any_call("Hello from agent", end="", style="bold cyan")
-            mock_console.print.assert_any_call("This is a streaming response", end="", style="bold cyan")
-            mock_console.print.assert_any_call("Final chunk", end="", style="bold cyan")
+            mock_console.print.assert_any_call("Hello from agent", end="")
+            mock_console.print.assert_any_call("This is a streaming response", end="")
+            mock_console.print.assert_any_call("Final chunk", end="")
             mock_console.print.assert_any_call()  # Final newline call
+
+    def test_handle_aws_response_byte_parsing(self):
+        """Test _handle_aws_response properly parses byte strings."""
+        # Test with byte string in response
+        response = {
+            "response": [b'"Hello from agent"', b'"Another message"'],
+            "ResponseMetadata": {"RequestId": "test-123"},
+        }
+
+        result = _handle_aws_response(response)
+
+        # Verify bytes were decoded and JSON parsed
+        assert result["response"] == ["Hello from agent", "Another message"]
+        assert result["ResponseMetadata"]["RequestId"] == "test-123"
+
+        # Test with non-JSON bytes
+        response = {
+            "response": [b"plain text message"],
+        }
+
+        result = _handle_aws_response(response)
+        assert result["response"] == ["plain text message"]
+
+        # Test with mixed content
+        response = {
+            "response": [b'"JSON string"', "regular string", b"plain bytes"],
+        }
+
+        result = _handle_aws_response(response)
+        assert result["response"] == ["JSON string", "regular string", "plain bytes"]
