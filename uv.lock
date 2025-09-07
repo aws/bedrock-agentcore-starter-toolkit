@@ -73,7 +73,7 @@ wheels = [
 
 [[package]]
 name = "bedrock-agentcore"
-version = "0.1.2"
+version = "0.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
@@ -84,14 +84,14 @@ dependencies = [
     { name = "urllib3" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/7c/2de54122abd86ad73cf42b5ba3f26410bb043cca685edc3f90d166b8bc38/bedrock_agentcore-0.1.2.tar.gz", hash = "sha256:9063dddef43c0f6c492d8fec852a6a8c1c630f7bcee07aa3f0d218290370988b", size = 204302, upload-time = "2025-08-11T21:27:50.053Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/6b/d5051b8fffe83e71c0d8099388f81d510d316d167f6b3b33236d690a1808/bedrock_agentcore-0.1.3.tar.gz", hash = "sha256:5a569e54844aa2d6080ca0ff1c64a42d1bd7b19ef613f760c82187041b404ec5", size = 228637, upload-time = "2025-09-05T22:53:32.22Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/e0/d66fbc2f7620214964039ffe9a675dd1e8e23245c61cd7b280f78d606d02/bedrock_agentcore-0.1.2-py3-none-any.whl", hash = "sha256:2e45b5e3d14ac1828881f089456fb35c48233ab7aad8c4d83c525cf4b2ab92c2", size = 48747, upload-time = "2025-08-11T21:27:48.804Z" },
+    { url = "https://files.pythonhosted.org/packages/58/89/4ed9b136bfab46c4afc4ff1e8fec12618eafc395fcd006234e10103111d6/bedrock_agentcore-0.1.3-py3-none-any.whl", hash = "sha256:570356f11d859dafe91aa524ba8e9cac46837d7202847c615b832e318c77f632", size = 61621, upload-time = "2025-09-05T22:53:31.199Z" },
 ]
 
 [[package]]
 name = "bedrock-agentcore-starter-toolkit"
-version = "0.1.8"
+version = "0.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "autopep8" },
@@ -139,7 +139,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "autopep8", specifier = ">=2.3.2" },
-    { name = "bedrock-agentcore", specifier = ">=0.1.2" },
+    { name = "bedrock-agentcore", specifier = ">=0.1.3" },
     { name = "boto3", specifier = ">=1.39.7" },
     { name = "botocore", specifier = ">=1.39.7" },
     { name = "docstring-parser", specifier = ">=0.15,<1.0" },

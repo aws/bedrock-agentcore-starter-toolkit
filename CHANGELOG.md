@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.9] - 2025-09-07
+
+### Changes
+
+- fix: resolve regex escape sequence warnings (#151) (70d7381)
+- feat(gateway): handle existing policies gracefully in _attach_policy (#140) (f372b99)
+- chore: bump version to 0.1.8 (#150) (1421e48)
+
+### Dependencies
+- Updated to bedrock-agentcore SDK v0.1.3
+
 ## [0.1.8] - 2025-09-02
 
 ### Changes
