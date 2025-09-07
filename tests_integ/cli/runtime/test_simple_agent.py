@@ -81,13 +81,13 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         logger.info(output)
 
         assert "Configuration Complete" in output
-        assert "Name: agent" in output
+        assert "Agent Name: agent" in output
         assert TEST_ROLE in output
         assert "Authorization: IAM" in output
         assert ".bedrock_agentcore.yaml" in output
 
         if TEST_ECR == "auto":
-            assert "ECR: Auto-create" in output
+            assert "ECR Repository: Auto-create" in output
         else:
             assert TEST_ECR in output
 
