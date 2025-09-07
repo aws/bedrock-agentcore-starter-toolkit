@@ -66,7 +66,7 @@ def handler(payload):
             )
 
             assert result.exit_code == 0
-            assert "Configuration Summary" in result.stdout
+            assert "Configuration Complete" in result.stdout
             mock_configure.assert_called_once()
 
     def test_configure_with_oauth(self, tmp_path):
@@ -627,17 +627,9 @@ agents:
             "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
         )
 
-        with (
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
-        ):
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
             # Simulate ValueError with "not deployed" message
             mock_invoke.side_effect = ValueError("Agent is not deployed to Bedrock AgentCore")
-
-            def mock_handle_error_side_effect(message, exception=None):
-                raise typer.Exit(1)
-
-            mock_error.side_effect = mock_handle_error_side_effect
 
             original_cwd = Path.cwd()
             os.chdir(tmp_path)
@@ -646,9 +638,8 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
 
                 assert result.exit_code == 1
-                mock_error.assert_called_once_with(
-                    "Bedrock AgentCore not deployed. Run 'bedrock_agentcore launch' first", mock_invoke.side_effect
-                )
+                assert "Agent Not Deployed" in result.stdout
+                assert "agentcore launch" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -659,17 +650,9 @@ agents:
             "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
         )
 
-        with (
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
-        ):
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
             # Simulate general ValueError
             mock_invoke.side_effect = ValueError("Invalid payload format")
-
-            def mock_handle_error_side_effect(message, exception=None):
-                raise typer.Exit(1)
-
-            mock_error.side_effect = mock_handle_error_side_effect
 
             original_cwd = Path.cwd()
             os.chdir(tmp_path)
@@ -678,7 +661,42 @@ agents:
                 result = self.runner.invoke(app, ["invoke", "invalid-json"])
 
                 assert result.exit_code == 1
-                mock_error.assert_called_with("Invocation failed: Invalid payload format", mock_invoke.side_effect)
+                assert "Invocation Failed" in result.stdout
+                assert "Invalid payload format" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_command_error_with_cloudwatch_logs(self, tmp_path):
+        """Test invoke command error that includes CloudWatch logs information."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    bedrock_agentcore:
+      agent_id: AGENT123
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
+            # Simulate a runtime error
+            mock_invoke.side_effect = RuntimeError("Connection timeout")
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["invoke", '{"prompt": "Hello"}'])
+
+                assert result.exit_code == 1
+                assert "Invocation Failed" in result.stdout
+                assert "Connection timeout" in result.stdout
+                assert "CloudWatch Logs:" in result.stdout
+                assert "Debug Commands:" in result.stdout
+                assert "agentcore status" in result.stdout
+                assert "agentcore launch" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -689,17 +707,9 @@ agents:
             "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
         )
 
-        with (
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
-        ):
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
             # Simulate general Exception during invoke
             mock_invoke.side_effect = Exception("Network timeout during invocation")
-
-            def mock_handle_error_side_effect(message, exception=None):
-                raise typer.Exit(1)
-
-            mock_error.side_effect = mock_handle_error_side_effect
 
             original_cwd = Path.cwd()
             os.chdir(tmp_path)
@@ -708,9 +718,8 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
 
                 assert result.exit_code == 1
-                mock_error.assert_called_once_with(
-                    "Invocation failed: Network timeout during invocation", mock_invoke.side_effect
-                )
+                assert "Invocation Failed" in result.stdout
+                assert "Network timeout during invocation" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -1171,7 +1180,7 @@ agents:
             try:
                 result = self.runner.invoke(app, ["launch", "--local-build"])
                 assert result.exit_code == 0
-                assert "Local Docker Build Deployment Successful!" in result.stdout
+                assert "Local Build Deployment Successful!" in result.stdout
                 assert "agentcore status" in result.stdout
                 assert "agentcore invoke" in result.stdout
 
@@ -1181,6 +1190,52 @@ agents:
                     agent_name=None,
                     local=False,
                     use_codebuild=False,  # Should be False due to --local-build
+                    env_vars=None,
+                    auto_update_on_conflict=False,
+                )
+            finally:
+                os.chdir(original_cwd)
+
+    def test_launch_command_codebuild_success(self, tmp_path):
+        """Test launch command with CodeBuild mode success and CloudWatch logs."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+            mock_result = Mock()
+            mock_result.mode = "codebuild"  # This should trigger the missing code path
+            mock_result.tag = "bedrock_agentcore-test-agent"
+            mock_result.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123"
+            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent"
+            mock_result.codebuild_id = "codebuild-project:12345"
+            mock_result.agent_id = "AGENT123"
+            mock_launch.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["launch"])
+                assert result.exit_code == 0
+                assert "CodeBuild Deployment Successful!" in result.stdout
+                assert "ARM64 container deployed" in result.stdout
+                assert "CloudWatch Logs:" in result.stdout
+                assert "agentcore status" in result.stdout
+                assert "agentcore invoke" in result.stdout
+
+                # Verify the core function was called with correct parameters
+                mock_launch.assert_called_once_with(
+                    config_path=config_file,
+                    agent_name=None,
+                    local=False,
+                    use_codebuild=True,  # Default CodeBuild mode
                     env_vars=None,
                     auto_update_on_conflict=False,
                 )
@@ -1231,7 +1286,7 @@ agents:
         try:
             result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
             assert result.exit_code == 1
-            assert ".bedrock_agentcore.yaml not found" in result.stdout
+            assert "Configuration Not Found" in result.stdout
         finally:
             os.chdir(original_cwd)
 
@@ -2010,7 +2065,7 @@ agents:
 
                 assert result.exit_code == 0
                 assert "test-agent" in result.stdout
-                assert "Not available" in result.stdout  # Should show for missing fields
+                assert "🔄 Deploying" in result.stdout  # Should show deploying status for non-READY endpoint
                 assert "creating" in result.stdout  # Should show available status
                 mock_status.assert_called_once_with(config_file, None)
             finally:

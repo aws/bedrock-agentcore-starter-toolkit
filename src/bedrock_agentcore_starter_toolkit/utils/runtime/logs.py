@@ -1,5 +1,6 @@
 """Utility functions for agent log information."""
 
+from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 
@@ -14,8 +15,11 @@ def get_agent_log_paths(agent_id: str, endpoint_name: Optional[str] = None) -> T
         Tuple of (runtime_log_group, otel_log_group)
     """
     endpoint_name = endpoint_name or "DEFAULT"
-    runtime_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}"
-    otel_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name} --log-stream-names otel-rt-logs"
+    runtime_log_group = (
+        f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name} "
+        f'--log-stream-name-prefix "{datetime.now(timezone.utc).strftime("%Y/%m/%d")}/\\[runtime-logs]"'
+    )
+    otel_log_group = f'/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name} --log-stream-names "otel-rt-logs"'
     return runtime_log_group, otel_log_group
 
 

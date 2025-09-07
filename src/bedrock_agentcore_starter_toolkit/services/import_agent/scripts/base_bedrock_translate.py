@@ -1033,7 +1033,7 @@ class BaseBedrockTranslator:
 
     def _get_url_regex_pattern(self) -> str:
         """Get the URL regex pattern for source extraction."""
-        return r'(?:https?://|www\.)(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/[^/\s]*)*'
+        return r"(?:https?://|www\.)(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/[^/\s]*)*"
 
     def generate_entrypoint_code(self, platform: str) -> str:
         """Generate entrypoint code for the agent."""

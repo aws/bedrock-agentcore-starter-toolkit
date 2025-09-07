@@ -86,12 +86,9 @@ def _attach_policy(
         iam_client.attach_role_policy(RoleName=role_name, PolicyArn=policy_arn)
     except ClientError as e:
         raise RuntimeError(f"Failed to attach AgentCore policy: {e}") from e
-    
-def _try_create_policy(
-    iam_client: BaseClient, 
-    policy_name: str, 
-    policy_document: str
-) -> str:
+
+
+def _try_create_policy(iam_client: BaseClient, policy_name: str, policy_document: str) -> str:
     """Try to create a new policy, or return the arn if the policy already exists.
 
     :param iam_client: the IAM client to use.
@@ -110,11 +107,9 @@ def _try_create_policy(
             return _get_existing_policy_arn(iam_client, policy_name)
         else:
             raise e
-        
-def _get_existing_policy_arn(
-    iam_client: BaseClient, 
-    policy_name: str
-) -> str:
+
+
+def _get_existing_policy_arn(iam_client: BaseClient, policy_name: str) -> str:
     """Get the arn of an existing policy.
 
     :param iam_client: the IAM client to use.

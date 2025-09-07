@@ -419,10 +419,9 @@ class TestAttachPolicy:
 
         # Mock ClientError on create_policy
         client_error = ClientError(
-            error_response={"Error": {
-                "Code": "EntityAlreadyExists", 
-                "Message": f"Policy {policy_name} already exists"
-            }},
+            error_response={
+                "Error": {"Code": "EntityAlreadyExists", "Message": f"Policy {policy_name} already exists"}
+            },
             operation_name="CreatePolicy",
         )
         self.mock_iam_client.create_policy.side_effect = client_error
@@ -442,7 +441,7 @@ class TestAttachPolicy:
         # Verify paginator was called
         self.mock_iam_client.get_paginator.assert_called_once_with("list_policies")
         self.mock_iam_client.get_paginator().paginate.assert_called_once_with(Scope="Local")
-    
+
         # Verify attach_role_policy was called
         self.mock_iam_client.attach_role_policy.assert_called_once_with(
             RoleName=self.role_name, PolicyArn=existing_policy_arn
