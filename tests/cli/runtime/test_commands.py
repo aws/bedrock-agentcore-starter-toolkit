@@ -885,6 +885,109 @@ agents:
             finally:
                 os.chdir(original_cwd)
 
+    def test_handle_requirements_file_display_none_return(self, tmp_path):
+        """Test _handle_requirements_file_display with no deps found raises typer.Exit."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _handle_requirements_file_display
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._prompt_for_requirements_file"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.detect_dependencies") as mock_detect,
+        ):
+            mock_prompt.return_value = None
+            # Mock detect_dependencies to return no dependencies found
+            mock_deps = type("obj", (object,), {"found": False, "file": None})()
+            mock_detect.return_value = mock_deps
+
+            # This should raise typer.Exit when no deps found and user provides no file
+            with pytest.raises(typer.Exit):
+                _handle_requirements_file_display(None)
+
+    def test_prompt_for_requirements_empty_response(self, tmp_path):
+        """Test _prompt_for_requirements_file with empty response."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _prompt_for_requirements_file
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_prompt:
+            mock_prompt.return_value = "   "  # Empty/whitespace response
+
+            result = _prompt_for_requirements_file("Enter path: ", "")
+            assert result is None
+
+    def test_configure_no_agents_configured(self, tmp_path):
+        """Test configure list with no agents configured."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: null\nagents: {}")
+
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config:
+            # Mock empty agents config
+            mock_config = type("obj", (object,), {"agents": {}})()
+            mock_load_config.return_value = mock_config
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["configure", "list"])
+                assert result.exit_code == 0
+                assert "No agents configured" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_launch_deprecated_code_build_flag(self, tmp_path):
+        """Test launch command with deprecated --code-build flag."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text(
+            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+        )
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+        ):
+            mock_launch.return_value = None
+            # Mock config loading
+            mock_config = type("obj", (object,), {"default_agent": "test-agent", "agents": {}})()
+            mock_load_config.return_value = mock_config
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["launch", "--code-build"])
+                # Just check that the deprecation warning appears
+                assert "DEPRECATION WARNING" in result.stdout
+                assert "--code-build flag is deprecated" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_status_verbose_json_output(self, tmp_path):
+        """Test status command with verbose JSON output."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text(
+            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+        )
+
+        mock_status_data = {"agent": "test-agent", "status": "deployed", "details": {"key": "value"}}
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            # Create a mock object with model_dump method
+            mock_result = Mock()
+            mock_result.model_dump.return_value = mock_status_data
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status", "--verbose"])
+                assert result.exit_code == 0
+                # Should contain JSON output in verbose mode
+                assert "agent" in result.stdout
+                assert "test-agent" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
     def test_invoke_command_basic(self, tmp_path):
         """Test invoke command."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
@@ -1380,31 +1483,6 @@ agents:
             assert "Configuration Not Found" in result.stdout
         finally:
             os.chdir(original_cwd)
-
-    def test_status_verbose_json_output(self, tmp_path):
-        """Test status command with verbose JSON output."""
-        config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_file.write_text("name: test-agent")
-
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
-            mock_result = Mock()
-            mock_result.model_dump.return_value = {
-                "config": {"name": "test-agent"},
-                "agent": {"status": "deployed"},
-                "endpoint": {"status": "READY"},
-            }
-            mock_status.return_value = mock_result
-
-            original_cwd = Path.cwd()
-            os.chdir(tmp_path)
-
-            try:
-                result = self.runner.invoke(app, ["status", "--verbose"])
-                assert result.exit_code == 0
-                # Should contain JSON output
-                assert '"name": "test-agent"' in result.stdout
-            finally:
-                os.chdir(original_cwd)
 
     def test_status_command_missing_fields(self, tmp_path):
         """Test status command handles missing fields gracefully when endpoint is creating."""

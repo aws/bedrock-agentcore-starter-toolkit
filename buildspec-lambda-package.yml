@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Lambda compute build starting (no Docker)..."
+      - start=$(date +%s)
+      - echo "Setting up Python environment..."
+      - python3 -m venv /tmp/venv
+      - source /tmp/venv/bin/activate
+      - pip install --upgrade pip
+
+  build:
+    commands:
+      - echo "Installing dependencies..."
+      - pip install -e . --target /tmp/layer
+      - echo "Creating deployment package..."
+      - cd /tmp/layer
+      - zip -r /tmp/deployment.zip .
+      - cd $CODEBUILD_SRC_DIR
+      - zip -r /tmp/deployment.zip . -x "*.git*" -x "*__pycache__*"
+      - echo "Package size: $(du -h /tmp/deployment.zip)"
+
+  post_build:
+    commands:
+      - end=$(date +%s)
+      - echo "Build completed in $((end - start)) seconds"
+      - echo "Uploading to S3..."
+      - aws s3 cp /tmp/deployment.zip s3://bedrock-agentcore-codebuild-sources-309149493152-us-west-2/test_siwabhi_9_6_3/lambda-deployment.zip
+      - echo "Lambda package ready (no container needed)"

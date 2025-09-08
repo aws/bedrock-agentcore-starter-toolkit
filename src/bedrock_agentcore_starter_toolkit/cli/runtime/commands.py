@@ -620,7 +620,7 @@ def invoke(
         )
         agent_display = config.name if config else (agent or "unknown")
         _show_invoke_info_panel(agent_display, result, config)
-        if result.response:
+        if result.response != {}:
             content = result.response
             if isinstance(content, dict) and "response" in content:
                 content = content["response"]
@@ -628,7 +628,24 @@ def invoke(
                 if len(content) == 1:
                     content = content[0]
                 else:
-                    content = "".join(content)
+                    # Handle mix of strings and bytes
+                    string_items = []
+                    for item in content:
+                        if isinstance(item, bytes):
+                            string_items.append(item.decode("utf-8", errors="replace"))
+                        else:
+                            string_items.append(str(item))
+                    content = "".join(string_items)
+            # Parse JSON string if needed (handles escape sequences)
+            if isinstance(content, str):
+                try:
+                    parsed = json.loads(content)
+                    if isinstance(parsed, dict) and "response" in parsed:
+                        content = parsed["response"]
+                    elif isinstance(parsed, str):
+                        content = parsed
+                except (json.JSONDecodeError, TypeError):
+                    pass
             _show_success_response(content)
 
     except FileNotFoundError:
