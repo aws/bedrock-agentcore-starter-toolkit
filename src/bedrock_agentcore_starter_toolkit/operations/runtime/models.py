@@ -77,3 +77,13 @@ class StatusResult(BaseModel):
     config: StatusConfigInfo = Field(..., description="Configuration information")
     agent: Optional[Dict[str, Any]] = Field(None, description="Agent runtime details or error")
     endpoint: Optional[Dict[str, Any]] = Field(None, description="Endpoint details or error")
+
+
+class DestroyResult(BaseModel):
+    """Result of destroy operation."""
+
+    agent_name: str = Field(..., description="Name of the destroyed agent")
+    resources_removed: List[str] = Field(default_factory=list, description="List of removed AWS resources")
+    warnings: List[str] = Field(default_factory=list, description="List of warnings during destruction")
+    errors: List[str] = Field(default_factory=list, description="List of errors during destruction")
+    dry_run: bool = Field(default=False, description="Whether this was a dry run")

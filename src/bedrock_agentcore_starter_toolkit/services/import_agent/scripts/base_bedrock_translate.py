@@ -1064,7 +1064,7 @@ class BaseBedrockTranslator:
         )
         response_content_code = "str(agent_result)" if platform == "strands" else "agent_result[-1].content"
         url_pattern = self._get_url_regex_pattern()
-
+        
         entrypoint_code += f"""
     def endpoint(payload, context):
         try:
