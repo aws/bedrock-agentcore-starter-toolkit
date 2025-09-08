@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.10] - 2025-09-08
+
+### Changes
+
+- chore/improve invoke (#153) (824b22c)
+- feat: add agentcore destroy command (#100) (0611649)
+- chore: bump version to 0.1.9 (#152) (6e65256)
+
 ## [0.1.9] - 2025-09-07
 
 ### Changes
