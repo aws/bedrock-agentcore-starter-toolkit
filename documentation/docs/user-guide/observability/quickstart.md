@@ -34,6 +34,19 @@ AgentCore Runtime-hosted agents are deployed and executed directly within the Ag
 
 For a complete example please refer to this [notebook](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/01-Agentcore-runtime-hosted/runtime_with_strands_and_bedrock_models.ipynb)
 
+
+## Step 0: Setup folder and virtual environment
+
+Create a new folder for this quickstart, create and initialize a new python virtual environment
+
+```bash
+mkdir agentcore-observability-quickstart
+cd agentcore-observability-quickstart
+python3 -m venv venv
+source venv/bin/activate
+```
+
+
 ### Step 1 : Create your Agent, shown below is an example with Strands Agents SDK:
 
 To enable OTEL exporting, please note to install [Strands Agents](https://strandsagents.com/latest/) with otel extra dependencies:
