@@ -236,6 +236,72 @@ CMD ["python", "/app/{{ agent_file }}"]
             result = runtime.run_local("test:latest", 8080, env_vars)
             assert result.returncode == 0
 
+    def test_run_local_default_port(self, mock_boto3_clients, monkeypatch):
+        """Test run_local uses default port when none specified."""
+        # Ensure env var is not set
+        monkeypatch.delenv("AGENTCORE_RUNTIME_LOCAL_PORT", raising=False)
+        
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            with patch("subprocess.run") as mock_run:
+                # Mock successful subprocess call
+                mock_run.return_value.returncode = 0
+
+                # Call without specifying port
+                result = runtime.run_local("test:latest")
+                assert result.returncode == 0
+
+                # Verify the docker run command used default port 8080
+                call_args = mock_run.call_args[0][0]
+                assert "-p" in call_args
+                port_index = call_args.index("-p") + 1
+                assert call_args[port_index] == "8080:8080"
+
+    def test_run_local_custom_port_from_env(self, mock_boto3_clients, monkeypatch):
+        """Test run_local uses custom port from environment variable."""
+        # Set custom port via environment variable
+        monkeypatch.setenv("AGENTCORE_RUNTIME_LOCAL_PORT", "9000")
+        
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            with patch("subprocess.run") as mock_run:
+                # Mock successful subprocess call
+                mock_run.return_value.returncode = 0
+
+                # Call without specifying port (should use env var)
+                result = runtime.run_local("test:latest")
+                assert result.returncode == 0
+
+                # Verify the docker run command used custom port 9000
+                call_args = mock_run.call_args[0][0]
+                assert "-p" in call_args
+                port_index = call_args.index("-p") + 1
+                assert call_args[port_index] == "9000:8080"
+
+    def test_run_local_explicit_port_overrides_env(self, mock_boto3_clients, monkeypatch):
+        """Test run_local explicit port parameter overrides environment variable."""
+        # Set custom port via environment variable
+        monkeypatch.setenv("AGENTCORE_RUNTIME_LOCAL_PORT", "9000")
+        
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            with patch("subprocess.run") as mock_run:
+                # Mock successful subprocess call
+                mock_run.return_value.returncode = 0
+
+                # Call with explicit port (should override env var)
+                result = runtime.run_local("test:latest", port=7000)
+                assert result.returncode == 0
+
+                # Verify the docker run command used explicit port 7000
+                call_args = mock_run.call_args[0][0]
+                assert "-p" in call_args
+                port_index = call_args.index("-p") + 1
+                assert call_args[port_index] == "7000:8080"
+
     def test_dockerfile_generation_with_wheelhouse(self, tmp_path):
         """Test Dockerfile generation when wheelhouse directory exists."""
         with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):

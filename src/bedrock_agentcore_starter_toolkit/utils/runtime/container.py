@@ -11,6 +11,7 @@ from jinja2 import Template
 
 from ...cli.common import _handle_warn
 from .entrypoint import detect_dependencies, get_python_version
+from .port_config import get_local_port
 
 log = logging.getLogger(__name__)
 
@@ -247,12 +248,12 @@ class ContainerRuntime:
 
         return self._execute_command(cmd)
 
-    def run_local(self, tag: str, port: int = 8080, env_vars: Optional[dict] = None) -> subprocess.CompletedProcess:
+    def run_local(self, tag: str, port: Optional[int] = None, env_vars: Optional[dict] = None) -> subprocess.CompletedProcess:
         """Run container locally.
 
         Args:
             tag: Docker image tag to run
-            port: Port to expose (default: 8080)
+            port: Port to expose (default: from AGENTCORE_RUNTIME_LOCAL_PORT env var or 8080)
             env_vars: Additional environment variables to pass to container
         """
         if not self.has_local_runtime:
@@ -262,6 +263,10 @@ class ContainerRuntime:
                 "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
                 "💡 For local runs, please install Docker, Finch, or Podman"
             )
+
+        # Use provided port or get from environment/default
+        if port is None:
+            port = get_local_port()
 
         container_name = f"{tag.split(':')[0]}-{int(time.time())}"
         cmd = [self.runtime, "run", "-it", "--rm", "-p", f"{port}:8080", "--name", container_name]

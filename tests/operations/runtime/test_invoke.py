@@ -282,7 +282,7 @@ class TestInvokeBedrockAgentCore:
                 workload_name="existing-workload-456", user_token=None, user_id=None
             )
 
-            # Verify LocalBedrockAgentCoreClient was created with correct URL
+            # Verify LocalBedrockAgentCoreClient was created with correct URL (using default port)
             mock_local_client_class.assert_called_once_with("http://0.0.0.0:8080")
 
             # Verify local client invoke_endpoint was called correctly
@@ -348,7 +348,7 @@ class TestInvokeBedrockAgentCore:
                 workload_name="test-workload-789", user_token=bearer_token, user_id=user_id
             )
 
-            # Verify LocalBedrockAgentCoreClient was used
+            # Verify LocalBedrockAgentCoreClient was used (using default port)
             mock_local_client_class.assert_called_once_with("http://0.0.0.0:8080")
 
             # Verify local client invoke was called with workload token
@@ -421,6 +421,54 @@ class TestInvokeBedrockAgentCore:
 
             # Verify result
             assert result.response == {"response": "workload creation test"}
+
+    def test_invoke_local_mode_custom_port(self, tmp_path, monkeypatch):
+        """Test invoke_bedrock_agentcore local mode uses custom port from environment variable."""
+        # Set custom port via environment variable
+        monkeypatch.setenv("AGENTCORE_RUNTIME_LOCAL_PORT", "9000")
+        
+        # Create config file
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            oauth_configuration={"workload_name": "test-workload-custom-port"},
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Test custom port"}
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
+            ) as mock_identity_client_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+            ) as mock_local_client_class,
+        ):
+            # Mock IdentityClient
+            mock_identity_client = Mock()
+            mock_identity_client.get_workload_access_token.return_value = {"workloadAccessToken": "custom-port-token"}
+            mock_identity_client_class.return_value = mock_identity_client
+
+            # Mock LocalBedrockAgentCoreClient
+            mock_local_client = Mock()
+            mock_local_client.invoke_endpoint.return_value = {"response": "custom port response"}
+            mock_local_client_class.return_value = mock_local_client
+
+            # Call with local_mode=True
+            result = invoke_bedrock_agentcore(config_path, payload, local_mode=True)
+
+            # Verify LocalBedrockAgentCoreClient was created with custom port
+            mock_local_client_class.assert_called_once_with("http://0.0.0.0:9000")
+
+            # Verify result
+            assert result.response == {"response": "custom port response"}
 
 
 class TestGetWorkloadName:
