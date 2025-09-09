@@ -4,9 +4,12 @@ Amazon Bedrock AgentCore Memory lets you create and manage memory resources that
 
 ## Install Dependencies
 
-To get started with Amazon Bedrock AgentCore Memory, install the required Python package:
+To get started with Amazon Bedrock AgentCore Memory, make a folder for this quick start, create a virtual environment, and install the dependencies.
 
 ```bash
+mkdir agentcore-memory-quickstart
+python3 -m venv venv
+source venv/bin/activate
 pip install bedrock-agentcore
 ```
 
