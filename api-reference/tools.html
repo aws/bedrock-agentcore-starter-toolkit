@@ -2349,7 +2349,12 @@ in a secure, managed environment.</p>
 <span class="normal">156</span>
 <span class="normal">157</span>
 <span class="normal">158</span>
-<span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CodeInterpreter</span><span class="p">:</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CodeInterpreter</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Client for interacting with the AWS Code Interpreter sandbox service.</span>
 
 <span class="sd">    This client handles the session lifecycle and method invocation for</span>
@@ -2363,14 +2368,19 @@ in a secure, managed environment.</p>
 <span class="sd">        session_id (str, optional): The active session ID.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a Code Interpreter client for the specified AWS region.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            region (str): The AWS region to use for the Code Interpreter service.</span>
+<span class="sd">            session (Optional[boto3.Session]): Optional boto3 session to use.</span>
+<span class="sd">                If not provided, a new session will be created. This is useful</span>
+<span class="sd">                for cases where you need to use custom credentials or assume roles.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_plane_service_name</span> <span class="o">=</span> <span class="s2">&quot;bedrock-agentcore&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">session</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_plane_service_name</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">region</span><span class="p">,</span> <span class="n">endpoint_url</span><span class="o">=</span><span class="n">get_data_plane_endpoint</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2602,7 +2612,7 @@ in a secure, managed environment.</p>
 
 
 <h4 id="bedrock_agentcore.tools.code_interpreter_client.CodeInterpreter.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">region</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.tools.code_interpreter_client.CodeInterpreter.__init__" class="headerlink" title="Permanent link">&para;</a></h4>
 
@@ -2639,6 +2649,24 @@ in a secure, managed environment.</p>
                 <em>required</em>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>session</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="boto3.Session">Session</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional boto3 session to use.
+If not provided, a new session will be created. This is useful
+for cases where you need to use custom credentials or assume roles.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -2656,14 +2684,24 @@ in a secure, managed environment.</p>
 <span class="normal">41</span>
 <span class="normal">42</span>
 <span class="normal">43</span>
-<span class="normal">44</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize a Code Interpreter client for the specified AWS region.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        region (str): The AWS region to use for the Code Interpreter service.</span>
+<span class="sd">        session (Optional[boto3.Session]): Optional boto3 session to use.</span>
+<span class="sd">            If not provided, a new session will be created. This is useful</span>
+<span class="sd">            for cases where you need to use custom credentials or assume roles.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">data_plane_service_name</span> <span class="o">=</span> <span class="s2">&quot;bedrock-agentcore&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
+    <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_plane_service_name</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">region</span><span class="p">,</span> <span class="n">endpoint_url</span><span class="o">=</span><span class="n">get_data_plane_endpoint</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2777,12 +2815,7 @@ before invoking the requested method.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/code_interpreter_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">140</span>
 <span class="normal">141</span>
 <span class="normal">142</span>
 <span class="normal">143</span>
@@ -2801,7 +2834,12 @@ before invoking the requested method.</p>
 <span class="normal">156</span>
 <span class="normal">157</span>
 <span class="normal">158</span>
-<span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Invoke a method in the code interpreter sandbox.</span>
 
 <span class="sd">    If no session is active, this method automatically starts a new session</span>
@@ -2955,12 +2993,7 @@ Defaults to an empty string.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/code_interpreter_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 87</span>
 <span class="normal"> 88</span>
 <span class="normal"> 89</span>
 <span class="normal"> 90</span>
@@ -2987,7 +3020,12 @@ Defaults to an empty string.</p>
 <span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
-<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_IDENTIFIER</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3066,12 +3104,7 @@ If no session is active, this method does nothing.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/code_interpreter_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
@@ -3083,7 +3116,12 @@ If no session is active, this method does nothing.</p>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Stop the current code interpreter session if one is active.</span>
 
 <span class="sd">    This method stops any active session and clears the session state.</span>
@@ -3120,7 +3158,7 @@ If no session is active, this method does nothing.</p>
 
 
 <h3 id="bedrock_agentcore.tools.code_interpreter_client.code_session" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">code_session</span><span class="p">(</span><span class="n">region</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">code_session</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.tools.code_interpreter_client.code_session" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -3159,6 +3197,23 @@ ensuring the session is properly cleaned up when the context exits.</p>
                 <em>required</em>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>session</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="boto3.Session">Session</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional boto3 session to use.
+If not provided, a new session will be created.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -3173,7 +3228,7 @@ ensuring the session is properly cleaned up when the context exits.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>CodeInterpreterClient</code></td>            <td>
+<td><code>CodeInterpreter</code></td>            <td>
                   <code><a class="autorefs autorefs-internal" title="CodeInterpreter (bedrock_agentcore.tools.code_interpreter_client.CodeInterpreter)" href="#bedrock_agentcore.tools.code_interpreter_client.CodeInterpreter">CodeInterpreter</a></code>
             </td>
             <td>
@@ -3201,12 +3256,7 @@ ensuring the session is properly cleaned up when the context exits.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/code_interpreter_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">167</span>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
@@ -3225,8 +3275,15 @@ ensuring the session is properly cleaned up when the context exits.</p>
 <span class="normal">183</span>
 <span class="normal">184</span>
 <span class="normal">185</span>
-<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextmanager</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">code_session</span><span class="p">(</span><span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">CodeInterpreter</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">code_session</span><span class="p">(</span><span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">CodeInterpreter</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Context manager for creating and managing a code interpreter session.</span>
 
 <span class="sd">    This context manager handles creating a client, starting a session, and</span>
@@ -3234,16 +3291,18 @@ ensuring the session is properly cleaned up when the context exits.</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        region (str): The AWS region to use for the Code Interpreter service.</span>
+<span class="sd">        session (Optional[boto3.Session]): Optional boto3 session to use.</span>
+<span class="sd">            If not provided, a new session will be created.</span>
 
 <span class="sd">    Yields:</span>
-<span class="sd">        CodeInterpreterClient: An initialized and started code interpreter client.</span>
+<span class="sd">        CodeInterpreter: An initialized and started code interpreter client.</span>
 
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; with code_session(&#39;us-west-2&#39;) as client:</span>
 <span class="sd">        ...     result = client.invoke(&#39;listFiles&#39;)</span>
 <span class="sd">        ...     # Process result here</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">CodeInterpreter</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">CodeInterpreter</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
     <span class="n">client</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">try</span><span class="p">:</span>

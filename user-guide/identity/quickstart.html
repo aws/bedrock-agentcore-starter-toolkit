@@ -1949,7 +1949,11 @@
 <li>(Optional) External service accounts for OAuth2 or API key integration</li>
 </ul>
 <h2 id="install-the-sdk">Install the SDK<a class="headerlink" href="#install-the-sdk" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore
+<p>Make a folder for this quickstart, create a virtual environment, and install the agentcore sdk.</p>
+<div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>agentcore-identity-quickstart
+pythom3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore
 </code></pre></div>
 <h2 id="create-a-workload-identity">Create a Workload Identity<a class="headerlink" href="#create-a-workload-identity" title="Permanent link">&para;</a></h2>
 <p>A workload identity is a unique identifier that represents your agent within the AgentCore Identity system:</p>

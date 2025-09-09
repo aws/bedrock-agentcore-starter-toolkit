@@ -1062,7 +1062,16 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Enabling Observability for AgentCore-Hosted Agents">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-0-setup-folder-and-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 0: Setup folder and virtual environment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 0: Setup folder and virtual environment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1839,7 +1848,16 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Enabling Observability for AgentCore-Hosted Agents">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-0-setup-folder-and-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 0: Setup folder and virtual environment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 0: Setup folder and virtual environment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2031,6 +2049,13 @@
 <h2 id="enabling-observability-for-agentcore-hosted-agents">Enabling Observability for AgentCore-Hosted Agents<a class="headerlink" href="#enabling-observability-for-agentcore-hosted-agents" title="Permanent link">&para;</a></h2>
 <p>AgentCore Runtime-hosted agents are deployed and executed directly within the AgentCore environment, providing automatic instrumentation with minimal configuration. This approach offers the fastest path to deployment and is ideal for rapid development and testing.</p>
 <p>For a complete example please refer to this <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/01-Agentcore-runtime-hosted/runtime_with_strands_and_bedrock_models.ipynb">notebook</a></p>
+<h2 id="step-0-setup-folder-and-virtual-environment">Step 0: Setup folder and virtual environment<a class="headerlink" href="#step-0-setup-folder-and-virtual-environment" title="Permanent link">&para;</a></h2>
+<p>Create a new folder for this quickstart, create and initialize a new python virtual environment</p>
+<div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>agentcore-observability-quickstart
+<span class="nb">cd</span><span class="w"> </span>agentcore-observability-quickstart
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</code></pre></div>
 <h3 id="step-1-create-your-agent-shown-below-is-an-example-with-strands-agents-sdk">Step 1 : Create your Agent, shown below is an example with Strands Agents SDK:<a class="headerlink" href="#step-1-create-your-agent-shown-below-is-an-example-with-strands-agents-sdk" title="Permanent link">&para;</a></h3>
 <p>To enable OTEL exporting, please note to install <a href="https://strandsagents.com/latest/">Strands Agents</a> with otel extra dependencies:</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;strands-agents[otel]&#39;</span>
