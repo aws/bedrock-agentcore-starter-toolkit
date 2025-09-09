@@ -15,6 +15,19 @@ In the quick start guide you will learn how to set up a Gateway and integrate it
 - **Python 3.10+** installed.
 - **Access to** Anthropic's Sonnet 3.7 (or another model) for running the demo agent below.
 
+
+## Step 0: Setup folder and virtual environment
+
+Create a new folder for this quickstart, create and initialize a new python virtual environment
+
+```bash
+mkdir agentcore-gateway-quickstart
+cd agentcore-gateway-quickstart
+python3 -m venv venv
+source venv/bin/activate
+```
+
+
 ## Step 1: Install and Create Your Agent
 
 ```bash
