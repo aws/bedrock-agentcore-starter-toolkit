@@ -15,6 +15,18 @@ Before starting, make sure you have:
 - **Model Access**: Anthropic Claude 4.0 enabled in [Amazon Bedrock console](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html)
 
 
+## Step 0: Setup folder and virtual environment
+
+Create a new folder for this quickstart, create and initialize a new python virtual environment
+
+```bash
+mkdir agentcore-runtime-quickstart
+cd agentcore-runtime-quickstart
+python3 -m venv venv
+source venv/bin/activate
+```
+
+
 ## Step 1: Install and Create Your Agent
 
 ```bash
