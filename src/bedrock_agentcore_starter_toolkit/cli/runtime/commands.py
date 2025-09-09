@@ -870,15 +870,13 @@ def destroy(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Show what would be destroyed without actually destroying anything"
     ),
-    force: bool = typer.Option(
-        False, "--force", help="Skip confirmation prompts and destroy immediately"
-    ),
+    force: bool = typer.Option(False, "--force", help="Skip confirmation prompts and destroy immediately"),
     delete_ecr_repo: bool = typer.Option(
         False, "--delete-ecr-repo", help="Also delete the ECR repository after removing images"
     ),
 ) -> None:
     """Destroy Bedrock AgentCore resources.
-    
+
     This command removes the following AWS resources for the specified agent:
     - Bedrock AgentCore endpoint (if exists)
     - Bedrock AgentCore agent runtime
@@ -887,7 +885,7 @@ def destroy(
     - IAM execution role (only if not used by other agents)
     - Agent deployment configuration
     - ECR repository (only if --delete-ecr-repo is specified)
-    
+
     CAUTION: This action cannot be undone. Use --dry-run to preview changes first.
     """
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -898,15 +896,18 @@ def destroy(
         # Load project configuration to get agent details
         project_config = load_config(config_path)
         agent_config = project_config.get_agent_config(agent)
-        
+
         if not agent_config:
             _handle_error(f"Agent '{agent or 'default'}' not found in configuration")
-            
+
         actual_agent_name = agent_config.name
 
         # Show what will be destroyed
         if dry_run:
-            console.print(f"[cyan]🔍 Dry run: Preview of resources that would be destroyed for agent '{actual_agent_name}'[/cyan]\n")
+            console.print(
+                f"[cyan]🔍 Dry run: Preview of resources that would be destroyed for agent "
+                f"'{actual_agent_name}'[/cyan]\n"
+            )
         else:
             console.print(f"[yellow]⚠️  About to destroy resources for agent '{actual_agent_name}'[/yellow]\n")
 
@@ -956,7 +957,9 @@ def destroy(
             color = "cyan"
         else:
             if result.errors:
-                console.print(f"[yellow]⚠️  Destruction completed with errors for agent '{result.agent_name}'[/yellow]\n")
+                console.print(
+                    f"[yellow]⚠️  Destruction completed with errors for agent '{result.agent_name}'[/yellow]\n"
+                )
                 title = "Destruction Results (With Errors)"
                 color = "yellow"
             else:
@@ -987,7 +990,7 @@ def destroy(
             console.print("  • Run 'agentcore configure --entrypoint <file>' to set up a new agent")
             console.print("  • Run 'agentcore launch' to deploy to Bedrock AgentCore")
         elif dry_run:
-            console.print(f"\n[dim]To actually destroy these resources, run:[/dim]")
+            console.print("\n[dim]To actually destroy these resources, run:[/dim]")
             destroy_cmd = f"  agentcore destroy{f' --agent {actual_agent_name}' if agent else ''}"
             if delete_ecr_repo:
                 destroy_cmd += " --delete-ecr-repo"

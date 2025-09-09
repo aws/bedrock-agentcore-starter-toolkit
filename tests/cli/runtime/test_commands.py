@@ -2489,7 +2489,9 @@ agents:
             mock_result = Mock()
             mock_result.agent_name = "test-agent"
             mock_result.dry_run = False
-            mock_result.resources_removed = ["AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"]
+            mock_result.resources_removed = [
+                "AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            ]
             mock_result.warnings = []
             mock_result.errors = []
             mock_destroy.return_value = mock_result
@@ -2575,7 +2577,9 @@ agents:
             mock_result = Mock()
             mock_result.agent_name = "agent2"
             mock_result.dry_run = True
-            mock_result.resources_removed = ["AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/agent2"]
+            mock_result.resources_removed = [
+                "AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/agent2"
+            ]
             mock_result.warnings = []
             mock_result.errors = []
             mock_destroy.return_value = mock_result

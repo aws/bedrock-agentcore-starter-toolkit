@@ -39,14 +39,18 @@ def destroy_bedrock_agentcore(
         ValueError: If agent is not found or not deployed
         RuntimeError: If destruction fails
     """
-    log.info("Starting destroy operation for agent: %s (dry_run=%s, delete_ecr_repo=%s)", 
-             agent_name or "default", dry_run, delete_ecr_repo)
+    log.info(
+        "Starting destroy operation for agent: %s (dry_run=%s, delete_ecr_repo=%s)",
+        agent_name or "default",
+        dry_run,
+        delete_ecr_repo,
+    )
 
     try:
         # Load configuration
         project_config = load_config(config_path)
         agent_config = project_config.get_agent_config(agent_name)
-        
+
         if not agent_config:
             raise ValueError(f"Agent '{agent_name or 'default'}' not found in configuration")
 
@@ -60,32 +64,36 @@ def destroy_bedrock_agentcore(
 
         # Initialize AWS session and clients
         session = boto3.Session(region_name=agent_config.aws.region)
-        
+
         # 1. Destroy Bedrock AgentCore endpoint (if exists)
         _destroy_agentcore_endpoint(session, agent_config, result, dry_run)
-        
+
         # 2. Destroy Bedrock AgentCore agent
         _destroy_agentcore_agent(session, agent_config, result, dry_run)
-        
+
         # 3. Remove ECR images and optionally the repository
         _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
-        
+
         # 4. Remove CodeBuild project
         _destroy_codebuild_project(session, agent_config, result, dry_run)
 
         # 5. Remove CodeBuild IAM Role
         _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
-        
+
         # 6. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
-        
+
         # 7. Clean up configuration
         if not dry_run and not result.errors:
             _cleanup_agent_config(config_path, project_config, agent_config.name, result)
 
-        log.info("Destroy operation completed. Resources removed: %d, Warnings: %d, Errors: %d",
-                len(result.resources_removed), len(result.warnings), len(result.errors))
-        
+        log.info(
+            "Destroy operation completed. Resources removed: %d, Warnings: %d, Errors: %d",
+            len(result.resources_removed),
+            len(result.warnings),
+            len(result.errors),
+        )
+
         return result
 
     except Exception as e:
@@ -105,7 +113,7 @@ def _destroy_agentcore_endpoint(
 
     try:
         client = BedrockAgentCoreClient(agent_config.aws.region)
-        
+
         agent_id = agent_config.bedrock_agentcore.agent_id
         if not agent_id:
             result.warnings.append("No agent ID found, skipping endpoint destruction")
@@ -116,12 +124,10 @@ def _destroy_agentcore_endpoint(
             endpoint_response = client.get_agent_runtime_endpoint(agent_id)
             endpoint_name = endpoint_response.get("name", "DEFAULT")
             endpoint_arn = endpoint_response.get("agentRuntimeEndpointArn")
-            
+
             # Special case: DEFAULT endpoint cannot be explicitly deleted
             if endpoint_name == "DEFAULT":
-                result.warnings.append(
-                    "DEFAULT endpoint cannot be explicitly deleted, skipping"
-                )
+                result.warnings.append("DEFAULT endpoint cannot be explicitly deleted, skipping")
                 log.info("Skipping deletion of DEFAULT endpoint")
                 return
 
@@ -143,7 +149,7 @@ def _destroy_agentcore_endpoint(
                         result.warnings.append("Endpoint not found or already deleted during deletion")
             else:
                 result.warnings.append("No endpoint ARN found for agent")
-                
+
         except ClientError as e:
             if e.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
                 result.warnings.append(f"Failed to get endpoint info: {e}")
@@ -168,7 +174,8 @@ def _destroy_agentcore_agent(
         return
 
     try:
-        client = BedrockAgentCoreClient(agent_config.aws.region)
+        # Initialize client to enable exception handling path for tests
+        BedrockAgentCoreClient(agent_config.aws.region)
         agent_arn = agent_config.bedrock_agentcore.agent_arn
         agent_id = agent_config.bedrock_agentcore.agent_id
 
@@ -212,18 +219,18 @@ def _destroy_ecr_images(
         # Create ECR client with explicit region specification
         ecr_client = session.client("ecr", region_name=agent_config.aws.region)
         ecr_uri = agent_config.aws.ecr_repository
-        
+
         # Extract repository name from URI
         # Format: account.dkr.ecr.region.amazonaws.com/repo-name
         repo_name = ecr_uri.split("/")[-1]
-        
+
         log.info("Checking ECR repository: %s in region: %s", repo_name, agent_config.aws.region)
 
         try:
             # List all images in the repository (both tagged and untagged)
             response = ecr_client.list_images(repositoryName=repo_name)
             log.debug("ECR list_images response: %s", response)
-            
+
             # Fix: use correct response key 'imageIds' instead of 'imageDetails'
             all_images = response.get("imageIds", [])
             if not all_images:
@@ -238,7 +245,7 @@ def _destroy_ecr_images(
                 return
 
             if dry_run:
-                # Fix: imageIds structure has imageTag (string) not imageTags (array)  
+                # Fix: imageIds structure has imageTag (string) not imageTags (array)
                 tagged_count = len([img for img in all_images if img.get("imageTag")])
                 untagged_count = len([img for img in all_images if not img.get("imageTag")])
                 result.resources_removed.append(
@@ -250,18 +257,18 @@ def _destroy_ecr_images(
 
             # Prepare images for deletion - imageIds are already in the correct format
             images_to_delete = []
-            
+
             for image in all_images:
                 # imageIds structure already contains the correct identifiers
                 image_id = {}
-                
+
                 # If image has a tag, use it
                 if image.get("imageTag"):
                     image_id["imageTag"] = image["imageTag"]
-                # If no tag, use image digest  
+                # If no tag, use image digest
                 elif image.get("imageDigest"):
                     image_id["imageDigest"] = image["imageDigest"]
-                
+
                 if image_id:
                     images_to_delete.append(image_id)
 
@@ -269,34 +276,32 @@ def _destroy_ecr_images(
                 # Delete images in batches (ECR has a limit of 100 images per batch)
                 batch_size = 100
                 total_deleted = 0
-                
+
                 for i in range(0, len(images_to_delete), batch_size):
-                    batch = images_to_delete[i:i + batch_size]
-                    
-                    delete_response = ecr_client.batch_delete_image(
-                        repositoryName=repo_name,
-                        imageIds=batch
-                    )
-                    
+                    batch = images_to_delete[i : i + batch_size]
+
+                    delete_response = ecr_client.batch_delete_image(repositoryName=repo_name, imageIds=batch)
+
                     deleted_images = delete_response.get("imageIds", [])
                     total_deleted += len(deleted_images)
-                    
+
                     # Log any failures in this batch
                     failures = delete_response.get("failures", [])
                     for failure in failures:
-                        log.warning("Failed to delete image: %s - %s", 
-                                  failure.get("imageId"), failure.get("failureReason"))
+                        log.warning(
+                            "Failed to delete image: %s - %s", failure.get("imageId"), failure.get("failureReason")
+                        )
 
                 result.resources_removed.append(f"ECR images: {total_deleted} images from {repo_name}")
                 log.info("Deleted %d ECR images from %s", total_deleted, repo_name)
-                
+
                 # Log any partial failures
                 if total_deleted < len(images_to_delete):
                     failed_count = len(images_to_delete) - total_deleted
                     result.warnings.append(
                         f"Some ECR images could not be deleted: {failed_count} out of {len(images_to_delete)} failed"
                     )
-                
+
                 # Delete the repository if requested and all images were deleted successfully
                 if delete_ecr_repo and total_deleted == len(images_to_delete):
                     _delete_ecr_repository(ecr_client, repo_name, result)
@@ -326,16 +331,16 @@ def _delete_ecr_repository(ecr_client, repo_name: str, result: DestroyResult) ->
         # Verify repository is empty before deletion
         response = ecr_client.list_images(repositoryName=repo_name)
         remaining_images = response.get("imageIds", [])
-        
+
         if remaining_images:
             result.warnings.append(f"Cannot delete ECR repository {repo_name}: repository is not empty")
             return
-        
+
         # Delete the empty repository
         ecr_client.delete_repository(repositoryName=repo_name)
         result.resources_removed.append(f"ECR repository: {repo_name}")
         log.info("Deleted ECR repository: %s", repo_name)
-        
+
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         if error_code == "RepositoryNotFoundException":
@@ -380,6 +385,7 @@ def _destroy_codebuild_project(
         result.warnings.append(f"Error during CodeBuild cleanup: {e}")
         log.warning("Error during CodeBuild cleanup: %s", e)
 
+
 def _destroy_codebuild_iam_role(
     session: boto3.Session,
     agent_config: BedrockAgentCoreAgentSchema,
@@ -390,17 +396,17 @@ def _destroy_codebuild_iam_role(
     if not agent_config.codebuild.execution_role:
         result.warnings.append("No CodeBuild execution role configured, skipping IAM cleanup")
         return
-        
+
     try:
         # Note: IAM is a global service, but we specify region for consistency
         iam_client = session.client("iam", region_name=agent_config.aws.region)
         role_arn = agent_config.codebuild.execution_role
         role_name = role_arn.split("/")[-1]
-        
+
         if dry_run:
             result.resources_removed.append(f"CodeBuild IAM role: {role_name} (DRY RUN)")
             return
-            
+
         # Detach managed policies
         for policy in iam_client.list_attached_role_policies(RoleName=role_name).get("AttachedPolicies", []):
             iam_client.detach_role_policy(RoleName=role_name, PolicyArn=policy["PolicyArn"])
@@ -415,13 +421,14 @@ def _destroy_codebuild_iam_role(
         iam_client.delete_role(RoleName=role_name)
         result.resources_removed.append(f"Deleted CodeBuild IAM role: {role_name}")
         log.info("Deleted CodeBuild IAM role: %s", role_name)
-        
+
     except ClientError as e:
         result.warnings.append(f"Failed to delete CodeBuild role {role_name}: {e}")
         log.warning("Failed to delete CodeBuild role %s: %s", role_name, e)
     except Exception as e:
         result.warnings.append(f"Error during CodeBuild IAM role cleanup: {e}")
         log.error("Error during CodeBuild IAM role cleanup: %s", e)
+
 
 def _destroy_iam_role(
     session: boto3.Session,
@@ -443,7 +450,8 @@ def _destroy_iam_role(
 
         # Check if other agents use the same role
         other_agents_using_role = [
-            name for name, agent in project_config.agents.items()
+            name
+            for name, agent in project_config.agents.items()
             if name != agent_config.name and agent.aws.execution_role == role_arn
         ]
 
@@ -462,10 +470,7 @@ def _destroy_iam_role(
             try:
                 policies = iam_client.list_attached_role_policies(RoleName=role_name)
                 for policy in policies.get("AttachedPolicies", []):
-                    iam_client.detach_role_policy(
-                        RoleName=role_name,
-                        PolicyArn=policy["PolicyArn"]
-                    )
+                    iam_client.detach_role_policy(RoleName=role_name, PolicyArn=policy["PolicyArn"])
             except ClientError:
                 pass  # Continue if policy detachment fails
 
@@ -508,12 +513,12 @@ def _cleanup_agent_config(
 
         # Check if this agent is the default agent
         was_default = project_config.default_agent == agent_name
-        
+
         # Remove the agent entry completely
         del project_config.agents[agent_name]
         result.resources_removed.append(f"Agent configuration: {agent_name}")
         log.info("Removed agent configuration: %s", agent_name)
-        
+
         # Handle default agent cleanup
         if was_default:
             if project_config.agents:
@@ -526,7 +531,7 @@ def _cleanup_agent_config(
                 # No agents left, clear default
                 project_config.default_agent = None
                 log.info("Cleared default agent (no agents remaining)")
-        
+
         # If no agents remain, remove the config file
         if not project_config.agents:
             config_path.unlink()

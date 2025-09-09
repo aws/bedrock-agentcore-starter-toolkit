@@ -283,7 +283,7 @@ class TestInvokeBedrockAgentCore:
             )
 
             # Verify LocalBedrockAgentCoreClient was created with correct URL
-            mock_local_client_class.assert_called_once_with("http://0.0.0.0:8080")
+            mock_local_client_class.assert_called_once_with("http://127.0.0.1:8080")
 
             # Verify local client invoke_endpoint was called correctly
             mock_local_client.invoke_endpoint.assert_called_once_with(
@@ -349,7 +349,7 @@ class TestInvokeBedrockAgentCore:
             )
 
             # Verify LocalBedrockAgentCoreClient was used
-            mock_local_client_class.assert_called_once_with("http://0.0.0.0:8080")
+            mock_local_client_class.assert_called_once_with("http://127.0.0.1:8080")
 
             # Verify local client invoke was called with workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(

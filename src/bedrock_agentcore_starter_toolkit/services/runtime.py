@@ -399,7 +399,11 @@ class BedrockAgentCoreClient:
                 agentRuntimeId=agent_id,
                 endpointName=endpoint_name,
             )
-            self.logger.info("Successfully initiated deletion of endpoint '%s' for agent ID: %s", endpoint_name, agent_id)
+            self.logger.info(
+                "Successfully initiated deletion of endpoint '%s' for agent ID: %s",
+                endpoint_name,
+                agent_id,
+            )
             return response
         except Exception as e:
             self.logger.error("Failed to delete endpoint '%s' for agent ID '%s': %s", endpoint_name, agent_id, str(e))
