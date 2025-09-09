@@ -13,7 +13,12 @@ Before you begin, ensure you have:
 
 ## Install the SDK
 
+Make a folder for this quickstart, create a virtual environment, and install the agentcore sdk.
+
 ```bash
+mkdir agentcore-identity-quickstart
+pythom3 -m venv venv
+source venv/bin/activate
 pip install bedrock-agentcore
 ```
 
