@@ -921,15 +921,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configure-environment-variables" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure Environment Variables
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#building-a-simple-research-agent" class="md-nav__link">
     <span class="md-ellipsis">
       Building a Simple Research Agent
@@ -1842,15 +1833,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configure-environment-variables" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configure Environment Variables
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#building-a-simple-research-agent" class="md-nav__link">
     <span class="md-ellipsis">
       Building a Simple Research Agent
@@ -1945,7 +1927,7 @@
 <ul>
 <li>An AWS account with appropriate permissions</li>
 <li>Python 3.10+ installed</li>
-<li>AWS CLI configured with your credentials</li>
+<li>AWS credentials and region configured (<code>aws configure</code>)</li>
 <li>(Optional) External service accounts for OAuth2 or API key integration</li>
 </ul>
 <h2 id="install-the-sdk">Install the SDK<a class="headerlink" href="#install-the-sdk" title="Permanent link">&para;</a></h2>
@@ -1970,10 +1952,6 @@ pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Workload Identity ARN: </span><span class="si">{</span><span class="n">workload_identity</span><span class="p">[</span><span class="s1">&#39;workloadIdentityArn&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent Name: </span><span class="si">{</span><span class="n">workload_identity</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>You can also use the AWS CLI:</p>
-<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>bedrock-agentcore<span class="w"> </span>create-workload-identity<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--name<span class="w"> </span><span class="s2">&quot;my-research-agent&quot;</span>
-</code></pre></div>
 <h2 id="configure-credential-providers">Configure Credential Providers<a class="headerlink" href="#configure-credential-providers" title="Permanent link">&para;</a></h2>
 <p>Credential providers define how your agent accesses external services:</p>
 <h3 id="oauth2-provider-example-google">OAuth2 Provider Example (Google)<a class="headerlink" href="#oauth2-provider-example-google" title="Permanent link">&para;</a></h3>
@@ -1995,18 +1973,6 @@ pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore
     <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;myPerplexityAPIKeyCredentialProvider&quot;</span><span class="p">,</span>
     <span class="s2">&quot;apiKey&quot;</span><span class="p">:</span> <span class="s2">&quot;myApiKey&quot;</span>
 <span class="p">})</span>
-</code></pre></div>
-<h2 id="configure-environment-variables">Configure Environment Variables<a class="headerlink" href="#configure-environment-variables" title="Permanent link">&para;</a></h2>
-<p>Set up environment variables for your development environment:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># AWS Configuration</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">AWS_REGION</span><span class="o">=</span>us-west-2
-<span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span>your-access-key-id
-<span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span>your-secret-access-key
-
-<span class="c1"># Agent Configuration</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">AGENT_IDENTITY_ID</span><span class="o">=</span>your-agent-identity-id
-<span class="nb">export</span><span class="w"> </span><span class="nv">AGENT_IDENTITY_ARN</span><span class="o">=</span>your-agent-identity-arn
-<span class="nb">export</span><span class="w"> </span><span class="nv">WORKLOAD_ACCESS_TOKEN</span><span class="o">=</span>your-workload-access-token
 </code></pre></div>
 <h2 id="building-a-simple-research-agent">Building a Simple Research Agent<a class="headerlink" href="#building-a-simple-research-agent" title="Permanent link">&para;</a></h2>
 <p>Let's create a simple research agent that demonstrates AgentCore Identity capabilities:</p>
