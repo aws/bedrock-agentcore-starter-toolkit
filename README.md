@@ -83,30 +83,15 @@ Bedrock AgentCore is currently in public preview.
 ### Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/aws/bedrock-agentcore-starter-toolkit.git
-cd bedrock-agentcore-starter-toolkit
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies (recommended)
-uv sync
+# Install using uv (recommended)
+uv pip install bedrock-agentcore-starter-toolkit
 
 # Or alternatively with pip
-pip install -e .
+pip install bedrock-agentcore-starter-toolkit
 ```
-
-### About Package Management
-
-This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management, providing:
-
-- ⚡ 10-100x faster package installation than pip
-- 🔒 Lockfile support for reproducible builds
-- 📦 Built-in virtual environment management
-- 🎯 PEP 517 compliant builds
-
-The repository includes:
-
-- `pyproject.toml` - Project metadata and dependencies
-- `uv.lock` - Locked dependency versions for reproducibility
 
 ### Development Setup
 
