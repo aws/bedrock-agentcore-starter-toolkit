@@ -4,19 +4,6 @@ Command-line interface for BedrockAgentCore Starter Toolkit.
 
 The `agentcore` CLI provides commands for configuring, launching, managing agents, and working with gateways.
 
-## Recent Improvements
-
-### Enhanced Output Display
-- **Consistent Panels**: All commands now show information in unified panel format
-- **UTF-8 Support**: Proper handling of multi-byte characters (emoji, kanji, etc.)
-- **CloudWatch Integration**: Direct log tailing commands in output panels
-
-### Performance Optimizations
-- **50% faster first deployment**: Optimized CodeBuild process
-- **UV package manager**: 4x faster dependency installation
-- **Parallel operations**: ECR auth and builds run concurrently
-- **Resource caching**: Reuses roles and projects on subsequent deployments
-
 
 ## Runtime Commands
 
@@ -112,7 +99,7 @@ Options:
 
 - `--user-id, -u TEXT`: User ID for authorization flows
 
-**Enhanced Output:**
+**Example Output:**
 
 - Session and Request IDs displayed in panel header
 - CloudWatch log commands ready to copy

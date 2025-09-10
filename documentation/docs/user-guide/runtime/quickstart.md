@@ -8,7 +8,11 @@ Before starting, make sure you have:
 
 - **AWS Account** with credentials configured  in your desired region (`aws configure`)
 - **Python 3.10+** installed
-- AWS CLI configured with your preferred region:
+- **AWS CLI** configured with your preferred region
+- **AWS Permissions**:
+  - `BedrockAgentCoreFullAccess` managed policy
+  - `AmazonBedrockFullAccess` managed policy
+  - **Caller permissions**: [See detailed policy here](permissions.md#developercaller-permissions)
 
 
 ## Region Configuration
@@ -38,9 +42,7 @@ The toolkit uses [`uv`](https://github.com/astral-sh/uv) for ultra-fast Python p
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone and install
-git clone https://github.com/aws/bedrock-agentcore-starter-toolkit.git
-cd bedrock-agentcore-starter-toolkit
-uv sync
+uv pip install bedrock-agentcore-starter-toolkit
 ```
 
 ### Alternative: Using pip
