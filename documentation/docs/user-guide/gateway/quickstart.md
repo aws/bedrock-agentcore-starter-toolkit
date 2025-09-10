@@ -32,7 +32,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install boto3 bedrock-agentcore-starter-toolkit strands-agents
 ```
 
-## Complete Working Example
+## Step 2: Complete Working Example
 
 Save this as `gateway_quickstart.py` and run it to create your Gateway and test it with an agent:
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     main()
 ```
 
-## Run the Complete Example
+## Step 3: Run the Complete Example
 
 ```bash
 python gateway_quickstart.py
