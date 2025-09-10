@@ -78,6 +78,53 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 
 Bedrock AgentCore is currently in public preview.
 
+## Installation
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/aws/bedrock-agentcore-starter-toolkit.git
+cd bedrock-agentcore-starter-toolkit
+
+# Install dependencies (recommended)
+uv sync
+
+# Or alternatively with pip
+pip install -e .
+```
+
+### About Package Management
+
+This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management, providing:
+
+- ⚡ 10-100x faster package installation than pip
+- 🔒 Lockfile support for reproducible builds
+- 📦 Built-in virtual environment management
+- 🎯 PEP 517 compliant builds
+
+The repository includes:
+
+- `pyproject.toml` - Project metadata and dependencies
+- `uv.lock` - Locked dependency versions for reproducibility
+
+### Development Setup
+
+```bash
+# Create and activate virtual environment with dependencies
+uv sync
+
+# Run commands using uv
+uv run agentcore --help
+
+# Add new dependencies
+uv add requests
+
+# Add development dependencies
+uv add --dev pytest
+```
+
+
 ## 📝 License & Contributing
 
 - **License:** Apache 2.0 - see [LICENSE.txt](LICENSE.txt)

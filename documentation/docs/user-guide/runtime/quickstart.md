@@ -6,99 +6,118 @@ Get your AI agent running on Amazon Bedrock AgentCore in 3 simple steps.
 
 Before starting, make sure you have:
 
-- **AWS Account** with credentials configured (`aws configure`)
+- **AWS Account** with credentials configured  in your desired region (`aws configure`)
 - **Python 3.10+** installed
-- **AWS Permissions**:
-  - `BedrockAgentCoreFullAccess` managed policy
-  - `AmazonBedrockFullAccess` managed policy
-  - **Caller permissions**: [See detailed policy here](permissions.md#developercaller-permissions)
-- **Model Access**: Anthropic Claude 4.0 enabled in [Amazon Bedrock console](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html)
+- AWS CLI configured with your preferred region:
 
 
-## Step 0: Setup folder and virtual environment
+## Region Configuration
+By default, the AgentCore CLI deploys to `us-west-2`. To deploy to a different region:
+- Use `--region` flag: `agentcore configure -e my_agent.py --region us-east-1`
+- Or set AWS_DEFAULT_REGION environment variable: `export AWS_DEFAULT_REGION=us-east-1`
 
-Create a new folder for this quickstart, create and initialize a new python virtual environment
+
+## Architecture Requirements
+⚠️ **Important**: AgentCore Runtime requires ARM64 architecture containers. This is because:
+- Runtime uses AWS Graviton processors for cost-efficiency and performance
+- All containers must be built for `linux/arm64` platform
+- Local development on x86 machines requires Docker buildx or CodeBuild deployment
+
+**Solutions for x86 machines:**
+- Use default CodeBuild deployment (recommended): `agentcore launch`
+- Use Docker buildx for cross-platform builds: `docker buildx build --platform linux/arm64`
+
+## Step 1: Installation
+
+### Recommended: Using uv (Fastest)
+
+The toolkit uses [`uv`](https://github.com/astral-sh/uv) for ultra-fast Python package management:
 
 ```bash
-mkdir agentcore-runtime-quickstart
-cd agentcore-runtime-quickstart
-python3 -m venv venv
-source venv/bin/activate
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install
+git clone https://github.com/aws/bedrock-agentcore-starter-toolkit.git
+cd bedrock-agentcore-starter-toolkit
+uv sync
+```
+
+### Alternative: Using pip
+
+```bash
+pip install bedrock-agentcore-starter-toolkit
+```
+
+> **Note:** The toolkit uses `uv` internally for containerization, providing 4x faster dependency installation during deployments.
+
+### Verify Installation
+
+```bash
+agentcore --version
 ```
 
 
-## Step 1: Install and Create Your Agent
+## Step 2: Create Your First Agent
 
-```bash
-# Install both packages
-pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
-```
-
-Create `my_agent.py`:
+Create a file `hello_agent.py`:
 
 ```python
 from bedrock_agentcore import BedrockAgentCoreApp
-from strands import Agent
 
 app = BedrockAgentCoreApp()
-agent = Agent()
 
 @app.entrypoint
-def invoke(payload):
-    """Your AI agent function"""
-    user_message = payload.get("prompt", "Hello! How can I help you today?")
-    result = agent(user_message)
-    return {"result": result.message}
+def handler(payload):
+    user_message = payload.get("prompt", "Hello!")
+    return {"response": f"You said: {user_message}. I'm your agent running on AgentCore!"}
 
 if __name__ == "__main__":
     app.run()
 ```
 
-Create `requirements.txt`:
-```
-bedrock-agentcore
-strands-agents
-```
-
-Run
-```bash
-cat > requirements.txt << EOF
-bedrock-agentcore
-strands-agents
-EOF
-```
-
-## Step 2: Test Locally
+## Step 3: Configure and Deploy
 
 ```bash
-# Start your agent
-python my_agent.py
+# Configure your agent (creates necessary AWS resources)
+agentcore configure --entrypoint hello_agent.py
 
-# Test it (in another terminal)
-curl -X POST http://localhost:8080/invocations \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Hello!"}'
-```
-
-✅ **Success**: You should see a response like `{"result": "Hello! I'm here to help..."}`
-
-## Step 3: Deploy to AWS
-
-```bash
-# Configure and deploy (auto-creates all required resources)
-agentcore configure -e my_agent.py
+# Deploy to cloud (uses CodeBuild, no Docker required)
 agentcore launch
 
-# Test your deployed agent
-agentcore invoke '{"prompt": "tell me a joke"}'
+# Test your agent
+agentcore invoke '{"prompt": "Hello AgentCore!"}'
 ```
+
 
 🎉 **Congratulations!** Your agent is now running on Amazon Bedrock AgentCore!
 
----
-> **💡 Tip**: The toolkit auto-creates IAM roles and ECR repositories - no manual setup needed!
 
----
+## Understanding Your Deployment
+
+After deployment, the toolkit validates your setup and provides:
+
+- ✅ Execution role with proper permissions (Memory, Identity, Runtime access)
+- ✅ ECR repository for your container images
+- ✅ CloudWatch logs automatically configured
+- ✅ Session management enabled
+- ✅ Network configuration set to PUBLIC by default
+
+## Quick Links to AWS Console Resources
+
+After deployment, find your resources at:
+- [CloudWatch Logs](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups)
+- [ECR Repositories](https://console.aws.amazon.com/ecr/repositories)
+- [IAM Roles](https://console.aws.amazon.com/iam/home#/roles)
+- [CodeBuild Projects](https://console.aws.amazon.com/codesuite/codebuild/projects)
+
+### What’s Happening Behind the Scenes?
+
+1. **Container Build**: Your Python code is containerized for ARM64
+1. **Resource Creation**: IAM roles, ECR repositories created automatically
+1. **Deployment**: Container deployed to managed AgentCore infrastructure
+1. **Isolation**: Each session runs in isolated microVM for security
+
 
 ## Troubleshooting
 
@@ -126,6 +145,7 @@ lsof -ti:8080 | xargs kill -9
 **"CodeBuild build error"**
 - Check CodeBuild project logs in AWS console
 - Verify your [caller permissions](permissions.md#developercaller-permissions) include CodeBuild access
+
 
 ### Getting Help
 
@@ -177,6 +197,7 @@ agentcore configure -e my_agent.py --execution-role arn:aws:iam::123456789012:ro
 Ready to build something more advanced?
 
 - **[Runtime Overview](overview.md)** - Deep dive into AgentCore features
-- **[Memory Guide](../memory/quickstart.md)** - Add persistent memory
-- **[Gateway Tools](../gateway/quickstart.md)** - Connect external APIs
+- **[Add tools with Gateway](../gateway/quickstart.md)**
+- **[Enable memory for your agent](../../examples/memory-integration.md)**
+- **[Configure OAuth authentication](../runtime/auth.md)**
 - **[Examples](../../examples/README.md)** - More complete examples

@@ -4,6 +4,20 @@ Command-line interface for BedrockAgentCore Starter Toolkit.
 
 The `agentcore` CLI provides commands for configuring, launching, managing agents, and working with gateways.
 
+## Recent Improvements
+
+### Enhanced Output Display
+- **Consistent Panels**: All commands now show information in unified panel format
+- **UTF-8 Support**: Proper handling of multi-byte characters (emoji, kanji, etc.)
+- **CloudWatch Integration**: Direct log tailing commands in output panels
+
+### Performance Optimizations
+- **50% faster first deployment**: Optimized CodeBuild process
+- **UV package manager**: 4x faster dependency installation
+- **Parallel operations**: ECR auth and builds run concurrently
+- **Resource caching**: Reuses roles and projects on subsequent deployments
+
+
 ## Runtime Commands
 
 ### Configure
@@ -43,6 +57,18 @@ Subcommands:
 - `list`: List configured agents
 
 - `set-default`: Set default agent
+
+**Region Configuration:**
+
+```bash
+# Use specific region
+agentcore configure -e agent.py --region us-east-1
+
+# Region precedence:
+# 1. --region flag
+# 2. AWS_DEFAULT_REGION environment variable
+# 3. AWS CLI configured region
+```
 
 ### Launch
 
@@ -85,6 +111,27 @@ Options:
 - `--local, -l`: Send request to a running local container
 
 - `--user-id, -u TEXT`: User ID for authorization flows
+
+**Enhanced Output:**
+
+- Session and Request IDs displayed in panel header
+- CloudWatch log commands ready to copy
+- Proper UTF-8 character rendering
+- Clean response formatting without raw data structures
+
+Example output:
+
+```
+╭────────── agent_name ──────────╮
+│ Session: abc-123                │
+│ Request ID: req-456             │
+│ ARN: arn:aws:bedrock...         │
+│ Logs: aws logs tail ... --follow│
+╰─────────────────────────────────╯
+
+Response:
+Your formatted response here
+```
 
 ### Status
 

@@ -1,34 +1,77 @@
 # Runtime Permissions
 
-This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime. The toolkit supports two types of execution roles with distinct permission sets.
+This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime.
 
-Refer to [AWS Bedrock AgentCore Runtime Permissions](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html) documentation for more details.
 
-## Overview
+## Auto-Created Execution Role
 
-The toolkit requires two types of IAM roles for different phases of agent deployment:
+When using `agentcore configure` without specifying a role, the toolkit automatically creates an execution role with comprehensive permissions for all AgentCore services.
 
-- **Runtime Execution Role**: Used by Bedrock AgentCore Runtime to execute your agent
-- **CodeBuild Execution Role**: Used by AWS CodeBuild to build and push container images (ARM64 architecture)
+### Complete Permission Set
 
-Both roles can be automatically created by the toolkit or manually specified using existing roles.
+The auto-created role includes permissions for:
 
-## Auto Role Creation Feature
+#### Runtime Operations
+```json
+{
+  "Sid": "BedrockAgentCoreRuntime",
+  "Effect": "Allow",
+  "Action": [
+    "bedrock-agentcore:InvokeAgentRuntime"
+  ],
+  "Resource": [
+    "arn:aws:bedrock-agentcore:region:accountId:runtime/*"
+  ]
+}
+```
 
-### Overview
+#### Memory Service Access
 
-The Bedrock AgentCore Starter Toolkit includes an **auto role creation feature** that automatically generates the Runtime Execution Role when you don't specify an existing role.
+```json
+{
+  "Sid": "BedrockAgentCoreMemory",
+  "Effect": "Allow",
+  "Action": [
+    "bedrock-agentcore:CreateMemory",
+    "bedrock-agentcore:CreateEvent",
+    "bedrock-agentcore:GetEvent",
+    "bedrock-agentcore:GetMemory",
+    "bedrock-agentcore:GetMemoryRecord",
+    "bedrock-agentcore:ListActors",
+    "bedrock-agentcore:ListEvents",
+    "bedrock-agentcore:ListMemoryRecords",
+    "bedrock-agentcore:ListSessions",
+    "bedrock-agentcore:DeleteEvent",
+    "bedrock-agentcore:DeleteMemoryRecord",
+    "bedrock-agentcore:RetrieveMemoryRecords"
+  ],
+  "Resource": [
+    "arn:aws:bedrock-agentcore:region:accountId:memory/*"
+  ]
+}
+```
 
-### What Gets Auto-Created
+#### Identity Service Access
 
-When you run `agentcore configure` without specifying the `--execution-role` parameter, the toolkit automatically creates:
-
-#### Runtime Execution Role
-- **Name**: `AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}`
-- **Purpose**: Used by Bedrock AgentCore to execute your agent
-- **Permissions**: All required runtime permissions (ECR, CloudWatch, Bedrock, etc.)
-
-> **Note**: The CodeBuild Execution Role (`AmazonBedrockAgentCoreSDKCodeBuild-{region}-{hash}`) is always auto-created when using CodeBuild deployment, regardless of this setting.
+```json
+{
+  "Sid": "BedrockAgentCoreIdentity",
+  "Effect": "Allow",
+  "Action": [
+    "bedrock-agentcore:GetResourceApiKey",
+    "bedrock-agentcore:GetResourceOauth2Token",
+    "bedrock-agentcore:GetWorkloadAccessToken",
+    "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
+    "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+  ],
+  "Resource": [
+    "arn:aws:bedrock-agentcore:region:accountId:token-vault/default",
+    "arn:aws:bedrock-agentcore:region:accountId:token-vault/default/*",
+    "arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default",
+    "arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default/workload-identity/agentName-*"
+  ]
+}
+```
 
 ### Benefits of Auto Role Creation
 
