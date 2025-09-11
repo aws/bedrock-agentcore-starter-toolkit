@@ -15,9 +15,7 @@ In this quick start guide you will learn how to set up a Gateway and integrate i
 - **IAM Permissions** for creating roles, Lambda functions, and using Bedrock AgentCore
 - **Model Access** - Enable Anthropic’s Claude Sonnet 3.7 in the Bedrock console (or another model for the demo agent)
 
-## Step 0: Setup Folder and Virtual Environment
-
-Create a new folder for this quickstart and initialize a Python virtual environment:
+## Step 1: Setup and Install
 
 ```bash
 mkdir agentcore-gateway-quickstart
@@ -26,27 +24,25 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-## Step 1: Install Dependencies
+**Install Dependencies**
 
 ```bash
-pip install boto3 bedrock-agentcore-starter-toolkit strands-agents
+pip install boto3
+pip install bedrock-agentcore-starter-toolkit
+pip install strands-agents
 ```
 
-## Step 2: Complete Working Example
+## Step 2: Create and Configure Your Gateway
 
-Save this as `gateway_quickstart.py` and run it to create your Gateway and test it with an agent:
+Save this as `setup_gateway.py`:
 
 ```python
 """
-gateway_quickstart.py - Complete Gateway setup and test
-This script creates a Gateway, adds tools, and runs an interactive agent
+setup_gateway.py - Create and configure your Gateway
+Run this first to set up your Gateway infrastructure
 """
 
 from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-from strands import Agent
-from strands.models import BedrockModel
-from strands.tools.mcp.mcp_client import MCPClient
-from mcp.client.streamable_http import streamablehttp_client
 import json
 import logging
 import time
@@ -54,11 +50,8 @@ import time
 # ============= CONFIGURATION =============
 # IMPORTANT: Set your AWS region here
 REGION = "us-east-1"  # Change to your preferred region
-MODEL_ID = "anthropic.claude-3-7-sonnet-20250219-v1:0"  # Or your preferred model
 
-def setup_gateway():
-    """Create Gateway with OAuth authorization and Lambda tools"""
-
+def main():
     print(f"\n📍 Setting up Gateway in region: {REGION}")
     print("=" * 50)
 
@@ -66,14 +59,13 @@ def setup_gateway():
     client = GatewayClient(region_name=REGION)
     client.logger.setLevel(logging.INFO)
 
-    # Step 1: Create OAuth authorizer using Cognito
-    # This automatically sets up a Cognito user pool for authentication
-    print("\n1️⃣ Creating OAuth authorization server...")
+    # Step 2.1: Create OAuth authorizer using Cognito
+    print("\n2.1 Creating OAuth authorization server...")
     cognito_response = client.create_oauth_authorizer_with_cognito("TestGateway")
     print("✅ OAuth authorizer created")
 
-    # Step 2: Create the Gateway
-    print("\n2️⃣ Creating Gateway...")
+    # Step 2.2: Create the Gateway
+    print("\n2.2 Creating Gateway...")
     gateway = client.create_mcp_gateway(
         # name=None,  # Optional: Gateway name (auto-generated if not provided)
         # role_arn=None,  # Optional: IAM role ARN (auto-created if not provided)
@@ -83,42 +75,99 @@ def setup_gateway():
     print(f"✅ Gateway created: {gateway['gatewayId']}")
     print(f"   Gateway URL: {gateway['gatewayUrl']}")
 
-    # Step 3: Add Lambda target with test tools
-    print("\n3️⃣ Adding Lambda target with tools...")
+    # Step 2.3: Add Lambda target with test tools
+    print("\n2.3 Adding Lambda target with tools...")
     lambda_target = client.create_mcp_gateway_target(
-        gateway=gateway,  # Required: The gateway object from step 2
+        gateway=gateway,  # Required: The gateway object
         # name=None,  # Optional: Target name (auto-generated if not provided)
-        target_type="lambda",  # Required: Type of target (lambda, openApiSchema, smithyModel)
+        target_type="lambda",  # Required: Type of target
         # target_payload=None,  # Optional: Custom Lambda config (creates test Lambda if None)
-        # credentials=None  # Optional: For API targets requiring API keys or OAuth
     )
     print(f"✅ Lambda target added: {lambda_target['targetId']}")
 
-    # Step 4: Get access token for testing
-    print("\n4️⃣ Getting OAuth access token...")
+    # Step 2.4: Get access token
+    print("\n2.4 Getting OAuth access token...")
     access_token = client.get_access_token_for_cognito(cognito_response["client_info"])
     print("✅ Access token obtained")
 
-    # Wait for Gateway to be fully ready
-    print("\n⏳ Waiting for Gateway to be ready (DNS propagation)...")
-    time.sleep(10)
-
-    return {
-        "gateway": gateway,
+    # Step 2.5: Save configuration
+    print("\n2.5 Saving configuration...")
+    config = {
+        "gateway_url": gateway['gatewayUrl'],
+        "gateway_id": gateway['gatewayId'],
         "access_token": access_token,
-        "client_info": cognito_response["client_info"],
-        "client": client
+        "region": REGION,
+        "client_id": cognito_response["client_info"]["client_id"],
+        "client_secret": cognito_response["client_info"]["client_secret"],
+        "token_endpoint": cognito_response["client_info"]["token_endpoint"]
     }
 
-def run_interactive_agent(config):
-    """Run an interactive agent that uses the Gateway tools"""
+    with open("gateway_config.json", "w") as f:
+        json.dump(config, f, indent=2)
 
-    print("\n5️⃣ Starting Interactive Agent")
+    print("✅ Configuration saved to gateway_config.json")
+
+    # Wait for DNS propagation
+    print("\n⏳ Waiting for Gateway DNS propagation (10 seconds)...")
+    time.sleep(10)
+
+    print("\n" + "=" * 50)
+    print("✅ GATEWAY SETUP COMPLETE!")
+    print("=" * 50)
+    print("\n📊 Gateway Details:")
+    print(f"   Gateway ID: {gateway['gatewayId']}")
+    print(f"   Gateway URL: {gateway['gatewayUrl']}")
+    print(f"   Region: {REGION}")
+    print(f"\n📋 Available tools: get_weather, get_time")
+    print(f"\n👉 Next: Run 'python test_agent.py' to test your Gateway")
+
+    return config
+
+if __name__ == "__main__":
+    main()
+```
+
+Run it:
+
+```bash
+python setup_gateway.py
+```
+
+## Step 3: Test Your Gateway with an Interactive Agent
+
+Save this as `test_agent.py`:
+
+```python
+"""
+test_agent.py - Test your Gateway with an interactive agent
+Run this after setup_gateway.py to interact with your tools
+"""
+
+from strands import Agent
+from strands.models import BedrockModel
+from strands.tools.mcp.mcp_client import MCPClient
+from mcp.client.streamable_http import streamablehttp_client
+import json
+
+# Load configuration from setup
+try:
+    with open("gateway_config.json", "r") as f:
+        config = json.load(f)
+except FileNotFoundError:
+    print("❌ Error: gateway_config.json not found!")
+    print("Please run 'python setup_gateway.py' first")
+    exit(1)
+
+MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+
+def main():
+    print("\n🤖 Starting Interactive Agent")
     print("=" * 50)
 
+    # Create transport with OAuth token
     def create_transport():
         return streamablehttp_client(
-            config['gateway']['gatewayUrl'],
+            config['gateway_url'],
             headers={"Authorization": f"Bearer {config['access_token']}"}
         )
 
@@ -132,7 +181,8 @@ def run_interactive_agent(config):
     mcp_client = MCPClient(create_transport)
 
     with mcp_client:
-        # List available tools
+        # Step 3.1: List available tools
+        print("\n3.1 Discovering available tools...")
         tools = []
         pagination_token = None
         while True:
@@ -142,16 +192,21 @@ def run_interactive_agent(config):
                 break
             pagination_token = tmp_tools.pagination_token
 
-        print(f"\n📋 Available tools: {[tool.tool_name for tool in tools]}")
+        print(f"✅ Found {len(tools)} tools: {[tool.tool_name for tool in tools]}")
 
-        # Create agent
+        # Step 3.2: Create agent
+        print("\n3.2 Creating agent with tools...")
         agent = Agent(model=bedrock_model, tools=tools)
+        print("✅ Agent ready!")
 
-        print("\n🤖 Interactive Agent Ready!")
-        print("Ask questions like:")
-        print("  - What's the weather in Seattle?")
-        print("  - What time is it in EST?")
-        print("Type 'exit' or 'quit' to stop.\n")
+        # Step 3.3: Interactive loop
+        print("\n3.3 Starting interactive session")
+        print("-" * 50)
+        print("💡 Try these questions:")
+        print("   • What's the weather in Seattle?")
+        print("   • What time is it in EST?")
+        print("   • Get the weather for New York")
+        print("\nType 'exit' or 'quit' to stop.\n")
 
         while True:
             user_input = input("You: ")
@@ -159,60 +214,18 @@ def run_interactive_agent(config):
                 print("Goodbye!")
                 break
 
-            print("\n🤔 Thinking...\n")
+            print("\n🤔 Thinking...")
             response = agent(user_input)
-            print(f"Agent: {response.message['content']}\n")
-
-def save_configuration(config):
-    """Save configuration for later use"""
-
-    # Save config for reuse
-    config_to_save = {
-        "gateway_url": config['gateway']['gatewayUrl'],
-        "gateway_id": config['gateway']['gatewayId'],
-        "region": REGION,
-        "client_info": config['client_info']
-    }
-
-    with open("gateway_config.json", "w") as f:
-        json.dump(config_to_save, f, indent=2)
-
-    print("\n💾 Configuration saved to gateway_config.json")
-    print("\n📚 Next steps:")
-    print(f"   1. View in console: https://console.aws.amazon.com/bedrock-agentcore/")
-    print(f"   2. Check logs: /aws/bedrock-agentcore/gateways/{config['gateway']['gatewayId']}")
-    print("   3. Add real APIs using the examples in this guide")
-
-def main():
-    """Main execution flow"""
-    try:
-        # Setup Gateway
-        config = setup_gateway()
-
-        # Save configuration
-        save_configuration(config)
-
-        # Run interactive agent
-        run_interactive_agent(config)
-
-        print("\n✅ Success! Your Gateway is ready for production use.")
-
-    except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
-        print("\nTroubleshooting:")
-        print("1. Check AWS credentials: aws configure list")
-        print("2. Verify IAM permissions for bedrock-agentcore:*")
-        print("3. Ensure Claude Sonnet 3.7 is enabled in Bedrock console")
-        print("4. Try a different region if the service isn't available")
+            print(f"\nAgent: {response.message['content']}\n")
 
 if __name__ == "__main__":
     main()
 ```
 
-## Step 3: Run the Complete Example
+Run it:
 
 ```bash
-python gateway_quickstart.py
+python test_agent.py
 ```
 
 **Expected Output:**
