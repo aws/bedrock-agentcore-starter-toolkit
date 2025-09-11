@@ -18,40 +18,21 @@ Before starting, make sure you have:
 
 Create a project folder and install the required packages:
 
-### Option A: Using uv (Faster - Recommended)
-
 ```bash
-# Install uv (one-time setup)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
 # Setup project
 mkdir agentcore-runtime-quickstart
 cd agentcore-runtime-quickstart
-uv venv
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install packages
-uv pip install bedrock-agentcore-starter-toolkit strands-agents
-```
-
-### Option B: Using Standard Python
-
-```bash
-# Setup project
-mkdir agentcore-runtime-quickstart
-cd agentcore-runtime-quickstart
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install packages
 pip install bedrock-agentcore-starter-toolkit strands-agents
+
+# Verify installation
+agentcore --help
 ```
 
-### Verify Installation
-
-```bash
-agentcore --help  # Verify the CLI is installed
-```
+> **💡 Tip**: For faster installation, you can use [uv](https://github.com/astral-sh/uv) instead of pip. See [Advanced Setup](#advanced-setup) below.
 
 ## Step 2: Create Your Agent
 
@@ -77,7 +58,8 @@ if __name__ == "__main__":
 Create `requirements.txt` (for container deployment):
 
 ```bash
-echo "strands-agents" > requirements.txt
+echo "bedrock-agentcore
+strands-agents" > requirements.txt
 ```
 
 ## Step 3: Test Locally
@@ -96,7 +78,7 @@ curl -X POST http://localhost:8080/invocations \
 
 ```bash
 # Configure your agent (creates .bedrock_agentcore.yaml config file)
-agentcore configure --entrypoint my_agent.py
+agentcore configure -e my_agent.py
 
 # Deploy to cloud (reads config from .bedrock_agentcore.yaml)
 agentcore launch
@@ -153,140 +135,23 @@ agentcore configure -e my_agent.py
 |**“Docker not found” warning**     |Ignore it! CodeBuild handles container building        |
 |**“Port 8080 in use”** (local only)|`lsof -ti:8080                                         |
 
-## Using Other Frameworks
+## Advanced Setup
 
-### LangGraph Example
+### Using uv (Faster Alternative)
 
-Create `langgraph_agent.py`:
-
-```python
-from bedrock_agentcore import BedrockAgentCoreApp
-from langchain_aws import ChatBedrock
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
-from typing import Annotated, TypedDict
-
-app = BedrockAgentCoreApp()
-
-# Define state
-class State(TypedDict):
-    messages: Annotated[list, add_messages]
-
-# Initialize Bedrock LLM
-llm = ChatBedrock(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-    model_kwargs={"temperature": 0.7}
-)
-
-# Define agent function
-def chat_node(state: State):
-    response = llm.invoke(state["messages"])
-    return {"messages": [response]}
-
-# Build graph
-workflow = StateGraph(State)
-workflow.add_node("chat", chat_node)
-workflow.add_edge(START, "chat")
-workflow.add_edge("chat", END)
-graph = workflow.compile()
-
-@app.entrypoint
-def invoke(payload):
-    user_message = payload.get("prompt", "Hello!")
-    result = graph.invoke({
-        "messages": [{"role": "user", "content": user_message}]
-    })
-    # Extract the assistant's response
-    last_message = result["messages"][-1]
-    return {"result": last_message.content}
-
-if __name__ == "__main__":
-    app.run()
-```
-
-Create `requirements.txt`:
+[uv](https://github.com/astral-sh/uv) is a fast Python package manager that can speed up installation:
 
 ```bash
-echo "langchain-aws
-langgraph" > requirements.txt
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Quick setup with uv
+uv init agentcore-runtime-quickstart && cd agentcore-runtime-quickstart
+uv add bedrock-agentcore-starter-toolkit strands-agents
+source .venv/bin/activate
+
+# Create agent and continue from Step 2
 ```
-
-Deploy:
-
-```bash
-agentcore configure --entrypoint langgraph_agent.py
-agentcore launch
-agentcore invoke '{"prompt": "What is LangGraph?"}'
-```
-
-### CrewAI Example
-
-Create `crewai_agent.py`:
-
-```python
-from bedrock_agentcore import BedrockAgentCoreApp
-from crewai import Agent, Task, Crew, Process
-import os
-
-app = BedrockAgentCoreApp()
-
-# CrewAI with litellm expects the model in format: bedrock/model-id
-# Set AWS region for litellm to use
-os.environ["AWS_DEFAULT_REGION"] = os.environ.get("AWS_REGION", "us-west-2")
-
-# Create agent with Bedrock model
-researcher = Agent(
-    role="Research Assistant",
-    goal="Provide helpful and accurate information",
-    backstory="You are a knowledgeable research assistant",
-    verbose=False,
-    llm="bedrock/us.anthropic.claude-3-7-sonnet-20250219-v1:0",  # litellm format
-    max_iter=2  # Limit iterations to prevent runaway costs
-)
-
-@app.entrypoint
-def invoke(payload):
-    user_message = payload.get("prompt", "Hello!")
-
-    # Create task
-    task = Task(
-        description=user_message,
-        agent=researcher,
-        expected_output="A helpful response to the user's question"
-    )
-
-    # Create crew
-    crew = Crew(
-        agents=[researcher],
-        tasks=[task],
-        process=Process.sequential,
-        verbose=False
-    )
-
-    # Execute
-    result = crew.kickoff()
-    return {"result": result.raw}
-
-if __name__ == "__main__":
-    app.run()
-```
-
-Create `requirements.txt`:
-
-```bash
-echo "crewai
-crewai-tools" > requirements.txt
-```
-
-Deploy:
-
-```bash
-agentcore configure --entrypoint crewai_agent.py
-agentcore launch
-agentcore invoke '{"prompt": "What is CrewAI?"}'
-```
-
-## Advanced Options
 
 ### Deployment Modes
 
@@ -316,6 +181,7 @@ boto3>=1.34.0" > requirements.txt
 agentcore configure -e my_agent.py
 ```
 
+
 ### Why ARM64?
 
 AgentCore Runtime requires ARM64 containers (AWS Graviton). The toolkit handles this automatically:
@@ -325,6 +191,7 @@ AgentCore Runtime requires ARM64 containers (AWS Graviton). The toolkit handles 
 
 ## Next Steps
 
+- **[Framework Examples](../../examples/runtime-framework-agents.md)** - Use LangGraph, CrewAI, and other frameworks
 - **[Add tools with Gateway](../gateway/quickstart.md)** - Connect your agent to APIs and services
 - **[Enable memory](../../examples/memory-integration.md)** - Give your agent conversation history
 - **[Configure authentication](../runtime/auth.md)** - Set up OAuth/JWT auth

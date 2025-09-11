@@ -93,22 +93,6 @@ uv pip install bedrock-agentcore-starter-toolkit
 pip install bedrock-agentcore-starter-toolkit
 ```
 
-### Development Setup
-
-```bash
-# Create and activate virtual environment with dependencies
-uv sync
-
-# Run commands using uv
-uv run agentcore --help
-
-# Add new dependencies
-uv add requests
-
-# Add development dependencies
-uv add --dev pytest
-```
-
 
 ## 📝 License & Contributing
 

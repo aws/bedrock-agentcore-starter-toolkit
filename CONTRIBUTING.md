@@ -81,6 +81,22 @@ The repository includes:
 - `pyproject.toml` - Project metadata and dependencies
 - `uv.lock` - Locked dependency versions for reproducibility
 
+### Development Setup
+
+```bash
+# Create and activate virtual environment with dependencies
+uv sync
+
+# Run commands using uv
+uv run agentcore --help
+
+# Add new dependencies
+uv add requests
+
+# Add development dependencies
+uv add --dev pytest
+```
+
 ## Code of Conduct
 
 This project adheres to the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct). By participating, you're expected to uphold this code.
