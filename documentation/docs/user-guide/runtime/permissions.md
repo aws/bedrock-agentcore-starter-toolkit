@@ -1,10 +1,6 @@
 # Runtime Permissions
 
-This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime. The toolkit supports two types of execution roles with distinct permission sets.
-
-Refer to [AWS Bedrock AgentCore Runtime Permissions](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html) documentation for more details.
-
-## Overview
+This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime.
 
 The toolkit requires two types of IAM roles for different phases of agent deployment:
 

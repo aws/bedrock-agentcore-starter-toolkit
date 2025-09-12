@@ -67,6 +67,36 @@ See our [Security Policy](SECURITY.md) for more details.
 - For AWS Bedrock service questions, visit [AWS re:Post](https://repost.aws/)
 - For urgent AWS support, use your [AWS Support](https://aws.amazon.com/support/) plan
 
+## About Package Management
+
+This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management, providing:
+
+- ⚡ 10-100x faster package installation than pip
+- 🔒 Lockfile support for reproducible builds
+- 📦 Built-in virtual environment management
+- 🎯 PEP 517 compliant builds
+
+The repository includes:
+
+- `pyproject.toml` - Project metadata and dependencies
+- `uv.lock` - Locked dependency versions for reproducibility
+
+### Development Setup
+
+```bash
+# Create and activate virtual environment with dependencies
+uv sync
+
+# Run commands using uv
+uv run agentcore --help
+
+# Add new dependencies
+uv add requests
+
+# Add development dependencies
+uv add --dev pytest
+```
+
 ## Code of Conduct
 
 This project adheres to the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct). By participating, you're expected to uphold this code.

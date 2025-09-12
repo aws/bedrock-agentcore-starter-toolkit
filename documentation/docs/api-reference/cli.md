@@ -4,6 +4,7 @@ Command-line interface for BedrockAgentCore Starter Toolkit.
 
 The `agentcore` CLI provides commands for configuring, launching, managing agents, and working with gateways.
 
+
 ## Runtime Commands
 
 ### Configure
@@ -43,6 +44,18 @@ Subcommands:
 - `list`: List configured agents
 
 - `set-default`: Set default agent
+
+**Region Configuration:**
+
+```bash
+# Use specific region
+agentcore configure -e agent.py --region us-east-1
+
+# Region precedence:
+# 1. --region flag
+# 2. AWS_DEFAULT_REGION environment variable
+# 3. AWS CLI configured region
+```
 
 ### Launch
 
@@ -85,6 +98,27 @@ Options:
 - `--local, -l`: Send request to a running local container
 
 - `--user-id, -u TEXT`: User ID for authorization flows
+
+**Example Output:**
+
+- Session and Request IDs displayed in panel header
+- CloudWatch log commands ready to copy
+- Proper UTF-8 character rendering
+- Clean response formatting without raw data structures
+
+Example output:
+
+```
+╭────────── agent_name ──────────╮
+│ Session: abc-123                │
+│ Request ID: req-456             │
+│ ARN: arn:aws:bedrock...         │
+│ Logs: aws logs tail ... --follow│
+╰─────────────────────────────────╯
+
+Response:
+Your formatted response here
+```
 
 ### Status
 

@@ -78,6 +78,22 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 
 Bedrock AgentCore is currently in public preview.
 
+## Installation
+
+### Quick Start
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install using uv (recommended)
+uv pip install bedrock-agentcore-starter-toolkit
+
+# Or alternatively with pip
+pip install bedrock-agentcore-starter-toolkit
+```
+
+
 ## 📝 License & Contributing
 
 - **License:** Apache 2.0 - see [LICENSE.txt](LICENSE.txt)
