@@ -19,7 +19,7 @@ Make a folder for this quickstart, create a virtual environment, and install the
 mkdir agentcore-identity-quickstart
 cd agentcore-identity-quickstart
 python3 -m venv .venv
-source venv/bin/activate
+source .venv/bin/activate
 pip install bedrock-agentcore
 ```
 

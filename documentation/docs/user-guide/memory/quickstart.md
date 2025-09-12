@@ -10,7 +10,7 @@ To get started with Amazon Bedrock AgentCore Memory, make a folder for this quic
 mkdir agentcore-memory-quickstart
 cd agentcore-memory-quickstart
 python3 -m venv .venv
-source venv/bin/activate
+source .venv/bin/activate
 pip install bedrock-agentcore
 ```
 
