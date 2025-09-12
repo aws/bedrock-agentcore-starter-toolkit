@@ -20,8 +20,8 @@ In this quick start guide you will learn how to set up a Gateway and integrate i
 ```bash
 mkdir agentcore-gateway-quickstart
 cd agentcore-gateway-quickstart
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 **Install Dependencies**
@@ -32,394 +32,72 @@ pip install bedrock-agentcore-starter-toolkit
 pip install strands-agents
 ```
 
-## Step 2: Create and Configure Your Gateway
+## Step 2: Create and Test Your Gateway
 
 Creates a fully managed MCP server (Gateway) that transforms AWS Lambda functions into AI-accessible tools. The Gateway handles authentication, protocol translation, and provides a single endpoint for your agent to discover and use tools.
 
-Save this as `setup_gateway.py`:
+Save this as `gateway_quickstart.py`:
 
 ```python
-"""
-setup_gateway.py - Create and configure your Gateway with proper IAM permissions
-Run this first to set up your Gateway infrastructure
-"""
+from bedrock_agentcore_starter_toolkit.operations.gateway.setup_gateway import QuickGateway
 
-from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-import boto3
-import json
-import logging
-import time
-
-# ============= CONFIGURATION =============
-# IMPORTANT: Set your AWS region here
-REGION = "us-west-2"  # Change to your preferred region
-
-def fix_gateway_role_trust_policy(role_name, account_id, region):
-    """Ensure the Gateway role can be assumed by bedrock-agentcore service"""
-    iam = boto3.client('iam')
-
-    # Create correct trust policy for bedrock-agentcore
-    trust_policy = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "bedrock-agentcore.amazonaws.com"
-                },
-                "Action": "sts:AssumeRole",
-                "Condition": {
-                    "StringEquals": {
-                        "aws:SourceAccount": account_id
-                    },
-                    "ArnLike": {
-                        "aws:SourceArn": f"arn:aws:bedrock-agentcore:{region}:{account_id}:*"
-                    }
-                }
-            }
-        ]
-    }
-
-    try:
-        # Update the trust policy
-        iam.update_assume_role_policy(
-            RoleName=role_name,
-            PolicyDocument=json.dumps(trust_policy)
-        )
-
-        # Add Lambda invoke permissions
-        policy_name = "LambdaInvokePolicy"
-        lambda_policy = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "lambda:InvokeFunction"
-                    ],
-                    "Resource": f"arn:aws:lambda:{region}:{account_id}:function:AgentCoreLambdaTestFunction"
-                }
-            ]
-        }
-
-        try:
-            iam.put_role_policy(
-                RoleName=role_name,
-                PolicyName=policy_name,
-                PolicyDocument=json.dumps(lambda_policy)
-            )
-        except iam.exceptions.EntityAlreadyExistsException:
-            pass  # Policy already exists
-
-        return True
-    except Exception as e:
-        print(f"⚠️  Warning: Could not update role trust policy: {e}")
-        return False
-
-def main():
-    print(f"\\n📍 Setting up Gateway in region: {REGION}")
-    print("=" * 50)
-
-    # Validate AWS credentials
-    try:
-        sts = boto3.client('sts', region_name=REGION)
-        caller_identity = sts.get_caller_identity()
-        account_id = caller_identity['Account']
-        print(f"✅ AWS Account: {account_id}")
-    except Exception as e:
-        print("❌ AWS credentials not configured. Run 'aws configure' first")
-        exit(1)
-
-    # Initialize the Gateway client
-    client = GatewayClient(region_name=REGION)
-    client.logger.setLevel(logging.ERROR)  # Reduce verbosity
-
-    try:
-        # Step 3.1: Create OAuth authorizer using Cognito
-        print("\\n📐 Step 2.1: Creating OAuth authorization...")
-        print("   • Setting up Cognito user pool for authentication")
-        print("   • This provides secure access to your Gateway")
-
-        cognito_response = client.create_oauth_authorizer_with_cognito("QuickStartGateway")
-        print("   ✅ OAuth authorization configured")
-
-        # Step 3.2: Create the Gateway
-        print("\\n🚪 Step 2.2: Creating Gateway endpoint...")
-        print("   • This is your MCP server URL")
-        print("   • Auto-creates IAM execution role if needed")
-
-        gateway = client.create_mcp_gateway(
-            authorizer_config=cognito_response["authorizer_config"],
-            enable_semantic_search=True  # Enable intelligent tool discovery
-        )
-        print(f"   ✅ Gateway created: {gateway['gatewayId']}")
-
-        # Fix the auto-created role's trust policy
-        role_arn = gateway.get('roleArn')
-        if role_arn:
-            role_name = role_arn.split('/')[-1]
-            print("\\n🔧 Step 2.2.1: Configuring IAM permissions...")
-            print("   • Updating role trust policy for bedrock-agentcore")
-            print("   • Adding Lambda invoke permissions")
-
-            if fix_gateway_role_trust_policy(role_name, account_id, REGION):
-                print("   ✅ IAM permissions configured")
-            else:
-                print("   ⚠️  Manual IAM configuration may be needed")
-
-        # Step 2.3: Add Lambda target with test tools
-        print("\\n🛠️  Step 2.3: Adding Lambda tools...")
-        print("   • Creates test Lambda with mock functions")
-        print("   • Registers tools: get_weather, get_time")
-
-        lambda_target = client.create_mcp_gateway_target(
-            gateway=gateway,
-            target_type="lambda"
-        )
-        print(f"   ✅ Tools added: {lambda_target.get('name', 'TestTarget')}")
-
-        # Step 2.4: Get access token
-        print("\\n🔑 Step 2.4: Getting access token...")
-        print("   • OAuth token for API authentication")
-        print("   • Valid for ~1 hour")
-
-        access_token = client.get_access_token_for_cognito(cognito_response["client_info"])
-        print("   ✅ Access token obtained")
-
-        # Step 3.5: Save configuration
-        print("\\n💾 Step 3.5: Saving configuration...")
-        config = {
-            "gateway_url": gateway['gatewayUrl'],
-            "gateway_id": gateway['gatewayId'],
-            "gateway_role_arn": gateway.get('roleArn', ''),
-            "access_token": access_token,
-            "region": REGION,
-            "target_id": lambda_target['targetId'],
-            "target_name": lambda_target.get('name', 'TestGatewayTarget'),
-            "client_id": cognito_response["client_info"]["client_id"],
-            "client_secret": cognito_response["client_info"]["client_secret"],
-            "token_endpoint": cognito_response["client_info"]["token_endpoint"],
-            "user_pool_id": cognito_response["client_info"]["user_pool_id"],
-            "timestamp": time.time()
-        }
-
-        with open("gateway_config.json", "w") as f:
-            json.dump(config, f, indent=2)
-
-        print("   ✅ Configuration saved to gateway_config.json")
-
-        # Wait for resources to be ready
-        print("\\n⏳ Waiting for resources to be ready (30 seconds)...")
-        print("   • DNS propagation")
-        print("   • IAM permission propagation")
-        print("   • Lambda configuration")
-        time.sleep(30)
-
-        print("\\n" + "=" * 50)
-        print("✅ GATEWAY SETUP COMPLETE!")
-        print("=" * 50)
-        print(f"\\n📊 Gateway URL: {gateway['gatewayUrl']}")
-        print(f"🔧 Test Tools Available:")
-        print(f"   • {lambda_target.get('name', 'Target')}___get_weather (returns: 72°F, Sunny)")
-        print(f"   • {lambda_target.get('name', 'Target')}___get_time (returns: 2:30 PM)")
-        print(f"\\n👉 Next: Run 'python test_agent.py' to test your Gateway")
-
-    except Exception as e:
-        print(f"\\n❌ Setup failed: {e}")
-        print("\\nTroubleshooting:")
-        print("  • Check AWS credentials: 'aws configure'")
-        print("  • Verify IAM permissions for creating resources")
-        print("  • Ensure network connectivity to AWS")
-        exit(1)
-
-if __name__ == "__main__":
-    main()
+# Create and test Gateway
+gateway = QuickGateway(region="us-west-2") # enter your preferred region
+gateway.create()    # Creates Gateway, Lambda tools, and OAuth
+gateway.test()      # Interactive agent chat
+# gateway.cleanup() # Run this when done to remove resources
 ```
 
 Run it:
 
 ```bash
-python setup_gateway.py
+python gateway_quickstart.py
 ```
+That’s it! The agent will start and you can ask questions like:
 
-## Step 3: Test Your Gateway with an Interactive Agent
+- “What’s the weather in Seattle?”
+- “What time is it in New York?”
 
-Connects an AI agent (Claude) to your Gateway, enabling it to discover and use the Lambda tools. You'll have an interactive chat where Claude can respond to questions by calling your mock weather and time tools through the MCP protocol.
+## What You’ve Built
 
-Save this as `test_agent.py`:
-
-```python
-"""
-test_agent.py - Interactive agent using your Gateway tools
-Run after setup_gateway.py to test your MCP server
-"""
-
-from strands import Agent
-from strands.models import BedrockModel
-from strands.tools.mcp.mcp_client import MCPClient
-from mcp.client.streamable_http import streamablehttp_client
-import json
-import time
-import sys
-
-# Load configuration
-try:
-    with open("gateway_config.json", "r") as f:
-        config = json.load(f)
-except FileNotFoundError:
-    print("❌ Error: gateway_config.json not found!")
-    print("👉 Run 'python setup_gateway.py' first")
-    exit(1)
-
-# Model configuration
-MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"  # Set your preferred Bedrock model here.
-
-def check_token_age():
-    """Check if token is still valid (tokens expire after ~1 hour)"""
-    token_age = time.time() - config.get('timestamp', 0)
-    if token_age > 3300:  # 55 minutes
-        print("⚠️  Token may be expired (>55 minutes old)")
-        print("👉 Run 'python setup_gateway.py' again to refresh")
-        return False
-    return True
-
-def main():
-    print("\\n🤖 Starting Interactive Agent")
-    print("=" * 50)
-
-    # Check token validity
-    if not check_token_age():
-        exit(1)
-
-    # Create MCP transport
-    def create_transport():
-        return streamablehttp_client(
-            config['gateway_url'],
-            headers={"Authorization": f"Bearer {config['access_token']}"}
-        )
-
-    # Initialize Bedrock model
-    print(f"📍 Region: {config['region']}")
-    bedrock_model = BedrockModel(
-        model_id=MODEL_ID,
-        streaming=True
-    )
-
-    # Connect to Gateway
-    mcp_client = MCPClient(create_transport)
-
-    try:
-        with mcp_client:
-            # Discover available tools
-            print("\\n🔍 Discovering tools...")
-            tools = []
-            pagination_token = None
-
-            while True:
-                tmp_tools = mcp_client.list_tools_sync(pagination_token=pagination_token)
-                tools.extend(tmp_tools)
-                if not tmp_tools.pagination_token:
-                    break
-                pagination_token = tmp_tools.pagination_token
-
-            # Display discovered tools
-            tool_names = [
-                tool.tool_name if hasattr(tool, 'tool_name') else tool.name
-                for tool in tools
-            ]
-            print(f"✅ Found {len(tools)} tools:")
-            for name in tool_names:
-                if '___' in name:
-                    # Extract the actual tool name
-                    _, tool_part = name.split('___', 1)
-                    print(f"   • {tool_part}")
-                else:
-                    print(f"   • {name}")
-
-            # Create agent with tools
-            print("\\n🎯 Initializing agent...")
-            agent = Agent(model=bedrock_model, tools=tools)
-            print("✅ Agent ready!")
-
-            # Interactive session
-            print("\\n" + "=" * 50)
-            print("💬 INTERACTIVE SESSION")
-            print("=" * 50)
-            print("\\nExample questions to try:")
-            print("  • What's the weather in Seattle?")
-            print("  • What time is it in New York?")
-            print("  • Check the weather for London")
-            print("\\n📝 Note: These are mock tools with fixed responses")
-            print("Type 'exit' to quit\\n")
-
-            while True:
-                user_input = input("You: ")
-
-                if user_input.lower() in ["exit", "quit", "bye"]:
-                    print("\\n👋 Goodbye!")
-                    break
-
-                print("\\n🤔 Processing...")
-
-                try:
-                    response = agent(user_input)
-
-                    # Extract and display response
-                    if hasattr(response, 'message') and 'content' in response.message:
-                        content = response.message['content']
-                        if isinstance(content, list):
-                            for item in content:
-                                if isinstance(item, dict) and 'text' in item:
-                                    print(f"\\nAgent: {item['text']}")
-                                else:
-                                    print(f"\\nAgent: {item}")
-                        else:
-                            print(f"\\nAgent: {content}")
-                    else:
-                        print(f"\\nAgent: {response}")
-
-                    print()  # Add spacing
-
-                except Exception as e:
-                    print(f"\\n❌ Error: {e}")
-                    if "401" in str(e) or "Unauthorized" in str(e):
-                        print("📝 Token expired. Run 'python setup_gateway.py' to refresh")
-                        break
-                    print()
-
-    except Exception as e:
-        print(f"\\n❌ Failed to connect: {e}")
-
-        if "401 Unauthorized" in str(e):
-            print("\\n📝 Authentication failed - token may be expired")
-            print("👉 Run 'python setup_gateway.py' to get a new token")
-        else:
-            print("\\n📝 Troubleshooting tips:")
-            print("  • Verify Gateway setup completed successfully")
-            print("  • Check network connectivity")
-            print("  • Wait a moment for IAM permissions to propagate")
-
-if __name__ == "__main__":
-    main()
-```
-
-Run it:
-
-```bash
-python test_agent.py
-```
-
-**Expected Output:**
-
-- Gateway creation takes ~30 seconds
-- Interactive agent starts automatically
-- You can immediately test with questions
-- Configuration is saved for reuse
+- **MCP Server (Gateway)**: A managed endpoint at `https://gateway-id.gateway.bedrock-agentcore.region.amazonaws.com/mcp`
+- **Lambda Tools**: Mock functions that return test data (weather: “72°F, Sunny”, time: “2:30 PM”)
+- **OAuth Authentication**: Secure access using Cognito tokens
+- **AI Agent**: Claude-powered assistant that can discover and use your tools
 
 ---
 **🥳🥳🥳 Congratulations - you successfully built an agent with MCP tools powered by AgentCore Gateway!**
 ---
 
+## Troubleshooting
+
+|Issue                      |Solution                                                                     |
+|---------------------------|-----------------------------------------------------------------------------|
+|“No module named ‘strands’”|Run: `pip install strands-agents`                                            |
+|“Model not enabled”        |Enable Claude Sonnet 3.7 in Bedrock console → Model access                   |
+|“AccessDeniedException”    |Check IAM permissions for `bedrock-agentcore:*`                              |
+|Gateway not responding     |Wait 30-60 seconds after creation for DNS propagation                        |
+|OAuth token expired        |Tokens expire after 1 hour, get new one with `get_access_token_for_cognito()`|
+
+
+## Quick Validation
+
+```bash
+# Check your Gateway is working
+curl -X POST YOUR_GATEWAY_URL \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Watch live logs
+aws logs tail /aws/bedrock-agentcore/gateways/YOUR_GATEWAY_ID --follow
+```
+
+### Next Steps
+
+- **Add Real APIs**: Extend your Gateway with OpenAPI specifications for real services
+- **Custom Lambda Tools**: Create Lambda functions with your business logic
+- **Production Setup**: Configure VPC endpoints, custom domains, and monitoring
 
 ## Adding Real-World APIs
 
@@ -496,25 +174,6 @@ print(f"Target ID: {target['targetId']}")
 print("\\n👉 Run 'python test_agent.py' again to use the new API")
 ```
 
-### AWS PrivateLink Support
-
-Gateway now supports private VPC connectivity:
-
-```python
-# Create VPC endpoint for private access
-# Service name: com.amazonaws.{region}.bedrock-agentcore.gateway
-
-# Example endpoint policy for OAuth-based Gateway
-vpc_endpoint_policy = {
-    "Statement": [{
-        "Principal": "*",  # Required for OAuth (non-SigV4) authentication
-        "Effect": "Allow",
-        "Action": "*",
-        "Resource": f"arn:aws:bedrock-agentcore:{REGION}::gateway/{gateway_id}"
-    }]
-}
-```
-
 ### Invocation Logging
 
 Monitor all Gateway invocations with:
@@ -538,376 +197,6 @@ Monitor all Gateway invocations with:
 1. Token is included in all requests (valid for 1 hour)
 1. Gateway validates token before executing tools
 
-## Troubleshooting
-
-|Issue                      |Solution                                                                     |
-|---------------------------|-----------------------------------------------------------------------------|
-|“No module named ‘strands’”|Run: `pip install strands-agents`                                            |
-|“Model not enabled”        |Enable Claude Sonnet 3.7 in Bedrock console → Model access                   |
-|“AccessDeniedException”    |Check IAM permissions for `bedrock-agentcore:*`                              |
-|Gateway not responding     |Wait 30-60 seconds after creation for DNS propagation                        |
-|OAuth token expired        |Tokens expire after 1 hour, get new one with `get_access_token_for_cognito()`|
-
-
-**Additional Troubleshooting**
-
-If tools fail with "Access Denied" errors, create diagnose_gateway.py:
-
-What this achieves: Runs comprehensive diagnostics to identify permission issues, role configuration problems, or token expiration. It tests each layer of the Gateway stack and provides specific fixes for any issues found.
-```python
-"""
-diagnose_gateway.py - Comprehensive diagnostic for Gateway issues
-This will test each layer of the Gateway stack to identify the problem
-"""
-
-import boto3
-import json
-import requests
-import time
-from botocore.exceptions import ClientError
-
-# Load configuration
-with open("gateway_config.json", "r") as f:
-    config = json.load(f)
-
-print("🔍 GATEWAY DIAGNOSTIC TOOL")
-print("=" * 60)
-
-# Initialize clients
-sts = boto3.client('sts', region_name=config['region'])
-lambda_client = boto3.client('lambda', region_name=config['region'])
-iam = boto3.client('iam')
-gateway_client = boto3.client('bedrock-agentcore-control', region_name=config['region'])
-
-# Get account info
-account_id = sts.get_caller_identity()['Account']
-print(f"📍 Account: {account_id}")
-print(f"📍 Region: {config['region']}")
-print(f"📍 Gateway ID: {config['gateway_id']}")
-
-# ============= TEST 1: Verify Lambda Exists =============
-print("\\n" + "=" * 60)
-print("TEST 1: Lambda Function")
-print("-" * 60)
-
-lambda_name = "AgentCoreLambdaTestFunction"
-try:
-    func = lambda_client.get_function(FunctionName=lambda_name)
-    lambda_arn = func['Configuration']['FunctionArn']
-    print(f"✅ Lambda exists: {lambda_arn}")
-
-    # Check Lambda permissions
-    policy = lambda_client.get_policy(FunctionName=lambda_name)
-    policy_doc = json.loads(policy['Policy'])
-    print(f"📋 Lambda has {len(policy_doc['Statement'])} permission statements:")
-
-    for stmt in policy_doc['Statement']:
-        principal = stmt.get('Principal', {})
-        if isinstance(principal, dict):
-            principal_str = principal.get('Service', principal.get('AWS', 'Unknown'))
-        else:
-            principal_str = principal
-        print(f"   • {stmt['Sid']}: {principal_str}")
-
-    # Check if bedrock-agentcore service can invoke
-    has_bedrock_permission = any(
-        stmt.get('Principal', {}).get('Service') == 'bedrock-agentcore.amazonaws.com' or
-        stmt.get('Principal') == '*'
-        for stmt in policy_doc['Statement']
-    )
-
-    if has_bedrock_permission:
-        print("✅ Lambda has permission for bedrock-agentcore service")
-    else:
-        print("❌ Lambda missing bedrock-agentcore permission")
-
-except Exception as e:
-    print(f"❌ Lambda error: {e}")
-
-# ============= TEST 2: Verify Gateway Role =============
-print("\\n" + "=" * 60)
-print("TEST 2: Gateway Execution Role")
-print("-" * 60)
-
-role_arn = config.get('gateway_role_arn', f"arn:aws:iam::{account_id}:role/AgentCoreGatewayExecutionRole")
-role_name = role_arn.split('/')[-1]
-
-try:
-    role = iam.get_role(RoleName=role_name)
-    print(f"✅ Role exists: {role_arn}")
-
-    # Check trust policy
-    trust_policy = role['Role']['AssumeRolePolicyDocument']
-    can_be_assumed = any(
-        stmt.get('Principal', {}).get('Service') == 'bedrock-agentcore.amazonaws.com'
-        for stmt in trust_policy['Statement']
-    )
-
-    if can_be_assumed:
-        print("✅ Role can be assumed by bedrock-agentcore")
-    else:
-        print("❌ Role cannot be assumed by bedrock-agentcore")
-
-    # Check attached policies
-    attached = iam.list_attached_role_policies(RoleName=role_name)
-    print(f"📋 Attached policies: {len(attached['AttachedPolicies'])}")
-    for policy in attached['AttachedPolicies']:
-        print(f"   • {policy['PolicyName']}")
-
-    # Check inline policies
-    inline = iam.list_role_policies(RoleName=role_name)
-    print(f"📋 Inline policies: {len(inline['PolicyNames'])}")
-    for policy_name in inline['PolicyNames']:
-        print(f"   • {policy_name}")
-
-        # Get policy details
-        policy_doc = iam.get_role_policy(RoleName=role_name, PolicyName=policy_name)
-        statements = policy_doc['PolicyDocument']['Statement']
-
-        # Check for Lambda invoke permission
-        has_lambda_invoke = any(
-            'lambda:InvokeFunction' in stmt.get('Action', []) or
-            'lambda:*' in stmt.get('Action', [])
-            for stmt in statements
-        )
-
-        if has_lambda_invoke:
-            print("     ✅ Has lambda:InvokeFunction permission")
-        else:
-            print("     ❌ Missing lambda:InvokeFunction permission")
-
-except Exception as e:
-    print(f"❌ Role error: {e}")
-
-# ============= TEST 3: Direct Lambda Test =============
-print("\\n" + "=" * 60)
-print("TEST 3: Direct Lambda Invocation")
-print("-" * 60)
-
-try:
-    # Test direct Lambda invocation
-    test_payload = {"location": "Seattle"}
-
-    response = lambda_client.invoke(
-        FunctionName=lambda_name,
-        InvocationType='RequestResponse',
-        Payload=json.dumps(test_payload),
-        ClientContext=json.dumps({
-            "custom": {
-                "bedrockAgentCoreToolName": "get_weather"
-            }
-        }).encode('utf-8').hex()  # ClientContext must be base64
-    )
-
-    result = json.loads(response['Payload'].read())
-    print(f"✅ Direct Lambda call succeeded")
-    print(f"   Response: {result}")
-
-except Exception as e:
-    print(f"❌ Direct Lambda call failed: {e}")
-
-# ============= TEST 4: Gateway Target Configuration =============
-print("\\n" + "=" * 60)
-print("TEST 4: Gateway Target Configuration")
-print("-" * 60)
-
-try:
-    # Get gateway details
-    gateway = gateway_client.get_gateway(gatewayIdentifier=config['gateway_id'])
-    print(f"✅ Gateway status: {gateway['status']}")
-
-    # List targets
-    targets = gateway_client.list_gateway_targets(gatewayIdentifier=config['gateway_id'])
-    print(f"📋 Gateway has {len(targets['targets'])} target(s):")
-
-    for target in targets['targets']:
-        print(f"   • {target['name']} (ID: {target['targetId']}, Status: {target['status']})")
-
-        # Get target details
-        target_details = gateway_client.get_gateway_target(
-            gatewayIdentifier=config['gateway_id'],
-            targetId=target['targetId']
-        )
-
-        # Check Lambda ARN
-        lambda_config = target_details.get('targetConfiguration', {}).get('mcp', {}).get('lambda', {})
-        if lambda_config:
-            target_lambda = lambda_config.get('lambdaArn', 'Not found')
-            print(f"     Lambda: {target_lambda}")
-
-            if target_lambda == lambda_arn:
-                print("     ✅ Target points to correct Lambda")
-            else:
-                print("     ❌ Target Lambda mismatch")
-
-except Exception as e:
-    print(f"❌ Gateway configuration error: {e}")
-
-# ============= TEST 5: MCP Protocol Test =============
-print("\\n" + "=" * 60)
-print("TEST 5: MCP Protocol Tests")
-print("-" * 60)
-
-def test_mcp_request(method, params=None):
-    """Test an MCP request"""
-    headers = {
-        "Authorization": f"Bearer {config['access_token']}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "jsonrpc": "2.0",
-        "id": str(int(time.time())),
-        "method": method,
-        "params": params or {}
-    }
-
-    try:
-        response = requests.post(
-            config['gateway_url'],
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-
-        print(f"   Status: {response.status_code}")
-
-        if response.status_code == 401:
-            print("   ❌ Authentication failed (token expired or invalid)")
-            return None
-        elif response.status_code == 403:
-            print("   ❌ Authorization failed (no permission)")
-            return None
-        elif response.status_code == 200:
-            result = response.json()
-            if 'error' in result:
-                print(f"   ❌ MCP Error: {result['error']}")
-                return None
-            else:
-                print(f"   ✅ Success")
-                return result
-        else:
-            print(f"   ❌ HTTP Error: {response.text}")
-            return None
-
-    except Exception as e:
-        print(f"   ❌ Request failed: {e}")
-        return None
-
-# Test 5.1: List tools
-print("\\n5.1 Testing tools/list:")
-result = test_mcp_request("tools/list")
-if result and 'result' in result:
-    tools = result['result'].get('tools', [])
-    print(f"   Found {len(tools)} tools")
-    for tool in tools[:3]:  # Show first 3
-        print(f"     • {tool['name']}")
-
-# Test 5.2: Call get_weather tool
-print("\\n5.2 Testing tools/call (get_weather):")
-weather_tool_name = f"{config.get('target_name', 'TestGatewayTarget')}___get_weather"
-result = test_mcp_request("tools/call", {
-    "name": weather_tool_name,
-    "arguments": {"location": "Seattle"}
-})
-
-if result and 'result' in result:
-    print(f"   Tool response: {result['result']}")
-
-# ============= TEST 6: AssumeRole Test =============
-print("\\n" + "=" * 60)
-print("TEST 6: Role Assumption Test")
-print("-" * 60)
-
-try:
-    # Try to assume the Gateway role
-    assumed = sts.assume_role(
-        RoleArn=role_arn,
-        RoleSessionName='GatewayDiagnosticTest'
-    )
-
-    print(f"✅ Successfully assumed role")
-
-    # Create Lambda client with assumed role
-    assumed_lambda = boto3.client(
-        'lambda',
-        region_name=config['region'],
-        aws_access_key_id=assumed['Credentials']['AccessKeyId'],
-        aws_secret_access_key=assumed['Credentials']['SecretAccessKey'],
-        aws_session_token=assumed['Credentials']['SessionToken']
-    )
-
-    # Try to invoke Lambda with assumed role
-    response = assumed_lambda.invoke(
-        FunctionName=lambda_name,
-        InvocationType='RequestResponse',
-        Payload=json.dumps({"location": "Test"})
-    )
-
-    print(f"✅ Lambda invocation with assumed role succeeded")
-
-except ClientError as e:
-    error_code = e.response['Error']['Code']
-    if error_code == 'AccessDenied':
-        print(f"❌ Cannot assume role: {e.response['Error']['Message']}")
-    else:
-        print(f"❌ Role assumption error: {e}")
-except Exception as e:
-    print(f"❌ Lambda invocation with assumed role failed: {e}")
-
-# ============= SUMMARY =============
-print("\\n" + "=" * 60)
-print("DIAGNOSTIC SUMMARY")
-print("=" * 60)
-
-print("\\n🔍 Based on the tests above, here are the likely issues:\\n")
-
-if 'has_bedrock_permission' in locals() and not has_bedrock_permission:
-    print("⚠️  Lambda needs bedrock-agentcore service permission")
-    print("   Fix: Add bedrock-agentcore.amazonaws.com as principal in Lambda policy")
-
-if 'has_lambda_invoke' in locals() and not has_lambda_invoke:
-    print("⚠️  Gateway role needs lambda:InvokeFunction permission")
-    print("   Fix: Add lambda:InvokeFunction to the Gateway execution role")
-
-print("\\n📝 Next steps:")
-print("1. Review the test results above")
-print("2. Fix any ❌ items")
-print("3. Run 'python test_agent.py' again")
-
-```
-Run it:
-
-```bash
-python diagnose_gateway.py
-```
-
-## Quick Validation
-
-```bash
-# Check your Gateway is working
-curl -X POST YOUR_GATEWAY_URL \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-
-# Watch live logs
-aws logs tail /aws/bedrock-agentcore/gateways/YOUR_GATEWAY_ID --follow
-```
-
-## Clean Up
-
-```bash
-# Delete Gateway and all resources
-aws bedrock-agentcore-control delete-gateway \
-    --gateway-identifier YOUR_GATEWAY_ID \
-    --region us-east-1
-
-# Delete Cognito pool (optional)
-aws cognito-idp delete-user-pool \
-    --user-pool-id YOUR_POOL_ID \
-    --region us-east-1
-```
 
 <details>
 <summary><strong>➡️ Advanced: Custom Lambda Tools</strong></summary>
@@ -1299,6 +588,20 @@ open_api_target = client.create_mcp_gateway_target(
 <br/>
 <details>
 <summary><h2 style="display:inline">➡️ More Operations on Gateways and Targets (Create, Read, Update, Delete, List) </h2></summary>
+
+
+<details>
+<summary>Advanced: AWS PrivateLink for VPC Connectivity</summary>
+
+Create private connection between your VPC and Gateway:
+
+```bash
+aws ec2 create-vpc-endpoint \
+    --vpc-id vpc-12345678 \
+    --service-name com.amazonaws.region.bedrock-agentcore.gateway
+```
+
+</details>
 
 While the Starter Toolkit makes it easy to get started, the Boto3 Python client has a more complete set of operations including those for creating, reading, updating, deleting, and listing Gateways and Targets. Let's see how to use Boto3 to carry out these operations on Gateways and Targets.
 

@@ -120,14 +120,14 @@ researcher = Agent(
 @app.entrypoint
 def invoke(payload):
     user_message = payload.get("prompt", "Hello!")
-    
+
     # Create a task for the agent
     task = Task(
         description=user_message,
         agent=researcher,
         expected_output="A helpful and informative response"
     )
-    
+
     # Create and run the crew
     crew = Crew(
         agents=[researcher],
@@ -135,7 +135,7 @@ def invoke(payload):
         process=Process.sequential,
         verbose=False
     )
-    
+
     result = crew.kickoff()
     return {"result": result.raw}
 
