@@ -176,6 +176,145 @@ class GatewayClient:
         self.logger.info("\n✅Target is ready")
         return target
 
+    def fix_iam_permissions(self, gateway: dict) -> None:
+        """Fix IAM role trust policy for the gateway.
+
+        :param gateway: the gateway dict containing roleArn
+        """
+        # Check for None gateway
+        if gateway is None:
+            return
+
+        # Check for missing roleArn
+        role_arn = gateway.get("roleArn")
+        if not role_arn:
+            return
+
+        sts = boto3.client("sts")
+        iam = boto3.client("iam")
+
+        account_id = sts.get_caller_identity()["Account"]
+        role_name = role_arn.split("/")[-1]
+
+        # Update trust policy
+        trust_policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
+                    "Action": "sts:AssumeRole",
+                    "Condition": {
+                        "StringEquals": {"aws:SourceAccount": account_id},
+                        "ArnLike": {"aws:SourceArn": f"arn:aws:bedrock-agentcore:{self.region}:{account_id}:*"},
+                    },
+                }
+            ],
+        }
+
+        try:
+            iam.update_assume_role_policy(RoleName=role_name, PolicyDocument=json.dumps(trust_policy))
+
+            # Add Lambda permissions
+            iam.put_role_policy(
+                RoleName=role_name,
+                PolicyName="LambdaInvokePolicy",
+                PolicyDocument=json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": ["lambda:InvokeFunction"],
+                                "Resource": (
+                                    f"arn:aws:lambda:{self.region}:{account_id}:function:AgentCoreLambdaTestFunction"
+                                ),
+                            }
+                        ],
+                    }
+                ),
+            )
+            self.logger.info("✓ Fixed IAM permissions for Gateway")
+        except Exception as e:
+            self.logger.warning("⚠️ IAM role update failed: %s. Continuing with best effort.", str(e))
+
+    def cleanup_gateway(self, gateway_id: str, client_info: Optional[Dict] = None) -> None:
+        """Remove all resources associated with a gateway.
+
+        :param gateway_id: the ID of the gateway to clean up
+        :param client_info: optional Cognito client info for cleanup
+        """
+        self.logger.info("🧹 Cleaning up Gateway resources...")
+
+        gateway_client = self.client
+
+        # Step 1: List and delete all targets
+        self.logger.info("  • Finding targets for gateway: %s", gateway_id)
+
+        try:
+            response = gateway_client.list_gateway_targets(gatewayIdentifier=gateway_id)
+            # API returns targets in 'items' field
+            targets = response.get("items", [])
+            self.logger.info("    Found %s targets to delete", len(targets))
+
+            for target in targets:
+                target_id = target["targetId"]
+                self.logger.info("  • Deleting target: %s", target_id)
+                try:
+                    gateway_client.delete_gateway_target(gatewayIdentifier=gateway_id, targetId=target_id)
+                    self.logger.info("    ✓ Target deletion initiated: %s", target_id)
+                    # Wait for deletion to complete
+                    time.sleep(5)
+                except Exception as e:
+                    self.logger.warning("    ⚠️ Error deleting target %s: %s", target_id, str(e))
+
+            # Verify all targets are deleted
+            self.logger.info("  • Verifying targets deletion...")
+            time.sleep(5)  # Additional wait
+            verify_response = gateway_client.list_gateway_targets(gatewayIdentifier=gateway_id)
+            remaining_targets = verify_response.get("items", [])
+            if remaining_targets:
+                self.logger.warning("    ⚠️ %s targets still remain", len(remaining_targets))
+            else:
+                self.logger.info("    ✓ All targets deleted")
+
+        except Exception as e:
+            self.logger.warning("    ⚠️ Error managing targets: %s", str(e))
+
+        # Step 2: Delete the gateway
+        try:
+            self.logger.info("  • Deleting gateway: %s", gateway_id)
+            gateway_client.delete_gateway(gatewayIdentifier=gateway_id)
+            self.logger.info("    ✓ Gateway deleted: %s", gateway_id)
+        except Exception as e:
+            self.logger.warning("    ⚠️ Error deleting gateway: %s", str(e))
+
+        # Step 3: Delete Cognito resources if provided
+        if client_info and "user_pool_id" in client_info:
+            cognito = boto3.client("cognito-idp", region_name=self.region)
+            user_pool_id = client_info["user_pool_id"]
+
+            # Delete domain first
+            if "domain_prefix" in client_info:
+                domain_prefix = client_info["domain_prefix"]
+                self.logger.info("  • Deleting Cognito domain: %s", domain_prefix)
+                try:
+                    cognito.delete_user_pool_domain(UserPoolId=user_pool_id, Domain=domain_prefix)
+                    self.logger.info("    ✓ Cognito domain deleted")
+                    time.sleep(5)  # Wait for domain deletion
+                except Exception as e:
+                    self.logger.warning("    ⚠️ Error deleting Cognito domain: %s", str(e))
+
+            # Now delete the user pool
+            self.logger.info("  • Deleting Cognito user pool: %s", user_pool_id)
+            try:
+                cognito.delete_user_pool(UserPoolId=user_pool_id)
+                self.logger.info("    ✓ Cognito user pool deleted")
+            except Exception as e:
+                self.logger.warning("    ⚠️ Error deleting Cognito user pool: %s", str(e))
+
+        self.logger.info("✅ Cleanup complete")
+
     def __handle_lambda_target_creation(self, role_arn: str) -> Dict[str, Any]:
         """Create a test lambda.
 
