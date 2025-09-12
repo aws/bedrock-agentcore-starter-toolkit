@@ -42,7 +42,7 @@ Create a new folder for this quickstart, create and initialize a new python virt
 ```bash
 mkdir agentcore-observability-quickstart
 cd agentcore-observability-quickstart
-python3 -m venv venv
+python3 -m venv .venv
 source venv/bin/activate
 ```
 
