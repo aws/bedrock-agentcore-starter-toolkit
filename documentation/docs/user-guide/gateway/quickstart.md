@@ -410,7 +410,7 @@ print("✅ Cleanup complete!")
 Run: `python cleanup_gateway.py`
 
 
-## Learn More
+### Learn More
 
 - **Comprehensive examples**: [GitHub samples](https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/01-tutorials/02-AgentCore-gateway)
 - **Full API reference**: [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore-control.html)
@@ -496,8 +496,62 @@ nasa_target = client.create_mcp_gateway_target(
 print(f"✓ NASA API added! Try: 'Get NASA's astronomy picture for 2024-12-25'")
 ```
 
+
+
 <details>
-<summary><strong>Add Custom Lambda Tools (optional)</strong></summary>
+<summary><strong>➡️ Advanced: Custom Lambda Tools Example 1 (Optional)</strong></summary>
+
+Create custom Lambda functions with specific tools:
+
+```python
+# Custom Lambda configuration
+lambda_config = {
+    "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
+    "toolSchema": {
+        "inlinePayload": [
+            {
+                "name": "process_data",
+                "description": "Process customer data",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "customer_id": {
+                            "type": "string",
+                            "description": "Customer identifier"
+                        },
+                        "action": {
+                            "type": "string",
+                            "enum": ["analyze", "summarize", "export"]
+                        }
+                    },
+                    "required": ["customer_id", "action"]
+                }
+            }
+        ]
+    }
+}
+
+# Lambda implementation example
+def lambda_handler(event, context):
+    tool_name = context.client_context.custom.get('bedrockAgentCoreToolName')
+
+    if tool_name == 'process_data':
+        customer_id = event.get('customer_id')
+        action = event.get('action')
+
+        # Your business logic here
+        result = process_customer_data(customer_id, action)
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps(result)
+        }
+```
+
+</details>
+
+<details>
+<summary><strong>➡️ Advanced: Custom Lambda Tools Example 2 (Optional)</strong></summary>
 
 Each Lambda target needs a schema defining the tools that the Lambda function implements. Your agent will see this schema and will send requests to your Lambda function in this format.
 
@@ -655,60 +709,6 @@ print("\nRun 'python run_agent.py' and try: 'Calculate the sum of 42 and 58'")
 ```
 
 Run: `python create_custom_lambda.py`
-
-</details>
-
-
-
-<details>
-<summary><strong>➡️ Advanced: Custom Lambda Tools</strong></summary>
-
-Create custom Lambda functions with specific tools:
-
-```python
-# Custom Lambda configuration
-lambda_config = {
-    "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
-    "toolSchema": {
-        "inlinePayload": [
-            {
-                "name": "process_data",
-                "description": "Process customer data",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "customer_id": {
-                            "type": "string",
-                            "description": "Customer identifier"
-                        },
-                        "action": {
-                            "type": "string",
-                            "enum": ["analyze", "summarize", "export"]
-                        }
-                    },
-                    "required": ["customer_id", "action"]
-                }
-            }
-        ]
-    }
-}
-
-# Lambda implementation example
-def lambda_handler(event, context):
-    tool_name = context.client_context.custom.get('bedrockAgentCoreToolName')
-
-    if tool_name == 'process_data':
-        customer_id = event.get('customer_id')
-        action = event.get('action')
-
-        # Your business logic here
-        result = process_customer_data(customer_id, action)
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps(result)
-        }
-```
 
 </details>
 
