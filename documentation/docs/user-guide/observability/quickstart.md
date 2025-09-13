@@ -19,16 +19,56 @@ Before starting, make sure you have:
 
 - **AWS Account** with credentials configured (`aws configure`) with model access enabled to the Foundation Model you would like to use.
 - **Python 3.10+** installed
-- **Enable transaction search** on Amazon CloudWatch. First-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces.
+- **Enable transaction search** on Amazon CloudWatch. Only once, first-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces  
 - **Add the OpenTelemetry library** Include `aws-opentelemetry-distro` (ADOT) in your requirements.txt file.
 - Ensure that your framework is configured to emit traces (eg. `strands-agents[otel]` package), you may sometimes need to include `<your-agent-framework-auto-instrumentor>` # e.g., `opentelemetry-instrumentation-langchain`
-
 
 AgentCore Observability offers two ways to configure monitoring to match different infrastructure needs:
 1. AgentCore Runtime-hosted agents
 2. Non-runtime hosted agents
 
-## Enabling Observability for AgentCore-Hosted Agents
+As a **one time** setup per account, first time users would need to enable Transaction Search on Amazon CloudWatch. There are two ways to do this, via the API and via the CloudWatch Console. 
+
+## Enabling Transaction Search on CloudWatch
+
+After you enable Transaction Search, it can take ten minutes for spans to become available for search and analysis. Please choose one of the options below:
+
+### Option 1 : Enabling Transaction Search using an API
+
+**Step 1: Create a policy that grants access to ingest spans in CloudWatch Logs using AWS CLI**
+
+An example is shown below on how to format your AWS CLI command with PutResourcePolicy.
+
+```bash
+aws logs put-resource-policy --policy-name MyResourcePolicy --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "TransactionSearchXRayAccess", "Effect": "Allow", "Principal": { "Service": "xray.amazonaws.com" }, "Action": "logs:PutLogEvents", "Resource": [ "arn:partition:logs:region:account-id:log-group:aws/spans:*", "arn:partition:logs:region:account-id:log-group:/aws/application-signals/data:*" ], "Condition": { "ArnLike": { "aws:SourceArn": "arn:partition:logs:region:account-id:*" }, "StringEquals": { "aws:SourceAccount": "account-id" } } } ]}'
+```
+
+**Step 2: Configure the destination of trace segments**
+
+An example is shown below on how to format your AWS CLI command with UpdateTraceSegmentDestination.
+
+```bash
+aws xray update-indexing-rule --name "Default" --rule '{"Probabilistic": {"DesiredSamplingPercentage": number}}'
+```
+
+**Optional** Step : Configure the amount of spans to index
+
+Configure your desired sampling percentage with UpdateIndexingRule.
+
+```bash
+aws xray update-indexing-rule --name "Default" --rule '{"Probabilistic": {"DesiredSamplingPercentage": number}}'
+```
+
+### Option 2: Enabling Transaction Search in the CloudWatch console
+
+- Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/.
+- From the navigation pane, under Application Signals, choose Transaction Search.
+- Choose Enable Transaction Search.
+- Select the box to ingest spans as structured logs, and enter a percentage of spans to be indexed. You can index spans at 1% for free and change the percentage later based on your requirements.
+
+Let's now proceed to exploring the two ways to configure observability. 
+
+## Enabling Observability for AgentCore Runtime hosted Agents
 
 AgentCore Runtime-hosted agents are deployed and executed directly within the AgentCore environment, providing automatic instrumentation with minimal configuration. This approach offers the fastest path to deployment and is ideal for rapid development and testing.
 
