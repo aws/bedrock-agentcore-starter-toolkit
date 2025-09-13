@@ -1056,9 +1056,42 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#enabling-observability-for-agentcore-hosted-agents" class="md-nav__link">
+  <a href="#enabling-transaction-search-on-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
-      Enabling Observability for AgentCore-Hosted Agents
+      Enabling Transaction Search on CloudWatch
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enabling Transaction Search on CloudWatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-enabling-transaction-search-using-an-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 1 : Enabling Transaction Search using an API
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-enabling-transaction-search-in-the-cloudwatch-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 2: Enabling Transaction Search in the CloudWatch console
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enabling-observability-for-agentcore-runtime-hosted-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling Observability for AgentCore Runtime hosted Agents
     </span>
   </a>
   
@@ -1842,9 +1875,42 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#enabling-observability-for-agentcore-hosted-agents" class="md-nav__link">
+  <a href="#enabling-transaction-search-on-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
-      Enabling Observability for AgentCore-Hosted Agents
+      Enabling Transaction Search on CloudWatch
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enabling Transaction Search on CloudWatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-enabling-transaction-search-using-an-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 1 : Enabling Transaction Search using an API
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-enabling-transaction-search-in-the-cloudwatch-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      Option 2: Enabling Transaction Search in the CloudWatch console
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enabling-observability-for-agentcore-runtime-hosted-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling Observability for AgentCore Runtime hosted Agents
     </span>
   </a>
   
@@ -2039,14 +2105,38 @@
 <ul>
 <li><strong>AWS Account</strong> with credentials configured (<code>aws configure</code>) with model access enabled to the Foundation Model you would like to use.</li>
 <li><strong>Python 3.10+</strong> installed</li>
-<li><strong>Enable transaction search</strong> on Amazon CloudWatch. First-time users must enable <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html">CloudWatch Transaction Search</a> to view Bedrock AgentCore spans and traces.</li>
+<li><strong>Enable transaction search</strong> on Amazon CloudWatch. Only once, first-time users must enable <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html">CloudWatch Transaction Search</a> to view Bedrock AgentCore spans and traces  </li>
 <li><strong>Add the OpenTelemetry library</strong> Include <code>aws-opentelemetry-distro</code> (ADOT) in your requirements.txt file.</li>
 <li>Ensure that your framework is configured to emit traces (eg. <code>strands-agents[otel]</code> package), you may sometimes need to include <code>&lt;your-agent-framework-auto-instrumentor&gt;</code> # e.g., <code>opentelemetry-instrumentation-langchain</code></li>
 </ul>
 <p>AgentCore Observability offers two ways to configure monitoring to match different infrastructure needs:
 1. AgentCore Runtime-hosted agents
 2. Non-runtime hosted agents</p>
-<h2 id="enabling-observability-for-agentcore-hosted-agents">Enabling Observability for AgentCore-Hosted Agents<a class="headerlink" href="#enabling-observability-for-agentcore-hosted-agents" title="Permanent link">&para;</a></h2>
+<p>As a <strong>one time</strong> setup per account, first time users would need to enable Transaction Search on Amazon CloudWatch. There are two ways to do this, via the API and via the CloudWatch Console. </p>
+<h2 id="enabling-transaction-search-on-cloudwatch">Enabling Transaction Search on CloudWatch<a class="headerlink" href="#enabling-transaction-search-on-cloudwatch" title="Permanent link">&para;</a></h2>
+<p>After you enable Transaction Search, it can take ten minutes for spans to become available for search and analysis. Please choose one of the options below:</p>
+<h3 id="option-1-enabling-transaction-search-using-an-api">Option 1 : Enabling Transaction Search using an API<a class="headerlink" href="#option-1-enabling-transaction-search-using-an-api" title="Permanent link">&para;</a></h3>
+<p><strong>Step 1: Create a policy that grants access to ingest spans in CloudWatch Logs using AWS CLI</strong></p>
+<p>An example is shown below on how to format your AWS CLI command with PutResourcePolicy.</p>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>logs<span class="w"> </span>put-resource-policy<span class="w"> </span>--policy-name<span class="w"> </span>MyResourcePolicy<span class="w"> </span>--policy-document<span class="w"> </span><span class="s1">&#39;{ &quot;Version&quot;: &quot;2012-10-17&quot;, &quot;Statement&quot;: [ { &quot;Sid&quot;: &quot;TransactionSearchXRayAccess&quot;, &quot;Effect&quot;: &quot;Allow&quot;, &quot;Principal&quot;: { &quot;Service&quot;: &quot;xray.amazonaws.com&quot; }, &quot;Action&quot;: &quot;logs:PutLogEvents&quot;, &quot;Resource&quot;: [ &quot;arn:partition:logs:region:account-id:log-group:aws/spans:*&quot;, &quot;arn:partition:logs:region:account-id:log-group:/aws/application-signals/data:*&quot; ], &quot;Condition&quot;: { &quot;ArnLike&quot;: { &quot;aws:SourceArn&quot;: &quot;arn:partition:logs:region:account-id:*&quot; }, &quot;StringEquals&quot;: { &quot;aws:SourceAccount&quot;: &quot;account-id&quot; } } } ]}&#39;</span>
+</code></pre></div>
+<p><strong>Step 2: Configure the destination of trace segments</strong></p>
+<p>An example is shown below on how to format your AWS CLI command with UpdateTraceSegmentDestination.</p>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>xray<span class="w"> </span>update-indexing-rule<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Default&quot;</span><span class="w"> </span>--rule<span class="w"> </span><span class="s1">&#39;{&quot;Probabilistic&quot;: {&quot;DesiredSamplingPercentage&quot;: number}}&#39;</span>
+</code></pre></div>
+<p><strong>Optional</strong> Step : Configure the amount of spans to index</p>
+<p>Configure your desired sampling percentage with UpdateIndexingRule.</p>
+<div class="highlight"><pre><span></span><code>aws<span class="w"> </span>xray<span class="w"> </span>update-indexing-rule<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Default&quot;</span><span class="w"> </span>--rule<span class="w"> </span><span class="s1">&#39;{&quot;Probabilistic&quot;: {&quot;DesiredSamplingPercentage&quot;: number}}&#39;</span>
+</code></pre></div>
+<h3 id="option-2-enabling-transaction-search-in-the-cloudwatch-console">Option 2: Enabling Transaction Search in the CloudWatch console<a class="headerlink" href="#option-2-enabling-transaction-search-in-the-cloudwatch-console" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/.</li>
+<li>From the navigation pane, under Application Signals, choose Transaction Search.</li>
+<li>Choose Enable Transaction Search.</li>
+<li>Select the box to ingest spans as structured logs, and enter a percentage of spans to be indexed. You can index spans at 1% for free and change the percentage later based on your requirements.</li>
+</ul>
+<p>Let's now proceed to exploring the two ways to configure observability. </p>
+<h2 id="enabling-observability-for-agentcore-runtime-hosted-agents">Enabling Observability for AgentCore Runtime hosted Agents<a class="headerlink" href="#enabling-observability-for-agentcore-runtime-hosted-agents" title="Permanent link">&para;</a></h2>
 <p>AgentCore Runtime-hosted agents are deployed and executed directly within the AgentCore environment, providing automatic instrumentation with minimal configuration. This approach offers the fastest path to deployment and is ideal for rapid development and testing.</p>
 <p>For a complete example please refer to this <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/01-Agentcore-runtime-hosted/runtime_with_strands_and_bedrock_models.ipynb">notebook</a></p>
 <h2 id="step-0-setup-folder-and-virtual-environment">Step 0: Setup folder and virtual environment<a class="headerlink" href="#step-0-setup-folder-and-virtual-environment" title="Permanent link">&para;</a></h2>
