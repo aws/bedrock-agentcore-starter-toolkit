@@ -1,0 +1,986 @@
+import copy
+import boto3
+import logging
+import time
+import uuid
+import warnings
+
+from botocore.exceptions import ClientError
+from typing import Any, Dict, List, Optional
+
+from .models.MemoryStrategy import MemoryStrategy
+from .models.MemorySummary import MemorySummary
+from .constants import CUSTOM_CONSOLIDATION_WRAPPER_KEYS, CUSTOM_EXTRACTION_WRAPPER_KEYS, DEFAULT_NAMESPACES, EXTRACTION_WRAPPER_KEYS, MemoryStatus, MemoryStrategyStatus, MemoryStrategyTypeEnum, OverrideType, StrategyType
+
+logger = logging.getLogger(__name__)
+
+class MemoryManager:
+    """
+    A high-level client for managing the lifecycle of AgentCore Memory resources.
+    This class handles all CONTROL PLANE CRUD operations.
+    """
+    def __init__(self, region_name: str):
+        self.region_name = region_name
+        self._control_plane_client = boto3.client("bedrock-agentcore-control", region_name=region_name)
+
+        # AgentCore Memory control plane methods
+        self._ALLOWED_CONTROL_PLANE_METHODS = {
+            "create_memory",
+            "list_memories",
+            "update_memory",
+            "delete_memory",
+        }
+        logger.info(f"✅ MemoryManager initialized for region: {region_name}")
+
+    def __getattr__(self, name: str):
+        """Dynamically forward method calls to the appropriate boto3 client.
+
+        This method enables access to all control_plane boto3 client methods without explicitly
+        defining them. Methods are looked up in the following order:
+        _control_plane_client (bedrock-agentcore-control) - for control plane operations
+
+        Args:
+            name: The method name being accessed
+
+        Returns:
+            A callable method from the control_plane boto3 client
+
+        Raises:
+            AttributeError: If the method doesn't exist on control_plane_client
+
+        Example:
+            # Access any boto3 method directly
+            manager = MemoryManager(region_name="us-east-1")
+
+            # These calls are forwarded to the appropriate boto3 functions
+            response = manager.list_memories()
+            memory = manager.get_memory(memoryId="mem-123")
+        """
+
+        if hasattr(self._control_plane_client, name):
+            method = getattr(self._control_plane_client, name)
+            logger.debug("Forwarding method '%s' to control_plane_client", name)
+            return method
+
+        # Method not found on client
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'. "
+            f"Method not found on control_plane_client. "
+            f"Available methods can be found in the boto3 documentation for "
+            f"'bedrock-agentcore-control' services."
+        )
+
+    def _validate_namespace(self, namespace: str) -> bool:
+        """Validate namespace format - basic check only."""
+        # Only check for template variables in namespace definition
+        if "{" in namespace and not (
+            "{actorId}" in namespace or "{sessionId}" in namespace or "{strategyId}" in namespace
+        ):
+            logger.warning("Namespace with templates should contain valid variables: %s", namespace)
+
+        return True
+
+    def _validate_strategy_config(self, strategy: Dict[str, Any], strategy_type: str) -> None:
+        """Validate strategy configuration parameters."""
+        strategy_config = strategy[strategy_type]
+
+        namespaces = strategy_config.get("namespaces", [])
+        for namespace in namespaces:
+            self._validate_namespace(namespace)
+
+    def _wrap_configuration(
+        self, config: Dict[str, Any], strategy_type: str, override_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Wrap configuration based on strategy type."""
+        wrapped_config = {}
+
+        if "extraction" in config:
+            extraction = config["extraction"]
+
+            if any(key in extraction for key in ["triggerEveryNMessages", "historicalContextWindowSize"]):
+                strategy_type_enum = MemoryStrategyTypeEnum(strategy_type)
+
+                if strategy_type == "SEMANTIC":
+                    wrapped_config["extraction"] = {EXTRACTION_WRAPPER_KEYS[strategy_type_enum]: extraction}
+                elif strategy_type == "USER_PREFERENCE":
+                    wrapped_config["extraction"] = {EXTRACTION_WRAPPER_KEYS[strategy_type_enum]: extraction}
+                elif strategy_type == "CUSTOM" and override_type:
+                    override_enum = OverrideType(override_type)
+                    if override_type in ["SEMANTIC_OVERRIDE", "USER_PREFERENCE_OVERRIDE"]:
+                        wrapped_config["extraction"] = {
+                            "customExtractionConfiguration": {CUSTOM_EXTRACTION_WRAPPER_KEYS[override_enum]: extraction}
+                        }
+            else:
+                wrapped_config["extraction"] = extraction
+
+        if "consolidation" in config:
+            consolidation = config["consolidation"]
+
+            raw_keys = ["triggerEveryNMessages", "appendToPrompt", "modelId"]
+            if any(key in consolidation for key in raw_keys):
+                if strategy_type == "SUMMARIZATION":
+                    if "triggerEveryNMessages" in consolidation:
+                        wrapped_config["consolidation"] = {
+                            "summaryConsolidationConfiguration": {
+                                "triggerEveryNMessages": consolidation["triggerEveryNMessages"]
+                            }
+                        }
+                elif strategy_type == "CUSTOM" and override_type:
+                    override_enum = OverrideType(override_type)
+                    if override_enum in CUSTOM_CONSOLIDATION_WRAPPER_KEYS:
+                        wrapped_config["consolidation"] = {
+                            "customConsolidationConfiguration": {
+                                CUSTOM_CONSOLIDATION_WRAPPER_KEYS[override_enum]: consolidation
+                            }
+                        }
+            else:
+                wrapped_config["consolidation"] = consolidation
+
+        return wrapped_config
+
+    def _create_memory(
+        self,
+        name: str,
+        strategies: Optional[List[Dict[str, Any]]] = None,
+        description: Optional[str] = None,
+        event_expiry_days: int = 90,
+        memory_execution_role_arn: Optional[str] = None,
+    ) -> 'Memory':
+        """Creaete a memory resource and return the raw response.
+        Maps to: bedrock-agentcore-control.create_memory
+        """
+        if strategies is None:
+            strategies = []
+
+        try:
+            processed_strategies = self._add_default_namespaces(strategies)
+
+            params = {
+                "name": name,
+                "eventExpiryDuration": event_expiry_days,
+                "memoryStrategies": processed_strategies,
+                "clientToken": str(uuid.uuid4()),
+            }
+
+            if description is not None:
+                params["description"] = description
+
+            if memory_execution_role_arn is not None:
+                params["memoryExecutionRoleArn"] = memory_execution_role_arn
+
+            response = self._control_plane_client.create_memory(**params)
+
+            memory = response["memory"]
+            
+            # Handle field name normalization
+            memory_id = memory.get("id", memory.get("memoryId", "unknown"))
+            logger.info("Created memory: %s", memory_id)
+            return Memory(memory, self)
+
+        except ClientError as e:
+            logger.error("Failed to create memory: %s", e)
+            raise
+
+    def _create_memory_and_wait(
+        self,
+        name: str,
+        strategies: List[Dict[str, Any]],
+        description: Optional[str] = None,
+        event_expiry_days: int = 90,
+        memory_execution_role_arn: Optional[str] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Create a memory and wait for it to become ACTIVE.
+
+        This method creates a memory and polls until it reaches ACTIVE status,
+        providing a convenient way to ensure the memory is ready for use.
+
+        Args:
+            name: Name for the memory resource
+            strategies: List of strategy configurations
+            description: Optional description
+            event_expiry_days: How long to retain events (default: 90 days)
+            memory_execution_role_arn: IAM role ARN for memory execution
+            max_wait: Maximum seconds to wait (default: 300)
+            poll_interval: Seconds between status checks (default: 10)
+
+        Returns:
+            Created memory object in ACTIVE status
+
+        Raises:
+            TimeoutError: If memory doesn't become ACTIVE within max_wait
+            RuntimeError: If memory creation fails
+        """
+        # Create the memory
+        memory = self._create_memory(
+            name=name,
+            strategies=strategies,
+            description=description,
+            event_expiry_days=event_expiry_days,
+            memory_execution_role_arn=memory_execution_role_arn,
+        )
+
+        memory_id = memory.id
+        if memory_id is None:
+            memory_id = ""
+        logger.info("Created memory %s, waiting for ACTIVE status...", memory_id)
+
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            elapsed = int(time.time() - start_time)
+
+            try:
+                status = self.get_memory_status(memory_id)
+
+                if status == MemoryStatus.ACTIVE.value:
+                    logger.info("Memory %s is now ACTIVE (took %d seconds)", memory_id, elapsed)
+                    return memory
+                elif status == MemoryStatus.FAILED.value:
+                    # Get failure reason if available
+                    response = self._control_plane_client.get_memory(memoryId=memory_id)
+                    failure_reason = response["memory"].get("failureReason", "Unknown")
+                    raise RuntimeError("Memory creation failed: %s" % failure_reason)
+                else:
+                    logger.debug("Memory status: %s (%d seconds elapsed)", status, elapsed)
+
+            except ClientError as e:
+                logger.error("Error checking memory status: %s", e)
+                raise
+
+            time.sleep(poll_interval)
+
+        raise TimeoutError("Memory %s did not become ACTIVE within %d seconds" % (memory_id, max_wait))
+
+    def create_memory_and_wait(
+        self,
+        name: str,
+        strategies: List[Dict[str, Any]],
+        description: Optional[str] = None,
+        event_expiry_days: int = 90,
+        memory_execution_role_arn: Optional[str] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Create a memory and wait for it to become ACTIVE - public method."""
+        return self._create_memory_and_wait(
+            name=name,
+            strategies=strategies,
+            description=description,
+            event_expiry_days=event_expiry_days,
+            memory_execution_role_arn=memory_execution_role_arn,
+            max_wait=max_wait,
+            poll_interval=poll_interval,
+        )
+
+    def create_or_get_memory(
+        self,
+        name: str,
+        strategies: Optional[List[Dict[str, Any]]] = None,
+        description: Optional[str] = None,
+        event_expiry_days: int = 90,
+        memory_execution_role_arn: Optional[str] = None,
+    ) -> 'Memory':
+        """Create a memory resource or fetch the existing memory details if it already exists.
+
+        Returns:
+            Memory object, either newly created or existing
+        """
+        try:
+            memory = self._create_memory_and_wait(
+                name=name,
+                strategies=strategies,
+                description=description,
+                event_expiry_days=event_expiry_days,
+                memory_execution_role_arn=memory_execution_role_arn,
+            )
+            return memory
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ValidationException" and "already exists" in str(e):
+                memory_summaries = self.list_memories()
+                memory_summary = next((m for m in memory_summaries if m.id.startswith(name)), None)
+                if memory_summary is None:
+                    logger.error("Memory with name %s already exists but could not be found", name)
+                    raise
+                memory = self.get_memory(memory_summary.id)
+                logger.info("Memory already exists. Using existing memory ID: %s", memory.id)
+                return memory
+            else:
+                logger.error("ClientError: Failed to create or get memory: %s", e)
+                raise
+        except Exception:
+            raise
+
+    def get_memory(self, memory_id: str) -> 'Memory':
+        """
+        Retrieves an existing memory resource as a Memory object.
+        Maps to: bedrock-agentcore-control.get_memory
+        """
+        logger.info(f"🔎 Retrieving memory resource with ID: {memory_id}...")
+        try:
+            response = self._control_plane_client.get_memory(memoryId=memory_id).get("memory", {})
+            logger.info(f"  ✅ Found memory: {memory_id}")
+            return Memory(memory=response, manager=self)
+        except ClientError as e:
+            logger.error(f"  ❌ Error retrieving memory: {e}")
+            raise
+
+    def get_memory_status(self, memory_id: str) -> str:
+        """Get current memory status."""
+        try:
+            response = self._control_plane_client.get_memory(memoryId=memory_id)
+            return response["memory"]["status"]
+        except ClientError as e:
+            logger.error(f"  ❌ Error retrieving memory status: {e}")
+            raise
+
+    def get_memory_strategies(self, memory_id: str) -> List[Dict[str, Any]]:
+        """Get all strategies for a memory."""
+        try:
+            response = self._control_plane_client.get_memory(memoryId=memory_id)
+            memory = response["memory"]
+
+            # Handle both old and new field names in response
+            strategies = memory.get("strategies", memory.get("memoryStrategies", []))
+            return strategies
+        except ClientError as e:
+            logger.error("Failed to get memory strategies: %s", e)
+            raise
+
+    def list_memories(self, max_results: int = 100) -> list[MemorySummary]:
+        """
+        Lists all available memory resources.
+        Maps to: bedrock-agentcore-control.list_memories
+        """
+        try:
+            # Ensure max_results doesn't exceed API limit per request
+            results_per_request = min(max_results, 100)
+
+            response = self._control_plane_client.list_memories(maxResults=results_per_request)
+            memory_summaries = response.get("memories", [])
+
+            next_token = response.get("nextToken")
+            while next_token and len(memory_summaries) < max_results:
+                remaining = max_results - len(memory_summaries)
+                results_per_request = min(remaining, 100)
+
+                response = self._control_plane_client.list_memories(maxResults=results_per_request, nextToken=next_token)
+                memory_summaries.extend(response.get("memories", []))
+                next_token = response.get("nextToken")
+
+            # Normalize field names for backward compatibility
+            for memory_summary in memory_summaries:
+                if "memoryId" in memory_summary and "id" not in memory_summary:
+                    memory_summary["id"] = memory_summary["memoryId"]
+                elif "id" in memory_summary and "memoryId" not in memory_summary:
+                    memory_summary["memoryId"] = memory_summary["id"]
+
+            response = [MemorySummary(memory_summary=memory_summary) for memory_summary in memory_summaries]
+            return response
+
+        except ClientError as e:
+            logger.error(f"  ❌ Error listing memories: {e}")
+            raise
+        
+    def delete_memory(self, memory_id: str) -> Dict[str, Any]:
+        """Delete a memory resource.
+        Maps to: bedrock-agentcore-control.delete_memory
+        """
+        try:
+            response = self._control_plane_client.delete_memory(
+                memoryId=memory_id, clientToken=str(uuid.uuid4())
+            )
+            logger.info("Deleted memory: %s", memory_id)
+            return response
+        except ClientError as e:
+            logger.error(f"  ❌ Error deleting memory: {e}")
+            raise
+
+    def delete_memory_and_wait(self, memory_id: str, max_wait: int = 300, poll_interval: int = 10) -> Dict[str, Any]:
+        """Delete a memory and wait for deletion to complete.
+
+        This method deletes a memory and polls until it's fully deleted,
+        ensuring clean resource cleanup.
+
+        Args:
+            memory_id: Memory resource ID to delete
+            max_wait: Maximum seconds to wait (default: 300)
+            poll_interval: Seconds between checks (default: 10)
+
+        Returns:
+            Final deletion response
+
+        Raises:
+            TimeoutError: If deletion doesn't complete within max_wait
+        """
+        # Initiate deletion
+        response = self.delete_memory(memory_id)
+        logger.info("Initiated deletion of memory %s", memory_id)
+
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            elapsed = int(time.time() - start_time)
+
+            try:
+                # Try to get the memory - if it doesn't exist, deletion is complete
+                self._control_plane_client.get_memory(memoryId=memory_id)
+                logger.debug("Memory still exists, waiting... (%d seconds elapsed)", elapsed)
+
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "ResourceNotFoundException":
+                    logger.info("Memory %s successfully deleted (took %d seconds)", memory_id, elapsed)
+                    return response
+                else:
+                    logger.error("Error checking memory status: %s", e)
+                    raise
+
+            time.sleep(poll_interval)
+
+        raise TimeoutError("Memory %s was not deleted within %d seconds" % (memory_id, max_wait))
+
+    def add_semantic_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Add a semantic memory strategy.
+
+        Note: Configuration is no longer provided for built-in strategies as per API changes.
+        """
+        strategy: Dict = {
+            StrategyType.SEMANTIC.value: {
+                "name": name,
+            }
+        }
+
+        if description:
+            strategy[StrategyType.SEMANTIC.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.SEMANTIC.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_semantic_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Add a semantic strategy and wait for memory to return to ACTIVE state.
+
+        This addresses the issue where adding a strategy puts the memory into
+        CREATING state temporarily, preventing subsequent operations.
+        """
+        # Add the strategy
+        self.add_semantic_strategy(memory_id, name, description, namespaces)
+
+        # Wait for memory to return to ACTIVE
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def add_summary_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Add a summary memory strategy.
+
+        Note: Configuration is no longer provided for built-in strategies as per API changes.
+        """
+        strategy: Dict = {
+            StrategyType.SUMMARY.value: {
+                "name": name,
+            }
+        }
+
+        if description:
+            strategy[StrategyType.SUMMARY.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.SUMMARY.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_summary_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Add a summary strategy and wait for memory to return to ACTIVE state."""
+        self.add_summary_strategy(memory_id, name, description, namespaces)
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def add_user_preference_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Add a user preference memory strategy.
+
+        Note: Configuration is no longer provided for built-in strategies as per API changes.
+        """
+        strategy: Dict = {
+            StrategyType.USER_PREFERENCE.value: {
+                "name": name,
+            }
+        }
+
+        if description:
+            strategy[StrategyType.USER_PREFERENCE.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.USER_PREFERENCE.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_user_preference_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Add a user preference strategy and wait for memory to return to ACTIVE state."""
+        self.add_user_preference_strategy(memory_id, name, description, namespaces)
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def add_custom_semantic_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Add a custom semantic strategy with prompts.
+
+        Args:
+            memory_id: Memory resource ID
+            name: Strategy name
+            extraction_config: Extraction configuration with prompt and model:
+                {"prompt": "...", "modelId": "..."}
+            consolidation_config: Consolidation configuration with prompt and model:
+                {"prompt": "...", "modelId": "..."}
+            description: Optional description
+            namespaces: Optional namespaces list
+        """
+        strategy = {
+            StrategyType.CUSTOM.value: {
+                "name": name,
+                "configuration": {
+                    "semanticOverride": {
+                        "extraction": {
+                            "appendToPrompt": extraction_config["prompt"],
+                            "modelId": extraction_config["modelId"],
+                        },
+                        "consolidation": {
+                            "appendToPrompt": consolidation_config["prompt"],
+                            "modelId": consolidation_config["modelId"],
+                        },
+                    }
+                },
+            }
+        }
+
+        if description:
+            strategy[StrategyType.CUSTOM.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.CUSTOM.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_custom_semantic_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Add a custom semantic strategy and wait for memory to return to ACTIVE state."""
+        self.add_custom_semantic_strategy(
+            memory_id, name, extraction_config, consolidation_config, description, namespaces
+        )
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def modify_strategy(
+        self,
+        memory_id: str,
+        strategy_id: str,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        configuration: Optional[Dict[str, Any]] = None,
+    ) -> 'Memory':
+        """Modify a strategy with full control over configuration."""
+        modify_config: Dict = {"strategyId": strategy_id}
+
+        if description is not None:
+            modify_config["description"] = description
+        if namespaces is not None:
+            modify_config["namespaces"] = namespaces
+        if configuration is not None:
+            modify_config["configuration"] = configuration
+
+        return self.update_memory_strategies(memory_id=memory_id, modify_strategies=[modify_config])
+
+    def delete_strategy(self, memory_id: str, strategy_id: str) -> 'Memory':
+        """Delete a strategy from a memory."""
+        return self.update_memory_strategies(memory_id=memory_id, delete_strategy_ids=[strategy_id])
+
+    def update_memory_strategies(
+        self,
+        memory_id: str,
+        add_strategies: Optional[List[Dict[str, Any]]] = None,
+        modify_strategies: Optional[List[Dict[str, Any]]] = None,
+        delete_strategy_ids: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Update memory strategies - add, modify, or delete."""
+        try:
+            memory_strategies = {}
+
+            if add_strategies:
+                processed_add = self._add_default_namespaces(add_strategies)
+                memory_strategies["addMemoryStrategies"] = processed_add
+
+            if modify_strategies:
+                current_strategies = self.get_memory_strategies(memory_id)
+                strategy_map = {s["strategyId"]: s for s in current_strategies}
+
+                modify_list = []
+                for strategy in modify_strategies:
+                    if "strategyId" not in strategy:
+                        raise ValueError("Each modify strategy must include strategyId")
+
+                    strategy_id = strategy["strategyId"]
+                    strategy_info = strategy_map.get(strategy_id)
+
+                    if not strategy_info:
+                        raise ValueError("Strategy %s not found in memory %s" % (strategy_id, memory_id))
+
+                    # Handle field name variations for strategy type
+                    strategy_type = strategy_info.get("type", strategy_info.get("memoryStrategyType", "SEMANTIC"))
+                    override_type = strategy_info.get("configuration", {}).get("type")
+
+                    strategy_copy = copy.deepcopy(strategy)
+
+                    if "configuration" in strategy_copy:
+                        wrapped_config = self._wrap_configuration(
+                            strategy_copy["configuration"], strategy_type, override_type
+                        )
+                        strategy_copy["configuration"] = wrapped_config
+
+                    modify_list.append(strategy_copy)
+
+                memory_strategies["modifyMemoryStrategies"] = modify_list
+
+            if delete_strategy_ids:
+                delete_list = [{"strategyId": sid} for sid in delete_strategy_ids]
+                memory_strategies["deleteMemoryStrategies"] = delete_list
+
+            if not memory_strategies:
+                raise ValueError("No strategy operations provided")
+
+            response = self._control_plane_client.update_memory(
+                memoryId=memory_id,
+                memoryStrategies=memory_strategies,
+                clientToken=str(uuid.uuid4()),
+            )
+
+            logger.info("Updated memory strategies for: %s", memory_id)
+            return Memory(memory=response["memory"], manager=self)
+
+        except ClientError as e:
+            logger.error("Failed to update memory strategies: %s", e)
+            raise
+
+    def update_memory_strategies_and_wait(
+        self,
+        memory_id: str,
+        add_strategies: Optional[List[Dict[str, Any]]] = None,
+        modify_strategies: Optional[List[Dict[str, Any]]] = None,
+        delete_strategy_ids: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Update memory strategies and wait for memory to return to ACTIVE state.
+
+        This method handles the temporary CREATING state that occurs when
+        updating strategies, preventing subsequent update errors.
+        """
+        # Update strategies
+        self.update_memory_strategies(memory_id, add_strategies, modify_strategies, delete_strategy_ids)
+
+        # Wait for memory to return to ACTIVE
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def add_strategy(self, memory_id: str, strategy: Dict[str, Any]) -> 'Memory':
+        """Add a strategy to a memory (without waiting).
+
+        WARNING: After adding a strategy, the memory enters CREATING state temporarily.
+        Use add_*_strategy_and_wait() methods instead to avoid errors.
+
+        Args:
+            memory_id: Memory resource ID
+            strategy: Strategy configuration dictionary
+
+        Returns:
+            Updated memory response
+        """
+        warnings.warn(
+            "add_strategy() may leave memory in CREATING state. "
+            "Use add_*_strategy_and_wait() methods to avoid subsequent errors.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return self._add_strategy(memory_id, strategy)
+
+    def _add_strategy(self, memory_id: str, strategy: Dict[str, Any]) -> 'Memory':
+        """Internal method to add a single strategy."""
+        return self.update_memory_strategies(memory_id=memory_id, add_strategies=[strategy])
+
+    def _check_strategies_terminal_state(self, strategies: List[Dict[str, Any]]) -> tuple[bool, List[str], List[str]]:
+        """Check if all strategies are in terminal states.
+        
+        Args:
+            strategies: List of strategy dictionaries
+            
+        Returns:
+            Tuple of (all_terminal, strategy_statuses, failed_strategy_names)
+        """
+        all_strategies_terminal = True
+        strategy_statuses = []
+        failed_strategy_names = []
+        
+        for strategy in strategies:
+            strategy_status = strategy.get("status", "UNKNOWN")
+            strategy_statuses.append(strategy_status)
+            
+            # Check if strategy is in a terminal state
+            if strategy_status not in [MemoryStrategyStatus.ACTIVE.value, MemoryStrategyStatus.FAILED.value]:
+                all_strategies_terminal = False
+            elif strategy_status == MemoryStrategyStatus.FAILED.value:
+                strategy_name = strategy.get("name", strategy.get("strategyId", "unknown"))
+                failed_strategy_names.append(strategy_name)
+        
+        return all_strategies_terminal, strategy_statuses, failed_strategy_names
+
+    def _wait_for_memory_active(self, memory_id: str, max_wait: int, poll_interval: int) -> 'Memory':
+        """Wait for memory to return to ACTIVE state and all strategies to reach terminal states."""
+        logger.info("Waiting for memory %s to return to ACTIVE state and strategies to reach terminal states...", memory_id)
+
+        start_time = time.time()
+        
+        while time.time() - start_time < max_wait:
+            elapsed = int(time.time() - start_time)
+
+            try:
+                # Get full memory details including strategies
+                response = self._control_plane_client.get_memory(memoryId=memory_id)
+                memory = response["memory"]
+                memory_status = memory["status"]
+
+                # Check if memory itself has failed
+                if memory_status == MemoryStatus.FAILED.value:
+                    failure_reason = memory.get("failureReason", "Unknown")
+                    raise RuntimeError("Memory update failed: %s" % failure_reason)
+
+                # Get strategies and check their statuses
+                strategies = memory.get("strategies", memory.get("memoryStrategies", []))
+                all_strategies_terminal, strategy_statuses, failed_strategy_names = self._check_strategies_terminal_state(strategies)
+
+                # Log current status
+                logger.debug("Memory status: %s, Strategy statuses: %s (%d seconds elapsed)", 
+                           memory_status, strategy_statuses, elapsed)
+
+                # Check if memory is ACTIVE and all strategies are in terminal states
+                if memory_status == MemoryStatus.ACTIVE.value and all_strategies_terminal:
+                    # Check if any strategy failed
+                    if failed_strategy_names:
+                        raise RuntimeError("Memory strategy(ies) failed: %s" % ", ".join(failed_strategy_names))
+                    
+                    logger.info("Memory %s is ACTIVE and all strategies are in terminal states (took %d seconds)", 
+                              memory_id, elapsed)
+                    return Memory(memory=memory, manager=self)
+
+                # Wait before next check
+                time.sleep(poll_interval)
+
+            except ClientError as e:
+                logger.error("Error checking memory status: %s", e)
+                raise
+
+        raise TimeoutError("Memory %s did not return to ACTIVE state with all strategies in terminal states within %d seconds" % (memory_id, max_wait))
+
+    def _add_default_namespaces(self, strategies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Add default namespaces to strategies that don't have them."""
+        processed = []
+
+        for strategy in strategies:
+            strategy_copy = copy.deepcopy(strategy)
+
+            strategy_type_key = list(strategy.keys())[0]
+            strategy_config = strategy_copy[strategy_type_key]
+
+            if "namespaces" not in strategy_config:
+                strategy_type = StrategyType(strategy_type_key)
+                strategy_config["namespaces"] = DEFAULT_NAMESPACES.get(strategy_type, ["custom/{actorId}/{sessionId}"])
+
+            self._validate_strategy_config(strategy_copy, strategy_type_key)
+
+            processed.append(strategy_copy)
+
+        return processed
+
+    def _validate_namespace(self, namespace: str) -> bool:
+        """Validate namespace format - basic check only."""
+        # Only check for template variables in namespace definition
+        if "{" in namespace and not (
+            "{actorId}" in namespace or "{sessionId}" in namespace or "{strategyId}" in namespace
+        ):
+            logger.warning("Namespace with templates should contain valid variables: %s", namespace)
+
+        return True
+
+    def _validate_strategy_config(self, strategy: Dict[str, Any], strategy_type: str) -> None:
+        """Validate strategy configuration parameters."""
+        strategy_config = strategy[strategy_type]
+
+        namespaces = strategy_config.get("namespaces", [])
+        for namespace in namespaces:
+            self._validate_namespace(namespace)
+
+class Memory:
+    """
+    Represents a single, provisioned AgentCore Memory resource. 
+    This class provides convenient delegation to MemoryManager operations.
+    """
+    def __init__(self, memory: Dict[str, Any], manager: MemoryManager):
+        self._memory = memory
+        self._manager = manager
+
+    def _validate_initialized(self):
+        if self._memory is None or self._manager is None: # Check for None
+            raise ValueError("Memory object is not properly initialized")
+        if not self._memory:  # Check for empty dict
+            raise ValueError("Memory object has been deleted or is empty.")
+
+    def __getattr__(self, name: str) -> Any:
+        """Provides direct access to memory fields as attributes"""
+        self._validate_initialized()
+        if name == "get":
+            return self._get
+        return self._memory[name]
+
+    def __getitem__(self, key: str) -> Any:
+        """Provides dictionary-style access to memory fields"""
+        return self._memory[key]
+
+    def _get(self, key: str, default=None) -> Any:
+        """Provides dict.get() style access to memory fields"""
+        return self._memory.get(key, default)
+
+    def __repr__(self):
+        return self._memory.__repr__()
+
+    def delete(self):
+        """Delegates to manager.delete_memory"""
+        self._validate_initialized()
+        response = self._manager.delete_memory(self.id)
+        self._memory = {}
+        return response
+
+    def add_semantic_strategy(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None) -> 'Memory':
+        """Delegates to manager.add_semantic_strategy"""
+        self._validate_initialized()
+        self._memory = self._manager.add_semantic_strategy(self.id, name, description, namespaces)
+        return self
+
+    def add_semantic_strategy_and_wait(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None, max_wait: int = 300, poll_interval: int = 10) -> 'Memory':
+        """Delegates to manager.add_semantic_strategy_and_wait"""
+        self._validate_initialized()
+        self._memory = self._manager.add_semantic_strategy_and_wait(self.id, name, description, namespaces, max_wait, poll_interval)
+        return self
+
+    def add_summary_strategy(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None) -> 'Memory':
+        """Delegates to manager.add_summary_strategy"""
+        self._validate_initialized()
+        self._memory = self._manager.add_summary_strategy(self.id, name, description, namespaces)
+        return self
+
+    def add_summary_strategy_and_wait(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None, max_wait: int = 300, poll_interval: int = 10) -> 'Memory':
+        """Delegates to manager.add_summary_strategy_and_wait"""
+        self._validate_initialized()
+        self._memory = self._manager.add_summary_strategy_and_wait(self.id, name, description, namespaces, max_wait, poll_interval)
+        return self
+
+    def add_user_preference_strategy(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None) -> 'Memory':
+        """Delegates to manager.add_user_preference_strategy"""
+        self._validate_initialized()
+        self._memory = self._manager.add_user_preference_strategy(self.id, name, description, namespaces)
+        return self
+    
+    def add_user_preference_strategy_and_wait(self, name: str, description: Optional[str] = None, namespaces: Optional[List[str]] = None, max_wait: int = 300, poll_interval: int = 10) -> 'Memory':
+        """Delegates to manager.add_user_preference_strategy_and_wait"""
+        self._validate_initialized()
+        self._memory = self._manager.add_user_preference_strategy_and_wait(self.id, name, description, namespaces, max_wait, poll_interval)
+        return self
+
+    def add_custom_semantic_strategy(
+        self,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> 'Memory':
+        """Delegates to manager.add_custom_semantic_strategy"""
+        self._validate_initialized()
+        self._memory = self._manager.add_custom_semantic_strategy(
+            self.id, name, extraction_config, consolidation_config, description, namespaces
+        )
+        return self
+
+    def add_custom_semantic_strategy_and_wait(
+        self,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> 'Memory':
+        """Delegates to manager.add_custom_semantic_strategy_and_wait"""
+        self._validate_initialized()
+        self._memory = self._manager.add_custom_semantic_strategy_and_wait(
+            self.id, name, extraction_config, consolidation_config, description, namespaces, max_wait, poll_interval
+        )
+        return self
+
+    def get_strategies(self) -> List['MemoryStrategy']:
+        """Delegates to manager.get_memory_strategies"""
+        self._validate_initialized()
+        strategies = self._manager.get_memory_strategies(self.id)
+        return [MemoryStrategy(strategy) for strategy in strategies]
+
+    def delete_strategy(self, strategy_id: str) -> 'Memory':
+        """Delegates to manager.delete_strategy"""
+        self._validate_initialized()
+        self._memory = self._manager.delete_strategy(self.id, strategy_id)
+        return self
