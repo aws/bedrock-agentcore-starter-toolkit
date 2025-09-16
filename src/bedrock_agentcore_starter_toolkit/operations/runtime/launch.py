@@ -13,8 +13,10 @@ from botocore.exceptions import ClientError
 from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
+from ...services.xray import enable_transaction_search_if_needed
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .create_role import get_or_create_runtime_execution_role
 from .models import LaunchResult
@@ -135,6 +137,7 @@ def _deploy_to_bedrock_agentcore(
     agent_name: str,
     ecr_uri: str,
     region: str,
+    account_id: str,
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
 ):
@@ -229,6 +232,16 @@ def _deploy_to_bedrock_agentcore(
     save_config(project_config, config_path)
 
     log.info("✅ Agent created/updated: %s", agent_arn)
+
+    # Enable Transaction Search if observability is enabled
+    if agent_config.aws.observability.enabled:
+        log.info("Observability is enabled, configuring Transaction Search...")
+        enable_transaction_search_if_needed(region, account_id)
+
+        # Show GenAI Observability Dashboard URL whenever OTEL is enabled
+        console_url = get_genai_observability_url(region)
+        log.info("🔍 GenAI Observability Dashboard:")
+        log.info("   %s", console_url)
 
     # Wait for agent to be ready
     log.info("Polling for endpoint to be ready...")
@@ -367,6 +380,7 @@ def launch_bedrock_agentcore(
         bedrock_agentcore_name,
         ecr_uri,
         region,
+        account_id,
         env_vars,
         auto_update_on_conflict,
     )
@@ -495,6 +509,7 @@ def _launch_with_codebuild(
         agent_name,
         ecr_uri,
         region,
+        account_id,
         env_vars=env_vars,
         auto_update_on_conflict=auto_update_on_conflict,
     )

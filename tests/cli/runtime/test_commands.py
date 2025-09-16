@@ -1129,7 +1129,7 @@ agents:
         config_file = tmp_path / ".bedrock_agentcore.yaml"
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
         ):
             # Mock project config and agent config with OAuth
@@ -1172,7 +1172,7 @@ agents:
         config_file = tmp_path / ".bedrock_agentcore.yaml"
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
         ):
             # Mock project config and agent config without OAuth
@@ -1308,11 +1308,12 @@ default_agent: test-agent
 agents:
   test-agent:
     name: test-agent
+    entrypoint: test.py
 """
         config_file.write_text(config_content.strip())
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
         ):
             # Mock project config and agent config
@@ -1923,9 +1924,22 @@ agents:
     def test_launch_command_with_env_vars(self, tmp_path):
         """Test launch command with environment variables."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+        config_file.write_text(
+            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+        )
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.entrypoint = "test.py"
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
             mock_result = Mock()
             mock_result.mode = "local"
             mock_result.tag = "bedrock_agentcore-test-agent"
@@ -1953,7 +1967,7 @@ agents:
     def test_invoke_with_oauth_and_env_bearer_token(self, tmp_path):
         """Test invoke command uses bearer token from environment when OAuth configured."""
         with (
-            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
             patch.dict(os.environ, {"BEDROCK_AGENTCORE_BEARER_TOKEN": "env-token"}),
         ):
@@ -2525,7 +2539,7 @@ agents:
         config_file.write_text(config_content.strip())
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
         ):
             # Mock project config with undeployed agent
             mock_project_config = Mock()

@@ -20,7 +20,9 @@ from ...operations.runtime import (
     launch_bedrock_agentcore,
     validate_agent_name,
 )
+from ...utils.runtime.config import load_config
 from ...utils.runtime.entrypoint import parse_entrypoint
+from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
@@ -112,8 +114,6 @@ def list_agents():
     """List configured agents."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     try:
-        from ...utils.runtime.config import load_config
-
         project_config = load_config(config_path)
         if not project_config.agents:
             console.print("[yellow]No agents configured.[/yellow]")
@@ -404,6 +404,8 @@ def launch(
                 auto_update_on_conflict=auto_update_on_conflict,
             )
 
+        project_config = load_config(config_path)
+        agent_config = project_config.get_agent_config(agent)
         # Handle result based on mode
         if result.mode == "local":
             _print_success(f"Docker image built: {result.tag}")
@@ -422,6 +424,10 @@ def launch(
         elif result.mode == "codebuild":
             # Show deployment success panel
             agent_name = result.tag.split(":")[0].replace("bedrock_agentcore-", "")
+
+            # Get region from configuration
+            region = agent_config.aws.region if agent_config else "us-east-1"
+
             deploy_panel = (
                 f"✅ [green]CodeBuild Deployment Successful![/green]\n\n"
                 f"[bold]Agent Details:[/bold]\n"
@@ -437,18 +443,18 @@ def launch(
 
             # Add log information if we have agent_id
             if result.agent_id:
-                from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
-
                 runtime_logs, otel_logs = get_agent_log_paths(result.agent_id)
                 follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
-                deploy_panel += (
-                    f"\n\n📋 [cyan]CloudWatch Logs:[/cyan]\n"
-                    f"   {runtime_logs}\n"
-                    f"   {otel_logs}\n\n"
-                    f"💡 [dim]Tail logs with:[/dim]\n"
-                    f"   {follow_cmd}\n"
-                    f"   {since_cmd}"
-                )
+                deploy_panel += f"\n\n📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"
+                # Only show GenAI Observability Dashboard if OTEL is enabled
+                if agent_config and agent_config.aws.observability.enabled:
+                    deploy_panel += (
+                        f"🔍 [cyan]GenAI Observability Dashboard:[/cyan]\n"
+                        f"   {get_genai_observability_url(region)}\n\n"
+                        f"⏱️  [dim]Note: Observability data may take up to 10 minutes to appear "
+                        f"after first launch[/dim]\n\n"
+                    )
+                deploy_panel += f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}"
 
             console.print(
                 Panel(
@@ -483,8 +489,6 @@ def launch(
             )
 
             if result.agent_id:
-                from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
-
                 runtime_logs, otel_logs = get_agent_log_paths(result.agent_id)
                 follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
                 deploy_panel += (
@@ -530,15 +534,17 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
     # Agent ARN
     if invoke_result and invoke_result.agent_arn:
         info_lines.append(f"ARN: [cyan]{invoke_result.agent_arn}[/cyan]")
-    # CloudWatch logs (if we have config with agent_id)
+    # CloudWatch logs and GenAI Observability Dashboard (if we have config with agent_id)
     if config and hasattr(config, "bedrock_agentcore") and config.bedrock_agentcore.agent_id:
         try:
-            from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
-
             runtime_logs, _ = get_agent_log_paths(config.bedrock_agentcore.agent_id)
             follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
             info_lines.append(f"Logs: {follow_cmd}")
             info_lines.append(f"      {since_cmd}")
+
+            # Only show GenAI Observability Dashboard if OTEL is enabled
+            if config.aws.observability.enabled:
+                info_lines.append(f"GenAI Dashboard: {get_genai_observability_url(config.aws.region)}")
         except Exception:
             pass  # nosec B110
     panel_content = "\n".join(info_lines) if info_lines else "Invoke information unavailable"
@@ -580,8 +586,6 @@ def invoke(
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
     try:
-        from ...utils.runtime.config import load_config
-
         # Load project configuration to check if auth is configured
         project_config = load_config(config_path)
         config = project_config.get_agent_config(agent)
@@ -671,8 +675,6 @@ def invoke(
             agent_name = config.name if config else (agent or "unknown")
         except (NameError, AttributeError):
             try:
-                from ...utils.runtime.config import load_config
-
                 fallback_project_config = load_config(config_path)
                 agent_config = fallback_project_config.get_agent_config(agent)
                 agent_name = agent_config.name if agent_config else (agent or "unknown")
@@ -777,20 +779,24 @@ def status(
                     agent_id = status_json.get("config", {}).get("agent_id")
                     if agent_id:
                         try:
-                            from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands
-
                             endpoint_name = endpoint_data.get("name")
                             runtime_logs, otel_logs = get_agent_log_paths(agent_id, endpoint_name)
                             follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
 
-                            panel_content += (
-                                f"📋 [cyan]CloudWatch Logs:[/cyan]\n"
-                                f"   {runtime_logs}\n"
-                                f"   {otel_logs}\n\n"
-                                f"💡 [dim]Tail logs with:[/dim]\n"
-                                f"   {follow_cmd}\n"
-                                f"   {since_cmd}\n\n"
-                            )
+                            panel_content += f"📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"
+
+                            # Only show GenAI Observability Dashboard if OTEL is enabled
+                            project_config = load_config(config_path)
+                            agent_config = project_config.get_agent_config(agent)
+                            if agent_config and agent_config.aws.observability.enabled:
+                                panel_content += (
+                                    f"🔍 [cyan]GenAI Observability Dashboard:[/cyan]\n"
+                                    f"   {get_genai_observability_url(status_json['config']['region'])}\n\n"
+                                    f"⏱️  [dim]Note: Observability data may take up to 10 minutes to appear "
+                                    f"after first launch[/dim]\n\n"
+                                )
+
+                            panel_content += f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}\n\n"
                         except Exception:  # nosec B110
                             # If log retrieval fails, continue without logs section
                             pass
@@ -891,8 +897,6 @@ def destroy(
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
     try:
-        from ...utils.runtime.config import load_config
-
         # Load project configuration to get agent details
         project_config = load_config(config_path)
         agent_config = project_config.get_agent_config(agent)

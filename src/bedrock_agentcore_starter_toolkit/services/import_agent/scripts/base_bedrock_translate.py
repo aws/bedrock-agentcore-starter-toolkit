@@ -21,6 +21,7 @@ from openapi_schema_to_json_schema import to_json_schema
 
 from ....operations.gateway import GatewayClient
 from ..utils import (
+    clean_gateway_or_target_name,
     clean_variable_name,
     generate_pydantic_models,
     get_base_dir,
@@ -28,7 +29,6 @@ from ..utils import (
     prune_tool_name,
     safe_substitute_placeholders,
     unindent_by_one,
-    clean_gateway_or_target_name,
 )
 
 

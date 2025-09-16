@@ -19,7 +19,7 @@ Before starting, make sure you have:
 
 - **AWS Account** with credentials configured (`aws configure`) with model access enabled to the Foundation Model you would like to use.
 - **Python 3.10+** installed
-- **Enable transaction search** on Amazon CloudWatch. Only once, first-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces  
+- **Enable transaction search** on Amazon CloudWatch. Only once, first-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces
 - **Add the OpenTelemetry library** Include `aws-opentelemetry-distro` (ADOT) in your requirements.txt file.
 - Ensure that your framework is configured to emit traces (eg. `strands-agents[otel]` package), you may sometimes need to include `<your-agent-framework-auto-instrumentor>` # e.g., `opentelemetry-instrumentation-langchain`
 
@@ -27,7 +27,7 @@ AgentCore Observability offers two ways to configure monitoring to match differe
 1. AgentCore Runtime-hosted agents
 2. Non-runtime hosted agents
 
-As a **one time** setup per account, first time users would need to enable Transaction Search on Amazon CloudWatch. There are two ways to do this, via the API and via the CloudWatch Console. 
+As a **one time** setup per account, first time users would need to enable Transaction Search on Amazon CloudWatch. There are two ways to do this, via the API and via the CloudWatch Console.
 
 ## Enabling Transaction Search on CloudWatch
 
@@ -40,7 +40,7 @@ After you enable Transaction Search, it can take ten minutes for spans to become
 An example is shown below on how to format your AWS CLI command with PutResourcePolicy.
 
 ```bash
-aws logs put-resource-policy --policy-name MyResourcePolicy --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "TransactionSearchXRayAccess", "Effect": "Allow", "Principal": { "Service": "xray.amazonaws.com" }, "Action": "logs:PutLogEvents", "Resource": [ "arn:partition:logs:region:account-id:log-group:aws/spans:*", "arn:partition:logs:region:account-id:log-group:/aws/application-signals/data:*" ], "Condition": { "ArnLike": { "aws:SourceArn": "arn:partition:logs:region:account-id:*" }, "StringEquals": { "aws:SourceAccount": "account-id" } } } ]}'
+aws logs put-resource-policy --policy-name MyResourcePolicy --policy-document '{ "Version": "2012-10-17", "Statement": [ { "Sid": "TransactionSearchXRayAccess", "Effect": "Allow", "Principal": { "Service": "xray.amazonaws.com" }, "Action": "logs:PutLogEvents", "Resource": [ "arn:partition:logs:region:account-id:log-group:aws/spans:*", "arn:partition:logs:region:account-id:log-group:/aws/application-signals/data:*" ], "Condition": { "ArnLike": { "aws:SourceArn": "arn:partition:xray:region:account-id:*" }, "StringEquals": { "aws:SourceAccount": "account-id" } } } ]}'
 ```
 
 **Step 2: Configure the destination of trace segments**
@@ -48,7 +48,7 @@ aws logs put-resource-policy --policy-name MyResourcePolicy --policy-document '{
 An example is shown below on how to format your AWS CLI command with UpdateTraceSegmentDestination.
 
 ```bash
-aws xray update-indexing-rule --name "Default" --rule '{"Probabilistic": {"DesiredSamplingPercentage": number}}'
+aws xray update-trace-segment-destination --destination CloudWatchLogs
 ```
 
 **Optional** Step : Configure the amount of spans to index
@@ -66,7 +66,7 @@ aws xray update-indexing-rule --name "Default" --rule '{"Probabilistic": {"Desir
 - Choose Enable Transaction Search.
 - Select the box to ingest spans as structured logs, and enter a percentage of spans to be indexed. You can index spans at 1% for free and change the percentage later based on your requirements.
 
-Let's now proceed to exploring the two ways to configure observability. 
+Let's now proceed to exploring the two ways to configure observability.
 
 ## Enabling Observability for AgentCore Runtime hosted Agents
 
