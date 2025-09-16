@@ -141,6 +141,16 @@ def _deploy_to_bedrock_agentcore(
     """Deploy agent to Bedrock AgentCore with retry logic for role validation."""
     log.info("Deploying to Bedrock AgentCore...")
 
+    # Prepare environment variables
+    if env_vars is None:
+        env_vars = {}
+
+    # Add memory configuration to environment variables if available
+    if agent_config.memory and agent_config.memory.memory_id:
+        env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
+        log.info("Passing memory configuration to agent: %s", agent_config.memory.memory_id)
+
     bedrock_agentcore_client = BedrockAgentCoreClient(region)
 
     # Transform network configuration to AWS API format

@@ -266,6 +266,7 @@ def configure(
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/dim]\n"
                 f"Authorization: [dim]{auth_info}[/dim]\n\n"
+                f"Memory: [dim]Short-term memory (30-day retention)[/dim]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
@@ -428,7 +429,8 @@ def launch(
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
                 f"ECR URI: [cyan]{result.ecr_uri}:latest[/cyan]\n"
-                f"CodeBuild ID: [dim]{result.codebuild_id}[/dim]\n\n"
+                f"CodeBuild ID: [dim]{result.codebuild_id}[/dim]\n"
+                #                f"Memory: [cyan]{memory_info}[/cyan]\n\n"
                 f"🚀 ARM64 container deployed to Bedrock AgentCore\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore status[/cyan]\n"

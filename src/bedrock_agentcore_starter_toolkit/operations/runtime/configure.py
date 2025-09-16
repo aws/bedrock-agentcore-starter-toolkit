@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from bedrock_agentcore.memory.controlplane import MemoryControlPlaneClient
+
 from ...services.ecr import get_account_id, get_region
 from ...utils.runtime.config import merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
@@ -12,6 +14,7 @@ from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
+    MemoryConfig,
     NetworkConfiguration,
     ObservabilityConfig,
     ProtocolConfiguration,
@@ -138,6 +141,27 @@ def configure_bedrock_agentcore(
     if dockerignore_path.exists():
         log.info("Generated .dockerignore: %s", dockerignore_path)
 
+    # Create memory resource (always enabled by default)
+    memory_config = MemoryConfig()
+    try:
+        log.info("Creating short-term memory for agent: %s", agent_name)
+        memory_client = MemoryControlPlaneClient(region_name=region)
+
+        memory = memory_client.create_memory(
+            name=f"bedrock_agentcore_{agent_name}_memory",
+            event_expiry_days=30,
+            memory_execution_role_arn=execution_role_arn,
+            wait_for_active=True,
+            max_wait=60,
+        )
+
+        memory_config.memory_id = memory["id"]
+        memory_config.memory_arn = memory["arn"]
+        memory_config.memory_name = f"{agent_name}_memory"
+        log.info("✅ Memory created: %s", memory["id"])
+    except Exception as e:
+        log.warning("⚠️ Memory creation failed: %s. Continuing without memory.", str(e))
+
     # Handle project configuration (named agents)
     config_path = build_dir / ".bedrock_agentcore.yaml"
 
@@ -193,6 +217,7 @@ def configure_bedrock_agentcore(
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         authorizer_configuration=authorizer_configuration,
+        memory=memory_config,
     )
 
     # Use simplified config merging

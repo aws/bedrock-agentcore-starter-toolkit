@@ -5,6 +5,15 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+class MemoryConfig(BaseModel):
+    """Memory configuration for BedrockAgentCore."""
+
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
+    memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
+    memory_name: Optional[str] = Field(default=None, description="Memory resource name")
+    event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
+
+
 class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
@@ -80,6 +89,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
 

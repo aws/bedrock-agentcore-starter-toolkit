@@ -21,6 +21,7 @@ class ConfigureResult(BaseModel):
     execution_role: Optional[str] = Field(None, description="AWS execution role ARN")
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
 
 
 # Launch operation models

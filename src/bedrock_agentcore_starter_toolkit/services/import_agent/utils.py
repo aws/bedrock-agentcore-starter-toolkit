@@ -49,8 +49,9 @@ def clean_variable_name(text):
 
     return cleaned
 
+
 def clean_gateway_or_target_name(text):
-    """Clean a string to create a valid Gateway or Target name"""
+    """Clean a string to create a valid Gateway or Target name."""
     text = str(text)
     cleaned = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
     cleaned = cleaned.lower()
