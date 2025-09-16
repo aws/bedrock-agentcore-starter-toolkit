@@ -1,5 +1,6 @@
 """Tests for Bedrock AgentCore container runtime management."""
 
+import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -541,3 +542,329 @@ CMD ["python", "/app/{{ agent_file }}"]
                     "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html"
                     in warning_message
                 )
+
+    # New tests for Dockerfile overwrite protection
+
+    def test_generate_dockerfile_existing_file_prompt_overwrite(self, tmp_path):
+        """Test when Dockerfile exists and user chooses to overwrite."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+            existing_content = dockerfile.read_text()
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock user input to choose overwrite
+            with (
+                patch("builtins.input", return_value="1"),  # 1 for overwrite
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                )
+
+                # Verify file was overwritten
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content"
+                assert dockerfile_path.read_text() != existing_content
+
+    def test_generate_dockerfile_existing_file_prompt_skip(self, tmp_path):
+        """Test when Dockerfile exists and user chooses to skip."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+            existing_content = dockerfile.read_text()
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock user input to choose skip
+            with (
+                patch("builtins.input", return_value="2"),  # 2 for skip
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                )
+
+                # Verify file was not changed
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == existing_content
+                assert dockerfile_path.read_text() != "# New generated Dockerfile content"
+
+    def test_generate_dockerfile_existing_file_prompt_backup(self, tmp_path):
+        """Test when Dockerfile exists and user chooses to backup."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+            existing_content = dockerfile.read_text()
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock datetime for consistent backup naming
+            mock_now = datetime.datetime(2024, 1, 28, 13, 20, 0)
+
+            # Mock user input to choose backup
+            with (
+                patch("builtins.input", return_value="3"),  # 3 for backup
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+                patch("datetime.datetime") as mock_datetime,
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_datetime.now.return_value = mock_now
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                )
+
+                # Verify file was backed up and new one was created
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content"
+
+                # Check backup exists with timestamp
+                backup_file = tmp_path / f"Dockerfile.bak.{mock_now.strftime('%Y%m%d_%H%M%S')}"
+                assert backup_file.exists()
+                assert backup_file.read_text() == existing_content
+
+    def test_generate_dockerfile_existing_file_prompt_show_diff(self, tmp_path):
+        """Test when Dockerfile exists and user chooses to see diff then overwrite."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content\nFROM python:3.9")
+            existing_content = dockerfile.read_text()
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock user input sequence: first "4" for diff, then "1" for overwrite
+            with (
+                patch("builtins.input", side_effect=["4", "1"]),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+                patch("sys.stdout"),  # To capture print output for the diff
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content\nFROM python:3.10"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                )
+
+                # Verify diff was shown (via mocked stdout) and file was overwritten
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content\nFROM python:3.10"
+                assert dockerfile_path.read_text() != existing_content
+
+    def test_generate_dockerfile_force_overwrite_parameter(self, tmp_path):
+        """Test overwrite_existing=True parameter bypasses prompts."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+            existing_content = dockerfile.read_text()
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock input to ensure it's not called (should bypass prompt)
+            with (
+                patch("builtins.input", side_effect=Exception("Should not prompt user")) as mock_input,
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    overwrite_existing=True,  # Key parameter being tested
+                )
+
+                # Verify file was overwritten without prompting
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content"
+                assert dockerfile_path.read_text() != existing_content
+                mock_input.assert_not_called()
+
+    def test_generate_dockerfile_no_backup_parameter(self, tmp_path):
+        """Test backup_existing=False parameter."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock datetime for consistent backup naming
+            mock_now = datetime.datetime(2024, 1, 28, 13, 20, 0)
+
+            # Mock user input to choose backup
+            with (
+                patch("builtins.input", return_value="3"),  # 3 for backup
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+                patch("datetime.datetime") as mock_datetime,
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_datetime.now.return_value = mock_now
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    backup_existing=False,  # Key parameter being tested
+                )
+
+                # Verify new file was created but no backup was made
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content"
+
+                # Check backup does NOT exist
+                backup_file = tmp_path / f"Dockerfile.bak.{mock_now.strftime('%Y%m%d_%H%M%S')}"
+                assert not backup_file.exists()
+
+    def test_generate_dockerfile_backup_file_naming(self, tmp_path):
+        """Test backup file naming convention and collision handling."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create existing Dockerfile
+            dockerfile = tmp_path / "Dockerfile"
+            dockerfile.write_text("# Existing Dockerfile content")
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Create a backup file that would cause a collision
+            mock_now = datetime.datetime(2024, 1, 28, 13, 20, 0)
+            backup_name = f"Dockerfile.bak.{mock_now.strftime('%Y%m%d_%H%M%S')}"
+            collision_file = tmp_path / backup_name
+            collision_file.write_text("# This would cause a collision")
+
+            # Mock user input to choose backup
+            with (
+                patch("builtins.input", return_value="3"),  # 3 for backup
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+                patch("datetime.datetime") as mock_datetime,
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="", type="")
+
+                mock_datetime.now.return_value = mock_now
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# New generated Dockerfile content"
+
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                )
+
+                # Verify new file was created
+                assert dockerfile_path == tmp_path / "Dockerfile"
+                assert dockerfile_path.read_text() == "# New generated Dockerfile content"
+
+                # Check unique backup was created (should have a .1 suffix)
+                expected_backup = tmp_path / f"{backup_name}.1"
+                assert expected_backup.exists()

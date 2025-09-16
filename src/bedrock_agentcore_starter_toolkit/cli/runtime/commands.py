@@ -170,6 +170,12 @@ def configure(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
+    force_dockerfile_overwrite: bool = typer.Option(
+        False, "--force-dockerfile-overwrite", help="Overwrite existing Dockerfile without prompting"
+    ),
+    no_dockerfile_backup: bool = typer.Option(
+        False, "--no-dockerfile-backup", help="Don't create backups when overwriting Dockerfile"
+    ),
 ):
     """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
     if ctx.invoked_subcommand is not None:
@@ -245,6 +251,8 @@ def configure(
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,
+            overwrite_dockerfile=force_dockerfile_overwrite,
+            backup_dockerfile=not no_dockerfile_backup,
         )
 
         # Prepare authorization info for summary

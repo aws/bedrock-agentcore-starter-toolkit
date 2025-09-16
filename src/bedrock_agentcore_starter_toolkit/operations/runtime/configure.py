@@ -35,6 +35,8 @@ def configure_bedrock_agentcore(
     verbose: bool = False,
     region: Optional[str] = None,
     protocol: Optional[str] = None,
+    overwrite_dockerfile: bool = False,
+    backup_dockerfile: bool = True,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -52,6 +54,8 @@ def configure_bedrock_agentcore(
         verbose: Whether to provide verbose output during configuration
         region: AWS region for deployment
         protocol: agent server protocol, must be either HTTP or MCP
+        overwrite_dockerfile: Whether to overwrite existing Dockerfile without prompting
+        backup_dockerfile: Whether to create backups when overwriting Dockerfile
 
     Returns:
         ConfigureResult model with configuration details
@@ -129,6 +133,8 @@ def configure_bedrock_agentcore(
         region,
         enable_observability,
         requirements_file,
+        overwrite_existing=overwrite_dockerfile,
+        backup_existing=backup_dockerfile,
     )
 
     # Check if .dockerignore was created
