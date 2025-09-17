@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.11] - 2025-09-17
+
+### Changes
+
+- feat(observability): Add automatic Transaction Search configuration (#175) (fe7f29a)
+- ci(deps): bump trufflesecurity/trufflehog from 3.90.5 to 3.90.6 (#172) (afe2458)
+- adding - enable transaction search (#170) (2eaad64)
+- fix source (#168) (15d6b05)
+- small error fixes in stuff i added to quick start (#165) (2b7756b)
+- Fix: typo var name and use "-" not "_" in target (#142) (948c0d2)
+- Optimize Dockerfile template for faster builds (#166) (4d1a118)
+- Remove reference to IAM users, remove erroneous AWS CLI commands (#164) (d055a18)
+- Fix pre-commit linting issues (#161) (205678e)
+- Add pre-req steps so customers can easily follow along (#159) (67eb571)
+- ci(deps): bump actions/checkout from 4 to 5 (#121) (7282d82)
+- ci(deps): bump actions/download-artifact from 4 to 5 (#122) (141c8b7)
+- chore(deps): update mkdocstrings-python requirement (#147) (0922960)
+- ci(deps): bump aws-actions/configure-aws-credentials from 4 to 5 (#155) (4d931c7)
+- Using valid address for client http requests connection (#78) (2332309)
+- chore: bump version to 0.1.10 (#157) (569b6ac)
+
+### Dependencies
+- Updated to bedrock-agentcore SDK v0.1.4
+
 ## [0.1.10] - 2025-09-08
 
 ### Changes
