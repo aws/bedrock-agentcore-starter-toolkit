@@ -1,6 +1,7 @@
 """ECR (Elastic Container Registry) service integration."""
 
 import base64
+import os
 
 import boto3
 
@@ -14,7 +15,7 @@ def get_account_id() -> str:
 
 def get_region() -> str:
     """Get AWS region."""
-    return boto3.Session().region_name or "us-west-2"
+    return os.getenv("AWS_REGION") or boto3.Session().region_name or "us-west-2"
 
 
 def create_ecr_repository(repo_name: str, region: str) -> str:
