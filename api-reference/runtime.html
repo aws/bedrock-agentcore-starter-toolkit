@@ -2621,7 +2621,18 @@
 <span class="normal">497</span>
 <span class="normal">498</span>
 <span class="normal">499</span>
-<span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BedrockAgentCoreApp</span><span class="p">(</span><span class="n">Starlette</span><span class="p">):</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BedrockAgentCoreApp</span><span class="p">(</span><span class="n">Starlette</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Bedrock AgentCore application class that extends Starlette for AI agent deployment.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">lifespan</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Lifespan</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -2905,12 +2916,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Ping endpoint failed&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">JSONResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">PingStatus</span><span class="o">.</span><span class="n">HEALTHY</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;time_of_last_update&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())})</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start the Bedrock AgentCore server.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            port: Port to serve on, defaults to 8080</span>
 <span class="sd">            host: Host to bind to, auto-detected if None</span>
+<span class="sd">            **kwargs: Additional arguments passed to uvicorn.run()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -2921,7 +2933,17 @@
                 <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;0.0.0.0&quot;</span>  <span class="c1"># nosec B104 - Docker needs this to expose the port</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span>
-        <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">access_log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set default uvicorn parameters, allow kwargs to override</span>
+        <span class="n">uvicorn_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;host&quot;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
+            <span class="s2">&quot;port&quot;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span>
+            <span class="s2">&quot;access_log&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+            <span class="s2">&quot;log_level&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">uvicorn_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">uvicorn_params</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_invoke_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">request_context</span><span class="p">,</span> <span class="n">takes_context</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3952,7 +3974,7 @@ Call this when your background work finishes.</p>
 
 
 <h4 id="bedrock_agentcore.runtime.BedrockAgentCoreApp.run" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.runtime.BedrockAgentCoreApp.run" class="headerlink" title="Permanent link">&para;</a></h4>
 
@@ -4005,6 +4027,21 @@ Call this when your background work finishes.</p>
                   <code>None</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>**kwargs</code>
+            </td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional arguments passed to uvicorn.run()</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -4027,12 +4064,24 @@ Call this when your background work finishes.</p>
 <span class="normal">367</span>
 <span class="normal">368</span>
 <span class="normal">369</span>
-<span class="normal">370</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Start the Bedrock AgentCore server.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        port: Port to serve on, defaults to 8080</span>
 <span class="sd">        host: Host to bind to, auto-detected if None</span>
+<span class="sd">        **kwargs: Additional arguments passed to uvicorn.run()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -4043,7 +4092,17 @@ Call this when your background work finishes.</p>
             <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;0.0.0.0&quot;</span>  <span class="c1"># nosec B104 - Docker needs this to expose the port</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span>
-    <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">access_log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span> <span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set default uvicorn parameters, allow kwargs to override</span>
+    <span class="n">uvicorn_params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;host&quot;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
+        <span class="s2">&quot;port&quot;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span>
+        <span class="s2">&quot;access_log&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
+        <span class="s2">&quot;log_level&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="k">else</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">uvicorn_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">uvicorn_params</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

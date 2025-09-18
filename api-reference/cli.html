@@ -2006,6 +2006,15 @@
 <p><code>set-default</code>: Set default agent</p>
 </li>
 </ul>
+<p><strong>Region Configuration:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Use specific region</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>agent.py<span class="w"> </span>--region<span class="w"> </span>us-east-1
+
+<span class="c1"># Region precedence:</span>
+<span class="c1"># 1. --region flag</span>
+<span class="c1"># 2. AWS_DEFAULT_REGION environment variable</span>
+<span class="c1"># 3. AWS CLI configured region</span>
+</code></pre></div>
 <h3 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h3>
 <p>Deploy agents to AWS or run locally.</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
@@ -2051,6 +2060,24 @@
 <p><code>--user-id, -u TEXT</code>: User ID for authorization flows</p>
 </li>
 </ul>
+<p><strong>Example Output:</strong></p>
+<ul>
+<li>Session and Request IDs displayed in panel header</li>
+<li>CloudWatch log commands ready to copy</li>
+<li>Proper UTF-8 character rendering</li>
+<li>Clean response formatting without raw data structures</li>
+</ul>
+<p>Example output:</p>
+<div class="highlight"><pre><span></span><code>╭────────── agent_name ──────────╮
+│ Session: abc-123                │
+│ Request ID: req-456             │
+│ ARN: arn:aws:bedrock...         │
+│ Logs: aws logs tail ... --follow│
+╰─────────────────────────────────╯
+
+Response:
+Your formatted response here
+</code></pre></div>
 <h3 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h3>
 <p>Get Bedrock AgentCore status including config and runtime details.</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>status<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>

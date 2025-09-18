@@ -584,15 +584,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Overview
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#auto-role-creation-feature" class="md-nav__link">
     <span class="md-ellipsis">
       Auto Role Creation Feature
@@ -603,7 +594,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_1" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       Overview
     </span>
@@ -669,7 +660,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_2" class="md-nav__link">
+  <a href="#overview_1" class="md-nav__link">
     <span class="md-ellipsis">
       Overview
     </span>
@@ -1926,15 +1917,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Overview
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#auto-role-creation-feature" class="md-nav__link">
     <span class="md-ellipsis">
       Auto Role Creation Feature
@@ -1945,7 +1927,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_1" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       Overview
     </span>
@@ -2011,7 +1993,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#overview_2" class="md-nav__link">
+  <a href="#overview_1" class="md-nav__link">
     <span class="md-ellipsis">
       Overview
     </span>
@@ -2227,9 +2209,7 @@
 
 
 <h1 id="runtime-permissions">Runtime Permissions<a class="headerlink" href="#runtime-permissions" title="Permanent link">&para;</a></h1>
-<p>This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime. The toolkit supports two types of execution roles with distinct permission sets.</p>
-<p>Refer to <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html">AWS Bedrock AgentCore Runtime Permissions</a> documentation for more details.</p>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>This guide covers the IAM permissions required to run agents with Amazon Bedrock AgentCore Runtime.</p>
 <p>The toolkit requires two types of IAM roles for different phases of agent deployment:</p>
 <ul>
 <li><strong>Runtime Execution Role</strong>: Used by Bedrock AgentCore Runtime to execute your agent</li>
@@ -2237,7 +2217,7 @@
 </ul>
 <p>Both roles can be automatically created by the toolkit or manually specified using existing roles.</p>
 <h2 id="auto-role-creation-feature">Auto Role Creation Feature<a class="headerlink" href="#auto-role-creation-feature" title="Permanent link">&para;</a></h2>
-<h3 id="overview_1">Overview<a class="headerlink" href="#overview_1" title="Permanent link">&para;</a></h3>
+<h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
 <p>The Bedrock AgentCore Starter Toolkit includes an <strong>auto role creation feature</strong> that automatically generates the Runtime Execution Role when you don't specify an existing role.</p>
 <h3 id="what-gets-auto-created">What Gets Auto-Created<a class="headerlink" href="#what-gets-auto-created" title="Permanent link">&para;</a></h3>
 <p>When you run <code>agentcore configure</code> without specifying the <code>--execution-role</code> parameter, the toolkit automatically creates:</p>
@@ -2266,7 +2246,7 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class=
 agentcore<span class="w"> </span>launch
 </code></pre></div></p>
 <h2 id="developercaller-permissions">Developer/Caller Permissions<a class="headerlink" href="#developercaller-permissions" title="Permanent link">&para;</a></h2>
-<h3 id="overview_2">Overview<a class="headerlink" href="#overview_2" title="Permanent link">&para;</a></h3>
+<h3 id="overview_1">Overview<a class="headerlink" href="#overview_1" title="Permanent link">&para;</a></h3>
 <p>Developers using the Bedrock AgentCore Starter Toolkit need specific IAM permissions to create roles, manage CodeBuild projects, and deploy agents. These permissions are separate from the execution roles and are required for the toolkit's operational functionality.</p>
 <h3 id="required-caller-policy">Required Caller Policy<a class="headerlink" href="#required-caller-policy" title="Permanent link">&para;</a></h3>
 <p>Attach the following policy to your IAM user or role:</p>
