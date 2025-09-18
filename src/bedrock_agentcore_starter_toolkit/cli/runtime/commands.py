@@ -180,7 +180,7 @@ def configure(
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
     non_interactive: bool = typer.Option(
-        False, "--non-interactive", help="Skip prompts; use defaults unless overridden"
+        False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
 ):
     """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
