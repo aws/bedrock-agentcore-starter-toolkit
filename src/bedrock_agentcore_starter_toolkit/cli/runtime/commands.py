@@ -68,13 +68,22 @@ def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> Option
     return None
 
 
-def _handle_requirements_file_display(requirements_file: Optional[str]) -> Optional[str]:
+def _handle_requirements_file_display(requirements_file: Optional[str], non_interactive: bool = False) -> Optional[str]:
     """Handle requirements file with display logic for CLI."""
     from ...utils.runtime.entrypoint import detect_dependencies
 
     if requirements_file:
         # User provided file - validate and show confirmation
         return _validate_requirements_file(requirements_file)
+
+    if non_interactive:
+        # Auto-detection for non-interactive mode
+        deps = detect_dependencies(Path.cwd())
+        if deps.found:
+            _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
+            return None  # Use detected file
+        else:
+            _handle_error("No requirements file specified and none found automatically")
 
     # Auto-detection with interactive prompt
     deps = detect_dependencies(Path.cwd())
@@ -170,6 +179,9 @@ def configure(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
+    non_interactive: bool = typer.Option(
+        False, "--non-interactive", help="Skip prompts; use defaults unless overridden"
+    ),
 ):
     """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
     if ctx.invoked_subcommand is not None:
@@ -196,7 +208,7 @@ def configure(
 
     # Create configuration manager for clean, elegant prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-    config_manager = ConfigurationManager(config_path)
+    config_manager = ConfigurationManager(config_path, non_interactive)
 
     # Interactive prompts for missing values - clean and elegant
     if not execution_role:
@@ -217,7 +229,7 @@ def configure(
         _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file)
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive)
 
     # Handle OAuth authorization configuration
     oauth_config = None

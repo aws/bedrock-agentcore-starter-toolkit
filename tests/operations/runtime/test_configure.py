@@ -282,6 +282,86 @@ bedrock_agentcore = BedrockAgentCoreApp()
         finally:
             os.chdir(original_cwd)
 
+    def test_configure_with_minimal_defaults(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configure operation with minimal parameters (non-interactive mode defaults)."""
+        # Create minimal test agent file
+        agent_file = tmp_path / "minimal_agent.py"
+        agent_file.write_text("""
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+bedrock_agentcore = BedrockAgentCoreApp()
+
+@bedrock_agentcore.entrypoint
+def handler(payload):
+    return {"status": "success", "message": "Hello from minimal agent"}
+""")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+            # Create a mock class that preserves class attributes
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                MockContainerRuntimeClass,
+            ):
+                # Test with minimal parameters - only required ones, rest use defaults
+                result = configure_bedrock_agentcore(
+                    agent_name="minimal_agent",
+                    entrypoint_path=agent_file,
+                    # All other parameters should use their defaults
+                    execution_role=None,  # Should auto-create
+                    ecr_repository=None,  # Should auto-create
+                    auto_create_ecr=True,  # Default for non-interactive
+                    container_runtime="docker",  # Default runtime
+                    enable_observability=True,  # Default enabled
+                    authorizer_configuration=None,  # Default IAM
+                    verbose=False,  # Default non-verbose
+                )
+
+                # Verify result structure
+                assert hasattr(result, "config_path")
+                assert hasattr(result, "dockerfile_path")
+                assert hasattr(result, "runtime")
+                assert hasattr(result, "region")
+                assert hasattr(result, "account_id")
+                assert hasattr(result, "execution_role")
+
+                # Verify all defaults are applied correctly
+                assert result.runtime == "Docker"
+                assert result.region == "us-west-2"  # Default region from mock
+                assert result.account_id == "123456789012"  # Default account from mock
+
+                # Verify auto-creation defaults
+                assert result.auto_create_ecr is True
+                assert result.ecr_repository is None  # Will be auto-created
+
+                # Verify execution role is None (will be auto-created during launch, not configure)
+                assert result.execution_role is None  # Auto-create during launch
+
+                # Verify config file was created
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
+                assert config_path.exists()
+
+                # Verify Dockerfile path was returned (file creation is mocked in tests)
+                assert result.dockerfile_path is not None
+
+        finally:
+            os.chdir(original_cwd)
+
 
 class TestValidateAgentName:
     """Test class for validate_agent_name function."""

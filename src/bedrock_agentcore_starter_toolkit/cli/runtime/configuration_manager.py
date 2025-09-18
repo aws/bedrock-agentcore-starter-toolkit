@@ -10,19 +10,25 @@ from ..common import _handle_error, _print_success, _prompt_with_default, consol
 class ConfigurationManager:
     """Manages interactive configuration prompts with existing configuration defaults."""
 
-    def __init__(self, config_path: Path):
+    def __init__(self, config_path: Path, non_interactive: bool = False):
         """Initialize the ConfigPrompt with a configuration path.
 
         Args:
             config_path: Path to the configuration file
+            non_interactive: If True, use defaults without prompting
         """
         from ...utils.runtime.config import load_config_if_exists
 
         project_config = load_config_if_exists(config_path)
         self.existing_config = project_config.get_agent_config() if project_config else None
+        self.non_interactive = non_interactive
 
     def prompt_execution_role(self) -> Optional[str]:
         """Prompt for execution role. Returns role name/ARN or None for auto-creation."""
+        if self.non_interactive:
+            _print_success("Will auto-create execution role")
+            return None
+
         console.print("\n🔐 [cyan]Execution Role[/cyan]")
         console.print(
             "[dim]Press Enter to auto-create execution role, or provide execution role ARN/name to use existing[/dim]"
@@ -43,6 +49,10 @@ class ConfigurationManager:
 
     def prompt_ecr_repository(self) -> tuple[Optional[str], bool]:
         """Prompt for ECR repository. Returns (repository, auto_create_flag)."""
+        if self.non_interactive:
+            _print_success("Will auto-create ECR repository")
+            return None, True
+
         console.print("\n🏗️  [cyan]ECR Repository[/cyan]")
         console.print(
             "[dim]Press Enter to auto-create ECR repository, or provide ECR Repository URI to use existing[/dim]"
@@ -63,6 +73,10 @@ class ConfigurationManager:
 
     def prompt_oauth_config(self) -> Optional[dict]:
         """Prompt for OAuth configuration. Returns OAuth config dict or None."""
+        if self.non_interactive:
+            _print_success("Using default IAM authorization")
+            return None
+
         console.print("\n🔐 [cyan]Authorization Configuration[/cyan]")
         console.print("[dim]By default, Bedrock AgentCore uses IAM authorization.[/dim]")
 
