@@ -24,6 +24,8 @@ mkdir agentcore-runtime-quickstart
 cd agentcore-runtime-quickstart
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
 
 # Install packages
 pip install bedrock-agentcore-starter-toolkit strands-agents

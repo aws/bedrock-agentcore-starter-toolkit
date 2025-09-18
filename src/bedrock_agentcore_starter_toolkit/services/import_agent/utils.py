@@ -50,6 +50,20 @@ def clean_variable_name(text):
     return cleaned
 
 
+def clean_gateway_or_target_name(text):
+    """Clean a string to create a valid Gateway or Target name."""
+    text = str(text)
+    cleaned = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
+    cleaned = cleaned.lower()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    cleaned = cleaned.strip()
+    cleaned = cleaned.replace(" ", "-")
+    if not cleaned:
+        cleaned = "gateway-or-target"
+
+    return cleaned
+
+
 def unindent_by_one(input_code, spaces_per_indent=4):
     """Unindents the input code by one level of indentation.
 

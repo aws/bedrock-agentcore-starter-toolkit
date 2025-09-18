@@ -22,6 +22,7 @@ mkdir agentcore-gateway-quickstart
 cd agentcore-gateway-quickstart
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
 ```
 
 **Install Dependencies**

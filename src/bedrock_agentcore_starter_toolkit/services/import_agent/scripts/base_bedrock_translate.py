@@ -21,6 +21,7 @@ from openapi_schema_to_json_schema import to_json_schema
 
 from ....operations.gateway import GatewayClient
 from ..utils import (
+    clean_gateway_or_target_name,
     clean_variable_name,
     generate_pydantic_models,
     get_base_dir,
@@ -1179,7 +1180,7 @@ class BaseBedrockTranslator:
                 continue
 
             action_group_name = ag.get("actionGroupName", "AG")
-            clean_action_group_name = clean_variable_name(action_group_name)
+            clean_action_group_name = clean_gateway_or_target_name(action_group_name)
             action_group_desc = ag.get("description", "").replace('"', '\\"')
             end_lambda_arn = ag.get("actionGroupExecutor", {}).get("lambda", "")
             tools = []
@@ -1323,7 +1324,7 @@ class BaseBedrockTranslator:
                         "lambdaRegion": end_lambda_arn.split(":")[3] if end_lambda_arn else "us-west-2",
                     }
 
-                    func_desc = func_spec.get("description", "No Description Provided.")
+                    func_desc = func.get("description", "No Description Provided.")
                     func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                     func_parameters = func.get("parameters", {})

@@ -8,7 +8,7 @@ Before you begin, ensure you have:
 
 - An AWS account with appropriate permissions
 - Python 3.10+ installed
-- AWS CLI configured with your credentials
+- AWS credentials and region configured (`aws configure`)
 - (Optional) External service accounts for OAuth2 or API key integration
 
 ## Install the SDK
@@ -17,8 +17,9 @@ Make a folder for this quickstart, create a virtual environment, and install the
 
 ```bash
 mkdir agentcore-identity-quickstart
-pythom3 -m venv venv
-source venv/bin/activate
+cd agentcore-identity-quickstart
+python3 -m venv .venv
+source .venv/bin/activate
 pip install bedrock-agentcore
 ```
 
@@ -39,13 +40,6 @@ workload_identity = identity_client.create_workload_identity(
 
 print(f"Workload Identity ARN: {workload_identity['workloadIdentityArn']}")
 print(f"Agent Name: {workload_identity['name']}")
-```
-
-You can also use the AWS CLI:
-
-```bash
-aws bedrock-agentcore create-workload-identity \
-    --name "my-research-agent"
 ```
 
 ## Configure Credential Providers
@@ -76,22 +70,6 @@ perplexity_provider = identity_client.create_api_key_credential_provider(req={
     "name": "myPerplexityAPIKeyCredentialProvider",
     "apiKey": "myApiKey"
 })
-```
-
-## Configure Environment Variables
-
-Set up environment variables for your development environment:
-
-```bash
-# AWS Configuration
-export AWS_REGION=us-west-2
-export AWS_ACCESS_KEY_ID=your-access-key-id
-export AWS_SECRET_ACCESS_KEY=your-secret-access-key
-
-# Agent Configuration
-export AGENT_IDENTITY_ID=your-agent-identity-id
-export AGENT_IDENTITY_ARN=your-agent-identity-arn
-export WORKLOAD_ACCESS_TOKEN=your-workload-access-token
 ```
 
 ## Building a Simple Research Agent
