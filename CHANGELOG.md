@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.11] - 2025-09-18
+
+
+### Dependencies
+- Updated to bedrock-agentcore SDK v0.1.4
+
 ## [0.1.10] - 2025-09-08
 
 ### Changes
