@@ -8,7 +8,7 @@ In this quick start guide you will learn how to set up a Gateway and integrate i
 
 ## Prerequisites
 
-⚠️ Before starting, make sure you have:
+Before starting, make sure you have:
 
 - **AWS Account** with credentials configured (`aws configure`)
 - **Python 3.10+** installed
@@ -35,126 +35,7 @@ pip install strands-agents
 
 ## Step 2: Create Gateway Setup Script
 
-Create a new file `setup_gateway.py` and build it step by step:
-
-### Import required libraries
-
-```python
-from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-import json
-import logging
-import time
-```
-
-### Create the setup function
-
-```python
-def setup_gateway():
-    # Configuration
-    region = "us-east-1"  # Change to your preferred region
-
-    print("🚀 Setting up AgentCore Gateway...")
-    print(f"Region: {region}\n")
-
-    # Initialize client
-    client = GatewayClient(region_name=region)
-    client.logger.setLevel(logging.INFO)
-```
-
-### Step 2.1: Create OAuth Authorization
-
-Gateways are secured by OAuth authorization servers which ensure that only allowed users can access your Gateway. Let’s create an OAuth authorization server to use with this Gateway.
-
-```python
-    # Step 1: Create OAuth authorizer
-    print("Step 1: Creating OAuth authorization server...")
-    cognito_response = client.create_oauth_authorizer_with_cognito("TestGateway")
-    print("✓ Authorization server created\n")
-```
-
-### Step 2.2: Create the Gateway
-
-Now, let’s create a Gateway. The Gateway acts as your MCP server endpoint that agents will connect to.
-
-```python
-    # Step 2: Create Gateway
-    print("Step 2: Creating Gateway...")
-    gateway = client.create_mcp_gateway(
-        name=None,  # Auto-generates name like TestGateway123abc
-        role_arn=None,  # Auto-creates IAM role
-        authorizer_config=cognito_response["authorizer_config"],
-        enable_semantic_search=True,  # Enables tool discovery
-    )
-    print(f"✓ Gateway created: {gateway['gatewayUrl']}\n")
-```
-
-### Step 2.3: Update IAM Permissions
-
-Ensures proper trust policies for Gateway operation:
-
-```python
-    # Step 3: update IAM permissions
-    print("Step 3: Fixing IAM permissions...")
-    client.fix_iam_permissions(gateway)
-    print("⏳ Waiting 30s for IAM propagation...")
-    time.sleep(30)
-    print("✓ IAM permissions configured\n")
-```
-This updates the IAM role’s trust policy with proper conditions and adds Lambda invoke permissions. The 30-second wait ensures AWS IAM changes propagate.
-
-### Step 2.4: Add Lambda Target
-
-Let’s add a Lambda function target. This code will automatically create a Lambda function for you with weather and time tools.
-
-```python
-    # Step 4: Add Lambda target
-    print("Step 4: Adding Lambda target...")
-    lambda_target = client.create_mcp_gateway_target(
-        gateway=gateway,
-        name=None,  # Auto-generates name
-        target_type="lambda",
-        target_payload=None,  # Creates test Lambda automatically
-        credentials=None,
-    )
-    print("✓ Lambda target added\n")
-```
-
-### Step 2.5: Get Access Token and Save Configuration
-
-```python
-    # Step 5: Get access token
-    print("Step 5: Getting access token...")
-    access_token = client.get_access_token_for_cognito(cognito_response["client_info"])
-    print("✓ Access token obtained\n")
-
-    # Save configuration for agent
-    config = {
-        "gateway_url": gateway["gatewayUrl"],
-        "gateway_id": gateway["gatewayId"],
-        "access_token": access_token,
-        "region": region,
-        "client_info": cognito_response["client_info"]
-    }
-
-    with open("gateway_config.json", "w") as f:
-        json.dump(config, f, indent=2)
-
-    print("=" * 60)
-    print("✅ Gateway setup complete!")
-    print(f"Gateway URL: {gateway['gatewayUrl']}")
-    print(f"Gateway ID: {gateway['gatewayId']}")
-    print("\nConfiguration saved to: gateway_config.json")
-    print("\nNext step: Run 'python run_agent.py' to test your Gateway")
-    print("=" * 60)
-
-    return config
-
-if __name__ == "__main__":
-    setup_gateway()
-```
-
-<details>
-<summary><strong>📋 Complete setup_gateway.py file (click to expand)</strong></summary>
+Create a new file called `setup_gateway.py` with the following complete code.
 
 ```python
 """
@@ -178,49 +59,189 @@ def setup_gateway():
     client = GatewayClient(region_name=region)
     client.logger.setLevel(logging.INFO)
 
-    # Step 1: Create OAuth authorizer
-    print("Step 1: Creating OAuth authorization server...")
+    # Step 2.1: Create OAuth authorizer
+    print("Step 2.1: Creating OAuth authorization server...")
     cognito_response = client.create_oauth_authorizer_with_cognito("TestGateway")
     print("✓ Authorization server created\n")
 
-    # Step 2: Create Gateway
-    print("Step 2: Creating Gateway...")
+    # Step 2.2: Create Gateway
+    print("Step 2.2: Creating Gateway...")
     gateway = client.create_mcp_gateway(
-        name=None,  # Auto-generates name
-        role_arn=None,  # Auto-creates role
+        # the name of the Gateway - if you don't set one, one will be generated.
+        name=None,
+        # the role arn that the Gateway will use - if you don't set one, one will be created.
+        # NOTE: if you are using your own role make sure it has a trust policy that trusts bedrock-agentcore.amazonaws.com
+        role_arn=None,
+        # the OAuth authorization server details. If you are providing your own authorization server,
+        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "discoveryUrl": "<INSERT DISCOVERY URL">}}
         authorizer_config=cognito_response["authorizer_config"],
+        # enable semantic search
         enable_semantic_search=True,
     )
     print(f"✓ Gateway created: {gateway['gatewayUrl']}\n")
 
-    # Step 3: Fix IAM permissions
-    print("Step 3: Fixing IAM permissions...")
+    # If role_arn was not provided, fix IAM permissions
+    # NOTE: This is handled internally by the toolkit when no role is provided
     client.fix_iam_permissions(gateway)
     print("⏳ Waiting 30s for IAM propagation...")
     time.sleep(30)
     print("✓ IAM permissions configured\n")
 
-    # Step 4: Add Lambda target
-    print("Step 4: Adding Lambda target...")
+    # Step 2.3: Add Lambda target
+    print("Step 2.3: Adding Lambda target...")
     lambda_target = client.create_mcp_gateway_target(
+        # the gateway created in the previous step
         gateway=gateway,
+        # the name of the Target - if you don't set one, one will be generated.
         name=None,
+        # the type of the Target
         target_type="lambda",
-        target_payload=None,  # Auto-creates test Lambda
+        # the target details - set this to define your own lambda if you pre-created one.
+        # Otherwise leave this None and one will be created for you.
+        target_payload=None,
+        # you will see later in the tutorial how to use this to connect to APIs using API keys and OAuth credentials.
         credentials=None,
     )
     print("✓ Lambda target added\n")
 
-    # Step 5: Get access token
-    print("Step 5: Getting access token...")
-    access_token = client.get_access_token_for_cognito(cognito_response["client_info"])
-    print("✓ Access token obtained\n")
-
-    # Save configuration for agent
+    # Step 2.4: Save configuration for agent
     config = {
         "gateway_url": gateway["gatewayUrl"],
         "gateway_id": gateway["gatewayId"],
-        "access_token": access_token,
+        "region": region,
+        "client_info": cognito_response["client_info"]
+    }
+
+    with open("gateway_config.json", "w") as f:
+        json.dump(config, f, indent=2)
+
+    print("=" * 60)
+    print("✅ Gateway setup complete!")
+    print(f"Gateway URL: {gateway['gatewayUrl']}")
+    print(f"Gateway ID: {gateway['gatewayId']}")
+    print("\nConfiguration saved to: gateway_config.json")
+    print("\nNext step: Run 'python run_agent.py' to test your Gateway")
+    print("=" * 60)
+
+    return config
+
+if __name__ == "__main__":
+    setup_gateway()
+```
+
+See below for step-by-step understanding of each component.
+
+<details>
+<summary>
+<strong>📚 Understanding the Setup Script - Step by Step Explanation</strong>
+</summary>
+
+#### Import Required Libraries
+
+First, import the necessary libraries for gateway creation and configuration.
+
+```python
+from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
+import json
+import logging
+import time
+```
+
+#### Create the Setup Function
+
+Initialize the setup function with your AWS region configuration.
+
+```python
+def setup_gateway():
+    # Configuration
+    region = "us-east-1"  # Change to your preferred region
+
+    print("🚀 Setting up AgentCore Gateway...")
+    print(f"Region: {region}\n")
+
+    # Initialize client
+    client = GatewayClient(region_name=region)
+    client.logger.setLevel(logging.INFO)
+```
+
+### Step 2.1: Creating an OAuth Authorization Server
+
+🔑 Gateways are secured by OAuth authorization servers which ensure that only allowed users can access your Gateway. Let’s create an OAuth authorization server using Amazon Cognito.
+
+```python
+    # Step 2.1: Create OAuth authorizer
+    print("Step 2.1: Creating OAuth authorization server...")
+    cognito_response = client.create_oauth_authorizer_with_cognito("TestGateway")
+    print("✓ Authorization server created\n")
+```
+
+**What happens here**: This creates a Cognito user pool with OAuth 2.0 client credentials flow configured. You’ll get a client ID and secret that can be used to obtain access tokens.
+
+### Step 2.2: Creating a Gateway
+
+🌉 Now, let’s create a Gateway. The Gateway acts as your MCP server endpoint that agents will connect to.
+
+```python
+    # Step 2.2: Create Gateway
+    print("Step 2.2: Creating Gateway...")
+    gateway = client.create_mcp_gateway(
+        # the name of the Gateway - if you don't set one, one will be generated.
+        name=None,
+        # the role arn that the Gateway will use - if you don't set one, one will be created.
+        # NOTE: if you are using your own role make sure it has a trust policy that trusts bedrock-agentcore.amazonaws.com
+        role_arn=None,
+        # the OAuth authorization server details. If you are providing your own authorization server,
+        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "discoveryUrl": "<INSERT DISCOVERY URL">}}
+        authorizer_config=cognito_response["authorizer_config"],
+        # enable semantic search
+        enable_semantic_search=True,
+    )
+    print(f"✓ Gateway created: {gateway['gatewayUrl']}\n")
+
+    # If role_arn was not provided, fix IAM permissions
+    # NOTE: This is handled internally by the toolkit when no role is provided
+    client.fix_iam_permissions(gateway)
+    print("⏳ Waiting 30s for IAM propagation...")
+    time.sleep(30)
+    print("✓ IAM permissions configured\n")
+```
+
+**What happens here**: Creates a Gateway with MCP protocol support, configures OAuth authorization, and enables semantic search for tool discovery. If you don’t provide a role, one is created and configured automatically.
+
+### Step 2.3: Adding Lambda Targets
+
+🛠️ Let’s add a Lambda function target. This code will automatically create a Lambda function with weather and time tools.
+
+```python
+    # Step 2.3: Add Lambda target
+    print("Step 2.3: Adding Lambda target...")
+    lambda_target = client.create_mcp_gateway_target(
+        # the gateway created in the previous step
+        gateway=gateway,
+        # the name of the Target - if you don't set one, one will be generated.
+        name=None,
+        # the type of the Target
+        target_type="lambda",
+        # the target details - set this to define your own lambda if you pre-created one.
+        # Otherwise leave this None and one will be created for you.
+        target_payload=None,
+        # you will see later in the tutorial how to use this to connect to APIs using API keys and OAuth credentials.
+        credentials=None,
+    )
+    print("✓ Lambda target added\n")
+```
+
+**What happens here**: Creates a test Lambda function with two tools (get_weather and get_time) and registers it as a target in your Gateway.
+
+### Step 2.4: Save Configuration
+
+Save the gateway configuration to a file for use by the agent.
+
+```python
+    # Step 2.4: Save configuration for agent
+    config = {
+        "gateway_url": gateway["gatewayUrl"],
+        "gateway_id": gateway["gatewayId"],
         "region": region,
         "client_info": cognito_response["client_info"]
     }
@@ -244,17 +265,19 @@ if __name__ == "__main__":
 
 </details>
 
-### Run the setup:
+### Run the Setup
+
+Execute the setup script to create your Gateway and Lambda target.
 
 ```bash
 python setup_gateway.py
 ```
 
-The script will take about 2-3 minutes to complete. You’ll see progress messages for each step, and at the end, your Gateway configuration will be saved to `gateway_config.json`.
+**What to expect**: The script will take about 2-3 minutes to complete. You’ll see progress messages for each step.
 
-## Step 3: Create and Run the Agent
+## Step 3: Using the Gateway with an Agent
 
-To use this Gateway, we need an agent that can connect via MCP. Create a new file called `run_agent.py`:
+Create a new file called `run_agent.py` with the following code:
 
 ```python
 """
@@ -266,6 +289,7 @@ from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp.mcp_client import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
+from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
 import json
 import sys
 
@@ -298,10 +322,16 @@ def run_agent():
         sys.exit(1)
 
     gateway_url = config["gateway_url"]
-    access_token = config["access_token"]
+    client_info = config["client_info"]
+
+    # Get access token for the agent
+    print("Getting access token...")
+    client = GatewayClient(region_name=config["region"])
+    access_token = client.get_access_token_for_cognito(client_info)
+    print("✓ Access token obtained\n")
 
     # Model configuration - change if needed
-    model_id = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+    model_id = "anthropic.claude-3-7-sonnet-20250219-v1:0"
 
     print("🤖 Starting AgentCore Gateway Test Agent")
     print(f"Gateway URL: {gateway_url}")
@@ -345,7 +375,9 @@ if __name__ == "__main__":
     run_agent()
 ```
 
-### Run the agent:
+### Run Your Agent
+
+Test your Gateway by running the agent and interacting with the tools.
 
 ```bash
 python run_agent.py
@@ -364,8 +396,11 @@ That’s it! The agent will start and you can ask questions like:
 - **AI Agent**: Claude-powered assistant that can discover and use your tools
 
 ---
-**🥳🥳🥳 Congratulations - you successfully built an agent with MCP tools powered by AgentCore Gateway!**
+## **🥳🥳🥳 Congratulations - you successfully built an agent with MCP tools powered by AgentCore Gateway!**
 ---
+
+
+
 
 ## Troubleshooting
 
@@ -410,25 +445,20 @@ print("✅ Cleanup complete!")
 Run: `python cleanup_gateway.py`
 
 
-### Learn More
-
-- **Comprehensive examples**: [GitHub samples](https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/01-tutorials/02-AgentCore-gateway)
-- **Full API reference**: [Boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore-control.html)
-- **Developer guide**: [Official documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway.html)
-
 ### Next Steps
 
-- **Add Real APIs**: Extend your Gateway with OpenAPI specifications for real services
+- **Add Your Own APIs**: Extend your Gateway with OpenAPI specifications for real services
 - **Custom Lambda Tools**: Create Lambda functions with your business logic
 - **Production Setup**: Configure VPC endpoints, custom domains, and monitoring
 
-## Adding Real-World APIs
-
-After verifying the basic setup works, add real APIs to your Gateway. This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.
+## Adding Your Own APIs
 
 ### NASA API Integration
 
-Get your API key from https://api.nasa.gov/ then create `add_nasa_api.py`:
+Integrate real APIs like NASA’s Astronomy Picture of the Day. Get your API key from https://api.nasa.gov/ (instant via email), then create `add_nasa_api.py`:
+
+ This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.
+
 
 ```python
 from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
@@ -494,68 +524,19 @@ nasa_target = client.create_mcp_gateway_target(
 )
 
 print(f"✓ NASA API added! Try: 'Get NASA's astronomy picture for 2024-12-25'")
+print("Run 'python run_agent.py' and try: 'Get NASA's astronomy picture for 2024-12-25'")
 ```
 
+### Custom Lambda Tools
 
-
-<details>
-<summary><strong>➡️ Advanced: Custom Lambda Tools Example 1 (Optional)</strong></summary>
-
-Create custom Lambda functions with specific tools:
-
-```python
-# Custom Lambda configuration
-lambda_config = {
-    "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:MyFunction",
-    "toolSchema": {
-        "inlinePayload": [
-            {
-                "name": "process_data",
-                "description": "Process customer data",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "customer_id": {
-                            "type": "string",
-                            "description": "Customer identifier"
-                        },
-                        "action": {
-                            "type": "string",
-                            "enum": ["analyze", "summarize", "export"]
-                        }
-                    },
-                    "required": ["customer_id", "action"]
-                }
-            }
-        ]
-    }
-}
-
-# Lambda implementation example
-def lambda_handler(event, context):
-    tool_name = context.client_context.custom.get('bedrockAgentCoreToolName')
-
-    if tool_name == 'process_data':
-        customer_id = event.get('customer_id')
-        action = event.get('action')
-
-        # Your business logic here
-        result = process_customer_data(customer_id, action)
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps(result)
-        }
-```
-
-</details>
+Create your own Lambda functions with custom business logic and add them as Gateway targets. Lambda targets allow you to implement any custom tool logic in Python, Node.js, or other supported runtimes.
 
 <details>
-<summary><strong>➡️ Advanced: Custom Lambda Tools Example 2 (Optional)</strong></summary>
+<summary>
+<strong> ➡️ Creating Custom Lambda Tools</strong>
+</summary>
 
-Each Lambda target needs a schema defining the tools that the Lambda function implements. Your agent will see this schema and will send requests to your Lambda function in this format.
-
-Create `create_custom_lambda.py`:
+Create a file `create_custom_lambda.py`:
 
 ```python
 """Create a custom Lambda function and add it as a Gateway target"""
@@ -708,10 +689,9 @@ print(f"✓ Custom Lambda target added: {target['targetId']}")
 print("\nRun 'python run_agent.py' and try: 'Calculate the sum of 42 and 58'")
 ```
 
-Run: `python create_custom_lambda.py`
+Run: `python create_custom_lambda.py` then `python run_agent.py` to test.
 
 </details>
-
 
 If you're excited and want to learn more about Gateways and the other Target types. Continue through this guide.
 
@@ -944,7 +924,8 @@ nasa_open_api_payload = {
 </div>
 <br/>
 
-Use the following code to add an Open API target. **⚠️ Note: don't forget to add your api_key below.**
+Use the following code to add an Open API target.
+**Note: don't forget to add your api_key below.**
 ```python hl_lines="8"
 open_api_target = client.create_mcp_gateway_target(
     gateway=gateway,
@@ -976,7 +957,8 @@ You can also use an OpenAPI specification stored in S3 buckets by passing the fo
 }
 ```
 
-If you have an API that uses a key stored in a header value you can set the `credentials` field to the following. **⚠️ Note don't forget to fill in the api key and parameter name below.**
+If you have an API that uses a key stored in a header value you can set the `credentials` field to the following.
+**Note don't forget to fill in the api key and parameter name below.**
 ```json hl_lines="2 4"
 {
     "api_key": "<INSERT KEY>",
@@ -1412,18 +1394,3 @@ delete_target_response = boto_client.delete_gateway_target(
 )
 ```
 </details>
-
-## Understanding OAuth in Gateway
-
-🔒 **Why OAuth?** The Model Context Protocol requires OAuth 2.0 for security:
-
-- Ensures only authorized agents can access your tools
-- Provides auditable tool invocations
-- Manages credentials securely without hardcoding
-
-**How it works:**
-
-1. Gateway creates a Cognito user pool automatically
-2. Your agent authenticates using client credentials
-3. Token is included in all requests (valid for 1 hour)
-4. Gateway validates token before executing tools
