@@ -12,6 +12,7 @@ from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
+    CodeBuildConfig,
     NetworkConfiguration,
     ObservabilityConfig,
     ProtocolConfiguration,
@@ -192,6 +193,9 @@ def configure_bedrock_agentcore(
             observability=ObservabilityConfig(enabled=enable_observability),
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        codebuild=CodeBuildConfig(
+            execution_role=execution_role_arn,
+        ),
         authorizer_configuration=authorizer_configuration,
     )
 
