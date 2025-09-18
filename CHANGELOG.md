@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12] - 2025-09-18
+
+### Changes
+
+- docs: address feedback and improve Runtime/Gateway documentation (#163) (a422708)
+- chore: bump version to 0.1.11 (#180) (4e94d63)
+
 ## [0.1.11] - 2025-09-18
 
 
