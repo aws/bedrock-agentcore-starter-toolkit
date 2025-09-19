@@ -181,8 +181,6 @@ jobs:
           1. Approve and merge this PR
           2. The release workflow will automatically:
              - Build and test the package
-             - Publish to Test PyPI
-             - Wait for approval
              - Publish to PyPI
              - Create a GitHub release
              - Tag the release
@@ -294,76 +292,9 @@ jobs:
           name: dist
           path: dist/
 
-  publish-testpypi:
-    name: Publish to TestPyPI
-    needs: build
-    runs-on: ubuntu-latest
-
-    environment:
-      name: test-pypi
-      url: https://test.pypi.org/project/bedrock-agentcore-starter-toolkit/
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v5
-        with:
-          name: dist
-          path: dist/
-
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-
-      - name: Test installation from TestPyPI
-        run: |
-          sleep 60  # Wait for package to be available
-
-          # Get version from wheel filename
-          VERSION=$(ls dist/*.whl | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
-
-          # Create test environment
-          python -m venv test-install
-          source test-install/bin/activate
-
-          # Install from Test PyPI
-          pip install --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple/ \
-            bedrock-agentcore-starter-toolkit==$VERSION
-
-          # Test CLI
-          agentcore --help
-
-  release-approval:
-    name: Release Approval
-    needs: publish-testpypi
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi-approval
-
-    steps:
-      - name: Approval checkpoint
-        run: |
-          echo "✓ TestPyPI deployment successful"
-          echo "✓ Package available at: https://test.pypi.org/project/bedrock-agentcore-starter-toolkit/"
-          echo ""
-          echo "⚠️  MANUAL APPROVAL REQUIRED"
-          echo ""
-          echo "Before approving production release:"
-          echo "1. Test the package from TestPyPI:"
-          echo "   pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ bedrock-agentcore-starter-toolkit"
-          echo ""
-          echo "2. Verify the CLI works: agentcore --help"
-          echo "3. Check version number is correct"
-          echo "4. Test basic functionality"
-          echo ""
-          echo "Only approve if everything looks good!"
-
   publish-pypi:
     name: Publish to PyPI
-    needs: release-approval
+    needs: [test, build]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -390,6 +321,20 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Wait for PyPI availability
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "Waiting for package to be available on PyPI..."
+          for i in {1..10}; do
+            if pip index versions bedrock-agentcore-starter-toolkit | grep -q "$VERSION"; then
+              echo "✓ Package version $VERSION is now available on PyPI"
+              break
+            fi
+            echo "Attempt $i/10: Package not yet available, waiting 30s..."
+            sleep 30
+          done
 
       - name: Create and push tag
         run: |
@@ -419,7 +364,7 @@ jobs:
 
   summary:
     name: Release Summary
-    needs: publish-testpypi
+    needs: publish-pypi
     runs-on: ubuntu-latest
     if: always()
 
@@ -428,14 +373,14 @@ jobs:
         run: |
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.publish-testpypi.result }}" == "success" ]; then
-            echo "✅ **Test PyPI Release Successful**" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.publish-pypi.result }}" == "success" ]; then
+            echo "✅ **PyPI Release Successful**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Package published to: https://test.pypi.org/project/bedrock-agentcore-starter-toolkit/" >> $GITHUB_STEP_SUMMARY
+            echo "Package published to: https://pypi.org/project/bedrock-agentcore-starter-toolkit/" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "To install from Test PyPI:" >> $GITHUB_STEP_SUMMARY
+            echo "To install:" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo "pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ bedrock-agentcore-starter-toolkit" >> $GITHUB_STEP_SUMMARY
+            echo "pip install bedrock-agentcore-starter-toolkit" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Release Failed**" >> $GITHUB_STEP_SUMMARY
