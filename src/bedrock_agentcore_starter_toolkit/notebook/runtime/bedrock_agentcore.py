@@ -46,6 +46,8 @@ class Runtime:
         region: Optional[str] = None,
         protocol: Optional[Literal["HTTP", "MCP"]] = None,
         disable_otel: bool = False,
+        build_account: Optional[str] = None,
+        build_role_arn: Optional[str] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
 
@@ -64,7 +66,8 @@ class Runtime:
             region: AWS region for deployment
             protocol: agent server protocol, must be either HTTP or MCP
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
-
+            build_account: Optional AWS account ID for CodeBuild (if different from deployment account)
+            build_role_arn: Optional IAM role ARN to assume for CodeBuild operations
         Returns:
             ConfigureResult with configuration details
         """
@@ -117,6 +120,8 @@ class Runtime:
             authorizer_configuration=authorizer_configuration,
             region=region,
             protocol=protocol.upper() if protocol else None,
+            build_account=build_account,
+            build_role_arn=build_role_arn,
         )
 
         self._config_path = result.config_path

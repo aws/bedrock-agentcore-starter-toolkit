@@ -7,7 +7,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -18,20 +18,64 @@ from ..operations.runtime.create_role import get_or_create_codebuild_execution_r
 class CodeBuildService:
     """Service for managing CodeBuild projects and builds for ARM64."""
 
-    def __init__(self, session: boto3.Session):
-        """Initialize CodeBuild service with AWS session."""
+    # def __init__(self, session: boto3.Session):
+    #     """Initialize CodeBuild service with AWS session."""
+    #     self.session = session
+    #     self.client = session.client("codebuild")
+    #     self.s3_client = session.client("s3")
+    #     self.iam_client = session.client("iam")
+    #     self.logger = logging.getLogger(__name__)
+    #     self.source_bucket = None
+    def __init__(self, session: boto3.Session, build_session: Optional[boto3.Session] = None):
+        """Initialize CodeBuild service with AWS session.
+        
+        Args:
+            session: Primary AWS session for deployment account
+            build_session: Optional separate session for CodeBuild operations (for cross-account)
+        """
         self.session = session
-        self.client = session.client("codebuild")
-        self.s3_client = session.client("s3")
-        self.iam_client = session.client("iam")
-        self.logger = logging.getLogger(__name__)
+        self.build_session = build_session or session
+        
+        # Determine if this is cross-account CodeBuild
+        self.is_cross_account_codebuild = (
+            build_session is not None and 
+            build_session != session and
+            self._get_account_id(build_session) != self._get_account_id(session)
+        )
+        
+        # Use appropriate session for CodeBuild operations
+        if self.is_cross_account_codebuild:
+            # Cross-account mode: use build_session for CodeBuild operations
+            self.client = self.build_session.client("codebuild")
+            self.s3_client = self.build_session.client("s3")
+            self.iam_client = self.build_session.client("iam")
+            self.logger.info("CodeBuildService initialized in cross-account mode")
+        else:
+            # Same-account mode: use deployment session (backward compatibility)
+            self.client = self.session.client("codebuild")
+            self.s3_client = self.session.client("s3")
+            self.iam_client = self.session.client("iam")
+            self.logger.info("CodeBuildService initialized in same-account mode")
+        
         self.source_bucket = None
-
+        
+    def _get_account_id(self, session: boto3.Session) -> str:
+        """Get account ID from session."""
+        try:
+            return session.client("sts").get_caller_identity()["Account"]
+        except Exception:
+            return "unknown"
+            
     def get_source_bucket_name(self, account_id: str) -> str:
         """Get S3 bucket name for CodeBuild sources."""
-        region = self.session.region_name
+        # region = self.session.region_name
+        # return f"bedrock-agentcore-codebuild-sources-{account_id}-{region}"
+        if self.is_cross_account_codebuild:
+            region = self.build_session.region_name
+        else:
+            region = self.session.region_name
         return f"bedrock-agentcore-codebuild-sources-{account_id}-{region}"
-
+        
     def ensure_source_bucket(self, account_id: str) -> str:
         """Ensure S3 bucket exists for CodeBuild sources."""
         bucket_name = self.get_source_bucket_name(account_id)
@@ -41,7 +85,11 @@ class CodeBuildService:
             self.logger.debug("Using existing S3 bucket: %s", bucket_name)
         except ClientError:
             # Create bucket
-            region = self.session.region_name
+            #region = self.session.region_name
+            if self.is_cross_account_codebuild:
+                region = self.build_session.region_name
+            else:
+                region = self.session.region_name
             if region == "us-east-1":
                 self.s3_client.create_bucket(Bucket=bucket_name)
             else:
@@ -63,7 +111,17 @@ class CodeBuildService:
 
     def upload_source(self, agent_name: str) -> str:
         """Upload current directory to S3, respecting .dockerignore patterns."""
-        account_id = self.session.client("sts").get_caller_identity()["Account"]
+        
+        #account_id = self.session.client("sts").get_caller_identity()["Account"]
+        # Use appropriate session to get account ID where CodeBuild resources should be created
+        if self.is_cross_account_codebuild:
+            # Cross-account CodeBuild: use build account
+            account_id = self.build_session.client("sts").get_caller_identity()["Account"]
+            self.logger.info("Using build account for S3 bucket: %s", account_id)
+        else:
+            # Same-account CodeBuild: use deployment account
+            account_id = self.session.client("sts").get_caller_identity()["Account"]
+            self.logger.info("Using deployment account for S3 bucket: %s", account_id)       
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
@@ -116,10 +174,19 @@ class CodeBuildService:
 
     def create_codebuild_execution_role(self, account_id: str, ecr_repository_arn: str, agent_name: str) -> str:
         """Get or create CodeBuild execution role using shared role creation logic."""
+            # Use appropriate session for role creation
+        if self.is_cross_account_codebuild:
+            session_for_role = self.build_session
+            region_for_role = self.build_session.region_name
+        else:
+            session_for_role = self.session
+            region_for_role = self.session.region_name
         return get_or_create_codebuild_execution_role(
-            session=self.session,
+            #session=self.session,
+            session=session_for_role,
             logger=self.logger,
-            region=self.session.region_name,
+            #region=self.session.region_name,
+            region=region_for_role,
             account_id=account_id,
             agent_name=agent_name,
             ecr_repository_arn=ecr_repository_arn,
