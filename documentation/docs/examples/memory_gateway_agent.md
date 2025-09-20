@@ -65,11 +65,11 @@ class MemoryHook(HookProvider):
     - Loads previous conversation when agent starts
     - Saves each message after it's processed
     """
-    
+
     def on_agent_initialized(self, event):
         """Runs when agent starts - loads conversation history"""
         if not MEMORY_ID: return
-        
+
         # Get last 3 conversation turns from memory
         turns = memory_client.get_last_k_turns(
             memory_id=MEMORY_ID,
@@ -77,17 +77,17 @@ class MemoryHook(HookProvider):
             session_id=event.agent.state.get("session_id", "default"),
             k=3  # Number of previous exchanges to remember
         )
-        
+
         # Add conversation history to agent's context
         if turns:
-            context = "\n".join([f"{m['role']}: {m['content']['text']}" 
+            context = "\n".join([f"{m['role']}: {m['content']['text']}"
                                for t in turns for m in t])
             event.agent.system_prompt += f"\n\nPrevious:\n{context}"
-    
+
     def on_message_added(self, event):
         """Runs after each message - saves it to memory"""
         if not MEMORY_ID: return
-        
+
         # Save the latest message to memory
         msg = event.agent.messages[-1]
         memory_client.create_event(
@@ -96,7 +96,7 @@ class MemoryHook(HookProvider):
             session_id=event.agent.state.get("session_id", "default"),
             messages=[(str(msg["content"]), msg["role"])]
         )
-    
+
     def register_hooks(self, registry):
         """Registers both hooks with the agent"""
         registry.add_callback(AgentInitializedEvent, self.on_agent_initialized)
@@ -120,7 +120,7 @@ def invoke(payload, context):
     # Use the session ID from runtime (for session isolation)
     if hasattr(context, 'session_id'):
         agent.state.set("session_id", context.session_id)
-    
+
     # Process the user's message and return response
     response = agent(payload.get("prompt", "Hello"))
     return response.message['content'][0]['text']
@@ -182,12 +182,12 @@ ltm = client.create_memory_and_wait(
     strategies=[
         # Extracts user preferences like "I prefer Python"
         {"userPreferenceMemoryStrategy": {
-            "name": "prefs", 
+            "name": "prefs",
             "namespaces": ["/user/preferences"]
         }},
         # Extracts facts like "My birthday is in January"
         {"semanticMemoryStrategy": {
-            "name": "facts", 
+            "name": "facts",
             "namespaces": ["/user/facts"]
         }}
     ],
@@ -363,25 +363,25 @@ except:
 
 class MemoryHook(HookProvider):
     """Handles memory operations - same as before"""
-    
+
     def on_agent_initialized(self, event):
         if not MEMORY_ID: return
-        
+
         turns = memory_client.get_last_k_turns(
             memory_id=MEMORY_ID,
             actor_id="user",
             session_id=event.agent.state.get("session_id", "default"),
             k=3
         )
-        
+
         if turns:
-            context = "\n".join([f"{m['role']}: {m['content']['text']}" 
+            context = "\n".join([f"{m['role']}: {m['content']['text']}"
                                for t in turns for m in t])
             event.agent.system_prompt += f"\n\nPrevious:\n{context}"
-    
+
     def on_message_added(self, event):
         if not MEMORY_ID: return
-        
+
         msg = event.agent.messages[-1]
         memory_client.create_event(
             memory_id=MEMORY_ID,
@@ -389,7 +389,7 @@ class MemoryHook(HookProvider):
             session_id=event.agent.state.get("session_id", "default"),
             messages=[(str(msg["content"]), msg["role"])]
         )
-    
+
     def register_hooks(self, registry):
         registry.add_callback(AgentInitializedEvent, self.on_agent_initialized)
         registry.add_callback(MessageAddedEvent, self.on_message_added)
@@ -399,13 +399,13 @@ async def get_gateway_tools():
     """Get tools from gateway using MCP"""
     if not gateway_config:
         return None
-    
+
     try:
         gateway_url = gateway_config["gateway_url"]
         access_token = gateway_config["access_token"]
-        
+
         headers = {"Authorization": f"Bearer {access_token}"}
-        
+
         async with streamablehttp_client(gateway_url, headers=headers) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -431,7 +431,7 @@ def invoke(payload, context):
     # Use the session ID from runtime
     if hasattr(context, 'session_id'):
         agent.state.set("session_id", context.session_id)
-    
+
     # Try to get gateway tools
     gateway_tools = None
     if gateway_config:
@@ -442,7 +442,7 @@ def invoke(payload, context):
                 agent.tools = gateway_tools
         except Exception as e:
             print(f"Error getting gateway tools: {e}")
-    
+
     # Process the user's message
     response = agent(payload.get("prompt", "Hello"))
     return response.message['content'][0]['text']

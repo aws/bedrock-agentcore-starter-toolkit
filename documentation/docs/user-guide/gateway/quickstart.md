@@ -448,87 +448,12 @@ Run: `python cleanup_gateway.py`
 
 ### Next Steps
 
-- **Add Your Own APIs**: Extend your Gateway with OpenAPI specifications for real services
 - **Custom Lambda Tools**: Create Lambda functions with your business logic
+- **Add Your Own APIs**: Extend your Gateway with OpenAPI specifications for real services
 - **Production Setup**: Configure VPC endpoints, custom domains, and monitoring
 
-## Adding Your Own APIs
 
-### NASA API Integration
-
-Integrate real APIs like NASA’s Astronomy Picture of the Day. Get your API key from https://api.nasa.gov/ (instant via email), then create `add_nasa_api.py`:
-
- This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.
-
-
-```python
-from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
-import json
-
-with open("gateway_config.json", "r") as f:
-    config = json.load(f)
-
-client = GatewayClient(region_name=config["region"])
-
-nasa_spec = {
-    "openapi": "3.0.0",
-    "info": {"title": "NASA API", "version": "1.0.0"},
-    "servers": [{"url": "https://api.nasa.gov"}],
-    "paths": {
-        "/planetary/apod": {
-            "get": {
-                "operationId": "getAstronomyPictureOfDay",
-                "summary": "Get NASA's Astronomy Picture of the Day",
-                "parameters": [
-                    {
-                        "name": "date",
-                        "in": "query",
-                        "required": False,
-                        "schema": {"type": "string"},
-                        "description": "Date in YYYY-MM-DD format"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "title": {"type": "string"},
-                                        "explanation": {"type": "string"},
-                                        "url": {"type": "string"}
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-gateway = client.client.get_gateway(gatewayIdentifier=config["gateway_id"])
-
-nasa_target = client.create_mcp_gateway_target(
-    gateway=gateway,
-    name="NasaApi",
-    target_type="openApiSchema",
-    target_payload={"inlinePayload": json.dumps(nasa_spec)},
-    credentials={
-        "api_key": "YOUR_NASA_API_KEY",  # Replace with your key
-        "credential_location": "QUERY_PARAMETER",
-        "credential_parameter_name": "api_key"
-    }
-)
-
-print(f"✓ NASA API added! Try: 'Get NASA's astronomy picture for 2024-12-25'")
-print("Run 'python run_agent.py' and try: 'Get NASA's astronomy picture for 2024-12-25'")
-```
-
-### Custom Lambda Tools
+## Custom Lambda Tools
 
 Create your own Lambda functions with custom business logic and add them as Gateway targets. Lambda targets allow you to implement any custom tool logic in Python, Node.js, or other supported runtimes.
 
@@ -695,6 +620,83 @@ Run: `python create_custom_lambda.py` then `python run_agent.py` to test.
 </details>
 
 If you're excited and want to learn more about Gateways and the other Target types. Continue through this guide.
+
+## Adding Your Own APIs
+
+### NASA API Integration
+
+Integrate real APIs like NASA’s Astronomy Picture of the Day. Get your API key from https://api.nasa.gov/ (instant via email), then create `add_nasa_api.py`:
+
+ This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.
+
+
+```python
+from bedrock_agentcore_starter_toolkit.operations.gateway.client import GatewayClient
+import json
+
+with open("gateway_config.json", "r") as f:
+    config = json.load(f)
+
+client = GatewayClient(region_name=config["region"])
+
+nasa_spec = {
+    "openapi": "3.0.0",
+    "info": {"title": "NASA API", "version": "1.0.0"},
+    "servers": [{"url": "https://api.nasa.gov"}],
+    "paths": {
+        "/planetary/apod": {
+            "get": {
+                "operationId": "getAstronomyPictureOfDay",
+                "summary": "Get NASA's Astronomy Picture of the Day",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "required": False,
+                        "schema": {"type": "string"},
+                        "description": "Date in YYYY-MM-DD format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {"type": "string"},
+                                        "explanation": {"type": "string"},
+                                        "url": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+gateway = client.client.get_gateway(gatewayIdentifier=config["gateway_id"])
+
+nasa_target = client.create_mcp_gateway_target(
+    gateway=gateway,
+    name="NasaApi",
+    target_type="openApiSchema",
+    target_payload={"inlinePayload": json.dumps(nasa_spec)},
+    credentials={
+        "api_key": "YOUR_NASA_API_KEY",  # Replace with your key
+        "credential_location": "QUERY_PARAMETER",
+        "credential_parameter_name": "api_key"
+    }
+)
+
+print(f"✓ NASA API added! Try: 'Get NASA's astronomy picture for 2024-12-25'")
+print("Run 'python run_agent.py' and try: 'Get NASA's astronomy picture for 2024-12-25'")
+```
+
 
 ### Adding OpenAPI Targets
 
