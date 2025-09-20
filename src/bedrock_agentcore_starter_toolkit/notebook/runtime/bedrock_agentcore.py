@@ -35,6 +35,7 @@ class Runtime:
         self,
         entrypoint: str,
         execution_role: Optional[str] = None,
+        code_build_execution_role: Optional[str] = None,
         agent_name: Optional[str] = None,
         requirements: Optional[List[str]] = None,
         requirements_file: Optional[str] = None,
@@ -53,6 +54,7 @@ class Runtime:
             entrypoint: Path to Python file with optional Bedrock AgentCore name
                 (e.g., "handler.py" or "handler.py:bedrock_agentcore")
             execution_role: AWS IAM execution role ARN or name (optional if auto_create_execution_role=True)
+            code_build_execution_role: Optional separate CodeBuild execution role ARN or name
             agent_name: name of the agent
             requirements: Optional list of requirements to generate requirements.txt
             requirements_file: Optional path to existing requirements file
@@ -109,6 +111,7 @@ class Runtime:
             entrypoint_path=Path(file_path),
             auto_create_execution_role=auto_create_execution_role,
             execution_role=execution_role,
+            code_build_execution_role=code_build_execution_role,
             ecr_repository=ecr_repository,
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
