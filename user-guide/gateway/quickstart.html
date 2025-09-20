@@ -833,6 +833,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#custom-lambda-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Lambda Tools
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-your-own-apis" class="md-nav__link">
     <span class="md-ellipsis">
       Adding Your Own APIs
@@ -846,15 +855,6 @@
   <a href="#nasa-api-integration" class="md-nav__link">
     <span class="md-ellipsis">
       NASA API Integration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-lambda-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Lambda Tools
     </span>
   </a>
   
@@ -1947,6 +1947,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#custom-lambda-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Lambda Tools
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-your-own-apis" class="md-nav__link">
     <span class="md-ellipsis">
       Adding Your Own APIs
@@ -1960,15 +1969,6 @@
   <a href="#nasa-api-integration" class="md-nav__link">
     <span class="md-ellipsis">
       NASA API Integration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-lambda-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Lambda Tools
     </span>
   </a>
   
@@ -2436,80 +2436,11 @@ aws<span class="w"> </span>logs<span class="w"> </span>tail<span class="w"> </sp
 <p>Run: <code>python cleanup_gateway.py</code></p>
 <h3 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Add Your Own APIs</strong>: Extend your Gateway with OpenAPI specifications for real services</li>
 <li><strong>Custom Lambda Tools</strong>: Create Lambda functions with your business logic</li>
+<li><strong>Add Your Own APIs</strong>: Extend your Gateway with OpenAPI specifications for real services</li>
 <li><strong>Production Setup</strong>: Configure VPC endpoints, custom domains, and monitoring</li>
 </ul>
-<h2 id="adding-your-own-apis">Adding Your Own APIs<a class="headerlink" href="#adding-your-own-apis" title="Permanent link">&para;</a></h2>
-<h3 id="nasa-api-integration">NASA API Integration<a class="headerlink" href="#nasa-api-integration" title="Permanent link">&para;</a></h3>
-<p>Integrate real APIs like NASA’s Astronomy Picture of the Day. Get your API key from https://api.nasa.gov/ (instant via email), then create <code>add_nasa_api.py</code>:</p>
-<p>This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore_starter_toolkit.operations.gateway.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayClient</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;gateway_config.json&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-<span class="n">client</span> <span class="o">=</span> <span class="n">GatewayClient</span><span class="p">(</span><span class="n">region_name</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">])</span>
-
-<span class="n">nasa_spec</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;openapi&quot;</span><span class="p">:</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;NASA API&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">},</span>
-    <span class="s2">&quot;servers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://api.nasa.gov&quot;</span><span class="p">}],</span>
-    <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;/planetary/apod&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;get&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;operationId&quot;</span><span class="p">:</span> <span class="s2">&quot;getAstronomyPictureOfDay&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="s2">&quot;Get NASA&#39;s Astronomy Picture of the Day&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span>
-                    <span class="p">{</span>
-                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                        <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Date in YYYY-MM-DD format&quot;</span>
-                    <span class="p">}</span>
-                <span class="p">],</span>
-                <span class="s2">&quot;responses&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;200&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Success&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span>
-                            <span class="s2">&quot;application/json&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
-                                    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-                                        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-                                        <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-                                        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
-                                    <span class="p">}</span>
-                                <span class="p">}</span>
-                            <span class="p">}</span>
-                        <span class="p">}</span>
-                    <span class="p">}</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-
-<span class="n">gateway</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get_gateway</span><span class="p">(</span><span class="n">gatewayIdentifier</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;gateway_id&quot;</span><span class="p">])</span>
-
-<span class="n">nasa_target</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_mcp_gateway_target</span><span class="p">(</span>
-    <span class="n">gateway</span><span class="o">=</span><span class="n">gateway</span><span class="p">,</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;NasaApi&quot;</span><span class="p">,</span>
-    <span class="n">target_type</span><span class="o">=</span><span class="s2">&quot;openApiSchema&quot;</span><span class="p">,</span>
-    <span class="n">target_payload</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;inlinePayload&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">nasa_spec</span><span class="p">)},</span>
-    <span class="n">credentials</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;YOUR_NASA_API_KEY&quot;</span><span class="p">,</span>  <span class="c1"># Replace with your key</span>
-        <span class="s2">&quot;credential_location&quot;</span><span class="p">:</span> <span class="s2">&quot;QUERY_PARAMETER&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;credential_parameter_name&quot;</span><span class="p">:</span> <span class="s2">&quot;api_key&quot;</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ NASA API added! Try: &#39;Get NASA&#39;s astronomy picture for 2024-12-25&#39;&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Run &#39;python run_agent.py&#39; and try: &#39;Get NASA&#39;s astronomy picture for 2024-12-25&#39;&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="custom-lambda-tools">Custom Lambda Tools<a class="headerlink" href="#custom-lambda-tools" title="Permanent link">&para;</a></h3>
+<h2 id="custom-lambda-tools">Custom Lambda Tools<a class="headerlink" href="#custom-lambda-tools" title="Permanent link">&para;</a></h2>
 <p>Create your own Lambda functions with custom business logic and add them as Gateway targets. Lambda targets allow you to implement any custom tool logic in Python, Node.js, or other supported runtimes.</p>
 <details>
 <summary>
@@ -2673,6 +2604,75 @@ Run: `python create_custom_lambda.py` then `python run_agent.py` to test.
 </details>
 
 <p>If you're excited and want to learn more about Gateways and the other Target types. Continue through this guide.</p>
+<h2 id="adding-your-own-apis">Adding Your Own APIs<a class="headerlink" href="#adding-your-own-apis" title="Permanent link">&para;</a></h2>
+<h3 id="nasa-api-integration">NASA API Integration<a class="headerlink" href="#nasa-api-integration" title="Permanent link">&para;</a></h3>
+<p>Integrate real APIs like NASA’s Astronomy Picture of the Day. Get your API key from https://api.nasa.gov/ (instant via email), then create <code>add_nasa_api.py</code>:</p>
+<p>This example shows how to add external REST APIs to your Gateway, making them available as tools for your agent.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore_starter_toolkit.operations.gateway.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayClient</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;gateway_config.json&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">GatewayClient</span><span class="p">(</span><span class="n">region_name</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">])</span>
+
+<span class="n">nasa_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;openapi&quot;</span><span class="p">:</span> <span class="s2">&quot;3.0.0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;NASA API&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;servers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://api.nasa.gov&quot;</span><span class="p">}],</span>
+    <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;/planetary/apod&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;get&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;operationId&quot;</span><span class="p">:</span> <span class="s2">&quot;getAstronomyPictureOfDay&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="s2">&quot;Get NASA&#39;s Astronomy Picture of the Day&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Date in YYYY-MM-DD format&quot;</span>
+                    <span class="p">}</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;responses&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;200&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Success&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;application/json&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                                        <span class="s2">&quot;explanation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                                        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
+                                    <span class="p">}</span>
+                                <span class="p">}</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">gateway</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get_gateway</span><span class="p">(</span><span class="n">gatewayIdentifier</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;gateway_id&quot;</span><span class="p">])</span>
+
+<span class="n">nasa_target</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">create_mcp_gateway_target</span><span class="p">(</span>
+    <span class="n">gateway</span><span class="o">=</span><span class="n">gateway</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;NasaApi&quot;</span><span class="p">,</span>
+    <span class="n">target_type</span><span class="o">=</span><span class="s2">&quot;openApiSchema&quot;</span><span class="p">,</span>
+    <span class="n">target_payload</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;inlinePayload&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">nasa_spec</span><span class="p">)},</span>
+    <span class="n">credentials</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;YOUR_NASA_API_KEY&quot;</span><span class="p">,</span>  <span class="c1"># Replace with your key</span>
+        <span class="s2">&quot;credential_location&quot;</span><span class="p">:</span> <span class="s2">&quot;QUERY_PARAMETER&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;credential_parameter_name&quot;</span><span class="p">:</span> <span class="s2">&quot;api_key&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ NASA API added! Try: &#39;Get NASA&#39;s astronomy picture for 2024-12-25&#39;&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Run &#39;python run_agent.py&#39; and try: &#39;Get NASA&#39;s astronomy picture for 2024-12-25&#39;&quot;</span><span class="p">)</span>
+</code></pre></div>
 <h3 id="adding-openapi-targets">Adding OpenAPI Targets<a class="headerlink" href="#adding-openapi-targets" title="Permanent link">&para;</a></h3>
 <p>Let's add an OpenAPI target. This code uses the OpenAPI schema for a NASA API that provides Mars weather information. You can get an API key sent to your email in a minute by filling out the form here: https://api.nasa.gov/.</p>
 <p><strong>Open API Spec for NASA Mars weather API</strong></p>

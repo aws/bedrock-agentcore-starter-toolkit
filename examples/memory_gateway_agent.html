@@ -1800,7 +1800,7 @@ pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore<span
 
         <span class="c1"># Add conversation history to agent&#39;s context</span>
         <span class="k">if</span> <span class="n">turns</span><span class="p">:</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> 
+            <span class="n">context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">turns</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">t</span><span class="p">])</span>
             <span class="n">event</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Previous:</span><span class="se">\n</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">&quot;</span>
 
@@ -1895,12 +1895,12 @@ strands-agents
     <span class="n">strategies</span><span class="o">=</span><span class="p">[</span>
         <span class="c1"># Extracts user preferences like &quot;I prefer Python&quot;</span>
         <span class="p">{</span><span class="s2">&quot;userPreferenceMemoryStrategy&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;prefs&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;prefs&quot;</span><span class="p">,</span>
             <span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;/user/preferences&quot;</span><span class="p">]</span>
         <span class="p">}},</span>
         <span class="c1"># Extracts facts like &quot;My birthday is in January&quot;</span>
         <span class="p">{</span><span class="s2">&quot;semanticMemoryStrategy&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;facts&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;facts&quot;</span><span class="p">,</span>
             <span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;/user/facts&quot;</span><span class="p">]</span>
         <span class="p">}}</span>
     <span class="p">],</span>
@@ -2071,7 +2071,7 @@ strands-agents
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">turns</span><span class="p">:</span>
-            <span class="n">context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> 
+            <span class="n">context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">turns</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">t</span><span class="p">])</span>
             <span class="n">event</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Previous:</span><span class="se">\n</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">&quot;</span>
 
