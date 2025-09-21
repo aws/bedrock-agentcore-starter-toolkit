@@ -5,8 +5,6 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from bedrock_agentcore.memory.controlplane import MemoryControlPlaneClient
-
 from ...services.ecr import get_account_id, get_region
 from ...utils.runtime.config import merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
@@ -65,13 +63,12 @@ def configure_bedrock_agentcore(
         log.debug("Verbose mode enabled")
     else:
         log.setLevel(logging.INFO)
-    # Log agent name at the start of configuration
-    log.info("Configuring BedrockAgentCore agent: %s", agent_name)
+
     build_dir = Path.cwd()
 
     if verbose:
         log.debug("Build directory: %s", build_dir)
-        log.debug("Bedrock AgentCore name: %s", agent_name)
+        log.debug("Agent name: %s", agent_name)
         log.debug("Entrypoint path: %s", entrypoint_path)
 
     # Get AWS info
@@ -110,20 +107,60 @@ def configure_bedrock_agentcore(
             else:
                 log.debug("No execution role provided and auto-create disabled")
 
-    # Generate Dockerfile and .dockerignore
-    bedrock_agentcore_name = None
-    # Try to find the variable name for the Bedrock AgentCore instance in the file
+    # Prompt for memory configuration BEFORE generating Dockerfile
     if verbose:
-        log.debug("Attempting to find Bedrock AgentCore instance name in %s", entrypoint_path)
+        log.debug("Prompting for long-term memory configuration")
+
+    from ...cli.runtime.configuration_manager import ConfigurationManager
+
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
+    enable_ltm = config_manager.prompt_ltm_choice()
+
+    # Create memory config
+    memory_config = MemoryConfig()
+    memory_config.enabled = True  # Always true for STM
+    memory_config.enable_ltm = enable_ltm
+    memory_config.event_expiry_days = 30
+    memory_config.memory_name = f"{agent_name}_memory"
+
+    if enable_ltm:
+        log.info("Memory configuration: Short-term + Long-term memory enabled")
+    else:
+        log.info("Memory configuration: Short-term memory only")
+
+    # NOW print "Configuring agent" after memory prompt
+    log.info("Configuring BedrockAgentCore agent: %s", agent_name)
+
+    # Check for existing memory configuration from previous launch
+    config_path = build_dir / ".bedrock_agentcore.yaml"
+    memory_id = None
+    memory_name = None
+
+    if config_path.exists():
+        try:
+            from ...utils.runtime.config import load_config
+
+            existing_config = load_config(config_path)
+            existing_agent = existing_config.get_agent_config(agent_name)
+            if existing_agent and existing_agent.memory and existing_agent.memory.memory_id:
+                memory_id = existing_agent.memory.memory_id
+                memory_name = existing_agent.memory.memory_name
+                log.info("Found existing memory ID from previous launch: %s", memory_id)
+        except Exception:
+            pass  # No existing config or memory
+
+    # Generate Dockerfile with memory params if they exist from previous launch
+    bedrock_agentcore_name = None  # Variable name extraction not implemented
 
     if verbose:
         log.debug("Generating Dockerfile with parameters:")
         log.debug("  Entrypoint: %s", entrypoint_path)
         log.debug("  Build directory: %s", build_dir)
-        log.debug("  Bedrock AgentCore name: %s", bedrock_agentcore_name or "bedrock_agentcore")
         log.debug("  Region: %s", region)
         log.debug("  Enable observability: %s", enable_observability)
         log.debug("  Requirements file: %s", requirements_file)
+        if memory_id:
+            log.debug("  Memory ID: %s", memory_id)
 
     dockerfile_path = runtime.generate_dockerfile(
         entrypoint_path,
@@ -132,6 +169,8 @@ def configure_bedrock_agentcore(
         region,
         enable_observability,
         requirements_file,
+        memory_id,  # Will be None on first configure, populated on subsequent ones
+        memory_name,  # Will be None on first configure, populated on subsequent ones
     )
 
     # Check if .dockerignore was created
@@ -141,38 +180,8 @@ def configure_bedrock_agentcore(
     if dockerignore_path.exists():
         log.info("Generated .dockerignore: %s", dockerignore_path)
 
-    # Create memory resource (always enabled by default)
-    memory_config = MemoryConfig()
-    try:
-        log.info("Creating short-term memory for agent: %s", agent_name)
-        memory_client = MemoryControlPlaneClient(region_name=region)
-
-        memory = memory_client.create_memory(
-            name=f"bedrock_agentcore_{agent_name}_memory",
-            event_expiry_days=30,
-            memory_execution_role_arn=execution_role_arn,
-            wait_for_active=True,
-            max_wait=60,
-        )
-
-        memory_config.memory_id = memory["id"]
-        memory_config.memory_arn = memory["arn"]
-        memory_config.memory_name = f"{agent_name}_memory"
-        log.info("✅ Memory created: %s", memory["id"])
-    except Exception as e:
-        log.warning("⚠️ Memory creation failed: %s. Continuing without memory.", str(e))
-
-    # Handle project configuration (named agents)
-    config_path = build_dir / ".bedrock_agentcore.yaml"
-
-    if verbose:
-        log.debug("Agent name from BedrockAgentCoreApp: %s", agent_name)
-        log.debug("Config path: %s", config_path)
-
-    # Convert to POSIX for cross-platform compatibility
-    entrypoint_path_str = entrypoint_path.as_posix()
-
     # Determine entrypoint format
+    entrypoint_path_str = entrypoint_path.as_posix()  # Cross-platform compatibility
     if bedrock_agentcore_name:
         entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}"
     else:
@@ -186,17 +195,6 @@ def configure_bedrock_agentcore(
 
     if verbose:
         log.debug("ECR auto-create: %s", ecr_auto_create_value)
-
-    if verbose:
-        log.debug("Creating BedrockAgentCoreConfigSchema with following parameters:")
-        log.debug("  Name: %s", agent_name)
-        log.debug("  Entrypoint: %s", entrypoint)
-        log.debug("  Platform: %s", ContainerRuntime.DEFAULT_PLATFORM)
-        log.debug("  Container runtime: %s", runtime.runtime)
-        log.debug("  Execution role: %s", execution_role_arn)
-        ecr_repo_display = ecr_repository if ecr_repository else "Auto-create" if ecr_auto_create_value else "N/A"
-        log.debug("  ECR repository: %s", ecr_repo_display)
-        log.debug("  Enable observability: %s", enable_observability)
 
     # Create new agent configuration
     config = BedrockAgentCoreAgentSchema(
@@ -220,7 +218,7 @@ def configure_bedrock_agentcore(
         memory=memory_config,
     )
 
-    # Use simplified config merging
+    # Merge and save configuration
     project_config = merge_agent_config(config_path, agent_name, config)
     save_config(project_config, config_path)
 

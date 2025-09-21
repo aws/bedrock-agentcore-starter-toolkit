@@ -87,6 +87,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         assert TEST_ROLE in output
         assert "Authorization: IAM" in output
         assert ".bedrock_agentcore.yaml" in output
+        assert "Memory: Short-term memory (30-day retention)" in output
 
         if TEST_ECR == "auto":
             assert "ECR Repository: Auto-create" in output

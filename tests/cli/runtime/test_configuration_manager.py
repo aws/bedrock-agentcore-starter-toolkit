@@ -96,3 +96,45 @@ class TestConfigurationManager:
             mock_success.assert_called_once_with(
                 "Using existing execution role: [dim]arn:aws:iam::123456789012:role/NewRole[/dim]"
             )
+
+    def test_prompt_ltm_choice_yes(self, tmp_path):
+        """Test prompt_ltm_choice when user chooses yes."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user input for yes
+            mock_prompt.return_value = "yes"
+
+            result = config_manager.prompt_ltm_choice()
+
+            assert result is True
+            mock_prompt.assert_called_once_with("Enable long-term memory extraction? (yes/no)", "no")
+            mock_success.assert_called_once_with("Long-term memory extraction will be configured")
+
+    def test_prompt_ltm_choice_no(self, tmp_path):
+        """Test prompt_ltm_choice when user chooses no."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user input for no
+            mock_prompt.return_value = "no"
+
+            result = config_manager.prompt_ltm_choice()
+
+            assert result is False
+            mock_prompt.assert_called_once_with("Enable long-term memory extraction? (yes/no)", "no")
+            mock_success.assert_called_once_with("Using short-term memory only")

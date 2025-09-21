@@ -70,6 +70,9 @@ class StatusConfigInfo(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
+    memory_id: Optional[str] = None
+    memory_type: Optional[str] = None  # "STM" or "STM+LTM"
+    memory_enabled: Optional[bool] = None
 
 
 class StatusResult(BaseModel):

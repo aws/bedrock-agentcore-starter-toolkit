@@ -77,13 +77,16 @@ def destroy_bedrock_agentcore(
         # 4. Remove CodeBuild project
         _destroy_codebuild_project(session, agent_config, result, dry_run)
 
-        # 5. Remove CodeBuild IAM Role
+        # 5. Remove memory resource
+        _destroy_memory(session, agent_config, result, dry_run)
+
+        # 6. Remove CodeBuild IAM Role
         _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
 
-        # 6. Remove IAM execution role (if not used by other agents)
+        # 7. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
 
-        # 7. Clean up configuration
+        # 8. Clean up configuration
         if not dry_run and not result.errors:
             _cleanup_agent_config(config_path, project_config, agent_config.name, result)
 
@@ -428,6 +431,43 @@ def _destroy_codebuild_iam_role(
     except Exception as e:
         result.warnings.append(f"Error during CodeBuild IAM role cleanup: {e}")
         log.error("Error during CodeBuild IAM role cleanup: %s", e)
+
+
+def _destroy_memory(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Remove memory resource for this agent."""
+    if not agent_config.memory or not agent_config.memory.memory_id:
+        result.warnings.append("No memory configured, skipping memory cleanup")
+        return
+
+    try:
+        from bedrock_agentcore.memory.controlplane import MemoryControlPlaneClient
+
+        memory_client = MemoryControlPlaneClient(region_name=agent_config.aws.region)
+        memory_id = agent_config.memory.memory_id
+
+        if dry_run:
+            result.resources_removed.append(f"Memory: {memory_id} (DRY RUN)")
+            return
+
+        try:
+            memory_client.delete_memory(memory_id=memory_id)
+            result.resources_removed.append(f"Memory: {memory_id}")
+            log.info("Deleted memory: %s", memory_id)
+        except ClientError as e:
+            if e.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
+                result.warnings.append(f"Failed to delete memory {memory_id}: {e}")
+                log.warning("Failed to delete memory: %s", e)
+            else:
+                result.warnings.append(f"Memory {memory_id} not found (may have been deleted already)")
+
+    except Exception as e:
+        result.warnings.append(f"Error during memory cleanup: {e}")
+        log.warning("Error during memory cleanup: %s", e)
 
 
 def _destroy_iam_role(

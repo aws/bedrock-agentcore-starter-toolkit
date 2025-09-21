@@ -8,9 +8,11 @@ from pydantic import BaseModel, Field, field_validator
 class MemoryConfig(BaseModel):
     """Memory configuration for BedrockAgentCore."""
 
+    enabled: bool = Field(default=False, description="Whether memory is enabled")
+    enable_ltm: bool = Field(default=False, description="Whether long-term memory extraction is enabled")
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
     memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
-    memory_name: Optional[str] = Field(default=None, description="Memory resource name")
+    memory_name: Optional[str] = Field(default=None, description="Memory name")
     event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
 
 

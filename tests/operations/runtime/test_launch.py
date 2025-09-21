@@ -32,6 +32,7 @@ def create_test_config(
     ecr_auto_create=False,
     agent_id=None,
     agent_session_id=None,
+    observability_enabled=False,
 ):
     """Create a test configuration with customizable parameters."""
     config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -47,7 +48,7 @@ def create_test_config(
             ecr_repository=ecr_repository,
             ecr_auto_create=ecr_auto_create,
             network_configuration=NetworkConfiguration(),
-            observability=ObservabilityConfig(),
+            observability=ObservabilityConfig(enabled=observability_enabled),
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
             agent_id=agent_id,
@@ -798,6 +799,84 @@ class TestLaunchBedrockAgentCore:
             # Check that env_vars parameter was passed to _launch_with_codebuild
             assert mock_launch_with_codebuild.call_args.kwargs["env_vars"] == test_env_vars
 
+    def test_launch_with_memory_creation_codebuild(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test launch with memory creation in CodeBuild mode."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,  # Test with LTM enabled
+                memory_name="test-agent_memory",
+                event_expiry_days=30,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_or_create_runtime_execution_role"
+            ) as mock_create_role,
+            patch("bedrock_agentcore.memory.controlplane.MemoryControlPlaneClient") as mock_memory_client_class,
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
+        ):
+            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
+            mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+
+            # Mock memory client
+            mock_memory_client = MagicMock()
+            mock_memory_client.create_memory.return_value = {
+                "id": "mem-123456",
+                "arn": "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem-123456",
+            }
+            mock_memory_client_class.return_value = mock_memory_client
+
+            # Mock container runtime for Dockerfile regeneration
+            mock_runtime = MagicMock()
+            mock_runtime.generate_dockerfile.return_value = tmp_path / "Dockerfile"
+            mock_runtime_class.return_value = mock_runtime
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify memory was created with LTM strategies
+            mock_memory_client.create_memory.assert_called_once()
+            call_args = mock_memory_client.create_memory.call_args[1]
+
+            assert call_args["name"] == "bedrock_agentcore_test-agent_memory"
+            assert call_args["event_expiry_days"] == 30
+            assert "strategies" in call_args  # LTM strategies should be included
+            assert len(call_args["strategies"]) == 3  # Three LTM strategies
+
+            # Verify Dockerfile was regenerated with memory ID
+            mock_runtime.generate_dockerfile.assert_called()
+            dockerfile_args = mock_runtime.generate_dockerfile.call_args[1]
+            assert dockerfile_args["memory_id"] == "mem-123456"
+            assert dockerfile_args["memory_name"] == "test-agent_memory"
+
+            # Verify deployment succeeded
+            assert result.mode == "codebuild"
+
 
 class TestEnsureExecutionRole:
     """Test _ensure_execution_role functionality."""
@@ -1103,3 +1182,268 @@ class TestEnsureExecutionRole:
             mock_deploy.assert_called_once()
             # Check the env_vars parameter
             assert mock_deploy.call_args.kwargs["env_vars"] == test_env_vars
+
+
+class TestTransactionSearchIntegration:
+    """Test Transaction Search integration in launch operation."""
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_genai_observability_url")
+    def test_transaction_search_called_when_observability_enabled(
+        self, mock_get_url, mock_enable_transaction_search, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that transaction search is called when observability is enabled."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            observability_enabled=True,  # Enable observability
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock successful transaction search
+        mock_enable_transaction_search.return_value = True
+        mock_get_url.return_value = "https://console.aws.amazon.com/genai-observability"
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify transaction search was called with correct parameters
+            mock_enable_transaction_search.assert_called_once_with("us-west-2", "123456789012")
+
+            # Verify GenAI observability dashboard URL was logged
+            mock_get_url.assert_called_once_with("us-west-2")
+            mock_log.info.assert_any_call("Observability is enabled, configuring Transaction Search...")
+            mock_log.info.assert_any_call("🔍 GenAI Observability Dashboard:")
+            mock_log.info.assert_any_call("   %s", "https://console.aws.amazon.com/genai-observability")
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_genai_observability_url")
+    def test_transaction_search_not_called_when_observability_disabled(
+        self, mock_get_url, mock_enable_transaction_search, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that transaction search is NOT called when observability is disabled."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            observability_enabled=False,  # Disable observability
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify transaction search was NOT called
+            mock_enable_transaction_search.assert_not_called()
+            mock_get_url.assert_not_called()
+
+            # Verify observability logs were NOT emitted
+            log_calls = [call.args[0] for call in mock_log.info.call_args_list]
+            assert "Observability is enabled, configuring Transaction Search..." not in log_calls
+            assert "🔍 GenAI Observability Dashboard:" not in log_calls
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_genai_observability_url")
+    def test_launch_continues_when_transaction_search_fails(
+        self, mock_get_url, mock_enable_transaction_search, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that launch continues even if transaction search fails."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+            observability_enabled=True,  # Enable observability
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock failed transaction search
+        mock_enable_transaction_search.return_value = False
+        mock_get_url.return_value = "https://console.aws.amazon.com/genai-observability"
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            # Should not raise exception even if transaction search fails
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment still succeeded
+            assert result.mode == "cloud"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify transaction search was attempted
+            mock_enable_transaction_search.assert_called_once_with("us-west-2", "123456789012")
+
+            # Verify GenAI dashboard URL was still shown (transaction search failure doesn't prevent this)
+            mock_get_url.assert_called_once_with("us-west-2")
+            mock_log.info.assert_any_call("🔍 GenAI Observability Dashboard:")
+            mock_log.info.assert_any_call("   %s", "https://console.aws.amazon.com/genai-observability")
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_genai_observability_url")
+    def test_transaction_search_with_codebuild_deployment(
+        self, mock_get_url, mock_enable_transaction_search, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test transaction search integration with CodeBuild deployment."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_auto_create=True,
+            observability_enabled=True,  # Enable observability
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock successful transaction search
+        mock_enable_transaction_search.return_value = True
+        mock_get_url.return_value = "https://console.aws.amazon.com/genai-observability"
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.get_or_create_ecr_repository") as mock_create_ecr,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.get_or_create_runtime_execution_role"
+            ) as mock_create_role,
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
+            mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+
+            # Test with CodeBuild (default use_codebuild=True)
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify CodeBuild deployment succeeded
+            assert result.mode == "codebuild"
+            assert hasattr(result, "agent_arn")
+            assert hasattr(result, "agent_id")
+
+            # Verify transaction search was called
+            mock_enable_transaction_search.assert_called_once_with("us-west-2", "123456789012")
+
+            # Verify observability logs were emitted
+            mock_log.info.assert_any_call("Observability is enabled, configuring Transaction Search...")
+            mock_log.info.assert_any_call("🔍 GenAI Observability Dashboard:")
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
+    def test_transaction_search_with_different_regions(
+        self, mock_enable_transaction_search, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test transaction search is called with correct region parameter."""
+        test_region = "eu-west-1"
+        test_account = "987654321098"
+
+        config_path = create_test_config(
+            tmp_path,
+            region=test_region,
+            account=test_account,
+            execution_role="arn:aws:iam::987654321098:role/TestRole",
+            ecr_repository="987654321098.dkr.ecr.eu-west-1.amazonaws.com/test-repo",
+            observability_enabled=True,
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock successful transaction search
+        mock_enable_transaction_search.return_value = True
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Setup mock AWS clients for different region/account
+        mock_factory = MockAWSClientFactory(account=test_account, region=test_region)
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+
+            # Verify transaction search was called with correct region and account
+            mock_enable_transaction_search.assert_called_once_with(test_region, test_account)
+
+    def test_transaction_search_not_called_in_local_mode(self, mock_container_runtime, tmp_path):
+        """Test that transaction search is NOT called in local mode, even with observability enabled."""
+        config_path = create_test_config(
+            tmp_path,
+            observability_enabled=True,  # Enable observability
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed"
+            ) as mock_enable_transaction_search,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify local deployment succeeded
+            assert result.mode == "local"
+
+            # Verify transaction search was NOT called (local mode doesn't deploy to cloud)
+            mock_enable_transaction_search.assert_not_called()

@@ -38,6 +38,12 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
         agent_arn=agent_config.bedrock_agentcore.agent_arn,
     )
 
+    # Add memory information to config_info if available
+    if agent_config.memory and agent_config.memory.memory_id:
+        config_info.memory_id = agent_config.memory.memory_id
+        config_info.memory_type = "STM+LTM" if agent_config.memory.enable_ltm else "STM"
+        config_info.memory_enabled = agent_config.memory.enabled
+
     # Initialize status result
     agent_details = None
     endpoint_details = None

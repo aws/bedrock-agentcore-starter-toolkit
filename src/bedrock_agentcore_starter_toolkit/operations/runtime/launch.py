@@ -145,7 +145,7 @@ def _deploy_to_bedrock_agentcore(
     if env_vars is None:
         env_vars = {}
 
-    # Add memory configuration to environment variables if available
+    # Add memory configuration to env_vars if it exists
     if agent_config.memory and agent_config.memory.memory_id:
         env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
         env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
@@ -166,8 +166,8 @@ def _deploy_to_bedrock_agentcore(
 
     # Retry logic for role validation eventual consistency
     max_retries = 3
-    base_delay = 5  # Start with 2 seconds
-    max_delay = 15  # Max 32 seconds between retries
+    base_delay = 5  # Start with 5 seconds
+    max_delay = 15  # Max 15 seconds between retries
 
     for attempt in range(max_retries + 1):
         try:
@@ -256,22 +256,44 @@ def launch_bedrock_agentcore(
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
 ) -> LaunchResult:
-    """Launch Bedrock AgentCore locally or to cloud.
-
-    Args:
-        config_path: Path to BedrockAgentCore configuration file
-        agent_name: Name of agent to launch (for project configurations)
-        local: Whether to run locally
-        use_codebuild: Whether to use CodeBuild for ARM64 builds
-        env_vars: Environment variables to pass to local container (dict of key-value pairs)
-        auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
-
-    Returns:
-        LaunchResult model with launch details
-    """
+    """Launch Bedrock AgentCore locally or to cloud."""
     # Load project configuration
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
+
+    if env_vars is None:
+        env_vars = {}
+
+    # Add memory configuration to environment variables if available
+    if agent_config.memory and agent_config.memory.memory_id:
+        env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
+        log.info("Using existing memory: %s", agent_config.memory.memory_id)
+
+    # Create memory early if needed (for non-CodeBuild paths)
+    if not use_codebuild and agent_config.memory and agent_config.memory.enabled and not agent_config.memory.memory_id:
+        log.info("Creating memory resource for agent: %s", agent_config.name)
+        try:
+            from bedrock_agentcore.memory.controlplane import MemoryControlPlaneClient
+
+            memory_client = MemoryControlPlaneClient(region_name=agent_config.aws.region)
+            memory = memory_client.create_memory(
+                name=f"bedrock_agentcore_{agent_config.name}_memory",
+                event_expiry_days=agent_config.memory.event_expiry_days or 30,
+                memory_execution_role_arn=None,
+                wait_for_active=True,
+                max_wait=60,
+            )
+
+            agent_config.memory.memory_id = memory["id"]
+            agent_config.memory.memory_arn = memory["arn"]
+
+            project_config.agents[agent_config.name] = agent_config
+            save_config(project_config, config_path)
+
+            log.info("✅ Memory created: %s", memory["id"])
+        except Exception as e:
+            log.warning("⚠️ Memory creation failed: %s. Continuing without memory.", str(e))
 
     # Handle CodeBuild deployment (but not for local mode)
     if use_codebuild and not local:
@@ -299,18 +321,18 @@ def launch_bedrock_agentcore(
     # Check if we need local runtime for this operation
     if local and not runtime.has_local_runtime:
         raise RuntimeError(
-            "Cannot run locally - no container runtime available\n"
-            "💡 Recommendation: Use CodeBuild for cloud deployment\n"
-            "💡 Run 'agentcore launch' (without --local) for CodeBuild deployment\n"
+            "Cannot run locally - no container runtime available\\n"
+            "💡 Recommendation: Use CodeBuild for cloud deployment\\n"
+            "💡 Run 'agentcore launch' (without --local) for CodeBuild deployment\\n"
             "💡 For local runs, please install Docker, Finch, or Podman"
         )
 
     # Check if we need local runtime for local-build mode (cloud deployment with local build)
     if not local and not use_codebuild and not runtime.has_local_runtime:
         raise RuntimeError(
-            "Cannot build locally - no container runtime available\n"
-            "💡 Recommendation: Use CodeBuild for cloud deployment (no Docker needed)\n"
-            "💡 Run 'agentcore launch' (without --local-build) for CodeBuild deployment\n"
+            "Cannot build locally - no container runtime available\\n"
+            "💡 Recommendation: Use CodeBuild for cloud deployment (no Docker needed)\\n"
+            "💡 Run 'agentcore launch' (without --local-build) for CodeBuild deployment\\n"
             "💡 For local builds, please install Docker, Finch, or Podman"
         )
 
@@ -329,8 +351,8 @@ def launch_bedrock_agentcore(
         # Check if this is a container runtime issue and suggest CodeBuild
         if "No container runtime available" in error_message:
             raise RuntimeError(
-                f"Build failed: {error_message}\n"
-                "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
+                f"Build failed: {error_message}\\n"
+                "💡 Recommendation: Use CodeBuild for building containers in the cloud\\n"
                 "💡 Run 'agentcore launch' (default) for CodeBuild deployment"
             )
         else:
@@ -486,7 +508,88 @@ def _launch_with_codebuild(
     env_vars: Optional[dict] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
-    # Execute shared CodeBuild workflow with full deployment mode
+    # Create memory if configured
+    if agent_config.memory and agent_config.memory.enabled and not agent_config.memory.memory_id:
+        log.info("Creating memory resource for agent: %s", agent_name)
+        try:
+            from bedrock_agentcore.memory.controlplane import MemoryControlPlaneClient
+
+            memory_client = MemoryControlPlaneClient(region_name=agent_config.aws.region)
+
+            # Prepare strategies based on configuration
+            strategies = []
+            if agent_config.memory.enable_ltm:
+                log.info("Configuring long-term memory strategies...")
+                strategies = [
+                    {
+                        "userPreferenceMemoryStrategy": {
+                            "name": "UserPreferences",
+                            "namespaces": ["/users/{actorId}/preferences"],
+                        }
+                    },
+                    {"semanticMemoryStrategy": {"name": "SemanticFacts", "namespaces": ["/users/{actorId}/facts"]}},
+                    {
+                        "summaryMemoryStrategy": {
+                            "name": "SessionSummaries",
+                            "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                        }
+                    },
+                ]
+            else:
+                log.info("Configuring short-term memory only...")
+
+            # Create memory with or without strategies
+            create_params = {
+                "name": f"bedrock_agentcore_{agent_name}_memory",
+                "event_expiry_days": agent_config.memory.event_expiry_days or 30,
+                "memory_execution_role_arn": None,
+                "wait_for_active": True,
+                "max_wait": 180 if strategies else 60,
+            }
+
+            # Only add strategies if we have them
+            if strategies:
+                create_params["strategies"] = strategies
+
+            memory = memory_client.create_memory(**create_params)
+
+            # Update config with memory ID
+            agent_config.memory.memory_id = memory["id"]
+            agent_config.memory.memory_arn = memory["arn"]
+
+            # Save updated config
+            project_config.agents[agent_config.name] = agent_config
+            save_config(project_config, config_path)
+
+            log.info("Memory created: %s", memory["id"])
+
+            # Regenerate Dockerfile with memory ID
+            from ...utils.runtime.container import ContainerRuntime
+
+            runtime = ContainerRuntime(agent_config.container_runtime)
+            build_dir = config_path.parent
+
+            entrypoint_parts = agent_config.entrypoint.split(":")
+            entrypoint_path = Path(entrypoint_parts[0])
+            agent_var_name = entrypoint_parts[1] if len(entrypoint_parts) > 1 else agent_name
+
+            runtime.generate_dockerfile(
+                agent_path=entrypoint_path,
+                output_dir=build_dir,
+                agent_name=agent_var_name,
+                aws_region=agent_config.aws.region,
+                enable_observability=agent_config.aws.observability.enabled,
+                requirements_file=None,
+                memory_id=memory["id"],
+                memory_name=agent_config.memory.memory_name,
+            )
+            log.info("Dockerfile regenerated with memory ID: %s", memory["id"])
+
+        except Exception as e:
+            log.error("Memory creation failed: %s", str(e))
+            log.warning("Continuing without memory.")
+
+    # Execute CodeBuild workflow
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(
         config_path=config_path,
         agent_name=agent_name,

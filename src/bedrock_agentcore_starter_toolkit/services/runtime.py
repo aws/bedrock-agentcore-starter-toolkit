@@ -147,6 +147,7 @@ class BedrockAgentCoreClient:
 
             if env_vars is not None:
                 params["environmentVariables"] = env_vars
+                print(f"DEBUG: Sending to API environmentVariables: {json.dumps(env_vars)}")
 
             resp = self.client.create_agent_runtime(**params)
             agent_id = resp["agentRuntimeId"]
