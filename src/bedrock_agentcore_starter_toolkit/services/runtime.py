@@ -122,6 +122,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
@@ -141,6 +142,9 @@ class BedrockAgentCoreClient:
 
             if authorizer_config is not None:
                 params["authorizerConfiguration"] = authorizer_config
+
+            if request_header_config is not None:
+                params["requestHeaderConfiguration"] = request_header_config
 
             if protocol_config is not None:
                 params["protocolConfiguration"] = protocol_config
@@ -196,6 +200,7 @@ class BedrockAgentCoreClient:
                     execution_role_arn,
                     network_config,
                     authorizer_config,
+                    request_header_config,
                     protocol_config,
                     env_vars,
                 )
@@ -216,6 +221,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
     ) -> Dict[str, str]:
@@ -234,6 +240,9 @@ class BedrockAgentCoreClient:
 
             if authorizer_config is not None:
                 params["authorizerConfiguration"] = authorizer_config
+
+            if request_header_config is not None:
+                params["requestHeaderConfiguration"] = request_header_config
 
             if protocol_config is not None:
                 params["protocolConfiguration"] = protocol_config
@@ -297,6 +306,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
@@ -304,7 +314,7 @@ class BedrockAgentCoreClient:
         """Create or update agent."""
         if agent_id:
             return self.update_agent(
-                agent_id, image_uri, execution_role_arn, network_config, authorizer_config, protocol_config, env_vars
+                agent_id, image_uri, execution_role_arn, network_config, authorizer_config, request_header_config, protocol_config, env_vars
             )
         return self.create_agent(
             agent_name,
@@ -312,6 +322,7 @@ class BedrockAgentCoreClient:
             execution_role_arn,
             network_config,
             authorizer_config,
+            request_header_config,
             protocol_config,
             env_vars,
             auto_update_on_conflict,

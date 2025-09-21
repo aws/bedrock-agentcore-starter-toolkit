@@ -162,6 +162,34 @@ class TestBedrockAgentCoreRuntime:
         assert call_args["protocolConfiguration"] == protocol_config
         assert call_args["environmentVariables"] == env_vars
 
+    def test_create_agent_with_request_header_config(self, mock_boto3_clients):
+        """Test create agent with request header configuration."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        network_config = {"networkMode": "PRIVATE"}
+        authorizer_config = {"type": "IAM"}
+        request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-User-ID"]}
+        protocol_config = {"serverProtocol": "MCP"}
+        env_vars = {"ENV1": "HELLO", "ENV2": "WORLD"}
+
+        result = client.create_agent(
+            agent_name="test-agent",
+            image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            network_config=network_config,
+            authorizer_config=authorizer_config,
+            request_header_config=request_header_config,
+            protocol_config=protocol_config,
+            env_vars=env_vars,
+        )
+
+        assert result["id"] == "test-agent-id"
+        assert result["arn"] == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+
+        # Verify the call included request header config
+        call_args = mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.call_args[1]
+        assert call_args["requestHeaderConfiguration"] == request_header_config
+
     def test_create_agent_error_handling(self, mock_boto3_clients):
         """Test create agent error handling."""
         client = BedrockAgentCoreClient("us-west-2")

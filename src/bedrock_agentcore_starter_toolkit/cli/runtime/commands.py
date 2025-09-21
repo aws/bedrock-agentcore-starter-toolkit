@@ -233,15 +233,21 @@ def configure(
 
     # Handle OAuth authorization configuration
     oauth_config = None
+    request_header_config = None
     if authorizer_config:
         # Parse provided JSON configuration
         try:
             oauth_config = json.loads(authorizer_config)
             _print_success("Using provided OAuth authorizer configuration")
+            # Auto-configure request headers for OAuth
+            request_header_config = config_manager.get_request_header_config_for_oauth()
         except json.JSONDecodeError as e:
             _handle_error(f"Invalid JSON in --authorizer-config: {e}", e)
     else:
         oauth_config = config_manager.prompt_oauth_config()
+        # Auto-configure request headers if OAuth is configured
+        if oauth_config:
+            request_header_config = config_manager.get_request_header_config_for_oauth()
 
     try:
         result = configure_bedrock_agentcore(
@@ -254,6 +260,7 @@ def configure(
             enable_observability=not disable_otel,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
+            request_header_configuration=request_header_config,
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,

@@ -145,3 +145,9 @@ class ConfigurationManager:
 
         _print_success("OAuth authorizer configuration created")
         return config
+
+    def get_request_header_config_for_oauth(self) -> Optional[dict]:
+        """Get request header configuration for OAuth (auto-configured)."""
+        return {
+            "allowed_headers": ["Authorization"]
+        }

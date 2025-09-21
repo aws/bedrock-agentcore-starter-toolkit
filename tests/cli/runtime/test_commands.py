@@ -1680,6 +1680,21 @@ agents:
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "")
             mock_success.assert_called_once_with("OAuth authorizer configuration created")
 
+    def test_get_request_header_config_for_oauth(self, tmp_path):
+        """Test get_request_header_config_for_oauth returns correct configuration."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
+
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+        result = config_manager.get_request_header_config_for_oauth()
+
+        expected_config = {
+            "allowed_headers": ["Authorization"]
+        }
+
+        assert result == expected_config
+
     def test_configure_oauth_with_existing_values(self, tmp_path):
         """Test _configure_oauth with existing configuration values as defaults."""
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager

@@ -351,3 +351,62 @@ class TestMergeAgentConfig:
         mock_log.reset_mock()
         merge_agent_config(config_path, "agent2", agent2)
         mock_log.info.assert_called_with("Keeping '%s' as default agent", "agent2")
+
+
+class TestRequestHeaderConfiguration:
+    """Test request header configuration functionality."""
+
+    def test_get_request_header_configuration_with_headers(self):
+        """Test get_request_header_configuration with allowed headers."""
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            request_header_configuration={
+                "allowed_headers": ["Authorization", "X-User-ID", "X-Custom-Header"]
+            }
+        )
+
+        result = agent_config.get_request_header_configuration()
+
+        expected = {
+            "requestHeaderAllowlist": ["Authorization", "X-User-ID", "X-Custom-Header"]
+        }
+
+        assert result == expected
+
+    def test_get_request_header_configuration_empty_headers(self):
+        """Test get_request_header_configuration with empty allowed headers."""
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            request_header_configuration={
+                "allowed_headers": []
+            }
+        )
+
+        result = agent_config.get_request_header_configuration()
+
+        assert result is None
+
+    def test_get_request_header_configuration_no_config(self):
+        """Test get_request_header_configuration with no configuration."""
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py"
+        )
+
+        result = agent_config.get_request_header_configuration()
+
+        assert result is None
+
+    def test_get_request_header_configuration_missing_headers_key(self):
+        """Test get_request_header_configuration with missing allowed_headers key."""
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            request_header_configuration={}
+        )
+
+        result = agent_config.get_request_header_configuration()
+
+        assert result is None
