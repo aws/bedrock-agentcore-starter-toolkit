@@ -171,6 +171,7 @@ def _deploy_to_bedrock_agentcore(
                 execution_role_arn=agent_config.aws.execution_role,
                 network_config=network_config,
                 authorizer_config=agent_config.get_authorizer_configuration(),
+                request_header_config=agent_config.request_header_configuration,
                 protocol_config=protocol_config,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,

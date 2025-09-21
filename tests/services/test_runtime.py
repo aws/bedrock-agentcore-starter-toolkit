@@ -28,6 +28,7 @@ class TestBedrockAgentCoreRuntime:
             agent_name="test-agent",
             image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
             execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            request_header_config=None,
         )
 
         # Verify create was called
@@ -41,6 +42,7 @@ class TestBedrockAgentCoreRuntime:
             agent_name="test-agent",
             image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
             execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            request_header_config=None,
         )
 
         # Verify update was called
