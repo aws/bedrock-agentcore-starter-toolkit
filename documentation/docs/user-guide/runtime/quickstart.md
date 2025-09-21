@@ -197,4 +197,43 @@ AgentCore Runtime requires ARM64 containers (AWS Graviton). The toolkit handles 
 - **[Add tools with Gateway](../gateway/quickstart.md)** - Connect your agent to APIs and services
 - **[Enable memory](../../examples/memory-integration.md)** - Give your agent conversation history
 - **[Configure authentication](../runtime/auth.md)** - Set up OAuth/JWT auth
+- **[Request Header Configuration](#request-header-configuration)** - Forward headers to your agent
 - **[View more examples](../../examples/README.md)** - Learn from complete implementations
+
+## Request Header Configuration
+
+When you configure OAuth authentication, the system automatically forwards the `Authorization` header to your agent container. You can also configure additional headers to be forwarded.
+
+### Automatic OAuth Header Forwarding
+
+When OAuth is enabled, the `Authorization` header is automatically forwarded to your agent:
+
+```yaml
+# .bedrock_agentcore.yaml
+agents:
+  my-agent:
+    # ... other configuration ...
+    authorizer_configuration:
+      customJWTAuthorizer:
+        discoveryUrl: "https://example.com/.well-known/openid_configuration"
+        allowedClients: ["client1", "client2"]
+        allowedAudience: ["audience1", "audience2"]
+    
+    # Automatically added when OAuth is configured
+    request_header_configuration:
+      allowed_headers:
+        - "Authorization"
+```
+
+### Custom Header Configuration
+
+You can manually edit the configuration file to forward additional headers:
+
+```yaml
+request_header_configuration:
+  allowed_headers:
+    - "Authorization"      # Automatically added for OAuth
+    - "X-User-ID"          # Add your custom headers
+    - "X-Tenant-ID"
+    - "X-Custom-Header"
+```

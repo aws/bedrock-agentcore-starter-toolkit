@@ -82,10 +82,24 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
+    request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
         return self.authorizer_configuration
+
+    def get_request_header_configuration(self) -> Optional[dict]:
+        """Get request header configuration for AWS API."""
+        if not self.request_header_configuration:
+            return None
+        
+        allowed_headers = self.request_header_configuration.get("allowed_headers", [])
+        if not allowed_headers:
+            return None
+            
+        return {
+            "requestHeaderAllowlist": allowed_headers
+        }
 
     def validate(self, for_local: bool = False) -> List[str]:
         """Validate configuration and return list of errors.
