@@ -56,7 +56,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
                 "--requirements-file",
                 self.requirements_file,
             ],
-            user_input=["no"],  # oauth config
+            user_input=["no", "no"],  # oauth config, request header allowlist
             validator=lambda result: self.validate_configure(result),
         )
 

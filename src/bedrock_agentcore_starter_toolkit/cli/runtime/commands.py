@@ -176,6 +176,12 @@ def configure(
     authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
+    request_header_allowlist: Optional[str] = typer.Option(
+        None,
+        "--request-header-allowlist",
+        "-rha",
+        help="Comma-separated list of allowed request headers (Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
@@ -243,6 +249,21 @@ def configure(
     else:
         oauth_config = config_manager.prompt_oauth_config()
 
+    # Handle request header allowlist configuration
+    request_header_config = None
+    if request_header_allowlist:
+        # Parse comma-separated headers and create configuration
+        headers = [header.strip() for header in request_header_allowlist.split(",") if header.strip()]
+        if headers:
+            request_header_config = {
+                "requestHeaderAllowlist": headers
+            }
+            _print_success(f"Configured request header allowlist with {len(headers)} headers")
+        else:
+            _handle_error("Empty request header allowlist provided")
+    else:
+        request_header_config = config_manager.prompt_request_header_allowlist()
+
     try:
         result = configure_bedrock_agentcore(
             agent_name=agent_name,
@@ -254,6 +275,7 @@ def configure(
             enable_observability=not disable_otel,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
+            request_header_configuration=request_header_config,
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,
@@ -263,6 +285,12 @@ def configure(
         auth_info = "IAM (default)"
         if oauth_config:
             auth_info = "OAuth (customJWTAuthorizer)"
+
+        # Prepare request headers info for summary
+        headers_info = ""
+        if request_header_config:
+            headers = request_header_config.get("requestHeaderAllowlist", [])
+            headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
         console.print(
             Panel(
@@ -277,7 +305,8 @@ def configure(
                 f"ECR Repository: [dim]"
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/dim]\n"
-                f"Authorization: [dim]{auth_info}[/dim]\n\n"
+                f"Authorization: [dim]{auth_info}[/dim]\n"
+                f"{headers_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",

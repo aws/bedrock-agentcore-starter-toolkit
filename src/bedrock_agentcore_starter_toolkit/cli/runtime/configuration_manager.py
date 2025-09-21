@@ -145,3 +145,61 @@ class ConfigurationManager:
 
         _print_success("OAuth authorizer configuration created")
         return config
+
+    def prompt_request_header_allowlist(self) -> Optional[dict]:
+        """Prompt for request header allowlist configuration. Returns allowlist config dict or None."""
+        if self.non_interactive:
+            _print_success("Using default request header configuration")
+            return None
+
+        console.print("\n🔒 [cyan]Request Header Allowlist[/cyan]")
+        console.print("[dim]Configure which request headers are allowed to pass through to your agent.[/dim]")
+        console.print("[dim]Common headers: Authorization, X-Amzn-Bedrock-AgentCore-Runtime-Custom-*[/dim]")
+
+        # Get existing allowlist values
+        existing_headers = ""
+        if (
+            self.existing_config
+            and self.existing_config.request_header_configuration
+            and "requestHeaderAllowlist" in self.existing_config.request_header_configuration
+        ):
+            existing_headers = ",".join(self.existing_config.request_header_configuration["requestHeaderAllowlist"])
+
+        allowlist_default = "yes" if existing_headers else "no"
+        response = _prompt_with_default("Configure request header allowlist? (yes/no)", allowlist_default)
+
+        if response.lower() in ["yes", "y"]:
+            return self._configure_request_header_allowlist(existing_headers)
+        else:
+            _print_success("Using default request header configuration")
+            return None
+
+    def _configure_request_header_allowlist(self, existing_headers: str = "") -> dict:
+        """Configure request header allowlist and return config dict."""
+        console.print("\n📋 [cyan]Request Header Allowlist Configuration[/cyan]")
+        
+        # Show existing config if available
+        if existing_headers:
+            console.print(f"[dim]Previously configured: {existing_headers}[/dim]")
+
+        # Prompt for headers
+        default_headers = existing_headers or "Authorization,X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
+        headers_input = _prompt_with_default(
+            "Enter allowed request headers (comma-separated)", 
+            default_headers
+        )
+
+        if not headers_input:
+            _handle_error("At least one request header must be specified for allowlist configuration")
+
+        # Parse and validate headers
+        headers = [header.strip() for header in headers_input.split(",") if header.strip()]
+        
+        if not headers:
+            _handle_error("Empty request header allowlist provided")
+
+        _print_success(f"Request header allowlist configured with {len(headers)} headers")
+        
+        return {
+            "requestHeaderAllowlist": headers
+        }
