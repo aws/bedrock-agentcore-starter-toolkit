@@ -42,12 +42,11 @@ class CodeBuildService:
             self.logger.debug("Using existing S3 bucket: %s", bucket_name)
         except ClientError as e:
             if e.response["Error"]["Code"] == "403":
-                # Bucket exists but owned by different account
-                self.logger.error("Bucket %s exists but is owned by a different AWS account", bucket_name)
+                self.logger.error("Unable to access bucket %s due to permission constraints", bucket_name)
                 raise RuntimeError(
-                    f"Security Error: S3 bucket '{bucket_name}' exists but is owned by a different AWS account. "
-                    "This could indicate a potential bucket takeover attempt. Please contact your security team."
+                    f"Access Error: Unable to access S3 bucket '{bucket_name}' due to permission constraints."
                 ) from e
+
             # Create bucket (no ExpectedBucketOwner needed for create_bucket)
             region = self.session.region_name
             if region == "us-east-1":
@@ -57,7 +56,6 @@ class CodeBuildService:
                     Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": region}
                 )
 
-            # SECURITY FIX: Add ExpectedBucketOwner to lifecycle configuration
             self.s3_client.put_bucket_lifecycle_configuration(
                 Bucket=bucket_name,
                 ExpectedBucketOwner=account_id,
@@ -110,7 +108,6 @@ class CodeBuildService:
                 # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
                 s3_key = f"{agent_name}/source.zip"
 
-                # SECURITY FIX: Add ExpectedBucketOwner to upload_file
                 self.s3_client.upload_file(
                     temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
                 )

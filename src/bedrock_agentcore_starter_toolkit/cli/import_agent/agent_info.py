@@ -151,7 +151,6 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
                 # Get account ID for bucket ownership verification
                 sts_client = boto3.client("sts")
                 account_id = sts_client.get_caller_identity()["Account"]
-                # SECURITY FIX: Add ExpectedBucketOwner to get_object call
                 response = s3_client.get_object(
                     Bucket=s3_bucket_name, Key=s3_object_key, ExpectedBucketOwner=account_id
                 )

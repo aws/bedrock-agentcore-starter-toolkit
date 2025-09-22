@@ -100,18 +100,18 @@ class TestCodeBuildService:
         expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
         assert bucket_name == expected
 
-        # Verify S3 operations WITH ExpectedBucketOwner
+        # Verify S3 operations
         mock_clients["s3"].head_bucket.assert_called_once_with(
             Bucket=expected,
-            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+            ExpectedBucketOwner="123456789012",
         )
         mock_clients["s3"].create_bucket.assert_called_once_with(
             Bucket=expected, CreateBucketConfiguration={"LocationConstraint": "us-west-2"}
         )
-        # Verify ExpectedBucketOwner in lifecycle configuration
+
         mock_clients["s3"].put_bucket_lifecycle_configuration.assert_called_once_with(
             Bucket=expected,
-            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+            ExpectedBucketOwner="123456789012",
             LifecycleConfiguration={
                 "Rules": [{"ID": "DeleteOldBuilds", "Status": "Enabled", "Filter": {}, "Expiration": {"Days": 7}}]
             },
@@ -128,22 +128,20 @@ class TestCodeBuildService:
         expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
         assert bucket_name == expected
 
-        #  Verify ExpectedBucketOwner is included
         mock_clients["s3"].head_bucket.assert_called_once_with(
             Bucket=expected,
-            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+            ExpectedBucketOwner="123456789012",
         )
 
         # Should not create bucket
         mock_clients["s3"].create_bucket.assert_not_called()
 
-    def test_ensure_source_bucket_wrong_owner(self, codebuild_service, mock_clients):
-        """Test error handling when bucket is owned by different account."""
-        # Mock bucket exists but owned by different account (403 error)
+    def test_ensure_source_bucket_access_constraints(self, codebuild_service, mock_clients):
+        """Test error handling for bucket access constraints."""
+        # Mock bucket access constraints (403 error)
         mock_clients["s3"].head_bucket.side_effect = ClientError({"Error": {"Code": "403"}}, "HeadBucket")
 
-        # Should raise RuntimeError with security error message
-        with pytest.raises(RuntimeError, match="Security Error.*different AWS account.*potential bucket takeover"):
+        with pytest.raises(RuntimeError, match="Access Error.*permission constraints"):
             codebuild_service.ensure_source_bucket("123456789012")
 
         expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
@@ -197,7 +195,7 @@ class TestCodeBuildService:
             "/tmp/test.zip",
             "bedrock-agentcore-codebuild-sources-123456789012-us-west-2",
             "test-agent/source.zip",
-            ExtraArgs={"ExpectedBucketOwner": "123456789012"},  # ADDED: Security fix verification
+            ExtraArgs={"ExpectedBucketOwner": "123456789012"},
         )
         mock_unlink.assert_called_once_with("/tmp/test.zip")
 
