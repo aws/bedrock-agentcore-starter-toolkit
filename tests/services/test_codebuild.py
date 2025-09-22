@@ -62,13 +62,29 @@ class TestCodeBuildService:
 
     def test_init(self, mock_session):
         """Test CodeBuildService initialization."""
+
+        # Mock all the clients including STS
+        mock_sts = Mock()
+        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+        mock_codebuild = Mock()
+        mock_s3 = Mock()
+        mock_iam = Mock()
+
+        def client_factory(service_name):
+            clients = {"sts": mock_sts, "codebuild": mock_codebuild, "s3": mock_s3, "iam": mock_iam}
+            return clients.get(service_name, Mock())
+
+        mock_session.client = client_factory
+
         service = CodeBuildService(mock_session)
 
         assert service.session == mock_session
-        assert service.client == mock_session.client("codebuild")
-        assert service.s3_client == mock_session.client("s3")
-        assert service.iam_client == mock_session.client("iam")
+        assert service.client == mock_codebuild
+        assert service.s3_client == mock_s3
+        assert service.iam_client == mock_iam
         assert service.source_bucket is None
+        assert service.account_id == "123456789012"  # Verify account_id is stored
 
     def test_get_source_bucket_name(self, codebuild_service):
         """Test S3 bucket name generation."""
@@ -84,12 +100,22 @@ class TestCodeBuildService:
         expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
         assert bucket_name == expected
 
-        # Verify S3 operations
-        mock_clients["s3"].head_bucket.assert_called_once_with(Bucket=expected)
+        # Verify S3 operations WITH ExpectedBucketOwner
+        mock_clients["s3"].head_bucket.assert_called_once_with(
+            Bucket=expected,
+            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+        )
         mock_clients["s3"].create_bucket.assert_called_once_with(
             Bucket=expected, CreateBucketConfiguration={"LocationConstraint": "us-west-2"}
         )
-        mock_clients["s3"].put_bucket_lifecycle_configuration.assert_called_once()
+        # Verify ExpectedBucketOwner in lifecycle configuration
+        mock_clients["s3"].put_bucket_lifecycle_configuration.assert_called_once_with(
+            Bucket=expected,
+            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+            LifecycleConfiguration={
+                "Rules": [{"ID": "DeleteOldBuilds", "Status": "Enabled", "Filter": {}, "Expiration": {"Days": 7}}]
+            },
+        )
 
     def test_ensure_source_bucket_existing(self, codebuild_service, mock_clients):
         """Test using existing S3 bucket."""
@@ -102,7 +128,30 @@ class TestCodeBuildService:
         expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
         assert bucket_name == expected
 
+        #  Verify ExpectedBucketOwner is included
+        mock_clients["s3"].head_bucket.assert_called_once_with(
+            Bucket=expected,
+            ExpectedBucketOwner="123456789012",  # ADDED: Security fix verification
+        )
+
         # Should not create bucket
+        mock_clients["s3"].create_bucket.assert_not_called()
+
+    def test_ensure_source_bucket_wrong_owner(self, codebuild_service, mock_clients):
+        """Test error handling when bucket is owned by different account."""
+        # Mock bucket exists but owned by different account (403 error)
+        mock_clients["s3"].head_bucket.side_effect = ClientError({"Error": {"Code": "403"}}, "HeadBucket")
+
+        # Should raise RuntimeError with security error message
+        with pytest.raises(RuntimeError, match="Security Error.*different AWS account.*potential bucket takeover"):
+            codebuild_service.ensure_source_bucket("123456789012")
+
+        expected = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
+
+        # Verify head_bucket was called with ExpectedBucketOwner
+        mock_clients["s3"].head_bucket.assert_called_once_with(Bucket=expected, ExpectedBucketOwner="123456789012")
+
+        # Should NOT create bucket when 403 error occurs
         mock_clients["s3"].create_bucket.assert_not_called()
 
     def test_ensure_source_bucket_us_east_1(self, mock_session, mock_clients):
@@ -144,7 +193,12 @@ class TestCodeBuildService:
         expected_s3_url = f"s3://bedrock-agentcore-codebuild-sources-123456789012-us-west-2/{expected_key}"
 
         assert result == expected_s3_url
-        mock_clients["s3"].upload_file.assert_called_once()
+        mock_clients["s3"].upload_file.assert_called_once_with(
+            "/tmp/test.zip",
+            "bedrock-agentcore-codebuild-sources-123456789012-us-west-2",
+            "test-agent/source.zip",
+            ExtraArgs={"ExpectedBucketOwner": "123456789012"},  # ADDED: Security fix verification
+        )
         mock_unlink.assert_called_once_with("/tmp/test.zip")
 
     def test_normalize_s3_location(self, codebuild_service):
