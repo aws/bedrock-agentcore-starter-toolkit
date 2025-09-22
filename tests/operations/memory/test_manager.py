@@ -1188,128 +1188,6 @@ def test_update_memory_strategies_client_error():
                 assert "ValidationException" in str(e)
 
 
-def test_create_or_get_memory_creates_new():
-    """Test create_or_get_memory creates new memory when it doesn't exist."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the _control_plane_client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock successful create_memory response
-        mock_control_plane_client.create_memory.return_value = {
-            "memory": {"id": "new-memory-123", "status": "CREATING"}
-        }
-
-        # Mock get_memory to return ACTIVE status (for the waiting part)
-        mock_control_plane_client.get_memory.return_value = {"memory": {"id": "new-memory-123", "status": "ACTIVE"}}
-
-        with patch("time.time", return_value=0):
-            with patch("time.sleep"):
-                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                    result = manager.create_or_get_memory(
-                        name="TestMemory",
-                        strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                    )
-
-                    assert result["id"] == "new-memory-123"
-                    assert mock_control_plane_client.create_memory.called
-
-
-def test_create_or_get_memory_gets_existing():
-    """Test create_or_get_memory returns existing memory when it already exists."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the _control_plane_client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock ValidationException for create_memory (memory already exists)
-        error_response = {
-            "Error": {
-                "Code": "ValidationException",
-                "Message": "Memory with name 'ExistingMemory' already exists",
-            }
-        }
-        mock_control_plane_client.create_memory.side_effect = ClientError(error_response, "CreateMemory")
-
-        # Mock list_memories response
-        mock_control_plane_client.list_memories.return_value = {
-            "memories": [{"id": "ExistingMemory-456", "name": "ExistingMemory", "status": "ACTIVE"}],
-            "nextToken": None,
-        }
-
-        # Mock get_memory response (this is what was missing)
-        mock_control_plane_client.get_memory.return_value = {
-            "memory": {"id": "ExistingMemory-456", "name": "ExistingMemory", "status": "ACTIVE"}
-        }
-
-        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-            result = manager.create_or_get_memory(
-                name="ExistingMemory",
-                strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-            )
-
-            assert result["id"] == "ExistingMemory-456"
-            assert mock_control_plane_client.create_memory.called
-            assert mock_control_plane_client.list_memories.called
-
-
-def test_create_or_get_memory_other_client_error():
-    """Test create_or_get_memory raises other ClientErrors."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the _control_plane_client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock different ClientError (not "already exists")
-        error_response = {
-            "Error": {
-                "Code": "ValidationException",
-                "Message": "Invalid parameters",
-            }
-        }
-        mock_control_plane_client.create_memory.side_effect = ClientError(error_response, "CreateMemory")
-
-        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-            try:
-                manager.create_or_get_memory(
-                    name="TestMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                )
-                raise AssertionError("ClientError was not raised")
-            except ClientError as e:
-                assert "ValidationException" in str(e)
-                assert "Invalid parameters" in str(e)
-
-
-def test_create_or_get_memory_general_exception():
-    """Test create_or_get_memory raises general exceptions."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the _control_plane_client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock general exception
-        mock_control_plane_client.create_memory.side_effect = Exception("Unexpected error")
-
-        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-            try:
-                manager.create_or_get_memory(
-                    name="TestMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                )
-                raise AssertionError("Exception was not raised")
-            except Exception as e:
-                assert "Unexpected error" in str(e)
-
-
 # Memory class tests
 def test_memory_initialization():
     """Test Memory class initialization."""
@@ -2178,42 +2056,6 @@ def test_create_memory_and_wait_debug_logging():
                         mock_logger.debug.assert_called()
 
 
-def test_create_or_get_memory_existing_not_found():
-    """Test create_or_get_memory when existing memory is not found in list."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the _control_plane_client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock ValidationException for create_memory (memory already exists)
-        error_response = {
-            "Error": {
-                "Code": "ValidationException",
-                "Message": "Memory with name 'MissingMemory' already exists",
-            }
-        }
-        mock_control_plane_client.create_memory.side_effect = ClientError(error_response, "CreateMemory")
-
-        # Mock list_memories response with no matching memory
-        mock_control_plane_client.list_memories.return_value = {
-            "memories": [{"id": "other-memory-123", "name": "OtherMemory", "status": "ACTIVE"}],
-            "nextToken": None,
-        }
-
-        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-            try:
-                manager.create_or_get_memory(
-                    name="MissingMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                )
-                raise AssertionError("Exception was not raised")
-            except Exception:
-                # Should raise an exception when memory not found
-                pass
-
-
 def test_get_memory_client_error():
     """Test get_memory with ClientError."""
     with patch("boto3.client"):
@@ -2416,3 +2258,432 @@ def test_update_memory_strategies_with_configuration_wrapping():
             args, kwargs = mock_control_plane_client.update_memory.call_args
             modified_strategy = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
             assert "configuration" in modified_strategy
+
+
+# Tests for get_or_create_memory function
+def test_get_or_create_memory_creates_new_memory():
+    """Test get_or_create_memory when no existing memory is found."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list (no existing memory)
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {"memory": {"id": "mem-new-123", "status": "CREATING"}}
+
+        # Mock get_memory to return ACTIVE status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-new-123", "status": "ACTIVE", "name": "TestMemory"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    # Test get_or_create_memory
+                    result = manager.get_or_create_memory(
+                        name="TestMemory",
+                        strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                        description="Test description",
+                    )
+
+                    assert result.id == "mem-new-123"
+                    assert isinstance(result, Memory)
+
+                    # Verify list_memories was called to check for existing memory
+                    assert mock_control_plane_client.list_memories.called
+
+                    # Verify create_memory was called since no existing memory found
+                    assert mock_control_plane_client.create_memory.called
+
+
+def test_get_or_create_memory_returns_existing_memory():
+    """Test get_or_create_memory when existing memory is found."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory with matching name pattern
+        existing_memories = [
+            {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"},
+            {"id": "OtherMemory-def456", "name": "OtherMemory", "status": "ACTIVE"},
+        ]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return the existing memory details
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}
+        }
+
+        # Test get_or_create_memory
+        result = manager.get_or_create_memory(
+            name="TestMemory",
+            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+            description="Test description",
+        )
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Verify list_memories was called to check for existing memory
+        assert mock_control_plane_client.list_memories.called
+
+        # Verify get_memory was called to fetch existing memory details
+        assert mock_control_plane_client.get_memory.called
+        args, kwargs = mock_control_plane_client.get_memory.call_args
+        assert kwargs["memoryId"] == "TestMemory-abc123"
+
+        # Verify create_memory was NOT called since existing memory was found
+        assert not mock_control_plane_client.create_memory.called
+
+
+def test_get_or_create_memory_with_minimal_parameters():
+    """Test get_or_create_memory with minimal parameters."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {
+            "memory": {"id": "mem-minimal-456", "status": "CREATING"}
+        }
+
+        # Mock get_memory to return ACTIVE status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-minimal-456", "status": "ACTIVE", "name": "MinimalMemory"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    # Test get_or_create_memory with only name
+                    result = manager.get_or_create_memory(name="MinimalMemory")
+
+                    assert result.id == "mem-minimal-456"
+                    assert isinstance(result, Memory)
+
+                    # Verify create_memory was called with default parameters
+                    assert mock_control_plane_client.create_memory.called
+                    args, kwargs = mock_control_plane_client.create_memory.call_args
+                    assert kwargs["name"] == "MinimalMemory"
+                    assert kwargs["eventExpiryDuration"] == 90  # default
+                    assert kwargs["memoryStrategies"] == []  # empty list processed
+
+
+def test_get_or_create_memory_with_all_parameters():
+    """Test get_or_create_memory with all optional parameters."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {"memory": {"id": "mem-full-789", "status": "CREATING"}}
+
+        # Mock get_memory to return ACTIVE status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-full-789", "status": "ACTIVE", "name": "FullMemory"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    # Test get_or_create_memory with all parameters
+                    result = manager.get_or_create_memory(
+                        name="FullMemory",
+                        strategies=[{StrategyType.SEMANTIC.value: {"name": "FullStrategy"}}],
+                        description="Full test description",
+                        event_expiry_days=120,
+                        memory_execution_role_arn="arn:aws:iam::123456789012:role/MemoryRole",
+                    )
+
+                    assert result.id == "mem-full-789"
+                    assert isinstance(result, Memory)
+
+                    # Verify create_memory was called with all parameters
+                    assert mock_control_plane_client.create_memory.called
+                    args, kwargs = mock_control_plane_client.create_memory.call_args
+                    assert kwargs["name"] == "FullMemory"
+                    assert kwargs["description"] == "Full test description"
+                    assert kwargs["eventExpiryDuration"] == 120
+                    assert kwargs["memoryExecutionRoleArn"] == "arn:aws:iam::123456789012:role/MemoryRole"
+
+
+def test_get_or_create_memory_client_error_during_list():
+    """Test get_or_create_memory when ClientError occurs during list_memories."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to raise ClientError
+        error_response = {"Error": {"Code": "AccessDeniedException", "Message": "Insufficient permissions"}}
+        mock_control_plane_client.list_memories.side_effect = ClientError(error_response, "ListMemories")
+
+        try:
+            manager.get_or_create_memory(name="ErrorMemory")
+            raise AssertionError("ClientError was not raised")
+        except ClientError as e:
+            assert "AccessDeniedException" in str(e)
+
+
+def test_get_or_create_memory_client_error_during_create():
+    """Test get_or_create_memory when ClientError occurs during memory creation."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory to raise ClientError
+        error_response = {"Error": {"Code": "ValidationException", "Message": "Invalid parameter"}}
+        mock_control_plane_client.create_memory.side_effect = ClientError(error_response, "CreateMemory")
+
+        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+            try:
+                manager.get_or_create_memory(name="ErrorMemory")
+                raise AssertionError("ClientError was not raised")
+            except ClientError as e:
+                assert "ValidationException" in str(e)
+
+
+def test_get_or_create_memory_client_error_during_get():
+    """Test get_or_create_memory when ClientError occurs during get_memory for existing memory."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to raise ClientError
+        error_response = {"Error": {"Code": "ResourceNotFoundException", "Message": "Memory not found"}}
+        mock_control_plane_client.get_memory.side_effect = ClientError(error_response, "GetMemory")
+
+        try:
+            manager.get_or_create_memory(name="TestMemory")
+            raise AssertionError("ClientError was not raised")
+        except ClientError as e:
+            assert "ResourceNotFoundException" in str(e)
+
+
+def test_get_or_create_memory_creation_timeout():
+    """Test get_or_create_memory when memory creation times out."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {
+            "memory": {"id": "mem-timeout-999", "status": "CREATING"}
+        }
+
+        # Mock get_memory to always return CREATING (never becomes ACTIVE)
+        mock_control_plane_client.get_memory.return_value = {"memory": {"id": "mem-timeout-999", "status": "CREATING"}}
+
+        # Mock time to simulate timeout
+        with patch("time.time", side_effect=[0, 0, 0, 301, 301]):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    try:
+                        manager.get_or_create_memory(name="TimeoutMemory")
+                        raise AssertionError("TimeoutError was not raised")
+                    except TimeoutError as e:
+                        assert "did not become ACTIVE within 300 seconds" in str(e)
+
+
+def test_get_or_create_memory_creation_failure():
+    """Test get_or_create_memory when memory creation fails."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {
+            "memory": {"id": "mem-failed-888", "status": "CREATING"}
+        }
+
+        # Mock get_memory to return FAILED status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-failed-888", "status": "FAILED", "failureReason": "Configuration error"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    try:
+                        manager.get_or_create_memory(name="FailedMemory")
+                        raise AssertionError("RuntimeError was not raised")
+                    except RuntimeError as e:
+                        assert "Memory creation failed: Configuration error" in str(e)
+
+
+def test_get_or_create_memory_multiple_matching_memories():
+    """Test get_or_create_memory when multiple memories match the name pattern."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return multiple memories with matching pattern
+        existing_memories = [
+            {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"},
+            {"id": "TestMemory-def456", "name": "TestMemory", "status": "ACTIVE"},
+            {"id": "OtherMemory-ghi789", "name": "OtherMemory", "status": "ACTIVE"},
+        ]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return the first matching memory
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}
+        }
+
+        # Test get_or_create_memory
+        result = manager.get_or_create_memory(name="TestMemory")
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Verify get_memory was called with the first matching memory ID
+        assert mock_control_plane_client.get_memory.called
+        args, kwargs = mock_control_plane_client.get_memory.call_args
+        assert kwargs["memoryId"] == "TestMemory-abc123"
+
+
+def test_get_or_create_memory_no_matching_pattern():
+    """Test get_or_create_memory when memories exist but none match the name pattern."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return memories that don't match the pattern
+        existing_memories = [
+            {"id": "OtherMemory-abc123", "name": "OtherMemory", "status": "ACTIVE"},
+            {"id": "DifferentMemory-def456", "name": "DifferentMemory", "status": "ACTIVE"},
+        ]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {"memory": {"id": "mem-new-777", "status": "CREATING"}}
+
+        # Mock get_memory to return ACTIVE status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-new-777", "status": "ACTIVE", "name": "TestMemory"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    # Test get_or_create_memory
+                    result = manager.get_or_create_memory(name="TestMemory")
+
+                    assert result.id == "mem-new-777"
+                    assert isinstance(result, Memory)
+
+                    # Verify create_memory was called since no matching pattern found
+                    assert mock_control_plane_client.create_memory.called
+
+
+def test_get_or_create_memory_with_strategies():
+    """Test get_or_create_memory with various strategy configurations."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return empty list
+        mock_control_plane_client.list_memories.return_value = {"memories": [], "nextToken": None}
+
+        # Mock create_memory response
+        mock_control_plane_client.create_memory.return_value = {
+            "memory": {"id": "mem-strategies-555", "status": "CREATING"}
+        }
+
+        # Mock get_memory to return ACTIVE status
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "mem-strategies-555", "status": "ACTIVE", "name": "StrategiesMemory"}
+        }
+
+        with patch("time.time", return_value=0):
+            with patch("time.sleep"):
+                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+                    # Test get_or_create_memory with multiple strategies
+                    strategies = [
+                        {StrategyType.SEMANTIC.value: {"name": "SemanticStrategy"}},
+                        {StrategyType.SUMMARY.value: {"name": "SummaryStrategy"}},
+                    ]
+                    result = manager.get_or_create_memory(name="StrategiesMemory", strategies=strategies)
+
+                    assert result.id == "mem-strategies-555"
+                    assert isinstance(result, Memory)
+
+                    # Verify create_memory was called with strategies
+                    assert mock_control_plane_client.create_memory.called
+                    args, kwargs = mock_control_plane_client.create_memory.call_args
+                    assert len(kwargs["memoryStrategies"]) == 2
+
+
+def test_get_or_create_memory_exception_handling():
+    """Test get_or_create_memory handles unexpected exceptions."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to raise unexpected exception
+        mock_control_plane_client.list_memories.side_effect = Exception("Unexpected error")
+
+        try:
+            manager.get_or_create_memory(name="ExceptionMemory")
+            raise AssertionError("Exception was not raised")
+        except Exception as e:
+            assert "Unexpected error" in str(e)

@@ -282,7 +282,7 @@ class MemoryManager:
             poll_interval=poll_interval,
         )
 
-    def create_or_get_memory(
+    def get_or_create_memory(
         self,
         name: str,
         strategies: Optional[List[Dict[str, Any]]] = None,
@@ -290,33 +290,33 @@ class MemoryManager:
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
     ) -> Memory:
-        """Create a memory resource or fetch the existing memory details if it already exists.
+        """Fetch an existing memory resource or create the memory.
 
         Returns:
             Memory object, either newly created or existing
         """
+        memory: Memory = None
         try:
-            memory = self._create_memory_and_wait(
-                name=name,
-                strategies=strategies,
-                description=description,
-                event_expiry_days=event_expiry_days,
-                memory_execution_role_arn=memory_execution_role_arn,
-            )
+            memory_summaries = self.list_memories()
+            memory_summary = next((m for m in memory_summaries if m.id.startswith(f"{name}-")), None)
+
+            # Create Memory if it doesn't exist
+            if memory_summary is None:
+                memory = self._create_memory_and_wait(
+                    name=name,
+                    strategies=strategies,
+                    description=description,
+                    event_expiry_days=event_expiry_days,
+                    memory_execution_role_arn=memory_execution_role_arn,
+                )
+            else:
+                logger.info("Memory already exists. Using existing memory ID: %s", memory_summary.id)
+                memory = self.get_memory(memory_summary.id)
             return memory
         except ClientError as e:
-            if e.response["Error"]["Code"] == "ValidationException" and "already exists" in str(e):
-                memory_summaries = self.list_memories()
-                memory_summary = next((m for m in memory_summaries if m.id.startswith(name)), None)
-                if memory_summary is None:
-                    logger.error("Memory with name %s already exists but could not be found", name)
-                    raise
-                memory = self.get_memory(memory_summary.id)
-                logger.info("Memory already exists. Using existing memory ID: %s", memory.id)
-                return memory
-            else:
-                logger.error("ClientError: Failed to create or get memory: %s", e)
-                raise
+            # Failed to create memory
+            logger.error("ClientError: Failed to create or get memory: %s", e)
+            raise
         except Exception:
             raise
 
