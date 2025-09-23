@@ -516,7 +516,7 @@ def handler(payload):
                 agent_config = config.get_agent_config("test_agent")
 
                 assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
-                assert agent_config.codebuild.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
+                assert agent_config.codebuild.execution_role is None
 
         finally:
             os.chdir(original_cwd)
