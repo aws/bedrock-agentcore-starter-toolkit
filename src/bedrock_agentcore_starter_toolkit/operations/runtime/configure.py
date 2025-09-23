@@ -124,8 +124,8 @@ def configure_bedrock_agentcore(
         if verbose:
             log.debug("Using separate CodeBuild execution role: %s", codebuild_execution_role_arn)
     else:
-        # No separate CodeBuild role provided - use the same as execution_role
-        codebuild_execution_role_arn = execution_role_arn
+        # No separate CodeBuild role provided - use None
+        codebuild_execution_role_arn = None
 
         if verbose and execution_role_arn:
             log.debug("Using same role for CodeBuild: %s", codebuild_execution_role_arn)
