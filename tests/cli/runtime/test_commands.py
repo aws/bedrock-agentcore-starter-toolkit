@@ -1022,6 +1022,7 @@ agents:
                     bearer_token=None,
                     local_mode=False,
                     user_id=None,
+                    custom_headers={},
                 )
             finally:
                 os.chdir(original_cwd)
@@ -1162,6 +1163,7 @@ agents:
                     bearer_token="test-token",
                     local_mode=False,
                     user_id=None,
+                    custom_headers={},
                 )
             finally:
                 os.chdir(original_cwd)
@@ -1205,6 +1207,7 @@ agents:
                     bearer_token=None,
                     local_mode=False,
                     user_id=None,
+                    custom_headers={},
                 )
             finally:
                 os.chdir(original_cwd)
@@ -2656,3 +2659,362 @@ agents:
             assert ".bedrock_agentcore.yaml not found" in result.stdout
         finally:
             os.chdir(original_cwd)
+
+    # --Headers functionality tests
+    def test_parse_custom_headers_valid_single_header(self):
+        """Test _parse_custom_headers with single valid header."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        result = _parse_custom_headers("Context:production")
+        
+        expected = {"X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production"}
+        assert result == expected
+
+    def test_parse_custom_headers_valid_multiple_headers(self):
+        """Test _parse_custom_headers with multiple valid headers."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        result = _parse_custom_headers("Context:prod,User-ID:123,Session:abc")
+        
+        expected = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "prod",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc"
+        }
+        assert result == expected
+
+    def test_parse_custom_headers_already_prefixed(self):
+        """Test _parse_custom_headers with already prefixed headers."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        result = _parse_custom_headers("X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context:prod,User-ID:123")
+        
+        expected = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "prod",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+        }
+        assert result == expected
+
+    def test_parse_custom_headers_with_spaces_and_special_chars(self):
+        """Test _parse_custom_headers with spaces and special characters."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        result = _parse_custom_headers("Context: production env ,Special-Header: value with spaces!@#")
+        
+        expected = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production env",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Special-Header": "value with spaces!@#"
+        }
+        assert result == expected
+
+    def test_parse_custom_headers_empty_string(self):
+        """Test _parse_custom_headers with empty string."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        result = _parse_custom_headers("")
+        assert result == {}
+
+        result = _parse_custom_headers("   ")
+        assert result == {}
+
+    def test_parse_custom_headers_invalid_format_no_colon(self):
+        """Test _parse_custom_headers with invalid format (no colon)."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        with pytest.raises(ValueError, match="Invalid header format: 'InvalidHeader'. Expected format: 'Header:value'"):
+            _parse_custom_headers("InvalidHeader")
+
+    def test_parse_custom_headers_invalid_format_empty_name(self):
+        """Test _parse_custom_headers with invalid format (empty header name)."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        with pytest.raises(ValueError, match="Empty header name in: ':value'"):
+            _parse_custom_headers(":value")
+
+    def test_parse_custom_headers_mixed_valid_invalid(self):
+        """Test _parse_custom_headers with mix of valid and invalid headers."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
+
+        with pytest.raises(ValueError, match="Invalid header format: 'InvalidHeader2'. Expected format: 'Header:value'"):
+            _parse_custom_headers("Header1:value1,InvalidHeader2")
+
+    def test_invoke_with_custom_headers_success(self, tmp_path):
+        """Test invoke command with valid custom headers."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "success with headers"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, [
+                    "invoke", 
+                    '{"message": "hello"}', 
+                    "--headers", 
+                    "Context:production,User-ID:123"
+                ])
+
+                assert result.exit_code == 0
+                assert "Using custom headers" in result.stdout
+
+                # Verify custom headers were parsed and passed correctly
+                call_args = mock_invoke.call_args
+                expected_headers = {
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+                }
+                assert call_args.kwargs["custom_headers"] == expected_headers
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_with_custom_headers_and_bearer_token(self, tmp_path):
+        """Test invoke command with custom headers and bearer token."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config with OAuth
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = {"customJWTAuthorizer": {"discoveryUrl": "test"}}
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "success with headers and auth"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, [
+                    "invoke", 
+                    '{"message": "hello"}', 
+                    "--headers", 
+                    "Context:prod",
+                    "--bearer-token", 
+                    "test-token"
+                ])
+
+                assert result.exit_code == 0
+                assert "Using bearer token for OAuth authentication" in result.stdout
+                assert "Using custom headers" in result.stdout
+
+                # Verify both bearer token and headers were passed
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["bearer_token"] == "test-token"
+                expected_headers = {"X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "prod"}
+                assert call_args.kwargs["custom_headers"] == expected_headers
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_with_custom_headers_and_session_id(self, tmp_path):
+        """Test invoke command with custom headers and session ID."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "success"}
+            mock_result.session_id = "custom-session-123"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, [
+                    "invoke", 
+                    '{"message": "hello"}', 
+                    "--headers", 
+                    "Session:abc,Context:test",
+                    "--session-id", 
+                    "custom-session-123"
+                ])
+
+                assert result.exit_code == 0
+                assert "Session: custom-session-123" in result.stdout
+
+                # Verify session ID and headers were both passed
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["session_id"] == "custom-session-123"
+                expected_headers = {
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc",
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"
+                }
+                assert call_args.kwargs["custom_headers"] == expected_headers
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_with_invalid_headers_format(self, tmp_path):
+        """Test invoke command with invalid headers format shows proper error."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(app, [
+                "invoke", 
+                '{"message": "hello"}', 
+                "--headers", 
+                "InvalidHeaderFormat"
+            ])
+
+            assert result.exit_code == 1
+            assert "Invalid headers format" in result.stdout
+            assert "Expected format: 'Header:value'" in result.stdout
+        finally:
+            os.chdir(original_cwd)
+
+    def test_invoke_with_empty_headers(self, tmp_path):
+        """Test invoke command with empty headers string."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "success"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, [
+                    "invoke", 
+                    '{"message": "hello"}', 
+                    "--headers", 
+                    ""
+                ])
+
+                assert result.exit_code == 0
+
+                # Verify empty headers dict was passed
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["custom_headers"] == {}
+            finally:
+                os.chdir(original_cwd)
+
+    def test_invoke_with_headers_local_mode(self, tmp_path):
+        """Test invoke command with custom headers in local mode."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.response = {"result": "local success with headers"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, [
+                    "invoke", 
+                    '{"message": "hello"}', 
+                    "--headers", 
+                    "Environment:local,Debug:true",
+                    "--local"
+                ])
+
+                assert result.exit_code == 0
+
+                # Verify both local mode and headers were passed
+                call_args = mock_invoke.call_args
+                assert call_args.kwargs["local_mode"] is True
+                expected_headers = {
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Environment": "local",
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+                }
+                assert call_args.kwargs["custom_headers"] == expected_headers
+            finally:
+                os.chdir(original_cwd)

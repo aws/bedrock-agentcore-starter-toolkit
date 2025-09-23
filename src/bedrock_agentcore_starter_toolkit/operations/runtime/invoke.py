@@ -23,6 +23,7 @@ def invoke_bedrock_agentcore(
     bearer_token: Optional[str] = None,
     user_id: Optional[str] = None,
     local_mode: Optional[bool] = False,
+    custom_headers: Optional[dict] = None,
 ) -> InvokeResult:
     """Invoke deployed Bedrock AgentCore endpoint."""
     # Load project configuration
@@ -68,7 +69,7 @@ def invoke_bedrock_agentcore(
 
         # TODO: store and read port config of local running container
         client = LocalBedrockAgentCoreClient("http://127.0.0.1:8080")
-        response = client.invoke_endpoint(session_id, payload_str, workload_access_token)
+        response = client.invoke_endpoint(session_id, payload_str, workload_access_token, custom_headers)
 
     else:
         if not agent_arn:
@@ -88,12 +89,13 @@ def invoke_bedrock_agentcore(
                 payload=payload_str,
                 session_id=session_id,
                 bearer_token=bearer_token,
+                custom_headers=custom_headers,
             )
         else:
             # Use existing boto3 client
             bedrock_agentcore_client = BedrockAgentCoreClient(region)
             response = bedrock_agentcore_client.invoke_endpoint(
-                agent_arn=agent_arn, payload=payload_str, session_id=session_id, user_id=user_id
+                agent_arn=agent_arn, payload=payload_str, session_id=session_id, user_id=user_id, custom_headers=custom_headers
             )
 
     return InvokeResult(

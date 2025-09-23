@@ -156,6 +156,7 @@ class TestInvokeBedrockAgentCore:
                 payload='{"message": "Hello with bearer token"}',  # Payload is converted to JSON string
                 session_id=result.session_id,
                 bearer_token=bearer_token,
+                custom_headers=None
             )
 
             # Verify response
@@ -200,6 +201,7 @@ class TestInvokeBedrockAgentCore:
                 payload='{"message": "Hello"}',  # Payload is converted to JSON string
                 session_id=custom_session_id,
                 bearer_token=bearer_token,
+                custom_headers=None
             )
 
     def test_invoke_without_bearer_token_uses_boto3(self, mock_boto3_clients, tmp_path):
@@ -287,7 +289,7 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke_endpoint was called correctly
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123"
+                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123", None
             )
 
             # Verify result
@@ -353,7 +355,7 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke was called with workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context"
+                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context", None
             )
 
             # Verify result
@@ -409,7 +411,7 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client was called with the new workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Test workload creation"}', "new-workload-token"
+                result.session_id, '{"message": "Test workload creation"}', "new-workload-token", None
             )
 
             # Verify config was updated with the new workload name
@@ -489,3 +491,247 @@ class TestGetWorkloadName:
         updated_config = load_config(config_path)
         updated_agent = updated_config.get_agent_config("test-agent")
         assert updated_agent.oauth_configuration == {"workload_name": "created-workload-789"}
+
+    def test_invoke_with_custom_headers_boto3_client(self, mock_boto3_clients, tmp_path):
+        """Test invocation with custom headers using boto3 client."""
+        # Create config file with deployed agent
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello with headers"}
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+        }
+
+        result = invoke_bedrock_agentcore(config_path, payload, custom_headers=custom_headers)
+
+        # Verify result structure
+        assert result.response == {"response": [{"data": "test response"}]}
+        assert isinstance(result.session_id, str)
+        assert result.agent_arn == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+
+        # Verify boto3 client was called correctly (custom headers are handled via event system, not as direct parameters)
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+        call_args = mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.call_args
+        
+        # Verify basic call parameters (custom_headers are injected via boto3 event system, not as direct params)
+        assert call_args[1]["agentRuntimeArn"] == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+        assert call_args[1]["payload"] == '{"message": "Hello with headers"}'
+        assert call_args[1]["qualifier"] == "DEFAULT"
+        assert "runtimeSessionId" in call_args[1]
+
+    def test_invoke_with_custom_headers_http_client(self, tmp_path):
+        """Test invocation with custom headers using HTTP client (bearer token)."""
+        # Create config file
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello with headers and bearer token"}
+        bearer_token = "test-bearer-token-123"
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc123"
+        }
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+        ) as mock_http_client_class:
+            mock_http_client = Mock()
+            mock_http_client.invoke_endpoint.return_value = {"response": "http client response with headers"}
+            mock_http_client_class.return_value = mock_http_client
+
+            result = invoke_bedrock_agentcore(
+                config_path, payload, bearer_token=bearer_token, custom_headers=custom_headers
+            )
+
+            # Verify HTTP client was used
+            mock_http_client_class.assert_called_once_with("us-west-2")
+            mock_http_client.invoke_endpoint.assert_called_once_with(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                payload='{"message": "Hello with headers and bearer token"}',
+                session_id=result.session_id,
+                bearer_token=bearer_token,
+                custom_headers=custom_headers,
+            )
+
+            # Verify response
+            assert result.response == {"response": "http client response with headers"}
+
+    def test_invoke_with_custom_headers_local_client(self, tmp_path):
+        """Test invocation with custom headers using local client."""
+        # Create config file
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            oauth_configuration={"workload_name": "test-workload-456"},
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello local mode with headers"}
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Environment": "local",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
+            ) as mock_identity_client_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+            ) as mock_local_client_class,
+        ):
+            # Mock IdentityClient
+            mock_identity_client = Mock()
+            mock_identity_client.get_workload_access_token.return_value = {
+                "workloadAccessToken": "test-workload-token-456"
+            }
+            mock_identity_client_class.return_value = mock_identity_client
+
+            # Mock LocalBedrockAgentCoreClient
+            mock_local_client = Mock()
+            mock_local_client.invoke_endpoint.return_value = {"response": "local client response with headers"}
+            mock_local_client_class.return_value = mock_local_client
+
+            # Call with local_mode=True and custom_headers
+            result = invoke_bedrock_agentcore(config_path, payload, local_mode=True, custom_headers=custom_headers)
+
+            # Verify LocalBedrockAgentCoreClient was used with headers
+            mock_local_client_class.assert_called_once_with("http://127.0.0.1:8080")
+            mock_local_client.invoke_endpoint.assert_called_once_with(
+                result.session_id, 
+                '{"message": "Hello local mode with headers"}', 
+                "test-workload-token-456",
+                custom_headers
+            )
+
+            # Verify result
+            assert result.response == {"response": "local client response with headers"}
+
+    def test_invoke_with_empty_custom_headers(self, mock_boto3_clients, tmp_path):
+        """Test invocation with empty custom headers dict."""
+        # Create config file with deployed agent
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello without headers"}
+        empty_headers = {}
+
+        result = invoke_bedrock_agentcore(config_path, payload, custom_headers=empty_headers)
+
+        # Verify boto3 client was called correctly (empty custom headers handled via event system)
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+        call_args = mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.call_args
+        
+        # Verify basic call parameters (custom_headers are injected via boto3 event system, not as direct params)
+        assert call_args[1]["agentRuntimeArn"] == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+        assert call_args[1]["payload"] == '{"message": "Hello without headers"}'
+        assert call_args[1]["qualifier"] == "DEFAULT"
+
+    def test_invoke_with_none_custom_headers(self, mock_boto3_clients, tmp_path):
+        """Test invocation with None custom headers."""
+        # Create config file with deployed agent
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello without headers"}
+
+        result = invoke_bedrock_agentcore(config_path, payload, custom_headers=None)
+
+        # Verify boto3 client was called correctly (None custom headers handled via event system)
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+        call_args = mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.call_args
+        
+        # Verify basic call parameters (custom_headers are injected via boto3 event system, not as direct params)
+        assert call_args[1]["agentRuntimeArn"] == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+        assert call_args[1]["payload"] == '{"message": "Hello without headers"}'
+        assert call_args[1]["qualifier"] == "DEFAULT"
+
+    def test_invoke_custom_headers_with_session_id(self, mock_boto3_clients, tmp_path):
+        """Test invocation with both custom headers and custom session ID."""
+        # Create config file with deployed agent
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        payload = {"message": "Hello with headers and session"}
+        custom_headers = {"X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"}
+        custom_session_id = "custom-session-789"
+
+        result = invoke_bedrock_agentcore(
+            config_path, payload, session_id=custom_session_id, custom_headers=custom_headers
+        )
+
+        # Verify both session ID and headers were used
+        assert result.session_id == custom_session_id
+        
+        # Verify boto3 client was called correctly (custom headers are handled via event system, not as direct parameters)
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+        call_args = mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.call_args
+        assert call_args[1]["runtimeSessionId"] == custom_session_id
+        
+        # Verify basic call parameters (custom_headers are injected via boto3 event system, not as direct params)
+        assert call_args[1]["agentRuntimeArn"] == "arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+        assert call_args[1]["payload"] == '{"message": "Hello with headers and session"}'
+        assert call_args[1]["qualifier"] == "DEFAULT"

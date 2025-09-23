@@ -109,6 +109,150 @@ class TestBedrockAgentCoreRuntime:
         assert "response" in response
         assert response["response"] == [{"data": "test response"}]
 
+    def test_invoke_endpoint_with_custom_headers(self, mock_boto3_clients):
+        """Test agent invocation with custom headers using boto3 event handlers."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+        }
+
+        # Mock the event system - use dataplane client for invocations
+        mock_events = Mock()
+        client.dataplane_client.meta.events = mock_events
+
+        response = client.invoke_endpoint(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            payload='{"message": "Hello"}',
+            session_id="test-session-123",
+            custom_headers=custom_headers,
+        )
+
+        # Verify invocation was called correctly
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once_with(
+            agentRuntimeArn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            qualifier="DEFAULT",
+            runtimeSessionId="test-session-123",
+            payload='{"message": "Hello"}',
+        )
+
+        # Verify single event handler was registered for all custom headers
+        assert mock_events.register_first.call_count == 1
+        
+        # Verify single unregister was called for cleanup  
+        assert mock_events.unregister.call_count == 1
+
+        # Verify response structure
+        assert "response" in response
+        assert response["response"] == [{"data": "test response"}]
+
+    def test_invoke_endpoint_with_empty_custom_headers(self, mock_boto3_clients):
+        """Test agent invocation with empty custom headers dict."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock the event system - use dataplane client for invocations
+        mock_events = Mock()
+        client.dataplane_client.meta.events = mock_events
+
+        response = client.invoke_endpoint(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            payload='{"message": "Hello"}',
+            session_id="test-session-123",
+            custom_headers={},
+        )
+
+        # Verify no event handlers were registered for empty headers
+        mock_events.register_first.assert_not_called()
+        mock_events.unregister.assert_not_called()
+
+        # Verify response structure
+        assert "response" in response
+        assert response["response"] == [{"data": "test response"}]
+
+    def test_invoke_endpoint_with_none_custom_headers(self, mock_boto3_clients):
+        """Test agent invocation with None custom headers."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock the event system - use dataplane client for invocations
+        mock_events = Mock()
+        client.dataplane_client.meta.events = mock_events
+
+        response = client.invoke_endpoint(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            payload='{"message": "Hello"}',
+            session_id="test-session-123",
+            custom_headers=None,
+        )
+
+        # Verify no event handlers were registered for None headers
+        mock_events.register_first.assert_not_called()
+        mock_events.unregister.assert_not_called()
+
+        # Verify response structure
+        assert "response" in response
+        assert response["response"] == [{"data": "test response"}]
+
+    def test_invoke_endpoint_headers_cleanup_on_exception(self, mock_boto3_clients):
+        """Test custom headers event handlers are cleaned up even when invocation fails."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"
+        }
+
+        # Mock the event system - use dataplane client for invocations
+        mock_events = Mock()
+        client.dataplane_client.meta.events = mock_events
+
+        # Mock invoke_agent_runtime to raise an exception
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.side_effect = Exception("Invocation failed")
+
+        try:
+            client.invoke_endpoint(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                payload='{"message": "Hello"}',
+                session_id="test-session-123",
+                custom_headers=custom_headers,
+            )
+        except Exception:
+            pass  # Expected
+
+        # Verify event handlers were still cleaned up despite the exception
+        mock_events.register_first.assert_called_once()
+        mock_events.unregister.assert_called_once()
+
+
+    def test_invoke_endpoint_multiple_custom_headers(self, mock_boto3_clients):
+        """Test agent invocation with multiple custom headers."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "user123",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "session456",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+        }
+
+        # Mock the event system - use dataplane client for invocations
+        mock_events = Mock()
+        client.dataplane_client.meta.events = mock_events
+
+        response = client.invoke_endpoint(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            payload='{"message": "Hello"}',
+            session_id="test-session-123",
+            custom_headers=custom_headers,
+        )
+
+        # Verify single event handler was registered for all headers
+        assert mock_events.register_first.call_count == 1
+        assert mock_events.unregister.call_count == 1
+
+        # Verify response structure
+        assert "response" in response
+        assert response["response"] == [{"data": "test response"}]
+
     def test_api_error_handling(self, mock_boto3_clients):
         """Test handling of Bedrock AgentCore API errors."""
         client = BedrockAgentCoreClient("us-west-2")
@@ -573,6 +717,153 @@ class TestLocalBedrockAgentCoreClient:
             call_args = mock_post.call_args
             body = call_args[1]["json"]
             assert body == {"payload": "invalid json string"}
+
+    def test_invoke_endpoint_with_custom_headers(self):
+        """Test endpoint invocation with custom headers."""
+        client = LocalBedrockAgentCoreClient("http://localhost:8080")
+
+        custom_headers = {
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "local",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+        }
+
+        # Mock successful HTTP response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b"local response with headers"
+        mock_response.text = "local response with headers"
+        mock_response.raise_for_status.return_value = None
+        mock_response.headers = {"content-type": "application/json"}
+
+        with (
+            patch("requests.post", return_value=mock_response) as mock_post,
+            patch(
+                "bedrock_agentcore_starter_toolkit.services.runtime._handle_http_response",
+                return_value={"response": "local response with custom headers"},
+            ) as mock_handle,
+        ):
+            result = client.invoke_endpoint(
+                session_id="test-session-123", 
+                payload='{"message": "hello"}', 
+                workload_access_token="test-token-456",
+                custom_headers=custom_headers
+            )
+
+            # Verify request was made correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+
+            # Check URL
+            expected_url = "http://localhost:8080/invocations"
+            assert call_args[0][0] == expected_url
+
+            # Check headers - need to import the constants
+            from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
+
+            headers = call_args[1]["headers"]
+            assert headers["Content-Type"] == "application/json"
+            assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
+            assert headers[SESSION_HEADER] == "test-session-123"
+            
+            # Verify custom headers were added
+            assert headers["X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context"] == "local"
+            assert headers["X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug"] == "true"
+
+            # Verify response handling
+            mock_handle.assert_called_once_with(mock_response)
+            assert result == {"response": "local response with custom headers"}
+
+    def test_invoke_endpoint_with_empty_custom_headers(self):
+        """Test endpoint invocation with empty custom headers dict."""
+        client = LocalBedrockAgentCoreClient("http://localhost:8080")
+
+        # Mock successful HTTP response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b"local response without headers"
+        mock_response.text = "local response without headers"
+        mock_response.raise_for_status.return_value = None
+        mock_response.headers = {"content-type": "application/json"}
+
+        with (
+            patch("requests.post", return_value=mock_response) as mock_post,
+            patch(
+                "bedrock_agentcore_starter_toolkit.services.runtime._handle_http_response",
+                return_value={"response": "local response"},
+            ) as mock_handle,
+        ):
+            result = client.invoke_endpoint(
+                session_id="test-session-123", 
+                payload='{"message": "hello"}', 
+                workload_access_token="test-token-456",
+                custom_headers={}
+            )
+
+            # Verify request was made correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+
+            # Check headers - should only have default headers
+            from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
+
+            headers = call_args[1]["headers"]
+            assert headers["Content-Type"] == "application/json"
+            assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
+            assert headers[SESSION_HEADER] == "test-session-123"
+            
+            # Verify no custom headers were added
+            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            assert len(custom_header_keys) == 0
+
+            # Verify response handling
+            mock_handle.assert_called_once_with(mock_response)
+            assert result == {"response": "local response"}
+
+    def test_invoke_endpoint_with_none_custom_headers(self):
+        """Test endpoint invocation with None custom headers."""
+        client = LocalBedrockAgentCoreClient("http://localhost:8080")
+
+        # Mock successful HTTP response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b"local response without headers"
+        mock_response.text = "local response without headers"
+        mock_response.raise_for_status.return_value = None
+        mock_response.headers = {"content-type": "application/json"}
+
+        with (
+            patch("requests.post", return_value=mock_response) as mock_post,
+            patch(
+                "bedrock_agentcore_starter_toolkit.services.runtime._handle_http_response",
+                return_value={"response": "local response"},
+            ) as mock_handle,
+        ):
+            result = client.invoke_endpoint(
+                session_id="test-session-123", 
+                payload='{"message": "hello"}', 
+                workload_access_token="test-token-456",
+                custom_headers=None
+            )
+
+            # Verify request was made correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+
+            # Check headers - should only have default headers
+            from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
+
+            headers = call_args[1]["headers"]
+            assert headers["Content-Type"] == "application/json"
+            assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
+            assert headers[SESSION_HEADER] == "test-session-123"
+            
+            # Verify no custom headers were added
+            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            assert len(custom_header_keys) == 0
+
+            # Verify response handling
+            mock_handle.assert_called_once_with(mock_response)
+            assert result == {"response": "local response"}
 
 
 class TestHandleStreamingResponse:

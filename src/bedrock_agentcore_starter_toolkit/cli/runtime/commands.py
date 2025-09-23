@@ -611,6 +611,45 @@ def _show_error_response(error_msg: str):
     console.print(f"\n[red]{error_msg}[/red]")
 
 
+def _parse_custom_headers(headers_str: str) -> dict:
+    """Parse custom headers string and apply prefix logic.
+    
+    Args:
+        headers_str: String in format "Header1:value,Header2:value2"
+        
+    Returns:
+        dict: Dictionary of processed headers with proper prefixes
+        
+    Raises:
+        ValueError: If header format is invalid
+    """
+    if not headers_str or not headers_str.strip():
+        return {}
+        
+    headers = {}
+    header_pairs = [pair.strip() for pair in headers_str.split(',')]
+    
+    for pair in header_pairs:
+        if ':' not in pair:
+            raise ValueError(f"Invalid header format: '{pair}'. Expected format: 'Header:value'")
+            
+        header_name, header_value = pair.split(':', 1)
+        header_name = header_name.strip()
+        header_value = header_value.strip()
+        
+        if not header_name:
+            raise ValueError(f"Empty header name in: '{pair}'")
+            
+        # Apply prefix logic: if header doesn't start with the custom prefix, add it
+        prefix = "X-Amzn-Bedrock-AgentCore-Runtime-Custom-"
+        if not header_name.startswith(prefix):
+            header_name = prefix + header_name
+            
+        headers[header_name] = header_value
+        
+    return headers
+
+
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
     agent: Optional[str] = typer.Option(
@@ -622,6 +661,9 @@ def invoke(
     ),
     local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
     user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
+    headers: Optional[str] = typer.Option(
+        None, "--headers", help="Custom headers (format: 'Header1:value,Header2:value2'). Headers will be auto-prefixed with 'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' if not already present."
+    ),
 ):
     """Invoke Bedrock AgentCore endpoint."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -654,6 +696,17 @@ def invoke(
                 "[yellow]Warning: Bearer token provided but OAuth is not configured in .bedrock_agentcore.yaml[/yellow]"
             )
 
+        # Process custom headers
+        custom_headers = {}
+        if headers:
+            try:
+                custom_headers = _parse_custom_headers(headers)
+                if custom_headers:
+                    header_names = list(custom_headers.keys())
+                    console.print(f"[dim]Using custom headers: {', '.join(header_names)}[/dim]")
+            except ValueError as e:
+                _handle_error(f"Invalid headers format: {e}")
+
         # Invoke
         result = invoke_bedrock_agentcore(
             config_path=config_path,
@@ -663,6 +716,7 @@ def invoke(
             bearer_token=final_bearer_token,
             user_id=user_id,
             local_mode=local_mode,
+            custom_headers=custom_headers,
         )
         agent_display = config.name if config else (agent or "unknown")
         _show_invoke_info_panel(agent_display, result, config)
