@@ -48,7 +48,6 @@ dependencies = [
     "questionary>=2.1.0",
     "openapi-spec-validator>=0.7.2",
     "py-openapi-schema-to-json-schema>=0.0.3",
-    "strands-agents>=1.7.1",
 ]
 
 [project.scripts]
