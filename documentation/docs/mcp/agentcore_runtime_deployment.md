@@ -1,4 +1,4 @@
-### Building your first agent or transform existing code
+### Build your first agent or transform existing code
 
 #### Prerequisites & Environment Setup
 - **Environment**: Set up Python 3.10+ and virtual environment - [Environment Setup](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html#step-0-setup-folder-and-virtual-environment)
