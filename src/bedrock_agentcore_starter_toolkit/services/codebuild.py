@@ -44,7 +44,9 @@ class CodeBuildService:
             if e.response["Error"]["Code"] == "403":
                 self.logger.error("Unable to access bucket %s due to permission constraints", bucket_name)
                 raise RuntimeError(
-                    f"Access Error: Unable to access S3 bucket '{bucket_name}' due to permission constraints."
+                    f"Access Error: Unable to access S3 bucket '{bucket_name}' due to permission constraints. "
+                    f"The bucket may exist but you don't have sufficient permissions, or it could be "
+                    f"owned by another account."
                 ) from e
 
             # Create bucket (no ExpectedBucketOwner needed for create_bucket)
