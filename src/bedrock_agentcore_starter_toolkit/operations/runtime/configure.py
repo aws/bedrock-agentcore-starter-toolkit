@@ -36,6 +36,8 @@ def configure_bedrock_agentcore(
     verbose: bool = False,
     region: Optional[str] = None,
     protocol: Optional[str] = None,
+    build_account: Optional[str] = None,
+    build_role_arn: Optional[str] = None,    
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -193,6 +195,8 @@ def configure_bedrock_agentcore(
             network_configuration=NetworkConfiguration(network_mode="PUBLIC"),
             protocol_configuration=ProtocolConfiguration(server_protocol=protocol or "HTTP"),
             observability=ObservabilityConfig(enabled=enable_observability),
+            build_account=build_account,
+            build_role_arn=build_role_arn,
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         authorizer_configuration=authorizer_configuration,

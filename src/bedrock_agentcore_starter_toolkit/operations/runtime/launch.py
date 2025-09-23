@@ -23,7 +23,41 @@ from .models import LaunchResult
 
 log = logging.getLogger(__name__)
 
-
+def _create_build_session(agent_config, region: str) -> boto3.Session:
+    """Create AWS session for CodeBuild operations.
+    
+    Args:
+        agent_config: Agent configuration containing build account settings
+        region: AWS region
+        
+    Returns:
+        boto3.Session configured for CodeBuild operations
+    """
+    build_role_arn = agent_config.aws.get_build_role_arn()
+    
+    if build_role_arn:
+        # Assume role for CodeBuild operations
+        sts_client = boto3.client('sts', region_name=region)
+        
+        try:
+            response = sts_client.assume_role(
+                RoleArn=build_role_arn,
+                RoleSessionName=f"bedrock-agentcore-build-{int(time.time())}"
+            )
+            
+            credentials = response['Credentials']
+            return boto3.Session(
+                aws_access_key_id=credentials['AccessKeyId'],
+                aws_secret_access_key=credentials['SecretAccessKey'],
+                aws_session_token=credentials['SessionToken'],
+                region_name=region
+            )
+        except ClientError as e:
+            raise RuntimeError(f"Failed to assume build role {build_role_arn}: {e}")
+    
+    # Use current session if no build role specified
+    return boto3.Session(region_name=region)
+    
 def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region):
     """Ensure ECR repository exists (idempotent)."""
     ecr_uri = agent_config.aws.ecr_repository
@@ -395,7 +429,6 @@ def launch_bedrock_agentcore(
         build_output=output,
     )
 
-
 def _execute_codebuild_workflow(
     config_path: Path,
     agent_name: str,
@@ -406,44 +439,87 @@ def _execute_codebuild_workflow(
     env_vars: Optional[dict] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
+    
+    region = agent_config.aws.region
+    deployment_account = agent_config.aws.account
+    build_account = agent_config.aws.get_build_account()
+    ecr_account = agent_config.aws.get_ecr_account()
+    scenario = agent_config.aws.get_deployment_scenario()
+    
     log.info(
         "Starting CodeBuild ARM64 deployment for agent '%s' to account %s (%s)",
         agent_name,
         agent_config.aws.account,
         agent_config.aws.region,
     )
+    log.info("Deployment scenario: %s", scenario)
+    log.info("Deployment account: %s", deployment_account)
+    log.info("Build account: %s", build_account)
+    log.info("ECR account: %s", ecr_account)
+
+    if agent_config.aws.is_cross_account_build():
+        log.info("Cross-account CodeBuild enabled")
+        log.info("Build role: %s", agent_config.aws.get_build_role_arn())
+    
+    if agent_config.aws.is_cross_account_ecr():
+        log.info("Cross-account ECR enabled")
+        
     # Validate configuration
     errors = agent_config.validate(for_local=False)
     if errors:
         raise ValueError(f"Invalid configuration: {', '.join(errors)}")
-
-    region = agent_config.aws.region
+    
     if not region:
         raise ValueError("Region not found in configuration")
 
-    session = boto3.Session(region_name=region)
-    account_id = agent_config.aws.account  # Use existing account from config
-
+    #session = boto3.Session(region_name=region)
+    #account_id = agent_config.aws.account  # Use existing account from config
+    # Create sessions based on scenario
+    deployment_session = boto3.Session(region_name=region)
+    # Only create build session if CodeBuild is cross-account
+    if agent_config.aws.is_cross_account_build():
+        build_session = _create_build_session(agent_config, region)
+    else:
+        build_session = deployment_session
+        
     # Setup AWS resources
     log.info("Setting up AWS resources (ECR repository%s)...", "" if ecr_only else ", execution roles")
     ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region)
-    ecr_repository_arn = f"arn:aws:ecr:{region}:{account_id}:repository/{ecr_uri.split('/')[-1]}"
+
+    # Parse ECR URI to get account and repository name
+    ecr_parts = ecr_uri.split('/')
+    ecr_account = ecr_parts[0].split('.')[0]
+    ecr_repo_name = ecr_parts[-1]
+    ecr_repository_arn = f"arn:aws:ecr:{region}:{ecr_account}:repository/{ecr_repo_name}"
+    #ecr_repository_arn = f"arn:aws:ecr:{region}:{account_id}:repository/{ecr_uri.split('/')[-1]}"
 
     # Setup execution role only if not ECR-only mode
     if not ecr_only:
-        _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
+        #_ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
+        _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, deployment_account)
 
     # Prepare CodeBuild
     log.info("Preparing CodeBuild project and uploading source...")
-    codebuild_service = CodeBuildService(session)
-
+    #codebuild_service = CodeBuildService(session)
+    if scenario in ["cross_account_build_only", "full_cross_account"]:
+        # CodeBuild is cross-account: use separate sessions
+        log.info("Using cross-account CodeBuild session")
+        codebuild_service = CodeBuildService(deployment_session, build_session)
+        account_for_codebuild = build_account
+    else:
+        # CodeBuild is same-account: use deployment session only
+        log.info("Using same-account CodeBuild session")
+        codebuild_service = CodeBuildService(deployment_session)
+        account_for_codebuild = deployment_account
+        
     # Use cached CodeBuild role from config if available
     if hasattr(agent_config, "codebuild") and agent_config.codebuild.execution_role:
         log.info("Using CodeBuild role from config: %s", agent_config.codebuild.execution_role)
         codebuild_execution_role = agent_config.codebuild.execution_role
     else:
         codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
-            account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
+            #account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
+            account_id=account_for_codebuild, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
         )
 
     source_location = codebuild_service.upload_source(agent_name=agent_name)

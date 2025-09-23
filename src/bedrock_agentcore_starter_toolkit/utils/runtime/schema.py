@@ -43,6 +43,10 @@ class AWSConfig(BaseModel):
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
+    # NEW FIELDS FOR CROSS-ACCOUNT CODEBUILD
+    build_account: Optional[str] = Field(default=None, description="AWS account ID for CodeBuild operations")
+    build_role_arn: Optional[str] = Field(default=None, description="IAM role ARN to assume for CodeBuild")
+    
 
     @field_validator("account")
     @classmethod
@@ -53,7 +57,43 @@ class AWSConfig(BaseModel):
                 raise ValueError("Invalid AWS account ID")
         return v
 
-
+    def get_build_account(self) -> str:
+        """Get the account to use for CodeBuild operations."""
+        return self.build_account or self.account
+    
+    def get_build_role_arn(self) -> Optional[str]:
+        """Get the role ARN to assume for CodeBuild operations."""
+        return self.build_role_arn
+    
+    def get_ecr_account(self) -> Optional[str]:
+        """Get the account where ECR repository is located."""
+        if self.ecr_repository:
+            # Extract account from ECR URI: account.dkr.ecr.region.amazonaws.com/repo
+            return self.ecr_repository.split('.')[0]
+        return self.account
+    def is_cross_account_build(self) -> bool:
+        """Check if CodeBuild should run in a different account."""
+        return self.build_account is not None and self.build_account != self.account
+    
+    def is_cross_account_ecr(self) -> bool:
+        """Check if ECR is in a different account."""
+        ecr_account = self.get_ecr_account()
+        return ecr_account != self.account
+    
+    def get_deployment_scenario(self) -> str:
+        """Determine the deployment scenario."""
+        cross_build = self.is_cross_account_build()
+        cross_ecr = self.is_cross_account_ecr()
+        
+        if not cross_build and not cross_ecr:
+            return "same_account"
+        elif cross_build and not cross_ecr:
+            return "cross_account_build_only"
+        elif not cross_build and cross_ecr:
+            return "cross_account_ecr_only"
+        else:
+            return "full_cross_account"
+            
 class CodeBuildConfig(BaseModel):
     """CodeBuild deployment information."""
 
