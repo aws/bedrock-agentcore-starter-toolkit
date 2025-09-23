@@ -120,13 +120,13 @@ def configure_bedrock_agentcore(
             codebuild_execution_role_arn = code_build_execution_role
         else:
             codebuild_execution_role_arn = f"arn:aws:iam::{account_id}:role/{code_build_execution_role}"
-        
+
         if verbose:
             log.debug("Using separate CodeBuild execution role: %s", codebuild_execution_role_arn)
     else:
         # No separate CodeBuild role provided - use the same as execution_role
         codebuild_execution_role_arn = execution_role_arn
-        
+
         if verbose and execution_role_arn:
             log.debug("Using same role for CodeBuild: %s", codebuild_execution_role_arn)
 

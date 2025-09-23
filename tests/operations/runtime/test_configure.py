@@ -371,9 +371,11 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
+
             class MockContainerRuntimeClass:
                 DEFAULT_RUNTIME = "auto"
                 DEFAULT_PLATFORM = "linux/arm64"
@@ -397,9 +399,10 @@ def handler(payload):
 
                 # Load and verify the configuration
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 config = load_config(result.config_path)
                 agent_config = config.get_agent_config("test_agent")
-                
+
                 assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
                 assert agent_config.codebuild.execution_role == "arn:aws:iam::123456789012:role/CodeBuildRole"
 
@@ -481,9 +484,11 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
+
             class MockContainerRuntimeClass:
                 DEFAULT_RUNTIME = "auto"
                 DEFAULT_PLATFORM = "linux/arm64"
@@ -506,9 +511,10 @@ def handler(payload):
 
                 # Load and verify the configuration
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 config = load_config(result.config_path)
                 agent_config = config.get_agent_config("test_agent")
-                
+
                 assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
                 assert agent_config.codebuild.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
 
