@@ -58,7 +58,7 @@ def create_test_lambda(session: Session, logger: logging.Logger, gateway_role_ar
     try:
         response = lambda_client.create_function(
             FunctionName=function_name,
-            Runtime="python3.9",
+            Runtime="python3.13",
             Role=role_arn,
             Handler="lambda_function.lambda_handler",
             Code={"ZipFile": zip_buffer.read()},
