@@ -375,8 +375,9 @@ def get_or_create_codebuild_execution_role(
                     },
                     {
                         "Effect": "Allow",
-                        "Action": ["s3:GetObject"],
-                        "Resource": f"arn:aws:s3:::{source_bucket_name}/*",
+                        "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+                        "Resource": [f"arn:aws:s3:::{source_bucket_name}", f"arn:aws:s3:::{source_bucket_name}/*"],
+                        "Condition": {"StringEquals": {"s3:ResourceAccount": account_id}},
                     },
                 ],
             }
