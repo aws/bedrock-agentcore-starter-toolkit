@@ -1,6 +1,7 @@
 """Tests for ConfigurationManager."""
 
 from unittest.mock import Mock, patch
+
 import pytest
 
 from bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager import ConfigurationManager
@@ -134,7 +135,7 @@ class TestConfigurationManager:
             # Mock user accepting configuration, then configuring headers
             mock_prompt.side_effect = [
                 "yes",  # First call: "Configure request header allowlist?"
-                "Authorization,X-Custom-Header"  # Second call: "Enter allowed request headers"
+                "Authorization,X-Custom-Header",  # Second call: "Enter allowed request headers"
             ]
 
             result = config_manager.prompt_request_header_allowlist()
@@ -161,7 +162,7 @@ class TestConfigurationManager:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
             ) as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success"),
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
         ):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -169,7 +170,7 @@ class TestConfigurationManager:
             # Mock user accepting existing configuration
             mock_prompt.side_effect = [
                 "yes",  # First call: "Configure request header allowlist?"
-                "Authorization,X-Existing-Header"  # Second call: headers (using existing)
+                "Authorization,X-Existing-Header",  # Second call: headers (using existing)
             ]
 
             result = config_manager.prompt_request_header_allowlist()
@@ -220,7 +221,7 @@ class TestConfigurationManager:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
             ) as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success"),
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
         ):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -234,10 +235,7 @@ class TestConfigurationManager:
             expected = {"requestHeaderAllowlist": ["Authorization", "X-Existing-Header"]}
             assert result == expected
             # Should use existing headers as default
-            mock_prompt.assert_called_once_with(
-                "Enter allowed request headers (comma-separated)", 
-                existing_headers
-            )
+            mock_prompt.assert_called_once_with("Enter allowed request headers (comma-separated)", existing_headers)
 
     def test_configure_request_header_allowlist_with_whitespace(self, tmp_path):
         """Test _configure_request_header_allowlist handles whitespace properly."""
@@ -246,7 +244,7 @@ class TestConfigurationManager:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
             ) as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success"),
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
         ):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -262,7 +260,7 @@ class TestConfigurationManager:
     def test_configure_request_header_allowlist_empty_input_error(self, tmp_path):
         """Test _configure_request_header_allowlist handles empty input properly."""
         import typer
-        
+
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
             patch(
@@ -282,12 +280,14 @@ class TestConfigurationManager:
             with pytest.raises(typer.Exit):
                 config_manager._configure_request_header_allowlist()
 
-            mock_error.assert_called_once_with("At least one request header must be specified for allowlist configuration")
+            mock_error.assert_called_once_with(
+                "At least one request header must be specified for allowlist configuration"
+            )
 
     def test_configure_request_header_allowlist_only_commas_error(self, tmp_path):
         """Test _configure_request_header_allowlist handles input with only commas."""
         import typer
-        
+
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
             patch(
@@ -316,7 +316,7 @@ class TestConfigurationManager:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
             ) as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success"),
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
         ):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -330,7 +330,4 @@ class TestConfigurationManager:
             expected = {"requestHeaderAllowlist": ["Authorization", "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"]}
             assert result == expected
             # Should use default headers when no existing ones provided
-            mock_prompt.assert_called_once_with(
-                "Enter allowed request headers (comma-separated)", 
-                default_headers
-            )
+            mock_prompt.assert_called_once_with("Enter allowed request headers (comma-separated)", default_headers)

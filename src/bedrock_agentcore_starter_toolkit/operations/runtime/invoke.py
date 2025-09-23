@@ -95,7 +95,11 @@ def invoke_bedrock_agentcore(
             # Use existing boto3 client
             bedrock_agentcore_client = BedrockAgentCoreClient(region)
             response = bedrock_agentcore_client.invoke_endpoint(
-                agent_arn=agent_arn, payload=payload_str, session_id=session_id, user_id=user_id, custom_headers=custom_headers
+                agent_arn=agent_arn,
+                payload=payload_str,
+                session_id=session_id,
+                user_id=user_id,
+                custom_headers=custom_headers,
             )
 
     return InvokeResult(

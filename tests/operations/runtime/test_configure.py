@@ -414,13 +414,16 @@ def handler(payload):
 
                 # Load and verify the configuration contains request headers
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 loaded_config = load_config(config_path)
                 agent_config = loaded_config.get_agent_config("test_agent")
-                
+
                 assert agent_config.request_header_configuration is not None
                 assert "requestHeaderAllowlist" in agent_config.request_header_configuration
                 assert agent_config.request_header_configuration["requestHeaderAllowlist"] == [
-                    "Authorization", "X-Custom-Header", "X-Test-Header"
+                    "Authorization",
+                    "X-Custom-Header",
+                    "X-Test-Header",
                 ]
 
         finally:
@@ -466,12 +469,14 @@ def handler(payload):
                 # Verify config file was created
                 config_path = tmp_path / ".bedrock_agentcore.yaml"
                 assert config_path.exists()
+                assert result.config_path is not None
 
                 # Load and verify the configuration has None for request headers
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 loaded_config = load_config(config_path)
                 agent_config = loaded_config.get_agent_config("test_agent")
-                
+
                 assert agent_config.request_header_configuration is None
 
         finally:
@@ -517,12 +522,14 @@ def handler(payload):
                 # Verify config file was created
                 config_path = tmp_path / ".bedrock_agentcore.yaml"
                 assert config_path.exists()
+                assert result.config_path is not None
 
                 # Load and verify the configuration has empty dict for request headers
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 loaded_config = load_config(config_path)
                 agent_config = loaded_config.get_agent_config("test_agent")
-                
+
                 assert agent_config.request_header_configuration == {}
 
         finally:
@@ -559,9 +566,7 @@ def handler(payload):
             ):
                 # Mock the logger to capture verbose logging
                 with patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log:
-                    request_header_config = {
-                        "requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]
-                    }
+                    request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]}
 
                     result = configure_bedrock_agentcore(
                         agent_name="test_agent",
@@ -580,11 +585,9 @@ def handler(payload):
                     # Verify that request header configuration was logged
                     debug_calls = [call for call in mock_log.debug.call_args_list]
                     assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
-                    
+
                     # Check that request header configuration appears in one of the debug calls
-                    request_header_logged = any(
-                        "Request header configuration" in str(call) for call in debug_calls
-                    )
+                    request_header_logged = any("Request header configuration" in str(call) for call in debug_calls)
                     assert request_header_logged, "Expected request header configuration to be logged in verbose mode"
 
         finally:
@@ -625,13 +628,9 @@ def handler(payload):
                         "Authorization",
                         "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*",
                         "Content-Type",
-                        "User-Agent"
+                        "User-Agent",
                     ],
-                    "additionalSettings": {
-                        "maxHeaderSize": 8192,
-                        "caseSensitive": False,
-                        "allowWildcards": True
-                    }
+                    "additionalSettings": {"maxHeaderSize": 8192, "caseSensitive": False, "allowWildcards": True},
                 }
 
                 result = configure_bedrock_agentcore(
@@ -644,18 +643,23 @@ def handler(payload):
                 # Verify config file was created
                 config_path = tmp_path / ".bedrock_agentcore.yaml"
                 assert config_path.exists()
+                assert result.config_path is not None
 
                 # Load and verify the complex configuration is preserved
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 loaded_config = load_config(config_path)
                 agent_config = loaded_config.get_agent_config("test_agent")
-                
+
                 assert agent_config.request_header_configuration is not None
                 assert "requestHeaderAllowlist" in agent_config.request_header_configuration
                 assert len(agent_config.request_header_configuration["requestHeaderAllowlist"]) == 4
                 assert "Authorization" in agent_config.request_header_configuration["requestHeaderAllowlist"]
-                assert "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*" in agent_config.request_header_configuration["requestHeaderAllowlist"]
-                
+                assert (
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
+                    in agent_config.request_header_configuration["requestHeaderAllowlist"]
+                )
+
                 # Verify additional settings are preserved
                 assert "additionalSettings" in agent_config.request_header_configuration
                 assert agent_config.request_header_configuration["additionalSettings"]["maxHeaderSize"] == 8192
@@ -698,13 +702,11 @@ def handler(payload):
                     "customJWTAuthorizer": {
                         "discoveryUrl": "https://example.com/.well-known/openid_configuration",
                         "allowedClients": ["client1", "client2"],
-                        "allowedAudience": ["aud1", "aud2"]
+                        "allowedAudience": ["aud1", "aud2"],
                     }
                 }
-                
-                request_header_config = {
-                    "requestHeaderAllowlist": ["Authorization", "X-OAuth-Token", "X-Client-ID"]
-                }
+
+                request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-OAuth-Token", "X-Client-ID"]}
 
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -717,21 +719,28 @@ def handler(payload):
                 # Verify config file was created
                 config_path = tmp_path / ".bedrock_agentcore.yaml"
                 assert config_path.exists()
+                assert result.config_path is not None
 
                 # Load and verify both configurations are preserved
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
                 loaded_config = load_config(config_path)
                 agent_config = loaded_config.get_agent_config("test_agent")
-                
+
                 # Verify OAuth configuration
                 assert agent_config.authorizer_configuration is not None
                 assert "customJWTAuthorizer" in agent_config.authorizer_configuration
-                assert agent_config.authorizer_configuration["customJWTAuthorizer"]["discoveryUrl"] == "https://example.com/.well-known/openid_configuration"
-                
+                assert (
+                    agent_config.authorizer_configuration["customJWTAuthorizer"]["discoveryUrl"]
+                    == "https://example.com/.well-known/openid_configuration"
+                )
+
                 # Verify request header configuration
                 assert agent_config.request_header_configuration is not None
                 assert agent_config.request_header_configuration["requestHeaderAllowlist"] == [
-                    "Authorization", "X-OAuth-Token", "X-Client-ID"
+                    "Authorization",
+                    "X-OAuth-Token",
+                    "X-Client-ID",
                 ]
 
         finally:

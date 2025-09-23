@@ -115,7 +115,7 @@ class TestBedrockAgentCoreRuntime:
 
         custom_headers = {
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123",
         }
 
         # Mock the event system - use dataplane client for invocations
@@ -139,8 +139,8 @@ class TestBedrockAgentCoreRuntime:
 
         # Verify single event handler was registered for all custom headers
         assert mock_events.register_first.call_count == 1
-        
-        # Verify single unregister was called for cleanup  
+
+        # Verify single unregister was called for cleanup
         assert mock_events.unregister.call_count == 1
 
         # Verify response structure
@@ -197,9 +197,7 @@ class TestBedrockAgentCoreRuntime:
         """Test custom headers event handlers are cleaned up even when invocation fails."""
         client = BedrockAgentCoreClient("us-west-2")
 
-        custom_headers = {
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"
-        }
+        custom_headers = {"X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"}
 
         # Mock the event system - use dataplane client for invocations
         mock_events = Mock()
@@ -222,7 +220,6 @@ class TestBedrockAgentCoreRuntime:
         mock_events.register_first.assert_called_once()
         mock_events.unregister.assert_called_once()
 
-
     def test_invoke_endpoint_multiple_custom_headers(self, mock_boto3_clients):
         """Test agent invocation with multiple custom headers."""
         client = BedrockAgentCoreClient("us-west-2")
@@ -231,7 +228,7 @@ class TestBedrockAgentCoreRuntime:
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "user123",
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "session456",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true",
         }
 
         # Mock the event system - use dataplane client for invocations
@@ -724,7 +721,7 @@ class TestLocalBedrockAgentCoreClient:
 
         custom_headers = {
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "local",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true",
         }
 
         # Mock successful HTTP response
@@ -743,10 +740,10 @@ class TestLocalBedrockAgentCoreClient:
             ) as mock_handle,
         ):
             result = client.invoke_endpoint(
-                session_id="test-session-123", 
-                payload='{"message": "hello"}', 
+                session_id="test-session-123",
+                payload='{"message": "hello"}',
                 workload_access_token="test-token-456",
-                custom_headers=custom_headers
+                custom_headers=custom_headers,
             )
 
             # Verify request was made correctly
@@ -764,7 +761,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers["Content-Type"] == "application/json"
             assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
             assert headers[SESSION_HEADER] == "test-session-123"
-            
+
             # Verify custom headers were added
             assert headers["X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context"] == "local"
             assert headers["X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug"] == "true"
@@ -793,10 +790,10 @@ class TestLocalBedrockAgentCoreClient:
             ) as mock_handle,
         ):
             result = client.invoke_endpoint(
-                session_id="test-session-123", 
-                payload='{"message": "hello"}', 
+                session_id="test-session-123",
+                payload='{"message": "hello"}',
                 workload_access_token="test-token-456",
-                custom_headers={}
+                custom_headers={},
             )
 
             # Verify request was made correctly
@@ -810,7 +807,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers["Content-Type"] == "application/json"
             assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
             assert headers[SESSION_HEADER] == "test-session-123"
-            
+
             # Verify no custom headers were added
             custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
@@ -839,10 +836,10 @@ class TestLocalBedrockAgentCoreClient:
             ) as mock_handle,
         ):
             result = client.invoke_endpoint(
-                session_id="test-session-123", 
-                payload='{"message": "hello"}', 
+                session_id="test-session-123",
+                payload='{"message": "hello"}',
                 workload_access_token="test-token-456",
-                custom_headers=None
+                custom_headers=None,
             )
 
             # Verify request was made correctly
@@ -856,7 +853,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers["Content-Type"] == "application/json"
             assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
             assert headers[SESSION_HEADER] == "test-session-123"
-            
+
             # Verify no custom headers were added
             custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
