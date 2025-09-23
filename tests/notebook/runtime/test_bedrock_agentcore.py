@@ -83,6 +83,33 @@ def handler(payload):
             assert "boto3" in content
             assert "pandas" in content
 
+    def test_configure_with_code_build_execution_role(self, tmp_path):
+        """Test configuration with CodeBuild execution role."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.configure_bedrock_agentcore"
+            ) as mock_configure,
+        ):
+            mock_result = Mock()
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_configure.return_value = mock_result
+
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="ExecutionRole",
+                code_build_execution_role="CodeBuildRole",
+            )
+
+            # Verify configure was called with CodeBuild execution role
+            mock_configure.assert_called_once()
+            args, kwargs = mock_configure.call_args
+            assert kwargs["code_build_execution_role"] == "CodeBuildRole"
+
     def test_launch_without_config(self):
         """Test launch fails when not configured."""
         bedrock_agentcore = Runtime()
