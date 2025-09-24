@@ -49,6 +49,7 @@ dependencies = [
     "openapi-spec-validator>=0.7.2",
     "py-openapi-schema-to-json-schema>=0.0.3",
     "strands-agents>=1.7.1",
+    "strands>=0.1.0",
 ]
 
 [project.scripts]
