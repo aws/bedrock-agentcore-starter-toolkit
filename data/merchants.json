@@ -1,0 +1,26 @@
+{
+  "normal_merchants": [
+    "WALMART",
+    "AMAZON", 
+    "STARBUCKS",
+    "SHELL",
+    "MCDONALDS",
+    "TARGET",
+    "COSTCO",
+    "UBER",
+    "NETFLIX",
+    "SPOTIFY",
+    "HOME_DEPOT",
+    "BEST_BUY",
+    "KROGER",
+    "CVS_PHARMACY",
+    "WALGREENS"
+  ],
+  "suspicious_merchants": [
+    "UNKNOWN_MERCHANT",
+    "CASH_ADVANCE",
+    "OFFSHORE_GAMING",
+    "CRYPTO_EXCHANGE",
+    "PAYDAY_LOANS"
+  ]
+}

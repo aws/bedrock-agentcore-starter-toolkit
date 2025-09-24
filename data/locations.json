@@ -1,0 +1,21 @@
+{
+  "safe_locations": [
+    "NEW_YORK_NY",
+    "LOS_ANGELES_CA", 
+    "CHICAGO_IL",
+    "HOUSTON_TX",
+    "PHOENIX_AZ",
+    "PHILADELPHIA_PA",
+    "SAN_ANTONIO_TX",
+    "SAN_DIEGO_CA",
+    "DALLAS_TX",
+    "SAN_JOSE_CA"
+  ],
+  "risky_locations": [
+    "FOREIGN_COUNTRY",
+    "HIGH_RISK_COUNTRY",
+    "SANCTIONED_REGION",
+    "UNKNOWN_LOCATION",
+    "OFFSHORE_TERRITORY"
+  ]
+}

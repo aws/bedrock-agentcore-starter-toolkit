@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from bedrock_agentcore import BedrockAgentCoreApp
 from strands import Agent
+from currency_converter import CurrencyConverter
 
 load_dotenv()
 
@@ -24,12 +25,14 @@ class Transaction:
     timestamp: datetime
     location: str
     card_type: str
+    currency: str = "USD"
     
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "user_id": self.user_id,
             "amount": self.amount,
+            "currency": self.currency,
             "merchant": self.merchant,
             "category": self.category,
             "timestamp": self.timestamp.isoformat(),
@@ -60,6 +63,7 @@ class FraudDetectionAgent:
         self.agent = Agent(model="us.anthropic.claude-3-haiku-20240307-v1:0")
         self.criteria = FraudCriteria()
         self.transaction_history: List[Transaction] = []
+        self.currency_converter = CurrencyConverter()
         
     def update_criteria(self, new_criteria: Dict[str, Any]):
         """Admin interface to update fraud criteria"""
@@ -75,9 +79,21 @@ class FraudDetectionAgent:
         flags = []
         risk_score = 0
         
-        # Amount threshold check
-        if transaction.amount > self.criteria.max_amount_threshold:
-            flags.append(f"High amount: ${transaction.amount}")
+        # Currency-specific analysis
+        currency_analysis = self.currency_converter.analyze_currency_risk(
+            transaction.amount, 
+            transaction.currency
+        )
+        risk_score += currency_analysis['risk_score']
+        flags.extend(currency_analysis['flags'])
+        
+        # Convert to USD for consistent threshold checking
+        usd_amount = currency_analysis['usd_equivalent']
+        
+        # Amount threshold check (in USD)
+        if usd_amount > self.criteria.max_amount_threshold:
+            formatted_amount = self.currency_converter.format_amount(transaction.amount, transaction.currency)
+            flags.append(f"High amount: {formatted_amount} (${usd_amount} USD)")
             risk_score += 30
             
         # Suspicious merchant check
@@ -123,11 +139,16 @@ class FraudDetectionAgent:
     def _ai_fraud_analysis(self, transaction: Transaction, recent_transactions: List[Transaction]) -> str:
         """Use AI to analyze transaction patterns"""
         
+        # Format amount with currency
+        formatted_amount = self.currency_converter.format_amount(transaction.amount, transaction.currency)
+        usd_equivalent = self.currency_converter.convert_to_usd(transaction.amount, transaction.currency)
+        
         prompt = f"""
-        Analyze this transaction for fraud indicators:
+        Analyze this multi-currency transaction for fraud indicators:
         
         Current Transaction:
-        - Amount: ${transaction.amount}
+        - Amount: {formatted_amount} (${usd_equivalent:.2f} USD)
+        - Currency: {transaction.currency}
         - Merchant: {transaction.merchant}
         - Category: {transaction.category}
         - Location: {transaction.location}
@@ -138,11 +159,13 @@ class FraudDetectionAgent:
         
         Look for:
         1. Unusual spending patterns
-        2. Geographic anomalies
+        2. Geographic anomalies  
         3. Time-based irregularities
         4. Merchant category deviations
+        5. Currency risk factors (high-risk currencies, large cross-currency amounts)
+        6. Currency-location mismatches
         
-        Provide a brief risk assessment (1-2 sentences).
+        Provide a brief risk assessment (1-2 sentences) considering currency factors.
         """
         
         try:
@@ -159,7 +182,9 @@ class FraudDetectionAgent:
             
         formatted = []
         for t in transactions[-5:]:  # Last 5 transactions
-            formatted.append(f"${t.amount} at {t.merchant} ({t.category}) - {t.timestamp}")
+            amount_str = self.currency_converter.format_amount(t.amount, t.currency)
+            usd_equiv = self.currency_converter.convert_to_usd(t.amount, t.currency)
+            formatted.append(f"{amount_str} (${usd_equiv:.2f}) at {t.merchant} ({t.category}) - {t.timestamp}")
         return "\n".join(formatted)
     
     def process_transaction_stream(self, transaction: Transaction) -> Dict[str, Any]:
@@ -202,7 +227,8 @@ def fraud_detection_handler(payload):
             category=transaction_data.get("category", "OTHER"),
             timestamp=datetime.fromisoformat(transaction_data.get("timestamp", datetime.now().isoformat())),
             location=transaction_data.get("location", "UNKNOWN"),
-            card_type=transaction_data.get("card_type", "DEBIT")
+            card_type=transaction_data.get("card_type", "DEBIT"),
+            currency=transaction_data.get("currency", "USD")
         )
         
         # Process transaction

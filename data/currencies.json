@@ -1,0 +1,137 @@
+{
+  "base_currency": "USD",
+  "supported_currencies": {
+    "USD": {
+      "name": "US Dollar",
+      "symbol": "$",
+      "exchange_rate": 1.0,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 10000],
+      "high_amount_threshold": 5000
+    },
+    "EUR": {
+      "name": "Euro",
+      "symbol": "€",
+      "exchange_rate": 0.92,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 9200],
+      "high_amount_threshold": 4600
+    },
+    "GBP": {
+      "name": "British Pound",
+      "symbol": "£",
+      "exchange_rate": 0.79,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 7900],
+      "high_amount_threshold": 3950
+    },
+    "JPY": {
+      "name": "Japanese Yen",
+      "symbol": "¥",
+      "exchange_rate": 149.50,
+      "risk_level": "medium",
+      "typical_transaction_range": [100, 1495000],
+      "high_amount_threshold": 747500
+    },
+    "INR": {
+      "name": "Indian Rupee",
+      "symbol": "₹",
+      "exchange_rate": 83.25,
+      "risk_level": "medium",
+      "typical_transaction_range": [10, 832500],
+      "high_amount_threshold": 416250
+    },
+    "KES": {
+      "name": "Kenyan Shilling",
+      "symbol": "KSh",
+      "exchange_rate": 129.50,
+      "risk_level": "high",
+      "typical_transaction_range": [50, 1295000],
+      "high_amount_threshold": 647500
+    },
+    "UGX": {
+      "name": "Ugandan Shilling",
+      "symbol": "USh",
+      "exchange_rate": 3750.00,
+      "risk_level": "high",
+      "typical_transaction_range": [1000, 37500000],
+      "high_amount_threshold": 18750000
+    },
+    "TZS": {
+      "name": "Tanzanian Shilling",
+      "symbol": "TSh",
+      "exchange_rate": 2500.00,
+      "risk_level": "high",
+      "typical_transaction_range": [500, 25000000],
+      "high_amount_threshold": 12500000
+    },
+    "NGN": {
+      "name": "Nigerian Naira",
+      "symbol": "₦",
+      "exchange_rate": 775.00,
+      "risk_level": "high",
+      "typical_transaction_range": [100, 7750000],
+      "high_amount_threshold": 3875000
+    },
+    "CAD": {
+      "name": "Canadian Dollar",
+      "symbol": "C$",
+      "exchange_rate": 1.35,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 13500],
+      "high_amount_threshold": 6750
+    },
+    "AUD": {
+      "name": "Australian Dollar",
+      "symbol": "A$",
+      "exchange_rate": 1.52,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 15200],
+      "high_amount_threshold": 7600
+    },
+    "CHF": {
+      "name": "Swiss Franc",
+      "symbol": "CHF",
+      "exchange_rate": 0.88,
+      "risk_level": "low",
+      "typical_transaction_range": [1, 8800],
+      "high_amount_threshold": 4400
+    },
+    "CNY": {
+      "name": "Chinese Yuan",
+      "symbol": "¥",
+      "exchange_rate": 7.25,
+      "risk_level": "medium",
+      "typical_transaction_range": [5, 72500],
+      "high_amount_threshold": 36250
+    },
+    "BRL": {
+      "name": "Brazilian Real",
+      "symbol": "R$",
+      "exchange_rate": 5.15,
+      "risk_level": "medium",
+      "typical_transaction_range": [5, 51500],
+      "high_amount_threshold": 25750
+    },
+    "ZAR": {
+      "name": "South African Rand",
+      "symbol": "R",
+      "exchange_rate": 18.75,
+      "risk_level": "medium",
+      "typical_transaction_range": [10, 187500],
+      "high_amount_threshold": 93750
+    }
+  },
+  "currency_risk_rules": {
+    "cross_currency_threshold": 1000,
+    "high_risk_currency_multiplier": 1.5,
+    "currency_conversion_fee_threshold": 50,
+    "suspicious_currency_pairs": [
+      ["USD", "KES"],
+      ["USD", "UGX"],
+      ["USD", "TZS"],
+      ["EUR", "NGN"],
+      ["GBP", "UGX"]
+    ]
+  }
+}

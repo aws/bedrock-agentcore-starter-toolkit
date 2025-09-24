@@ -80,8 +80,8 @@ def test_fraud_detection():
     
     # Admin updates criteria
     fraud_agent.update_criteria({
-        "max_amount_threshold": 1000.0,  # Lower threshold
-        "max_transactions_per_hour": 3   # Stricter velocity
+        "max_amount_threshold": 1000.0,  # limit or threshold
+        "max_transactions_per_hour": 2   # Stricter velocity
     })
     
     print("Updated max amount threshold:", fraud_agent.criteria.max_amount_threshold)

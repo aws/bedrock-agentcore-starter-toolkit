@@ -1,0 +1,13 @@
+user_id,name,account_type,credit_limit,risk_profile,location
+user_0001,John Smith,premium,10000,low,NEW_YORK_NY
+user_0002,Jane Doe,standard,5000,low,LOS_ANGELES_CA
+user_0003,Bob Johnson,premium,15000,medium,CHICAGO_IL
+user_0004,Alice Brown,standard,3000,low,HOUSTON_TX
+user_0005,Charlie Wilson,basic,1000,high,PHOENIX_AZ
+user_0006,Diana Davis,premium,20000,low,PHILADELPHIA_PA
+user_0007,Eve Miller,standard,7500,medium,SAN_ANTONIO_TX
+user_0008,Frank Garcia,basic,2000,high,SAN_DIEGO_CA
+user_0009,Grace Lee,premium,12000,low,DALLAS_TX
+user_0010,Henry Wang,standard,6000,medium,SAN_JOSE_CA
+user_0011,Ivy Chen,suspicious,500,high,UNKNOWN_LOCATION
+user_0012,Jack Taylor,blocked,0,high,FOREIGN_COUNTRY

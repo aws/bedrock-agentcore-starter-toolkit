@@ -1,0 +1,54 @@
+{
+  "categories": [
+    {
+      "name": "GROCERY",
+      "typical_amount_range": [10, 200],
+      "risk_level": "low"
+    },
+    {
+      "name": "GAS",
+      "typical_amount_range": [20, 100],
+      "risk_level": "low"
+    },
+    {
+      "name": "RESTAURANT",
+      "typical_amount_range": [15, 150],
+      "risk_level": "low"
+    },
+    {
+      "name": "ENTERTAINMENT",
+      "typical_amount_range": [25, 300],
+      "risk_level": "medium"
+    },
+    {
+      "name": "SHOPPING",
+      "typical_amount_range": [30, 500],
+      "risk_level": "medium"
+    },
+    {
+      "name": "SUBSCRIPTION",
+      "typical_amount_range": [5, 50],
+      "risk_level": "low"
+    },
+    {
+      "name": "TRANSPORT",
+      "typical_amount_range": [10, 100],
+      "risk_level": "low"
+    },
+    {
+      "name": "CASH_ADVANCE",
+      "typical_amount_range": [100, 2000],
+      "risk_level": "high"
+    },
+    {
+      "name": "GAMBLING",
+      "typical_amount_range": [50, 5000],
+      "risk_level": "high"
+    },
+    {
+      "name": "OTHER",
+      "typical_amount_range": [1, 1000],
+      "risk_level": "medium"
+    }
+  ]
+}

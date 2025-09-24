@@ -7,43 +7,64 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 import requests
+from data_loader import DataLoader
 
 fake = Faker()
 
 class TransactionGenerator:
-    """Generate realistic bank transactions"""
+    """Generate realistic bank transactions using file data"""
     
     def __init__(self):
-        self.merchants = [
-            "WALMART", "AMAZON", "STARBUCKS", "SHELL", "MCDONALDS",
-            "TARGET", "COSTCO", "UBER", "NETFLIX", "SPOTIFY",
-            "UNKNOWN_MERCHANT",  # Suspicious
-            "CASH_ADVANCE"       # Suspicious
-        ]
+        # Load data from files
+        self.data_loader = DataLoader()
         
-        self.categories = [
-            "GROCERY", "GAS", "RESTAURANT", "ENTERTAINMENT", "SHOPPING",
-            "SUBSCRIPTION", "TRANSPORT", "OTHER"
-        ]
+        # Use loaded data instead of hardcoded lists
+        self.merchants = self.data_loader.get_all_merchants()
+        self.normal_merchants = self.data_loader.get_normal_merchants()
+        self.suspicious_merchants = self.data_loader.get_suspicious_merchants()
         
-        self.locations = [
-            "NEW_YORK", "LOS_ANGELES", "CHICAGO", "HOUSTON", "PHOENIX",
-            "FOREIGN",           # Suspicious
-            "HIGH_RISK_COUNTRY"  # Suspicious
-        ]
+        self.categories = self.data_loader.get_category_names()
         
-        self.users = [f"user_{i:04d}" for i in range(1, 101)]  # 100 users
+        self.locations = self.data_loader.get_all_locations()
+        self.safe_locations = self.data_loader.get_safe_locations()
+        self.risky_locations = self.data_loader.get_risky_locations()
+        
+        self.users = self.data_loader.get_all_user_ids()
+        
+        print(f"🔄 Transaction Generator initialized with file data:")
+        print(f"  📊 {len(self.merchants)} merchants loaded")
+        print(f"  👥 {len(self.users)} users loaded")
     
     def generate_normal_transaction(self) -> dict:
-        """Generate a normal transaction"""
+        """Generate a normal transaction using file data"""
+        user_id = random.choice(self.users)
+        user_profile = self.data_loader.get_user_profile(user_id)
+        category = random.choice(self.categories)
+        
+        # Get category-specific amount range
+        category_info = self.data_loader.get_category_by_name(category)
+        if category_info and category_info['risk_level'] != 'high':
+            min_amt, max_amt = category_info['typical_amount_range']
+            amount = round(random.uniform(min_amt, max_amt), 2)
+        else:
+            amount = round(random.uniform(5.0, 500.0), 2)
+        
+        # Choose currency based on location
+        currency = self._get_currency_for_location(user_profile.location if user_profile else random.choice(self.safe_locations))
+        
+        # Convert amount to chosen currency if not USD
+        if currency != "USD":
+            amount = self.data_loader.currency_converter.convert_from_usd(amount, currency)
+        
         return {
             "id": fake.uuid4(),
-            "user_id": random.choice(self.users),
-            "amount": round(random.uniform(5.0, 500.0), 2),
-            "merchant": random.choice(self.merchants[:-2]),  # Exclude suspicious ones
-            "category": random.choice(self.categories),
+            "user_id": user_id,
+            "amount": round(amount, 2),
+            "currency": currency,
+            "merchant": random.choice(self.normal_merchants),
+            "category": category,
             "timestamp": datetime.now().isoformat(),
-            "location": random.choice(self.locations[:-2]),  # Exclude suspicious ones
+            "location": user_profile.location if user_profile else random.choice(self.safe_locations),
             "card_type": random.choice(["DEBIT", "CREDIT"])
         }
     
@@ -60,14 +81,38 @@ class TransactionGenerator:
         if fraud_type == "high_amount":
             transaction["amount"] = round(random.uniform(5000.0, 50000.0), 2)
         elif fraud_type == "suspicious_merchant":
-            transaction["merchant"] = random.choice(self.merchants[-2:])
+            transaction["merchant"] = random.choice(self.suspicious_merchants)
         elif fraud_type == "unusual_location":
-            transaction["location"] = random.choice(self.locations[-2:])
+            transaction["location"] = random.choice(self.risky_locations)
         elif fraud_type == "foreign_location":
-            transaction["location"] = "FOREIGN"
+            transaction["location"] = "FOREIGN_COUNTRY"
             transaction["amount"] = round(random.uniform(1000.0, 10000.0), 2)
+            # Use high-risk currency for foreign transactions
+            transaction["currency"] = random.choice(["KES", "UGX", "NGN", "TZS"])
             
         return transaction
+    
+    def _get_currency_for_location(self, location: str) -> str:
+        """Get appropriate currency based on location"""
+        location_currency_map = {
+            "NEW_YORK_NY": "USD",
+            "LOS_ANGELES_CA": "USD", 
+            "CHICAGO_IL": "USD",
+            "HOUSTON_TX": "USD",
+            "PHOENIX_AZ": "USD",
+            "PHILADELPHIA_PA": "USD",
+            "SAN_ANTONIO_TX": "USD",
+            "SAN_DIEGO_CA": "USD",
+            "DALLAS_TX": "USD",
+            "SAN_JOSE_CA": "USD",
+            "FOREIGN_COUNTRY": random.choice(["EUR", "GBP", "JPY"]),
+            "HIGH_RISK_COUNTRY": random.choice(["KES", "UGX", "TZS", "NGN"]),
+            "SANCTIONED_REGION": random.choice(["INR", "CNY"]),
+            "OFFSHORE_TERRITORY": random.choice(["EUR", "CHF"]),
+            "UNKNOWN_LOCATION": random.choice(["USD", "EUR", "GBP"])
+        }
+        
+        return location_currency_map.get(location, "USD")
     
     def generate_transaction_stream(self, duration_minutes: int = 60, 
                                   transactions_per_minute: int = 10,
@@ -107,7 +152,13 @@ class TransactionGenerator:
             
             # If agent is running as a service, send HTTP request
             # For now, just print the transaction
-            print(f"💳 Transaction: ${transaction['amount']} at {transaction['merchant']}")
+            currency = transaction.get('currency', 'USD')
+            converter = self.data_loader.currency_converter if hasattr(self, 'data_loader') else None
+            if converter:
+                formatted_amount = converter.format_amount(transaction['amount'], currency)
+            else:
+                formatted_amount = f"{transaction['amount']} {currency}"
+            print(f"💳 Transaction: {formatted_amount} at {transaction['merchant']}")
             
             # Uncomment if agent is running as HTTP service:
             # response = requests.post("http://localhost:8080/invoke", json=payload)
