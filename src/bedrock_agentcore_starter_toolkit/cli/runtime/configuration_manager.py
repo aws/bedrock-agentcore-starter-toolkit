@@ -145,3 +145,72 @@ class ConfigurationManager:
 
         _print_success("OAuth authorizer configuration created")
         return config
+
+    def prompt_memory_type(self) -> tuple[bool, bool]:
+        """Prompt user for memory configuration preference.
+
+        Returns:
+            Tuple of (enable_memory, enable_ltm)
+        """
+        console.print("\\n🧠 [cyan]Memory Configuration[/cyan]")
+        console.print("Short-term memory stores conversation within sessions.")
+        console.print("Long-term memory extracts preferences and facts across sessions.")
+        console.print()
+
+        # First ask if they want memory at all
+        enable_memory_response = _prompt_with_default("Enable memory for your agent? (yes/no)", "yes").strip().lower()
+
+        enable_memory = enable_memory_response in ["yes", "y"]
+
+        if not enable_memory:
+            _print_success("Memory disabled")
+            return False, False
+
+        # If memory is enabled, ask about long-term memory
+        console.print("\\n[dim]Long-term memory extracts:[/dim]")
+        console.print("  • User preferences (e.g., 'I prefer Python')")
+        console.print("  • Semantic facts (e.g., 'My birthday is in January')")
+        console.print("  • Session summaries")
+        console.print()
+
+        enable_ltm_response = _prompt_with_default("Enable long-term memory extraction? (yes/no)", "no").strip().lower()
+
+        enable_ltm = enable_ltm_response in ["yes", "y"]
+
+        if enable_ltm:
+            _print_success("Long-term memory will be configured")
+        else:
+            _print_success("Using short-term memory only")
+
+        return enable_memory, enable_ltm
+
+    def prompt_ltm_choice(self) -> bool:
+        """Prompt user for long-term memory preference.
+
+        STM is always enabled by default.
+
+        Returns:
+            bool: True if LTM should be enabled, False otherwise
+        """
+        console.print("\\n🧠 [cyan]Memory Configuration[/cyan]")
+        console.print("[green]✓ Short-term memory is enabled by default[/green]")
+        console.print("  • Stores conversations within sessions")
+        console.print("  • Provides immediate context recall")
+        console.print()
+        console.print("[cyan]Optional: Long-term memory[/cyan]")
+        console.print("  • Extracts user preferences across sessions")
+        console.print("  • Remembers facts and patterns")
+        console.print("  • Creates session summaries")
+        console.print("  • [dim]Note: Takes 60-90 seconds to process[/dim]")
+        console.print()
+
+        enable_ltm_response = _prompt_with_default("Enable long-term memory extraction? (yes/no)", "no").strip().lower()
+
+        enable_ltm = enable_ltm_response in ["yes", "y"]
+
+        if enable_ltm:
+            _print_success("Long-term memory extraction will be configured")
+        else:
+            _print_success("Using short-term memory only")
+
+        return enable_ltm

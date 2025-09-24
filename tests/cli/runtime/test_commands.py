@@ -1228,6 +1228,13 @@ agents:
         network_mode: PUBLIC
       observability:
         enabled: true
+    memory:
+      enabled: true
+      enable_ltm: true
+      memory_id: mem_123456
+      memory_arn: arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456
+      memory_name: test-agent_memory
+      event_expiry_days: 30
     bedrock_agentcore:
       agent_id: null
       agent_arn: null
@@ -1248,6 +1255,9 @@ agents:
                     "account": "123456789012",
                     "execution_role": "test-role",
                     "ecr_repository": "test-repo",
+                    "memory_id": "mem_123456",
+                    "memory_enabled": True,
+                    "memory_ltm": True,
                 },
                 "agent": {
                     "status": "deployed",
@@ -1925,7 +1935,15 @@ agents:
         """Test launch command with environment variables."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text(
-            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+            """default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    memory:
+      enabled: true
+      memory_id: mem_123456
+      memory_name: test-agent_memory"""
         )
 
         with (
@@ -1937,6 +1955,10 @@ agents:
             mock_agent_config = Mock()
             mock_agent_config.name = "test-agent"
             mock_agent_config.entrypoint = "test.py"
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.enabled = True
+            mock_agent_config.memory.memory_id = "mem_123456"
+            mock_agent_config.memory.memory_name = "test-agent_memory"
             mock_project_config.get_agent_config.return_value = mock_agent_config
             mock_load_config.return_value = mock_project_config
 
@@ -1945,7 +1967,12 @@ agents:
             mock_result.tag = "bedrock_agentcore-test-agent"
             mock_result.runtime = Mock()
             mock_result.port = 8080
-            mock_result.env_vars = {"KEY1": "value1", "KEY2": "value2"}
+            mock_result.env_vars = {
+                "KEY1": "value1",
+                "KEY2": "value2",
+                "BEDROCK_AGENTCORE_MEMORY_ID": "mem_123456",
+                "BEDROCK_AGENTCORE_MEMORY_NAME": "test-agent_memory",
+            }
             mock_launch.return_value = mock_result
 
             # Mock the local run to avoid blocking
@@ -2006,6 +2033,11 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    memory:
+      enabled: true
+      enable_ltm: false
+      memory_name: test-agent_memory
+      event_expiry_days: 30
 """
         config_file.write_text(config_content.strip())
 
@@ -2016,6 +2048,7 @@ agents:
             mock_result.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123"
             mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent"
             mock_result.agent_id = "AGENT123"
+            mock_result.memory_id = "mem_123456"
             mock_launch.return_value = mock_result
 
             original_cwd = Path.cwd()
@@ -2483,6 +2516,11 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    memory:
+      enabled: true
+      memory_id: mem_123456
+      memory_arn: arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456
+      memory_name: test-agent_memory
 """
         config_file.write_text(config_content.strip())
 
@@ -2496,6 +2534,9 @@ agents:
             mock_agent_config.name = "test-agent"
             mock_agent_config.bedrock_agentcore = Mock()
             mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.enabled = True
+            mock_agent_config.memory.memory_id = "mem_123456"
             mock_project_config.get_agent_config.return_value = mock_agent_config
             mock_load_config.return_value = mock_project_config
 
@@ -2504,7 +2545,8 @@ agents:
             mock_result.agent_name = "test-agent"
             mock_result.dry_run = False
             mock_result.resources_removed = [
-                "AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+                "AgentCore agent: arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test",
+                "Memory: mem_123456",
             ]
             mock_result.warnings = []
             mock_result.errors = []

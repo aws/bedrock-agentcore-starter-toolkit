@@ -278,6 +278,7 @@ def configure(
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/dim]\n"
                 f"Authorization: [dim]{auth_info}[/dim]\n\n"
+                f"Memory: [dim]Short-term memory (30-day retention)[/dim]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
@@ -765,6 +766,11 @@ def status(
 
                     # Determine overall status
                     endpoint_status = endpoint_data.get("status", "Unknown") if endpoint_data else "Not Ready"
+                    memory_info = ""
+                    if hasattr(status_json["config"], "memory_id") and status_json["config"].get("memory_id"):
+                        memory_type = status_json["config"].get("memory_type", "Short-term")
+                        memory_id = status_json["config"].get("memory_id")
+                        memory_info = f"Memory: [cyan]{memory_type}[/cyan] ([dim]{memory_id}[/dim])\\n"
                     if endpoint_status == "READY":
                         status_text = "Ready - Agent deployed and endpoint available"
                     else:
@@ -780,6 +786,7 @@ def status(
                         f"([cyan]{endpoint_status}[/cyan])\n"
                         f"Region: [cyan]{status_json['config']['region']}[/cyan] | "
                         f"Account: [dim]{status_json['config'].get('account', 'Not available')}[/dim]\n\n"
+                        f"Memory: [cyan]{memory_info}[/cyan]\n"
                         f"[bold]Deployment Info:[/bold]\n"
                         f"Created: [dim]{agent_data.get('createdAt', 'Not available')}[/dim]\n"
                         f"Last Updated: [dim]"
