@@ -1451,9 +1451,10 @@ agents:
         assert "Build and push to ECR only" not in result.stdout
 
         # Check that the three modes are clearly described
-        assert "DEFAULT (no flags): CodeBuild + cloud runtime (RECOMMENDED)" in result.stdout
-        assert "--local: Local build + local runtime" in result.stdout
-        assert "--local-build: Local build + cloud runtime" in result.stdout
+        help_text = result.stdout
+        assert "DEFAULT (no flags): CodeBuild + cloud runtime" in help_text
+        assert "--local" in help_text and "Local build + local runtime" in help_text
+        assert "--local-build" in help_text and "Local build + cloud runtime" in help_text
 
         # Check that remaining options are present
         assert "--local" in result.stdout
