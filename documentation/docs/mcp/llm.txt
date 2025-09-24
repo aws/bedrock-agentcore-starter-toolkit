@@ -24,7 +24,6 @@ giving you ultimate flexibility.
 - [Runtime Transform and Deployment](https://raw.githubusercontent.com/aws/bedrock-agentcore-starter-toolkit/refs/heads/main/documentation/docs/mcp/agentcore_runtime_deployment.md)
 - [Framework compatibility](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/using-any-agent-framework.html)
 - [Model flexibility](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/using-any-model.html)
-- [Runtime Quickstart](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html)
 - [How Runtime Works](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-how-it-works.html)
 - [Invoke Agent Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-invoke-agent.html)
 - [Runtime Sessions](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-sessions.html)
