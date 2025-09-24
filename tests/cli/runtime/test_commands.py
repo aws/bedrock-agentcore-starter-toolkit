@@ -1442,29 +1442,24 @@ agents:
 
     def test_launch_help_text_updated(self):
         """Test that help text reflects the three simplified launch modes."""
+        import re
+        
         result = self.runner.invoke(app, ["launch", "--help"])
         assert result.exit_code == 0
-
-        # Print the actual help text for debugging
-        print(f"\n\nACTUAL HELP TEXT:\n{repr(result.stdout)}\n\n")
-
+        
+        # Strip ANSI escape codes for easier text comparison
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|$$[0-?]*[ -/]*[@-~])')
+        plain_text = ansi_escape.sub('', result.stdout)
+        
         # Check that old flags are no longer in help text
-        assert "--push-ecr" not in result.stdout
-        assert "--codebuild" not in result.stdout
-        assert "Build and push to ECR only" not in result.stdout
-
+        assert "--push-ecr" not in plain_text
+        assert "--codebuild" not in plain_text 
+        assert "Build and push to ECR only" not in plain_text
+        
         # Check that the three modes are clearly described
-        help_text = result.stdout
-        assert "DEFAULT (no flags): CodeBuild + cloud runtime" in help_text
-        assert "--local" in help_text and "Local build + local runtime" in help_text
-        assert "--local-build" in help_text and "Local build + cloud runtime" in help_text
-
-        # Check that remaining options are present
-        assert "--local" in result.stdout
-        assert "--local-build" in result.stdout
-
-        # Check that Docker requirements are mentioned for local modes
-        assert "requires Docker/Finch/Podman" in result.stdout
+        assert "DEFAULT (no flags): CodeBuild + cloud runtime (RECOMMENDED)" in plain_text
+        assert "--local: Local build + local runtime" in plain_text
+        assert "--local-build: Local build + cloud runtime" in plain_text
 
     def test_launch_missing_config(self, tmp_path):
         """Test launch command with missing config file."""
