@@ -23,7 +23,11 @@ def test_fraud_detection():
     result = fraud_detection_handler(payload)
     
     print(f"Transaction: ${normal_tx['amount']} at {normal_tx['merchant']}")
-    print(f"Result: {json.dumps(result, indent=2)}")
+    print(f"Result: {result}")
+    if result.get('result'):
+        print(f"  - Flagged: {result['result']['is_flagged']}")
+        print(f"  - Risk Score: {result['result']['risk_score']}")
+        print(f"  - Flags: {result['result']['flags']}")
     
     # Test high amount transaction
     print("\n2. Testing High Amount Transaction:")
@@ -34,7 +38,11 @@ def test_fraud_detection():
     result = fraud_detection_handler(payload)
     
     print(f"Transaction: ${high_amount_tx['amount']} at {high_amount_tx['merchant']}")
-    print(f"Result: {json.dumps(result, indent=2)}")
+    print(f"Result: {result}")
+    if result.get('result'):
+        print(f"  - Flagged: {result['result']['is_flagged']}")
+        print(f"  - Risk Score: {result['result']['risk_score']}")
+        print(f"  - Flags: {result['result']['flags']}")
     
     # Test suspicious merchant
     print("\n3. Testing Suspicious Merchant:")
@@ -46,7 +54,11 @@ def test_fraud_detection():
     result = fraud_detection_handler(payload)
     
     print(f"Transaction: ${suspicious_tx['amount']} at {suspicious_tx['merchant']}")
-    print(f"Result: {json.dumps(result, indent=2)}")
+    print(f"Result: {result}")
+    if result.get('result'):
+        print(f"  - Flagged: {result['result']['is_flagged']}")
+        print(f"  - Risk Score: {result['result']['risk_score']}")
+        print(f"  - Flags: {result['result']['flags']}")
     
     # Test velocity (multiple transactions)
     print("\n4. Testing High Velocity:")

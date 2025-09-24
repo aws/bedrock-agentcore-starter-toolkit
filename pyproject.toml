@@ -51,6 +51,7 @@ dependencies = [
     "strands-agents>=1.7.1",
     "strands>=0.1.0",
     "python-dotenv>=1.1.1",
+    "faker>=37.8.0",
 ]
 
 [project.scripts]
