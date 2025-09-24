@@ -17,4 +17,11 @@ def agent_invocation(payload):
     return response
     # return "hello"
 
-app.run()
+if __name__ == "__main__":
+    # Test locally before running the server
+    test_payload = {"prompt": "Hello, how are you?"}
+    result = agent_invocation(test_payload)
+    print(f"Test result: {result}")
+    
+    # Uncomment to run the server
+    # app.run()
