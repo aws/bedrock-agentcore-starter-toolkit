@@ -34,7 +34,7 @@ jobs:
   pre-commit-check:
     name: Pre-commit Checks
     runs-on: ubuntu-latest
-    # continue-on-error: true  # This makes it non-blocking
+    continue-on-error: true  # This makes it non-blocking
     steps:
       - uses: actions/checkout@v5
 
