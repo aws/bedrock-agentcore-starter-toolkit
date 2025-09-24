@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.13] - 2025-09-24
+
+### Changes
+
+- Fix linter errors and ran formatter (#203) (64656b6)
+- fix: add S3 bucket ownership verification (#194) (225dd86)
+- quick start doc updates (#199) (3e9b930)
+- Add ability to invoke runtime with custom headers (#200) (ba337db)
+- revert dockerfile optimization (#198) (3285377)
+- Added request header allowlist configuration support (#197) (7a7c65f)
+- feat: change create_or_get_memory to get_or_create_memory to do the lookup before the create (#195) (ef22d20)
+- Remove TestPyPI publishing step from release workflow (#186) (887e23b)
+- feat: Initial commit for Memory manager (#169) (e067386)
+
 ## [0.1.12] - 2025-09-18
 
 ### Changes

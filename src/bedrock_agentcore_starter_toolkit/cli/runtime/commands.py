@@ -180,7 +180,8 @@ def configure(
         None,
         "--request-header-allowlist",
         "-rha",
-        help="Comma-separated list of allowed request headers (Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)"
+        help="Comma-separated list of allowed request headers "
+        "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
@@ -255,9 +256,7 @@ def configure(
         # Parse comma-separated headers and create configuration
         headers = [header.strip() for header in request_header_allowlist.split(",") if header.strip()]
         if headers:
-            request_header_config = {
-                "requestHeaderAllowlist": headers
-            }
+            request_header_config = {"requestHeaderAllowlist": headers}
             _print_success(f"Configured request header allowlist with {len(headers)} headers")
         else:
             _handle_error("Empty request header allowlist provided")
@@ -613,40 +612,40 @@ def _show_error_response(error_msg: str):
 
 def _parse_custom_headers(headers_str: str) -> dict:
     """Parse custom headers string and apply prefix logic.
-    
+
     Args:
         headers_str: String in format "Header1:value,Header2:value2"
-        
+
     Returns:
         dict: Dictionary of processed headers with proper prefixes
-        
+
     Raises:
         ValueError: If header format is invalid
     """
     if not headers_str or not headers_str.strip():
         return {}
-        
+
     headers = {}
-    header_pairs = [pair.strip() for pair in headers_str.split(',')]
-    
+    header_pairs = [pair.strip() for pair in headers_str.split(",")]
+
     for pair in header_pairs:
-        if ':' not in pair:
+        if ":" not in pair:
             raise ValueError(f"Invalid header format: '{pair}'. Expected format: 'Header:value'")
-            
-        header_name, header_value = pair.split(':', 1)
+
+        header_name, header_value = pair.split(":", 1)
         header_name = header_name.strip()
         header_value = header_value.strip()
-        
+
         if not header_name:
             raise ValueError(f"Empty header name in: '{pair}'")
-            
+
         # Apply prefix logic: if header doesn't start with the custom prefix, add it
         prefix = "X-Amzn-Bedrock-AgentCore-Runtime-Custom-"
         if not header_name.startswith(prefix):
             header_name = prefix + header_name
-            
+
         headers[header_name] = header_value
-        
+
     return headers
 
 
@@ -662,7 +661,10 @@ def invoke(
     local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
     user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
     headers: Optional[str] = typer.Option(
-        None, "--headers", help="Custom headers (format: 'Header1:value,Header2:value2'). Headers will be auto-prefixed with 'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' if not already present."
+        None,
+        "--headers",
+        help="Custom headers (format: 'Header1:value,Header2:value2'). "
+        "Headers will be auto-prefixed with 'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' if not already present.",
     ),
 ):
     """Invoke Bedrock AgentCore endpoint."""

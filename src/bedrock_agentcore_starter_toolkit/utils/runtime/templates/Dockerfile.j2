@@ -8,7 +8,7 @@ ENV UV_SYSTEM_PYTHON=1 UV_COMPILE_BYTECODE=1
 {% if dependencies_install_path %}
 COPY {{ dependencies_install_path }} {{ dependencies_install_path }}
 # Install from pyproject.toml directory
-RUN uv pip install {{ dependencies_install_path }}
+RUN cd {{ dependencies_install_path }} && uv pip install .
 {% else %}
 COPY {{ dependencies_file }} {{ dependencies_file }}
 # Install from requirements file

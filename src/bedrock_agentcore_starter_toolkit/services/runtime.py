@@ -314,7 +314,14 @@ class BedrockAgentCoreClient:
         """Create or update agent."""
         if agent_id:
             return self.update_agent(
-                agent_id, image_uri, execution_role_arn, network_config, authorizer_config, request_header_config, protocol_config, env_vars
+                agent_id,
+                image_uri,
+                execution_role_arn,
+                network_config,
+                authorizer_config,
+                request_header_config,
+                protocol_config,
+                env_vars,
             )
         return self.create_agent(
             agent_name,
@@ -429,7 +436,19 @@ class BedrockAgentCoreClient:
         user_id: Optional[str] = None,
         custom_headers: Optional[dict] = None,
     ) -> Dict:
-        """Invoke agent endpoint."""
+        """Invoke agent endpoint.
+
+        Args:
+            agent_arn: Agent ARN to invoke
+            payload: Payload to send as string
+            session_id: Session ID for the request
+            endpoint_name: Endpoint name, defaults to "DEFAULT"
+            user_id: Optional user ID for authorization
+            custom_headers: Optional custom headers to include in the request
+
+        Returns:
+            Response from the agent endpoint
+        """
         req = {
             "agentRuntimeArn": agent_arn,
             "qualifier": endpoint_name,
@@ -447,8 +466,10 @@ class BedrockAgentCoreClient:
             def add_all_headers(request, **kwargs):
                 for header_name, header_value in custom_headers.items():
                     request.headers.add_header(header_name, header_value)
-            
-            handler_id = self.dataplane_client.meta.events.register_first('before-sign.bedrock-agentcore.InvokeAgentRuntime', add_all_headers)
+
+            handler_id = self.dataplane_client.meta.events.register_first(
+                "before-sign.bedrock-agentcore.InvokeAgentRuntime", add_all_headers
+            )
 
         try:
             response = self.dataplane_client.invoke_agent_runtime(**req)
@@ -456,7 +477,9 @@ class BedrockAgentCoreClient:
         finally:
             # Always clean up event handler
             if handler_id is not None:
-                self.dataplane_client.meta.events.unregister('before-sign.bedrock-agentcore.InvokeAgentRuntime', handler_id)
+                self.dataplane_client.meta.events.unregister(
+                    "before-sign.bedrock-agentcore.InvokeAgentRuntime", handler_id
+                )
 
 
 class HttpBedrockAgentCoreClient:
@@ -492,6 +515,7 @@ class HttpBedrockAgentCoreClient:
             session_id: Session ID for the request
             bearer_token: Bearer token for authentication
             endpoint_name: Endpoint name, defaults to "DEFAULT"
+            custom_headers: Optional custom headers to include in the request
 
         Returns:
             Response from the agent endpoint
@@ -545,7 +569,13 @@ class LocalBedrockAgentCoreClient:
         self.endpoint = endpoint
         self.logger = logging.getLogger("bedrock_agentcore.http_local")
 
-    def invoke_endpoint(self, session_id: str, payload: str, workload_access_token: str, custom_headers: Optional[dict] = None):
+    def invoke_endpoint(
+        self,
+        session_id: str,
+        payload: str,
+        workload_access_token: str,
+        custom_headers: Optional[dict] = None,
+    ):
         """Invoke the endpoint with the given parameters."""
         from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
 
