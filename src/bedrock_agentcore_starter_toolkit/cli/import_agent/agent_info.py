@@ -148,7 +148,12 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
                 s3_object_key = action_group["apiSchema"]["s3"]["s3ObjectKey"]
 
                 s3_client = boto3.client("s3")
-                response = s3_client.get_object(Bucket=s3_bucket_name, Key=s3_object_key)
+                # Get account ID for bucket ownership verification
+                sts_client = boto3.client("sts")
+                account_id = sts_client.get_caller_identity()["Account"]
+                response = s3_client.get_object(
+                    Bucket=s3_bucket_name, Key=s3_object_key, ExpectedBucketOwner=account_id
+                )
                 yaml_content = response["Body"].read().decode("utf-8")
                 yaml = YAML(typ="safe")
                 action_group["apiSchema"]["payload"] = yaml.load(yaml_content)

@@ -34,6 +34,7 @@ def configure_bedrock_agentcore(
     enable_observability: bool = True,
     requirements_file: Optional[str] = None,
     authorizer_configuration: Optional[Dict[str, Any]] = None,
+    request_header_configuration: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     region: Optional[str] = None,
     protocol: Optional[str] = None,
@@ -51,6 +52,7 @@ def configure_bedrock_agentcore(
         enable_observability: Whether to enable observability
         requirements_file: Path to requirements file
         authorizer_configuration: JWT authorizer configuration dictionary
+        request_header_configuration: Request header configuration dictionary
         verbose: Whether to provide verbose output during configuration
         region: AWS region for deployment
         protocol: agent server protocol, must be either HTTP or MCP
@@ -216,6 +218,7 @@ def configure_bedrock_agentcore(
         ecr_repo_display = ecr_repository if ecr_repository else "Auto-create" if ecr_auto_create_value else "N/A"
         log.debug("  ECR repository: %s", ecr_repo_display)
         log.debug("  Enable observability: %s", enable_observability)
+        log.debug("  Request header configuration: %s", request_header_configuration)
 
     # Create new agent configuration
     config = BedrockAgentCoreAgentSchema(
@@ -236,6 +239,7 @@ def configure_bedrock_agentcore(
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         authorizer_configuration=authorizer_configuration,
+        request_header_configuration=request_header_configuration,
         memory=memory_config,
     )
 

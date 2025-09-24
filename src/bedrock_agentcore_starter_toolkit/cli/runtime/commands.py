@@ -176,6 +176,13 @@ def configure(
     authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
+    request_header_allowlist: Optional[str] = typer.Option(
+        None,
+        "--request-header-allowlist",
+        "-rha",
+        help="Comma-separated list of allowed request headers "
+        "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
@@ -243,6 +250,19 @@ def configure(
     else:
         oauth_config = config_manager.prompt_oauth_config()
 
+    # Handle request header allowlist configuration
+    request_header_config = None
+    if request_header_allowlist:
+        # Parse comma-separated headers and create configuration
+        headers = [header.strip() for header in request_header_allowlist.split(",") if header.strip()]
+        if headers:
+            request_header_config = {"requestHeaderAllowlist": headers}
+            _print_success(f"Configured request header allowlist with {len(headers)} headers")
+        else:
+            _handle_error("Empty request header allowlist provided")
+    else:
+        request_header_config = config_manager.prompt_request_header_allowlist()
+
     try:
         result = configure_bedrock_agentcore(
             agent_name=agent_name,
@@ -254,6 +274,7 @@ def configure(
             enable_observability=not disable_otel,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
+            request_header_configuration=request_header_config,
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,
@@ -263,6 +284,12 @@ def configure(
         auth_info = "IAM (default)"
         if oauth_config:
             auth_info = "OAuth (customJWTAuthorizer)"
+
+        # Prepare request headers info for summary
+        headers_info = ""
+        if request_header_config:
+            headers = request_header_config.get("requestHeaderAllowlist", [])
+            headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
         console.print(
             Panel(
@@ -278,6 +305,7 @@ def configure(
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/dim]\n"
                 f"Authorization: [dim]{auth_info}[/dim]\n\n"
+                f"{headers_info}\n"
                 f"Memory: [dim]Short-term memory (30-day retention)[/dim]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
@@ -583,6 +611,45 @@ def _show_error_response(error_msg: str):
     console.print(f"\n[red]{error_msg}[/red]")
 
 
+def _parse_custom_headers(headers_str: str) -> dict:
+    """Parse custom headers string and apply prefix logic.
+
+    Args:
+        headers_str: String in format "Header1:value,Header2:value2"
+
+    Returns:
+        dict: Dictionary of processed headers with proper prefixes
+
+    Raises:
+        ValueError: If header format is invalid
+    """
+    if not headers_str or not headers_str.strip():
+        return {}
+
+    headers = {}
+    header_pairs = [pair.strip() for pair in headers_str.split(",")]
+
+    for pair in header_pairs:
+        if ":" not in pair:
+            raise ValueError(f"Invalid header format: '{pair}'. Expected format: 'Header:value'")
+
+        header_name, header_value = pair.split(":", 1)
+        header_name = header_name.strip()
+        header_value = header_value.strip()
+
+        if not header_name:
+            raise ValueError(f"Empty header name in: '{pair}'")
+
+        # Apply prefix logic: if header doesn't start with the custom prefix, add it
+        prefix = "X-Amzn-Bedrock-AgentCore-Runtime-Custom-"
+        if not header_name.startswith(prefix):
+            header_name = prefix + header_name
+
+        headers[header_name] = header_value
+
+    return headers
+
+
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
     agent: Optional[str] = typer.Option(
@@ -594,6 +661,12 @@ def invoke(
     ),
     local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
     user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
+    headers: Optional[str] = typer.Option(
+        None,
+        "--headers",
+        help="Custom headers (format: 'Header1:value,Header2:value2'). "
+        "Headers will be auto-prefixed with 'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' if not already present.",
+    ),
 ):
     """Invoke Bedrock AgentCore endpoint."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -626,6 +699,17 @@ def invoke(
                 "[yellow]Warning: Bearer token provided but OAuth is not configured in .bedrock_agentcore.yaml[/yellow]"
             )
 
+        # Process custom headers
+        custom_headers = {}
+        if headers:
+            try:
+                custom_headers = _parse_custom_headers(headers)
+                if custom_headers:
+                    header_names = list(custom_headers.keys())
+                    console.print(f"[dim]Using custom headers: {', '.join(header_names)}[/dim]")
+            except ValueError as e:
+                _handle_error(f"Invalid headers format: {e}")
+
         # Invoke
         result = invoke_bedrock_agentcore(
             config_path=config_path,
@@ -635,6 +719,7 @@ def invoke(
             bearer_token=final_bearer_token,
             user_id=user_id,
             local_mode=local_mode,
+            custom_headers=custom_headers,
         )
         agent_display = config.name if config else (agent or "unknown")
         _show_invoke_info_panel(agent_display, result, config)

@@ -332,7 +332,6 @@ class TestConfigurationManager:
             # Should use default headers when no existing ones provided
             mock_prompt.assert_called_once_with("Enter allowed request headers (comma-separated)", default_headers)
 
-
     def test_prompt_ltm_choice_yes(self, tmp_path):
         """Test prompt_ltm_choice when user chooses yes."""
         with (
