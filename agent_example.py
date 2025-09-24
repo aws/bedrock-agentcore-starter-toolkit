@@ -13,7 +13,6 @@ agent = Agent(
     region=os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
 )
 
-
 @app.entrypoint
 def agent_invocation(payload):
     """Handler for agent invocation"""
