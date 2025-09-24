@@ -1445,6 +1445,9 @@ agents:
         result = self.runner.invoke(app, ["launch", "--help"])
         assert result.exit_code == 0
 
+        # Print the actual help text for debugging
+        print(f"\n\nACTUAL HELP TEXT:\n{repr(result.stdout)}\n\n")
+
         # Check that old flags are no longer in help text
         assert "--push-ecr" not in result.stdout
         assert "--codebuild" not in result.stdout
