@@ -177,29 +177,24 @@ class ConfigurationManager:
     def _configure_request_header_allowlist(self, existing_headers: str = "") -> dict:
         """Configure request header allowlist and return config dict."""
         console.print("\n📋 [cyan]Request Header Allowlist Configuration[/cyan]")
-        
+
         # Show existing config if available
         if existing_headers:
             console.print(f"[dim]Previously configured: {existing_headers}[/dim]")
 
         # Prompt for headers
         default_headers = existing_headers or "Authorization,X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
-        headers_input = _prompt_with_default(
-            "Enter allowed request headers (comma-separated)", 
-            default_headers
-        )
+        headers_input = _prompt_with_default("Enter allowed request headers (comma-separated)", default_headers)
 
         if not headers_input:
             _handle_error("At least one request header must be specified for allowlist configuration")
 
         # Parse and validate headers
         headers = [header.strip() for header in headers_input.split(",") if header.strip()]
-        
+
         if not headers:
             _handle_error("Empty request header allowlist provided")
 
         _print_success(f"Request header allowlist configured with {len(headers)} headers")
-        
-        return {
-            "requestHeaderAllowlist": headers
-        }
+
+        return {"requestHeaderAllowlist": headers}

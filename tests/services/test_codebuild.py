@@ -581,7 +581,7 @@ node_modules
         # Look for bucket name inside ARN format
         bucket_name = "bedrock-agentcore-codebuild-sources-123456789012-us-west-2"
         assert any(bucket_name in resource for resource in s3_statement["Resource"])
-        
+
         # Also verify the condition is present
         assert "Condition" in s3_statement
         assert "StringEquals" in s3_statement["Condition"]

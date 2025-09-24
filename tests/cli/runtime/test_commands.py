@@ -2666,7 +2666,7 @@ agents:
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
 
         result = _parse_custom_headers("Context:production")
-        
+
         expected = {"X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production"}
         assert result == expected
 
@@ -2675,11 +2675,11 @@ agents:
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
 
         result = _parse_custom_headers("Context:prod,User-ID:123,Session:abc")
-        
+
         expected = {
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "prod",
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc",
         }
         assert result == expected
 
@@ -2688,10 +2688,10 @@ agents:
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
 
         result = _parse_custom_headers("X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context:prod,User-ID:123")
-        
+
         expected = {
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "prod",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123",
         }
         assert result == expected
 
@@ -2700,10 +2700,10 @@ agents:
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
 
         result = _parse_custom_headers("Context: production env ,Special-Header: value with spaces!@#")
-        
+
         expected = {
             "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production env",
-            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Special-Header": "value with spaces!@#"
+            "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Special-Header": "value with spaces!@#",
         }
         assert result == expected
 
@@ -2735,7 +2735,9 @@ agents:
         """Test _parse_custom_headers with mix of valid and invalid headers."""
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _parse_custom_headers
 
-        with pytest.raises(ValueError, match="Invalid header format: 'InvalidHeader2'. Expected format: 'Header:value'"):
+        with pytest.raises(
+            ValueError, match="Invalid header format: 'InvalidHeader2'. Expected format: 'Header:value'"
+        ):
             _parse_custom_headers("Header1:value1,InvalidHeader2")
 
     def test_invoke_with_custom_headers_success(self, tmp_path):
@@ -2770,12 +2772,9 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, [
-                    "invoke", 
-                    '{"message": "hello"}', 
-                    "--headers", 
-                    "Context:production,User-ID:123"
-                ])
+                result = self.runner.invoke(
+                    app, ["invoke", '{"message": "hello"}', "--headers", "Context:production,User-ID:123"]
+                )
 
                 assert result.exit_code == 0
                 assert "Using custom headers" in result.stdout
@@ -2784,7 +2783,7 @@ agents:
                 call_args = mock_invoke.call_args
                 expected_headers = {
                     "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "production",
-                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123"
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-User-ID": "123",
                 }
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:
@@ -2792,7 +2791,6 @@ agents:
 
     def test_invoke_with_custom_headers_and_bearer_token(self, tmp_path):
         """Test invoke command with custom headers and bearer token."""
-        config_file = tmp_path / ".bedrock_agentcore.yaml"
 
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
@@ -2814,14 +2812,9 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, [
-                    "invoke", 
-                    '{"message": "hello"}', 
-                    "--headers", 
-                    "Context:prod",
-                    "--bearer-token", 
-                    "test-token"
-                ])
+                result = self.runner.invoke(
+                    app, ["invoke", '{"message": "hello"}', "--headers", "Context:prod", "--bearer-token", "test-token"]
+                )
 
                 assert result.exit_code == 0
                 assert "Using bearer token for OAuth authentication" in result.stdout
@@ -2867,14 +2860,17 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, [
-                    "invoke", 
-                    '{"message": "hello"}', 
-                    "--headers", 
-                    "Session:abc,Context:test",
-                    "--session-id", 
-                    "custom-session-123"
-                ])
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "invoke",
+                        '{"message": "hello"}',
+                        "--headers",
+                        "Session:abc,Context:test",
+                        "--session-id",
+                        "custom-session-123",
+                    ],
+                )
 
                 assert result.exit_code == 0
                 assert "Session: custom-session-123" in result.stdout
@@ -2884,7 +2880,7 @@ agents:
                 assert call_args.kwargs["session_id"] == "custom-session-123"
                 expected_headers = {
                     "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Session": "abc",
-                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test"
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Context": "test",
                 }
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:
@@ -2906,12 +2902,7 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(app, [
-                "invoke", 
-                '{"message": "hello"}', 
-                "--headers", 
-                "InvalidHeaderFormat"
-            ])
+            result = self.runner.invoke(app, ["invoke", '{"message": "hello"}', "--headers", "InvalidHeaderFormat"])
 
             assert result.exit_code == 1
             assert "Invalid headers format" in result.stdout
@@ -2951,12 +2942,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, [
-                    "invoke", 
-                    '{"message": "hello"}', 
-                    "--headers", 
-                    ""
-                ])
+                result = self.runner.invoke(app, ["invoke", '{"message": "hello"}', "--headers", ""])
 
                 assert result.exit_code == 0
 
@@ -2998,13 +2984,9 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, [
-                    "invoke", 
-                    '{"message": "hello"}', 
-                    "--headers", 
-                    "Environment:local,Debug:true",
-                    "--local"
-                ])
+                result = self.runner.invoke(
+                    app, ["invoke", '{"message": "hello"}', "--headers", "Environment:local,Debug:true", "--local"]
+                )
 
                 assert result.exit_code == 0
 
@@ -3013,7 +2995,7 @@ agents:
                 assert call_args.kwargs["local_mode"] is True
                 expected_headers = {
                     "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Environment": "local",
-                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true"
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Debug": "true",
                 }
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:

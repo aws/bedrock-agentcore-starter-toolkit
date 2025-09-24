@@ -378,21 +378,20 @@ class TestRequestHeaderConfigurationSchema:
     def test_agent_schema_request_header_configuration_valid_dict(self):
         """Test that valid request_header_configuration dict is accepted."""
         agent_config = self._create_base_agent_config()
-        agent_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]
-        }
-        
+        agent_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]}
+
         assert agent_config.request_header_configuration is not None
         assert "requestHeaderAllowlist" in agent_config.request_header_configuration
         assert agent_config.request_header_configuration["requestHeaderAllowlist"] == [
-            "Authorization", "X-Custom-Header"
+            "Authorization",
+            "X-Custom-Header",
         ]
 
     def test_agent_schema_request_header_configuration_empty_dict(self):
         """Test that empty dict is valid for request_header_configuration."""
         agent_config = self._create_base_agent_config()
         agent_config.request_header_configuration = {}
-        
+
         assert agent_config.request_header_configuration == {}
 
     def test_agent_schema_request_header_configuration_complex_structure(self):
@@ -403,14 +402,11 @@ class TestRequestHeaderConfigurationSchema:
                 "Authorization",
                 "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*",
                 "Content-Type",
-                "User-Agent"
+                "User-Agent",
             ],
-            "additionalConfig": {
-                "maxHeaderSize": 8192,
-                "caseSensitive": False
-            }
+            "additionalConfig": {"maxHeaderSize": 8192, "caseSensitive": False},
         }
-        
+
         assert len(agent_config.request_header_configuration["requestHeaderAllowlist"]) == 4
         assert "Authorization" in agent_config.request_header_configuration["requestHeaderAllowlist"]
         assert agent_config.request_header_configuration["additionalConfig"]["maxHeaderSize"] == 8192
@@ -422,11 +418,8 @@ class TestRequestHeaderConfigurationSchema:
         agent_config.request_header_configuration = {
             "requestHeaderAllowlist": ["Authorization", "X-Custom-Header", "X-Another-Header"]
         }
-        
-        project_config = BedrockAgentCoreConfigSchema(
-            default_agent="test-agent",
-            agents={"test-agent": agent_config}
-        )
+
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
 
         # Save to temp file
         config_path = tmp_path / "test_request_headers.yaml"
@@ -440,7 +433,9 @@ class TestRequestHeaderConfigurationSchema:
         assert loaded_agent.request_header_configuration is not None
         assert "requestHeaderAllowlist" in loaded_agent.request_header_configuration
         assert loaded_agent.request_header_configuration["requestHeaderAllowlist"] == [
-            "Authorization", "X-Custom-Header", "X-Another-Header"
+            "Authorization",
+            "X-Custom-Header",
+            "X-Another-Header",
         ]
 
     def test_merge_agent_config_replaces_request_header_config(self, tmp_path):
@@ -450,9 +445,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # First configuration with request headers
         first_config = self._create_base_agent_config(agent_name)
-        first_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization", "X-Original-Header"]
-        }
+        first_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization", "X-Original-Header"]}
         result1 = merge_agent_config(config_path, agent_name, first_config)
         save_config(result1, config_path)
 
@@ -474,9 +467,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # First configuration with request headers
         first_config = self._create_base_agent_config(agent_name)
-        first_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization", "X-Original-Header"]
-        }
+        first_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization", "X-Original-Header"]}
         result1 = merge_agent_config(config_path, agent_name, first_config)
         save_config(result1, config_path)
 
@@ -492,7 +483,8 @@ class TestRequestHeaderConfigurationSchema:
         # Verify both changes are applied
         assert result_config.agents[agent_name].request_header_configuration is not None
         assert result_config.agents[agent_name].request_header_configuration["requestHeaderAllowlist"] == [
-            "Authorization", "X-Original-Header"
+            "Authorization",
+            "X-Original-Header",
         ]
         assert result_config.agents[agent_name].aws.region == "us-east-1"
 
@@ -503,9 +495,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # First configuration with request headers
         first_config = self._create_base_agent_config(agent_name)
-        first_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization"]
-        }
+        first_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization"]}
         result1 = merge_agent_config(config_path, agent_name, first_config)
         save_config(result1, config_path)
 
@@ -519,7 +509,9 @@ class TestRequestHeaderConfigurationSchema:
 
         # Verify request header config was updated
         assert result_config.agents[agent_name].request_header_configuration["requestHeaderAllowlist"] == [
-            "Authorization", "X-New-Header", "X-Updated-Header"
+            "Authorization",
+            "X-New-Header",
+            "X-Updated-Header",
         ]
 
     def test_merge_agent_config_clears_request_header_config_when_none(self, tmp_path):
@@ -529,9 +521,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # First configuration with request headers
         first_config = self._create_base_agent_config(agent_name)
-        first_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization", "X-Original-Header"]
-        }
+        first_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization", "X-Original-Header"]}
         result1 = merge_agent_config(config_path, agent_name, first_config)
         save_config(result1, config_path)
 
@@ -551,14 +541,11 @@ class TestRequestHeaderConfigurationSchema:
             "requestHeaderAllowlist": [
                 "Authorization",
                 "X-Amzn-Bedrock-AgentCore-Runtime-Custom-SessionId",
-                "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
+                "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*",
             ]
         }
 
-        project_config = BedrockAgentCoreConfigSchema(
-            default_agent="test-agent",
-            agents={"test-agent": agent_config}
-        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
 
         # Save and verify the file content has proper structure
         config_path = tmp_path / "serialization_test.yaml"
@@ -566,7 +553,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # Read raw content to verify serialization format
         raw_content = config_path.read_text()
-        
+
         # Should contain the request_header_configuration section
         assert "request_header_configuration:" in raw_content
         assert "requestHeaderAllowlist:" in raw_content
@@ -576,15 +563,10 @@ class TestRequestHeaderConfigurationSchema:
     def test_config_schema_validation_with_request_headers(self):
         """Test BedrockAgentCoreConfigSchema validation includes request headers."""
         agent_config = self._create_base_agent_config()
-        agent_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]
-        }
+        agent_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]}
 
         # Test valid configuration
-        project_config = BedrockAgentCoreConfigSchema(
-            default_agent="test-agent",
-            agents={"test-agent": agent_config}
-        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
 
         # Should validate without errors
         retrieved_config = project_config.get_agent_config("test-agent")
@@ -597,18 +579,12 @@ class TestRequestHeaderConfigurationSchema:
 
         # Agent 1 with basic headers
         agent1_config = self._create_base_agent_config("agent1")
-        agent1_config.request_header_configuration = {
-            "requestHeaderAllowlist": ["Authorization"]
-        }
+        agent1_config.request_header_configuration = {"requestHeaderAllowlist": ["Authorization"]}
 
         # Agent 2 with more headers
         agent2_config = self._create_base_agent_config("agent2")
         agent2_config.request_header_configuration = {
-            "requestHeaderAllowlist": [
-                "Authorization",
-                "X-Custom-Header",
-                "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
-            ]
+            "requestHeaderAllowlist": ["Authorization", "X-Custom-Header", "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"]
         }
 
         # Agent 3 with no header config (None)
@@ -617,12 +593,7 @@ class TestRequestHeaderConfigurationSchema:
 
         # Create project config
         project_config = BedrockAgentCoreConfigSchema(
-            default_agent="agent1",
-            agents={
-                "agent1": agent1_config,
-                "agent2": agent2_config,
-                "agent3": agent3_config
-            }
+            default_agent="agent1", agents={"agent1": agent1_config, "agent2": agent2_config, "agent3": agent3_config}
         )
 
         # Save and reload
