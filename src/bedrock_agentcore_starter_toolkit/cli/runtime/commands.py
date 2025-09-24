@@ -326,7 +326,7 @@ def launch(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     local: bool = typer.Option(
-        False, "--local", "-l", help="Build locally and run container locally - requires Docker/Finch/Podman"
+        False, "--local", "-l", help="Local build + local runtime - requires Docker/Finch/Podman"
     ),
     local_build: bool = typer.Option(
         False,
