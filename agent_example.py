@@ -7,7 +7,7 @@ from strands import Agent
 load_dotenv()
 
 app = BedrockAgentCoreApp()
-agent = Agent()
+agent = Agent(model="anthropic.claude-3-5-sonnet-20241022-v2:0")
 
 @app.entrypoint
 def agent_invocation(payload):
