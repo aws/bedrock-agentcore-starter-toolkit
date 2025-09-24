@@ -24,14 +24,32 @@ class MemoryManager:
     This class handles all CONTROL PLANE CRUD operations.
     """
 
-    def __init__(self, region_name: str):
+    def __init__(self, region_name: Optional[str] = None, boto3_session: Optional[boto3.Session] = None):
         """Initialize MemoryManager with AWS region.
 
         Args:
-            region_name: AWS region name for the bedrock-agentcore-control client.
+            region_name: AWS region for the bedrock-agentcore-control client. If not provided,
+                   will use the region from boto3_session or default session.
+            boto3_session: Optional boto3 Session to use. If provided and region_name
+                          parameter is also specified, validation will ensure they match.
+
+        Raises:
+            ValueError: If region_name parameter conflicts with boto3_session region.
         """
+        session = boto3_session if boto3_session else boto3.Session()
+        session_region = session.region_name
+
+        # Validate region consistency if both are provided
+        if region_name and boto3_session and session_region and region_name != session_region:
+            raise ValueError(
+                f"Region mismatch: provided region_name '{region_name}' does not match "
+                f"boto3_session region '{session_region}'. Please ensure both "
+                f"parameters specify the same region or omit the region_name parameter "
+                f"to use the session's region."
+            )
+
         self.region_name = region_name
-        self._control_plane_client = boto3.client("bedrock-agentcore-control", region_name=region_name)
+        self._control_plane_client = session.client("bedrock-agentcore-control", region_name=self.region_name)
 
         # AgentCore Memory control plane methods
         self._ALLOWED_CONTROL_PLANE_METHODS = {

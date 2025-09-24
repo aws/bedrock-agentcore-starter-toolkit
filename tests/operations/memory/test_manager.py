@@ -17,20 +17,28 @@ from bedrock_agentcore_starter_toolkit.operations.memory.models.MemorySummary im
 
 def test_manager_initialization():
     """Test client initialization."""
-    with patch("boto3.client") as mock_boto_client:
-        # Setup the mock to return a consistent region_name
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
         mock_client_instance = MagicMock()
         mock_client_instance.meta.region_name = "us-west-2"
-        mock_boto_client.return_value = mock_client_instance
+        mock_session.client.return_value = mock_client_instance
 
         manager = MemoryManager(region_name="us-west-2")
 
-        # Check that the region was set correctly and boto3.client was called once (only control plane)
+        # Check that the region was set correctly and session.client was called once
         assert manager.region_name == "us-west-2"
-        assert mock_boto_client.call_count == 1
+        assert mock_session.client.call_count == 1
 
-        # Verify the correct service was called (without endpoint_url)
-        mock_boto_client.assert_called_with("bedrock-agentcore-control", region_name="us-west-2")
+        # Verify the correct service was called with config
+        mock_session.client.assert_called_once()
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-west-2"
 
 
 def test_namespace_defaults():
