@@ -167,6 +167,7 @@ def configure(
     entrypoint: Optional[str] = typer.Option(None, "--entrypoint", "-e", help="Python file with BedrockAgentCoreApp"),
     agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
     execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
+    code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
     ecr_repository: Optional[str] = typer.Option(None, "--ecr", "-ecr"),
     container_runtime: Optional[str] = typer.Option(None, "--container-runtime", "-ctr"),
     requirements_file: Optional[str] = typer.Option(
@@ -268,6 +269,7 @@ def configure(
             agent_name=agent_name,
             entrypoint_path=Path(entrypoint),
             execution_role=execution_role,
+            code_build_execution_role=code_build_execution_role,
             ecr_repository=ecr_repository,
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,

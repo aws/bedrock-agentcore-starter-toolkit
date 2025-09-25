@@ -12,6 +12,7 @@ from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
+    CodeBuildConfig,
     NetworkConfiguration,
     ObservabilityConfig,
     ProtocolConfiguration,
@@ -25,6 +26,7 @@ def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
     execution_role: Optional[str] = None,
+    code_build_execution_role: Optional[str] = None,
     ecr_repository: Optional[str] = None,
     container_runtime: Optional[str] = None,
     auto_create_ecr: bool = True,
@@ -43,6 +45,7 @@ def configure_bedrock_agentcore(
         agent_name: name of the agent,
         entrypoint_path: Path to the entrypoint file
         execution_role: AWS execution role ARN or name (auto-created if not provided)
+        code_build_execution_role: CodeBuild execution role ARN or name (uses execution_role if not provided)
         ecr_repository: ECR repository URI
         container_runtime: Container runtime to use
         auto_create_ecr: Whether to auto-create ECR repository
@@ -108,6 +111,24 @@ def configure_bedrock_agentcore(
                 log.debug("Execution role will be auto-created during launch")
             else:
                 log.debug("No execution role provided and auto-create disabled")
+
+    # Handle CodeBuild execution role - use separate role if provided, otherwise use execution_role
+    codebuild_execution_role_arn = None
+    if code_build_execution_role:
+        # User provided a separate CodeBuild role
+        if code_build_execution_role.startswith("arn:aws:iam::"):
+            codebuild_execution_role_arn = code_build_execution_role
+        else:
+            codebuild_execution_role_arn = f"arn:aws:iam::{account_id}:role/{code_build_execution_role}"
+
+        if verbose:
+            log.debug("Using separate CodeBuild execution role: %s", codebuild_execution_role_arn)
+    else:
+        # No separate CodeBuild role provided - use None
+        codebuild_execution_role_arn = None
+
+        if verbose and execution_role_arn:
+            log.debug("Using same role for CodeBuild: %s", codebuild_execution_role_arn)
 
     # Generate Dockerfile and .dockerignore
     bedrock_agentcore_name = None
@@ -195,6 +216,9 @@ def configure_bedrock_agentcore(
             observability=ObservabilityConfig(enabled=enable_observability),
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        codebuild=CodeBuildConfig(
+            execution_role=codebuild_execution_role_arn,
+        ),
         authorizer_configuration=authorizer_configuration,
         request_header_configuration=request_header_configuration,
     )

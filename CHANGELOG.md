@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.14] - 2025-09-25
+
+### Changes
+
+- Fix: Runtime configure function now sets CodeBuild execution role from --code_build_execution_role parameter (#184) (7d7dffd)
+- docs: Generate llm.txt via mkdocs-llmstxt (#213) (6459979)
+- fix: llm.txt typo (#210) (f48ae5e)
+- docs: Add llm.txt and file on runtime deployment (#202) (90dac4b)
+- fix: correct pyproject.toml installation in subdirectories (#207) (ea01c65)
+
 ## [0.1.13] - 2025-09-24
 
 ### Changes
