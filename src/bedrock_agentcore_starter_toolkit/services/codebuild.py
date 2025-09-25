@@ -26,6 +26,7 @@ class CodeBuildService:
         self.iam_client = session.client("iam")
         self.logger = logging.getLogger(__name__)
         self.source_bucket = None
+        self.account_id = session.client("sts").get_caller_identity()["Account"]
 
     def get_source_bucket_name(self, account_id: str) -> str:
         """Get S3 bucket name for CodeBuild sources."""
@@ -37,10 +38,18 @@ class CodeBuildService:
         bucket_name = self.get_source_bucket_name(account_id)
 
         try:
-            self.s3_client.head_bucket(Bucket=bucket_name)
+            self.s3_client.head_bucket(Bucket=bucket_name, ExpectedBucketOwner=account_id)
             self.logger.debug("Using existing S3 bucket: %s", bucket_name)
-        except ClientError:
-            # Create bucket
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "403":
+                self.logger.error("Unable to access bucket %s due to permission constraints", bucket_name)
+                raise RuntimeError(
+                    f"Access Error: Unable to access S3 bucket '{bucket_name}' due to permission constraints. "
+                    f"The bucket may exist but you don't have sufficient permissions, or it could be "
+                    f"owned by another account."
+                ) from e
+
+            # Create bucket (no ExpectedBucketOwner needed for create_bucket)
             region = self.session.region_name
             if region == "us-east-1":
                 self.s3_client.create_bucket(Bucket=bucket_name)
@@ -49,9 +58,9 @@ class CodeBuildService:
                     Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": region}
                 )
 
-            # Set lifecycle to cleanup old builds
             self.s3_client.put_bucket_lifecycle_configuration(
                 Bucket=bucket_name,
+                ExpectedBucketOwner=account_id,
                 LifecycleConfiguration={
                     "Rules": [{"ID": "DeleteOldBuilds", "Status": "Enabled", "Filter": {}, "Expiration": {"Days": 7}}]
                 },
@@ -63,7 +72,7 @@ class CodeBuildService:
 
     def upload_source(self, agent_name: str) -> str:
         """Upload current directory to S3, respecting .dockerignore patterns."""
-        account_id = self.session.client("sts").get_caller_identity()["Account"]
+        account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
@@ -101,7 +110,9 @@ class CodeBuildService:
                 # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
                 s3_key = f"{agent_name}/source.zip"
 
-                self.s3_client.upload_file(temp_zip.name, bucket_name, s3_key)
+                self.s3_client.upload_file(
+                    temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
+                )
 
                 self.logger.info("Uploaded source to S3: %s", s3_key)
                 return f"s3://{bucket_name}/{s3_key}"

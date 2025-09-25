@@ -93,6 +93,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
+    request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
 
     def get_authorizer_configuration(self) -> Optional[dict]:

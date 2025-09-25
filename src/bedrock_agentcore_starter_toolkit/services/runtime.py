@@ -122,6 +122,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
@@ -141,6 +142,9 @@ class BedrockAgentCoreClient:
 
             if authorizer_config is not None:
                 params["authorizerConfiguration"] = authorizer_config
+
+            if request_header_config is not None:
+                params["requestHeaderConfiguration"] = request_header_config
 
             if protocol_config is not None:
                 params["protocolConfiguration"] = protocol_config
@@ -196,6 +200,7 @@ class BedrockAgentCoreClient:
                     execution_role_arn,
                     network_config,
                     authorizer_config,
+                    request_header_config,
                     protocol_config,
                     env_vars,
                 )
@@ -216,6 +221,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
     ) -> Dict[str, str]:
@@ -234,6 +240,9 @@ class BedrockAgentCoreClient:
 
             if authorizer_config is not None:
                 params["authorizerConfiguration"] = authorizer_config
+
+            if request_header_config is not None:
+                params["requestHeaderConfiguration"] = request_header_config
 
             if protocol_config is not None:
                 params["protocolConfiguration"] = protocol_config
@@ -297,6 +306,7 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
@@ -304,7 +314,14 @@ class BedrockAgentCoreClient:
         """Create or update agent."""
         if agent_id:
             return self.update_agent(
-                agent_id, image_uri, execution_role_arn, network_config, authorizer_config, protocol_config, env_vars
+                agent_id,
+                image_uri,
+                execution_role_arn,
+                network_config,
+                authorizer_config,
+                request_header_config,
+                protocol_config,
+                env_vars,
             )
         return self.create_agent(
             agent_name,
@@ -312,6 +329,7 @@ class BedrockAgentCoreClient:
             execution_role_arn,
             network_config,
             authorizer_config,
+            request_header_config,
             protocol_config,
             env_vars,
             auto_update_on_conflict,
@@ -416,8 +434,21 @@ class BedrockAgentCoreClient:
         session_id: str,
         endpoint_name: str = "DEFAULT",
         user_id: Optional[str] = None,
+        custom_headers: Optional[dict] = None,
     ) -> Dict:
-        """Invoke agent endpoint."""
+        """Invoke agent endpoint.
+
+        Args:
+            agent_arn: Agent ARN to invoke
+            payload: Payload to send as string
+            session_id: Session ID for the request
+            endpoint_name: Endpoint name, defaults to "DEFAULT"
+            user_id: Optional user ID for authorization
+            custom_headers: Optional custom headers to include in the request
+
+        Returns:
+            Response from the agent endpoint
+        """
         req = {
             "agentRuntimeArn": agent_arn,
             "qualifier": endpoint_name,
@@ -428,8 +459,27 @@ class BedrockAgentCoreClient:
         if user_id:
             req["runtimeUserId"] = user_id
 
-        response = self.dataplane_client.invoke_agent_runtime(**req)
-        return _handle_aws_response(response)
+        # Handle custom headers using boto3 event system
+        handler_id = None
+        if custom_headers:
+            # Register a single event handler for all custom headers
+            def add_all_headers(request, **kwargs):
+                for header_name, header_value in custom_headers.items():
+                    request.headers.add_header(header_name, header_value)
+
+            handler_id = self.dataplane_client.meta.events.register_first(
+                "before-sign.bedrock-agentcore.InvokeAgentRuntime", add_all_headers
+            )
+
+        try:
+            response = self.dataplane_client.invoke_agent_runtime(**req)
+            return _handle_aws_response(response)
+        finally:
+            # Always clean up event handler
+            if handler_id is not None:
+                self.dataplane_client.meta.events.unregister(
+                    "before-sign.bedrock-agentcore.InvokeAgentRuntime", handler_id
+                )
 
 
 class HttpBedrockAgentCoreClient:
@@ -455,6 +505,7 @@ class HttpBedrockAgentCoreClient:
         session_id: str,
         bearer_token: Optional[str],
         endpoint_name: str = "DEFAULT",
+        custom_headers: Optional[dict] = None,
     ) -> Dict:
         """Invoke agent endpoint using HTTP request with bearer token.
 
@@ -464,6 +515,7 @@ class HttpBedrockAgentCoreClient:
             session_id: Session ID for the request
             bearer_token: Bearer token for authentication
             endpoint_name: Endpoint name, defaults to "DEFAULT"
+            custom_headers: Optional custom headers to include in the request
 
         Returns:
             Response from the agent endpoint
@@ -479,6 +531,10 @@ class HttpBedrockAgentCoreClient:
             "Content-Type": "application/json",
             "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
         }
+
+        # Merge custom headers if provided
+        if custom_headers:
+            headers.update(custom_headers)
 
         # Parse the payload string back to JSON object to send properly
         # This ensures consistent payload structure between boto3 and HTTP clients
@@ -513,7 +569,13 @@ class LocalBedrockAgentCoreClient:
         self.endpoint = endpoint
         self.logger = logging.getLogger("bedrock_agentcore.http_local")
 
-    def invoke_endpoint(self, session_id: str, payload: str, workload_access_token: str):
+    def invoke_endpoint(
+        self,
+        session_id: str,
+        payload: str,
+        workload_access_token: str,
+        custom_headers: Optional[dict] = None,
+    ):
         """Invoke the endpoint with the given parameters."""
         from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
 
@@ -524,6 +586,10 @@ class LocalBedrockAgentCoreClient:
             ACCESS_TOKEN_HEADER: workload_access_token,
             SESSION_HEADER: session_id,
         }
+
+        # Merge custom headers if provided
+        if custom_headers:
+            headers.update(custom_headers)
 
         try:
             body = json.loads(payload) if isinstance(payload, str) else payload
