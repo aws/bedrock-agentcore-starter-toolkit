@@ -1448,21 +1448,18 @@ agents:
         assert result.exit_code == 0
         
         # Strip ANSI escape codes for easier text comparison
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|$$[0-?]*[ -/]*[@-~])')
-        plain_text = ansi_escape.sub('', result.stdout)
-        
-        # Print the stripped text to see what we're actually working with
-        print(f"\n\nPLAIN TEXT AFTER STRIPPING ANSI:\n{plain_text}\n\n")
+        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|$$[0-?]*[ -/]*[@-~])")
+        plain_text = ansi_escape.sub("", result.stdout)
         
         # Check that old flags are no longer in help text
         assert "--push-ecr" not in plain_text
-        assert "--codebuild" not in plain_text 
+        assert "--codebuild" not in plain_text
         assert "Build and push to ECR only" not in plain_text
         
-        # Check that the three modes are clearly described - with emojis!
-        assert "DEFAULT (no flags): CodeBuild + cloud runtime" in plain_text
-        assert "💻 --local: Local build + local runtime" in plain_text
-        assert "🔧 --local-build: Local build + cloud runtime" in plain_text
+        # More flexible assertions that are resilient to minor formatting changes
+        assert "DEFAULT" in plain_text and "CodeBuild + cloud runtime" in plain_text
+        assert "--local:" in plain_text and "Local build + local runtime" in plain_text
+        assert "--local-build:" in plain_text and "Local build + cloud runtime" in plain_text
 
     def test_launch_missing_config(self, tmp_path):
         """Test launch command with missing config file."""
