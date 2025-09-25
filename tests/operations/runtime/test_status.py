@@ -289,3 +289,233 @@ class TestStatusOperation:
         assert (
             result.config.agent_arn == "arn:aws:bedrock_agentcore:eu-west-1:987654321098:agent-runtime/my-agent-id-123"
         )
+
+    def test_status_with_memory_enabled(self, mock_boto3_clients, tmp_path):
+        """Test status for agent with memory enabled."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        # Create config file with deployed agent and memory
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,
+                memory_name="test-agent-memory",
+                memory_id="mem-12345",
+                memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem-12345",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock memory manager - split long line
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = mock_memory_manager_class.return_value
+            # Set up mock for get_memory_status
+            mock_memory_manager.get_memory_status.return_value = "ACTIVE"
+            # Set up mock for get_memory_strategies
+            mock_memory_manager.get_memory_strategies.return_value = [
+                {"name": "UserPreferences"},
+                {"name": "SemanticFacts"},
+            ]
+
+            # Mock Bedrock AgentCore client responses with actual dictionaries
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {"status": "READY"}
+
+            # Get status
+            result = get_status(config_path)
+
+            # Verify memory information
+            assert result.config.memory_id == "mem-12345"
+            assert result.config.memory_enabled is True
+            assert result.config.memory_type == "STM+LTM (2 strategies)"
+            assert result.config.memory_status == "ACTIVE"
+
+            # Verify memory manager was called with correct parameters
+            mock_memory_manager.get_memory_status.assert_called_once_with("mem-12345")
+            mock_memory_manager.get_memory_strategies.assert_called_once_with("mem-12345")
+
+    def test_status_with_memory_provisioning(self, mock_boto3_clients, tmp_path):
+        """Test status for agent with memory in provisioning state."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        # Create config file with deployed agent and memory
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,
+                memory_name="test-agent-memory",
+                memory_id="mem-12345",
+                memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem-12345",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock memory manager
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = mock_memory_manager_class.return_value
+            # Set up mock for get_memory_status - CREATING state
+            mock_memory_manager.get_memory_status.return_value = "CREATING"
+
+            # Mock Bedrock AgentCore client responses with actual dictionaries
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {"status": "READY"}
+
+            # Get status
+            result = get_status(config_path)
+
+            # Verify provisioning memory information
+            assert result.config.memory_id == "mem-12345"
+            assert result.config.memory_enabled is False  # Not ready yet
+            assert result.config.memory_type == "STM+LTM (provisioning...)"
+            assert result.config.memory_status == "CREATING"
+
+    def test_status_with_memory_error(self, mock_boto3_clients, tmp_path):
+        """Test status for agent with memory in error state."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        # Create config file with deployed agent and memory
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,
+                memory_name="test-agent-memory",
+                memory_id="mem-12345",
+                memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem-12345",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock memory manager to throw exception
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = mock_memory_manager_class.return_value
+            mock_memory_manager.get_memory_status.side_effect = Exception("Memory access denied")
+
+            # Mock Bedrock AgentCore client responses with actual dictionaries
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {"status": "READY"}
+
+            # Get status
+            result = get_status(config_path)
+
+            # Instead, check that error handling is working correctly:
+            assert result.config.memory_enabled is False
+            assert "Error checking: Memory access denied" in result.config.memory_type
+
+    def test_status_with_memory_failed_state(self, mock_boto3_clients, tmp_path):
+        """Test status for agent with memory in FAILED state."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        # Create config file with deployed agent and memory
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,
+                memory_name="test-agent-memory",
+                memory_id="mem-12345",
+                memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem-12345",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock memory manager
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = mock_memory_manager_class.return_value
+            # Set up mock for get_memory_status - FAILED state
+            mock_memory_manager.get_memory_status.return_value = "FAILED"
+
+            # Mock Bedrock AgentCore client responses with actual dictionaries
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {"status": "READY"}
+
+            # Get status
+            result = get_status(config_path)
+
+            # Verify failed memory information
+            assert result.config.memory_id == "mem-12345"
+            assert result.config.memory_enabled is False
+            assert result.config.memory_type == "Error (FAILED)"
+            assert result.config.memory_status == "FAILED"

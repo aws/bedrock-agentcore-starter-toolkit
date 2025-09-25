@@ -994,3 +994,19 @@ class TestValidateAgentName:
             is_valid, error_msg = validate_agent_name(name)
             assert is_valid is False, f"Expected '{name}' to be invalid"
             assert error_msg == AGENT_NAME_ERROR, f"Expected standard error message for '{name}'"
+
+    def test_validate_agent_name_additional_patterns(self):
+        """Test validate_agent_name with various name patterns."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.configure import validate_agent_name
+
+        # Test valid names
+        valid_names = ["agent123", "Agent_123", "A_1"]
+        for name in valid_names:
+            is_valid, _ = validate_agent_name(name)
+            assert is_valid is True, f"Expected '{name}' to be valid"
+
+        # Test invalid names
+        invalid_names = ["1agent", "agent-123", "agent.name"]
+        for name in invalid_names:
+            is_valid, _ = validate_agent_name(name)
+            assert is_valid is False, f"Expected '{name}' to be invalid"

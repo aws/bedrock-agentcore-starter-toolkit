@@ -428,6 +428,30 @@ class TestLaunchBedrockAgentCore:
         assert updated_agent.aws.execution_role == created_role_arn
         assert updated_agent.aws.execution_role_auto_create is False  # Should be disabled after creation
 
+    def test_launch_with_invalid_agent_name(self, tmp_path):
+        """Test launch with invalid agent name."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import launch_bedrock_agentcore
+
+        # Create a config file with invalid agent name (starts with a number)
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="1invalid-name",  # Invalid: starts with a number
+            entrypoint="app.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(
+            default_agent="1invalid-name", agents={"1invalid-name": agent_config}
+        )
+        save_config(project_config, config_path)
+
+        # Should raise ValueError for invalid agent name
+        with pytest.raises(ValueError, match="Invalid configuration"):
+            launch_bedrock_agentcore(config_path)
+
     def test_launch_cloud_with_existing_execution_role(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment with existing execution role (no auto-creation)."""
         existing_role_arn = "arn:aws:iam::123456789012:role/existing-test-role"
@@ -1513,6 +1537,99 @@ class TestLaunchBedrockAgentCore:
 
             # Should succeed despite memory error
             assert result.mode == "cloud"
+
+    def test_launch_local_with_invalid_config(self, mock_container_runtime, tmp_path):
+        """Test error handling when launching locally with invalid configuration."""
+        # Create config with missing required fields
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="",  # Invalid empty entrypoint
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Should raise ValueError for invalid configuration
+        with pytest.raises(ValueError, match="Invalid configuration"):
+            launch_bedrock_agentcore(config_path, local=True)
+
+    def test_launch_local_with_custom_port(self, mock_container_runtime, tmp_path):
+        """Test local deployment with custom port configuration."""
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Mock successful build
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+        mock_container_runtime.has_local_runtime = True
+
+        env_vars = {"PORT": "9000"}  # Custom port
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True, env_vars=env_vars)
+
+            # Verify result has the default port (8080) since PORT env var is only used at runtime
+            assert result.mode == "local"
+            assert result.port == 8080
+            assert result.tag == "bedrock_agentcore-test-agent:latest"
+
+            # Verify env_vars were passed through
+            assert "PORT" in result.env_vars
+            assert result.env_vars["PORT"] == "9000"
+
+    def test_launch_auto_update_on_conflict(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test auto_update_on_conflict flag is properly passed to deployment."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            # Configure return values
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
+            # Call with auto_update_on_conflict=True
+            result = launch_bedrock_agentcore(config_path, local=False, auto_update_on_conflict=True)
+
+            # Verify flag was passed through to _deploy_to_bedrock_agentcore
+            mock_deploy.assert_called_once()
+            assert mock_deploy.call_args.kwargs["auto_update_on_conflict"] is True
+
+            # Verify successful deployment
+            assert result.mode == "codebuild"
+            assert result.agent_id == "agent-123"
 
 
 class TestEnsureExecutionRole:
