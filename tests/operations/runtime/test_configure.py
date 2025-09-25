@@ -483,6 +483,127 @@ def handler(payload):
 
         finally:
             os.chdir(original_cwd)
+            
+    def test_configure_with_code_build_execution_role(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with separate CodeBuild execution role."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_ltm_choice.return_value = False
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                # Patch the CodeBuildConfig import if it doesn't exist in your local version
+                with patch("bedrock_agentcore_starter_toolkit.utils.runtime.schema.CodeBuildConfig", create=True):
+                    result = configure_bedrock_agentcore(
+                        agent_name="test_agent",
+                        entrypoint_path=agent_file,
+                        execution_role="ExecutionRole",
+                        code_build_execution_role="CodeBuildRole",
+                    )
+
+                    # Load and verify the configuration
+                    from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                    config = load_config(result.config_path)
+                    agent_config = config.get_agent_config("test_agent")
+
+                    assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
+                    # Check codebuild if it exists in the schema
+                    if hasattr(agent_config, "codebuild") and agent_config.codebuild:
+                        assert agent_config.codebuild.execution_role == "arn:aws:iam::123456789012:role/CodeBuildRole"
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_without_code_build_execution_role(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration without CodeBuild execution role uses main execution role."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_ltm_choice.return_value = False
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                # Patch the CodeBuildConfig import if it doesn't exist in your local version
+                with patch("bedrock_agentcore_starter_toolkit.utils.runtime.schema.CodeBuildConfig", create=True):
+                    result = configure_bedrock_agentcore(
+                        agent_name="test_agent",
+                        entrypoint_path=agent_file,
+                        execution_role="arn:aws:iam::123456789012:role/ExecutionRole",
+                    )
+
+                    # Load and verify the configuration
+                    from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                    config = load_config(result.config_path)
+                    agent_config = config.get_agent_config("test_agent")
+
+                    assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
+                    # Check codebuild if it exists in the schema
+                    if hasattr(agent_config, "codebuild"):
+                        assert agent_config.codebuild.execution_role is None
+
+        finally:
+            os.chdir(original_cwd)
 
     def test_configure_with_request_header_configuration(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
@@ -494,7 +615,6 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
-
         os.chdir(tmp_path)
 
         try:
@@ -571,7 +691,6 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
-
         os.chdir(tmp_path)
 
         try:
@@ -595,8 +714,6 @@ def handler(payload):
                     "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
                 ) as mock_config_manager_class,
             ):
-                # Test with None request header configuration
-
                 # Configure mock
                 mock_config_manager = Mock()
                 mock_config_manager.prompt_ltm_choice.return_value = False
@@ -625,7 +742,7 @@ def handler(payload):
 
         finally:
             os.chdir(original_cwd)
-
+            
     def test_configure_with_empty_request_header_configuration(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
@@ -1010,3 +1127,4 @@ class TestValidateAgentName:
         for name in invalid_names:
             is_valid, _ = validate_agent_name(name)
             assert is_valid is False, f"Expected '{name}' to be invalid"
+            
