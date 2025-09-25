@@ -31,6 +31,36 @@ jobs:
         ruff check src/ || true  # Don't fail on style issues
         ruff format --check src/ || true
 
+  pre-commit-check:
+    name: Pre-commit Checks
+    runs-on: ubuntu-latest
+    # No continue-on-error - this makes it blocking
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Create virtual environment
+        run: uv venv
+      
+      - name: Install dependencies
+        run: uv sync --dev
+      
+      - name: Run pre-commit
+        run: |
+          # Clear pre-commit cache
+          uv run pre-commit clean
+          # Run all pre-commit hooks including pytest with 90% coverage threshold
+          uv run pre-commit run --all-files
+
   test:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest

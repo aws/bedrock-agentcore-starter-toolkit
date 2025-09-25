@@ -9,7 +9,6 @@
 - fix: llm.txt typo (#210) (f48ae5e)
 - docs: Add llm.txt and file on runtime deployment (#202) (90dac4b)
 - fix: correct pyproject.toml installation in subdirectories (#207) (ea01c65)
-- chore: bump version to 0.1.13 (#205) (86269a9)
 
 ## [0.1.13] - 2025-09-24
 
