@@ -138,8 +138,8 @@ fraud_detector = StandaloneFraudDetector()
 
 # API Routes
 
-@app.route('/', methods=['GET'])
-def home():
+@app.route('/api-docs', methods=['GET'])
+def api_docs():
     """API documentation page"""
     html = """
     <!DOCTYPE html>
@@ -211,6 +211,19 @@ def home():
     </html>
     """
     return html
+
+@app.route('/', methods=['GET'])
+def web_interface():
+    """Serve the web testing interface"""
+    try:
+        with open('web_interface.html', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return """
+        <h1>Web Interface Not Found</h1>
+        <p>The web_interface.html file is missing.</p>
+        <p><a href="/api-docs">View API Documentation</a></p>
+        """
 
 @app.route('/health', methods=['GET'])
 def health_check():

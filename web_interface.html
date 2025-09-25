@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏦 Fraud Detection Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .form-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        
+        .results-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .result-card.flagged {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .result-card.warning {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        .risk-score {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .risk-low { background: #28a745; }
+        .risk-medium { background: #ffc107; color: #212529; }
+        .risk-high { background: #dc3545; }
+        
+        .flags {
+            margin-top: 10px;
+        }
+        
+        .flag {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin: 2px;
+            color: #495057;
+        }
+        
+        .flag.high-risk {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .quick-tests {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .status-online {
+            background: #28a745;
+        }
+        
+        .status-offline {
+            background: #dc3545;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .quick-tests {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">
+        🔄 Checking API...
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Fraud Detection Tester</h1>
+            <p>Test multi-currency fraud detection in real-time</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="form-section">
+                <h2>💳 Transaction Details</h2>
+                
+                <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <input type="number" id="amount" step="0.01" value="1500.00" placeholder="Enter amount">
+                </div>
+                
+                <div class="form-group">
+                    <label for="currency">Currency</label>
+                    <select id="currency">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="INR">INR - Indian Rupee</option>
+                        <option value="KES">KES - Kenyan Shilling</option>
+                        <option value="UGX">UGX - Ugandan Shilling</option>
+                        <option value="TZS">TZS - Tanzanian Shilling</option>
+                        <option value="NGN">NGN - Nigerian Naira</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                        <option value="AUD">AUD - Australian Dollar</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="merchant">Merchant</label>
+                    <select id="merchant">
+                        <option value="AMAZON">AMAZON</option>
+                        <option value="WALMART">WALMART</option>
+                        <option value="STARBUCKS">STARBUCKS</option>
+                        <option value="SHELL">SHELL</option>
+                        <option value="MCDONALDS">MCDONALDS</option>
+                        <option value="UNKNOWN_MERCHANT">UNKNOWN_MERCHANT (Suspicious)</option>
+                        <option value="CASH_ADVANCE">CASH_ADVANCE (Suspicious)</option>
+                        <option value="CRYPTO_EXCHANGE">CRYPTO_EXCHANGE (Suspicious)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <select id="location">
+                        <option value="NEW_YORK_NY">New York, NY</option>
+                        <option value="LOS_ANGELES_CA">Los Angeles, CA</option>
+                        <option value="CHICAGO_IL">Chicago, IL</option>
+                        <option value="HOUSTON_TX">Houston, TX</option>
+                        <option value="FOREIGN_COUNTRY">Foreign Country (Risky)</option>
+                        <option value="HIGH_RISK_COUNTRY">High Risk Country (Risky)</option>
+                        <option value="OFFSHORE_TERRITORY">Offshore Territory (Risky)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userId">User ID</label>
+                    <input type="text" id="userId" value="user_001" placeholder="Enter user ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="SHOPPING">Shopping</option>
+                        <option value="RESTAURANT">Restaurant</option>
+                        <option value="GAS">Gas</option>
+                        <option value="GROCERY">Grocery</option>
+                        <option value="ENTERTAINMENT">Entertainment</option>
+                        <option value="CASH_ADVANCE">Cash Advance</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="analyzeTransaction()">
+                    🔍 Analyze Transaction
+                </button>
+                
+                <div class="quick-tests">
+                    <button class="btn btn-secondary" onclick="testNormalTransaction()">
+                        ✅ Test Normal
+                    </button>
+                    <button class="btn btn-danger" onclick="testSuspiciousTransaction()">
+                        🚨 Test Suspicious
+                    </button>
+                    <button class="btn btn-secondary" onclick="testMultiCurrency()">
+                        💱 Test Multi-Currency
+                    </button>
+                    <button class="btn btn-secondary" onclick="testVelocity()">
+                        🚀 Test Velocity
+                    </button>
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <h2>📊 Analysis Results</h2>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing transaction...</p>
+                </div>
+                
+                <div id="results">
+                    <p style="text-align: center; color: #6c757d; padding: 40px;">
+                        Enter transaction details and click "Analyze Transaction" to see results
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        // Check API status on load
+        window.onload = function() {
+            checkApiStatus();
+            loadCurrencies();
+        };
+        
+        async function checkApiStatus() {
+            const indicator = document.getElementById('statusIndicator');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    indicator.textContent = '🟢 API Online';
+                    indicator.className = 'status-indicator status-online';
+                } else {
+                    throw new Error('API not responding');
+                }
+            } catch (error) {
+                indicator.textContent = '🔴 API Offline';
+                indicator.className = 'status-indicator status-offline';
+            }
+        }
+        
+        async function loadCurrencies() {
+            try {
+                const response = await fetch(`${API_BASE}/currencies`);
+                const data = await response.json();
+                
+                const currencySelect = document.getElementById('currency');
+                currencySelect.innerHTML = '';
+                
+                Object.keys(data.currencies).forEach(code => {
+                    const currency = data.currencies[code];
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${code} - ${currency.name}`;
+                    currencySelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load currencies:', error);
+            }
+        }
+        
+        async function analyzeTransaction() {
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            // Show loading
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            
+            // Get form data
+            const transaction = {
+                id: `web_${Date.now()}`,
+                user_id: document.getElementById('userId').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                currency: document.getElementById('currency').value,
+                merchant: document.getElementById('merchant').value,
+                location: document.getElementById('location').value,
+                category: document.getElementById('category').value,
+                timestamp: new Date().toISOString(),
+                card_type: 'CREDIT'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ transaction })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayResult(data.result, transaction);
+                } else {
+                    displayError(data.error || 'Analysis failed');
+                }
+                
+            } catch (error) {
+                displayError(`Network error: ${error.message}`);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function displayResult(result, transaction) {
+            const results = document.getElementById('results');
+            
+            const riskLevel = result.risk_score < 30 ? 'low' : 
+                             result.risk_score < 70 ? 'medium' : 'high';
+            
+            const cardClass = result.is_flagged ? 'flagged' : 
+                             result.risk_score > 30 ? 'warning' : '';
+            
+            results.innerHTML = `
+                <div class="result-card ${cardClass}">
+                    <h3>${result.is_flagged ? '🚨 TRANSACTION FLAGGED' : '✅ TRANSACTION APPROVED'}</h3>
+                    
+                    <div style="margin: 15px 0;">
+                        <strong>Transaction:</strong> ${transaction.amount} ${transaction.currency} at ${transaction.merchant}
+                        ${result.usd_equivalent ? `<br><strong>USD Equivalent:</strong> $${result.usd_equivalent.toFixed(2)}` : ''}
+                    </div>
+                    
+                    <div class="risk-score risk-${riskLevel}">
+                        Risk Score: ${result.risk_score}/100
+                    </div>
+                    
+                    ${result.flags && result.flags.length > 0 ? `
+                        <div class="flags">
+                            <strong>Flags:</strong><br>
+                            ${result.flags.map(flag => `<span class="flag ${result.is_flagged ? 'high-risk' : ''}">${flag}</span>`).join('')}
+                        </div>
+                    ` : '<p style="color: #28a745;">No risk factors detected</p>'}
+                    
+                    <div style="margin-top: 15px; font-size: 12px; color: #6c757d;">
+                        Analysis Type: ${result.analysis_type || 'Rule-based'} | 
+                        Time: ${new Date(result.timestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayError(error) {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="result-card flagged">
+                    <h3>❌ Error</h3>
+                    <p>${error}</p>
+                    <p style="margin-top: 10px; font-size: 14px;">
+                        Make sure the API is running: <code>python standalone_fraud_api.py</code>
+                    </p>
+                </div>
+            `;
+        }
+        
+        function testNormalTransaction() {
+            document.getElementById('amount').value = '85.50';
+            document.getElementById('currency').value = 'USD';
+            document.getElementById('merchant').value = 'STARBUCKS';
+            document.getElementById('location').value = 'NEW_YORK_NY';
+            document.getElementById('category').value = 'RESTAURANT';
+            analyzeTransaction();
+        }
+        
+        function testSuspiciousTransaction() {
+            document.getElementById('amount').value = '15000.00';
+            document.getElementById('currency').value = 'USD';
+            document.getElementById('merchant').value = 'UNKNOWN_MERCHANT';
+            document.getElementById('location').value = 'FOREIGN_COUNTRY';
+            document.getElementById('category').value = 'OTHER';
+            analyzeTransaction();
+        }
+        
+        function testMultiCurrency() {
+            document.getElementById('amount').value = '5000000';
+            document.getElementById('currency').value = 'NGN';
+            document.getElementById('merchant').value = 'AMAZON';
+            document.getElementById('location').value = 'HIGH_RISK_COUNTRY';
+            document.getElementById('category').value = 'SHOPPING';
+            analyzeTransaction();
+        }
+        
+        async function testVelocity() {
+            const userId = 'velocity_test_' + Date.now();
+            document.getElementById('userId').value = userId;
+            document.getElementById('amount').value = '500.00';
+            document.getElementById('currency').value = 'USD';
+            document.getElementById('merchant').value = 'AMAZON';
+            
+            // Send 6 rapid transactions
+            for (let i = 0; i < 6; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+                await analyzeTransaction();
+            }
+        }
+        
+        // Auto-refresh API status every 30 seconds
+        setInterval(checkApiStatus, 30000);
+    </script>
+</body>
+</html>
