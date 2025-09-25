@@ -71,8 +71,10 @@ class StatusConfigInfo(BaseModel):
     agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
     memory_id: Optional[str] = Field(None, description="Memory resource ID")
+    memory_status: Optional[str] = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
     memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
     memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
+    memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
 
 
 class StatusResult(BaseModel):

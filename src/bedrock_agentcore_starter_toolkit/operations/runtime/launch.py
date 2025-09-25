@@ -594,30 +594,32 @@ def _launch_with_codebuild(
                 if agent_config.memory.enable_ltm and len(existing_strategies) == 0:
                     log.info("Adding LTM strategies to existing memory...")
 
-                    # Add strategies one by one with wait
-                    memory_manager.add_user_preference_strategy_and_wait(
+                    # Add all strategies in one batch call
+                    memory_manager.update_memory_strategies_and_wait(
                         memory_id=existing_memory.id,
-                        name="UserPreferences",
-                        namespaces=["/users/{actorId}/preferences"],
-                        max_wait=60,
+                        add_strategies=[
+                            {
+                                StrategyType.USER_PREFERENCE.value: {
+                                    "name": "UserPreferences",
+                                    "namespaces": ["/users/{actorId}/preferences"],
+                                }
+                            },
+                            {
+                                StrategyType.SEMANTIC.value: {
+                                    "name": "SemanticFacts",
+                                    "namespaces": ["/users/{actorId}/facts"],
+                                }
+                            },
+                            {
+                                StrategyType.SUMMARY.value: {
+                                    "name": "SessionSummaries",
+                                    "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                                }
+                            },
+                        ],
+                        max_wait=30,  # Give it 30 seconds for batch update
+                        poll_interval=5,
                     )
-                    log.info("Added UserPreferences strategy")
-
-                    memory_manager.add_semantic_strategy_and_wait(
-                        memory_id=existing_memory.id,
-                        name="SemanticFacts",
-                        namespaces=["/users/{actorId}/facts"],
-                        max_wait=60,
-                    )
-                    log.info("Added SemanticFacts strategy")
-
-                    memory_manager.add_summary_strategy_and_wait(
-                        memory_id=existing_memory.id,
-                        name="SessionSummaries",
-                        namespaces=["/summaries/{actorId}/{sessionId}"],
-                        max_wait=60,
-                    )
-                    log.info("Added SessionSummaries strategy")
 
                     memory = existing_memory
                     log.info("✅ LTM strategies added to existing memory")
@@ -656,15 +658,19 @@ def _launch_with_codebuild(
                 else:
                     log.info("Creating new STM-only memory...")
 
-                memory = memory_manager.create_memory_and_wait(
+                # Use private method to avoid waiting
+                memory = memory_manager._create_memory(
                     name=memory_name,
                     description=f"Memory for agent {agent_name} with {'STM+LTM' if strategies else 'STM only'}",
                     strategies=strategies,
                     event_expiry_days=agent_config.memory.event_expiry_days or 30,
                     memory_execution_role_arn=None,
-                    max_wait=180 if strategies else 60,
                 )
-                log.info("✅ New memory created: %s", memory.id)
+                log.info("✅ New memory created: %s (provisioning in background)", memory.id)
+
+            # Save memory configuration
+            agent_config.memory.memory_id = memory.id
+            agent_config.memory.memory_arn = memory.arn
 
             # Regenerate Dockerfile with memory ID
             from ...utils.runtime.container import ContainerRuntime
