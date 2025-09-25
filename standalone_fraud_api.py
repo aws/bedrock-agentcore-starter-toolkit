@@ -216,7 +216,7 @@ def api_docs():
 def web_interface():
     """Serve the web testing interface"""
     try:
-        with open('web_interface.html', 'r') as f:
+        with open('web_interface.html', 'r', encoding='utf-8') as f:
             return f.read()
     except FileNotFoundError:
         return """
