@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 ```bash
 # Configure and deploy your agent
-agentcore configure --entrypoint my_agent.py
+agentcore configure --entrypoint my_agent.py --non-interactive
 agentcore launch
 agentcore invoke '{"name": "Alice"}'
 ```

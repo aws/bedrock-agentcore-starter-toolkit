@@ -126,6 +126,51 @@ def handler(payload):
             call_args = mock_configure.call_args
             assert call_args[1]["authorizer_configuration"] == oauth_config
 
+    def test_configure_with_code_build_execution_role(self, tmp_path):
+        """Test configure command with CodeBuild execution role."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.parse_entrypoint") as mock_parse,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req_display,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+        ):
+            mock_parse.return_value = (str(agent_file), "bedrock_agentcore")
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/ExecutionRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_configure.return_value = mock_result
+
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "ExecutionRole",
+                    "--code-build-execution-role",
+                    "CodeBuildRole",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Verify CodeBuild execution role was passed
+            call_args = mock_configure.call_args
+            assert call_args[1]["code_build_execution_role"] == "CodeBuildRole"
+
     def test_configure_with_invalid_protocol(self, tmp_path):
         agent_file = tmp_path / "test_agent.py"
 

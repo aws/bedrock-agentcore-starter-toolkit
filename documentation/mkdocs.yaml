@@ -127,6 +127,28 @@ plugins:
             docstring_style: google
             show_root_heading: true
             show_source: true
+  - llmstxt:
+      markdown_description: "Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI agents securely, at scale. It offers infrastructure purpose-built for dynamic agent workloads, powerful tools to enhance agents, and essential controls for real-world deployment. AgentCore services can be used together or independently and work with any framework including CrewAI, LangGraph, LlamaIndex, and Strands Agents, as well as any foundation model in or outside of Amazon Bedrock, giving you ultimate flexibility."
+      sections:
+        "User Guide":
+          - "mcp/agentcore_runtime_deployment.md"  # replace with user-guide/runtime/quickstart.md
+          - "user-guide/runtime/overview.md": "Runtime service overview"
+          - "user-guide/runtime/permissions.md": "Runtime permissions guide"
+          - "user-guide/runtime/async.md": "Runtime async processing"
+          - "user-guide/runtime/notebook.md": "Runtime notebook integration"
+          - "user-guide/gateway/quickstart.md": "Gateway quickstart guide"
+          - "user-guide/memory/quickstart.md": "Memory quickstart guide"
+          - "user-guide/identity/quickstart.md": "Identity quickstart guide"
+          - "user-guide/builtin-tools/quickstart-browser.md": "Browser tool quickstart"
+          - "user-guide/builtin-tools/quickstart-code-interpreter.md": "Code interpreter quickstart"
+          - "user-guide/observability/quickstart.md": "Observability quickstart guide"
+          - "user-guide/import-agent/quickstart.md": "Import agent quickstart"
+          - "user-guide/import-agent/overview.md": "Import agent overview"
+          - "user-guide/import-agent/configuration.md": "Import agent configuration"
+        "Examples":
+          - examples/*.md
+        "API Reference":
+          - api-reference/*.md
 
 extra:
   social:
