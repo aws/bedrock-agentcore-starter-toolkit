@@ -506,6 +506,239 @@ class TestLaunchBedrockAgentCore:
         updated_agent = updated_config.agents["test-agent"]
         assert updated_agent.aws.execution_role == existing_role_arn
 
+    def test_port_configuration(self, mock_container_runtime, tmp_path):
+        """Test port configuration from environment variables."""
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Mock successful build
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+        mock_container_runtime.has_local_runtime = True
+
+        # Test various port configurations
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            # Default port
+            result1 = launch_bedrock_agentcore(config_path, local=True)
+            assert result1.port == 8080
+
+            # String port
+            result2 = launch_bedrock_agentcore(config_path, local=True, env_vars={"PORT": "9000"})
+            assert result2.port == 8080  # Should still be 8080 as env vars are only passed to container
+
+            # Invalid port
+            result3 = launch_bedrock_agentcore(config_path, local=True, env_vars={"PORT": "invalid"})
+            assert result3.port == 8080  # Should default to 8080
+
+    def test_network_configuration_validation(self, tmp_path):
+        """Test network configuration validation."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration
+
+        # Create config with invalid network mode
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="app.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(
+                    network_mode="INVALID_MODE"  # Invalid network mode
+                ),
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Should raise ValueError for invalid network mode
+        with pytest.raises(ValueError, match="Invalid configuration"):
+            launch_bedrock_agentcore(config_path)
+
+    def test_container_build_failure_handling(self, mock_container_runtime, tmp_path):
+        """Test handling of container build failures."""
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Mock build failure
+        mock_container_runtime.build.return_value = (False, ["Error: failed to resolve", "No such file or directory"])
+        mock_container_runtime.has_local_runtime = True
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            # Should raise RuntimeError with build failure message
+            with pytest.raises(RuntimeError, match="Build failed"):
+                launch_bedrock_agentcore(config_path, local=True)
+
+    def test_container_runtime_availability_check(self, tmp_path):
+        """Test container runtime availability check."""
+        # Create config with execution role to avoid validation error
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+
+        # Mock container runtime with no local runtime available
+        mock_runtime = Mock()
+        mock_runtime.has_local_runtime = False
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_runtime,
+        ):
+            # Test local mode with no runtime
+            with pytest.raises(RuntimeError, match="Cannot run locally"):
+                launch_bedrock_agentcore(config_path, local=True)
+
+            # Test cloud mode with local build but no runtime
+            with pytest.raises(RuntimeError, match="Cannot build locally"):
+                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+    def test_configuration_validation(self, tmp_path):
+        """Test configuration validation for cloud deployment."""
+        # Create config with missing execution role (invalid for cloud deployment)
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Should fail validation due to missing execution role
+        with pytest.raises(ValueError, match="Missing 'aws.execution_role'"):
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+    def test_local_launch_result_structure(self, mock_container_runtime, tmp_path):
+        """Test structure of LaunchResult for local mode."""
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Mock build success but don't mock run
+        mock_container_runtime.has_local_runtime = True
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.run",
+                return_value=True,
+            ),
+        ):  # Patch the class method directly
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Check result structure
+            assert result.mode == "local"
+            assert result.port == 8080
+            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert isinstance(result.runtime, type(mock_container_runtime))
+
+    def test_env_vars_handling(self, mock_container_runtime, tmp_path):
+        """Test environment variable handling."""
+        config_path = create_test_config(tmp_path)
+
+        # Add a memory configuration to the agent
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
+
+        config = load_config(config_path)
+        agent = list(config.agents.values())[0]
+
+        # Add memory info to the agent
+        agent.memory = Mock()
+        agent.memory.memory_id = "test-memory-id"
+        agent.memory.memory_name = "test-memory-name"
+
+        config.agents[agent.name] = agent
+        save_config(config, config_path)
+
+        # Test that launch operation adds the memory env vars
+        env_vars = {}
+
+        # Instead of running the full launch, just call the specific part we want to test
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import launch_bedrock_agentcore
+
+        # Mock the build operation to avoid execution
+        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.build") as mock_build:
+            mock_build.return_value = (True, ["Successfully built"])
+
+            # Launch with our env_vars dictionary
+            launch_bedrock_agentcore(config_path, local=True, env_vars=env_vars)
+
+            # Check that memory vars were added to env_vars
+            assert "BEDROCK_AGENTCORE_MEMORY_ID" in env_vars
+            assert env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "test-memory-id"
+            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in env_vars
+            assert env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test-memory-name"
+
+    def test_memory_configuration_handling(self, mock_container_runtime, tmp_path):
+        """Test memory configuration handling in environment variables."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        # Create config with memory already configured
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="app.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                network_configuration=NetworkConfiguration(),
+            ),
+            memory=MemoryConfig(
+                enabled=True,
+                enable_ltm=True,
+                memory_name="test_memory",
+                memory_id="mem-12345",  # Already has memory ID
+                event_expiry_days=30,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        mock_container_runtime.has_local_runtime = True
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            # Run locally
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Check that memory env vars were passed
+            assert "BEDROCK_AGENTCORE_MEMORY_ID" in result.env_vars
+            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "mem-12345"
+            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in result.env_vars
+            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test_memory"
+
+    def test_container_runtime_error_handling(self, mock_container_runtime, tmp_path):
+        """Test error handling for container runtime issues."""
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+
+        # Simulate runtime error that mentions container runtime
+        mock_container_runtime.has_local_runtime = True
+        mock_container_runtime.build.return_value = (False, ["Error: No container runtime available"])
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            # Should throw specific error with recommendation
+            with pytest.raises(RuntimeError) as excinfo:
+                launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify error contains helpful recommendation
+            error_text = str(excinfo.value)
+            assert "No container runtime available" in error_text
+            assert "Recommendation:" in error_text
+            assert "CodeBuild" in error_text
+
     def test_launch_missing_execution_role_no_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test error when execution role not configured and auto-create disabled."""
         config_path = create_test_config(

@@ -373,3 +373,190 @@ class TestConfigurationManager:
             assert result is False
             mock_prompt.assert_called_once_with("Enable long-term memory extraction? (yes/no)", "no")
             mock_success.assert_called_once_with("Using short-term memory only")
+
+    def test_init_with_non_interactive_mode(self, tmp_path):
+        """Test initialization with non_interactive=True."""
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml", non_interactive=True)
+            assert config_manager.non_interactive is True
+            assert config_manager.existing_config is None
+
+    def test_prompt_execution_role_non_interactive(self, tmp_path):
+        """Test prompt_execution_role in non-interactive mode."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml", non_interactive=True)
+            result = config_manager.prompt_execution_role()
+
+            assert result is None
+            mock_success.assert_called_once_with("Will auto-create execution role")
+
+    def test_prompt_ecr_repository_non_interactive(self, tmp_path):
+        """Test prompt_ecr_repository in non-interactive mode."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml", non_interactive=True)
+            repo, auto_create = config_manager.prompt_ecr_repository()
+
+            assert repo is None
+            assert auto_create is True
+            mock_success.assert_called_once_with("Will auto-create ECR repository")
+
+    def test_prompt_ecr_repository_with_user_input(self, tmp_path):
+        """Test prompt_ecr_repository with user providing a repository."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user input
+            mock_prompt.return_value = "123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo"
+
+            repo, auto_create = config_manager.prompt_ecr_repository()
+
+            assert repo == "123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo"
+            assert auto_create is False
+            mock_prompt.assert_called_once_with("ECR Repository URI (or press Enter to auto-create)", "")
+            mock_success.assert_called_once_with(
+                "Using existing ECR repository: [dim]123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo[/dim]"
+            )
+
+    def test_prompt_oauth_config_non_interactive(self, tmp_path):
+        """Test prompt_oauth_config in non-interactive mode."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml", non_interactive=True)
+            result = config_manager.prompt_oauth_config()
+
+            assert result is None
+            mock_success.assert_called_once_with("Using default IAM authorization")
+
+    def test_prompt_oauth_config_with_no(self, tmp_path):
+        """Test prompt_oauth_config when user declines OAuth."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user declining OAuth
+            mock_prompt.return_value = "no"
+
+            result = config_manager.prompt_oauth_config()
+
+            assert result is None
+            mock_prompt.assert_called_once_with("Configure OAuth authorizer instead? (yes/no)", "no")
+            mock_success.assert_called_once_with("Using default IAM authorization")
+
+    def test_configure_oauth_basic(self, tmp_path):
+        """Test _configure_oauth with basic configuration."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user input for OAuth configuration
+            mock_prompt.side_effect = [
+                "https://cognito-idp.us-east-1.amazonaws.com/my-user-pool",  # discovery URL
+                "client1,client2",  # client IDs
+                "api://default",  # audience
+            ]
+
+            result = config_manager._configure_oauth()
+
+            expected = {
+                "customJWTAuthorizer": {
+                    "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/my-user-pool",
+                    "allowedClients": ["client1", "client2"],
+                    "allowedAudience": ["api://default"],
+                }
+            }
+            assert result == expected
+            assert mock_prompt.call_count == 3
+            mock_success.assert_called_once_with("OAuth authorizer configuration created")
+
+    def test_prompt_memory_type_yes_both(self, tmp_path):
+        """Test prompt_memory_type with user enabling both STM and LTM."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user enabling both memory types
+            mock_prompt.side_effect = ["yes", "yes"]
+
+            enable_memory, enable_ltm = config_manager.prompt_memory_type()
+
+            assert enable_memory is True
+            assert enable_ltm is True
+            assert mock_prompt.call_count == 2
+            mock_success.assert_called_once_with("Long-term memory will be configured")
+
+    def test_prompt_memory_type_yes_stm_only(self, tmp_path):
+        """Test prompt_memory_type with user enabling only STM."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user enabling STM but not LTM
+            mock_prompt.side_effect = ["yes", "no"]
+
+            enable_memory, enable_ltm = config_manager.prompt_memory_type()
+
+            assert enable_memory is True
+            assert enable_ltm is False
+            assert mock_prompt.call_count == 2
+            mock_success.assert_called_once_with("Using short-term memory only")
+
+    def test_prompt_memory_type_no(self, tmp_path):
+        """Test prompt_memory_type with user disabling memory."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+        ):
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+
+            # Mock user disabling all memory
+            mock_prompt.return_value = "no"
+
+            enable_memory, enable_ltm = config_manager.prompt_memory_type()
+
+            assert enable_memory is False
+            assert enable_ltm is False
+            mock_prompt.assert_called_once_with("Enable memory for your agent? (yes/no)", "yes")
+            mock_success.assert_called_once_with("Memory disabled")
