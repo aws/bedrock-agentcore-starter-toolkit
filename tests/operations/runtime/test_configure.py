@@ -509,14 +509,24 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
                 # Test with request header configuration
                 request_header_config = {
                     "requestHeaderAllowlist": ["Authorization", "X-Custom-Header", "X-Test-Header"]
                 }
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_ltm_choice.return_value = False  # Default to STM only
+                mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -576,10 +586,22 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
+                # Test with None request header configuration
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager_class.return_value = mock_config_manager
+
                 # Test with None request header configuration
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -629,10 +651,22 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
+                # Test with empty dict request header configuration
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager_class.return_value = mock_config_manager
+
                 # Test with empty dict request header configuration
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -682,13 +716,23 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
                 # Mock the logger to capture verbose logging
                 with patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log:
                     request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]}
+
+                    # Configure mock
+                    mock_config_manager = Mock()
+                    mock_config_manager.prompt_ltm_choice.return_value = False
+                    mock_config_manager_class.return_value = mock_config_manager
 
                     result = configure_bedrock_agentcore(
                         agent_name="test_agent",
@@ -740,9 +784,14 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
                 # Test with complex nested request header configuration
                 request_header_config = {
@@ -754,6 +803,11 @@ def handler(payload):
                     ],
                     "additionalSettings": {"maxHeaderSize": 8192, "caseSensitive": False, "allowWildcards": True},
                 }
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -815,9 +869,14 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
                 # Test with both OAuth authorizer and request headers
                 oauth_config = {
@@ -829,6 +888,11 @@ def handler(payload):
                 }
 
                 request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-OAuth-Token", "X-Client-ID"]}
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",

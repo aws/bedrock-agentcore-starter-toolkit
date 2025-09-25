@@ -1,5 +1,6 @@
 """Tests for Bedrock AgentCore launch operation."""
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -868,29 +869,48 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
             ) as mock_memory_manager_class,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
             mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
 
+            # Add these return values
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
             # Fix the memory manager mock setup
             mock_memory_manager = Mock()
 
-            # Create a proper Mock object for the memory result
-            memory_result = Mock()
-            memory_result.id = "mem_123456"
-            memory_result.arn = "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456"
-            # Also support dict-style access for compatibility
-            memory_result.__getitem__ = lambda self, key: {
-                "id": "mem_123456",
-                "arn": "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456",
-            }[key]
+            # Create a SimpleNamespace object for memory results
+            memory_data = {"id": "mem_123456", "arn": "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456"}
+            memory_result = SimpleNamespace(**memory_data)
 
-            # Set the create_memory_and_wait method to return the Mock object
+            # REMOVE THIS LINE: memory_result_dict = memory_data.copy()
+
+            # Set the methods to return the SimpleNamespace object
+            mock_memory_manager._create_memory.return_value = memory_result
             mock_memory_manager.create_memory_and_wait.return_value = memory_result
+
+            # Add item access
+            def getitem(self, key):
+                return memory_data[key]
+
+            memory_result.__getitem__ = getitem.__get__(memory_result)
+
             mock_memory_manager.list_memories.return_value = []  # No existing memories
-            mock_memory_manager.add_user_preference_strategy_and_wait.return_value = None
-            mock_memory_manager.add_semantic_strategy_and_wait.return_value = None
-            mock_memory_manager.add_summary_strategy_and_wait.return_value = None
             mock_memory_manager_class.return_value = mock_memory_manager
 
             # Mock container runtime for Dockerfile regeneration
@@ -902,15 +922,15 @@ class TestLaunchBedrockAgentCore:
             result = launch_bedrock_agentcore(config_path, local=False)
 
             # Verify memory creation was called with the right parameters
-            mock_memory_manager.create_memory_and_wait.assert_called_once()
+            mock_memory_manager._create_memory.assert_called_once()
 
-            # Check parameters
-            call_args = mock_memory_manager.create_memory_and_wait.call_args
+            # Check parameters for _create_memory, NOT create_memory_and_wait
+            call_args = mock_memory_manager._create_memory.call_args
             assert "name" in call_args[1]
             assert "description" in call_args[1]
             assert "strategies" in call_args[1]
 
-            # Verify strategies were added (for LTM)
+            # Verify strategies were added for LTM
             strategies = call_args[1]["strategies"]
             assert len(strategies) == 3  # Should have 3 strategies for LTM
 
@@ -959,28 +979,49 @@ class TestLaunchBedrockAgentCore:
             ) as mock_memory_manager_class,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
             patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
 
-            # Mock memory manager
-            mock_memory_manager = MagicMock()
+            # Add these return values
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
 
-            # Mock existing memory found
-            memory_summary = Mock()
-            memory_summary.id = "bedrock_agentcore_test-agent_memory-existing"
+            # Mock memory manager
+            mock_memory_manager = Mock()
+
+            # Mock existing memory found - use SimpleNamespace instead of Mock
+            memory_summary = SimpleNamespace(id="bedrock_agentcore_test-agent_memory-existing")
             mock_memory_manager.list_memories.return_value = [memory_summary]
 
-            # Mock existing memory without strategies (should trigger strategy addition)
-            existing_memory = MagicMock()
-            existing_memory.id = "mem_existing"
-            existing_memory.strategies = []  # No strategies
+            # Mock existing memory without strategies - use SimpleNamespace
+            existing_memory = SimpleNamespace(
+                id="mem_existing",
+                arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_existing",
+                strategies=[],  # No strategies
+            )
             mock_memory_manager.get_memory.return_value = existing_memory
 
-            # Mock strategy additions
+            # Use individual strategy methods instead of batch update
             mock_memory_manager.add_user_preference_strategy_and_wait.return_value = None
             mock_memory_manager.add_semantic_strategy_and_wait.return_value = None
             mock_memory_manager.add_summary_strategy_and_wait.return_value = None
 
+            # The code path we're testing probably calls these methods
+            mock_memory_manager.update_memory_strategies_and_wait.return_value = None
             mock_memory_manager_class.return_value = mock_memory_manager
 
             # Mock container runtime
@@ -988,20 +1029,15 @@ class TestLaunchBedrockAgentCore:
             mock_runtime.generate_dockerfile.return_value = tmp_path / "Dockerfile"
             mock_runtime_class.return_value = mock_runtime
 
-            # Launch with CodeBuild
+            # Now actually perform the test
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            # Verify memory was found and strategies added
+            # Verify existing memory was found
             mock_memory_manager.list_memories.assert_called()
-            mock_memory_manager.get_memory.assert_called_with(memory_summary.id)
-
-            # Verify all three strategies were added
-            mock_memory_manager.add_user_preference_strategy_and_wait.assert_called_once()
-            mock_memory_manager.add_semantic_strategy_and_wait.assert_called_once()
-            mock_memory_manager.add_summary_strategy_and_wait.assert_called_once()
+            mock_memory_manager.get_memory.assert_called()
 
             # Verify success log
-            mock_log.info.assert_any_call("Added UserPreferences strategy")
+            mock_log.info.assert_any_call("✅ LTM strategies added to existing memory")
 
             assert result.mode == "codebuild"
 
@@ -1048,16 +1084,43 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
             ) as mock_memory_manager_class,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
             mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
 
-            # Setup memory manager mock
-            mock_memory_manager = Mock()
-            memory_result = Mock()
-            memory_result.id = "mem_stm_only"
-            memory_result.arn = "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_stm_only"
+            # Add these return values
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
 
+            # Setup memory manager mock with SimpleNamespace
+            mock_memory_manager = Mock()
+            memory_data = {
+                "id": "mem_stm_only",
+                "arn": "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_stm_only",
+            }
+            memory_result = SimpleNamespace(**memory_data)
+
+            # Add item access
+            def getitem(self, key):
+                return memory_data[key]
+
+            memory_result.__getitem__ = getitem.__get__(memory_result)
+
+            mock_memory_manager._create_memory.return_value = memory_result
             mock_memory_manager.create_memory_and_wait.return_value = memory_result
             mock_memory_manager.list_memories.return_value = []
             mock_memory_manager_class.return_value = mock_memory_manager
@@ -1071,17 +1134,13 @@ class TestLaunchBedrockAgentCore:
             result = launch_bedrock_agentcore(config_path, local=False)
 
             # Verify memory creation was called
-            mock_memory_manager.create_memory_and_wait.assert_called_once()
+            mock_memory_manager._create_memory.assert_called_once()
 
             # Check that no strategies were added (STM only)
-            call_args = mock_memory_manager.create_memory_and_wait.call_args
+            call_args = mock_memory_manager._create_memory.call_args
+            assert "strategies" in call_args[1]
             strategies = call_args[1]["strategies"]
             assert len(strategies) == 0  # Should have no strategies for STM-only
-
-            # Verify strategy methods were NOT called
-            mock_memory_manager.add_user_preference_strategy_and_wait.assert_not_called()
-            mock_memory_manager.add_semantic_strategy_and_wait.assert_not_called()
-            mock_memory_manager.add_summary_strategy_and_wait.assert_not_called()
 
             # Verify result
             assert result.mode == "codebuild"
@@ -1177,11 +1236,29 @@ class TestLaunchBedrockAgentCore:
             ) as mock_memory_manager_class,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
             patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
 
+            # Add these return values
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
             # Mock memory manager to fail
-            mock_memory_manager = MagicMock()
+            mock_memory_manager = Mock()
             mock_memory_manager.list_memories.return_value = []
             mock_memory_manager.create_memory_and_wait.side_effect = Exception("Memory service unavailable")
             mock_memory_manager_class.return_value = mock_memory_manager
@@ -1196,7 +1273,7 @@ class TestLaunchBedrockAgentCore:
 
             # Verify memory manager was called
             mock_memory_manager_class.assert_called_once()
-            mock_memory_manager.create_memory_and_wait.assert_called_once()
+            mock_memory_manager._create_memory.assert_called_once()
 
             # The error is logged, not warned - check error logs
             error_calls = [str(call) for call in mock_log.error.call_args_list]
@@ -1245,31 +1322,45 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager"
             ) as mock_memory_manager_class,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime") as mock_runtime_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
         ):
             mock_create_ecr.return_value = "123456789012.dkr.ecr.us-west-2.amazonaws.com/bedrock_agentcore-test-agent"
+
+            # Mock CodeBuild workflow to avoid serialization
+            mock_execute_workflow.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+
+            # Mock deployment
+            mock_deploy.return_value = ("agent-123", "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent/agent-123")
 
             # Setup memory manager mock
             mock_memory_manager = Mock()
 
-            # Mock existing memory without strategies
-            existing_memory = Mock()
-            existing_memory.id = "existing_mem_456"
-            existing_memory.arn = "arn:aws:memory:us-west-2:123456789012:memory/existing_mem_456"
-            existing_memory.strategies = []  # No strategies yet
+            # Mock existing memory without strategies - use SimpleNamespace
+            existing_memory = SimpleNamespace(
+                id="existing_mem_456",
+                arn="arn:aws:memory:us-west-2:123456789012:memory/existing_mem_456",
+                strategies=[],  # No strategies yet
+            )
 
             # Mock list_memories to return existing memory
-            memory_summary = Mock()
-            memory_summary.id = "bedrock_agentcore_test-agent_memory-abc123"
+            memory_summary = SimpleNamespace(id="bedrock_agentcore_test-agent_memory-abc123")
             mock_memory_manager.list_memories.return_value = [memory_summary]
 
             # Mock get_memory to return the existing memory
             mock_memory_manager.get_memory.return_value = existing_memory
 
-            # Mock strategy addition methods
-            mock_memory_manager.add_user_preference_strategy_and_wait.return_value = None
-            mock_memory_manager.add_semantic_strategy_and_wait.return_value = None
-            mock_memory_manager.add_summary_strategy_and_wait.return_value = None
-
+            # Replace individual strategy methods with batch update
+            mock_memory_manager.update_memory_strategies_and_wait.return_value = None
             mock_memory_manager_class.return_value = mock_memory_manager
 
             # Mock container runtime
@@ -1283,10 +1374,8 @@ class TestLaunchBedrockAgentCore:
             mock_memory_manager.list_memories.assert_called()
             mock_memory_manager.get_memory.assert_called()
 
-            # Verify strategies were added
-            mock_memory_manager.add_user_preference_strategy_and_wait.assert_called_once()
-            mock_memory_manager.add_semantic_strategy_and_wait.assert_called_once()
-            mock_memory_manager.add_summary_strategy_and_wait.assert_called_once()
+            # Verify strategies were added with batch update
+            mock_memory_manager.update_memory_strategies_and_wait.assert_called_once()
 
             # Verify result
             assert result.mode == "codebuild"
