@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏦 Real-Time Fraud Detection Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .transaction-feed {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .controls {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .feed-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .feed-content {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+        
+        .transaction-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 5px solid #28a745;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .transaction-item.flagged {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .transaction-item.warning {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .transaction-id {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .risk-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .risk-low { background: #28a745; }
+        .risk-medium { background: #ffc107; color: #212529; }
+        .risk-high { background: #dc3545; }
+        
+        .transaction-details {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .flags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .flag {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #495057;
+        }
+        
+        .flag.high-risk {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-generating { background: #007bff; }
+        
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">
+        🔄 Connecting...
+    </div>
+    
+    <div class="dashboard">
+        <div class="control-panel">
+            <div class="header">
+                <h1>🏦 Fraud Detection</h1>
+                <p>Real-Time Transaction Monitor</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTransactions">0</div>
+                    <div class="stat-label">Total Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="flaggedTransactions">0</div>
+                    <div class="stat-label">Flagged</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="cleanTransactions">0</div>
+                    <div class="stat-label">Clean</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="fraudRate">0%</div>
+                    <div class="stat-label">Fraud Rate</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">Demo Controls</h3>
+                
+                <div class="form-group">
+                    <label for="transactionCount">Number of Transactions</label>
+                    <input type="number" id="transactionCount" value="10" min="1" max="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="interval">Interval (seconds)</label>
+                    <input type="number" id="interval" value="1.5" min="0.5" max="10" step="0.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fraudRate">Fraud Rate (%)</label>
+                    <input type="number" id="fraudRateInput" value="30" min="0" max="80">
+                </div>
+                
+                <button class="btn" id="startDemo" onclick="startDemo()">
+                    🚀 Start Real-Time Demo
+                </button>
+                
+                <button class="btn btn-danger" id="clearFeed" onclick="clearFeed()">
+                    🗑️ Clear Feed
+                </button>
+                
+                <div class="progress-bar" id="progressContainer" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressText" style="text-align: center; margin-top: 10px; display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="transaction-feed">
+            <div class="feed-header">
+                <h2>📊 Live Transaction Feed</h2>
+                <div style="font-size: 14px; color: #6c757d;">
+                    <span id="connectionStatus">Disconnected</span>
+                </div>
+            </div>
+            
+            <div class="feed-content" id="feedContent">
+                <div class="empty-state">
+                    Click "Start Real-Time Demo" to begin monitoring transactions
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        const socket = io();
+        
+        // Statistics
+        let stats = {
+            total: 0,
+            flagged: 0,
+            clean: 0
+        };
+        
+        // Connect to WebSocket
+        socket.on('connect', function() {
+            updateStatus('connected', '🟢 Connected');
+            document.getElementById('connectionStatus').textContent = 'Connected';
+        });
+        
+        socket.on('disconnect', function() {
+            updateStatus('disconnected', '🔴 Disconnected');
+            document.getElementById('connectionStatus').textContent = 'Disconnected';
+        });
+        
+        // Real-time transaction updates
+        socket.on('transaction_analyzed', function(data) {
+            addTransactionToFeed(data);
+            updateStats(data);
+        });
+        
+        // Demo progress updates
+        socket.on('demo_progress', function(data) {
+            updateProgress(data.current, data.total);
+            addTransactionToFeed(data.result);
+            updateStats(data.result);
+        });
+        
+        socket.on('demo_complete', function(data) {
+            updateStatus('connected', '🟢 Demo Complete');
+            document.getElementById('startDemo').disabled = false;
+            document.getElementById('startDemo').textContent = '🚀 Start Real-Time Demo';
+            hideProgress();
+        });
+        
+        socket.on('demo_error', function(data) {
+            console.error('Demo error:', data.message);
+            updateStatus('disconnected', '🔴 Demo Error');
+            document.getElementById('startDemo').disabled = false;
+            hideProgress();
+        });
+        
+        function startDemo() {
+            const count = parseInt(document.getElementById('transactionCount').value);
+            const interval = parseFloat(document.getElementById('interval').value);
+            const fraudRate = parseInt(document.getElementById('fraudRateInput').value) / 100;
+            
+            // Disable button and show progress
+            document.getElementById('startDemo').disabled = true;
+            document.getElementById('startDemo').textContent = '⏳ Generating...';
+            showProgress();
+            updateStatus('generating', '🔄 Generating Transactions');
+            
+            // Clear existing feed
+            clearFeed();
+            
+            // Start demo
+            fetch('/start-realtime-demo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    count: count,
+                    interval: interval,
+                    fraud_rate: fraudRate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Failed to start demo');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting demo:', error);
+                document.getElementById('startDemo').disabled = false;
+                document.getElementById('startDemo').textContent = '🚀 Start Real-Time Demo';
+                hideProgress();
+                updateStatus('disconnected', '🔴 Error');
+            });
+        }
+        
+        function addTransactionToFeed(result) {
+            const feedContent = document.getElementById('feedContent');
+            
+            // Remove empty state
+            const emptyState = feedContent.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            // Create transaction item
+            const transaction = result.transaction;
+            const riskLevel = result.risk_score < 30 ? 'low' : 
+                             result.risk_score < 70 ? 'medium' : 'high';
+            
+            const itemClass = result.is_flagged ? 'flagged' : 
+                             result.risk_score > 30 ? 'warning' : '';
+            
+            const transactionItem = document.createElement('div');
+            transactionItem.className = `transaction-item ${itemClass}`;
+            
+            const flagsHtml = result.flags && result.flags.length > 0 ? 
+                `<div class="flags">
+                    ${result.flags.map(flag => `<span class="flag ${result.is_flagged ? 'high-risk' : ''}">${flag}</span>`).join('')}
+                </div>` : '';
+            
+            transactionItem.innerHTML = `
+                <div class="transaction-header">
+                    <span class="transaction-id">${result.transaction_id}</span>
+                    <span class="risk-badge risk-${riskLevel}">Risk: ${result.risk_score}</span>
+                </div>
+                <div class="transaction-details">
+                    <strong>${transaction.amount} ${transaction.currency}</strong> at <strong>${transaction.merchant}</strong>
+                    ${result.usd_equivalent ? `<br>USD Equivalent: $${result.usd_equivalent.toFixed(2)}` : ''}
+                    <br>Location: ${transaction.location} | User: ${transaction.user_id}
+                </div>
+                ${flagsHtml}
+            `;
+            
+            // Add to top of feed
+            feedContent.insertBefore(transactionItem, feedContent.firstChild);
+            
+            // Keep only last 50 transactions
+            const items = feedContent.querySelectorAll('.transaction-item');
+            if (items.length > 50) {
+                items[items.length - 1].remove();
+            }
+        }
+        
+        function updateStats(result) {
+            stats.total++;
+            if (result.is_flagged) {
+                stats.flagged++;
+            } else {
+                stats.clean++;
+            }
+            
+            const fraudRate = stats.total > 0 ? Math.round((stats.flagged / stats.total) * 100) : 0;
+            
+            document.getElementById('totalTransactions').textContent = stats.total;
+            document.getElementById('flaggedTransactions').textContent = stats.flagged;
+            document.getElementById('cleanTransactions').textContent = stats.clean;
+            document.getElementById('fraudRate').textContent = fraudRate + '%';
+        }
+        
+        function updateProgress(current, total) {
+            const percentage = (current / total) * 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${current} / ${total} transactions`;
+        }
+        
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressText').style.display = 'block';
+        }
+        
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('progressText').style.display = 'none';
+        }
+        
+        function clearFeed() {
+            const feedContent = document.getElementById('feedContent');
+            feedContent.innerHTML = '<div class="empty-state">Transaction feed cleared</div>';
+            
+            // Reset stats
+            stats = { total: 0, flagged: 0, clean: 0 };
+            updateStats({ is_flagged: false }); // Trigger stats update
+            stats.total = 0; // Reset total back to 0
+            document.getElementById('totalTransactions').textContent = '0';
+        }
+        
+        function updateStatus(type, message) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.className = `status-indicator status-${type}`;
+        }
+    </script>
+</body>
+</html>

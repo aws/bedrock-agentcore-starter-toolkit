@@ -8,6 +8,9 @@ from datetime import datetime
 from typing import Dict, Any
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+import threading
+import time
 from currency_converter import CurrencyConverter
 from transaction_generator import TransactionGenerator
 from data_loader import DataLoader
@@ -15,6 +18,7 @@ from data_loader import DataLoader
 # Create Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for web requests
+socketio = SocketIO(app, cors_allowed_origins="*")  # Enable WebSocket for real-time updates
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -98,15 +102,24 @@ class StandaloneFraudDetector:
         
         is_flagged = len(flags) > 0 or risk_score > 50
         
-        return {
+        result = {
             'transaction_id': transaction.get('id', 'unknown'),
             'is_flagged': is_flagged,
             'risk_score': risk_score,
             'flags': flags,
             'usd_equivalent': usd_amount,
             'analysis_type': 'rule_based',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'transaction': transaction
         }
+        
+        # Emit real-time update via WebSocket
+        try:
+            socketio.emit('transaction_analyzed', result)
+        except:
+            pass  # Ignore if no WebSocket clients
+        
+        return result
     
     def _count_recent_transactions(self, user_id: str, minutes: int = 60) -> int:
         """Count recent transactions for velocity check"""
@@ -223,6 +236,19 @@ def web_interface():
         <h1>Web Interface Not Found</h1>
         <p>The web_interface.html file is missing.</p>
         <p><a href="/api-docs">View API Documentation</a></p>
+        """
+
+@app.route('/dashboard', methods=['GET'])
+def realtime_dashboard():
+    """Serve the real-time dashboard"""
+    try:
+        with open('realtime_dashboard.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return """
+        <h1>Dashboard Not Found</h1>
+        <p>The realtime_dashboard.html file is missing.</p>
+        <p><a href="/">Back to Main Interface</a></p>
         """
 
 @app.route('/health', methods=['GET'])
@@ -493,6 +519,93 @@ def get_stats():
             'message': str(e)
         }), 500
 
+@app.route('/start-realtime-demo', methods=['POST'])
+def start_realtime_demo():
+    """Start generating transactions in real-time"""
+    try:
+        data = request.get_json() or {}
+        
+        count = min(data.get('count', 10), 50)  # Max 50 transactions
+        interval = max(data.get('interval', 2), 0.5)  # Min 0.5 seconds between transactions
+        fraud_rate = min(data.get('fraud_rate', 0.3), 0.8)  # Max 80% fraud rate
+        
+        # Start background thread to generate transactions
+        thread = threading.Thread(
+            target=generate_realtime_transactions,
+            args=(count, interval, fraud_rate)
+        )
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Started generating {count} transactions',
+            'interval': interval,
+            'fraud_rate': fraud_rate
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to start demo',
+            'message': str(e)
+        }), 500
+
+def generate_realtime_transactions(count: int, interval: float, fraud_rate: float):
+    """Generate transactions in real-time (background thread)"""
+    
+    for i in range(count):
+        try:
+            # Generate transaction
+            if i < count * fraud_rate:
+                transaction = generator.generate_suspicious_transaction()
+            else:
+                transaction = generator.generate_normal_transaction()
+            
+            # Add sequence number for tracking
+            transaction['id'] = f"realtime_{i+1:03d}_{int(time.time())}"
+            transaction['sequence'] = i + 1
+            transaction['total'] = count
+            
+            # Analyze transaction
+            result = fraud_detector.analyze_transaction(transaction)
+            
+            # Emit progress update
+            socketio.emit('demo_progress', {
+                'current': i + 1,
+                'total': count,
+                'transaction': transaction,
+                'result': result
+            })
+            
+            logger.info(f"Demo transaction {i+1}/{count}: {result['transaction_id']} - Flagged: {result['is_flagged']}")
+            
+            # Wait before next transaction
+            if i < count - 1:  # Don't wait after last transaction
+                time.sleep(interval)
+                
+        except Exception as e:
+            logger.error(f"Error generating demo transaction {i+1}: {e}")
+            socketio.emit('demo_error', {
+                'message': f'Error generating transaction {i+1}: {str(e)}'
+            })
+    
+    # Demo complete
+    socketio.emit('demo_complete', {
+        'message': f'Generated {count} transactions successfully'
+    })
+
+# WebSocket events
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    logger.info('Client connected to real-time feed')
+    emit('connected', {'message': 'Connected to fraud detection feed'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    logger.info('Client disconnected from real-time feed')
+
 if __name__ == '__main__':
     print("🏦 Starting Standalone Fraud Detection API")
     print("=" * 50)
@@ -501,8 +614,9 @@ if __name__ == '__main__':
     print(f"🌐 API documentation: http://localhost:5000/")
     print("=" * 50)
     
-    # Run Flask app
-    app.run(
+    # Run Flask app with SocketIO
+    socketio.run(
+        app,
         host='0.0.0.0',
         port=5000,
         debug=True
