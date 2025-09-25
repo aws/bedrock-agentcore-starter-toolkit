@@ -135,8 +135,8 @@ class StandaloneFraudDetector:
 
 # Initialize fraud detector
 fraud_detector = StandaloneFraudDetector()
-# API R
-outes
+
+# API Routes
 
 @app.route('/', methods=['GET'])
 def home():
