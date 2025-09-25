@@ -1456,10 +1456,10 @@ agents:
         assert "--codebuild" not in plain_text
         assert "Build and push to ECR only" not in plain_text
         
-        # More flexible assertions that are resilient to minor formatting changes
-        assert "DEFAULT" in plain_text and "CodeBuild + cloud runtime" in plain_text
-        assert "--local:" in plain_text and "Local build + local runtime" in plain_text
-        assert "--local-build:" in plain_text and "Local build + cloud runtime" in plain_text
+        # Check that the three modes are clearly described with emojis
+        assert "DEFAULT (no flags): CodeBuild + cloud runtime" in plain_text
+        assert " 💻 --local: Local build + local runtime" in plain_text
+        assert " 🔧 --local-build: Local build + cloud runtime" in plain_text
 
     def test_launch_missing_config(self, tmp_path):
         """Test launch command with missing config file."""
