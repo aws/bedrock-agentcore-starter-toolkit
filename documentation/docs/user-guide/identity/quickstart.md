@@ -8,310 +8,340 @@ Before you begin, ensure you have:
 
 - An AWS account with appropriate permissions
 - Python 3.10+ installed
+- The latest AWS CLI installed
 - AWS credentials and region configured (`aws configure`)
-- (Optional) External service accounts for OAuth2 or API key integration
 
-## Install the SDK
+This quickstart requires that you have an OAuth 2.0 Authorization Server. If you do not have one, step 0.5 will create one for you using Amazon Cognito User pools. If you have an OAuth Authorization Server with a client_id, client_secret and user configure, you may proceed to step 1.
 
-Make a folder for this quickstart, create a virtual environment, and install the agentcore sdk.
+## Install the SDK and dependencies
+
+Make a folder for this quickstart, create a virtual environment, and install the agentcore sdk and the aws python sdk (boto3)
 
 ```bash
 mkdir agentcore-identity-quickstart
 cd agentcore-identity-quickstart
 python3 -m venv .venv
 source .venv/bin/activate
-pip install bedrock-agentcore
+pip install bedrock-agentcore boto3 strands-agents bedrock-agentcore-starter-toolkit pyjwt
 ```
 
-## Create a Workload Identity
+also create the `requirements.txt` file with the follow contents. This will be used later by the agentcore deployment tool.
 
-A workload identity is a unique identifier that represents your agent within the AgentCore Identity system:
-
-```python
-from bedrock_agentcore.services.identity import IdentityClient
-
-# Create identity client
-identity_client = IdentityClient("us-east-1")
-
-# Create workload identity
-workload_identity = identity_client.create_workload_identity(
-    name="my-research-agent",
-)
-
-print(f"Workload Identity ARN: {workload_identity['workloadIdentityArn']}")
-print(f"Agent Name: {workload_identity['name']}")
+```
+bedrock-agentcore
+boto3
+pyjwt
+strands-agents
+bedrock-agentcore-starter-toolkit
 ```
 
-## Configure Credential Providers
 
-Credential providers define how your agent accesses external services:
+## Step 0.5 Create a cognito user-pool
 
-### OAuth2 Provider Example (Google)
+This quickstart requires an OAuth 2.0 Authorization Server. If you do not have available to test with, or if you want to keep your test seperate from your Authorization Server, this script will use your AWS credentials to setup an Amazon Cognito instance for you to use as an authorization server. The script will create:
 
-```python
-# Configure Google OAuth2 provider
-google_provider = identity_client.create_oauth2_credential_provider(req={
-    "name": "myGoogleCredentialProvider",
-    "credentialProviderVendor": "GoogleOauth2",
-    "oauth2ProviderConfigInput": {
-        "googleOauth2ProviderConfig": {
-            "clientId": "your-google-client-id",
-            "clientSecret": "your-google-client-secret"
-        }
+   * A Cognito user-pool
+   * An oauth client, and client secret for that user-pool
+   * A test user and password in that Vognito user-pool
+
+
+Deleting the Cognito userpool AgentCoreIdentityQuickStartPool will delete the associated client_id and user as well.
+
+You may choose to save this script as create_cognito.sh and execute it from your command line, or paste the script into your command line.
+
+```bash
+#!/bin/bash
+
+REGION=$(aws configure get region)
+
+# Create user pool
+USER_POOL_ID=$(aws cognito-idp create-user-pool \
+  --pool-name AgentCoreIdentityQuickStartPool \
+  --query 'UserPool.Id' \
+  --no-cli-pager \
+  --output text)
+
+# Create user pool domain
+DOMAIN_NAME="agentcore-quickstart-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 5)"
+aws cognito-idp create-user-pool-domain \
+  --domain $DOMAIN_NAME \
+  --no-cli-pager \
+  --user-pool-id $USER_POOL_ID > /dev/null
+
+# Create user pool client with secret and hosted UI settings
+CLIENT_RESPONSE=$(aws cognito-idp create-user-pool-client \
+  --user-pool-id $USER_POOL_ID \
+  --client-name AgentCoreQuickStart \
+  --generate-secret \
+  --callback-urls "https://bedrock-agentcore.$REGION.amazonaws.com/identities/oauth2/callback" \
+  --allowed-o-auth-flows "code" \
+  --allowed-o-auth-scopes "openid" "profile" "email" \
+  --allowed-o-auth-flows-user-pool-client \
+  --supported-identity-providers "COGNITO" \
+  --query 'UserPoolClient.{ClientId:ClientId,ClientSecret:ClientSecret}' \
+  --output json)
+
+CLIENT_ID=$(echo $CLIENT_RESPONSE | jq -r '.ClientId')
+CLIENT_SECRET=$(echo $CLIENT_RESPONSE | jq -r '.ClientSecret')
+
+# Generate random username and password
+USERNAME="AgentCoreTestUser$(printf "%04d" $((RANDOM % 10000)))"
+PASSWORD="$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?' < /dev/urandom | head -c 16)"
+
+# Create user with permanent password
+aws cognito-idp admin-create-user \
+  --user-pool-id $USER_POOL_ID \
+  --username $USERNAME \
+  --output text > /dev/null
+
+aws cognito-idp admin-set-user-password \
+  --user-pool-id $USER_POOL_ID \
+  --username $USERNAME \
+  --password $PASSWORD \
+  --output text > /dev/null \
+  --permanent
+
+# Get region
+
+ISSUER_URL="https://cognito-idp.$REGION.amazonaws.com/$USER_POOL_ID/.well-known/openid-configuration"
+HOSTED_UI_URL="https://$DOMAIN_NAME.auth.$REGION.amazoncognito.com"
+
+# Output results
+echo "User Pool ID: $USER_POOL_ID"
+echo "Client ID: $CLIENT_ID"
+echo "Client Secret: $CLIENT_SECRET"
+echo "Issuer URL: $ISSUER_URL"
+echo "Hosted UI URL: $HOSTED_UI_URL"
+echo "Test User: $USERNAME"
+echo "Test Password: $PASSWORD"
+
+echo ""
+echo "# Copy and paste these exports to set environment variables for later use:"
+echo "export USER_POOL_ID='$USER_POOL_ID'"
+echo "export CLIENT_ID='$CLIENT_ID'"
+echo "export CLIENT_SECRET='$CLIENT_SECRET'"
+echo "export ISSUER_URL='$ISSUER_URL'"
+echo "export HOSTED_UI_URL='$HOSTED_UI_URL'"
+echo "export COGNITO_USERNAME='$USERNAME'"
+echo "export COGNITO_PASSWORD='$PASSWORD'"
+
+```
+
+## Step 1 Create a credential provider 
+
+Create a credential provider to contain the client_id, client_secret and issuer URL for your authorization server.
+
+If you are using your own authorization server, set the environment variables ISSUER_URL, CLIENT_ID, and CLIENT_SECRET with their appropriate values from your authorization. If you are using the previous script to create an authorization server for you with cognito, copy the EXPORT statements from the output into your terminal to set the environment variables.
+
+This credential provider will be used by your agent's code to get access tokens to act on behalf of your user.
+ 
+
+
+
+```bash
+#!/bin/bash
+# please note the expected ISSUER_URL format for bedrock agentcore is the full url, including .well-known/openid-configuration
+aws bedrock-agentcore-control create-oauth2-credential-provider \
+  --name "AgentCoreIdentityQuickStartProvider" \
+  --credential-provider-vendor "CustomOauth2" \
+  --no-cli-pager \
+  --oauth2-provider-config-input '{
+    "customOauth2ProviderConfig": {
+      "oauthDiscovery": {
+        "discoveryUrl": "'$ISSUER_URL'"
+      },
+      "clientId": "'$CLIENT_ID'",
+      "clientSecret": "'$CLIENT_SECRET'"
     }
-})
+  }'
 ```
 
-### API Key Provider Example (Perplexity AI)
+## Step 2 Create a sample agent that initiates an OAuth flow
+
+In this step, we will create an agent that initiates an OAuth to get tokens to act on behalf of the user. For simplicity, we the agent will not make actual calls to external services on behalf of our test, but will prove to us that it has obtained consent to act on behalf of our test user. 
+
+
+### Agent code
+
+Create a file named `agentcoreidentityquickstart.py` , and save this code.
 
 ```python
-# Configure API key provider
-perplexity_provider = identity_client.create_api_key_credential_provider(req={
-    "name": "myPerplexityAPIKeyCredentialProvider",
-    "apiKey": "myApiKey"
-})
-```
+"""
+AgentCore Identity Token Introspection Agent
 
-## Building a Simple Research Agent
+This agent demonstrates USER_FEDERATION OAuth flow and token introspection.
+It handles the consent flow and analyzes the resulting access token.
+"""
 
-Let's create a simple research agent that demonstrates AgentCore Identity capabilities:
-
-### Agent Implementation
-
-Create a file named `research_agent.py`:
-
-```python
-# research_agent.py
-import os
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from bedrock_agentcore.identity import requires_access_token
 import asyncio
-from typing import Optional
-from datetime import datetime
-from bedrock_agentcore.services.identity import IdentityClient
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-import requests
+import jwt
+import logging
 
-class ResearchAgent:
-    def __init__(self):
-        self.identity_client = IdentityClient("us-east-1")
-        self.workload_token = os.getenv('WORKLOAD_ACCESS_TOKEN')
+app = BedrockAgentCoreApp()
 
-    async def search_web(self, query: str) -> str:
-        """Search the web using Perplexity AI"""
-        # Get API key from identity service
-        api_key = await self.identity_client.get_api_key(
-            provider_name="myPerplexityAPIKeyCredentialProvider",
-            agent_identity_token=self.workload_token
-        )
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-        url = "https://api.perplexity.ai/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        body = {
-            "model": "sonar",
-            "messages": [
-                {"role": "user", "content": query}
-            ]
-        }
-
-        try:
-            response = requests.post(url, headers=headers, json=body)
-            response.raise_for_status()
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        except Exception as e:
-            return f"Search error: {str(e)}"
-
-    async def save_to_drive(self, content: str, filename: str) -> str:
-        """Save content to Google Drive"""
-        try:
-            # Get OAuth2 access token from identity service
-            access_token = await self.identity_client.get_token(
-                provider_name="myGoogleCredentialProvider",
-                scopes=["https://www.googleapis.com/auth/drive.file"],
-                agent_identity_token=self.workload_token,
-                auth_flow="USER_FEDERATION",
-                callback_url="https://myapp.com/callback"
-            )
-
-            # Create Google Drive service
-            creds = Credentials(token=access_token)
-            service = build("drive", "v3", credentials=creds)
-
-            # Create file metadata
-            file_metadata = {
-                'name': filename,
-                'mimeType': 'text/plain'
-            }
-
-            # Upload file
-            from googleapiclient.http import MediaIoBaseUpload
-            import io
-
-            media = MediaIoBaseUpload(
-                io.BytesIO(content.encode('utf-8')),
-                mimetype='text/plain'
-            )
-
-            file = service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id,name,webViewLink'
-            ).execute()
-
-            return f"File saved to Google Drive: {file.get('webViewLink')}"
-
-        except Exception as e:
-            return f"Drive save error: {str(e)}"
-
-    async def research_and_save(self, topic: str, user_id: str = None) -> str:
-        """Main agent function: research a topic and save to Drive"""
-        try:
-            # Search for information
-            search_query = f"Research comprehensive information about: {topic}"
-            search_results = await self.search_web(search_query)
-
-            # Format the research report
-            report = f"""
-Research Report: {topic}
-Generated by Research Agent
-{'=' * 50}
-
-{search_results}
-
-{'=' * 50}
-Report generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-            """
-
-            # Save to Google Drive
-            filename = f"research_report_{topic.replace(' ', '_')}.txt"
-
-            save_result = await self.save_to_drive(
-                content=report,
-                filename=filename
-            )
-
-            return f"Research completed! {save_result}"
-
-        except Exception as e:
-            return f"Research failed: {str(e)}"
-
-# Create agent instance
-agent = ResearchAgent()
-```
-
-### Create HTTP Server
-
-Create a file named `server.py` to host your agent:
-
-```python
-# server.py
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-import uvicorn
-from research_agent import agent
-
-app = FastAPI(title="Research Agent API")
-
-class ResearchRequest(BaseModel):
-    topic: str
-    user_id: Optional[str] = None
-
-@app.post("/research")
-async def research_endpoint(request: ResearchRequest):
-    """Research a topic and save results to Google Drive"""
+def decode_jwt(token):
     try:
-        result = await agent.research_and_save(
-            topic=request.topic,
-            user_id=request.user_id
-        )
-        return {"status": "success", "message": result}
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        return decoded
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": f"Error decoding JWT: {str(e)}"}
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+class StreamingQueue:
+    def __init__(self):
+        self.finished = False
+        self.queue = asyncio.Queue()
+
+    async def put(self, item):
+        await self.queue.put(item)
+
+    async def finish(self):
+        self.finished = True
+        await self.queue.put(None)
+
+    async def stream(self):
+        while True:
+            item = await self.queue.get()
+            if item is None and self.finished:
+                break
+            yield item
+
+queue = StreamingQueue()
+
+async def handle_auth_url(url):
+    await queue.put(f"Authorization url, please copy to your preferred browser : {url}")
+
+@requires_access_token(
+    provider_name="AgentCoreIdentityQuickStartProvider",
+    scopes=["openid"],
+    auth_flow="USER_FEDERATION",
+    on_auth_url=handle_auth_url, # streams authorization URL to client
+    force_authentication=True
+)
+async def introspect_with_decorator(*, access_token: str):
+    """Introspect token using decorator"""
+    logger.info("Inside introspect_with_decorator - decorator succeeded")
+    await queue.put({
+        "message": "Succesfully received an access token to act on behalf of your user!",
+        "token_claims": decode_jwt(access_token),
+        "token_length": len(access_token),
+        "token_preview": f"{access_token[:50]}...{access_token[-10:]}"
+    })
+    await queue.finish()
+
+@app.entrypoint
+async def agent_invocation(payload, context):
+    """Handler that uses only the decorator approach"""
+    logger.info("Agent invocation started")
+
+    # Start the OAuth task and immediately begin streaming
+    task = asyncio.create_task(introspect_with_decorator())
+
+    # Stream items as they come in
+    async for item in queue.stream():
+        yield item
+
+    # Wait for task completion
+    await task
+
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    app.run()
+
+
 ```
 
-### Test Your Agent
+## Step 3  Deploy the agent to agentcore runtime
 
-Start your agent server:
+We will host this agent on agentcore runtime. We can do this easily with the agentcore toolkit we installed earlier
+
+From your terminal, run `agentcore configure -e agentcoreidentityquickstart.py` and `agentcore launch` . The deployment will work the defaults set by `agentcore configure`, but you may customize them. Ensure that you select "No" for `Configure OAuth Authorizer` step. We want to use IAM authorization for this guide.
+
+### Update the IAM policy of the agent to be able to access the token vault, and client secret
+
+You will need to update the IAM policy of your agent that was created by or used with `agentcore configure`. This script will read your agenetcore configuration YAML and append the appropriate policy. You can copy paste this script, or save it to a file and execute it.
 
 ```bash
-python server.py
+#!/bin/bash
+
+# Parse values from .bedrock_agentcore.yaml
+EXECUTION_ROLE=$(grep "execution_role:" .bedrock_agentcore.yaml | head -1 | awk '{print $2}')
+AWS_ACCOUNT=$(grep "account:" .bedrock_agentcore.yaml | awk '{print $2}' | tr -d "'")
+REGION=$(grep "region:" .bedrock_agentcore.yaml | awk '{print $2}')
+
+echo "Parsed values:"
+echo "Execution Role: $EXECUTION_ROLE"
+echo "Account: $AWS_ACCOUNT"
+echo "Region: $REGION"
+
+# Create the policy document with proper variable substitution
+cat > agentcore-identity-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AccessTokenVault",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:GetResourceOauth2Token",
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": ["arn:aws:bedrock-agentcore:${REGION}:${AWS_ACCOUNT}:workload-identity-directory/default/workload-identity/*",
+        "arn:aws:bedrock-agentcore:${REGION}:${AWS_ACCOUNT}:token-vault/default/oauth2credentialprovider/AgentCoreIdentityQuickStartProvider",
+        "arn:aws:bedrock-agentcore:${REGION}:${AWS_ACCOUNT}:workload-identity-directory/default",
+        "arn:aws:bedrock-agentcore:${REGION}:${AWS_ACCOUNT}:token-vault/default",
+        "arn:aws:secretsmanager:${REGION}:${AWS_ACCOUNT}:secret:bedrock-agentcore-identity!default/oauth2/AgentCoreIdentityQuickStartProvider*"
+      ]
+    }
+  ]
+}
+EOF
+
+# Create the policy
+POLICY_ARN=$(aws iam create-policy \
+    --policy-name AgentCoreIdentityQuickStartPolicy$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 4) \
+    --policy-document file://agentcore-identity-policy.json \
+    --query 'Policy.Arn' \
+    --output text)
+
+# Extract role name from ARN and attach policy
+ROLE_NAME=$(echo $EXECUTION_ROLE | awk -F'/' '{print $NF}')
+aws iam attach-role-policy \
+    --role-name $ROLE_NAME \
+    --policy-arn $POLICY_ARN
+
+echo "Policy created and attached: $POLICY_ARN"
+
+# Cleanup
+rm agentcore-identity-policy.json
 ```
 
-Test the agent using curl:
+## Step 4 Invoke the agent!
 
-```bash
-# Test health endpoint
-curl http://localhost:8080/health
+Now that this is all setup, you can invoke the agent. For this demo, we will use the `agentcore invoke` command and our IAM credentials We will need to pass the userid and session id whe using IAM authentication, or else you will encounter unexpected results.
 
-# Test research functionality
-curl -X POST http://localhost:8080/research \
-    -H "Content-Type: application/json" \
-    -d '{
-        "topic": "artificial intelligence trends 2024",
-        "user_id": "user123"
-    }'
-```
+`agentcore invoke "TestPayload" -u "SampleUserID" -s "ALongThirtyThreeCharacterMinimumSessionIdYouCanChangeThisAsYouNeed"`
 
-## Understanding the OAuth2 Authorization Flow
+The agent will then return a URL to your agentcore invoke command. Copy and paste that URL into your preferred browser, and you will then be redirected to your authorization servers login page. The "-u" parameter is the userid you are presenting to agentcore identity. The -s parameter is the session id, which must be at least 33 characters long.
 
-When your agent first attempts to access Google Drive, it will trigger a 3-legged OAuth (3LO) flow:
+Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from step .5 to create a cognito instance, you can retreive this from your terminal history.
 
-1. The AgentCore SDK will display a URL for authentication
-2. The user visits the URL and grants permissions
-3. The token is securely stored in the token vault
-4. Subsequent requests use the cached token
+Your browser should redirect you to the AgentCore Identity Success Page, and you should have a success message in your terminal
 
-Example output during the OAuth2 flow:
+Note that if you interrupt an invokation without completing OAuth, you may need to request a new URL using a new Session ID (-s parameter)
 
-```
-Waiting for authentication...
-Visit the following URL to login:
-https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/authorize?request_uri=123456789
 
-Polling for token... (press Ctrl+C to cancel)
-```
+### Debugging
 
-## Using Declarative Annotations
+Should you encounter any errors or unexpected behaviors, the output of the agent is captured in cloudwatch logs. A log tailing command is provided after you run `agentcore launch`
 
-For a cleaner implementation, you can use AgentCore Identity's declarative annotations:
+## Clean Up
 
-```python
-from bedrock_agentcore.identity import requires_access_token, requires_api_key
-
-@requires_api_key(provider="Perplexity AI")
-def search_perplexity(query, api_key=None):
-    """
-    Search Perplexity AI with the query.
-    The api_key is automatically injected by the @requires_api_key decorator.
-    """
-    headers = {"Authorization": f"Bearer {api_key}"}
-    # Make API call to Perplexity AI with the headers
-    # ...
-    return results
-
-@requires_access_token(provider="Google Workspace", scopes=["https://www.googleapis.com/auth/drive.file"])
-def save_to_google_drive(content, filename, access_token=None):
-    """
-    Save content to Google Drive.
-    The access_token is automatically injected by the @requires_access_token decorator.
-    """
-    headers = {"Authorization": f"Bearer {access_token}"}
-    # Make API call to Google Drive with the headers
-    # ...
-    return results
-```
+After you're done, you can delete the cognito user-pool, Amazon ECR repo, Codebuild Project, IAM roles for the agent and codebuild project, and finally delete the agent, and credential provider.
 
 ## Security Best Practices
 
