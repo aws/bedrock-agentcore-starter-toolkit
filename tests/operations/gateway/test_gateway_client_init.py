@@ -694,7 +694,9 @@ class TestCreateOAuthAuthorizerWithCognito:
                 result = self.client.create_oauth_authorizer_with_cognito(gateway_name)
 
                 # Verify user pool creation
-                self.mock_cognito_client.create_user_pool.assert_called_once_with(PoolName="agentcore-gateway-12345678")
+                self.mock_cognito_client.create_user_pool.assert_called_once_with(
+                    PoolName="agentcore-gateway-12345678", AdminCreateUserConfig={"AllowAdminCreateUserOnly": True}
+                )
 
                 # Verify domain creation
                 self.mock_cognito_client.create_user_pool_domain.assert_called_once_with(
