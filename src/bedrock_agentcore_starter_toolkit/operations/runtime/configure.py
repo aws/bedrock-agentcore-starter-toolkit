@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...services.ecr import get_account_id, get_region
 from ...utils.runtime.config import merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
@@ -12,6 +13,7 @@ from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
+    MemoryConfig,
     CodeBuildConfig,
     NetworkConfiguration,
     ObservabilityConfig,
@@ -112,6 +114,44 @@ def configure_bedrock_agentcore(
             else:
                 log.debug("No execution role provided and auto-create disabled")
 
+
+    # Prompt for memory configuration BEFORE generating Dockerfile
+    if verbose:
+        log.debug("Prompting for long-term memory configuration")
+
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
+    enable_ltm = config_manager.prompt_ltm_choice()
+
+    # Create memory config
+    memory_config = MemoryConfig()
+    memory_config.enabled = True  # Always true for STM
+    memory_config.enable_ltm = enable_ltm
+    memory_config.event_expiry_days = 30
+    memory_config.memory_name = f"{agent_name}_memory"
+
+    if enable_ltm:
+        log.info("Memory configuration: Short-term + Long-term memory enabled")
+    else:
+        log.info("Memory configuration: Short-term memory only")
+
+    # Check for existing memory configuration from previous launch
+    config_path = build_dir / ".bedrock_agentcore.yaml"
+    memory_id = None
+    memory_name = None
+
+    if config_path.exists():
+        try:
+            from ...utils.runtime.config import load_config
+
+            existing_config = load_config(config_path)
+            existing_agent = existing_config.get_agent_config(agent_name)
+            if existing_agent and existing_agent.memory and existing_agent.memory.memory_id:
+                memory_id = existing_agent.memory.memory_id
+                memory_name = existing_agent.memory.memory_name
+                log.info("Found existing memory ID from previous launch: %s", memory_id)
+        except Exception as e:
+            log.debug("Unable to read existing memory configuration: %s", e)
+
     # Handle CodeBuild execution role - use separate role if provided, otherwise use execution_role
     codebuild_execution_role_arn = None
     if code_build_execution_role:
@@ -130,6 +170,7 @@ def configure_bedrock_agentcore(
         if verbose and execution_role_arn:
             log.debug("Using same role for CodeBuild: %s", codebuild_execution_role_arn)
 
+
     # Generate Dockerfile and .dockerignore
     bedrock_agentcore_name = None
     # Try to find the variable name for the Bedrock AgentCore instance in the file
@@ -144,6 +185,8 @@ def configure_bedrock_agentcore(
         log.debug("  Region: %s", region)
         log.debug("  Enable observability: %s", enable_observability)
         log.debug("  Requirements file: %s", requirements_file)
+        if memory_id:
+            log.debug("  Memory ID: %s", memory_id)
 
     dockerfile_path = runtime.generate_dockerfile(
         entrypoint_path,
@@ -152,6 +195,8 @@ def configure_bedrock_agentcore(
         region,
         enable_observability,
         requirements_file,
+        memory_id,
+        memory_name,
     )
 
     # Check if .dockerignore was created
@@ -221,6 +266,7 @@ def configure_bedrock_agentcore(
         ),
         authorizer_configuration=authorizer_configuration,
         request_header_configuration=request_header_configuration,
+        memory=memory_config,
     )
 
     # Use simplified config merging

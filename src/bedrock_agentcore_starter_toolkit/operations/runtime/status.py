@@ -38,6 +38,44 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
         agent_arn=agent_config.bedrock_agentcore.agent_arn,
     )
 
+    # Add memory status if configured
+    if agent_config.memory and agent_config.memory.memory_id:
+        try:
+            from ...operations.memory.manager import MemoryManager
+
+            memory_manager = MemoryManager(region_name=agent_config.aws.region)
+
+            # Get the actual memory status from AWS
+            memory_status = memory_manager.get_memory_status(agent_config.memory.memory_id)
+
+            # Determine memory type based on status and configuration
+            if memory_status == "ACTIVE":
+                # Check actual strategies deployed
+                strategies = memory_manager.get_memory_strategies(agent_config.memory.memory_id)
+                if strategies and len(strategies) > 0:
+                    config_info.memory_type = f"STM+LTM ({len(strategies)} strategies)"
+                else:
+                    config_info.memory_type = "STM only"
+                config_info.memory_enabled = True
+            elif memory_status == "CREATING" or memory_status == "UPDATING":
+                # Memory is still provisioning
+                if agent_config.memory.enable_ltm:
+                    config_info.memory_type = "STM+LTM (provisioning...)"
+                else:
+                    config_info.memory_type = "STM (provisioning...)"
+                config_info.memory_enabled = False  # Not ready yet
+            else:
+                # FAILED or other status
+                config_info.memory_type = f"Error ({memory_status})"
+                config_info.memory_enabled = False
+
+            config_info.memory_id = agent_config.memory.memory_id
+            config_info.memory_status = memory_status
+
+        except Exception as e:
+            config_info.memory_type = f"Error checking: {str(e)}"
+            config_info.memory_enabled = False
+
     # Initialize status result
     agent_details = None
     endpoint_details = None
