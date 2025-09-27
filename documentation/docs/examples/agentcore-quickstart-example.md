@@ -1,21 +1,22 @@
+
 # Amazon Bedrock AgentCore Runtime: Memory + Code Interpreter Quickstart
 
 ## Introduction
 
 This guide demonstrates deploying an AI agent that combines:
 
-- **Short-term and long-term memory** for conversation persistence
+- **AgentCore Runtime**: Managed container orchestration service that hosts your agent
+- **Short-term and long-term memory** for conversation persistence within and across sessions
 - **Code Interpreter tool** for dynamic Python execution in AWS’s secure sandbox
 - **Built-in observability** via AWS X-Ray tracing and CloudWatch for monitoring agent behavior, memory operations, and tool usage
 
-You’ll build and deploy an agent with memory persistence, secure code execution, and full observability to production in under 15 minutes.
-
+You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.
 
 ## Prerequisites
 
 - AWS account with appropriate permissions
 - AWS CLI configured (`aws configure`)
-- Access to Amazon Bedrock Claude 3.7 Sonnet model
+- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region)
 - Python 3.10 or newer
 
 ### Installation
@@ -33,9 +34,9 @@ pip install bedrock-agentcore-starter-toolkit strands-agents boto3
 
 Key components in this implementation:
 
-- **AgentCore Runtime**: Container orchestration service that hosts your agent
+- **Runtime**: Container orchestration service that hosts your agent
 - **Memory Service**: Dual-layer storage with STM (exact conversation storage) and LTM (intelligent fact extraction)
-- **Code Interpreter**: AWS-managed Python sandbox with 4GB RAM and pre-installed libraries
+- **Code Interpreter**: AWS-managed Python sandbox with pre-installed libraries
 - **Strands Framework**: Simplifies agent creation with memory session management
 - **AWS X-Ray & CloudWatch**: Automatic tracing and logging for complete visibility
 
@@ -53,18 +54,20 @@ from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemory
 from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
 from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from bedrock_agentcore.memory import MemoryClient
 
 app = BedrockAgentCoreApp()
 
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
 REGION = os.getenv("AWS_REGION", "us-west-2")
+MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
 code_interpreter = None
 code_session_id = None
 
 @tool
 def calculate(code: str) -> str:
-    """Execute Python code for calculations."""
+    """Execute Python code for calculations or analysis."""
     global code_interpreter, code_session_id
     
     if not code_interpreter:
@@ -91,6 +94,25 @@ def invoke(payload, context):
     if not MEMORY_ID:
         return {"error": "Memory not configured"}
     
+    # Check memory status
+    try:
+        memory_client = MemoryClient(region_name=REGION)
+        memory = memory_client.get_memory(memory_id=MEMORY_ID)
+        
+        if memory['status'] != 'ACTIVE':
+            agent = Agent(
+                model=MODEL_ID,
+                system_prompt="You are a helpful assistant.",
+                tools=[calculate]
+            )
+            result = agent(payload.get("prompt", ""))
+            return {
+                "response": f"[Memory initializing] {result.message.get('content', [{}])[0].get('text', '')}",
+                "session_id": "temp"
+            }
+    except Exception:
+        pass
+    
     session_id = getattr(context, 'session_id', 'default')
     
     memory_config = AgentCoreMemoryConfig(
@@ -98,17 +120,15 @@ def invoke(payload, context):
         session_id=session_id,
         actor_id="user",
         retrieval_config={
-            "/users/user/facts": RetrievalConfig(
-                top_k=3,
-                relevance_score=0.5  # Reduces API calls
-            )
+            "/users/user/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
+            "/users/user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
         }
     )
     
     agent = Agent(
+        model=MODEL_ID,
         session_manager=AgentCoreMemorySessionManager(memory_config, REGION),
-        system_prompt="""Personal finance assistant with memory and calculations.
-        For ANY calculation, use the calculate tool - never do mental math.""",
+        system_prompt="""You are a helpful assistant. Use tools when appropriate.""",
         tools=[calculate]
     )
     
@@ -184,37 +204,67 @@ agentcore status
 
 **Note:** LTM strategies require 2-5 minutes to activate. STM is available immediately.
 
-## Step 4: Test Core Functionality
+## Step 4: Test Memory and Code Interpreter
 
-### Test Short-Term Memory (Immediate)
+### Test Short-Term Memory (STM) - Immediate
 
 STM works immediately after deployment. Test within a single session:
 
 ```bash
 # Store information (session IDs must be 33+ characters)
-agentcore invoke '{"prompt": "Remember that my favorite programming language is Python and I prefer tabs over spaces"}'
+agentcore invoke '{"prompt": "Remember that my favorite programming language is Python and I prefer tabs over spaces"}' --session-id test_session_2024_01_user123_preferences_abc
 
-# Expected response:
+# If invoked too early (LTM still provisioning), you'll see:
+# "Memory is still provisioning (current status: CREATING). 
+#  Long-term memory extraction takes 60-90 seconds to activate.
+#  Please wait and check status with: agentcore status"
+
+# Once active, expected response:
 # "I've noted that your favorite programming language is Python and you prefer tabs over spaces..."
 
 # Retrieve within same session
-agentcore invoke '{"prompt": "What is my favorite programming language?"}'
+agentcore invoke '{"prompt": "What is my favorite programming language?"}' --session-id test_session_2024_01_user123_preferences_abc
 
 # Expected response:
 # "Your favorite programming language is Python."
+```
+
+### Test Long-Term Memory (LTM) - Cross-Session Persistence
+
+LTM enables information persistence across different sessions. This requires waiting for LTM extraction after storing information.
+
+```bash
+# First verify LTM is active
+agentcore status
+# Must show: "Memory: STM+LTM (3 strategies)"
+# If showing "provisioning", wait 2-3 minutes
+
+# Session 1: Store facts
+agentcore invoke '{"prompt": "My email is user@example.com and I work at TechCorp as a senior engineer"}' --session-id ltm_test_session_one_2024_january_user123_xyz
+
+# Wait for extraction
+sleep 20
+
+# Session 2: Different session retrieves the facts
+agentcore invoke '{"prompt": "What company do I work for?"}' --session-id ltm_test_session_two_2024_february_user456_abc
+
+# Expected response:
+# "You work at TechCorp."
 ```
 
 ### Test Code Interpreter with Memory
 
 ```bash
 # Store data
-agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56"}'
+agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56"}' --session-id test_session_2024_01_user123_preferences_abc
 
 # Calculate using remembered data
-agentcore invoke '{"prompt": "Calculate the mean and standard deviation of my dataset"}'
+agentcore invoke '{"prompt": "Calculate the mean and standard deviation of my dataset"}' --session-id test_session_2024_01_user123_preferences_abc
 
-# Expected response:
-# "Based on your dataset [23, 45, 67, 89, 12, 34, 56], the mean is 46.57 and the standard deviation is 25.73"
+# Create visualization
+agentcore invoke '{"prompt": "Create a bar chart showing the distribution of values in my dataset with proper labels"}' --session-id test_session_2024_01_user123_preferences_abc
+
+# Expected: Agent generates matplotlib code to create a bar chart
 ```
 
 ## Step 5: View Traces and Logs
@@ -263,56 +313,6 @@ aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name
 # For recent logs, use the --since option as shown in the output:
 aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name-prefix "YYYY/MM/DD/[runtime-logs]" --since 1h
 ```
-
-
-## Step 6: Test Long-Term Memory (Cross-Session)
-
-**Pre-requisite:** You must have enabled Long Term Memory during agentcore configure. 
-LTM enables information persistence across different sessions. This requires waiting for LTM extraction after storing information.
-
-### Verify LTM is Active
-
-```bash
-agentcore status
-# Must show: "Memory: STM+LTM (3 strategies)"
-# If showing "provisioning", wait 2-3 minutes
-```
-
-### Session 1: Provide Information
-
-```bash
-# Store facts in first session
-agentcore invoke '{"prompt": "My email is user@example.com and I work at TechCorp as a senior engineer"}' --session-id ltm_test_session_one_2024_january_user123_xyz
-```
-
-### Wait for Extraction
-
-```bash
-# Wait 15-30 seconds for LTM extraction
-sleep 20
-
-# To verify extraction through the GenAI Observability Dashboard:
-# 1. Open the dashboard URL from 'agentcore status'
-# 2. Navigate to the "Traces" section
-# 3. Filter for your session ID or recent timeframe
-# 4. Look for completed extraction spans
-
-# Alternatively, verify LTM is active through status check:
-agentcore status | grep Memory
-# Should show: Memory: STM+LTM (3 strategies)
-```
-
-### Session 2: Retrieve from Different Session
-
-```bash
-agentcore invoke '{"prompt": "What company do I work for?"}' --session-id ltm_test_session_two_2024_february_user456_abc
-
-# Expected response:
-# "You work at TechCorp."
-```
-
-**What’s happening:** The second session has a completely different ID but successfully retrieves facts stored by the first session through LTM.
-
 
 ## Clean Up
 
@@ -375,8 +375,8 @@ You’ve deployed a production agent with:
 
 - **AgentCore Runtime** for managed container orchestration
 - **Memory Service** with STM for immediate context and LTM for cross-session persistence
-- **Code Interpreter** for secure Python execution
+- **Code Interpreter** for secure Python execution with data visualization capabilities
 - **AWS X-Ray Tracing** automatically configured for distributed tracing
 - **CloudWatch Integration** for logs and metrics with Transaction Search enabled
 
-All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.​​​​​​​​​​​​​​​
+All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.​​​​​​​​​​​​​​​​

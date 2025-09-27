@@ -13,8 +13,8 @@ from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
-    MemoryConfig,
     CodeBuildConfig,
+    MemoryConfig,
     NetworkConfiguration,
     ObservabilityConfig,
     ProtocolConfiguration,
@@ -114,7 +114,6 @@ def configure_bedrock_agentcore(
             else:
                 log.debug("No execution role provided and auto-create disabled")
 
-
     # Prompt for memory configuration BEFORE generating Dockerfile
     if verbose:
         log.debug("Prompting for long-term memory configuration")
@@ -169,7 +168,6 @@ def configure_bedrock_agentcore(
 
         if verbose and execution_role_arn:
             log.debug("Using same role for CodeBuild: %s", codebuild_execution_role_arn)
-
 
     # Generate Dockerfile and .dockerignore
     bedrock_agentcore_name = None

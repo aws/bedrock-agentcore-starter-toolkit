@@ -14,6 +14,7 @@ class MemoryConfig(BaseModel):
     memory_name: Optional[str] = Field(default=None, description="Memory name")
     event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
     enable_ltm: bool = Field(default=False, description="Whether to enable long-term memory strategies")
+    first_invoke_memory_check_done: bool = Field(default=False, description="Whether first invoke memory check has been performed")
 
 
 class NetworkConfiguration(BaseModel):

@@ -672,6 +672,7 @@ def _launch_with_codebuild(
             # Save memory configuration
             agent_config.memory.memory_id = memory.id
             agent_config.memory.memory_arn = memory.arn
+            agent_config.memory.first_invoke_memory_check_done = False
 
             # Regenerate Dockerfile with memory ID
             from ...utils.runtime.container import ContainerRuntime
