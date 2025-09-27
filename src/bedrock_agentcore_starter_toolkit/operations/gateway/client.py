@@ -415,6 +415,10 @@ class GatewayClient:
     def create_oauth_authorizer_with_cognito(self, gateway_name: str) -> Dict[str, Any]:
         """Creates Cognito OAuth authorization server.
 
+        Note: This implementation uses AdminCreateUserOnly mode where only administrators
+        can create user accounts. If modifying this implementation for public clients,
+        review AWS Cognito security best practices regarding user sign-up policies.
+
         :param gateway_name: the name of the gateway being created for use in naming Cognito resources.
         :return: dictionary with details of the authorization server, client id, and client secret.
         """
@@ -425,7 +429,12 @@ class GatewayClient:
         try:
             # 1. Create User Pool
             pool_name = f"agentcore-gateway-{GatewayClient.generate_random_id()}"
-            user_pool_response = cognito_client.create_user_pool(PoolName=pool_name)
+            user_pool_response = cognito_client.create_user_pool(
+                PoolName=pool_name,
+                AdminCreateUserConfig={
+                    "AllowAdminCreateUserOnly": True  # Disables self-registration
+                },
+            )
             user_pool_id = user_pool_response["UserPool"]["Id"]
             self.logger.info("  ✓ Created User Pool: %s", user_pool_id)
 
