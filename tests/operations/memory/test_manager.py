@@ -1,7 +1,6 @@
 """Unit tests for Memory Client - no external connections."""
 
 import uuid
-import warnings
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
@@ -9,10 +8,11 @@ from botocore.exceptions import ClientError
 from bedrock_agentcore_starter_toolkit.operations.memory.constants import (
     StrategyType,
 )
+
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
-from bedrock_agentcore_starter_toolkit.operations.memory.models.Memory import Memory
-from bedrock_agentcore_starter_toolkit.operations.memory.models.MemoryStrategy import MemoryStrategy
-from bedrock_agentcore_starter_toolkit.operations.memory.models.MemorySummary import MemorySummary
+from bedrock_agentcore_starter_toolkit.operations.memory.models import (
+    Memory, MemoryStrategy, MemorySummary
+)
 
 
 def test_manager_initialization():
@@ -1047,37 +1047,6 @@ def test_delete_strategy():
             assert "memoryStrategies" in kwargs
             assert "deleteMemoryStrategies" in kwargs["memoryStrategies"]
             assert kwargs["memoryStrategies"]["deleteMemoryStrategies"][0]["memoryStrategyId"] == "strat-456"
-
-
-def test_add_strategy_warning():
-    """Test add_strategy shows deprecation warning."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock get_memory for strategy retrieval
-        mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-123", "memoryStrategies": []}}
-
-        # Mock update_memory response
-        mock_control_plane_client.update_memory.return_value = {"memory": {"memoryId": "mem-123", "status": "CREATING"}}
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_strategy (should show warning)
-                strategy = {StrategyType.SEMANTIC.value: {"name": "Test Strategy"}}
-                manager.add_strategy(memory_id="mem-123", strategy=strategy)
-
-                # Should have shown a warning
-                assert len(w) >= 1
-                assert any("may leave memory in CREATING state" in str(warning.message) for warning in w)
-
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
 
 
 def test_create_memory_and_wait_client_error():

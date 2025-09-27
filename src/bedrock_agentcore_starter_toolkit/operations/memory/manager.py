@@ -4,16 +4,17 @@ import copy
 import logging
 import time
 import uuid
-import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
 
-from .constants import DEFAULT_NAMESPACES, MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
+from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType, DEFAULT_NAMESPACES
+from .models import convert_strategies_to_dicts
 from .models.Memory import Memory
 from .models.MemoryStrategy import MemoryStrategy
 from .models.MemorySummary import MemorySummary
+from .models.strategies import BaseStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class MemoryManager:
         Raises:
             ValueError: If region_name parameter conflicts with boto3_session region.
         """
-        session = boto3_session if boto3_session else boto3.Session()
+        session = boto3_session or boto3.Session()
         session_region = session.region_name
 
         # Validate region consistency if both are provided
@@ -171,6 +172,7 @@ class MemoryManager:
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Create a memory resource and return the raw response.
 
@@ -180,12 +182,10 @@ class MemoryManager:
             strategies = []
 
         try:
-            processed_strategies = self._add_default_namespaces(strategies)
-
             params = {
                 "name": name,
                 "eventExpiryDuration": event_expiry_days,
-                "memoryStrategies": processed_strategies,
+                "memoryStrategies": strategies,
                 "clientToken": str(uuid.uuid4()),
             }
 
@@ -194,6 +194,9 @@ class MemoryManager:
 
             if memory_execution_role_arn is not None:
                 params["memoryExecutionRoleArn"] = memory_execution_role_arn
+
+            if encryption_key_arn is not None:
+                params["encryptionKeyArn"] = encryption_key_arn
 
             response = self._control_plane_client.create_memory(**params)
 
@@ -217,6 +220,7 @@ class MemoryManager:
         memory_execution_role_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE.
 
@@ -231,6 +235,7 @@ class MemoryManager:
             memory_execution_role_arn: IAM role ARN for memory execution
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
+            encryption_key_arn: kms key ARN for encryption
 
         Returns:
             Created memory object in ACTIVE status
@@ -246,6 +251,7 @@ class MemoryManager:
             description=description,
             event_expiry_days=event_expiry_days,
             memory_execution_role_arn=memory_execution_role_arn,
+            encryption_key_arn=encryption_key_arn,
         )
 
         memory_id = memory.id
@@ -282,20 +288,64 @@ class MemoryManager:
     def create_memory_and_wait(
         self,
         name: str,
-        strategies: List[Dict[str, Any]],
+        strategies: List[Union[BaseStrategy, Dict[str, Any]]],
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
-        """Create a memory and wait for it to become ACTIVE - public method."""
+        """Create a memory and wait for it to become ACTIVE - public method.
+
+        Args:
+            name: Name for the memory resource
+            strategies: List of typed strategy objects or dictionary configurations
+            description: Optional description
+            event_expiry_days: How long to retain events (default: 90 days)
+            memory_execution_role_arn: IAM role ARN for memory execution
+            max_wait: Maximum seconds to wait (default: 300)
+            poll_interval: Seconds between status checks (default: 10)
+            encryption_key_arn: kms key ARN for encryption
+
+        Returns:
+            Created memory object in ACTIVE status
+
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models import (
+                SemanticStrategy, CustomSemanticStrategy, ExtractionConfig, ConsolidationConfig
+            )
+
+            # Create typed strategies
+            semantic = SemanticStrategy(name="MySemanticStrategy")
+            custom = CustomSemanticStrategy(
+                name="MyCustomStrategy",
+                extraction_config=ExtractionConfig(
+                    append_to_prompt="Extract insights",
+                    model_id="anthropic.claude-3-sonnet-20240229-v1:0"
+                ),
+                consolidation_config=ConsolidationConfig(
+                    append_to_prompt="Consolidate insights",
+                    model_id="anthropic.claude-3-haiku-20240307-v1:0"
+                )
+            )
+
+            # Create memory with typed strategies
+            memory = manager.create_memory_and_wait(
+                name="TypedMemory",
+                strategies=[semantic, custom]
+            )
+        """
+        # Convert typed strategies to dicts for internal processing
+        dict_strategies = convert_strategies_to_dicts(strategies)
+
         return self._create_memory_and_wait(
             name=name,
-            strategies=strategies,
+            strategies=dict_strategies,
             description=description,
             event_expiry_days=event_expiry_days,
             memory_execution_role_arn=memory_execution_role_arn,
+            encryption_key_arn=encryption_key_arn,
             max_wait=max_wait,
             poll_interval=poll_interval,
         )
@@ -303,15 +353,34 @@ class MemoryManager:
     def get_or_create_memory(
         self,
         name: str,
-        strategies: Optional[List[Dict[str, Any]]] = None,
+        strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Fetch an existing memory resource or create the memory.
 
+        Args:
+            name: Memory name
+            strategies: List of typed strategy objects or dictionary configurations
+            description: Optional description
+            event_expiry_days: How long to retain events (default: 90 days)
+            memory_execution_role_arn: IAM role ARN for memory execution
+            encryption_key_arn: kms key ARN for encryption
+
         Returns:
             Memory object, either newly created or existing
+
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models import SemanticStrategy
+
+            # Create with typed strategy
+            semantic = SemanticStrategy(name="MyStrategy")
+            memory = manager.get_or_create_memory(
+                name="MyMemory",
+                strategies=[semantic]
+            )
         """
         memory: Memory = None
         try:
@@ -320,12 +389,16 @@ class MemoryManager:
 
             # Create Memory if it doesn't exist
             if memory_summary is None:
+                # Convert typed strategies to dicts for internal processing
+                dict_strategies = convert_strategies_to_dicts(strategies) if strategies else None
+
                 memory = self._create_memory_and_wait(
                     name=name,
-                    strategies=strategies,
+                    strategies=dict_strategies,
                     description=description,
                     event_expiry_days=event_expiry_days,
                     memory_execution_role_arn=memory_execution_role_arn,
+                    encryption_key_arn=encryption_key_arn,
                 )
             else:
                 logger.info("Memory already exists. Using existing memory ID: %s", memory_summary.id)
@@ -488,7 +561,7 @@ class MemoryManager:
         if namespaces:
             strategy[StrategyType.SEMANTIC.value]["namespaces"] = namespaces
 
-        return self._add_strategy(memory_id, strategy)
+        return self.add_strategy(memory_id, strategy)
 
     def add_semantic_strategy_and_wait(
         self,
@@ -532,7 +605,7 @@ class MemoryManager:
         if namespaces:
             strategy[StrategyType.SUMMARY.value]["namespaces"] = namespaces
 
-        return self._add_strategy(memory_id, strategy)
+        return self.add_strategy(memory_id, strategy)
 
     def add_summary_strategy_and_wait(
         self,
@@ -569,7 +642,7 @@ class MemoryManager:
         if namespaces:
             strategy[StrategyType.USER_PREFERENCE.value]["namespaces"] = namespaces
 
-        return self._add_strategy(memory_id, strategy)
+        return self.add_strategy(memory_id, strategy)
 
     def add_user_preference_strategy_and_wait(
         self,
@@ -628,7 +701,7 @@ class MemoryManager:
         if namespaces:
             strategy[StrategyType.CUSTOM.value]["namespaces"] = namespaces
 
-        return self._add_strategy(memory_id, strategy)
+        return self.add_strategy(memory_id, strategy)
 
     def add_custom_semantic_strategy_and_wait(
         self,
@@ -674,17 +747,38 @@ class MemoryManager:
     def update_memory_strategies(
         self,
         memory_id: str,
-        add_strategies: Optional[List[Dict[str, Any]]] = None,
+        add_strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
         modify_strategies: Optional[List[Dict[str, Any]]] = None,
         delete_strategy_ids: Optional[List[str]] = None,
     ) -> Memory:
-        """Update memory strategies - add, modify, or delete."""
+        """Update memory strategies - add, modify, or delete.
+
+        Args:
+            memory_id: Memory resource ID
+            add_strategies: List of typed strategy objects or dictionaries to add
+            modify_strategies: List of strategy modification dictionaries
+            delete_strategy_ids: List of strategy IDs to delete
+
+        Returns:
+            Updated Memory object
+
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models import SemanticStrategy
+
+            # Add typed strategy
+            semantic = SemanticStrategy(name="NewStrategy")
+            memory = manager.update_memory_strategies(
+                memory_id="mem-123",
+                add_strategies=[semantic]
+            )
+        """
         try:
             memory_strategies = {}
 
             if add_strategies:
-                processed_add = self._add_default_namespaces(add_strategies)
-                memory_strategies["addMemoryStrategies"] = processed_add
+                # Convert typed strategies to dicts for internal processing
+                dict_strategies = convert_strategies_to_dicts(add_strategies)
+                memory_strategies["addMemoryStrategies"] = dict_strategies
 
             if modify_strategies:
                 current_strategies = self.get_memory_strategies(memory_id)
@@ -740,7 +834,7 @@ class MemoryManager:
     def update_memory_strategies_and_wait(
         self,
         memory_id: str,
-        add_strategies: Optional[List[Dict[str, Any]]] = None,
+        add_strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
         modify_strategies: Optional[List[Dict[str, Any]]] = None,
         delete_strategy_ids: Optional[List[str]] = None,
         max_wait: int = 300,
@@ -750,6 +844,27 @@ class MemoryManager:
 
         This method handles the temporary CREATING state that occurs when
         updating strategies, preventing subsequent update errors.
+
+        Args:
+            memory_id: Memory resource ID
+            add_strategies: List of typed strategy objects or dictionaries to add
+            modify_strategies: List of strategy modification dictionaries
+            delete_strategy_ids: List of strategy IDs to delete
+            max_wait: Maximum seconds to wait (default: 300)
+            poll_interval: Seconds between checks (default: 10)
+
+        Returns:
+            Updated Memory object in ACTIVE state
+
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models import SummaryStrategy
+
+            # Add typed strategy and wait
+            summary = SummaryStrategy(name="NewSummaryStrategy")
+            memory = manager.update_memory_strategies_and_wait(
+                memory_id="mem-123",
+                add_strategies=[summary]
+            )
         """
         # Update strategies
         self.update_memory_strategies(memory_id, add_strategies, modify_strategies, delete_strategy_ids)
@@ -757,30 +872,76 @@ class MemoryManager:
         # Wait for memory to return to ACTIVE
         return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
-    def add_strategy(self, memory_id: str, strategy: Dict[str, Any]) -> Memory:
+    def add_strategy(self, memory_id: str, strategy: Union[BaseStrategy, Dict[str, Any]]) -> Memory:
         """Add a strategy to a memory (without waiting).
 
         WARNING: After adding a strategy, the memory enters CREATING state temporarily.
-        Use add_*_strategy_and_wait() methods instead to avoid errors.
+        Use add_strategy_and_wait() method instead to avoid errors.
 
         Args:
             memory_id: Memory resource ID
-            strategy: Strategy configuration dictionary
+            strategy: Typed strategy object or dictionary configuration
 
         Returns:
             Updated memory response
-        """
-        warnings.warn(
-            "add_strategy() may leave memory in CREATING state. "
-            "Use add_*_strategy_and_wait() methods to avoid subsequent errors.",
-            UserWarning,
-            stacklevel=2,
-        )
-        return self._add_strategy(memory_id, strategy)
 
-    def _add_strategy(self, memory_id: str, strategy: Dict[str, Any]) -> Memory:
-        """Internal method to add a single strategy."""
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models.semantic import SemanticStrategy
+
+            # Using typed strategy (recommended)
+            semantic = SemanticStrategy(name="MyStrategy", description="Test")
+            memory = manager.add_strategy(memory_id="mem-123", strategy=semantic)
+
+            # Using dictionary (legacy support)
+            strategy_dict = {"semanticMemoryStrategy": {"name": "MyStrategy"}}
+            memory = manager.add_strategy(memory_id="mem-123", strategy=strategy_dict)
+        """
         return self.update_memory_strategies(memory_id=memory_id, add_strategies=[strategy])
+
+    def add_strategy_and_wait(
+        self,
+        memory_id: str,
+        strategy: Union[BaseStrategy, Dict[str, Any]],
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> Memory:
+        """Add a strategy to a memory and wait for it to return to ACTIVE state.
+
+        Args:
+            memory_id: Memory resource ID
+            strategy: Typed strategy object or dictionary configuration
+            max_wait: Maximum seconds to wait (default: 300)
+            poll_interval: Seconds between status checks (default: 10)
+
+        Returns:
+            Updated memory response in ACTIVE state
+
+        Example:
+            from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import (
+                SemanticStrategy, CustomSemanticStrategy, ExtractionConfig, ConsolidationConfig
+            )
+
+            # Using typed strategy (recommended)
+            semantic = SemanticStrategy(name="MyStrategy", description="Test")
+            memory = manager.add_strategy_and_wait(memory_id="mem-123", strategy=semantic)
+
+            # Using custom strategy with configurations
+            custom = CustomSemanticStrategy(
+                name="CustomStrategy",
+                extraction_config=ExtractionConfig(
+                    append_to_prompt="Extract insights",
+                    model_id="anthropic.claude-3-sonnet-20240229-v1:0"
+                ),
+                consolidation_config=ConsolidationConfig(
+                    append_to_prompt="Consolidate insights",
+                    model_id="anthropic.claude-3-haiku-20240307-v1:0"
+                )
+            )
+            memory = manager.add_strategy_and_wait(memory_id="mem-123", strategy=custom)
+        """
+        return self.update_memory_strategies_and_wait(
+            memory_id=memory_id, add_strategies=[strategy], max_wait=max_wait, poll_interval=poll_interval
+        )
 
     def _check_strategies_terminal_state(self, strategies: List[Dict[str, Any]]) -> tuple[bool, List[str], List[str]]:
         """Check if all strategies are in terminal states.
