@@ -8,11 +8,8 @@ from botocore.exceptions import ClientError
 from bedrock_agentcore_starter_toolkit.operations.memory.constants import (
     StrategyType,
 )
-
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
-from bedrock_agentcore_starter_toolkit.operations.memory.models import (
-    Memory, MemoryStrategy, MemorySummary
-)
+from bedrock_agentcore_starter_toolkit.operations.memory.models import Memory, MemoryStrategy, MemorySummary
 
 
 def test_manager_initialization():
@@ -39,6 +36,147 @@ def test_manager_initialization():
         call_args = mock_session.client.call_args
         assert call_args[0][0] == "bedrock-agentcore-control"
         assert call_args[1]["region_name"] == "us-west-2"
+
+        # Verify default config includes user agent
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+
+
+def test_manager_initialization_with_boto_client_config():
+    """Test client initialization with custom boto_client_config."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Create custom boto client config
+        custom_config = BotocoreConfig(retries={"max_attempts": 5}, read_timeout=60)
+
+        manager = MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Check that the region was set correctly
+        assert manager.region_name == "us-east-1"
+        assert mock_session.client.call_count == 1
+
+        # Verify the correct service was called with merged config
+        mock_session.client.assert_called_once()
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-east-1"
+
+        # Verify config was merged and includes user agent
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+        # The merged config should contain the original settings
+        assert hasattr(config, "retries")
+        assert hasattr(config, "read_timeout")
+
+
+def test_boto_client_config_user_agent_merging():
+    """Test that boto_client_config properly merges user agent."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with existing user agent
+        custom_config = BotocoreConfig(user_agent_extra="my-custom-agent", retries={"max_attempts": 3})
+
+        MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Verify the user agent was merged correctly
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "my-custom-agent bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_without_existing_user_agent():
+    """Test boto_client_config when no existing user agent is present."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with config that has no user agent
+        custom_config = BotocoreConfig(retries={"max_attempts": 3}, read_timeout=30)
+
+        MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Verify the user agent was added correctly
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_with_session_and_region():
+    """Test boto_client_config works with both boto3_session and region_name."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session"):
+        # Create a mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Create custom boto client config
+        custom_config = BotocoreConfig(connect_timeout=30, user_agent_extra="test-agent")
+
+        MemoryManager(region_name="us-west-2", boto3_session=mock_session, boto_client_config=custom_config)
+
+        # Verify the client was created with the session and merged config
+        assert mock_session.client.call_count == 1
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-west-2"
+
+        # Verify config was merged properly
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "test-agent bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_none_handling():
+    """Test that None boto_client_config is handled correctly."""
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with explicit None config
+        MemoryManager(region_name="us-east-1", boto_client_config=None)
+
+        # Verify default config is used
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
 
 
 def test_namespace_defaults():

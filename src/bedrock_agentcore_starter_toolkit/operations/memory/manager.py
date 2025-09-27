@@ -7,9 +7,10 @@ import uuid
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
+from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 
-from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType, DEFAULT_NAMESPACES
+from .constants import DEFAULT_NAMESPACES, MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
 from .models import convert_strategies_to_dicts
 from .models.Memory import Memory
 from .models.MemoryStrategy import MemoryStrategy
@@ -25,7 +26,12 @@ class MemoryManager:
     This class handles all CONTROL PLANE CRUD operations.
     """
 
-    def __init__(self, region_name: Optional[str] = None, boto3_session: Optional[boto3.Session] = None):
+    def __init__(
+        self,
+        region_name: Optional[str] = None,
+        boto3_session: Optional[boto3.Session] = None,
+        boto_client_config: Optional[BotocoreConfig] = None,
+    ):
         """Initialize MemoryManager with AWS region.
 
         Args:
@@ -33,6 +39,8 @@ class MemoryManager:
                    will use the region from boto3_session or default session.
             boto3_session: Optional boto3 Session to use. If provided and region_name
                           parameter is also specified, validation will ensure they match.
+            boto_client_config: Optional boto3 client configuration. If provided, will be
+                              merged with default configuration including user agent.
 
         Raises:
             ValueError: If region_name parameter conflicts with boto3_session region.
@@ -49,8 +57,21 @@ class MemoryManager:
                 f"to use the session's region."
             )
 
+        # Configure boto3 client with merged configuration
+        if boto_client_config:
+            existing_user_agent = getattr(boto_client_config, "user_agent_extra", None)
+            if existing_user_agent:
+                new_user_agent = f"{existing_user_agent} bedrock-agentcore-starter-toolkit"
+            else:
+                new_user_agent = "bedrock-agentcore-starter-toolkit"
+            client_config = boto_client_config.merge(BotocoreConfig(user_agent_extra=new_user_agent))
+        else:
+            client_config = BotocoreConfig(user_agent_extra="bedrock-agentcore-starter-toolkit")
+
         self.region_name = region_name
-        self._control_plane_client = session.client("bedrock-agentcore-control", region_name=self.region_name)
+        self._control_plane_client = session.client(
+            "bedrock-agentcore-control", region_name=self.region_name, config=client_config
+        )
 
         # AgentCore Memory control plane methods
         self._ALLOWED_CONTROL_PLANE_METHODS = {
