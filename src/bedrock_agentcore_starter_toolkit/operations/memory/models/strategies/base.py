@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from .custom import CustomSemanticStrategy
@@ -23,10 +23,7 @@ class ExtractionConfig(BaseModel):
     append_to_prompt: Optional[str] = Field(None, description="Additional prompt text for extraction")
     model_id: Optional[str] = Field(None, description="Model identifier for extraction operations")
 
-    class Config:
-        """Pydantic configuration."""
-
-        validate_by_name = True
+    model_config = ConfigDict(validate_by_name=True)
 
 
 class ConsolidationConfig(BaseModel):
@@ -40,10 +37,7 @@ class ConsolidationConfig(BaseModel):
     append_to_prompt: Optional[str] = Field(None, description="Additional prompt text for consolidation")
     model_id: Optional[str] = Field(None, description="Model identifier for consolidation operations")
 
-    class Config:
-        """Pydantic configuration."""
-
-        validate_by_name = True
+    model_config = ConfigDict(validate_by_name=True)
 
 
 class BaseStrategy(BaseModel, ABC):
@@ -68,10 +62,7 @@ class BaseStrategy(BaseModel, ABC):
         """
         pass
 
-    class Config:
-        """Pydantic configuration."""
-
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 # Type union for all strategy types (including backward compatibility)
