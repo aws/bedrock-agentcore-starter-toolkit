@@ -341,9 +341,7 @@ class ContextManager:
                 "risk_score": 0.0,
                 "reasoning": [f"Error in contextual analysis: {str(e)}"],
                 "context_summary": {}
-            }    
-    d
-ef track_risk_profile_evolution(self, user_id: str) -> Dict[str, Any]:
+            }
         """
         Track the evolution of a user's risk profile over time.
         
