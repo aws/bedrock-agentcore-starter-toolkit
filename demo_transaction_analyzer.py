@@ -359,38 +359,34 @@ def demonstrate_transaction_analysis(analyzer: TransactionAnalyzer, scenario: Di
         print(f"  Recommendation: {analysis_data.get('recommendation', 'UNKNOWN')}")
         
         # Display validation results
-        validation = analysis_data.get("validation_result", {})
+        validation = analysis_data.get("validation_result")
         if validation:
             print(f"\nValidation Results:")
-            print(f"  Valid: {validation.get('is_valid', False)}")
+            print(f"  Valid: {validation.is_valid}")
             
-            errors = validation.get("validation_errors", [])
-            if errors:
-                print(f"  Errors: {', '.join(errors)}")
+            if validation.validation_errors:
+                print(f"  Errors: {', '.join(validation.validation_errors)}")
             
-            warnings = validation.get("validation_warnings", [])
-            if warnings:
-                print(f"  Warnings: {', '.join(warnings)}")
+            if validation.validation_warnings:
+                print(f"  Warnings: {', '.join(validation.validation_warnings)}")
             
-            risk_indicators = validation.get("risk_indicators", [])
-            if risk_indicators:
-                print(f"  Risk Indicators: {', '.join(risk_indicators)}")
+            if validation.risk_indicators:
+                print(f"  Risk Indicators: {', '.join(validation.risk_indicators)}")
         
         # Display velocity patterns
         velocity_patterns = analysis_data.get("velocity_patterns", [])
         if velocity_patterns:
             print(f"\nVelocity Patterns Detected ({len(velocity_patterns)}):")
             for i, pattern in enumerate(velocity_patterns, 1):
-                print(f"  {i}. {pattern.get('pattern_type', 'unknown').replace('_', ' ').title()}")
-                print(f"     Description: {pattern.get('description', 'N/A')}")
-                print(f"     Risk Score: {pattern.get('risk_score', 0):.3f}")
-                print(f"     Transactions: {pattern.get('transaction_count', 0)}")
-                print(f"     Time Window: {pattern.get('time_window_minutes', 0)} minutes")
+                print(f"  {i}. {pattern.pattern_type.replace('_', ' ').title()}")
+                print(f"     Description: {pattern.description}")
+                print(f"     Risk Score: {pattern.risk_score:.3f}")
+                print(f"     Transactions: {pattern.transaction_count}")
+                print(f"     Time Window: {pattern.time_window_minutes} minutes")
                 
-                evidence = pattern.get("evidence", [])
-                if evidence:
+                if pattern.evidence:
                     print(f"     Evidence:")
-                    for ev in evidence:
+                    for ev in pattern.evidence:
                         print(f"       - {ev}")
         
         # Display contextual factors
@@ -439,7 +435,7 @@ def demonstrate_velocity_detection(analyzer: TransactionAnalyzer):
             if velocity_patterns:
                 print(f"  ⚠️  Velocity patterns detected: {len(velocity_patterns)}")
                 for pattern in velocity_patterns:
-                    print(f"     - {pattern.get('pattern_type', 'unknown')}: {pattern.get('description', 'N/A')}")
+                    print(f"     - {pattern.pattern_type}: {pattern.description}")
             else:
                 print(f"  ✅ No velocity patterns detected")
             

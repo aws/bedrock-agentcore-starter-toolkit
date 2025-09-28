@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -118,6 +118,10 @@ class BaseAgent(ABC):
         self.start_time = datetime.now()
         self.logger = logging.getLogger(f"{__name__}.{config.agent_name}")
         
+        # Initialize tracking lists
+        self._processing_times = []
+        self._request_timestamps = []
+        
         # Initialize agent-specific components
         self._initialize_agent()
         
@@ -151,10 +155,6 @@ class BaseAgent(ABC):
             
         Returns:
             ProcessingResult with analysis results
-        """
-        if self.status != AgentStatus.READY:
-            return ProcessingResult(
-                success=Fult with analysis results
         """
         if self.status != AgentStatus.READY:
             return ProcessingResult(
