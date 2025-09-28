@@ -44,7 +44,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager to bypass interactive prompts
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False  # Default to STM only
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")  # Return tuple
 
             with (
                 patch(
@@ -82,7 +82,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 assert config_path.exists()
 
                 # Verify memory prompt was called
-                mock_config_manager.prompt_ltm_choice.assert_called_once()
+                mock_config_manager.prompt_memory_selection.assert_called_once()
         finally:
             os.chdir(original_cwd)
 
@@ -112,7 +112,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = True  # Enable LTM
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_AND_LTM")  # Enable LTM
 
             with (
                 patch(
@@ -139,8 +139,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 config = load_config(result.config_path)
                 agent_config = config.agents["test_agent"]
 
-                assert agent_config.memory.enabled is True
-                assert agent_config.memory.enable_ltm is True
+                assert agent_config.memory.mode == "STM_AND_LTM"
                 assert agent_config.memory.event_expiry_days == 30
                 assert agent_config.memory.memory_name == "test_agent_memory"
 
@@ -174,7 +173,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -225,7 +224,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -285,7 +284,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -344,7 +343,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -428,7 +427,7 @@ def handler(payload):
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -483,7 +482,7 @@ def handler(payload):
 
         finally:
             os.chdir(original_cwd)
-            
+
     def test_configure_with_code_build_execution_role(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
@@ -510,7 +509,7 @@ def handler(payload):
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -550,6 +549,7 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
@@ -580,7 +580,10 @@ def handler(payload):
 
                 # Configure mock
                 mock_config_manager = Mock()
-                mock_config_manager.prompt_ltm_choice.return_value = False  # Default to STM only
+                mock_config_manager.prompt_memory_selection.return_value = (
+                    "CREATE_NEW",
+                    "STM_ONLY",
+                )  # Default to STM only
                 mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
@@ -642,7 +645,7 @@ def handler(payload):
 
             # Mock the ConfigurationManager
             mock_config_manager = Mock()
-            mock_config_manager.prompt_ltm_choice.return_value = False
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
                 patch(
@@ -682,6 +685,7 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
@@ -707,7 +711,7 @@ def handler(payload):
             ):
                 # Configure mock
                 mock_config_manager = Mock()
-                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                 mock_config_manager_class.return_value = mock_config_manager
 
                 # Test with None request header configuration
@@ -733,7 +737,7 @@ def handler(payload):
 
         finally:
             os.chdir(original_cwd)
-            
+
     def test_configure_with_empty_request_header_configuration(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
@@ -772,7 +776,7 @@ def handler(payload):
 
                 # Configure mock
                 mock_config_manager = Mock()
-                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                 mock_config_manager_class.return_value = mock_config_manager
 
                 # Test with empty dict request header configuration
@@ -839,7 +843,7 @@ def handler(payload):
 
                     # Configure mock
                     mock_config_manager = Mock()
-                    mock_config_manager.prompt_ltm_choice.return_value = False
+                    mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                     mock_config_manager_class.return_value = mock_config_manager
 
                     result = configure_bedrock_agentcore(
@@ -914,7 +918,7 @@ def handler(payload):
 
                 # Configure mock
                 mock_config_manager = Mock()
-                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                 mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
@@ -999,7 +1003,7 @@ def handler(payload):
 
                 # Configure mock
                 mock_config_manager = Mock()
-                mock_config_manager.prompt_ltm_choice.return_value = False
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                 mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(

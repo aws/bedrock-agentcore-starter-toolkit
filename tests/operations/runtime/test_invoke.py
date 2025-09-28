@@ -752,3 +752,185 @@ class TestGetWorkloadName:
         )
         assert call_args[1]["payload"] == '{"message": "Hello with headers and session"}'
         assert call_args[1]["qualifier"] == "DEFAULT"
+
+    def test_invoke_sync_with_streaming(self, mock_boto3_clients, tmp_path):
+        """Test sync invocation with streaming response (covers lines 40-76)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock streaming response
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.return_value = {
+            "response": [{"chunk": {"text": "Part 1 "}}, {"chunk": {"text": "Part 2"}}, {"data": "final response"}]
+        }
+
+        result = invoke_bedrock_agentcore(config_path, {"message": "Test streaming"})
+
+        assert result.response is not None
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+
+    def test_invoke_with_invalid_json_response(self, mock_boto3_clients, tmp_path):
+        """Test handling of invalid JSON in response (covers line 122)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Return response that might contain invalid JSON
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.return_value = {
+            "response": [{"data": "{invalid json"}]
+        }
+
+        result = invoke_bedrock_agentcore(config_path, {"message": "Test invalid json"})
+
+        # Should handle gracefully
+        assert result.response is not None
+
+    def test_invoke_api_exception(self, mock_boto3_clients, tmp_path):
+        """Test API exception handling (covers line 127)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock API error
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.side_effect = Exception("API Error")
+
+        with pytest.raises(Exception, match="API Error"):
+            invoke_bedrock_agentcore(config_path, {"message": "Test error"})
+
+    def test_invoke_memory_not_active(self, tmp_path):
+        """Test invoke when memory is not yet active (covers lines 40-76)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+            memory=MemoryConfig(
+                mode="STM_AND_LTM",
+                memory_id="mem-12345",
+                memory_name="test_memory",
+                first_invoke_memory_check_done=False,  # Memory check not done yet
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager") as mock_mm:
+            mock_manager = Mock()
+            mock_manager.get_memory_status.return_value = "CREATING"  # Not ACTIVE
+            mock_mm.return_value = mock_manager
+
+            # Should raise ValueError about memory provisioning
+            with pytest.raises(ValueError, match="Memory is still provisioning"):
+                invoke_bedrock_agentcore(config_path, {"message": "test"})
+
+            # Verify memory status was checked
+            mock_manager.get_memory_status.assert_called_once_with("mem-12345")
+
+    def test_invoke_memory_active_updates_config(self, mock_boto3_clients, tmp_path):
+        """Test invoke when memory becomes active (covers lines 62-66)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+            memory=MemoryConfig(
+                mode="STM_AND_LTM",
+                memory_id="mem-12345",
+                memory_name="test_memory",
+                first_invoke_memory_check_done=False,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager") as mock_mm:
+            mock_manager = Mock()
+            mock_manager.get_memory_status.return_value = "ACTIVE"  # Memory is ready
+            mock_mm.return_value = mock_manager
+
+            _ = invoke_bedrock_agentcore(config_path, {"message": "test"})
+
+            # Verify config was updated
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+            updated_config = load_config(config_path)
+            updated_agent = updated_config.agents["test-agent"]
+            assert updated_agent.memory.first_invoke_memory_check_done is True
+
+    def test_invoke_memory_import_error(self, mock_boto3_clients, tmp_path):
+        """Test invoke when MemoryManager import fails (covers lines 68-70)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+            memory=MemoryConfig(
+                mode="STM_AND_LTM",
+                memory_id="mem-12345",
+                first_invoke_memory_check_done=False,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch.dict("sys.modules", {"bedrock_agentcore_starter_toolkit.operations.memory.manager": None}):
+            # Should continue despite import error
+            result = invoke_bedrock_agentcore(config_path, {"message": "test"})
+            assert result is not None

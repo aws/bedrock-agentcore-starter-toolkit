@@ -223,10 +223,10 @@ agentcore invoke '{"prompt": "Remember that my favorite programming language is 
 # If invoked too early (Memory still provisioning), you'll see:
 # "Memory is still provisioning (current status: CREATING).
 #  Long-term memory extraction takes 60-90 seconds to activate.
-#  
+#
 #  Please wait and check status with:
 #    agentcore status
-#  
+#
 #  Once memory status shows 'ACTIVE', you can invoke your agent."
 # "I've noted that your favorite programming language is Python and you prefer tabs over spaces..."
 

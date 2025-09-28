@@ -332,8 +332,8 @@ class TestConfigurationManager:
             # Should use default headers when no existing ones provided
             mock_prompt.assert_called_once_with("Enter allowed request headers (comma-separated)", default_headers)
 
-    def test_prompt_ltm_choice_yes(self, tmp_path):
-        """Test prompt_ltm_choice when user chooses yes."""
+    def test_prompt_memory_selection_create_new_stm_only(self, tmp_path):
+        """Test prompt_memory_selection when creating new memory with STM only."""
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
             patch(
@@ -344,17 +344,20 @@ class TestConfigurationManager:
         ):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
 
-            # Mock user input for yes
-            mock_prompt.return_value = "yes"
+            # Mock user choosing to create new memory with STM only
+            mock_prompt.side_effect = [
+                "",  # Press Enter to create new
+                "no",  # No to LTM
+            ]
 
-            result = config_manager.prompt_ltm_choice()
+            action, value = config_manager.prompt_memory_selection()
 
-            assert result is True
-            mock_prompt.assert_called_once_with("Enable long-term memory extraction? (yes/no)", "no")
-            mock_success.assert_called_once_with("Long-term memory extraction will be configured")
+            assert action == "CREATE_NEW"
+            assert value == "STM_ONLY"
+            mock_success.assert_called_with("Using short-term memory only")
 
-    def test_prompt_ltm_choice_no(self, tmp_path):
-        """Test prompt_ltm_choice when user chooses no."""
+    def test_prompt_memory_selection_create_new_stm_and_ltm(self, tmp_path):
+        """Test prompt_memory_selection when creating new memory with STM+LTM."""
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
             patch(
@@ -362,17 +365,21 @@ class TestConfigurationManager:
             ) as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+            # Mock the MemoryManager import to skip the existing memory check
+            patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager") as mock_mm_class,
         ):
+            # Make MemoryManager raise an exception to skip to new memory creation
+            mock_mm_class.side_effect = Exception("No memory manager available")
+
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
 
-            # Mock user input for no
-            mock_prompt.return_value = "no"
+            mock_prompt.return_value = "yes"  # Enable LTM
 
-            result = config_manager.prompt_ltm_choice()
+            action, value = config_manager.prompt_memory_selection()
 
-            assert result is False
-            mock_prompt.assert_called_once_with("Enable long-term memory extraction? (yes/no)", "no")
-            mock_success.assert_called_once_with("Using short-term memory only")
+            assert action == "CREATE_NEW"
+            assert value == "STM_AND_LTM"
+            mock_success.assert_called_with("Configuring short-term + long-term memory")
 
     def test_init_with_non_interactive_mode(self, tmp_path):
         """Test initialization with non_interactive=True."""
@@ -560,3 +567,68 @@ class TestConfigurationManager:
             assert enable_ltm is False
             mock_prompt.assert_called_once_with("Enable memory for your agent? (yes/no)", "yes")
             mock_success.assert_called_once_with("Memory disabled")
+
+    def test_prompt_memory_selection_with_existing_memories(self, tmp_path):
+        """Test memory selection with existing memories found (covers lines 264-303)."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+            patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager") as mock_mm,
+        ):
+            # Mock existing config with region
+            mock_config = Mock()
+            mock_config.aws.region = "us-west-2"
+
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+            config_manager.existing_config = mock_config
+
+            # Mock memory manager to return existing memories
+            mock_manager = Mock()
+            mock_manager.list_memories.return_value = [
+                {"id": "mem-123", "name": "existing-memory", "description": "Test memory"},
+                {"id": "mem-456", "name": "another-memory", "description": "Another test"},
+            ]
+            mock_mm.return_value = mock_manager
+
+            # User selects first memory
+            mock_prompt.return_value = "1"
+
+            action, value = config_manager.prompt_memory_selection()
+
+            assert action == "USE_EXISTING"
+            assert value == "mem-123"
+            mock_success.assert_called_with("Using existing memory: existing-memory")
+
+    def test_prompt_memory_selection_skip_option(self, tmp_path):
+        """Test memory selection skip option (covers response == 's' branch)."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._prompt_with_default"
+            ) as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager._print_success") as mock_success,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.configuration_manager.console.print"),
+            patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.MemoryManager") as mock_mm,
+        ):
+            mock_config = Mock()
+            mock_config.aws.region = "us-west-2"
+
+            config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
+            config_manager.existing_config = mock_config
+
+            mock_manager = Mock()
+            mock_manager.list_memories.return_value = [{"id": "mem-123", "name": "memory"}]
+            mock_mm.return_value = mock_manager
+
+            # User types 's' to skip
+            mock_prompt.return_value = "s"
+
+            action, value = config_manager.prompt_memory_selection()
+
+            assert action == "SKIP"
+            assert value is None
+            mock_success.assert_called_with("Skipping memory configuration")
