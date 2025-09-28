@@ -22,7 +22,9 @@
     - Write unit tests for reasoning logic validation
     - _Requirements: 1.1, 1.3, 1.5_
 
+
   - [ ] 2.2 Build Explanation Generation System
+
     - Implement detailed explanation generator for fraud decisions
     - Create human-readable reasoning trail formatter
     - Add evidence compilation and presentation logic
