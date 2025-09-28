@@ -1,93 +1,61 @@
 """
 Transaction Analyzer Agent
 
-Specialized agent for real-time transaction analysis with streaming support,
-velocity pattern detection, and comprehensive transaction validation.
+Specialized agent for real-time transaction analysis with velocity pattern detection,
+comprehensive validation, and streaming support.
 """
 
-import asyncio
 import logging
-import time
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from collections import defaultdict, deque
+import statistics
+import re
 
-from .base_agent import BaseSpecializedAgent, AgentConfiguration, AgentCapability, AgentStatus
-from memory_system.models import Transaction, FraudDecision, Location, DeviceInfo
+from .base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
+from memory_system.models import Transaction, Location, DeviceInfo, FraudDecision
 from memory_system.memory_manager import MemoryManager
-from reasoning_engine.chain_of_thought import ReasoningEngine
+from memory_system.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class VelocityWindow:
-    """Sliding window for velocity analysis."""
-    user_id: str
-    transactions: deque = field(default_factory=deque)
-    window_size_minutes: int = 60
-    max_transactions: int = 100
-    
-    def add_transaction(self, transaction: Transaction):
-        """Add transaction to velocity window."""
-        # Remove old transactions outside the window
-        cutoff_time = datetime.now() - timedelta(minutes=self.window_size_minutes)
-        while self.transactions and self.transactions[0].timestamp < cutoff_time:
-            self.transactions.popleft()
-        
-        # Add new transaction
-        self.transactions.append(transaction)
-        
-        # Limit window size
-        if len(self.transactions) > self.max_transactions:
-            self.transactions.popleft()
-    
-    def get_transaction_count(self, minutes: int = None) -> int:
-        """Get transaction count in specified time window."""
-        if minutes is None:
-            return len(self.transactions)
-        
-        cutoff_time = datetime.now() - timedelta(minutes=minutes)
-        return sum(1 for tx in self.transactions if tx.timestamp >= cutoff_time)
-    
-    def get_total_amount(self, minutes: int = None) -> Decimal:
-        """Get total transaction amount in specified time window."""
-        if minutes is None:
-            return sum(tx.amount for tx in self.transactions)
-        
-        cutoff_time = datetime.now() - timedelta(minutes=minutes)
-        return sum(tx.amount for tx in self.transactions if tx.timestamp >= cutoff_time)
-    
-    def get_unique_merchants(self, minutes: int = None) -> int:
-        """Get count of unique merchants in specified time window."""
-        if minutes is None:
-            merchants = {tx.merchant for tx in self.transactions}
-        else:
-            cutoff_time = datetime.now() - timedelta(minutes=minutes)
-            merchants = {tx.merchant for tx in self.transactions if tx.timestamp >= cutoff_time}
-        
-        return len(merchants)
+class VelocityPattern:
+    """Velocity pattern detection result."""
+    pattern_type: str
+    transaction_count: int
+    time_window_minutes: int
+    total_amount: Decimal
+    risk_score: float
+    description: str
+    evidence: List[str] = field(default_factory=list)
 
 
 @dataclass
-class TransactionAnalysisResult:
-    """Result of transaction analysis."""
+class ValidationResult:
+    """Transaction validation result."""
+    is_valid: bool
+    validation_errors: List[str] = field(default_factory=list)
+    validation_warnings: List[str] = field(default_factory=list)
+    risk_indicators: List[str] = field(default_factory=list)
+
+
+@dataclass
+class TransactionAnalysis:
+    """Complete transaction analysis result."""
     transaction_id: str
-    user_id: str
-    analysis_timestamp: datetime
     risk_score: float
-    decision_recommendation: FraudDecision
+    recommendation: str
     confidence: float
-    analysis_details: Dict[str, Any]
-    velocity_flags: List[str]
-    validation_results: Dict[str, bool]
-    processing_time_ms: float
-    agent_id: str
+    velocity_patterns: List[VelocityPattern] = field(default_factory=list)
+    validation_result: Optional[ValidationResult] = None
+    contextual_factors: Dict[str, Any] = field(default_factory=dict)
+    processing_details: Dict[str, Any] = field(default_factory=dict)
 
 
-class TransactionAnalyzerAgent(BaseSpecializedAgent):
+class TransactionAnalyzer(BaseAgent):
     """
     Specialized agent for transaction analysis.
     
@@ -95,247 +63,139 @@ class TransactionAnalyzerAgent(BaseSpecializedAgent):
     - Real-time transaction processing
     - Velocity pattern detection
     - Transaction validation
-    - Streaming support
-    - Risk scoring
+    - Risk scoring and recommendation
+    - Streaming support for high-volume processing
     """
     
     def __init__(
         self, 
-        config: AgentConfiguration,
         memory_manager: MemoryManager,
-        reasoning_engine: ReasoningEngine
+        context_manager: ContextManager,
+        config: Optional[AgentConfiguration] = None
     ):
         """
         Initialize the Transaction Analyzer Agent.
         
         Args:
-            config: Agent configuration
             memory_manager: Memory manager for data access
-            reasoning_engine: Reasoning engine for analysis
+            context_manager: Context manager for contextual analysis
+            config: Agent configuration (optional)
         """
-        super().__init__(config)
+        if config is None:
+            config = AgentConfiguration(
+                agent_id="transaction_analyzer_001",
+                agent_name="TransactionAnalyzer",
+                version="1.0.0",
+                capabilities=[
+                    AgentCapability.TRANSACTION_ANALYSIS,
+                    AgentCapability.REAL_TIME_PROCESSING,
+                    AgentCapability.PATTERN_DETECTION
+                ],
+                max_concurrent_requests=50,
+                timeout_seconds=10,
+                custom_parameters={
+                    "velocity_window_minutes": 60,
+                    "max_velocity_transactions": 10,
+                    "high_risk_threshold": 0.7,
+                    "medium_risk_threshold": 0.4
+                }
+            )
         
         self.memory_manager = memory_manager
-        self.reasoning_engine = reasoning_engine
+        self.context_manager = context_manager
         
-        # Velocity tracking
-        self.velocity_windows: Dict[str, VelocityWindow] = {}
-        self.velocity_thresholds = {
-            "max_transactions_per_hour": 10,
-            "max_transactions_per_10min": 5,
-            "max_amount_per_hour": Decimal("5000.00"),
-            "max_unique_merchants_per_hour": 5
-        }
+        # Initialize velocity tracking
+        self.velocity_cache = {}  # user_id -> list of recent transactions
+        self.cache_cleanup_interval = 300  # 5 minutes
+        self.last_cache_cleanup = datetime.now()
         
-        # Transaction validation rules
-        self.validation_rules = {
-            "min_amount": Decimal("0.01"),
-            "max_amount": Decimal("50000.00"),
-            "required_fields": ["id", "user_id", "amount", "merchant", "timestamp"],
-            "valid_currencies": ["USD", "EUR", "GBP", "CAD", "AUD"],
-            "valid_card_types": ["credit", "debit", "prepaid"]
-        }
+        super().__init__(config)
+    
+    def _initialize_agent(self) -> None:
+        """Initialize transaction analyzer specific components."""
+        self.logger.info("Initializing Transaction Analyzer Agent")
         
-        # Risk scoring weights
+        # Initialize validation rules
+        self.validation_rules = self._load_validation_rules()
+        
+        # Initialize risk scoring parameters
         self.risk_weights = {
-            "velocity_risk": 0.3,
-            "amount_risk": 0.2,
-            "location_risk": 0.2,
-            "merchant_risk": 0.15,
-            "device_risk": 0.1,
-            "temporal_risk": 0.05
+            "amount_anomaly": 0.25,
+            "velocity_risk": 0.30,
+            "geographic_risk": 0.20,
+            "temporal_risk": 0.15,
+            "contextual_risk": 0.10
         }
         
-        # Streaming support
-        self.stream_buffer = asyncio.Queue(maxsize=1000)
-        self.batch_size = 10
-        self.batch_timeout_seconds = 5
-        
-        self.logger.info(f"Transaction Analyzer Agent {self.agent_id} initialized")
+        self.logger.info("Transaction Analyzer Agent initialized successfully")
     
-    async def initialize(self) -> bool:
-        """Initialize the transaction analyzer agent."""
-        try:
-            self.logger.info("Initializing Transaction Analyzer Agent...")
-            
-            # Test memory manager connection
-            if not await self._test_memory_manager():
-                raise Exception("Memory manager connection failed")
-            
-            # Test reasoning engine
-            if not await self._test_reasoning_engine():
-                raise Exception("Reasoning engine initialization failed")
-            
-            # Start background tasks
-            asyncio.create_task(self._process_stream_buffer())
-            asyncio.create_task(self._cleanup_velocity_windows())
-            
-            self._set_status(AgentStatus.ACTIVE)
-            self.logger.info("Transaction Analyzer Agent initialized successfully")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Failed to initialize Transaction Analyzer Agent: {str(e)}")
-            self._set_status(AgentStatus.ERROR)
-            return False
-    
-    async def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         """
         Process a transaction analysis request.
         
         Args:
-            request: Request containing transaction data
+            request_data: Dictionary containing transaction data
             
         Returns:
-            Analysis results
+            ProcessingResult with transaction analysis
         """
-        start_time = time.time()
-        self.active_requests += 1
-        
         try:
-            self._set_status(AgentStatus.BUSY)
-            
             # Extract transaction from request
-            transaction_data = request.get("transaction")
-            if not transaction_data:
-                raise ValueError("No transaction data provided")
+            transaction = self._extract_transaction(request_data)
+            if not transaction:
+                return ProcessingResult(
+                    success=False,
+                    result_data={},
+                    processing_time_ms=0.0,
+                    confidence_score=0.0,
+                    error_message="Invalid transaction data"
+                )
             
-            # Parse transaction
-            transaction = self._parse_transaction(transaction_data)
+            # Perform comprehensive analysis
+            analysis = self._analyze_transaction(transaction)
             
-            # Perform analysis
-            analysis_result = await self._analyze_transaction(transaction)
+            # Store transaction in memory system
+            self.memory_manager.store_transaction(transaction)
             
-            # Update metrics
-            processing_time = (time.time() - start_time) * 1000
-            self._update_metrics(processing_time, True)
+            # Update velocity cache
+            self._update_velocity_cache(transaction)
             
-            return {
-                "success": True,
-                "analysis_result": analysis_result.__dict__,
-                "processing_time_ms": processing_time,
-                "agent_id": self.agent_id
-            }
-            
-        except Exception as e:
-            processing_time = (time.time() - start_time) * 1000
-            self._update_metrics(processing_time, False, str(e))
-            
-            self.logger.error(f"Transaction analysis failed: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e),
-                "processing_time_ms": processing_time,
-                "agent_id": self.agent_id
-            }
-            
-        finally:
-            self.active_requests -= 1
-            if self.active_requests == 0:
-                self._set_status(AgentStatus.ACTIVE)
-    
-    async def process_stream(self, transaction_stream: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Process a stream of transactions for real-time analysis.
-        
-        Args:
-            transaction_stream: List of transaction data
-            
-        Returns:
-            List of analysis results
-        """
-        try:
-            self.logger.info(f"Processing transaction stream with {len(transaction_stream)} transactions")
-            
-            results = []
-            for transaction_data in transaction_stream:
-                # Add to stream buffer for batch processing
-                await self.stream_buffer.put(transaction_data)
-                
-                # For immediate processing, analyze directly
-                if transaction_data.get("priority") == "high":
-                    result = await self.process_request({"transaction": transaction_data})
-                    results.append(result)
-            
-            return results
+            return ProcessingResult(
+                success=True,
+                result_data={
+                    "analysis": analysis.__dict__,
+                    "transaction_id": transaction.id,
+                    "timestamp": datetime.now().isoformat()
+                },
+                processing_time_ms=0.0,  # Will be set by base class
+                confidence_score=analysis.confidence,
+                metadata={
+                    "agent_type": "transaction_analyzer",
+                    "analysis_version": "1.0.0"
+                }
+            )
             
         except Exception as e:
-            self.logger.error(f"Stream processing failed: {str(e)}")
-            return [{"success": False, "error": str(e)}]
+            self.logger.error(f"Error analyzing transaction: {str(e)}")
+            return ProcessingResult(
+                success=False,
+                result_data={},
+                processing_time_ms=0.0,
+                confidence_score=0.0,
+                error_message=str(e)
+            )
     
-    async def _analyze_transaction(self, transaction: Transaction) -> TransactionAnalysisResult:
-        """
-        Perform comprehensive transaction analysis.
-        
-        Args:
-            transaction: Transaction to analyze
-            
-        Returns:
-            Analysis result
-        """
-        start_time = time.time()
-        
-        # Update velocity tracking
-        self._update_velocity_tracking(transaction)
-        
-        # Perform validation
-        validation_results = self._validate_transaction(transaction)
-        
-        # Detect velocity patterns
-        velocity_flags = self._detect_velocity_patterns(transaction)
-        
-        # Calculate risk scores
-        risk_scores = await self._calculate_risk_scores(transaction)
-        
-        # Overall risk score
-        overall_risk = sum(
-            risk_scores.get(factor, 0) * weight 
-            for factor, weight in self.risk_weights.items()
-        )
-        
-        # Determine recommendation
-        decision_recommendation, confidence = self._determine_recommendation(
-            overall_risk, velocity_flags, validation_results
-        )
-        
-        # Compile analysis details
-        analysis_details = {
-            "risk_scores": risk_scores,
-            "overall_risk_score": overall_risk,
-            "velocity_analysis": {
-                "transactions_last_hour": self._get_velocity_window(transaction.user_id).get_transaction_count(60),
-                "transactions_last_10min": self._get_velocity_window(transaction.user_id).get_transaction_count(10),
-                "amount_last_hour": float(self._get_velocity_window(transaction.user_id).get_total_amount(60)),
-                "unique_merchants_last_hour": self._get_velocity_window(transaction.user_id).get_unique_merchants(60)
-            },
-            "validation_summary": {
-                "total_checks": len(validation_results),
-                "passed_checks": sum(1 for passed in validation_results.values() if passed),
-                "failed_checks": sum(1 for passed in validation_results.values() if not passed)
-            }
-        }
-        
-        processing_time = (time.time() - start_time) * 1000
-        
-        return TransactionAnalysisResult(
-            transaction_id=transaction.id,
-            user_id=transaction.user_id,
-            analysis_timestamp=datetime.now(),
-            risk_score=overall_risk,
-            decision_recommendation=decision_recommendation,
-            confidence=confidence,
-            analysis_details=analysis_details,
-            velocity_flags=velocity_flags,
-            validation_results=validation_results,
-            processing_time_ms=processing_time,
-            agent_id=self.agent_id
-        )
-    
-    def _parse_transaction(self, transaction_data: Dict[str, Any]) -> Transaction:
-        """Parse transaction data into Transaction object."""
+    def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transaction]:
+        """Extract and validate transaction from request data."""
         try:
-            # Parse location
-            location_data = transaction_data.get("location", {})
+            # Handle different input formats
+            if "transaction" in request_data:
+                tx_data = request_data["transaction"]
+            else:
+                tx_data = request_data
+            
+            # Create Location object
+            location_data = tx_data.get("location", {})
             location = Location(
                 country=location_data.get("country", ""),
                 city=location_data.get("city", ""),
@@ -344,8 +204,8 @@ class TransactionAnalyzerAgent(BaseSpecializedAgent):
                 ip_address=location_data.get("ip_address")
             )
             
-            # Parse device info
-            device_data = transaction_data.get("device_info", {})
+            # Create DeviceInfo object
+            device_data = tx_data.get("device_info", {})
             device_info = DeviceInfo(
                 device_id=device_data.get("device_id", ""),
                 device_type=device_data.get("device_type", ""),
@@ -354,283 +214,455 @@ class TransactionAnalyzerAgent(BaseSpecializedAgent):
                 fingerprint=device_data.get("fingerprint")
             )
             
-            # Parse timestamp
-            timestamp_str = transaction_data.get("timestamp")
-            if isinstance(timestamp_str, str):
-                timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-            else:
-                timestamp = timestamp_str or datetime.now()
-            
-            return Transaction(
-                id=transaction_data["id"],
-                user_id=transaction_data["user_id"],
-                amount=Decimal(str(transaction_data["amount"])),
-                currency=transaction_data.get("currency", "USD"),
-                merchant=transaction_data["merchant"],
-                category=transaction_data.get("category", "unknown"),
+            # Create Transaction object
+            transaction = Transaction(
+                id=tx_data.get("id", ""),
+                user_id=tx_data.get("user_id", ""),
+                amount=Decimal(str(tx_data.get("amount", 0))),
+                currency=tx_data.get("currency", "USD"),
+                merchant=tx_data.get("merchant", ""),
+                category=tx_data.get("category", ""),
                 location=location,
-                timestamp=timestamp,
-                card_type=transaction_data.get("card_type", "credit"),
+                timestamp=datetime.fromisoformat(tx_data.get("timestamp", datetime.now().isoformat())),
+                card_type=tx_data.get("card_type", ""),
                 device_info=device_info,
-                ip_address=transaction_data.get("ip_address", ""),
-                session_id=transaction_data.get("session_id", ""),
-                metadata=transaction_data.get("metadata", {})
+                ip_address=tx_data.get("ip_address", ""),
+                session_id=tx_data.get("session_id", ""),
+                metadata=tx_data.get("metadata", {})
             )
             
+            return transaction
+            
         except Exception as e:
-            raise ValueError(f"Invalid transaction data: {str(e)}")
+            self.logger.error(f"Error extracting transaction: {str(e)}")
+            return None
     
-    def _validate_transaction(self, transaction: Transaction) -> Dict[str, bool]:
-        """Validate transaction against business rules."""
-        results = {}
+    def _analyze_transaction(self, transaction: Transaction) -> TransactionAnalysis:
+        """Perform comprehensive transaction analysis."""
+        analysis_start = datetime.now()
         
-        # Required fields validation
-        for field in self.validation_rules["required_fields"]:
-            value = getattr(transaction, field, None)
-            results[f"has_{field}"] = value is not None and str(value).strip() != ""
+        # 1. Validate transaction
+        validation_result = self._validate_transaction(transaction)
+        
+        # 2. Detect velocity patterns
+        velocity_patterns = self._detect_velocity_patterns(transaction)
+        
+        # 3. Get contextual analysis
+        contextual_factors = self._get_contextual_factors(transaction)
+        
+        # 4. Calculate risk score
+        risk_score = self._calculate_risk_score(
+            transaction, validation_result, velocity_patterns, contextual_factors
+        )
+        
+        # 5. Generate recommendation
+        recommendation, confidence = self._generate_recommendation(risk_score, validation_result)
+        
+        # 6. Create analysis result
+        analysis = TransactionAnalysis(
+            transaction_id=transaction.id,
+            risk_score=risk_score,
+            recommendation=recommendation,
+            confidence=confidence,
+            velocity_patterns=velocity_patterns,
+            validation_result=validation_result,
+            contextual_factors=contextual_factors,
+            processing_details={
+                "analysis_duration_ms": (datetime.now() - analysis_start).total_seconds() * 1000,
+                "rules_applied": len(self.validation_rules),
+                "velocity_patterns_detected": len(velocity_patterns)
+            }
+        )
+        
+        return analysis
+    
+    def _validate_transaction(self, transaction: Transaction) -> ValidationResult:
+        """Validate transaction against business rules."""
+        errors = []
+        warnings = []
+        risk_indicators = []
+        
+        # Basic field validation
+        if not transaction.id:
+            errors.append("Missing transaction ID")
+        
+        if not transaction.user_id:
+            errors.append("Missing user ID")
+        
+        if transaction.amount <= 0:
+            errors.append("Invalid transaction amount")
+        
+        if not transaction.merchant:
+            warnings.append("Missing merchant information")
         
         # Amount validation
-        results["amount_above_minimum"] = transaction.amount >= self.validation_rules["min_amount"]
-        results["amount_below_maximum"] = transaction.amount <= self.validation_rules["max_amount"]
+        if transaction.amount > Decimal("10000"):
+            risk_indicators.append("High transaction amount")
         
         # Currency validation
-        results["valid_currency"] = transaction.currency in self.validation_rules["valid_currencies"]
+        valid_currencies = ["USD", "EUR", "GBP", "CAD", "AUD"]
+        if transaction.currency not in valid_currencies:
+            warnings.append(f"Unusual currency: {transaction.currency}")
         
-        # Card type validation
-        results["valid_card_type"] = transaction.card_type in self.validation_rules["valid_card_types"]
-        
-        # Timestamp validation
-        now = datetime.now()
-        results["timestamp_not_future"] = transaction.timestamp <= now
-        results["timestamp_not_too_old"] = transaction.timestamp >= now - timedelta(days=30)
+        # Merchant validation
+        if self._is_high_risk_merchant(transaction.merchant):
+            risk_indicators.append("High-risk merchant category")
         
         # Location validation
-        results["has_location"] = bool(transaction.location.country and transaction.location.city)
+        if not transaction.location.country:
+            warnings.append("Missing location information")
         
         # Device validation
-        results["has_device_info"] = bool(transaction.device_info.device_id and transaction.device_info.device_type)
+        if not transaction.device_info.device_id:
+            warnings.append("Missing device information")
         
-        return results
-    
-    def _update_velocity_tracking(self, transaction: Transaction):
-        """Update velocity tracking for the user."""
-        if transaction.user_id not in self.velocity_windows:
-            self.velocity_windows[transaction.user_id] = VelocityWindow(user_id=transaction.user_id)
+        # Time validation
+        current_time = datetime.now()
+        if transaction.timestamp > current_time + timedelta(minutes=5):
+            errors.append("Future transaction timestamp")
         
-        self.velocity_windows[transaction.user_id].add_transaction(transaction)
+        if transaction.timestamp < current_time - timedelta(days=30):
+            warnings.append("Old transaction timestamp")
+        
+        # Late night transactions
+        if 2 <= transaction.timestamp.hour <= 5:
+            risk_indicators.append("Late night transaction")
+        
+        return ValidationResult(
+            is_valid=len(errors) == 0,
+            validation_errors=errors,
+            validation_warnings=warnings,
+            risk_indicators=risk_indicators
+        )
     
-    def _get_velocity_window(self, user_id: str) -> VelocityWindow:
-        """Get velocity window for user."""
-        if user_id not in self.velocity_windows:
-            self.velocity_windows[user_id] = VelocityWindow(user_id=user_id)
-        return self.velocity_windows[user_id]
-    
-    def _detect_velocity_patterns(self, transaction: Transaction) -> List[str]:
+    def _detect_velocity_patterns(self, transaction: Transaction) -> List[VelocityPattern]:
         """Detect velocity-based fraud patterns."""
-        flags = []
-        window = self._get_velocity_window(transaction.user_id)
+        patterns = []
         
-        # Check transaction count thresholds
-        if window.get_transaction_count(60) > self.velocity_thresholds["max_transactions_per_hour"]:
-            flags.append("excessive_transactions_per_hour")
+        # Get recent transactions for this user
+        recent_transactions = self._get_recent_user_transactions(transaction.user_id)
+        recent_transactions.append(transaction)  # Include current transaction
         
-        if window.get_transaction_count(10) > self.velocity_thresholds["max_transactions_per_10min"]:
-            flags.append("excessive_transactions_per_10min")
+        # Sort by timestamp
+        recent_transactions.sort(key=lambda tx: tx.timestamp)
         
-        # Check amount thresholds
-        if window.get_total_amount(60) > self.velocity_thresholds["max_amount_per_hour"]:
-            flags.append("excessive_amount_per_hour")
+        # Detect rapid-fire pattern (multiple transactions in short time)
+        rapid_fire = self._detect_rapid_fire_pattern(recent_transactions)
+        if rapid_fire:
+            patterns.append(rapid_fire)
         
-        # Check merchant diversity
-        if window.get_unique_merchants(60) > self.velocity_thresholds["max_unique_merchants_per_hour"]:
-            flags.append("excessive_merchant_diversity")
+        # Detect escalating amounts pattern
+        escalating = self._detect_escalating_amounts_pattern(recent_transactions)
+        if escalating:
+            patterns.append(escalating)
         
-        # Check for rapid-fire pattern (multiple transactions in very short time)
-        recent_count = window.get_transaction_count(2)  # Last 2 minutes
-        if recent_count >= 3:
-            flags.append("rapid_fire_pattern")
+        # Detect geographic velocity pattern
+        geo_velocity = self._detect_geographic_velocity_pattern(recent_transactions)
+        if geo_velocity:
+            patterns.append(geo_velocity)
         
-        return flags
+        return patterns
     
-    async def _calculate_risk_scores(self, transaction: Transaction) -> Dict[str, float]:
-        """Calculate risk scores for different factors."""
-        risk_scores = {}
+    def _detect_rapid_fire_pattern(self, transactions: List[Transaction]) -> Optional[VelocityPattern]:
+        """Detect rapid-fire transaction pattern."""
+        if len(transactions) < 3:
+            return None
+        
+        # Check for multiple transactions in short time windows
+        time_windows = [5, 10, 30, 60]  # minutes
+        
+        for window_minutes in time_windows:
+            window_start = transactions[-1].timestamp - timedelta(minutes=window_minutes)
+            window_transactions = [
+                tx for tx in transactions 
+                if tx.timestamp >= window_start
+            ]
+            
+            if len(window_transactions) >= 4:  # 4+ transactions in window
+                total_amount = sum(tx.amount for tx in window_transactions)
+                
+                # Calculate risk score based on frequency and amounts
+                frequency_risk = min(1.0, len(window_transactions) / 10)
+                amount_risk = min(1.0, float(total_amount) / 5000)
+                risk_score = (frequency_risk + amount_risk) / 2
+                
+                return VelocityPattern(
+                    pattern_type="rapid_fire",
+                    transaction_count=len(window_transactions),
+                    time_window_minutes=window_minutes,
+                    total_amount=total_amount,
+                    risk_score=risk_score,
+                    description=f"{len(window_transactions)} transactions in {window_minutes} minutes",
+                    evidence=[
+                        f"Transaction frequency: {len(window_transactions)} in {window_minutes}min",
+                        f"Total amount: ${total_amount}",
+                        f"Average interval: {window_minutes / len(window_transactions):.1f} minutes"
+                    ]
+                )
+        
+        return None
+    
+    def _detect_escalating_amounts_pattern(self, transactions: List[Transaction]) -> Optional[VelocityPattern]:
+        """Detect escalating transaction amounts pattern."""
+        if len(transactions) < 3:
+            return None
+        
+        # Check last 5 transactions for escalating pattern
+        recent = transactions[-5:]
+        amounts = [float(tx.amount) for tx in recent]
+        
+        # Check if amounts are generally increasing
+        increases = 0
+        for i in range(1, len(amounts)):
+            if amounts[i] > amounts[i-1]:
+                increases += 1
+        
+        if increases >= len(amounts) - 2:  # Most transactions are increasing
+            amount_range = max(amounts) - min(amounts)
+            risk_score = min(1.0, amount_range / 1000)  # Risk based on range
+            
+            return VelocityPattern(
+                pattern_type="escalating_amounts",
+                transaction_count=len(recent),
+                time_window_minutes=int((recent[-1].timestamp - recent[0].timestamp).total_seconds() / 60),
+                total_amount=Decimal(str(sum(amounts))),
+                risk_score=risk_score,
+                description=f"Escalating amounts from ${min(amounts):.2f} to ${max(amounts):.2f}",
+                evidence=[
+                    f"Amount increase: {increases}/{len(amounts)-1} transactions",
+                    f"Range: ${min(amounts):.2f} - ${max(amounts):.2f}",
+                    f"Total escalation: ${amount_range:.2f}"
+                ]
+            )
+        
+        return None
+    
+    def _detect_geographic_velocity_pattern(self, transactions: List[Transaction]) -> Optional[VelocityPattern]:
+        """Detect impossible geographic velocity (travel) pattern."""
+        if len(transactions) < 2:
+            return None
+        
+        # Check last few transactions for impossible travel
+        for i in range(len(transactions) - 1):
+            tx1 = transactions[i]
+            tx2 = transactions[i + 1]
+            
+            # Skip if same location
+            if (tx1.location.country == tx2.location.country and 
+                tx1.location.city == tx2.location.city):
+                continue
+            
+            # Calculate time difference
+            time_diff_hours = (tx2.timestamp - tx1.timestamp).total_seconds() / 3600
+            
+            # Estimate distance (simplified)
+            distance_km = self._estimate_distance(tx1.location, tx2.location)
+            
+            # Check if travel is impossible (assuming max 1000 km/h)
+            if distance_km > 0 and time_diff_hours > 0:
+                required_speed = distance_km / time_diff_hours
+                
+                if required_speed > 1000:  # Impossible speed
+                    risk_score = min(1.0, required_speed / 2000)
+                    
+                    return VelocityPattern(
+                        pattern_type="geographic_velocity",
+                        transaction_count=2,
+                        time_window_minutes=int(time_diff_hours * 60),
+                        total_amount=tx1.amount + tx2.amount,
+                        risk_score=risk_score,
+                        description=f"Impossible travel: {distance_km:.0f}km in {time_diff_hours:.1f}h",
+                        evidence=[
+                            f"Distance: {distance_km:.0f} km",
+                            f"Time: {time_diff_hours:.1f} hours",
+                            f"Required speed: {required_speed:.0f} km/h",
+                            f"Locations: {tx1.location.city}, {tx1.location.country} → {tx2.location.city}, {tx2.location.country}"
+                        ]
+                    )
+        
+        return None
+    
+    def _get_contextual_factors(self, transaction: Transaction) -> Dict[str, Any]:
+        """Get contextual factors for the transaction."""
+        try:
+            # Get contextual recommendation
+            context_rec = self.context_manager.get_contextual_recommendation(transaction)
+            
+            return {
+                "contextual_risk_score": context_rec.get("risk_score", 0.0),
+                "contextual_recommendation": context_rec.get("recommendation", "UNKNOWN"),
+                "contextual_confidence": context_rec.get("confidence", 0.0),
+                "similar_cases_count": context_rec.get("context_summary", {}).get("similar_cases_count", 0),
+                "has_user_profile": context_rec.get("context_summary", {}).get("has_user_profile", False)
+            }
+            
+        except Exception as e:
+            self.logger.warning(f"Error getting contextual factors: {str(e)}")
+            return {}
+    
+    def _calculate_risk_score(
+        self, 
+        transaction: Transaction,
+        validation_result: ValidationResult,
+        velocity_patterns: List[VelocityPattern],
+        contextual_factors: Dict[str, Any]
+    ) -> float:
+        """Calculate overall risk score for the transaction."""
+        risk_components = {}
+        
+        # Validation risk
+        validation_risk = 0.0
+        if not validation_result.is_valid:
+            validation_risk += 0.5
+        validation_risk += len(validation_result.risk_indicators) * 0.1
+        validation_risk = min(1.0, validation_risk)
+        risk_components["validation_risk"] = validation_risk
         
         # Velocity risk
-        window = self._get_velocity_window(transaction.user_id)
-        velocity_score = min(1.0, window.get_transaction_count(60) / self.velocity_thresholds["max_transactions_per_hour"])
-        risk_scores["velocity_risk"] = velocity_score
+        velocity_risk = 0.0
+        if velocity_patterns:
+            velocity_risk = max(pattern.risk_score for pattern in velocity_patterns)
+        risk_components["velocity_risk"] = velocity_risk
         
         # Amount risk
-        amount_score = min(1.0, float(transaction.amount) / float(self.validation_rules["max_amount"]))
-        risk_scores["amount_risk"] = amount_score
+        amount_risk = 0.0
+        if transaction.amount > Decimal("1000"):
+            amount_risk = min(1.0, float(transaction.amount) / 10000)
+        risk_components["amount_risk"] = amount_risk
         
-        # Location risk (simplified - would use geolocation services in production)
-        location_risk = 0.1  # Default low risk
-        if not transaction.location.country or transaction.location.country == "XX":
-            location_risk = 0.8  # High risk for unknown countries
-        risk_scores["location_risk"] = location_risk
-        
-        # Merchant risk (simplified - would use merchant reputation database)
-        merchant_risk = 0.1  # Default low risk
-        high_risk_keywords = ["casino", "gambling", "crypto", "bitcoin"]
-        if any(keyword in transaction.merchant.lower() for keyword in high_risk_keywords):
-            merchant_risk = 0.7
-        risk_scores["merchant_risk"] = merchant_risk
-        
-        # Device risk
-        device_risk = 0.1  # Default low risk
-        if not transaction.device_info.device_id or transaction.device_info.device_id == "unknown":
-            device_risk = 0.6
-        risk_scores["device_risk"] = device_risk
-        
-        # Temporal risk (time of day)
+        # Temporal risk
+        temporal_risk = 0.0
         hour = transaction.timestamp.hour
-        if 2 <= hour <= 6:  # Late night/early morning
+        if 2 <= hour <= 6:  # Late night
             temporal_risk = 0.6
-        elif 22 <= hour <= 23 or 0 <= hour <= 1:  # Late evening/night
+        elif hour < 9 or hour > 22:  # Early morning or late evening
             temporal_risk = 0.3
-        else:
-            temporal_risk = 0.1
-        risk_scores["temporal_risk"] = temporal_risk
+        risk_components["temporal_risk"] = temporal_risk
         
-        return risk_scores
+        # Contextual risk
+        contextual_risk = contextual_factors.get("contextual_risk_score", 0.0)
+        if contextual_risk < 0:
+            contextual_risk = 0.0  # Convert negative (good) scores to 0
+        risk_components["contextual_risk"] = contextual_risk
+        
+        # Calculate weighted risk score
+        total_risk = 0.0
+        for component, weight in self.risk_weights.items():
+            if component in risk_components:
+                total_risk += risk_components[component] * weight
+        
+        return min(1.0, max(0.0, total_risk))
     
-    def _determine_recommendation(
-        self, 
-        risk_score: float, 
-        velocity_flags: List[str], 
-        validation_results: Dict[str, bool]
-    ) -> Tuple[FraudDecision, float]:
-        """Determine fraud decision recommendation and confidence."""
+    def _generate_recommendation(self, risk_score: float, validation_result: ValidationResult) -> Tuple[str, float]:
+        """Generate recommendation and confidence based on risk score."""
+        # If validation failed, always decline
+        if not validation_result.is_valid:
+            return "DECLINE", 0.95
         
-        # Check for validation failures
-        critical_validations = ["has_id", "has_user_id", "has_amount", "amount_above_minimum"]
-        validation_failures = [
-            check for check in critical_validations 
-            if not validation_results.get(check, False)
+        # Risk-based recommendations
+        high_threshold = self.config.custom_parameters.get("high_risk_threshold", 0.7)
+        medium_threshold = self.config.custom_parameters.get("medium_risk_threshold", 0.4)
+        
+        if risk_score >= high_threshold:
+            return "DECLINE", min(0.95, 0.7 + risk_score * 0.25)
+        elif risk_score >= medium_threshold:
+            return "FLAG_FOR_REVIEW", 0.75
+        else:
+            return "APPROVE", min(0.95, 0.8 + (1 - risk_score) * 0.15)
+    
+    def _get_recent_user_transactions(self, user_id: str) -> List[Transaction]:
+        """Get recent transactions for velocity analysis."""
+        # Check velocity cache first
+        if user_id in self.velocity_cache:
+            cached_transactions = self.velocity_cache[user_id]
+            # Filter to last hour
+            cutoff_time = datetime.now() - timedelta(hours=1)
+            return [tx for tx in cached_transactions if tx.timestamp >= cutoff_time]
+        
+        # Fallback to memory manager
+        try:
+            return self.memory_manager.get_user_transaction_history(user_id, days_back=1, limit=20)
+        except Exception as e:
+            self.logger.warning(f"Error getting user transaction history: {str(e)}")
+            return []
+    
+    def _update_velocity_cache(self, transaction: Transaction) -> None:
+        """Update velocity cache with new transaction."""
+        user_id = transaction.user_id
+        
+        if user_id not in self.velocity_cache:
+            self.velocity_cache[user_id] = []
+        
+        self.velocity_cache[user_id].append(transaction)
+        
+        # Keep only last hour of transactions
+        cutoff_time = datetime.now() - timedelta(hours=1)
+        self.velocity_cache[user_id] = [
+            tx for tx in self.velocity_cache[user_id] 
+            if tx.timestamp >= cutoff_time
         ]
         
-        if validation_failures:
-            return FraudDecision.DECLINED, 0.95
+        # Periodic cache cleanup
+        if (datetime.now() - self.last_cache_cleanup).total_seconds() > self.cache_cleanup_interval:
+            self._cleanup_velocity_cache()
+    
+    def _cleanup_velocity_cache(self) -> None:
+        """Clean up old entries from velocity cache."""
+        cutoff_time = datetime.now() - timedelta(hours=2)
         
-        # Check for high-risk velocity patterns
-        high_risk_flags = ["rapid_fire_pattern", "excessive_transactions_per_10min"]
-        if any(flag in velocity_flags for flag in high_risk_flags):
-            return FraudDecision.DECLINED, 0.85
+        for user_id in list(self.velocity_cache.keys()):
+            self.velocity_cache[user_id] = [
+                tx for tx in self.velocity_cache[user_id] 
+                if tx.timestamp >= cutoff_time
+            ]
+            
+            # Remove empty entries
+            if not self.velocity_cache[user_id]:
+                del self.velocity_cache[user_id]
         
-        # Risk-based decision
-        if risk_score >= 0.8:
-            return FraudDecision.DECLINED, 0.9
-        elif risk_score >= 0.6:
-            return FraudDecision.FLAGGED, 0.75
-        elif risk_score >= 0.4:
-            return FraudDecision.REVIEW_REQUIRED, 0.6
+        self.last_cache_cleanup = datetime.now()
+        self.logger.debug(f"Cleaned velocity cache, {len(self.velocity_cache)} users remaining")
+    
+    def _load_validation_rules(self) -> List[Dict[str, Any]]:
+        """Load transaction validation rules."""
+        return [
+            {"name": "required_fields", "type": "field_validation"},
+            {"name": "amount_limits", "type": "amount_validation"},
+            {"name": "merchant_validation", "type": "merchant_validation"},
+            {"name": "temporal_validation", "type": "time_validation"}
+        ]
+    
+    def _is_high_risk_merchant(self, merchant: str) -> bool:
+        """Check if merchant is in high-risk category."""
+        high_risk_keywords = [
+            "casino", "gambling", "crypto", "bitcoin", "forex", 
+            "adult", "escort", "pharmacy", "offshore"
+        ]
+        
+        merchant_lower = merchant.lower()
+        return any(keyword in merchant_lower for keyword in high_risk_keywords)
+    
+    def _estimate_distance(self, loc1: Location, loc2: Location) -> float:
+        """Estimate distance between two locations (simplified)."""
+        # Simple distance estimation based on country/city
+        if loc1.country != loc2.country:
+            # Different countries - assume significant distance
+            return 1000.0  # km
+        elif loc1.city != loc2.city:
+            # Same country, different cities
+            return 200.0  # km
         else:
-            return FraudDecision.APPROVED, 0.8
+            # Same city
+            return 0.0
     
-    async def _process_stream_buffer(self):
-        """Background task to process streaming transactions in batches."""
-        while True:
-            try:
-                batch = []
-                timeout_start = time.time()
-                
-                # Collect batch
-                while len(batch) < self.batch_size and (time.time() - timeout_start) < self.batch_timeout_seconds:
-                    try:
-                        transaction_data = await asyncio.wait_for(
-                            self.stream_buffer.get(), 
-                            timeout=1.0
-                        )
-                        batch.append(transaction_data)
-                    except asyncio.TimeoutError:
-                        break
-                
-                # Process batch if not empty
-                if batch:
-                    self.logger.info(f"Processing batch of {len(batch)} transactions")
-                    for transaction_data in batch:
-                        try:
-                            await self.process_request({"transaction": transaction_data})
-                        except Exception as e:
-                            self.logger.error(f"Failed to process transaction in batch: {str(e)}")
-                
-                # Small delay to prevent busy waiting
-                await asyncio.sleep(0.1)
-                
-            except Exception as e:
-                self.logger.error(f"Stream buffer processing error: {str(e)}")
-                await asyncio.sleep(1)
-    
-    async def _cleanup_velocity_windows(self):
-        """Background task to cleanup old velocity windows."""
-        while True:
-            try:
-                current_time = datetime.now()
-                cleanup_threshold = current_time - timedelta(hours=2)
-                
-                # Remove old velocity windows
-                users_to_remove = []
-                for user_id, window in self.velocity_windows.items():
-                    if window.transactions and window.transactions[-1].timestamp < cleanup_threshold:
-                        users_to_remove.append(user_id)
-                
-                for user_id in users_to_remove:
-                    del self.velocity_windows[user_id]
-                    self.logger.debug(f"Cleaned up velocity window for user {user_id}")
-                
-                # Sleep for 10 minutes before next cleanup
-                await asyncio.sleep(600)
-                
-            except Exception as e:
-                self.logger.error(f"Velocity window cleanup error: {str(e)}")
-                await asyncio.sleep(60)
-    
-    async def _test_memory_manager(self) -> bool:
-        """Test memory manager connectivity."""
-        try:
-            # Simple test - this would be more comprehensive in production
-            return self.memory_manager is not None
-        except Exception as e:
-            self.logger.error(f"Memory manager test failed: {str(e)}")
-            return False
-    
-    async def _test_reasoning_engine(self) -> bool:
-        """Test reasoning engine connectivity."""
-        try:
-            # Simple test - this would be more comprehensive in production
-            return self.reasoning_engine is not None
-        except Exception as e:
-            self.logger.error(f"Reasoning engine test failed: {str(e)}")
-            return False
-    
-    async def shutdown(self) -> bool:
-        """Shutdown the transaction analyzer agent."""
-        try:
-            self.logger.info("Shutting down Transaction Analyzer Agent...")
-            
-            self._set_status(AgentStatus.SHUTDOWN)
-            
-            # Wait for active requests to complete
-            timeout = 30  # 30 seconds timeout
-            start_time = time.time()
-            while self.active_requests > 0 and (time.time() - start_time) < timeout:
-                await asyncio.sleep(0.1)
-            
-            # Clear velocity windows
-            self.velocity_windows.clear()
-            
-            # Clear stream buffer
-            while not self.stream_buffer.empty():
-                try:
-                    self.stream_buffer.get_nowait()
-                except asyncio.QueueEmpty:
-                    break
-            
-            self.logger.info("Transaction Analyzer Agent shutdown complete")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Error during shutdown: {str(e)}")
-            return False
+    def get_velocity_statistics(self) -> Dict[str, Any]:
+        """Get velocity cache statistics."""
+        total_users = len(self.velocity_cache)
+        total_transactions = sum(len(transactions) for transactions in self.velocity_cache.values())
+        
+        return {
+            "cached_users": total_users,
+            "cached_transactions": total_transactions,
+            "cache_size_mb": len(str(self.velocity_cache)) / (1024 * 1024),
+            "last_cleanup": self.last_cache_cleanup.isoformat()
+        }
