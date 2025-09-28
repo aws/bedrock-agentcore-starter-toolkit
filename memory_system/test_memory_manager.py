@@ -61,8 +61,8 @@ def sample_transaction():
     )
         
 
-@p
-ytest.fixture
+
+@pytest.fixture
 def sample_decision_context():
     """Create a sample decision context for testing."""
     return DecisionContext(
