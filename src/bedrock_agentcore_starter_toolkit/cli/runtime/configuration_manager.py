@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from ..common import _handle_error, _print_success, _prompt_with_default, console
 
@@ -237,15 +237,74 @@ class ConfigurationManager:
 
         return enable_memory, enable_ltm
 
-    def prompt_ltm_choice(self) -> bool:
-        """Prompt user for long-term memory preference.
-
-        STM is always enabled by default.
+    def prompt_memory_selection(self) -> Tuple[str, str]:
+        """Prompt user to select existing memory or create new.
 
         Returns:
-            bool: True if LTM should be enabled, False otherwise
+            Tuple of (action, value) where:
+            - action is "USE_EXISTING", "CREATE_NEW"
+            - value is memory_id for USE_EXISTING, mode for CREATE_NEW
         """
-        console.print("\\n🧠 [cyan]Memory Configuration[/cyan]")
+        if self.non_interactive:
+            # In non-interactive mode, default to creating new STM
+            return ("CREATE_NEW", "STM_ONLY")
+
+        console.print("\n🧠 [cyan]Memory Configuration[/cyan]")
+
+        # Try to list existing memories
+        try:
+            from ...operations.memory.manager import MemoryManager
+
+            # Need region - will be passed from configure.py
+            region = self.existing_config.aws.region if self.existing_config else None
+            if not region:
+                # Fall back to new memory creation if no region
+                return self._prompt_new_memory_config()
+
+            memory_manager = MemoryManager(region_name=region)
+            existing_memories = memory_manager.list_memories(max_results=10)
+
+            if existing_memories:
+                console.print("\n[cyan]Existing memory resources found:[/cyan]")
+                for i, mem in enumerate(existing_memories, 1):
+                    # Display memory summary
+                    mem_id = mem.get("id", "unknown")
+                    mem_name = mem.get("name", "")
+                    if "memory-" in mem_id:
+                        display_name = mem_id.split("memory-")[0] + "memory"
+                    else:
+                        display_name = mem_name or mem_id[:40]
+
+                    console.print(f"  {i}. [bold]{display_name}[/bold]")
+                    if mem.get("description"):
+                        console.print(f"     [dim]{mem.get('description')}[/dim]")
+                    console.print(f"     [dim]ID: {mem_id}[/dim]")
+
+                console.print("\n[dim]Options:[/dim]")
+                console.print("[dim]  • Enter a number to use existing memory[/dim]")
+                console.print("[dim]  • Press Enter to create new memory[/dim]")
+                console.print("[dim]  • Type 's' to skip memory setup[/dim]")
+
+                response = _prompt_with_default("Your choice", "").strip().lower()
+
+                if response.isdigit():
+                    idx = int(response) - 1
+                    if 0 <= idx < len(existing_memories):
+                        selected = existing_memories[idx]
+                        _print_success(f"Using existing memory: {selected.get('name', selected.get('id'))}")
+                        return ("USE_EXISTING", selected.get("id"))
+                elif response == "s":
+                    _print_success("Skipping memory configuration")
+                    return ("SKIP", None)
+        except Exception as e:
+            console.print(f"[dim]Could not list existing memories: {e}[/dim]")
+
+        # Fall back to creating new memory
+        return self._prompt_new_memory_config()
+
+    def _prompt_new_memory_config(self) -> Tuple[str, str]:
+        """Prompt for new memory configuration."""
+        console.print("\n🧠 [cyan]Memory Configuration[/cyan]")
         console.print("[green]✓ Short-term memory is enabled by default[/green]")
         console.print("  • Stores conversations within sessions")
         console.print("  • Provides immediate context recall")
@@ -257,13 +316,11 @@ class ConfigurationManager:
         console.print("  • [dim]Note: Takes 60-90 seconds to process[/dim]")
         console.print()
 
-        enable_ltm_response = _prompt_with_default("Enable long-term memory extraction? (yes/no)", "no").strip().lower()
+        response = _prompt_with_default("Enable long-term memory extraction? (yes/no)", "no").strip().lower()
 
-        enable_ltm = enable_ltm_response in ["yes", "y"]
-
-        if enable_ltm:
-            _print_success("Long-term memory extraction will be configured")
+        if response in ["yes", "y"]:
+            _print_success("Configuring short-term + long-term memory")
+            return ("CREATE_NEW", "STM_AND_LTM")
         else:
             _print_success("Using short-term memory only")
-
-        return enable_ltm
+            return ("CREATE_NEW", "STM_ONLY")

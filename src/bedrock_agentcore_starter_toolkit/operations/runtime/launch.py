@@ -299,14 +299,19 @@ def launch_bedrock_agentcore(
         log.info("Using existing memory: %s", agent_config.memory.memory_id)
 
     # Create memory early if needed (for non-CodeBuild paths)
-    if not use_codebuild and agent_config.memory and agent_config.memory.enabled and not agent_config.memory.memory_id:
+    if (
+        not use_codebuild
+        and agent_config.memory
+        and agent_config.memory.is_enabled
+        and not agent_config.memory.memory_id
+    ):
         log.info("Creating memory resource for agent: %s", agent_config.name)
         try:
             memory_manager = MemoryManager(region_name=agent_config.aws.region)
 
             # Prepare strategies based on enable_ltm flag
             strategies = []
-            if hasattr(agent_config.memory, "enable_ltm") and agent_config.memory.enable_ltm:
+            if hasattr(agent_config.memory, "enable_ltm") and agent_config.memory.has_ltm:
                 strategies = [
                     {
                         StrategyType.USER_PREFERENCE.value: {
@@ -561,7 +566,7 @@ def _launch_with_codebuild(
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     # Create memory if configured
-    if agent_config.memory and agent_config.memory.enabled and not agent_config.memory.memory_id:
+    if agent_config.memory and not agent_config.memory.memory_id:
         log.info("Creating memory resource for agent: %s", agent_name)
         try:
             from ...operations.memory.constants import StrategyType
@@ -592,7 +597,7 @@ def _launch_with_codebuild(
                 log.info("Existing memory has %d strategies", len(existing_strategies))
 
                 # If LTM is enabled but no strategies exist, add them
-                if agent_config.memory.enable_ltm and len(existing_strategies) == 0:
+                if agent_config.memory.has_ltm and len(existing_strategies) == 0:
                     log.info("Adding LTM strategies to existing memory...")
 
                     # Add all strategies in one batch call
@@ -627,14 +632,14 @@ def _launch_with_codebuild(
                 else:
                     # Use existing memory as-is
                     memory = existing_memory
-                    if agent_config.memory.enable_ltm and len(existing_strategies) > 0:
+                    if agent_config.memory.has_ltm and len(existing_strategies) > 0:
                         log.info("✅ Using existing memory with %d strategies", len(existing_strategies))
                     else:
                         log.info("✅ Using existing STM-only memory")
             else:
                 # Create new memory with appropriate strategies
                 strategies = []
-                if agent_config.memory.enable_ltm:
+                if agent_config.memory.has_ltm:
                     log.info("Creating new memory with LTM strategies...")
                     strategies = [
                         {

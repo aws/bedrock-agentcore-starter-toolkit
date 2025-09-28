@@ -75,6 +75,7 @@ class StatusConfigInfo(BaseModel):
     memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
     memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
     memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
+    memory_details: Optional[Dict[str, Any]] = Field(None, description="Detailed memory resource information")
 
 
 class StatusResult(BaseModel):

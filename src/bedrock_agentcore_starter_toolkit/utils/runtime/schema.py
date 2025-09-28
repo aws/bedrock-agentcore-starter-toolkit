@@ -1,6 +1,6 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -8,13 +8,26 @@ from pydantic import BaseModel, Field, field_validator
 class MemoryConfig(BaseModel):
     """Memory configuration for BedrockAgentCore."""
 
-    enabled: bool = Field(default=False, description="Whether memory is enabled")
+    mode: Literal["STM_ONLY", "STM_AND_LTM"] = Field(
+        default="STM_ONLY", description="Memory mode - always has STM, optionally adds LTM"
+    )
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
     memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
     memory_name: Optional[str] = Field(default=None, description="Memory name")
     event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
-    enable_ltm: bool = Field(default=False, description="Whether to enable long-term memory strategies")
-    first_invoke_memory_check_done: bool = Field(default=False, description="Whether first invoke memory check has been performed")
+    first_invoke_memory_check_done: bool = Field(
+        default=False, description="Whether first invoke memory check has been performed"
+    )
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if memory is enabled (always true now)."""
+        return True
+
+    @property
+    def has_ltm(self) -> bool:
+        """Check if LTM is enabled."""
+        return self.mode == "STM_AND_LTM"
 
 
 class NetworkConfiguration(BaseModel):

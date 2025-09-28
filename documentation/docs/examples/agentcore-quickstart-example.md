@@ -69,21 +69,21 @@ code_session_id = None
 def calculate(code: str) -> str:
     """Execute Python code for calculations or analysis."""
     global code_interpreter, code_session_id
-    
+
     if not code_interpreter:
         code_interpreter = CodeInterpreter(REGION)
-    
+
     if not code_session_id:
         code_session_id = code_interpreter.start(
             name="calc_session",
             session_timeout_seconds=1800
         )
-    
+
     result = code_interpreter.invoke("executeCode", {
         "code": code,
         "language": "python"
     })
-    
+
     for event in result.get("stream", []):
         if stdout := event.get("result", {}).get("structuredContent", {}).get("stdout"):
             return stdout
@@ -93,12 +93,12 @@ def calculate(code: str) -> str:
 def invoke(payload, context):
     if not MEMORY_ID:
         return {"error": "Memory not configured"}
-    
+
     # Check memory status
     try:
         memory_client = MemoryClient(region_name=REGION)
         memory = memory_client.get_memory(memory_id=MEMORY_ID)
-        
+
         if memory['status'] != 'ACTIVE':
             agent = Agent(
                 model=MODEL_ID,
@@ -112,9 +112,9 @@ def invoke(payload, context):
             }
     except Exception:
         pass
-    
+
     session_id = getattr(context, 'session_id', 'default')
-    
+
     memory_config = AgentCoreMemoryConfig(
         memory_id=MEMORY_ID,
         session_id=session_id,
@@ -124,14 +124,14 @@ def invoke(payload, context):
             "/users/user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
         }
     )
-    
+
     agent = Agent(
         model=MODEL_ID,
         session_manager=AgentCoreMemorySessionManager(memory_config, REGION),
         system_prompt="""You are a helpful assistant. Use tools when appropriate.""",
         tools=[calculate]
     )
-    
+
     result = agent(payload.get("prompt", ""))
     return {"response": result.message.get('content', [{}])[0].get('text', str(result))}
 
@@ -158,7 +158,10 @@ agentcore configure --e memory_ci_agent.py
 # Interactive prompts:
 # Execution role (press Enter to auto-create)
 # ECR repository (press Enter to auto-create)
-# Enable long-term memory extraction? → yes
+# Memory configuration:
+#   - If existing memories found: Choose from list or press Enter to create new
+#   - If creating new: Enable long-term memory extraction? (yes/no) → yes
+#   Note: Short-term memory is always enabled by default
 ```
 
 **What’s happening:** The toolkit analyzes your code, detects the memory integration, prepares deployment configurations, and creates IAM roles with permissions for Memory. When observability is enabled, Transaction Search is automatically configured.
@@ -197,8 +200,11 @@ Check deployment status:
 agentcore status
 
 # Shows:
-# Memory: STM+LTM (provisioning...) - if still creating
-# Memory: STM+LTM (3 strategies) - when active
+# Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123
+# Memory Status: CREATING - if still provisioning
+# Memory Type: STM+LTM (provisioning...) - if creating with LTM
+# Memory Type: STM+LTM (3 strategies) - when active with strategies
+# Memory Type: STM only - if configured without LTM
 # Observability: Enabled
 ```
 
@@ -214,12 +220,14 @@ STM works immediately after deployment. Test within a single session:
 # Store information (session IDs must be 33+ characters)
 agentcore invoke '{"prompt": "Remember that my favorite programming language is Python and I prefer tabs over spaces"}' --session-id test_session_2024_01_user123_preferences_abc
 
-# If invoked too early (LTM still provisioning), you'll see:
-# "Memory is still provisioning (current status: CREATING). 
+# If invoked too early (Memory still provisioning), you'll see:
+# "Memory is still provisioning (current status: CREATING).
 #  Long-term memory extraction takes 60-90 seconds to activate.
-#  Please wait and check status with: agentcore status"
-
-# Once active, expected response:
+#  
+#  Please wait and check status with:
+#    agentcore status
+#  
+#  Once memory status shows 'ACTIVE', you can invoke your agent."
 # "I've noted that your favorite programming language is Python and you prefer tabs over spaces..."
 
 # Retrieve within same session
@@ -236,8 +244,8 @@ LTM enables information persistence across different sessions. This requires wai
 ```bash
 # First verify LTM is active
 agentcore status
-# Must show: "Memory: STM+LTM (3 strategies)"
-# If showing "provisioning", wait 2-3 minutes
+# Must show: Memory Status: ACTIVE and Memory Type: STM+LTM (3 strategies)
+# If Memory Status shows "CREATING", wait 2-3 minutes
 
 # Session 1: Store facts
 agentcore invoke '{"prompt": "My email is user@example.com and I work at TechCorp as a senior engineer"}' --session-id ltm_test_session_one_2024_january_user123_xyz
@@ -326,6 +334,20 @@ agentcore destroy
 # - IAM roles (if auto-created)
 # - CloudWatch log groups (optional)
 ```
+
+### Understanding Memory Selection
+
+The toolkit provides intelligent memory management:
+
+**Reusing Existing Memory:**
+- Lists up to 10 existing memory resources from your account
+- Useful for sharing memory across agents or redeploying
+- Preserves all existing conversation history and extracted facts
+
+**Creating New Memory:**
+- Short-term memory (STM) always enabled - stores exact conversations
+- Optional long-term memory (LTM) - extracts facts, preferences, and summaries
+- Each agent can have its own isolated memory or share with others
 
 ## Troubleshooting
 

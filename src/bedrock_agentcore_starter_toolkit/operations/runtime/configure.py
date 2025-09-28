@@ -115,22 +115,44 @@ def configure_bedrock_agentcore(
                 log.debug("No execution role provided and auto-create disabled")
 
     # Prompt for memory configuration BEFORE generating Dockerfile
-    if verbose:
-        log.debug("Prompting for long-term memory configuration")
+    #    if verbose:
+    #        log.debug("Prompting for long-term memory configuration")
 
-    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
-    enable_ltm = config_manager.prompt_ltm_choice()
+    #    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
+    #    enable_ltm = config_manager.prompt_ltm_choice()
 
     # Create memory config
-    memory_config = MemoryConfig()
-    memory_config.enabled = True  # Always true for STM
-    memory_config.enable_ltm = enable_ltm
-    memory_config.event_expiry_days = 30
-    memory_config.memory_name = f"{agent_name}_memory"
+    #    memory_config = MemoryConfig()
+    #    memory_config.mode = "STM_AND_LTM" if enable_ltm else "STM_ONLY"
+    #    memory_config.event_expiry_days = 30
+    #    memory_config.memory_name = f"{agent_name}_memory"
 
-    if enable_ltm:
+    # Prompt for memory configuration BEFORE generating Dockerfile
+    if verbose:
+        log.debug("Prompting for memory configuration")
+
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
+
+    # New memory selection flow
+    action, value = config_manager.prompt_memory_selection()
+
+    memory_config = MemoryConfig()
+    if action == "USE_EXISTING":
+        # Using existing memory - just store the ID
+        memory_config.memory_id = value
+        memory_config.mode = "STM_AND_LTM"  # Assume existing has strategies
+        memory_config.memory_name = f"{agent_name}_memory"
+        log.info("Using existing memory resource: %s", value)
+    elif action == "CREATE_NEW":
+        # Create new with specified mode
+        memory_config.mode = value  # This is the mode (STM_ONLY, STM_AND_LTM, NO_MEMORY)
+        memory_config.event_expiry_days = 30
+        memory_config.memory_name = f"{agent_name}_memory"
+        log.info("Will create new memory with mode: %s", value)
+
+    if memory_config.mode == "STM_AND_LTM":
         log.info("Memory configuration: Short-term + Long-term memory enabled")
-    else:
+    elif memory_config.mode == "STM_ONLY":
         log.info("Memory configuration: Short-term memory only")
 
     # Check for existing memory configuration from previous launch
