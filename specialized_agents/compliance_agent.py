@@ -89,8 +89,7 @@ class ComplianceCheck:
     violations: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
     severity: str = "medium"  # low, medium, high, critical
-@datacl
-ass
+@dataclass
 class ComplianceReport:
     """Compliance assessment report."""
     report_id: str
