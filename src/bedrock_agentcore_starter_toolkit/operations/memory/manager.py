@@ -235,7 +235,7 @@ class MemoryManager:
     def _create_memory_and_wait(
         self,
         name: str,
-        strategies: List[Dict[str, Any]],
+        strategies: Optional[List[Dict[str, Any]]],
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
@@ -309,7 +309,7 @@ class MemoryManager:
     def create_memory_and_wait(
         self,
         name: str,
-        strategies: List[Union[BaseStrategy, Dict[str, Any]]],
+        strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
@@ -358,7 +358,7 @@ class MemoryManager:
             )
         """
         # Convert typed strategies to dicts for internal processing
-        dict_strategies = convert_strategies_to_dicts(strategies)
+        dict_strategies = convert_strategies_to_dicts(strategies) if strategies else None
 
         return self._create_memory_and_wait(
             name=name,
