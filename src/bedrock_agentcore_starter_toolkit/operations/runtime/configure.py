@@ -114,20 +114,6 @@ def configure_bedrock_agentcore(
             else:
                 log.debug("No execution role provided and auto-create disabled")
 
-    # Prompt for memory configuration BEFORE generating Dockerfile
-    #    if verbose:
-    #        log.debug("Prompting for long-term memory configuration")
-
-    #    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
-    #    enable_ltm = config_manager.prompt_ltm_choice()
-
-    # Create memory config
-    #    memory_config = MemoryConfig()
-    #    memory_config.mode = "STM_AND_LTM" if enable_ltm else "STM_ONLY"
-    #    memory_config.event_expiry_days = 30
-    #    memory_config.memory_name = f"{agent_name}_memory"
-
-    # Prompt for memory configuration BEFORE generating Dockerfile
     if verbose:
         log.debug("Prompting for memory configuration")
 

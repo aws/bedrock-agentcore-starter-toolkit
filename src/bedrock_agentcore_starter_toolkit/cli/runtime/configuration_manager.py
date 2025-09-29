@@ -205,7 +205,7 @@ class ConfigurationManager:
         Returns:
             Tuple of (enable_memory, enable_ltm)
         """
-        console.print("\\n🧠 [cyan]Memory Configuration[/cyan]")
+        console.print("\n🧠 [cyan]Memory Configuration[/cyan]")
         console.print("Short-term memory stores conversation within sessions.")
         console.print("Long-term memory extracts preferences and facts across sessions.")
         console.print()
@@ -220,7 +220,7 @@ class ConfigurationManager:
             return False, False
 
         # If memory is enabled, ask about long-term memory
-        console.print("\\n[dim]Long-term memory extracts:[/dim]")
+        console.print("\n[dim]Long-term memory extracts:[/dim]")
         console.print("  • User preferences (e.g., 'I prefer Python')")
         console.print("  • Semantic facts (e.g., 'My birthday is in January')")
         console.print("  • Session summaries")
