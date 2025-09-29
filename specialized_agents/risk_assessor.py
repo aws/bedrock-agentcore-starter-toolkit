@@ -12,74 +12,72 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from collections import defaultdict
-from enum import Enum
+import statistics
 
 from .base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
-from memory_system.models import Transaction, RiskProfile, RiskLevel, Location, FraudDecision
+from memory_system.models import Transaction, RiskProfile, RiskLevel, Location, DecisionContext
 from memory_system.memory_manager import MemoryManager
 
 logger = logging.getLogger(__name__)
-
-
-class RiskCategory(Enum):
-    """Risk assessment categories."""
-    GEOGRAPHIC = "geographic"
-    TEMPORAL = "temporal"
-    BEHAVIORAL = "behavioral"
-    TRANSACTIONAL = "transactional"
-    DEVICE = "device"
-    NETWORK = "network"
 
 
 @dataclass
 class RiskFactor:
     """Individual risk factor assessment."""
     factor_name: str
-    category: RiskCategory
     risk_score: float  # 0-1, higher = more risky
-    confidence: float  # 0-1, confidence in assessment
+    confidence: float  # 0-1, confidence in the assessment
     description: str
     evidence: List[str] = field(default_factory=list)
-    weight: float = 1.0  # Importance weight for this factor
+    weight: float = 1.0  # Relative importance of this factor
 
 
 @dataclass
-class GeographicRiskAssessment:
-    """Geographic risk analysis result."""
+class GeographicRisk:
+    """Geographic risk assessment result."""
     location_risk_score: float
-    country_risk_level: str  # "low", "medium", "high"
-    travel_pattern_anomaly: float
+    country_risk_level: str  # "low", "medium", "high", "critical"
+    travel_pattern_risk: float
     ip_location_mismatch: bool
-    high_risk_jurisdiction: bool
-    distance_from_usual: float  # km
-    evidence: List[str] = field(default_factory=list)
+    distance_from_home: float  # km
+    risk_factors: List[str] = field(default_factory=list)
 
 
 @dataclass
-class TemporalRiskAssessment:
-    """Temporal risk analysis result."""
+class TemporalRisk:
+    """Temporal risk assessment result."""
     time_risk_score: float
-    unusual_hour: bool
-    frequency_anomaly: float
+    unusual_hour_risk: float
+    frequency_risk: float
     velocity_risk: float
-    time_since_last_transaction: float  # hours
-    business_hours_compliance: bool
-    evidence: List[str] = field(default_factory=list)
+    pattern_deviation: float
+    risk_factors: List[str] = field(default_factory=list)
+
+
+@dataclass
+class CrossReferenceResult:
+    """Cross-reference check result."""
+    reference_type: str  # "blacklist", "watchlist", "fraud_database"
+    match_found: bool
+    match_confidence: float
+    match_details: Dict[str, Any] = field(default_factory=dict)
+    risk_impact: float = 0.0
 
 
 @dataclass
 class RiskAssessmentResult:
     """Complete risk assessment result."""
     transaction_id: str
-    overall_risk_score: float
-    risk_level: RiskLevel
+    overall_risk_score: float  # 0-1
+    risk_level: str  # "low", "medium", "high", "critical"
     confidence: float
     risk_factors: List[RiskFactor] = field(default_factory=list)
-    geographic_assessment: Optional[GeographicRiskAssessment] = None
-    temporal_assessment: Optional[TemporalRiskAssessment] = None
-    fraud_indicators: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    geographic_risk: Optional[GeographicRisk] = None
+    temporal_risk: Optional[TemporalRisk] = None
+    cross_reference_results: List[CrossReferenceResult] = field(default_factory=list)
     risk_threshold_breaches: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    risk_mitigation_suggestions: List[str] = field(default_factory=list)
 
 
 class RiskAssessor(BaseAgent):
@@ -91,7 +89,7 @@ class RiskAssessor(BaseAgent):
     - Geographic and temporal risk analysis
     - Cross-reference system for known fraud indicators
     - Risk threshold management and adaptation
-    - Real-time risk evaluation
+    - Real-time risk monitoring
     """
     
     def __init__(
@@ -119,49 +117,71 @@ class RiskAssessor(BaseAgent):
                 max_concurrent_requests=40,
                 timeout_seconds=12,
                 custom_parameters={
-                    "high_risk_threshold": 0.7,
-                    "medium_risk_threshold": 0.4,
-                    "geographic_risk_weight": 0.25,
-                    "temporal_risk_weight": 0.20,
-                    "behavioral_risk_weight": 0.30,
-                    "transactional_risk_weight": 0.25
+                    "risk_thresholds": {
+                        "low": 0.3,
+                        "medium": 0.6,
+                        "high": 0.8
+                    },
+                    "geographic_risk_enabled": True,
+                    "temporal_risk_enabled": True,
+                    "cross_reference_enabled": True,
+                    "adaptive_thresholds": True
                 }
             )
         
         self.memory_manager = memory_manager
         
         # Risk assessment configuration
-        self.risk_thresholds = {
-            "high": config.custom_parameters.get("high_risk_threshold", 0.7),
-            "medium": config.custom_parameters.get("medium_risk_threshold", 0.4)
-        }
-        
-        # Risk factor weights
         self.risk_weights = {
-            RiskCategory.GEOGRAPHIC: config.custom_parameters.get("geographic_risk_weight", 0.25),
-            RiskCategory.TEMPORAL: config.custom_parameters.get("temporal_risk_weight", 0.20),
-            RiskCategory.BEHAVIORAL: config.custom_parameters.get("behavioral_risk_weight", 0.30),
-            RiskCategory.TRANSACTIONAL: config.custom_parameters.get("transactional_risk_weight", 0.25)
+            "amount_risk": 0.25,
+            "geographic_risk": 0.20,
+            "temporal_risk": 0.15,
+            "behavioral_risk": 0.20,
+            "cross_reference_risk": 0.15,
+            "velocity_risk": 0.05
         }
         
-        super().__init__(config)    
+        # Geographic risk databases
+        self.high_risk_countries = {
+            "XX", "YY", "ZZ"  # Placeholder high-risk countries
+        }
+        
+        self.country_risk_scores = {
+            "US": 0.1, "CA": 0.1, "GB": 0.15, "DE": 0.15, "FR": 0.15,
+            "AU": 0.2, "JP": 0.2, "BR": 0.4, "IN": 0.3, "CN": 0.35,
+            "RU": 0.6, "XX": 0.9, "YY": 0.85, "ZZ": 0.8
+        }
+        
+        # Fraud indicators database
+        self.fraud_indicators = {
+            "blacklisted_ips": set(),
+            "suspicious_merchants": set(),
+            "known_fraud_patterns": [],
+            "watchlist_users": set()
+        }
+        
+        super().__init__(config)
     
-def _initialize_agent(self) -> None:
+    def _initialize_agent(self) -> None:
         """Initialize risk assessor specific components."""
         self.logger.info("Initializing Risk Assessment Agent")
         
-        # Initialize fraud indicator databases
+        # Initialize risk thresholds
+        self.risk_thresholds = self.config.custom_parameters.get("risk_thresholds", {
+            "low": 0.3,
+            "medium": 0.6,
+            "high": 0.8
+        })
+        
+        # Initialize fraud indicators (in production, load from external sources)
         self._initialize_fraud_indicators()
         
         # Initialize geographic risk data
-        self._initialize_geographic_risk_data()
-        
-        # Initialize risk scoring models
-        self._initialize_risk_models()
+        self._initialize_geographic_data()
         
         self.logger.info("Risk Assessment Agent initialized successfully")
     
-def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
+    def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         """
         Process a risk assessment request.
         
@@ -172,7 +192,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
             ProcessingResult with risk assessment analysis
         """
         try:
-            # Extract transaction and parameters
+            # Extract transaction and assessment parameters
             transaction = self._extract_transaction(request_data)
             assessment_type = request_data.get("assessment_type", "comprehensive")
             
@@ -212,9 +232,9 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
                 processing_time_ms=0.0,
                 confidence_score=0.0,
                 error_message=str(e)
-            ) 
-   
-def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transaction]:
+            )
+    
+    def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transaction]:
         """Extract transaction from request data."""
         try:
             if "transaction" in request_data:
@@ -222,7 +242,7 @@ def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transac
             else:
                 tx_data = request_data
             
-            # Create transaction object
+            # Create transaction object (simplified for demo)
             from memory_system.models import Location, DeviceInfo
             
             location = Location(
@@ -236,9 +256,7 @@ def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transac
             device_info = DeviceInfo(
                 device_id=tx_data.get("device_info", {}).get("device_id", ""),
                 device_type=tx_data.get("device_info", {}).get("device_type", ""),
-                os=tx_data.get("device_info", {}).get("os", ""),
-                browser=tx_data.get("device_info", {}).get("browser"),
-                fingerprint=tx_data.get("device_info", {}).get("fingerprint")
+                os=tx_data.get("device_info", {}).get("os", "")
             )
             
             transaction = Transaction(
@@ -263,434 +281,736 @@ def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transac
             self.logger.error(f"Error extracting transaction: {str(e)}")
             return None
     
-def _assess_risk(self, transaction: Transaction, assessment_type: str) -> RiskAssessmentResult:
+    def _assess_risk(self, transaction: Transaction, assessment_type: str) -> RiskAssessmentResult:
         """Perform comprehensive risk assessment."""
         result = RiskAssessmentResult(
             transaction_id=transaction.id,
             overall_risk_score=0.0,
-            risk_level=RiskLevel.LOW,
+            risk_level="low",
             confidence=0.0
         )
         
-        # 1. Geographic Risk Assessment
-        if assessment_type in ["comprehensive", "geographic"]:
-            geo_assessment = self._assess_geographic_risk(transaction)
-            result.geographic_assessment = geo_assessment
-            
-            # Add geographic risk factors
-            geo_factors = self._extract_geographic_risk_factors(geo_assessment)
-            result.risk_factors.extend(geo_factors)
+        # 1. Multi-factor risk scoring
+        risk_factors = self._calculate_risk_factors(transaction)
+        result.risk_factors = risk_factors
         
-        # 2. Temporal Risk Assessment
-        if assessment_type in ["comprehensive", "temporal"]:
-            temporal_assessment = self._assess_temporal_risk(transaction)
-            result.temporal_assessment = temporal_assessment
-            
-            # Add temporal risk factors
-            temporal_factors = self._extract_temporal_risk_factors(temporal_assessment)
-            result.risk_factors.extend(temporal_factors)
+        # 2. Geographic risk analysis
+        if self.config.custom_parameters.get("geographic_risk_enabled", True):
+            geographic_risk = self._assess_geographic_risk(transaction)
+            result.geographic_risk = geographic_risk
         
-        # 3. Behavioral Risk Assessment
-        if assessment_type in ["comprehensive", "behavioral"]:
-            behavioral_factors = self._assess_behavioral_risk(transaction)
-            result.risk_factors.extend(behavioral_factors)
+        # 3. Temporal risk analysis
+        if self.config.custom_parameters.get("temporal_risk_enabled", True):
+            temporal_risk = self._assess_temporal_risk(transaction)
+            result.temporal_risk = temporal_risk
         
-        # 4. Transactional Risk Assessment
-        if assessment_type in ["comprehensive", "transactional"]:
-            transactional_factors = self._assess_transactional_risk(transaction)
-            result.risk_factors.extend(transactional_factors)
+        # 4. Cross-reference checks
+        if self.config.custom_parameters.get("cross_reference_enabled", True):
+            cross_ref_results = self._perform_cross_reference_checks(transaction)
+            result.cross_reference_results = cross_ref_results
         
-        # 5. Cross-reference fraud indicators
-        fraud_indicators = self._check_fraud_indicators(transaction)
-        result.fraud_indicators = fraud_indicators
+        # 5. Calculate overall risk score
+        result.overall_risk_score = self._calculate_overall_risk_score(result)
         
-        # 6. Calculate overall risk score
-        result.overall_risk_score = self._calculate_overall_risk_score(result.risk_factors)
-        
-        # 7. Determine risk level
+        # 6. Determine risk level
         result.risk_level = self._determine_risk_level(result.overall_risk_score)
         
-        # 8. Calculate confidence
-        result.confidence = self._calculate_confidence(result.risk_factors)
+        # 7. Calculate confidence
+        result.confidence = self._calculate_assessment_confidence(result)
         
-        # 9. Check threshold breaches
+        # 8. Check threshold breaches
         result.risk_threshold_breaches = self._check_threshold_breaches(result)
         
-        # 10. Generate recommendations
+        # 9. Generate recommendations
         result.recommendations = self._generate_risk_recommendations(result)
         
-        return result    
-
-def _assess_geographic_risk(self, transaction: Transaction) -> GeographicRiskAssessment:
-        """Assess geographic risk factors."""
-        location = transaction.location
+        # 10. Generate risk mitigation suggestions
+        result.risk_mitigation_suggestions = self._generate_mitigation_suggestions(result)
         
-        # Initialize assessment
-        assessment = GeographicRiskAssessment(
-            location_risk_score=0.0,
-            country_risk_level="low",
-            travel_pattern_anomaly=0.0,
-            ip_location_mismatch=False,
-            high_risk_jurisdiction=False,
-            distance_from_usual=0.0
-        )
-        
-        # Check country risk level
-        country_risk = self._get_country_risk_level(location.country)
-        assessment.country_risk_level = country_risk
-        
-        if country_risk == "high":
-            assessment.location_risk_score += 0.6
-            assessment.evidence.append(f"High-risk country: {location.country}")
-        elif country_risk == "medium":
-            assessment.location_risk_score += 0.3
-            assessment.evidence.append(f"Medium-risk country: {location.country}")
-        
-        # Check for high-risk jurisdictions
-        if self._is_high_risk_jurisdiction(location.country):
-            assessment.high_risk_jurisdiction = True
-            assessment.location_risk_score += 0.4
-            assessment.evidence.append("Transaction in high-risk jurisdiction")
-        
-        # Analyze travel patterns
-        user_locations = self._get_user_typical_locations(transaction.user_id)
-        if user_locations:
-            distance = self._calculate_distance_from_usual(location, user_locations)
-            assessment.distance_from_usual = distance
-            
-            if distance > 1000:  # More than 1000km from usual locations
-                travel_anomaly = min(1.0, distance / 5000)  # Scale to 0-1
-                assessment.travel_pattern_anomaly = travel_anomaly
-                assessment.location_risk_score += travel_anomaly * 0.5
-                assessment.evidence.append(f"Transaction {distance:.0f}km from usual locations")
-        
-        # Check IP-location mismatch (simplified)
-        if self._detect_ip_location_mismatch(transaction):
-            assessment.ip_location_mismatch = True
-            assessment.location_risk_score += 0.3
-            assessment.evidence.append("IP address doesn't match transaction location")
-        
-        # Normalize risk score
-        assessment.location_risk_score = min(1.0, assessment.location_risk_score)
-        
-        return assessment
+        return result
     
-def _assess_temporal_risk(self, transaction: Transaction) -> TemporalRiskAssessment:
-        """Assess temporal risk factors."""
-        timestamp = transaction.timestamp
+    def _calculate_risk_factors(self, transaction: Transaction) -> List[RiskFactor]:
+        """Calculate individual risk factors."""
+        risk_factors = []
         
-        # Initialize assessment
-        assessment = TemporalRiskAssessment(
-            time_risk_score=0.0,
-            unusual_hour=False,
-            frequency_anomaly=0.0,
-            velocity_risk=0.0,
-            time_since_last_transaction=0.0,
-            business_hours_compliance=True
+        # Amount risk factor
+        amount_risk = self._assess_amount_risk(transaction)
+        if amount_risk:
+            risk_factors.append(amount_risk)
+        
+        # Merchant risk factor
+        merchant_risk = self._assess_merchant_risk(transaction)
+        if merchant_risk:
+            risk_factors.append(merchant_risk)
+        
+        # Device risk factor
+        device_risk = self._assess_device_risk(transaction)
+        if device_risk:
+            risk_factors.append(device_risk)
+        
+        # Behavioral risk factor
+        behavioral_risk = self._assess_behavioral_risk(transaction)
+        if behavioral_risk:
+            risk_factors.append(behavioral_risk)
+        
+        # Velocity risk factor
+        velocity_risk = self._assess_velocity_risk(transaction)
+        if velocity_risk:
+            risk_factors.append(velocity_risk)
+        
+        return risk_factors
+    
+    def _assess_amount_risk(self, transaction: Transaction) -> Optional[RiskFactor]:
+        """Assess risk based on transaction amount."""
+        amount = float(transaction.amount)
+        
+        # Get user's typical spending pattern
+        user_profile = self.memory_manager.get_user_profile(transaction.user_id)
+        
+        if user_profile:
+            typical_range = user_profile.typical_spending_range
+            max_typical = typical_range.get("max", 500)
+            avg_typical = typical_range.get("avg", 100)
+            
+            # Calculate amount risk based on deviation from typical spending
+            if amount > max_typical * 3:  # 3x typical maximum
+                risk_score = min(1.0, amount / (max_typical * 5))
+                return RiskFactor(
+                    factor_name="amount_risk",
+                    risk_score=risk_score,
+                    confidence=0.8,
+                    description=f"Transaction amount ${amount:.2f} significantly exceeds typical spending",
+                    evidence=[
+                        f"Amount: ${amount:.2f}",
+                        f"User's typical max: ${max_typical:.2f}",
+                        f"Ratio: {amount/max_typical:.1f}x typical maximum"
+                    ],
+                    weight=self.risk_weights.get("amount_risk", 0.25)
+                )
+            elif amount > max_typical * 1.5:  # 1.5x typical maximum
+                risk_score = 0.4 + (amount - max_typical * 1.5) / (max_typical * 1.5) * 0.3
+                return RiskFactor(
+                    factor_name="amount_risk",
+                    risk_score=min(1.0, risk_score),
+                    confidence=0.6,
+                    description=f"Transaction amount ${amount:.2f} above typical spending range",
+                    evidence=[
+                        f"Amount: ${amount:.2f}",
+                        f"User's typical max: ${max_typical:.2f}"
+                    ],
+                    weight=self.risk_weights.get("amount_risk", 0.25)
+                )
+        else:
+            # No user profile - assess based on absolute thresholds
+            if amount > 5000:
+                risk_score = min(1.0, amount / 10000)
+                return RiskFactor(
+                    factor_name="amount_risk",
+                    risk_score=risk_score,
+                    confidence=0.5,
+                    description=f"High transaction amount ${amount:.2f} (no user baseline)",
+                    evidence=[f"Amount: ${amount:.2f}", "No user spending history available"],
+                    weight=self.risk_weights.get("amount_risk", 0.25)
+                )
+        
+        return None
+    
+    def _assess_merchant_risk(self, transaction: Transaction) -> Optional[RiskFactor]:
+        """Assess risk based on merchant characteristics."""
+        merchant = transaction.merchant.lower()
+        
+        # Check for high-risk merchant categories
+        high_risk_keywords = [
+            "casino", "gambling", "crypto", "bitcoin", "forex", "adult", 
+            "escort", "pharmacy", "offshore", "anonymous", "proxy"
+        ]
+        
+        for keyword in high_risk_keywords:
+            if keyword in merchant:
+                risk_score = 0.7 if keyword in ["casino", "gambling", "crypto"] else 0.5
+                return RiskFactor(
+                    factor_name="merchant_risk",
+                    risk_score=risk_score,
+                    confidence=0.9,
+                    description=f"High-risk merchant category detected: {keyword}",
+                    evidence=[
+                        f"Merchant: {transaction.merchant}",
+                        f"Risk keyword: {keyword}",
+                        f"Category: {transaction.category}"
+                    ],
+                    weight=0.2
+                )
+        
+        # Check if merchant is in suspicious merchants list
+        if merchant in self.fraud_indicators["suspicious_merchants"]:
+            return RiskFactor(
+                factor_name="merchant_risk",
+                risk_score=0.8,
+                confidence=0.95,
+                description="Merchant flagged in suspicious merchants database",
+                evidence=[f"Merchant: {transaction.merchant}"],
+                weight=0.2
+            )
+        
+        return None
+    
+    def _assess_device_risk(self, transaction: Transaction) -> Optional[RiskFactor]:
+        """Assess risk based on device characteristics."""
+        device_info = transaction.device_info
+        
+        # Check for suspicious device characteristics
+        risk_indicators = []
+        risk_score = 0.0
+        
+        # Unknown or suspicious device type
+        if device_info.device_type.lower() in ["unknown", "emulator", "bot"]:
+            risk_indicators.append("Unknown or suspicious device type")
+            risk_score += 0.4
+        
+        # Missing device fingerprint
+        if not device_info.fingerprint:
+            risk_indicators.append("Missing device fingerprint")
+            risk_score += 0.2
+        
+        # Suspicious OS
+        if device_info.os.lower() in ["unknown", "custom", "modified"]:
+            risk_indicators.append("Suspicious operating system")
+            risk_score += 0.3
+        
+        if risk_indicators:
+            return RiskFactor(
+                factor_name="device_risk",
+                risk_score=min(1.0, risk_score),
+                confidence=0.7,
+                description="Suspicious device characteristics detected",
+                evidence=risk_indicators,
+                weight=0.15
+            )
+        
+        return None
+    
+    def _assess_behavioral_risk(self, transaction: Transaction) -> Optional[RiskFactor]:
+        """Assess risk based on behavioral patterns."""
+        # Get user's recent transaction history
+        recent_transactions = self.memory_manager.get_user_transaction_history(
+            transaction.user_id, days_back=30, limit=50
         )
         
-        # Check for unusual hours
-        hour = timestamp.hour
-        if 2 <= hour <= 5:  # Late night/early morning
-            assessment.unusual_hour = True
-            assessment.time_risk_score += 0.6
-            assessment.evidence.append(f"Transaction at unusual hour: {hour:02d}:00")
-        elif hour < 8 or hour > 22:  # Very early or very late
-            assessment.unusual_hour = True
-            assessment.time_risk_score += 0.3
-            assessment.evidence.append(f"Transaction outside normal hours: {hour:02d}:00")
+        if len(recent_transactions) < 5:
+            # New user or insufficient history
+            return RiskFactor(
+                factor_name="behavioral_risk",
+                risk_score=0.4,
+                confidence=0.6,
+                description="Insufficient transaction history for behavioral analysis",
+                evidence=[f"Transaction count: {len(recent_transactions)}"],
+                weight=self.risk_weights.get("behavioral_risk", 0.2)
+            )
         
-        # Check business hours compliance
-        if not (9 <= hour <= 17):  # Outside business hours
-            assessment.business_hours_compliance = False
-            assessment.time_risk_score += 0.2
+        # Analyze behavioral deviations
+        risk_indicators = []
+        risk_score = 0.0
         
-        # Analyze transaction frequency
+        # Check for unusual merchant
+        user_merchants = [tx.merchant for tx in recent_transactions]
+        if transaction.merchant not in user_merchants:
+            risk_indicators.append("Transaction with new merchant")
+            risk_score += 0.3
+        
+        # Check for unusual category
+        user_categories = [tx.category for tx in recent_transactions]
+        if transaction.category not in user_categories:
+            risk_indicators.append("Transaction in new category")
+            risk_score += 0.2
+        
+        # Check for unusual time pattern
+        user_hours = [tx.timestamp.hour for tx in recent_transactions]
+        common_hours = set(h for h in user_hours if user_hours.count(h) >= 2)
+        if transaction.timestamp.hour not in common_hours:
+            risk_indicators.append("Transaction at unusual time")
+            risk_score += 0.2
+        
+        if risk_indicators:
+            return RiskFactor(
+                factor_name="behavioral_risk",
+                risk_score=min(1.0, risk_score),
+                confidence=0.7,
+                description="Behavioral deviations from user's typical patterns",
+                evidence=risk_indicators,
+                weight=self.risk_weights.get("behavioral_risk", 0.2)
+            )
+        
+        return None
+    
+    def _assess_velocity_risk(self, transaction: Transaction) -> Optional[RiskFactor]:
+        """Assess risk based on transaction velocity."""
+        # Get recent transactions for velocity analysis
         recent_transactions = self.memory_manager.get_user_transaction_history(
             transaction.user_id, days_back=1, limit=20
         )
         
-        if recent_transactions:
-            # Calculate time since last transaction
-            last_tx_time = max(tx.timestamp for tx in recent_transactions)
-            time_diff = (timestamp - last_tx_time).total_seconds() / 3600  # hours
-            assessment.time_since_last_transaction = time_diff
-            
-            # Check for velocity risk (multiple transactions in short time)
-            recent_count = len([tx for tx in recent_transactions 
-                              if (timestamp - tx.timestamp).total_seconds() < 3600])  # Last hour
-            
-            if recent_count > 5:
-                velocity_risk = min(1.0, recent_count / 10)
-                assessment.velocity_risk = velocity_risk
-                assessment.time_risk_score += velocity_risk * 0.5
-                assessment.evidence.append(f"High velocity: {recent_count} transactions in last hour")
-            
-            # Check for frequency anomaly
-            daily_transactions = len([tx for tx in recent_transactions 
-                                    if tx.timestamp.date() == timestamp.date()])
-            
-            if daily_transactions > 10:
-                freq_anomaly = min(1.0, daily_transactions / 20)
-                assessment.frequency_anomaly = freq_anomaly
-                assessment.time_risk_score += freq_anomaly * 0.4
-                assessment.evidence.append(f"High frequency: {daily_transactions} transactions today")
+        # Count transactions in different time windows
+        now = transaction.timestamp
         
-        # Normalize risk score
-        assessment.time_risk_score = min(1.0, assessment.time_risk_score)
+        # Last hour
+        hour_transactions = [tx for tx in recent_transactions 
+                           if (now - tx.timestamp).total_seconds() <= 3600]
         
-        return assessment 
-   
-def _assess_behavioral_risk(self, transaction: Transaction) -> List[RiskFactor]:
-        """Assess behavioral risk factors."""
-        risk_factors = []
+        # Last 10 minutes
+        ten_min_transactions = [tx for tx in recent_transactions 
+                              if (now - tx.timestamp).total_seconds() <= 600]
         
-        # Get user profile for behavioral analysis
-        user_profile = self.memory_manager.get_user_profile(transaction.user_id)
+        risk_indicators = []
+        risk_score = 0.0
         
-        if user_profile:
-            # Check spending pattern deviation
-            amount = float(transaction.amount)
-            typical_range = user_profile.typical_spending_range
-            
-            if amount > typical_range.get("max", 0) * 3:
-                risk_factors.append(RiskFactor(
-                    factor_name="excessive_spending",
-                    category=RiskCategory.BEHAVIORAL,
-                    risk_score=min(1.0, amount / (typical_range.get("max", 1) * 5)),
-                    confidence=0.8,
-                    description=f"Amount ${amount:.2f} significantly exceeds typical spending",
-                    evidence=[f"Typical max: ${typical_range.get('max', 0):.2f}"],
-                    weight=1.2
-                ))
-            
-            # Check merchant familiarity
-            if transaction.merchant not in user_profile.frequent_merchants:
-                risk_factors.append(RiskFactor(
-                    factor_name="unfamiliar_merchant",
-                    category=RiskCategory.BEHAVIORAL,
-                    risk_score=0.4,
-                    confidence=0.6,
-                    description=f"Transaction with unfamiliar merchant: {transaction.merchant}",
-                    evidence=["Merchant not in user's frequent list"],
-                    weight=0.8
-                ))
-            
-            # Check category preference
-            if transaction.category not in user_profile.preferred_categories:
-                risk_factors.append(RiskFactor(
-                    factor_name="unusual_category",
-                    category=RiskCategory.BEHAVIORAL,
-                    risk_score=0.3,
-                    confidence=0.5,
-                    description=f"Transaction in unusual category: {transaction.category}",
-                    evidence=["Category not in user's preferences"],
-                    weight=0.6
-                ))
+        if len(ten_min_transactions) >= 3:
+            risk_indicators.append(f"{len(ten_min_transactions)} transactions in last 10 minutes")
+            risk_score += 0.6
+        elif len(hour_transactions) >= 5:
+            risk_indicators.append(f"{len(hour_transactions)} transactions in last hour")
+            risk_score += 0.4
         
-        # Check for suspicious behavioral patterns
-        if self._detect_suspicious_behavior_patterns(transaction):
-            risk_factors.append(RiskFactor(
-                factor_name="suspicious_behavior",
-                category=RiskCategory.BEHAVIORAL,
-                risk_score=0.7,
+        if risk_indicators:
+            return RiskFactor(
+                factor_name="velocity_risk",
+                risk_score=min(1.0, risk_score),
                 confidence=0.8,
-                description="Suspicious behavioral patterns detected",
-                evidence=["Pattern analysis indicates anomalous behavior"],
-                weight=1.5
-            ))
+                description="High transaction velocity detected",
+                evidence=risk_indicators,
+                weight=self.risk_weights.get("velocity_risk", 0.05)
+            )
         
-        return risk_factors
+        return None
     
-def _assess_transactional_risk(self, transaction: Transaction) -> List[RiskFactor]:
-        """Assess transactional risk factors."""
+    def _assess_geographic_risk(self, transaction: Transaction) -> GeographicRisk:
+        """Assess geographic risk factors."""
+        location = transaction.location
+        
+        # Base country risk
+        country_risk = self.country_risk_scores.get(location.country, 0.5)
+        
+        # Determine country risk level
+        if country_risk >= 0.8:
+            country_risk_level = "critical"
+        elif country_risk >= 0.6:
+            country_risk_level = "high"
+        elif country_risk >= 0.3:
+            country_risk_level = "medium"
+        else:
+            country_risk_level = "low"
+        
+        # Travel pattern analysis
+        travel_pattern_risk = self._assess_travel_pattern_risk(transaction)
+        
+        # IP location mismatch detection
+        ip_mismatch = self._detect_ip_location_mismatch(transaction)
+        
+        # Distance from user's home location
+        distance_from_home = self._calculate_distance_from_home(transaction)
+        
+        # Compile risk factors
         risk_factors = []
+        if country_risk >= 0.5:
+            risk_factors.append(f"High-risk country: {location.country}")
+        if travel_pattern_risk > 0.5:
+            risk_factors.append("Unusual travel pattern detected")
+        if ip_mismatch:
+            risk_factors.append("IP address location mismatch")
+        if distance_from_home > 1000:
+            risk_factors.append(f"Transaction far from home: {distance_from_home:.0f}km")
         
-        # Amount-based risk assessment
-        amount = float(transaction.amount)
+        # Calculate overall location risk score
+        location_risk_score = (
+            country_risk * 0.4 +
+            travel_pattern_risk * 0.3 +
+            (0.3 if ip_mismatch else 0.0) * 0.2 +
+            min(1.0, distance_from_home / 5000) * 0.1
+        )
         
-        if amount > 10000:
-            risk_factors.append(RiskFactor(
-                factor_name="high_value_transaction",
-                category=RiskCategory.TRANSACTIONAL,
-                risk_score=min(1.0, amount / 50000),
-                confidence=0.9,
-                description=f"High-value transaction: ${amount:.2f}",
-                evidence=[f"Amount exceeds ${10000} threshold"],
-                weight=1.3
-            ))
-        
-        # Round number analysis
-        if amount % 100 == 0 and amount >= 500:
-            risk_factors.append(RiskFactor(
-                factor_name="round_number_amount",
-                category=RiskCategory.TRANSACTIONAL,
-                risk_score=0.3,
-                confidence=0.6,
-                description="Transaction uses round number amount",
-                evidence=[f"Amount is exact multiple of 100: ${amount:.2f}"],
-                weight=0.7
-            ))
-        
-        # Currency risk
-        if transaction.currency not in ["USD", "EUR", "GBP", "CAD", "AUD"]:
-            risk_factors.append(RiskFactor(
-                factor_name="unusual_currency",
-                category=RiskCategory.TRANSACTIONAL,
-                risk_score=0.4,
-                confidence=0.7,
-                description=f"Transaction in unusual currency: {transaction.currency}",
-                evidence=["Currency not commonly used"],
-                weight=0.8
-            ))
-        
-        # Merchant category risk
-        high_risk_categories = ["gambling", "adult", "cryptocurrency", "money_transfer"]
-        if transaction.category.lower() in high_risk_categories:
-            risk_factors.append(RiskFactor(
-                factor_name="high_risk_category",
-                category=RiskCategory.TRANSACTIONAL,
-                risk_score=0.8,
-                confidence=0.9,
-                description=f"Transaction in high-risk category: {transaction.category}",
-                evidence=["Category associated with higher fraud risk"],
-                weight=1.4
-            ))
-        
-        return risk_factors
+        return GeographicRisk(
+            location_risk_score=min(1.0, location_risk_score),
+            country_risk_level=country_risk_level,
+            travel_pattern_risk=travel_pattern_risk,
+            ip_location_mismatch=ip_mismatch,
+            distance_from_home=distance_from_home,
+            risk_factors=risk_factors
+        )
     
-def _check_fraud_indicators(self, transaction: Transaction) -> List[str]:
-        """Cross-reference against known fraud indicators."""
-        indicators = []
+    def _assess_temporal_risk(self, transaction: Transaction) -> TemporalRisk:
+        """Assess temporal risk factors."""
+        timestamp = transaction.timestamp
         
-        # Check against fraud indicator database
-        fraud_indicators = self.fraud_indicator_db
+        # Unusual hour risk
+        hour = timestamp.hour
+        unusual_hour_risk = 0.0
         
-        # Check merchant blacklist
-        if transaction.merchant.lower() in fraud_indicators.get("blacklisted_merchants", []):
-            indicators.append(f"Merchant on blacklist: {transaction.merchant}")
+        if 2 <= hour <= 5:  # Late night/early morning
+            unusual_hour_risk = 0.7
+        elif hour < 7 or hour > 23:  # Very early or very late
+            unusual_hour_risk = 0.4
+        elif 7 <= hour <= 9 or 17 <= hour <= 19:  # Rush hours
+            unusual_hour_risk = 0.1
+        else:  # Normal business hours
+            unusual_hour_risk = 0.0
         
-        # Check IP address reputation
-        if transaction.ip_address in fraud_indicators.get("suspicious_ips", []):
-            indicators.append(f"Suspicious IP address: {transaction.ip_address}")
+        # Frequency risk (transactions per day)
+        frequency_risk = self._assess_frequency_risk(transaction)
         
-        # Check device fingerprint
-        if hasattr(transaction.device_info, 'fingerprint') and transaction.device_info.fingerprint:
-            if transaction.device_info.fingerprint in fraud_indicators.get("suspicious_devices", []):
-                indicators.append(f"Suspicious device fingerprint")
+        # Velocity risk (rapid successive transactions)
+        velocity_risk = self._assess_temporal_velocity_risk(transaction)
         
-        # Check for known fraud patterns
-        if self._matches_known_fraud_pattern(transaction):
-            indicators.append("Transaction matches known fraud pattern")
+        # Pattern deviation risk
+        pattern_deviation = self._assess_temporal_pattern_deviation(transaction)
         
-        return indicators    
- 
-def _calculate_overall_risk_score(self, risk_factors: List[RiskFactor]) -> float:
-        """Calculate overall risk score from individual risk factors."""
-        if not risk_factors:
-            return 0.0
+        # Compile risk factors
+        risk_factors = []
+        if unusual_hour_risk > 0.5:
+            risk_factors.append(f"Transaction at unusual hour: {hour:02d}:00")
+        if frequency_risk > 0.5:
+            risk_factors.append("High transaction frequency")
+        if velocity_risk > 0.5:
+            risk_factors.append("Rapid successive transactions")
+        if pattern_deviation > 0.5:
+            risk_factors.append("Deviation from typical timing patterns")
         
-        # Group risk factors by category
-        category_scores = defaultdict(list)
-        for factor in risk_factors:
-            weighted_score = factor.risk_score * factor.confidence * factor.weight
-            category_scores[factor.category].append(weighted_score)
+        # Calculate overall temporal risk score
+        time_risk_score = (
+            unusual_hour_risk * 0.3 +
+            frequency_risk * 0.25 +
+            velocity_risk * 0.25 +
+            pattern_deviation * 0.2
+        )
         
-        # Calculate category averages
-        category_averages = {}
-        for category, scores in category_scores.items():
-            category_averages[category] = sum(scores) / len(scores)
+        return TemporalRisk(
+            time_risk_score=min(1.0, time_risk_score),
+            unusual_hour_risk=unusual_hour_risk,
+            frequency_risk=frequency_risk,
+            velocity_risk=velocity_risk,
+            pattern_deviation=pattern_deviation,
+            risk_factors=risk_factors
+        )
+    
+    def _perform_cross_reference_checks(self, transaction: Transaction) -> List[CrossReferenceResult]:
+        """Perform cross-reference checks against fraud databases."""
+        results = []
         
-        # Apply category weights
-        overall_score = 0.0
+        # IP blacklist check
+        ip_result = self._check_ip_blacklist(transaction.ip_address)
+        if ip_result:
+            results.append(ip_result)
+        
+        # User watchlist check
+        user_result = self._check_user_watchlist(transaction.user_id)
+        if user_result:
+            results.append(user_result)
+        
+        # Merchant blacklist check
+        merchant_result = self._check_merchant_blacklist(transaction.merchant)
+        if merchant_result:
+            results.append(merchant_result)
+        
+        # Device fingerprint check
+        if transaction.device_info.fingerprint:
+            device_result = self._check_device_blacklist(transaction.device_info.fingerprint)
+            if device_result:
+                results.append(device_result)
+        
+        return results
+    
+    def _calculate_overall_risk_score(self, result: RiskAssessmentResult) -> float:
+        """Calculate overall risk score from all risk factors."""
+        total_weighted_score = 0.0
         total_weight = 0.0
         
-        for category, avg_score in category_averages.items():
-            weight = self.risk_weights.get(category, 0.1)
-            overall_score += avg_score * weight
-            total_weight += weight
+        # Risk factors
+        for factor in result.risk_factors:
+            weighted_score = factor.risk_score * factor.confidence * factor.weight
+            total_weighted_score += weighted_score
+            total_weight += factor.weight
         
-        # Normalize by total weight
+        # Geographic risk
+        if result.geographic_risk:
+            geo_weight = self.risk_weights.get("geographic_risk", 0.2)
+            total_weighted_score += result.geographic_risk.location_risk_score * geo_weight
+            total_weight += geo_weight
+        
+        # Temporal risk
+        if result.temporal_risk:
+            temp_weight = self.risk_weights.get("temporal_risk", 0.15)
+            total_weighted_score += result.temporal_risk.time_risk_score * temp_weight
+            total_weight += temp_weight
+        
+        # Cross-reference results
+        if result.cross_reference_results:
+            cross_ref_weight = self.risk_weights.get("cross_reference_risk", 0.15)
+            max_cross_ref_risk = max(cr.risk_impact for cr in result.cross_reference_results)
+            total_weighted_score += max_cross_ref_risk * cross_ref_weight
+            total_weight += cross_ref_weight
+        
+        # Calculate final score
         if total_weight > 0:
-            overall_score = overall_score / total_weight
-        
-        return min(1.0, max(0.0, overall_score))
+            return min(1.0, total_weighted_score / total_weight)
+        else:
+            return 0.0
     
-def _determine_risk_level(self, risk_score: float) -> RiskLevel:
+    def _determine_risk_level(self, risk_score: float) -> str:
         """Determine risk level based on risk score."""
-        if risk_score >= self.risk_thresholds["high"]:
-            return RiskLevel.HIGH
-        elif risk_score >= self.risk_thresholds["medium"]:
-            return RiskLevel.MEDIUM
+        thresholds = self.risk_thresholds
+        
+        if risk_score >= thresholds.get("high", 0.8):
+            return "critical" if risk_score >= 0.9 else "high"
+        elif risk_score >= thresholds.get("medium", 0.6):
+            return "medium"
+        elif risk_score >= thresholds.get("low", 0.3):
+            return "low"
         else:
-            return RiskLevel.LOW
+            return "minimal"
     
-def _calculate_confidence(self, risk_factors: List[RiskFactor]) -> float:
-        """Calculate overall confidence in risk assessment."""
-        if not risk_factors:
+    def _calculate_assessment_confidence(self, result: RiskAssessmentResult) -> float:
+        """Calculate confidence in the risk assessment."""
+        confidence_factors = []
+        
+        # Confidence from risk factors
+        if result.risk_factors:
+            avg_factor_confidence = sum(f.confidence for f in result.risk_factors) / len(result.risk_factors)
+            confidence_factors.append(avg_factor_confidence)
+        
+        # Confidence from geographic assessment
+        if result.geographic_risk:
+            confidence_factors.append(0.8)  # Geographic data is generally reliable
+        
+        # Confidence from temporal assessment
+        if result.temporal_risk:
+            confidence_factors.append(0.7)  # Temporal patterns have moderate reliability
+        
+        # Confidence from cross-reference checks
+        if result.cross_reference_results:
+            avg_cross_ref_confidence = sum(cr.match_confidence for cr in result.cross_reference_results) / len(result.cross_reference_results)
+            confidence_factors.append(avg_cross_ref_confidence)
+        
+        if confidence_factors:
+            return sum(confidence_factors) / len(confidence_factors)
+        else:
             return 0.5  # Default confidence
-        
-        # Weight confidence by risk factor importance
-        weighted_confidences = []
-        for factor in risk_factors:
-            weighted_confidence = factor.confidence * factor.weight
-            weighted_confidences.append(weighted_confidence)
-        
-        if weighted_confidences:
-            return sum(weighted_confidences) / len(weighted_confidences)
-        else:
-            return 0.5
     
-def _check_threshold_breaches(self, result: RiskAssessmentResult) -> List[str]:
+    def _check_threshold_breaches(self, result: RiskAssessmentResult) -> List[str]:
         """Check for risk threshold breaches."""
         breaches = []
         
-        # Check overall risk threshold
-        if result.overall_risk_score >= self.risk_thresholds["high"]:
-            breaches.append(f"High risk threshold breached: {result.overall_risk_score:.3f}")
-        elif result.overall_risk_score >= self.risk_thresholds["medium"]:
-            breaches.append(f"Medium risk threshold breached: {result.overall_risk_score:.3f}")
+        # Overall risk threshold
+        if result.overall_risk_score >= self.risk_thresholds.get("high", 0.8):
+            breaches.append(f"Overall risk score ({result.overall_risk_score:.3f}) exceeds high threshold")
         
-        # Check category-specific thresholds
-        category_scores = defaultdict(list)
+        # Individual factor thresholds
         for factor in result.risk_factors:
-            category_scores[factor.category].append(factor.risk_score)
+            if factor.risk_score >= 0.8:
+                breaches.append(f"{factor.factor_name} ({factor.risk_score:.3f}) exceeds critical threshold")
         
-        for category, scores in category_scores.items():
-            avg_score = sum(scores) / len(scores)
-            if avg_score > 0.8:
-                breaches.append(f"High {category.value} risk: {avg_score:.3f}")
+        # Geographic risk threshold
+        if result.geographic_risk and result.geographic_risk.location_risk_score >= 0.7:
+            breaches.append(f"Geographic risk ({result.geographic_risk.location_risk_score:.3f}) exceeds threshold")
         
         return breaches
     
-def _generate_risk_recommendations(self, result: RiskAssessmentResult) -> List[str]:
+    def _generate_risk_recommendations(self, result: RiskAssessmentResult) -> List[str]:
         """Generate risk-based recommendations."""
         recommendations = []
         
-        # Overall risk recommendations
-        if result.risk_level == RiskLevel.HIGH:
+        # Overall risk level recommendations
+        if result.risk_level in ["critical", "high"]:
             recommendations.append("RECOMMEND: DECLINE transaction due to high risk")
-        elif result.risk_level == RiskLevel.MEDIUM:
+        elif result.risk_level == "medium":
             recommendations.append("RECOMMEND: FLAG for manual review")
         else:
-            recommendations.append("RECOMMEND: APPROVE transaction - low risk")
+            recommendations.append("RECOMMEND: APPROVE transaction - acceptable risk level")
         
         # Specific risk factor recommendations
-        high_risk_factors = [f for f in result.risk_factors if f.risk_score > 0.7]
-        if high_risk_factors:
-            factor_names = [f.factor_name for f in high_risk_factors]
-            recommendations.append(f"High-risk factors detected: {', '.join(factor_names)}")
+        for factor in result.risk_factors:
+            if factor.risk_score >= 0.8:
+                recommendations.append(f"HIGH RISK: {factor.description}")
         
         # Geographic recommendations
-        if result.geographic_assessment and result.geographic_assessment.location_risk_score > 0.6:
-            recommendations.append("Consider additional location verification")
+        if result.geographic_risk and result.geographic_risk.country_risk_level in ["high", "critical"]:
+            recommendations.append("Consider additional identity verification for high-risk location")
         
-        # Temporal recommendations
-        if result.temporal_assessment and result.temporal_assessment.velocity_risk > 0.5:
-            recommendations.append("Monitor for velocity fraud patterns")
-        
-        # Fraud indicator recommendations
-        if result.fraud_indicators:
-            recommendations.append("Cross-reference with fraud database confirmed matches")
+        # Cross-reference recommendations
+        if result.cross_reference_results:
+            for cr in result.cross_reference_results:
+                if cr.match_found and cr.risk_impact >= 0.7:
+                    recommendations.append(f"ALERT: Match found in {cr.reference_type}")
         
         return recommendations
+    
+    def _generate_mitigation_suggestions(self, result: RiskAssessmentResult) -> List[str]:
+        """Generate risk mitigation suggestions."""
+        suggestions = []
+        
+        # High amount risk mitigation
+        amount_factors = [f for f in result.risk_factors if f.factor_name == "amount_risk"]
+        if amount_factors and amount_factors[0].risk_score >= 0.6:
+            suggestions.append("Consider step-up authentication for high-value transactions")
+            suggestions.append("Implement transaction amount limits based on user history")
+        
+        # Geographic risk mitigation
+        if result.geographic_risk and result.geographic_risk.location_risk_score >= 0.5:
+            suggestions.append("Require additional location verification")
+            suggestions.append("Consider travel notification requirements")
+        
+        # Velocity risk mitigation
+        velocity_factors = [f for f in result.risk_factors if f.factor_name == "velocity_risk"]
+        if velocity_factors and velocity_factors[0].risk_score >= 0.5:
+            suggestions.append("Implement velocity controls and cooling-off periods")
+            suggestions.append("Consider transaction frequency limits")
+        
+        # Device risk mitigation
+        device_factors = [f for f in result.risk_factors if f.factor_name == "device_risk"]
+        if device_factors and device_factors[0].risk_score >= 0.5:
+            suggestions.append("Require device registration and verification")
+            suggestions.append("Implement device fingerprinting")
+        
+        return suggestions
+    
+    # Helper methods for risk assessment components
+    
+    def _assess_travel_pattern_risk(self, transaction: Transaction) -> float:
+        """Assess risk based on travel patterns."""
+        # Simplified travel pattern analysis
+        # In production, this would analyze user's location history
+        return 0.2  # Default low travel risk
+    
+    def _detect_ip_location_mismatch(self, transaction: Transaction) -> bool:
+        """Detect mismatch between IP location and transaction location."""
+        # Simplified IP geolocation check
+        # In production, this would use IP geolocation services
+        return False  # Default no mismatch
+    
+    def _calculate_distance_from_home(self, transaction: Transaction) -> float:
+        """Calculate distance from user's home location."""
+        # Simplified distance calculation
+        # In production, this would use user's registered address
+        return 50.0  # Default 50km from home
+    
+    def _assess_frequency_risk(self, transaction: Transaction) -> float:
+        """Assess risk based on transaction frequency."""
+        recent_transactions = self.memory_manager.get_user_transaction_history(
+            transaction.user_id, days_back=1, limit=10
+        )
+        
+        daily_count = len([tx for tx in recent_transactions 
+                          if tx.timestamp.date() == transaction.timestamp.date()])
+        
+        if daily_count >= 10:
+            return 0.8
+        elif daily_count >= 5:
+            return 0.5
+        else:
+            return 0.1
+    
+    def _assess_temporal_velocity_risk(self, transaction: Transaction) -> float:
+        """Assess velocity risk in temporal context."""
+        recent_transactions = self.memory_manager.get_user_transaction_history(
+            transaction.user_id, days_back=1, limit=5
+        )
+        
+        # Check for rapid successive transactions
+        if len(recent_transactions) >= 3:
+            time_diffs = []
+            for i in range(1, len(recent_transactions)):
+                diff = (recent_transactions[i-1].timestamp - recent_transactions[i].timestamp).total_seconds()
+                time_diffs.append(diff)
+            
+            avg_interval = sum(time_diffs) / len(time_diffs) if time_diffs else 3600
+            
+            if avg_interval < 300:  # Less than 5 minutes average
+                return 0.8
+            elif avg_interval < 900:  # Less than 15 minutes average
+                return 0.5
+        
+        return 0.1
+    
+    def _assess_temporal_pattern_deviation(self, transaction: Transaction) -> float:
+        """Assess deviation from user's typical temporal patterns."""
+        # Simplified pattern deviation analysis
+        # In production, this would analyze user's historical timing patterns
+        return 0.2  # Default low deviation
+    
+    def _check_ip_blacklist(self, ip_address: str) -> Optional[CrossReferenceResult]:
+        """Check IP address against blacklist."""
+        if ip_address in self.fraud_indicators["blacklisted_ips"]:
+            return CrossReferenceResult(
+                reference_type="ip_blacklist",
+                match_found=True,
+                match_confidence=0.95,
+                match_details={"ip_address": ip_address},
+                risk_impact=0.9
+            )
+        return None
+    
+    def _check_user_watchlist(self, user_id: str) -> Optional[CrossReferenceResult]:
+        """Check user against watchlist."""
+        if user_id in self.fraud_indicators["watchlist_users"]:
+            return CrossReferenceResult(
+                reference_type="user_watchlist",
+                match_found=True,
+                match_confidence=0.9,
+                match_details={"user_id": user_id},
+                risk_impact=0.8
+            )
+        return None
+    
+    def _check_merchant_blacklist(self, merchant: str) -> Optional[CrossReferenceResult]:
+        """Check merchant against blacklist."""
+        if merchant.lower() in self.fraud_indicators["suspicious_merchants"]:
+            return CrossReferenceResult(
+                reference_type="merchant_blacklist",
+                match_found=True,
+                match_confidence=0.85,
+                match_details={"merchant": merchant},
+                risk_impact=0.7
+            )
+        return None
+    
+    def _check_device_blacklist(self, device_fingerprint: str) -> Optional[CrossReferenceResult]:
+        """Check device fingerprint against blacklist."""
+        # Simplified device check
+        # In production, this would check against device fraud databases
+        return None
+    
+    def _initialize_fraud_indicators(self) -> None:
+        """Initialize fraud indicators database."""
+        # In production, these would be loaded from external fraud databases
+        self.fraud_indicators = {
+            "blacklisted_ips": {"192.0.2.1", "198.51.100.1", "203.0.113.1"},
+            "suspicious_merchants": {"fraud merchant", "scam store", "fake shop"},
+            "known_fraud_patterns": [],
+            "watchlist_users": {"suspicious_user_001", "flagged_user_002"}
+        }
+    
+    def _initialize_geographic_data(self) -> None:
+        """Initialize geographic risk data."""
+        # Country risk scores are already initialized in __init__
+        # In production, this would load from external geographic risk databases
+        pass
+    
+    def update_risk_thresholds(self, new_thresholds: Dict[str, float]) -> bool:
+        """Update risk assessment thresholds."""
+        try:
+            self.risk_thresholds.update(new_thresholds)
+            self.logger.info(f"Updated risk thresholds: {new_thresholds}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating risk thresholds: {str(e)}")
+            return False
+    
+    def get_risk_statistics(self) -> Dict[str, Any]:
+        """Get risk assessment statistics."""
+        return {
+            "risk_thresholds": self.risk_thresholds,
+            "risk_weights": self.risk_weights,
+            "fraud_indicators_count": {
+                "blacklisted_ips": len(self.fraud_indicators["blacklisted_ips"]),
+                "suspicious_merchants": len(self.fraud_indicators["suspicious_merchants"]),
+                "watchlist_users": len(self.fraud_indicators["watchlist_users"])
+            },
+            "country_risk_levels": len(self.country_risk_scores)
+        }
