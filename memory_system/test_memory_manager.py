@@ -58,8 +58,7 @@ def sample_transaction():
         ip_address="192.168.1.1",
         session_id="session_456",
         metadata={"channel": "mobile_app"}
-    )
-        
+    )      
 
 
 @pytest.fixture

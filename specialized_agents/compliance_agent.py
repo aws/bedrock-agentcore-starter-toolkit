@@ -16,11 +16,10 @@ from enum import Enum
 import uuid
 
 from base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
-from models import Transaction, DecisionContext, FraudDecision
-from memory_manager import MemoryManager
+from memory_system.models import Transaction, DecisionContext, FraudDecision
+from memory_system.memory_manager import MemoryManager
 
 logger = logging.getLogger(__name__)
-
 
 class ComplianceRegulation(Enum):
     """Supported compliance regulations."""
