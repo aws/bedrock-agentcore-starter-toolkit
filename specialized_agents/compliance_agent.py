@@ -14,10 +14,23 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
+import os
+import sys
+
+# Ensure project root is on sys.path when running this file directly
+# This allows absolute imports like `memory_system` to resolve when the
+# working directory is not the repository root.
+CURRENT_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
 from memory_system.models import Transaction, DecisionContext, FraudDecision
 from memory_system.memory_manager import MemoryManager
+
+# Mark imported models as intentionally used (prevents unused-import warnings)
+_ = (Transaction, DecisionContext, FraudDecision)
 
 logger = logging.getLogger(__name__)
 
