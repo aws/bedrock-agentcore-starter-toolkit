@@ -214,7 +214,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
                 error_message=str(e)
             ) 
    
-    def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transaction]:
+def _extract_transaction(self, request_data: Dict[str, Any]) -> Optional[Transaction]:
         """Extract transaction from request data."""
         try:
             if "transaction" in request_data:
@@ -263,7 +263,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
             self.logger.error(f"Error extracting transaction: {str(e)}")
             return None
     
-    def _assess_risk(self, transaction: Transaction, assessment_type: str) -> RiskAssessmentResult:
+def _assess_risk(self, transaction: Transaction, assessment_type: str) -> RiskAssessmentResult:
         """Perform comprehensive risk assessment."""
         result = RiskAssessmentResult(
             transaction_id=transaction.id,
@@ -321,7 +321,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return result    
 
-    def _assess_geographic_risk(self, transaction: Transaction) -> GeographicRiskAssessment:
+def _assess_geographic_risk(self, transaction: Transaction) -> GeographicRiskAssessment:
         """Assess geographic risk factors."""
         location = transaction.location
         
@@ -375,7 +375,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return assessment
     
-    def _assess_temporal_risk(self, transaction: Transaction) -> TemporalRiskAssessment:
+def _assess_temporal_risk(self, transaction: Transaction) -> TemporalRiskAssessment:
         """Assess temporal risk factors."""
         timestamp = transaction.timestamp
         
@@ -441,7 +441,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return assessment 
    
-    def _assess_behavioral_risk(self, transaction: Transaction) -> List[RiskFactor]:
+def _assess_behavioral_risk(self, transaction: Transaction) -> List[RiskFactor]:
         """Assess behavioral risk factors."""
         risk_factors = []
         
@@ -502,7 +502,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return risk_factors
     
-    def _assess_transactional_risk(self, transaction: Transaction) -> List[RiskFactor]:
+def _assess_transactional_risk(self, transaction: Transaction) -> List[RiskFactor]:
         """Assess transactional risk factors."""
         risk_factors = []
         
@@ -559,7 +559,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return risk_factors
     
-    def _check_fraud_indicators(self, transaction: Transaction) -> List[str]:
+def _check_fraud_indicators(self, transaction: Transaction) -> List[str]:
         """Cross-reference against known fraud indicators."""
         indicators = []
         
@@ -585,7 +585,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return indicators    
  
-   def _calculate_overall_risk_score(self, risk_factors: List[RiskFactor]) -> float:
+def _calculate_overall_risk_score(self, risk_factors: List[RiskFactor]) -> float:
         """Calculate overall risk score from individual risk factors."""
         if not risk_factors:
             return 0.0
@@ -616,7 +616,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return min(1.0, max(0.0, overall_score))
     
-    def _determine_risk_level(self, risk_score: float) -> RiskLevel:
+def _determine_risk_level(self, risk_score: float) -> RiskLevel:
         """Determine risk level based on risk score."""
         if risk_score >= self.risk_thresholds["high"]:
             return RiskLevel.HIGH
@@ -625,7 +625,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         else:
             return RiskLevel.LOW
     
-    def _calculate_confidence(self, risk_factors: List[RiskFactor]) -> float:
+def _calculate_confidence(self, risk_factors: List[RiskFactor]) -> float:
         """Calculate overall confidence in risk assessment."""
         if not risk_factors:
             return 0.5  # Default confidence
@@ -641,7 +641,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         else:
             return 0.5
     
-    def _check_threshold_breaches(self, result: RiskAssessmentResult) -> List[str]:
+def _check_threshold_breaches(self, result: RiskAssessmentResult) -> List[str]:
         """Check for risk threshold breaches."""
         breaches = []
         
@@ -663,7 +663,7 @@ def process_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
         
         return breaches
     
-    def _generate_risk_recommendations(self, result: RiskAssessmentResult) -> List[str]:
+def _generate_risk_recommendations(self, result: RiskAssessmentResult) -> List[str]:
         """Generate risk-based recommendations."""
         recommendations = []
         
