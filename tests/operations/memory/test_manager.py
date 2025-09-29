@@ -179,18 +179,6 @@ def test_boto_client_config_none_handling():
         assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
 
 
-def test_namespace_defaults():
-    """Test namespace defaults."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Test strategy without namespace
-        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
-        processed = manager._add_default_namespaces(strategies)
-
-        assert "namespaces" in processed[0][StrategyType.SEMANTIC.value]
-
-
 def test_create_memory():
     """Test _create_memory."""
     with patch("boto3.client"):

@@ -10,7 +10,7 @@ from .base import BaseStrategy, ConsolidationConfig, ExtractionConfig
 class CustomSemanticStrategy(BaseStrategy):
     """Custom semantic strategy with configurable extraction and consolidation.
 
-    This strategy allows full customization of both extraction and consolidation
+    This strategy allows customization of both extraction and consolidation
     processes using custom prompts and models.
 
     Attributes:
@@ -53,8 +53,6 @@ class CustomSemanticStrategy(BaseStrategy):
 
         if self.namespaces is not None:
             config["namespaces"] = self.namespaces
-        else:
-            config["namespaces"] = ["custom/{actorId}/{sessionId}"]
 
         return {"customMemoryStrategy": config}
 

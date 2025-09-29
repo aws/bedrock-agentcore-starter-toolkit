@@ -30,7 +30,5 @@ class UserPreferenceStrategy(BaseStrategy):
 
         if self.namespaces is not None:
             config["namespaces"] = self.namespaces
-        else:
-            config["namespaces"] = ["/actor/{actorId}/strategy/{strategyId}"]
 
         return {"userPreferenceMemoryStrategy": config}

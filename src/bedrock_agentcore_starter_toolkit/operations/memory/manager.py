@@ -10,7 +10,7 @@ import boto3
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 
-from .constants import DEFAULT_NAMESPACES, MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
+from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
 from .models import convert_strategies_to_dicts
 from .models.Memory import Memory
 from .models.MemoryStrategy import MemoryStrategy
@@ -1050,26 +1050,6 @@ class MemoryManager:
             "Memory %s did not return to ACTIVE state with all strategies in terminal states within %d seconds"
             % (memory_id, max_wait)
         )
-
-    def _add_default_namespaces(self, strategies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Add default namespaces to strategies that don't have them."""
-        processed = []
-
-        for strategy in strategies:
-            strategy_copy = copy.deepcopy(strategy)
-
-            strategy_type_key = list(strategy.keys())[0]
-            strategy_config = strategy_copy[strategy_type_key]
-
-            if "namespaces" not in strategy_config:
-                strategy_type = StrategyType(strategy_type_key)
-                strategy_config["namespaces"] = DEFAULT_NAMESPACES.get(strategy_type, ["custom/{actorId}/{sessionId}"])
-
-            self._validate_strategy_config(strategy_copy, strategy_type_key)
-
-            processed.append(strategy_copy)
-
-        return processed
 
     def _validate_namespace(self, namespace: str) -> bool:
         """Validate namespace format - basic check only."""
