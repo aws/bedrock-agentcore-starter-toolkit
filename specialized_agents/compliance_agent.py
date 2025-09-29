@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 
-from .base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
+from base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
 from memory_system.models import Transaction, DecisionContext, FraudDecision
 from memory_system.memory_manager import MemoryManager
 
