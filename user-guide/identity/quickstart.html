@@ -881,7 +881,7 @@
         <li class="md-nav__item">
   <a href="#step-05-create-a-cognito-user-pool" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 0.5 Create a cognito user-pool
+      Step 0.5: Create a Cognito user pool
     </span>
   </a>
   
@@ -890,20 +890,20 @@
         <li class="md-nav__item">
   <a href="#step-1-create-a-credential-provider" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1 Create a credential provider
+      Step 1: Create a credential provider
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-flow" class="md-nav__link">
+  <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2 Create a sample agent that initiates an OAuth flow
+      Step 2: Create a sample agent that initiates an OAuth 2.0 flow
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 2 Create a sample agent that initiates an OAuth flow">
+    <nav class="md-nav" aria-label="Step 2: Create a sample agent that initiates an OAuth 2.0 flow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -923,11 +923,11 @@
         <li class="md-nav__item">
   <a href="#step-3-deploy-the-agent-to-agentcore-runtime" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3 Deploy the agent to agentcore runtime
+      Step 3: Deploy the agent to AgentCore Runtime
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 3 Deploy the agent to agentcore runtime">
+    <nav class="md-nav" aria-label="Step 3: Deploy the agent to AgentCore Runtime">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -947,11 +947,11 @@
         <li class="md-nav__item">
   <a href="#step-4-invoke-the-agent" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 4 Invoke the agent!
+      Step 4: Invoke the agent!
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 4 Invoke the agent!">
+    <nav class="md-nav" aria-label="Step 4: Invoke the agent!">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1790,7 +1790,7 @@
         <li class="md-nav__item">
   <a href="#step-05-create-a-cognito-user-pool" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 0.5 Create a cognito user-pool
+      Step 0.5: Create a Cognito user pool
     </span>
   </a>
   
@@ -1799,20 +1799,20 @@
         <li class="md-nav__item">
   <a href="#step-1-create-a-credential-provider" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1 Create a credential provider
+      Step 1: Create a credential provider
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-flow" class="md-nav__link">
+  <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2 Create a sample agent that initiates an OAuth flow
+      Step 2: Create a sample agent that initiates an OAuth 2.0 flow
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 2 Create a sample agent that initiates an OAuth flow">
+    <nav class="md-nav" aria-label="Step 2: Create a sample agent that initiates an OAuth 2.0 flow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1832,11 +1832,11 @@
         <li class="md-nav__item">
   <a href="#step-3-deploy-the-agent-to-agentcore-runtime" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3 Deploy the agent to agentcore runtime
+      Step 3: Deploy the agent to AgentCore Runtime
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 3 Deploy the agent to agentcore runtime">
+    <nav class="md-nav" aria-label="Step 3: Deploy the agent to AgentCore Runtime">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1856,11 +1856,11 @@
         <li class="md-nav__item">
   <a href="#step-4-invoke-the-agent" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 4 Invoke the agent!
+      Step 4: Invoke the agent!
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 4 Invoke the agent!">
+    <nav class="md-nav" aria-label="Step 4: Invoke the agent!">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1924,30 +1924,30 @@
 <li>The latest AWS CLI installed</li>
 <li>AWS credentials and region configured (<code>aws configure</code>)</li>
 </ul>
-<p>This quickstart requires that you have an OAuth 2.0 Authorization Server. If you do not have one, step 0.5 will create one for you using Amazon Cognito User pools. If you have an OAuth Authorization Server with a client_id, client_secret and user configure, you may proceed to step 1.</p>
+<p>This quickstart requires that you have an OAuth 2.0 authorization server. If you do not have one, Step 0.5 will create one for you using Amazon Cognito user pools. If you have an OAuth 2.0 authorization server with a client id, client secret, and a user configured, you may proceed to step 1. This authorization server will act as a resource credential provider, representing the authority that grants the agent an outbound OAuth 2.0 access token.</p>
 <h2 id="install-the-sdk-and-dependencies">Install the SDK and dependencies<a class="headerlink" href="#install-the-sdk-and-dependencies" title="Permanent link">&para;</a></h2>
-<p>Make a folder for this quickstart, create a virtual environment, and install the agentcore sdk and the aws python sdk (boto3)</p>
+<p>Make a folder for this guide, create a Python virtual environment, and install the AgentCore SDK and the aws Python SDK (boto3)</p>
 <div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>agentcore-identity-quickstart
 <span class="nb">cd</span><span class="w"> </span>agentcore-identity-quickstart
 python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
 <span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore<span class="w"> </span>boto3<span class="w"> </span>strands-agents<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>pyjwt
 </code></pre></div>
-<p>also create the <code>requirements.txt</code> file with the follow contents. This will be used later by the agentcore deployment tool.</p>
+<p>Also create the <code>requirements.txt</code> file with the following content. This will be used later by the AgentCore deployment tool.</p>
 <div class="highlight"><pre><span></span><code>bedrock-agentcore
 boto3
 pyjwt
 strands-agents
 bedrock-agentcore-starter-toolkit
 </code></pre></div>
-<h2 id="step-05-create-a-cognito-user-pool">Step 0.5 Create a cognito user-pool<a class="headerlink" href="#step-05-create-a-cognito-user-pool" title="Permanent link">&para;</a></h2>
-<p>This quickstart requires an OAuth 2.0 Authorization Server. If you do not have available to test with, or if you want to keep your test seperate from your Authorization Server, this script will use your AWS credentials to setup an Amazon Cognito instance for you to use as an authorization server. The script will create:</p>
+<h2 id="step-05-create-a-cognito-user-pool">Step 0.5: Create a Cognito user pool<a class="headerlink" href="#step-05-create-a-cognito-user-pool" title="Permanent link">&para;</a></h2>
+<p>This quickstart requires an OAuth 2.0 authorization server. If you do not have one available for testing, or if you want to keep your test separate from your authorization server, this script will use your AWS credentials to set up an Amazon Cognito instance for you to use as an authorization server. The script will create:</p>
 <ul>
-<li>A Cognito user-pool</li>
-<li>An oauth client, and client secret for that user-pool</li>
-<li>A test user and password in that Vognito user-pool</li>
+<li>A Cognito user pool</li>
+<li>An OAuth 2.0 client, and client secret for that user pool</li>
+<li>A test user and password in that Cognito user pool</li>
 </ul>
-<p>Deleting the Cognito userpool AgentCoreIdentityQuickStartPool will delete the associated client_id and user as well.</p>
+<p>Deleting the Cognito user pool AgentCoreIdentityQuickStartPool will delete the associated client_id and user as well.</p>
 <p>You may choose to save this script as create_cognito.sh and execute it from your command line, or paste the script into your command line.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 
@@ -2024,12 +2024,12 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>admin-set-user-pas
 <span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;export COGNITO_USERNAME=&#39;</span><span class="nv">$USERNAME</span><span class="s2">&#39;&quot;</span>
 <span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;export COGNITO_PASSWORD=&#39;</span><span class="nv">$PASSWORD</span><span class="s2">&#39;&quot;</span>
 </code></pre></div>
-<h2 id="step-1-create-a-credential-provider">Step 1 Create a credential provider<a class="headerlink" href="#step-1-create-a-credential-provider" title="Permanent link">&para;</a></h2>
-<p>Create a credential provider to contain the client_id, client_secret and issuer URL for your authorization server.</p>
-<p>If you are using your own authorization server, set the environment variables ISSUER_URL, CLIENT_ID, and CLIENT_SECRET with their appropriate values from your authorization. If you are using the previous script to create an authorization server for you with cognito, copy the EXPORT statements from the output into your terminal to set the environment variables.</p>
+<h2 id="step-1-create-a-credential-provider">Step 1: Create a credential provider<a class="headerlink" href="#step-1-create-a-credential-provider" title="Permanent link">&para;</a></h2>
+<p>Credential providers are how your agent accesses external services. Create a credential provider and configure it with an OAuth 2.0 client for your authorization server.</p>
+<p>If you are using your own authorization server, set the environment variables <code>ISSUER_URL</code>, <code>CLIENT_ID</code>, and <code>CLIENT_SECRET</code> with their appropriate values from your authorization server. If you are using the previous script to create an authorization server for you with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables.</p>
 <p>This credential provider will be used by your agent's code to get access tokens to act on behalf of your user.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
-<span class="c1"># please note the expected ISSUER_URL format for bedrock agentcore is the full url, including .well-known/openid-configuration</span>
+<span class="c1"># please note the expected ISSUER_URL format for Bedrock AgentCore is the full url, including .well-known/openid-configuration</span>
 aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>create-oauth2-credential-provider<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;AgentCoreIdentityQuickStartProvider&quot;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--credential-provider-vendor<span class="w"> </span><span class="s2">&quot;CustomOauth2&quot;</span><span class="w"> </span><span class="se">\</span>
@@ -2044,15 +2044,16 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="s1">    }</span>
 <span class="s1">  }&#39;</span>
 </code></pre></div>
-<h2 id="step-2-create-a-sample-agent-that-initiates-an-oauth-flow">Step 2 Create a sample agent that initiates an OAuth flow<a class="headerlink" href="#step-2-create-a-sample-agent-that-initiates-an-oauth-flow" title="Permanent link">&para;</a></h2>
-<p>In this step, we will create an agent that initiates an OAuth to get tokens to act on behalf of the user. For simplicity, we the agent will not make actual calls to external services on behalf of our test, but will prove to us that it has obtained consent to act on behalf of our test user. </p>
+<h2 id="step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow">Step 2: Create a sample agent that initiates an OAuth 2.0 flow<a class="headerlink" href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" title="Permanent link">&para;</a></h2>
+<p>In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user. </p>
 <h3 id="agent-code">Agent code<a class="headerlink" href="#agent-code" title="Permanent link">&para;</a></h3>
-<p>Create a file named <code>agentcoreidentityquickstart.py</code> , and save this code.</p>
+<p>Create a file named <code>agentcoreidentityquickstart.py</code>, and save this code.</p>
 <div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">AgentCore Identity Token Introspection Agent</span>
+<span class="sd">AgentCore Identity Outbound Token Agent</span>
 
-<span class="sd">This agent demonstrates USER_FEDERATION OAuth flow and token introspection.</span>
-<span class="sd">It handles the consent flow and analyzes the resulting access token.</span>
+<span class="sd">This agent demonstrates the USER_FEDERATION OAuth 2.0 flow.</span>
+
+<span class="sd">It handles the OAuth 2.0 user consent flow and inspects the resulting OAuth 2.0 access token.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
@@ -2095,7 +2096,7 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="n">queue</span> <span class="o">=</span> <span class="n">StreamingQueue</span><span class="p">()</span>
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_auth_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
-    <span class="k">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Authorization url, please copy to your preferred browser : </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Authorization URL, please copy to your preferred browser: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="nd">@requires_access_token</span><span class="p">(</span>
     <span class="n">provider_name</span><span class="o">=</span><span class="s2">&quot;AgentCoreIdentityQuickStartProvider&quot;</span><span class="p">,</span>
@@ -2108,7 +2109,7 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Introspect token using decorator&quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Inside introspect_with_decorator - decorator succeeded&quot;</span><span class="p">)</span>
     <span class="k">await</span> <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">({</span>
-        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Succesfully received an access token to act on behalf of your user!&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Successfully received an access token to act on behalf of your user!&quot;</span><span class="p">,</span>
         <span class="s2">&quot;token_claims&quot;</span><span class="p">:</span> <span class="n">decode_jwt</span><span class="p">(</span><span class="n">access_token</span><span class="p">),</span>
         <span class="s2">&quot;token_length&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">access_token</span><span class="p">),</span>
         <span class="s2">&quot;token_preview&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">access_token</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">...</span><span class="si">{</span><span class="n">access_token</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -2120,7 +2121,7 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Handler that uses only the decorator approach&quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Agent invocation started&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Start the OAuth task and immediately begin streaming</span>
+    <span class="c1"># Start the agent task and immediately begin streaming</span>
     <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">introspect_with_decorator</span><span class="p">())</span>
 
     <span class="c1"># Stream items as they come in</span>
@@ -2134,16 +2135,16 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </code></pre></div>
-<h2 id="step-3-deploy-the-agent-to-agentcore-runtime">Step 3  Deploy the agent to agentcore runtime<a class="headerlink" href="#step-3-deploy-the-agent-to-agentcore-runtime" title="Permanent link">&para;</a></h2>
-<p>We will host this agent on agentcore runtime. We can do this easily with the agentcore toolkit we installed earlier</p>
-<p>From your terminal, run <code>agentcore configure -e agentcoreidentityquickstart.py</code> and <code>agentcore launch</code> . The deployment will work the defaults set by <code>agentcore configure</code>, but you may customize them. Ensure that you select "No" for <code>Configure OAuth Authorizer</code> step. We want to use IAM authorization for this guide.</p>
+<h2 id="step-3-deploy-the-agent-to-agentcore-runtime">Step 3:  Deploy the agent to AgentCore Runtime<a class="headerlink" href="#step-3-deploy-the-agent-to-agentcore-runtime" title="Permanent link">&para;</a></h2>
+<p>We will host this agent on AgentCore Runtime. We can do this easily with the AgentCore SDK we installed earlier.</p>
+<p>From your terminal, run <code>agentcore configure -e agentcoreidentityquickstart.py</code> and <code>agentcore launch</code> . The deployment will work with the defaults set by <code>agentcore configure</code>, but you may customize them. Ensure that you select "No" for the <code>Configure OAuth authorizer instead</code> step. We want to use IAM authorization for this guide.</p>
 <h3 id="update-the-iam-policy-of-the-agent-to-be-able-to-access-the-token-vault-and-client-secret">Update the IAM policy of the agent to be able to access the token vault, and client secret<a class="headerlink" href="#update-the-iam-policy-of-the-agent-to-be-able-to-access-the-token-vault-and-client-secret" title="Permanent link">&para;</a></h3>
-<p>You will need to update the IAM policy of your agent that was created by or used with <code>agentcore configure</code>. This script will read your agenetcore configuration YAML and append the appropriate policy. You can copy paste this script, or save it to a file and execute it.</p>
+<p>You will need to update the IAM policy of your agent that was created by or used with <code>agentcore configure</code>. This script will read your agent's configuration YAML and append the appropriate policy. You can copy and paste this script, or save it to a file and execute it.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 
 <span class="c1"># Parse values from .bedrock_agentcore.yaml</span>
 <span class="nv">EXECUTION_ROLE</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span><span class="s2">&quot;execution_role:&quot;</span><span class="w"> </span>.bedrock_agentcore.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $2}&#39;</span><span class="k">)</span>
-<span class="nv">AWS_ACCOUNT</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span><span class="s2">&quot;account:&quot;</span><span class="w"> </span>.bedrock_agentcore.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $2}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;&#39;&quot;</span><span class="k">)</span>
+<span class="nv">AWS_ACCOUNT</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span><span class="s2">&quot;account:&quot;</span><span class="w"> </span>.bedrock_agentcore.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $2}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;&#39;&quot;</span><span class="k">)</span>
 <span class="nv">REGION</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span><span class="s2">&quot;region:&quot;</span><span class="w"> </span>.bedrock_agentcore.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $2}&#39;</span><span class="k">)</span>
 
 <span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Parsed values:&quot;</span>
@@ -2192,17 +2193,17 @@ aws<span class="w"> </span>iam<span class="w"> </span>attach-role-policy<span cl
 <span class="c1"># Cleanup</span>
 rm<span class="w"> </span>agentcore-identity-policy.json
 </code></pre></div>
-<h2 id="step-4-invoke-the-agent">Step 4 Invoke the agent!<a class="headerlink" href="#step-4-invoke-the-agent" title="Permanent link">&para;</a></h2>
-<p>Now that this is all setup, you can invoke the agent. For this demo, we will use the <code>agentcore invoke</code> command and our IAM credentials We will need to pass the userid and session id whe using IAM authentication, or else you will encounter unexpected results.</p>
-<p><code>agentcore invoke "TestPayload" -u "SampleUserID" -s "ALongThirtyThreeCharacterMinimumSessionIdYouCanChangeThisAsYouNeed"</code></p>
-<p>The agent will then return a URL to your agentcore invoke command. Copy and paste that URL into your preferred browser, and you will then be redirected to your authorization servers login page. The "-u" parameter is the userid you are presenting to agentcore identity. The -s parameter is the session id, which must be at least 33 characters long.</p>
-<p>Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from step .5 to create a cognito instance, you can retreive this from your terminal history.</p>
+<h2 id="step-4-invoke-the-agent">Step 4: Invoke the agent!<a class="headerlink" href="#step-4-invoke-the-agent" title="Permanent link">&para;</a></h2>
+<p>Now that this is all set up, you can invoke the agent. For this demo, we will use the <code>agentcore invoke</code> command and our IAM credentials. We will need to pass the <code>--user-id</code> and <code>--session-id</code> arguments when using IAM authentication.</p>
+<p><code>agentcore invoke "TestPayload" --agent agentcoreidentityquickstart --user-id "SampleUserID" --session-id "ALongThirtyThreeCharacterMinimumSessionIdYouCanChangeThisAsYouNeed"</code></p>
+<p>The agent will then return a URL to your <code>agentcore invoke</code> command. Copy and paste that URL into your preferred browser, and you will then be redirected to your authorization server's login page. The <code>--user-id</code> parameter is the user ID you are presenting to AgentCore Identity. The <code>--session-id</code> parameter is the session ID, which must be at least 33 characters long.</p>
+<p>Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.</p>
 <p>Your browser should redirect you to the AgentCore Identity Success Page, and you should have a success message in your terminal</p>
-<p>Note that if you interrupt an invokation without completing OAuth, you may need to request a new URL using a new Session ID (-s parameter)</p>
+<p>Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (<code>--session-id</code> parameter).</p>
 <h3 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h3>
-<p>Should you encounter any errors or unexpected behaviors, the output of the agent is captured in cloudwatch logs. A log tailing command is provided after you run <code>agentcore launch</code></p>
+<p>Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run <code>agentcore launch</code></p>
 <h2 id="clean-up">Clean Up<a class="headerlink" href="#clean-up" title="Permanent link">&para;</a></h2>
-<p>After you're done, you can delete the cognito user-pool, Amazon ECR repo, Codebuild Project, IAM roles for the agent and codebuild project, and finally delete the agent, and credential provider.</p>
+<p>After you're done, you can delete the Cognito user pool, Amazon ECR repo, CodeBuild Project, IAM roles for the agent and CodeBuild project, and finally delete the agent, and credential provider.</p>
 <h2 id="security-best-practices">Security Best Practices<a class="headerlink" href="#security-best-practices" title="Permanent link">&para;</a></h2>
 <p>When working with identity information:</p>
 <ol>
