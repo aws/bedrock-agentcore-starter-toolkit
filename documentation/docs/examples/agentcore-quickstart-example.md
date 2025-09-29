@@ -14,9 +14,9 @@ You’ll build and deploy an agent with runtime hosting, memory persistence, sec
 
 ## Prerequisites
 
-- AWS account with appropriate permissions
+- **AWS Permissions:** You need specific permissions to use the starter toolkit. See the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
 - AWS CLI configured (`aws configure`)
-- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region)
+- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with the Strands Agents see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
 
 ### Installation
@@ -42,7 +42,7 @@ Key components in this implementation:
 
 ## Step 1: Create the Agent
 
-Create `memory_ci_agent.py`:
+Create `strands_quickstart_agent.py`:
 
 ```python
 """
@@ -153,7 +153,7 @@ The AgentCore CLI automates deployment with intelligent provisioning:
 ### Configure the Agent
 
 ```bash
-agentcore configure --e memory_ci_agent.py
+agentcore configure -e strands_quickstart_agent.py
 
 # Interactive prompts:
 # Execution role (press Enter to auto-create)
@@ -270,7 +270,7 @@ agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56"
 agentcore invoke '{"prompt": "Calculate the mean and standard deviation of my dataset"}' --session-id test_session_2024_01_user123_preferences_abc
 
 # Create visualization
-agentcore invoke '{"prompt": "Create a bar chart showing the distribution of values in my dataset with proper labels"}' --session-id test_session_2024_01_user123_preferences_abc
+agentcore invoke '{"prompt": "Create a text based bar chart visualization showing the distribution of values in my dataset with proper labels"}' --session-id test_session_2024_01_user123_preferences_abc
 
 # Expected: Agent generates matplotlib code to create a bar chart
 ```
@@ -334,6 +334,258 @@ agentcore destroy
 # - IAM roles (if auto-created)
 # - CloudWatch log groups (optional)
 ```
+
+## Permissions Reference
+
+### Developer Permissions for Starter Toolkit
+
+To use the starter toolkit (`agentcore configure` and `agentcore launch` commands), you need the following IAM policy attached to your AWS user or role:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockAgentCoreRuntimeOperations",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateAgentRuntime",
+                "bedrock-agentcore:UpdateAgentRuntime",
+                "bedrock-agentcore:GetAgentRuntime",
+                "bedrock-agentcore:GetAgentRuntimeEndpoint",
+                "bedrock-agentcore:ListAgentRuntimes",
+                "bedrock-agentcore:ListAgentRuntimeEndpoints",
+                "bedrock-agentcore:DeleteAgentRuntime",
+                "bedrock-agentcore:DeleteAgentRuntimeEndpoint"
+            ],
+            "Resource": "arn:aws:bedrock-agentcore:*:*:runtime/*"
+        },
+        {
+            "Sid": "BedrockAgentCoreMemoryOperations",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateMemory",
+                "bedrock-agentcore:UpdateMemory",
+                "bedrock-agentcore:GetMemory",
+                "bedrock-agentcore:DeleteMemory",
+                "bedrock-agentcore:ListMemories"
+            ],
+            "Resource": [
+                "arn:aws:bedrock-agentcore:*:*:memory/*",
+                "*"
+            ]
+        },
+        {
+            "Sid": "IAMRoleManagement",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:DeleteRole",
+                "iam:GetRole",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:TagRole",
+                "iam:ListRolePolicies",
+                "iam:ListAttachedRolePolicies"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/*BedrockAgentCore*",
+                "arn:aws:iam::*:role/service-role/*BedrockAgentCore*"
+            ]
+        },
+        {
+            "Sid": "CodeBuildProjectAccess",
+            "Effect": "Allow",
+            "Action": [
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds",
+                "codebuild:ListBuildsForProject",
+                "codebuild:CreateProject",
+                "codebuild:UpdateProject",
+                "codebuild:BatchGetProjects"
+            ],
+            "Resource": [
+                "arn:aws:codebuild:*:*:project/bedrock-agentcore-*",
+                "arn:aws:codebuild:*:*:build/bedrock-agentcore-*"
+            ]
+        },
+        {
+            "Sid": "CodeBuildListAccess",
+            "Effect": "Allow",
+            "Action": [
+                "codebuild:ListProjects"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IAMPassRoleAccess",
+            "Effect": "Allow",
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/AmazonBedrockAgentCore*",
+                "arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
+            ]
+        },
+        {
+            "Sid": "CloudWatchLogsAccess",
+            "Effect": "Allow",
+            "Action": [
+                "logs:GetLogEvents",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutResourcePolicy"
+            ],
+            "Resource": [
+                "arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*",
+                "arn:aws:logs:*:*:log-group:/aws/codebuild/*",
+                "arn:aws:logs:*:*:log-group:*"
+            ]
+        },
+        {
+            "Sid": "S3Access",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:CreateBucket",
+                "s3:PutLifecycleConfiguration"
+            ],
+            "Resource": [
+                "arn:aws:s3:::bedrock-agentcore-*",
+                "arn:aws:s3:::bedrock-agentcore-*/*"
+            ]
+        },
+        {
+            "Sid": "ECRRepositoryAccess",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:CreateRepository",
+                "ecr:DescribeRepositories",
+                "ecr:GetRepositoryPolicy",
+                "ecr:InitiateLayerUpload",
+                "ecr:CompleteLayerUpload",
+                "ecr:PutImage",
+                "ecr:UploadLayerPart",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:ListImages",
+                "ecr:BatchDeleteImage",
+                "ecr:DeleteRepository",
+                "ecr:TagResource"
+            ],
+            "Resource": [
+                "arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
+            ]
+        },
+        {
+            "Sid": "ECRAuthorizationAccess",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetAuthorizationToken"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "XRayConfiguration",
+            "Effect": "Allow",
+            "Action": [
+                "xray:UpdateTraceSegmentDestination",
+                "xray:UpdateIndexingRule",
+                "xray:GetTraceSegmentDestination",
+                "xray:GetIndexingRules"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "STSGetCallerIdentity",
+            "Effect": "Allow",
+            "Action": [
+                "sts:GetCallerIdentity"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+### Auto-Generated Execution Role
+
+**Important**: The starter toolkit automatically creates an execution role with all necessary permissions when you run `agentcore configure`. You do NOT need to create this role manually. The auto-generated role includes permissions for:
+
+- **Memory operations** (create, read, write, retrieve)
+- **Code Interpreter sessions** (create, invoke, manage)
+- **Model invocation** (Bedrock models)
+- **CloudWatch logging and X-Ray tracing**
+- **ECR image access**
+
+The execution role is created with a name pattern: `AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}`
+
+For reference, the auto-generated execution role includes these additional permissions for Memory and Code Interpreter:
+
+**Memory Permissions (automatically included):**
+
+```json
+{
+    "Sid": "BedrockAgentCoreMemoryCreateMemory",
+    "Effect": "Allow",
+    "Action": [
+        "bedrock-agentcore:CreateMemory"
+    ],
+    "Resource": "*"
+},
+{
+    "Sid": "BedrockAgentCoreMemory",
+    "Effect": "Allow",
+    "Action": [
+        "bedrock-agentcore:CreateEvent",
+        "bedrock-agentcore:GetEvent",
+        "bedrock-agentcore:GetMemory",
+        "bedrock-agentcore:GetMemoryRecord",
+        "bedrock-agentcore:ListActors",
+        "bedrock-agentcore:ListEvents",
+        "bedrock-agentcore:ListMemoryRecords",
+        "bedrock-agentcore:ListSessions",
+        "bedrock-agentcore:DeleteEvent",
+        "bedrock-agentcore:DeleteMemoryRecord",
+        "bedrock-agentcore:RetrieveMemoryRecords"
+    ],
+    "Resource": [
+        "arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*"
+    ]
+}
+```
+
+**Code Interpreter Permissions (automatically included):**
+
+```json
+{
+    "Sid": "BedrockAgentCoreCodeInterpreter",
+    "Effect": "Allow",
+    "Action": [
+        "bedrock-agentcore:CreateCodeInterpreter",
+        "bedrock-agentcore:StartCodeInterpreterSession",
+        "bedrock-agentcore:InvokeCodeInterpreter",
+        "bedrock-agentcore:StopCodeInterpreterSession",
+        "bedrock-agentcore:DeleteCodeInterpreter",
+        "bedrock-agentcore:ListCodeInterpreters",
+        "bedrock-agentcore:GetCodeInterpreter",
+        "bedrock-agentcore:GetCodeInterpreterSession",
+        "bedrock-agentcore:ListCodeInterpreterSessions"
+    ],
+    "Resource": [
+        "arn:aws:bedrock-agentcore:{region}:aws:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter-custom/*"
+    ]
+}
+```
+
 
 ### Understanding Memory Selection
 
