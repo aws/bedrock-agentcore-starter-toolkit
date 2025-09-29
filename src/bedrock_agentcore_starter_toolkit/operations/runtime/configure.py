@@ -40,6 +40,7 @@ def configure_bedrock_agentcore(
     verbose: bool = False,
     region: Optional[str] = None,
     protocol: Optional[str] = None,
+    non_interactive: bool = False,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 

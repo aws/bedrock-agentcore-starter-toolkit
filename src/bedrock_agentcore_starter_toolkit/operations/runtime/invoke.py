@@ -48,10 +48,9 @@ def invoke_bedrock_agentcore(
                 # Provide graceful error message
                 error_message = (
                     f"Memory is still provisioning (current status: {memory_status}). "
-                    f"Long-term memory extraction takes 60-90 seconds to activate.\n\n"
+                    f"Long-term memory extraction takes 60-180 seconds to activate.\n\n"
                     f"Please wait and check status with:\n"
                     f"  agentcore status{f' --agent {agent_name}' if agent_name else ''}\n\n"
-                    f"Once memory status shows 'ACTIVE', you can invoke your agent."
                 )
 
                 # Log the message for visibility

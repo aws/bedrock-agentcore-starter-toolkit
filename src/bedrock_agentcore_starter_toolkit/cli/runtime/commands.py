@@ -280,6 +280,7 @@ def configure(
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,
+            non_interactive=non_interactive,
         )
 
         # Prepare authorization info for summary
