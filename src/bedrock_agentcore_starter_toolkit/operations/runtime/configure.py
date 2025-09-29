@@ -60,6 +60,7 @@ def configure_bedrock_agentcore(
         verbose: Whether to provide verbose output during configuration
         region: AWS region for deployment
         protocol: agent server protocol, must be either HTTP or MCP
+        non_interactive: Skip interactive prompts and use defaults
 
     Returns:
         ConfigureResult model with configuration details
