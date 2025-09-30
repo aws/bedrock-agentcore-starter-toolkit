@@ -1,7 +1,6 @@
 """Unit tests for Memory Client - no external connections."""
 
 import uuid
-import warnings
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
@@ -10,39 +9,174 @@ from bedrock_agentcore_starter_toolkit.operations.memory.constants import (
     StrategyType,
 )
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
-from bedrock_agentcore_starter_toolkit.operations.memory.models.Memory import Memory
-from bedrock_agentcore_starter_toolkit.operations.memory.models.MemoryStrategy import MemoryStrategy
-from bedrock_agentcore_starter_toolkit.operations.memory.models.MemorySummary import MemorySummary
+from bedrock_agentcore_starter_toolkit.operations.memory.models import Memory, MemoryStrategy, MemorySummary
 
 
 def test_manager_initialization():
     """Test client initialization."""
-    with patch("boto3.client") as mock_boto_client:
-        # Setup the mock to return a consistent region_name
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
         mock_client_instance = MagicMock()
         mock_client_instance.meta.region_name = "us-west-2"
-        mock_boto_client.return_value = mock_client_instance
+        mock_session.client.return_value = mock_client_instance
 
         manager = MemoryManager(region_name="us-west-2")
 
-        # Check that the region was set correctly and boto3.client was called once (only control plane)
+        # Check that the region was set correctly and session.client was called once
         assert manager.region_name == "us-west-2"
-        assert mock_boto_client.call_count == 1
+        assert mock_session.client.call_count == 1
 
-        # Verify the correct service was called (without endpoint_url)
-        mock_boto_client.assert_called_with("bedrock-agentcore-control", region_name="us-west-2")
+        # Verify the correct service was called with config
+        mock_session.client.assert_called_once()
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-west-2"
+
+        # Verify default config includes user agent
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
 
 
-def test_namespace_defaults():
-    """Test namespace defaults."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
+def test_manager_initialization_with_boto_client_config():
+    """Test client initialization with custom boto_client_config."""
+    from botocore.config import Config as BotocoreConfig
 
-        # Test strategy without namespace
-        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
-        processed = manager._add_default_namespaces(strategies)
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
 
-        assert "namespaces" in processed[0][StrategyType.SEMANTIC.value]
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Create custom boto client config
+        custom_config = BotocoreConfig(retries={"max_attempts": 5}, read_timeout=60)
+
+        manager = MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Check that the region was set correctly
+        assert manager.region_name == "us-east-1"
+        assert mock_session.client.call_count == 1
+
+        # Verify the correct service was called with merged config
+        mock_session.client.assert_called_once()
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-east-1"
+
+        # Verify config was merged and includes user agent
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+        # The merged config should contain the original settings
+        assert hasattr(config, "retries")
+        assert hasattr(config, "read_timeout")
+
+
+def test_boto_client_config_user_agent_merging():
+    """Test that boto_client_config properly merges user agent."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with existing user agent
+        custom_config = BotocoreConfig(user_agent_extra="my-custom-agent", retries={"max_attempts": 3})
+
+        MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Verify the user agent was merged correctly
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "my-custom-agent bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_without_existing_user_agent():
+    """Test boto_client_config when no existing user agent is present."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with config that has no user agent
+        custom_config = BotocoreConfig(retries={"max_attempts": 3}, read_timeout=30)
+
+        MemoryManager(region_name="us-east-1", boto_client_config=custom_config)
+
+        # Verify the user agent was added correctly
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_with_session_and_region():
+    """Test boto_client_config works with both boto3_session and region_name."""
+    from botocore.config import Config as BotocoreConfig
+
+    with patch("boto3.Session"):
+        # Create a mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Create custom boto client config
+        custom_config = BotocoreConfig(connect_timeout=30, user_agent_extra="test-agent")
+
+        MemoryManager(region_name="us-west-2", boto3_session=mock_session, boto_client_config=custom_config)
+
+        # Verify the client was created with the session and merged config
+        assert mock_session.client.call_count == 1
+        call_args = mock_session.client.call_args
+        assert call_args[0][0] == "bedrock-agentcore-control"
+        assert call_args[1]["region_name"] == "us-west-2"
+
+        # Verify config was merged properly
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "test-agent bedrock-agentcore-starter-toolkit"
+
+
+def test_boto_client_config_none_handling():
+    """Test that None boto_client_config is handled correctly."""
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Test with explicit None config
+        MemoryManager(region_name="us-east-1", boto_client_config=None)
+
+        # Verify default config is used
+        call_args = mock_session.client.call_args
+        config = call_args[1]["config"]
+        assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
 
 
 def test_create_memory():
@@ -1039,37 +1173,6 @@ def test_delete_strategy():
             assert "memoryStrategies" in kwargs
             assert "deleteMemoryStrategies" in kwargs["memoryStrategies"]
             assert kwargs["memoryStrategies"]["deleteMemoryStrategies"][0]["memoryStrategyId"] == "strat-456"
-
-
-def test_add_strategy_warning():
-    """Test add_strategy shows deprecation warning."""
-    with patch("boto3.client"):
-        manager = MemoryManager(region_name="us-east-1")
-
-        # Mock the client
-        mock_control_plane_client = MagicMock()
-        manager._control_plane_client = mock_control_plane_client
-
-        # Mock get_memory for strategy retrieval
-        mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-123", "memoryStrategies": []}}
-
-        # Mock update_memory response
-        mock_control_plane_client.update_memory.return_value = {"memory": {"memoryId": "mem-123", "status": "CREATING"}}
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_strategy (should show warning)
-                strategy = {StrategyType.SEMANTIC.value: {"name": "Test Strategy"}}
-                manager.add_strategy(memory_id="mem-123", strategy=strategy)
-
-                # Should have shown a warning
-                assert len(w) >= 1
-                assert any("may leave memory in CREATING state" in str(warning.message) for warning in w)
-
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
 
 
 def test_create_memory_and_wait_client_error():
@@ -2302,7 +2405,7 @@ def test_get_or_create_memory_creates_new_memory():
 
 
 def test_get_or_create_memory_returns_existing_memory():
-    """Test get_or_create_memory when existing memory is found."""
+    """Test get_or_create_memory when existing memory is found with matching strategies."""
     with patch("boto3.client"):
         manager = MemoryManager(region_name="us-east-1")
 
@@ -2317,15 +2420,20 @@ def test_get_or_create_memory_returns_existing_memory():
         ]
         mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
 
-        # Mock get_memory to return the existing memory details
+        # Mock get_memory to return the existing memory details with matching strategies
         mock_control_plane_client.get_memory.return_value = {
-            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SEMANTIC", "name": "TestStrategy", "description": "Test description"}],
+            }
         }
 
-        # Test get_or_create_memory
+        # Test get_or_create_memory with matching strategy (same name and description)
         result = manager.get_or_create_memory(
             name="TestMemory",
-            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy", "description": "Test description"}}],
             description="Test description",
         )
 
@@ -2687,3 +2795,174 @@ def test_get_or_create_memory_exception_handling():
             raise AssertionError("Exception was not raised")
         except Exception as e:
             assert "Unexpected error" in str(e)
+
+
+def test_get_or_create_memory_strategy_validation_success():
+    """Test get_or_create_memory strategy validation when strategies match."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with matching strategies (same name)
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SEMANTIC", "name": "TestStrategy", "description": "Test description"}],
+            }
+        }
+
+        # Test get_or_create_memory with matching strategy (same name and description)
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy", "description": "Test description"}}]
+        result = manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Verify get_memory was called
+        assert mock_control_plane_client.get_memory.called
+
+
+def test_get_or_create_memory_strategy_validation_mismatch():
+    """Test get_or_create_memory strategy validation when strategies don't match."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with different strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SUMMARIZATION", "name": "SummaryStrategy"}],
+            }
+        }
+
+        # Test get_or_create_memory with mismatched strategy
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
+
+        try:
+            manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+            raise AssertionError("ValueError was not raised")
+        except ValueError as e:
+            assert "Strategy mismatch" in str(e)
+            # The error should mention the type mismatch since we're comparing SUMMARIZATION vs SEMANTIC
+            assert ("type: value mismatch" in str(e) and "SUMMARIZATION" in str(e) and "SEMANTIC" in str(e)) or (
+                "name: value mismatch" in str(e) and "SummaryStrategy" in str(e) and "TestStrategy" in str(e)
+            )
+
+
+def test_get_or_create_memory_strategy_validation_multiple_strategies():
+    """Test get_or_create_memory strategy validation with multiple strategies."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with multiple strategies (matching names)
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [
+                    {"type": "SEMANTIC", "name": "SemanticStrategy", "description": "Semantic description"},
+                    {"type": "SUMMARIZATION", "name": "SummaryStrategy", "description": "Summary description"},
+                ],
+            }
+        }
+
+        # Test get_or_create_memory with matching multiple strategies (same names and descriptions)
+        strategies = [
+            {StrategyType.SEMANTIC.value: {"name": "SemanticStrategy", "description": "Semantic description"}},
+            {StrategyType.SUMMARY.value: {"name": "SummaryStrategy", "description": "Summary description"}},
+        ]
+        result = manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+
+def test_get_or_create_memory_strategy_validation_no_existing_strategies():
+    """Test get_or_create_memory strategy validation when existing memory has no strategies."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with no strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE", "strategies": []}
+        }
+
+        # Test get_or_create_memory with strategies when existing has none
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
+
+        try:
+            manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+            raise AssertionError("ValueError was not raised")
+        except ValueError as e:
+            assert "Strategy mismatch" in str(e)
+            assert "Strategy count mismatch" in str(e)
+            assert "0 strategies" in str(e)
+            assert "1 strategies were requested" in str(e)
+
+
+def test_get_or_create_memory_no_strategy_validation_when_none_provided():
+    """Test get_or_create_memory skips validation when no strategies provided."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with any strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SUMMARIZATION", "name": "SummaryStrategy"}],
+            }
+        }
+
+        # Test get_or_create_memory without providing strategies - should not validate
+        result = manager.get_or_create_memory(name="TestMemory")
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Should not raise any validation error
