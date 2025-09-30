@@ -5,14 +5,50 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+class NetworkModeConfig(BaseModel):
+    """Network mode configuration for VPC deployments."""
+
+    security_groups: List[str] = Field(default_factory=list, description="List of security group IDs")
+    subnets: List[str] = Field(default_factory=list, description="List of subnet IDs")
+
+
 class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
     network_mode: str = Field(default="PUBLIC", description="Network mode for deployment")
+    network_mode_config: Optional[NetworkModeConfig] = Field(
+        default=None,
+        description="Network mode configuration (required for VPC mode)"
+    )
+
+    @field_validator("network_mode")
+    @classmethod
+    def validate_network_mode(cls, v: str) -> str:
+        """Validate network mode and ensure VPC config is provided when needed."""
+        valid_modes = ["PUBLIC", "VPC"]
+        if v not in valid_modes:
+            raise ValueError(f"Invalid network_mode: {v}. Must be one of {valid_modes}")
+        return v
+
+    @field_validator("network_mode_config")
+    @classmethod
+    def validate_network_mode_config(cls, v: Optional[NetworkModeConfig], info) -> Optional[NetworkModeConfig]:
+        """Validate that network_mode_config is provided when network_mode is VPC."""
+        if info.data.get("network_mode") == "VPC" and v is None:
+            raise ValueError("network_mode_config is required when network_mode is VPC")
+        return v
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
-        return {"networkMode": self.network_mode}
+        result = {"networkMode": self.network_mode}
+
+        if self.network_mode_config:
+            result["networkModeConfig"] = {
+                "securityGroups": self.network_mode_config.security_groups,
+                "subnets": self.network_mode_config.subnets
+            }
+
+        return result
 
 
 class ProtocolConfiguration(BaseModel):
