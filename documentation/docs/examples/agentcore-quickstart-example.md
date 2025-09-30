@@ -5,7 +5,7 @@
 
 This guide demonstrates deploying an AI agent that combines:
 
-- **AgentCore Runtime**: Managed container orchestration service that hosts your agent
+- **AgentCore Runtime**: Managed compute service that runs your containerized agent with automatic scaling and built-in observability.
 - **Short-term and long-term memory** for conversation persistence within and across sessions
 - **Code Interpreter tool** for dynamic Python execution in AWS’s secure sandbox
 - **Built-in observability** via AWS X-Ray tracing and CloudWatch for monitoring agent behavior, memory operations, and tool usage
@@ -34,9 +34,9 @@ pip install bedrock-agentcore-starter-toolkit strands-agents boto3
 
 Key components in this implementation:
 
-- **Runtime**: Container orchestration service that hosts your agent
-- **Memory Service**: Dual-layer storage with STM (exact conversation storage) and LTM (intelligent fact extraction)
-- **Code Interpreter**: AWS-managed Python sandbox with pre-installed libraries
+- **Runtime**: Managed compute service that runs your containerized agent with automatic scaling. See [AgentCore Runtime docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)
+- **Memory Service**: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See [AgentCore Memory docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
+- **Code Interpreter**: AWS-managed Python sandbox with pre-installed libraries. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
 - **Strands Framework**: Simplifies agent creation with memory session management
 - **AWS X-Ray & CloudWatch**: Automatic tracing and logging for complete visibility
 
@@ -46,7 +46,7 @@ Create `strands_agentcore_starter.py`:
 
 ```python
 """
-Strands Agent Assistant - With AgentCore Memory and Tools
+Strands Agent with AgentCore Memory and Code Interpreter
 """
 import os
 from strands import Agent, tool
@@ -54,7 +54,6 @@ from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemory
 from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
 from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from bedrock_agentcore.memory import MemoryClient
 
 app = BedrockAgentCoreApp()
 
@@ -62,28 +61,32 @@ MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
 REGION = os.getenv("AWS_REGION", "us-west-2")
 MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
-code_interpreter = None
-code_session_id = None
+ci_sessions = {}
+current_session = None
 
 @tool
 def calculate(code: str) -> str:
     """Execute Python code for calculations or analysis."""
-    global code_interpreter, code_session_id
-
-    if not code_interpreter:
-        code_interpreter = CodeInterpreter(REGION)
-
-    if not code_session_id:
-        code_session_id = code_interpreter.start(
-            name="calc_session",
+    session_id = current_session or 'default'
+    
+    if session_id not in ci_sessions:
+        ci_sessions[session_id] = {
+            'client': CodeInterpreter(REGION),
+            'session_id': None
+        }
+    
+    ci = ci_sessions[session_id]
+    if not ci['session_id']:
+        ci['session_id'] = ci['client'].start(
+            name=f"session_{session_id[:30]}",
             session_timeout_seconds=1800
         )
-
-    result = code_interpreter.invoke("executeCode", {
+    
+    result = ci['client'].invoke("executeCode", {
         "code": code,
         "language": "python"
     })
-
+    
     for event in result.get("stream", []):
         if stdout := event.get("result", {}).get("structuredContent", {}).get("stdout"):
             return stdout
@@ -91,28 +94,33 @@ def calculate(code: str) -> str:
 
 @app.entrypoint
 def invoke(payload, context):
+    global current_session
+    
     if not MEMORY_ID:
         return {"error": "Memory not configured"}
-
+    
+    actor_id = context.headers.get('X-Amzn-Bedrock-AgentCore-Runtime-Custom-Actor-Id', 'user') if hasattr(context, 'headers') else 'user'
+    
     session_id = getattr(context, 'session_id', 'default')
-
+    current_session = session_id
+    
     memory_config = AgentCoreMemoryConfig(
         memory_id=MEMORY_ID,
         session_id=session_id,
-        actor_id="user",
+        actor_id=actor_id,
         retrieval_config={
-            "/users/user/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
-            "/users/user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
+            f"/users/{actor_id}/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
+            f"/users/{actor_id}/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
         }
     )
-
+    
     agent = Agent(
         model=MODEL_ID,
         session_manager=AgentCoreMemorySessionManager(memory_config, REGION),
-        system_prompt="""You are a helpful assistant. Use tools when appropriate.""",
+        system_prompt="You are a helpful assistant. Use tools when appropriate.",
         tools=[calculate]
     )
-
+    
     result = agent(payload.get("prompt", ""))
     return {"response": result.message.get('content', [{}])[0].get('text', str(result))}
 
@@ -239,7 +247,7 @@ agentcore invoke '{"prompt": "What company do I work for?"}' --session-id ltm_te
 # "You work at TechCorp."
 ```
 
-### Test Code Interpreter with Memory
+### Test Code Interpreter
 
 ```bash
 # Store data
