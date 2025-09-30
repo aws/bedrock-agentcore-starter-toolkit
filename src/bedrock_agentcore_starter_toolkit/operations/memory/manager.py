@@ -16,6 +16,7 @@ from .models.Memory import Memory
 from .models.MemoryStrategy import MemoryStrategy
 from .models.MemorySummary import MemorySummary
 from .models.strategies import BaseStrategy
+from .strategy_validator import validate_existing_memory_strategies
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +385,7 @@ class MemoryManager:
 
         Args:
             name: Memory name
-            strategies: List of typed strategy objects or dictionary configurations
+            strategies: Optional List of typed strategy objects or dictionary configurations
             description: Optional description
             event_expiry_days: How long to retain events (default: 90 days)
             memory_execution_role_arn: IAM role ARN for memory execution
@@ -392,6 +393,9 @@ class MemoryManager:
 
         Returns:
             Memory object, either newly created or existing
+
+        Raises:
+            ValueError: If strategies are provided but existing memory has different strategies
 
         Example:
             from bedrock_agentcore_starter_toolkit.operations.memory.models import SemanticStrategy
@@ -424,6 +428,13 @@ class MemoryManager:
             else:
                 logger.info("Memory already exists. Using existing memory ID: %s", memory_summary.id)
                 memory = self.get_memory(memory_summary.id)
+
+                # Validate strategies if provided using deep comparison
+                if strategies is not None:
+                    existing_strategies = memory.get("strategies", memory.get("memoryStrategies", []))
+                    memory_name = memory.get("name")
+                    validate_existing_memory_strategies(existing_strategies, strategies, memory_name)
+
             return memory
         except ClientError as e:
             # Failed to create memory

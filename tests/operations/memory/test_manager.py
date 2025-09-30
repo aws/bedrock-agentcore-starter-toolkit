@@ -2405,7 +2405,7 @@ def test_get_or_create_memory_creates_new_memory():
 
 
 def test_get_or_create_memory_returns_existing_memory():
-    """Test get_or_create_memory when existing memory is found."""
+    """Test get_or_create_memory when existing memory is found with matching strategies."""
     with patch("boto3.client"):
         manager = MemoryManager(region_name="us-east-1")
 
@@ -2420,15 +2420,20 @@ def test_get_or_create_memory_returns_existing_memory():
         ]
         mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
 
-        # Mock get_memory to return the existing memory details
+        # Mock get_memory to return the existing memory details with matching strategies
         mock_control_plane_client.get_memory.return_value = {
-            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SEMANTIC", "name": "TestStrategy", "description": "Test description"}],
+            }
         }
 
-        # Test get_or_create_memory
+        # Test get_or_create_memory with matching strategy (same name and description)
         result = manager.get_or_create_memory(
             name="TestMemory",
-            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy", "description": "Test description"}}],
             description="Test description",
         )
 
@@ -2790,3 +2795,174 @@ def test_get_or_create_memory_exception_handling():
             raise AssertionError("Exception was not raised")
         except Exception as e:
             assert "Unexpected error" in str(e)
+
+
+def test_get_or_create_memory_strategy_validation_success():
+    """Test get_or_create_memory strategy validation when strategies match."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with matching strategies (same name)
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SEMANTIC", "name": "TestStrategy", "description": "Test description"}],
+            }
+        }
+
+        # Test get_or_create_memory with matching strategy (same name and description)
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy", "description": "Test description"}}]
+        result = manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Verify get_memory was called
+        assert mock_control_plane_client.get_memory.called
+
+
+def test_get_or_create_memory_strategy_validation_mismatch():
+    """Test get_or_create_memory strategy validation when strategies don't match."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with different strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SUMMARIZATION", "name": "SummaryStrategy"}],
+            }
+        }
+
+        # Test get_or_create_memory with mismatched strategy
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
+
+        try:
+            manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+            raise AssertionError("ValueError was not raised")
+        except ValueError as e:
+            assert "Strategy mismatch" in str(e)
+            # The error should mention the type mismatch since we're comparing SUMMARIZATION vs SEMANTIC
+            assert ("type: value mismatch" in str(e) and "SUMMARIZATION" in str(e) and "SEMANTIC" in str(e)) or (
+                "name: value mismatch" in str(e) and "SummaryStrategy" in str(e) and "TestStrategy" in str(e)
+            )
+
+
+def test_get_or_create_memory_strategy_validation_multiple_strategies():
+    """Test get_or_create_memory strategy validation with multiple strategies."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with multiple strategies (matching names)
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [
+                    {"type": "SEMANTIC", "name": "SemanticStrategy", "description": "Semantic description"},
+                    {"type": "SUMMARIZATION", "name": "SummaryStrategy", "description": "Summary description"},
+                ],
+            }
+        }
+
+        # Test get_or_create_memory with matching multiple strategies (same names and descriptions)
+        strategies = [
+            {StrategyType.SEMANTIC.value: {"name": "SemanticStrategy", "description": "Semantic description"}},
+            {StrategyType.SUMMARY.value: {"name": "SummaryStrategy", "description": "Summary description"}},
+        ]
+        result = manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+
+def test_get_or_create_memory_strategy_validation_no_existing_strategies():
+    """Test get_or_create_memory strategy validation when existing memory has no strategies."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with no strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE", "strategies": []}
+        }
+
+        # Test get_or_create_memory with strategies when existing has none
+        strategies = [{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}]
+
+        try:
+            manager.get_or_create_memory(name="TestMemory", strategies=strategies)
+            raise AssertionError("ValueError was not raised")
+        except ValueError as e:
+            assert "Strategy mismatch" in str(e)
+            assert "Strategy count mismatch" in str(e)
+            assert "0 strategies" in str(e)
+            assert "1 strategies were requested" in str(e)
+
+
+def test_get_or_create_memory_no_strategy_validation_when_none_provided():
+    """Test get_or_create_memory skips validation when no strategies provided."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        # Mock the client
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock list_memories to return existing memory
+        existing_memories = [{"id": "TestMemory-abc123", "name": "TestMemory", "status": "ACTIVE"}]
+        mock_control_plane_client.list_memories.return_value = {"memories": existing_memories, "nextToken": None}
+
+        # Mock get_memory to return memory with any strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "id": "TestMemory-abc123",
+                "name": "TestMemory",
+                "status": "ACTIVE",
+                "strategies": [{"type": "SUMMARIZATION", "name": "SummaryStrategy"}],
+            }
+        }
+
+        # Test get_or_create_memory without providing strategies - should not validate
+        result = manager.get_or_create_memory(name="TestMemory")
+
+        assert result.id == "TestMemory-abc123"
+        assert isinstance(result, Memory)
+
+        # Should not raise any validation error
