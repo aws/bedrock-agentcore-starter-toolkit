@@ -121,6 +121,16 @@
       ]
     },
     {
+      "Sid": "BedrockAgentCoreIdentityGetCredentialProviderClientSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/oauth2/*"
+      ]
+    },
+    {
       "Sid": "BedrockAgentCoreIdentityGetResourceOauth2Token",
       "Effect": "Allow",
       "Action": [
