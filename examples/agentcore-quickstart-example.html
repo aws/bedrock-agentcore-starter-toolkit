@@ -1,0 +1,2500 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    
+      <meta name="description" content="Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents">
+    
+    
+    
+    
+    
+    
+    <link rel="icon" href=".." sizes="any">
+    <link rel="icon" href="../assets/images/favicon.png" type="image/svg+xml">
+    <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+
+    
+      
+        <title>Amazon Bedrock AgentCore Runtime: Memory + Code Interpreter Quickstart - Amazon Bedrock AgentCore</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#amazon-bedrock-agentcore-runtime-memory-code-interpreter-quickstart" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Amazon Bedrock AgentCore" class="md-header__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Amazon Bedrock AgentCore
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Amazon Bedrock AgentCore Runtime: Memory + Code Interpreter Quickstart
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../index.html" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="index.html" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contribute ❤️
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api-reference/runtime.html" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Amazon Bedrock AgentCore" class="md-nav__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Amazon Bedrock AgentCore
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Runtime
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            Runtime
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/permissions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Permissions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/async.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Async Processing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/notebook.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Notebook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Gateway
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            Gateway
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/gateway/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Memory
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            Memory
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/memory/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_5" id="__nav_1_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Identity
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            Identity
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/identity/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Built-in Tools
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            Built-in Tools
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/builtin-tools/quickstart-browser.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart Browser Tool
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/builtin-tools/quickstart-code-interpreter.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart Code Interpreter
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Observability
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_7">
+            <span class="md-nav__icon md-icon"></span>
+            Observability
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/observability/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Import Agent
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_8">
+            <span class="md-nav__icon md-icon"></span>
+            Import Agent
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="session-management.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Session Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="async-processing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Async Processing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="gateway-integration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Gateway Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contribute ❤️
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Bedrock AgentCore SDK
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            Bedrock AgentCore SDK
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/runtime.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Runtime
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/identity.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Identity
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/memory.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Memory
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/tools.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Built-in Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Bedrock AgentCore Starter Toolkit
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Bedrock AgentCore Starter Toolkit
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/cli.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AgentCore CLI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Create the Agent
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-configure-and-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Configure and Deploy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Configure and Deploy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure the Agent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-to-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy to Runtime
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-monitor-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Monitor Deployment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-test-memory-and-code-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Test Memory and Code Interpreter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 4: Test Memory and Code Interpreter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-short-term-memory-stm-immediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Short-Term Memory (STM) - Immediate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-long-term-memory-ltm-cross-session-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Long-Term Memory (LTM) - Cross-Session Persistence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-code-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Code Interpreter
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-view-traces-and-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: View Traces and Logs
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5: View Traces and Logs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-cloudwatch-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access CloudWatch Dashboard
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-agent-runtime-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      View Agent Runtime Logs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clean Up
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permissions Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Permissions Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#developer-permissions-for-starter-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Developer Permissions for Starter Toolkit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-generated-execution-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto-Generated Execution Role
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-memory-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Memory Selection
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observability-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observability Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="amazon-bedrock-agentcore-runtime-memory-code-interpreter-quickstart">Amazon Bedrock AgentCore Runtime: Memory + Code Interpreter Quickstart<a class="headerlink" href="#amazon-bedrock-agentcore-runtime-memory-code-interpreter-quickstart" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>This guide demonstrates deploying an AI agent that combines:</p>
+<ul>
+<li><strong>AgentCore Runtime</strong>: Managed compute service that runs your containerized agent with automatic scaling and built-in observability.</li>
+<li><strong>Short-term and long-term memory</strong> for conversation persistence within and across sessions</li>
+<li><strong>Code Interpreter tool</strong> for dynamic Python execution in AWS’s secure sandbox</li>
+<li><strong>Built-in observability</strong> via AWS X-Ray tracing and CloudWatch for monitoring agent behavior, memory operations, and tool usage</li>
+</ul>
+<p>You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>AWS Permissions:</strong> If you are a root user or using Admin credentails, then you can skip this pre-requisite. If you need specific permissions to use the starter toolkit. See the <a href="#permissions-reference">Permissions Reference</a> section for the complete IAM policy.</li>
+<li>AWS CLI configured (<code>aws configure</code>)</li>
+<li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with the Strands Agents see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
+<li>Python 3.10 or newer</li>
+</ul>
+<h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create virtual environment</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
+
+<span class="c1"># Install required packages</span>
+pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>strands-agents<span class="w"> </span>boto3
+</code></pre></div>
+<h2 id="understanding-the-architecture">Understanding the Architecture<a class="headerlink" href="#understanding-the-architecture" title="Permanent link">&para;</a></h2>
+<p>Key components in this implementation:</p>
+<ul>
+<li><strong>Runtime</strong>: Managed compute service that runs your containerized agent with automatic scaling. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime docs</a></li>
+<li><strong>Memory Service</strong>: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory docs</a></li>
+<li><strong>Code Interpreter</strong>: AWS-managed Python sandbox with pre-installed libraries. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a></li>
+<li><strong>Strands Framework</strong>: Simplifies agent creation with memory session management</li>
+<li><strong>AWS X-Ray &amp; CloudWatch</strong>: Automatic tracing and logging for complete visibility</li>
+</ul>
+<h2 id="step-1-create-the-agent">Step 1: Create the Agent<a class="headerlink" href="#step-1-create-the-agent" title="Permanent link">&para;</a></h2>
+<p>Create <code>strands_agentcore_starter.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Strands Agent with AgentCore Memory and Code Interpreter</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">strands</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">tool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.memory.integrations.strands.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentCoreMemoryConfig</span><span class="p">,</span> <span class="n">RetrievalConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.memory.integrations.strands.session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentCoreMemorySessionManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.tools.code_interpreter_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">CodeInterpreter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
+
+<span class="n">MEMORY_ID</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BEDROCK_AGENTCORE_MEMORY_ID&quot;</span><span class="p">)</span>
+<span class="n">REGION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
+<span class="n">MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;us.anthropic.claude-3-7-sonnet-20250219-v1:0&quot;</span>
+
+<span class="n">ci_sessions</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">current_session</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="nd">@tool</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute Python code for calculations or analysis.&quot;&quot;&quot;</span>
+    <span class="n">session_id</span> <span class="o">=</span> <span class="n">current_session</span> <span class="ow">or</span> <span class="s1">&#39;default&#39;</span>
+
+    <span class="k">if</span> <span class="n">session_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ci_sessions</span><span class="p">:</span>
+        <span class="n">ci_sessions</span><span class="p">[</span><span class="n">session_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;client&#39;</span><span class="p">:</span> <span class="n">CodeInterpreter</span><span class="p">(</span><span class="n">REGION</span><span class="p">),</span>
+            <span class="s1">&#39;session_id&#39;</span><span class="p">:</span> <span class="kc">None</span>
+        <span class="p">}</span>
+
+    <span class="n">ci</span> <span class="o">=</span> <span class="n">ci_sessions</span><span class="p">[</span><span class="n">session_id</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ci</span><span class="p">[</span><span class="s1">&#39;session_id&#39;</span><span class="p">]:</span>
+        <span class="n">ci</span><span class="p">[</span><span class="s1">&#39;session_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;session_</span><span class="si">{</span><span class="n">session_id</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">session_timeout_seconds</span><span class="o">=</span><span class="mi">1800</span>
+        <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ci</span><span class="p">[</span><span class="s1">&#39;client&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="s2">&quot;executeCode&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+        <span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;python&quot;</span>
+    <span class="p">})</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="k">if</span> <span class="n">stdout</span> <span class="o">:=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;structuredContent&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stdout&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">stdout</span>
+    <span class="k">return</span> <span class="s2">&quot;Executed&quot;</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">current_session</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">MEMORY_ID</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Memory not configured&quot;</span><span class="p">}</span>
+
+    <span class="n">actor_id</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;X-Amzn-Bedrock-AgentCore-Runtime-Custom-Actor-Id&#39;</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;headers&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;user&#39;</span>
+
+    <span class="n">session_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;session_id&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">)</span>
+    <span class="n">current_session</span> <span class="o">=</span> <span class="n">session_id</span>
+
+    <span class="n">memory_config</span> <span class="o">=</span> <span class="n">AgentCoreMemoryConfig</span><span class="p">(</span>
+        <span class="n">memory_id</span><span class="o">=</span><span class="n">MEMORY_ID</span><span class="p">,</span>
+        <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+        <span class="n">actor_id</span><span class="o">=</span><span class="n">actor_id</span><span class="p">,</span>
+        <span class="n">retrieval_config</span><span class="o">=</span><span class="p">{</span>
+            <span class="sa">f</span><span class="s2">&quot;/users/</span><span class="si">{</span><span class="n">actor_id</span><span class="si">}</span><span class="s2">/facts&quot;</span><span class="p">:</span> <span class="n">RetrievalConfig</span><span class="p">(</span><span class="n">top_k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">relevance_score</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">&quot;/users/</span><span class="si">{</span><span class="n">actor_id</span><span class="si">}</span><span class="s2">/preferences&quot;</span><span class="p">:</span> <span class="n">RetrievalConfig</span><span class="p">(</span><span class="n">top_k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">relevance_score</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">MODEL_ID</span><span class="p">,</span>
+        <span class="n">session_manager</span><span class="o">=</span><span class="n">AgentCoreMemorySessionManager</span><span class="p">(</span><span class="n">memory_config</span><span class="p">,</span> <span class="n">REGION</span><span class="p">),</span>
+        <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant. Use tools when appropriate.&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">calculate</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">))}</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<p>Create <code>requirements.txt</code>:</p>
+<div class="highlight"><pre><span></span><code>strands-agents
+bedrock-agentcore
+</code></pre></div>
+<h2 id="step-2-configure-and-deploy">Step 2: Configure and Deploy<a class="headerlink" href="#step-2-configure-and-deploy" title="Permanent link">&para;</a></h2>
+<p>The AgentCore CLI automates deployment with intelligent provisioning:</p>
+<h3 id="configure-the-agent">Configure the Agent<a class="headerlink" href="#configure-the-agent" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>strands_agentcore_starter.py
+
+<span class="c1"># Interactive prompts:</span>
+<span class="c1"># Execution role (press Enter to auto-create)</span>
+<span class="c1"># ECR repository (press Enter to auto-create)</span>
+<span class="c1"># Memory configuration:</span>
+<span class="c1">#   - If existing memories found: Choose from list or press Enter to create new</span>
+<span class="c1">#   - If creating new: Enable long-term memory extraction? (yes/no) → yes</span>
+<span class="c1">#   Note: Short-term memory is always enabled by default</span>
+</code></pre></div>
+<p><strong>What’s happening:</strong> The toolkit analyzes your code, detects the memory integration, prepares deployment configurations, and creates IAM roles with permissions for Memory. When observability is enabled, Transaction Search is automatically configured.</p>
+<h3 id="deploy-to-runtime">Deploy to Runtime<a class="headerlink" href="#deploy-to-runtime" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
+
+<span class="c1"># This performs:</span>
+<span class="c1"># 1. Memory resource provisioning (STM + LTM strategies)</span>
+<span class="c1"># 2. Docker container build with dependencies</span>
+<span class="c1"># 3. ECR repository push</span>
+<span class="c1"># 4. AgentCore Runtime deployment with X-Ray tracing enabled</span>
+<span class="c1"># 5. CloudWatch Transaction Search configuration (automatic)</span>
+<span class="c1"># 6. Endpoint activation with trace collection</span>
+</code></pre></div>
+<p><strong>Expected output:</strong></p>
+<div class="highlight"><pre><span></span><code>✅ Memory created: bedrock_agentcore_memory_ci_agent_memory-abc123
+Observability is enabled, configuring Transaction Search...
+✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
+🔍 GenAI Observability Dashboard:
+   https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
+✅ Container deployed to Bedrock AgentCore
+Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/memory_ci_agent-xyz
+</code></pre></div>
+<h2 id="step-3-monitor-deployment">Step 3: Monitor Deployment<a class="headerlink" href="#step-3-monitor-deployment" title="Permanent link">&para;</a></h2>
+<p>Check deployment status:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>status
+
+<span class="c1"># Shows:</span>
+<span class="c1"># Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123</span>
+<span class="c1"># Memory Status: CREATING - if still provisioning</span>
+<span class="c1"># Memory Type: STM+LTM (provisioning...) - if creating with LTM</span>
+<span class="c1"># Memory Type: STM+LTM (3 strategies) - when active with strategies</span>
+<span class="c1"># Memory Type: STM only - if configured without LTM</span>
+<span class="c1"># Observability: Enabled</span>
+</code></pre></div>
+<p><strong>Note:</strong> LTM strategies require 2-5 minutes to activate. STM is available immediately.</p>
+<h2 id="step-4-test-memory-and-code-interpreter">Step 4: Test Memory and Code Interpreter<a class="headerlink" href="#step-4-test-memory-and-code-interpreter" title="Permanent link">&para;</a></h2>
+<h3 id="test-short-term-memory-stm-immediate">Test Short-Term Memory (STM) - Immediate<a class="headerlink" href="#test-short-term-memory-stm-immediate" title="Permanent link">&para;</a></h3>
+<p>STM works immediately after deployment. Test within a single session:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Store information (session IDs must be 33+ characters)</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Remember that my favorite programming language is Python and I prefer tabs over spaces&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>test_session_2024_01_user123_preferences_abc
+
+<span class="c1"># If invoked too early (Memory still provisioning), you&#39;ll see:</span>
+<span class="c1"># &quot;Memory is still provisioning (current status: CREATING).</span>
+<span class="c1">#  Long-term memory extraction takes 60-90 seconds to activate.</span>
+<span class="c1">#</span>
+<span class="c1">#  Please wait and check status with:</span>
+<span class="c1">#    agentcore status&quot;</span>
+<span class="c1"># &quot;I&#39;ve noted that your favorite programming language is Python and you prefer tabs over spaces...&quot;</span>
+
+<span class="c1"># Retrieve within same session</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What is my favorite programming language?&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>test_session_2024_01_user123_preferences_abc
+
+<span class="c1"># Expected response:</span>
+<span class="c1"># &quot;Your favorite programming language is Python.&quot;</span>
+</code></pre></div>
+<h3 id="test-long-term-memory-ltm-cross-session-persistence">Test Long-Term Memory (LTM) - Cross-Session Persistence<a class="headerlink" href="#test-long-term-memory-ltm-cross-session-persistence" title="Permanent link">&para;</a></h3>
+<p>LTM enables information persistence across different sessions. This requires waiting for LTM extraction after storing information.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># First verify LTM is active</span>
+agentcore<span class="w"> </span>status
+<span class="c1"># Must show: Memory Status: ACTIVE and Memory Type: STM+LTM (3 strategies)</span>
+<span class="c1"># If Memory Status shows &quot;CREATING&quot;, wait 2-3 minutes</span>
+
+<span class="c1"># Session 1: Store facts</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;My email is user@example.com and I work at TechCorp as a senior engineer&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>ltm_test_session_one_2024_january_user123_xyz
+
+<span class="c1"># Wait for extraction</span>
+sleep<span class="w"> </span><span class="m">20</span>
+
+<span class="c1"># Session 2: Different session retrieves the facts</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What company do I work for?&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>ltm_test_session_two_2024_february_user456_abc
+
+<span class="c1"># Expected response:</span>
+<span class="c1"># &quot;You work at TechCorp.&quot;</span>
+</code></pre></div>
+<h3 id="test-code-interpreter">Test Code Interpreter<a class="headerlink" href="#test-code-interpreter" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Store data</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;My dataset has values: 23, 45, 67, 89, 12, 34, 56&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>test_session_2024_01_user123_preferences_abc
+
+<span class="c1"># Calculate using remembered data</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Calculate the mean and standard deviation of my dataset&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>test_session_2024_01_user123_preferences_abc
+
+<span class="c1"># Create visualization</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Create a text based bar chart visualization showing the distribution of values in my dataset with proper labels&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span>test_session_2024_01_user123_preferences_abc
+
+<span class="c1"># Expected: Agent generates matplotlib code to create a bar chart</span>
+</code></pre></div>
+<h2 id="step-5-view-traces-and-logs">Step 5: View Traces and Logs<a class="headerlink" href="#step-5-view-traces-and-logs" title="Permanent link">&para;</a></h2>
+<h3 id="access-cloudwatch-dashboard">Access CloudWatch Dashboard<a class="headerlink" href="#access-cloudwatch-dashboard" title="Permanent link">&para;</a></h3>
+<p>Navigate to the GenAI Observability dashboard:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get the dashboard URL from status</span>
+agentcore<span class="w"> </span>status
+
+<span class="c1"># Navigate to the URL shown, or go directly to:</span>
+<span class="c1"># https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core</span>
+</code></pre></div>
+<p><strong>What you’ll see:</strong></p>
+<p><strong>Service Map View:</strong></p>
+<ul>
+<li>Agent runtime connections to Memory and Code Interpreter services</li>
+<li>Request flow visualization</li>
+<li>Latency by service</li>
+</ul>
+<p><strong>Traces View (via X-Ray):</strong></p>
+<ul>
+<li>End-to-end request traces</li>
+<li>Memory retrieval operations</li>
+<li>Code Interpreter executions</li>
+<li>Agent reasoning steps</li>
+<li>Latency breakdown by component</li>
+</ul>
+<h3 id="view-agent-runtime-logs">View Agent Runtime Logs<a class="headerlink" href="#view-agent-runtime-logs" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># The correct log paths are shown in the invoke or status output</span>
+agentcore<span class="w"> </span>status
+
+<span class="c1"># You&#39;ll see log paths like:</span>
+<span class="c1"># aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name-prefix &quot;YYYY/MM/DD/[runtime-logs]&quot; --follow</span>
+
+<span class="c1"># Copy this command from the output to view logs</span>
+<span class="c1"># For example:</span>
+aws<span class="w"> </span>logs<span class="w"> </span>tail<span class="w"> </span>/aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT<span class="w"> </span>--log-stream-name-prefix<span class="w"> </span><span class="s2">&quot;YYYY/MM/DD/[runtime-logs]&quot;</span><span class="w"> </span>--follow
+
+<span class="c1"># For recent logs, use the --since option as shown in the output:</span>
+aws<span class="w"> </span>logs<span class="w"> </span>tail<span class="w"> </span>/aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT<span class="w"> </span>--log-stream-name-prefix<span class="w"> </span><span class="s2">&quot;YYYY/MM/DD/[runtime-logs]&quot;</span><span class="w"> </span>--since<span class="w"> </span>1h
+</code></pre></div>
+<h2 id="clean-up">Clean Up<a class="headerlink" href="#clean-up" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>destroy
+
+<span class="c1"># Removes:</span>
+<span class="c1"># - Runtime endpoint and agent</span>
+<span class="c1"># - Memory resources (STM + LTM)</span>
+<span class="c1"># - ECR repository and images</span>
+<span class="c1"># - IAM roles (if auto-created)</span>
+<span class="c1"># - CloudWatch log groups (optional)</span>
+</code></pre></div>
+<h2 id="permissions-reference">Permissions Reference<a class="headerlink" href="#permissions-reference" title="Permanent link">&para;</a></h2>
+<h3 id="developer-permissions-for-starter-toolkit">Developer Permissions for Starter Toolkit<a class="headerlink" href="#developer-permissions-for-starter-toolkit" title="Permanent link">&para;</a></h3>
+<p>To use the starter toolkit (<code>agentcore configure</code> and <code>agentcore launch</code> commands), you need the following IAM policy attached to your AWS user or role:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreRuntimeOperations&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:CreateAgentRuntime&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:UpdateAgentRuntime&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetAgentRuntime&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetAgentRuntimeEndpoint&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListAgentRuntimes&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListAgentRuntimeEndpoints&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteAgentRuntime&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteAgentRuntimeEndpoint&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:bedrock-agentcore:*:*:runtime/*&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemoryOperations&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:CreateMemory&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:UpdateMemory&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetMemory&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteMemory&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListMemories&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:bedrock-agentcore:*:*:memory/*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMRoleManagement&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;iam:CreateRole&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:DeleteRole&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:GetRole&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:PutRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:DeleteRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:AttachRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:DetachRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:TagRole&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:ListRolePolicies&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;iam:ListAttachedRolePolicies&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/*BedrockAgentCore*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/*BedrockAgentCore*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildProjectAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:StartBuild&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetBuilds&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:ListBuildsForProject&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:CreateProject&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:UpdateProject&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetProjects&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:project/bedrock-agentcore-*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:build/bedrock-agentcore-*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildListAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;codebuild:ListProjects&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMPassRoleAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;iam:PassRole&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/AmazonBedrockAgentCore*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudWatchLogsAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;logs:GetLogEvents&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;logs:DescribeLogGroups&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;logs:DescribeLogStreams&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;logs:PutResourcePolicy&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/codebuild/*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;S3Access&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;s3:ListBucket&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;s3:CreateBucket&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;s3:PutLifecycleConfiguration&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*/*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRRepositoryAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;ecr:CreateRepository&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:DescribeRepositories&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:GetRepositoryPolicy&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:InitiateLayerUpload&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:CompleteLayerUpload&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:PutImage&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:UploadLayerPart&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:BatchCheckLayerAvailability&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:GetDownloadUrlForLayer&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:BatchGetImage&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:ListImages&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:BatchDeleteImage&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:DeleteRepository&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;ecr:TagResource&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;arn:aws:ecr:*:*:repository/bedrock-agentcore-*&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRAuthorizationAccess&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;ecr:GetAuthorizationToken&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XRayConfiguration&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;xray:UpdateTraceSegmentDestination&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;xray:UpdateIndexingRule&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;xray:GetTraceSegmentDestination&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;xray:GetIndexingRules&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;STSGetCallerIdentity&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;sts:GetCallerIdentity&quot;</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="auto-generated-execution-role">Auto-Generated Execution Role<a class="headerlink" href="#auto-generated-execution-role" title="Permanent link">&para;</a></h3>
+<p><strong>Important</strong>: The starter toolkit automatically creates an execution role with all necessary permissions when you run <code>agentcore configure</code>. You do NOT need to create this role manually. The auto-generated role includes permissions for:</p>
+<ul>
+<li><strong>Memory operations</strong> (create, read, write, retrieve)</li>
+<li><strong>Code Interpreter sessions</strong> (create, invoke, manage)</li>
+<li><strong>Model invocation</strong> (Bedrock models)</li>
+<li><strong>CloudWatch logging and X-Ray tracing</strong></li>
+<li><strong>ECR image access</strong></li>
+</ul>
+<p>The execution role is created with a name pattern: <code>AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}</code></p>
+<p>For reference, the auto-generated execution role includes these additional permissions for Memory and Code Interpreter:</p>
+<p><strong>Memory Permissions (automatically included):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemoryCreateMemory&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateMemory&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="p">},</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemory&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateEvent&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetEvent&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetMemory&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetMemoryRecord&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListActors&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListEvents&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListMemoryRecords&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListSessions&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteEvent&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteMemoryRecord&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:RetrieveMemoryRecords&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Code Interpreter Permissions (automatically included):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreCodeInterpreter&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateCodeInterpreter&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:StartCodeInterpreterSession&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:InvokeCodeInterpreter&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:StopCodeInterpreterSession&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteCodeInterpreter&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListCodeInterpreters&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetCodeInterpreter&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetCodeInterpreterSession&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListCodeInterpreterSessions&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:aws:code-interpreter/*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter-custom/*&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="understanding-memory-selection">Understanding Memory Selection<a class="headerlink" href="#understanding-memory-selection" title="Permanent link">&para;</a></h3>
+<p>The toolkit provides intelligent memory management:</p>
+<p><strong>Reusing Existing Memory:</strong>
+- Lists up to 10 existing memory resources from your account
+- Useful for sharing memory across agents or redeploying
+- Preserves all existing conversation history and extracted facts</p>
+<p><strong>Creating New Memory:</strong>
+- Short-term memory (STM) always enabled - stores exact conversations
+- Optional long-term memory (LTM) - extracts facts, preferences, and summaries
+- Each agent can have its own isolated memory or share with others</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="memory-issues">Memory Issues<a class="headerlink" href="#memory-issues" title="Permanent link">&para;</a></h3>
+<p><strong>“Memory status is not active” error:</strong></p>
+<ul>
+<li>Run <code>agentcore status</code> to check memory status</li>
+<li>If showing “provisioning”, wait 2-3 minutes</li>
+<li>Retry after status shows “STM+LTM (3 strategies)”</li>
+</ul>
+<p><strong>Cross-session memory not working:</strong></p>
+<ul>
+<li>Verify LTM is active (not “provisioning”)</li>
+<li>Wait 15-30 seconds after storing facts for extraction</li>
+<li>Check extraction logs for completion</li>
+</ul>
+<h3 id="observability-issues">Observability Issues<a class="headerlink" href="#observability-issues" title="Permanent link">&para;</a></h3>
+<p><strong>No traces appearing:</strong></p>
+<ul>
+<li>Verify observability was enabled during <code>agentcore configure</code></li>
+<li>Check IAM permissions include CloudWatch and X-Ray access</li>
+<li>Wait 30-60 seconds for traces to appear in CloudWatch</li>
+<li>Traces are viewable at: AWS Console → CloudWatch → Service Map or X-Ray → Traces</li>
+</ul>
+<p><strong>Missing memory logs:</strong></p>
+<ul>
+<li>Check log group exists: <code>/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/&lt;memory-id&gt;</code></li>
+<li>Verify IAM role has CloudWatch Logs permissions</li>
+</ul>
+<h3 id="performance-issues">Performance Issues<a class="headerlink" href="#performance-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Code Interpreter timeout:</strong></p>
+<ul>
+<li>Simplify calculations or break into smaller steps</li>
+<li>Check CloudWatch logs for actual execution details</li>
+</ul>
+<p><strong>High latency (&gt;1s):</strong></p>
+<ul>
+<li>Check X-Ray trace breakdown to identify bottleneck</li>
+<li>First Code Interpreter call is slower (~500ms for session creation)</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>You’ve deployed a production agent with:</p>
+<ul>
+<li><strong>AgentCore Runtime</strong> for managed container orchestration</li>
+<li><strong>Memory Service</strong> with STM for immediate context and LTM for cross-session persistence</li>
+<li><strong>Code Interpreter</strong> for secure Python execution with data visualization capabilities</li>
+<li><strong>AWS X-Ray Tracing</strong> automatically configured for distributed tracing</li>
+<li><strong>CloudWatch Integration</strong> for logs and metrics with Transaction Search enabled</li>
+</ul>
+<p>All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.​​​​​​​​​​​​​​​​</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+        <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+      
+        <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
