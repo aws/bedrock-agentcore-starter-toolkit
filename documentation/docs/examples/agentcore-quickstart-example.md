@@ -14,7 +14,7 @@ You’ll build and deploy an agent with runtime hosting, memory persistence, sec
 
 ## Prerequisites
 
-- **AWS Permissions:** You need specific permissions to use the starter toolkit. See the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
+- **AWS Permissions:** If you are a root user or using Admin credentails, then you can skip this pre-requisite. If you need specific permissions to use the starter toolkit. See the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
 - AWS CLI configured (`aws configure`)
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with the Strands Agents see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
@@ -42,7 +42,7 @@ Key components in this implementation:
 
 ## Step 1: Create the Agent
 
-Create `strands_quickstart_agent.py`:
+Create `strands_agentcore_starter.py`:
 
 ```python
 """
@@ -94,25 +94,6 @@ def invoke(payload, context):
     if not MEMORY_ID:
         return {"error": "Memory not configured"}
 
-    # Check memory status
-    try:
-        memory_client = MemoryClient(region_name=REGION)
-        memory = memory_client.get_memory(memory_id=MEMORY_ID)
-
-        if memory['status'] != 'ACTIVE':
-            agent = Agent(
-                model=MODEL_ID,
-                system_prompt="You are a helpful assistant.",
-                tools=[calculate]
-            )
-            result = agent(payload.get("prompt", ""))
-            return {
-                "response": f"[Memory initializing] {result.message.get('content', [{}])[0].get('text', '')}",
-                "session_id": "temp"
-            }
-    except Exception:
-        pass
-
     session_id = getattr(context, 'session_id', 'default')
 
     memory_config = AgentCoreMemoryConfig(
@@ -153,7 +134,7 @@ The AgentCore CLI automates deployment with intelligent provisioning:
 ### Configure the Agent
 
 ```bash
-agentcore configure -e strands_quickstart_agent.py
+agentcore configure -e strands_agentcore_starter.py
 
 # Interactive prompts:
 # Execution role (press Enter to auto-create)
@@ -225,9 +206,7 @@ agentcore invoke '{"prompt": "Remember that my favorite programming language is 
 #  Long-term memory extraction takes 60-90 seconds to activate.
 #
 #  Please wait and check status with:
-#    agentcore status
-#
-#  Once memory status shows 'ACTIVE', you can invoke your agent."
+#    agentcore status"
 # "I've noted that your favorite programming language is Python and you prefer tabs over spaces..."
 
 # Retrieve within same session

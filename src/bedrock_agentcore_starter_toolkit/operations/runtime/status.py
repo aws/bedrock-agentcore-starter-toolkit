@@ -45,8 +45,9 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
             memory_manager = MemoryManager(region_name=agent_config.aws.region)
 
             # Get full memory details
+            memory_status = memory_manager.get_memory_status(agent_config.memory.memory_id)
             memory = memory_manager.get_memory(agent_config.memory.memory_id)
-            memory_status = memory.get("status", "UNKNOWN")
+            strategies = memory_manager.get_memory_strategies(agent_config.memory.memory_id)
 
             # Build detailed memory info
             memory_details = {
@@ -61,7 +62,6 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
             }
 
             # Get strategy details
-            strategies = memory.get("strategies", [])
             for strategy in strategies:
                 strategy_info = {
                     "id": strategy.get("strategyId"),

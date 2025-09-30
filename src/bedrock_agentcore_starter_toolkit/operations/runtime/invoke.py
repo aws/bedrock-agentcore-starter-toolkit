@@ -50,7 +50,7 @@ def invoke_bedrock_agentcore(
                     f"Memory is still provisioning (current status: {memory_status}). "
                     f"Long-term memory extraction takes 60-180 seconds to activate.\n\n"
                     f"Please wait and check status with:\n"
-                    f"  agentcore status{f' --agent {agent_name}' if agent_name else ''}\n\n"
+                    f"  agentcore status{f' --agent {agent_name}' if agent_name else ''}"
                 )
 
                 # Log the message for visibility
