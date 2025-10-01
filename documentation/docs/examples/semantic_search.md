@@ -94,4 +94,9 @@ for record in memory_records:
     print(f"retrieved memory: {record}")
     print("--------------------------------------------------------------------")
 
+
+# Cleanup - delete the memory resource
+print("Cleaning up...")
+
+memory_manager.delete_memory(memory_id=memory.get("id"))
 ```

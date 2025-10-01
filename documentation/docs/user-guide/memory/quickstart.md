@@ -28,20 +28,24 @@ pip install bedrock-agentcore-starter-toolkit
 ```
 
 
-**Note: The AgentCore Starter Toolkit is intended to help developers get started quickly. The Boto3 Python library provides the most comprehensive set of operations for AgentCore Memory. You can find the Boto3 documentation here.**
+**Note:** The AgentCore Starter Toolkit is intended to help developers get started quickly. For the complete set of AgentCore Memory operations, see the Boto3 documentation: [bedrock-agentcore-control](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore-control.html) and [bedrock-agentcore](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore.html).
 
+
+
+**Full example:** See the [complete code example](../../examples/semantic_search.md) that demonstrates steps 1-3.
 
 ## Step One: Create a Memory Resource
 
 A memory resource is needed to start storing information for your agent. By default, memory events (which we refer to as short-term memory) can be written to a memory resource. In order for insights to be extracted and placed into long term memory records, the resource requires a 'memory strategy' - a configuration that defines how conversational data should be processed, and what information to extract (such as facts, preferences, or summaries).
 
-We are going to create a memory resource with a semantic strategy so that both short term and long term memory can be utilized. This will take 1-2 minutes. Memory resources can also be created in the AWS console.
+We are going to create a memory resource with a semantic strategy so that both short term and long term memory can be utilized. This will take 2-3 minutes. Memory resources can also be created in the AWS console.
 
 ```python
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
 from bedrock_agentcore.memory.session import MemorySessionManager
-from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import (
-    SemanticStrategy)
+from bedrock_agentcore.memory.constants import ConversationalMessage, MessageRole
+from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import SemanticStrategy
+import time
 
 memory_manager = MemoryManager(region_name="us-west-2")
 
@@ -49,10 +53,11 @@ print("Creating memory resource...")
 
 memory = memory_manager.get_or_create_memory(
     name="CustomerSupportSemantic",
-    description="Customer suppoer memory store",
+    description="Customer support memory store",
     strategies=[
         SemanticStrategy(
             name="semanticLongTermMemory",
+            namespaces=['/strategies/{memoryStrategyId}/actors/{actorId}'],
         )
     ]
 )
@@ -122,6 +127,9 @@ events = session_manager.list_events(
     actor_id="User1",
     session_id="OrderSupportSession1"
 )
+
+for event in events:
+    print(f"Event: {event}")
 ```
 
 
@@ -135,9 +143,12 @@ You can list all memory records with:
 
 ```python
 # List all memory records
-session_manager.list_long_term_memory_records(
+memory_records = session_manager.list_long_term_memory_records(
     namespace_prefix="/"
 )
+
+for record in memory_records:
+    print(f"Memory record: {record}")
 ```
 
 Or ask for the most relevant information as part of a semantic search:
@@ -154,7 +165,14 @@ memory_records = session_manager.search_long_term_memories(
 
 Important information about the user is likely stored is long term memory. Agents can use long term memory rather than a full conversation history to make sure that LLMs are not overloaded with context.
 
-The full example source file showing steps 1 - 3 is available [here](../../examples/semantic_search.md).
+## Cleanup
+
+When you're done with the memory resource, you can delete it:
+
+```python
+# Delete the memory resource
+memory_manager.delete_memory(memory_id=memory.get("id"))
+```
 
 ## What’s Next?
 
