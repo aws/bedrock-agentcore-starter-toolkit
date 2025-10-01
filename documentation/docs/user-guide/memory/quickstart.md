@@ -40,7 +40,6 @@ We are going to create a memory resource with a semantic strategy so that both s
 ```python
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
 from bedrock_agentcore.memory.session import MemorySessionManager
-from bedrock_agentcore.memory.constants import StrategyType
 from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import (
     SemanticStrategy)
 

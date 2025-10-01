@@ -7,7 +7,7 @@ This example demonstrates the complete workflow for creating a memory resource w
 
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
 from bedrock_agentcore.memory.session import MemorySessionManager
-from bedrock_agentcore.memory.constants import StrategyType, ConversationalMessage, MessageRole
+from bedrock_agentcore.memory.constants import ConversationalMessage, MessageRole
 from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import SemanticStrategy
 import time
 
