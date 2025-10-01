@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.16] - 2025-10-01
+
+### Changes
+
+- fix: initialize ConfigurationManager with non_interactive flag (#240) (3b92653)
+- Add cleanup section and fix documentation links (#239) (cba1169)
+
 ## [0.1.15] - 2025-10-01
 
 ### Changes
