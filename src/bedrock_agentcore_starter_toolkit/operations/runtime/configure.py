@@ -119,7 +119,7 @@ def configure_bedrock_agentcore(
     if verbose:
         log.debug("Prompting for memory configuration")
 
-    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml")
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive)
 
     # New memory selection flow
     action, value = config_manager.prompt_memory_selection()
