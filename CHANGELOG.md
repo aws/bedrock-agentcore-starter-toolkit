@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.16] - 2025-10-01
+
+### Changes
+
+- fix: don't fail validation for empty namespaces for during get_or_create when strategy defaults server side (#235) (3557359)
+- chore: make doc titles more meaningful (#229) (9c860d7)
+- Update memory quickstart (#234) (98a192b)
+- chore: bump version to 0.1.15 (#233) (0561bb5)
+
 ## [0.1.15] - 2025-10-01
 
 ### Changes
