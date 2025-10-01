@@ -126,14 +126,14 @@ echo "export COGNITO_PASSWORD='$PASSWORD'"
 
 ```
 
-## Step 1: Create a credential provider 
+## Step 1: Create a credential provider
 
 Credential providers are how your agent accesses external services. Create a credential provider and configure it with an OAuth 2.0 client for your authorization server.
 
 If you are using your own authorization server, set the environment variables `ISSUER_URL`, `CLIENT_ID`, and `CLIENT_SECRET` with their appropriate values from your authorization server. If you are using the previous script to create an authorization server for you with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables.
 
 This credential provider will be used by your agent's code to get access tokens to act on behalf of your user.
- 
+
 
 
 
@@ -157,7 +157,7 @@ aws bedrock-agentcore-control create-oauth2-credential-provider \
 
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
 
-In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user. 
+In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user.
 
 
 ### Agent code

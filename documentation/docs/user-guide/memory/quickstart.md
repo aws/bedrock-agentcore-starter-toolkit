@@ -1,6 +1,6 @@
 # Getting Started with AgentCore Memory
 
-Amazon Bedrock AgentCore Memory lets you create and manage memory resources that store conversation context for your AI agents. This section guides you through installing dependencies and implementing both short-term and long-term memory features. 
+Amazon Bedrock AgentCore Memory lets you create and manage memory resources that store conversation context for your AI agents. This section guides you through installing dependencies and implementing both short-term and long-term memory features.
 
 The steps are as follows
 
@@ -80,7 +80,7 @@ memories = memory_manager.list_memories()
 Writing events to memory has multiple purposes. First, event contents (most commonly conversation history) are stored as short term memory. Second, relevant insights are pulled from events and written into memory records as a part of long term memory.
 
 The memory resource id, actor id, and session id are required to create an event. We are going to create three events, simulating messages between an end user and a chat bot.
- 
+
 
 ```python
 # Create a session to store memory events
@@ -178,4 +178,3 @@ Consider the following as you continue your AgentCore journey
 * Add another strategy to your memory resource
 * Enable observability for more visibility into how memory is working
 * Look at the vast collection of samples to familiarize yourself with other use cases.
-

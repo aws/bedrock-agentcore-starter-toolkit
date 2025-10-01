@@ -40,7 +40,7 @@ The `MemoryManager` class provides a comprehensive interface for managing AWS Be
 ```python
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
 from bedrock_agentcore_starter_toolkit.operations.memory.models import (
-    SemanticStrategy, SummaryStrategy, UserPreferenceStrategy, 
+    SemanticStrategy, SummaryStrategy, UserPreferenceStrategy,
     CustomSemanticStrategy, ExtractionConfig, ConsolidationConfig
 )
 
@@ -625,7 +625,7 @@ dev_config = BotocoreConfig(
 )
 
 dev_manager = MemoryManager(
-    region_name="us-east-1", 
+    region_name="us-east-1",
     boto_client_config=dev_config
 )
 
@@ -691,7 +691,7 @@ try:
 except ClientError as e:
     error_code = e.response['Error']['Code']
     error_message = e.response['Error']['Message']
-    
+
     if error_code == 'ValidationException':
         print(f"Invalid parameters: {error_message}")
     elif error_code == 'ResourceNotFoundException':
@@ -700,13 +700,13 @@ except ClientError as e:
         print(f"Access denied: {error_message}")
     else:
         print(f"AWS error ({error_code}): {error_message}")
-        
+
 except TimeoutError as e:
     print(f"Operation timed out: {e}")
-    
+
 except RuntimeError as e:
     print(f"Memory operation failed: {e}")
-    
+
 except Exception as e:
     print(f"Unexpected error: {e}")
 ```
@@ -722,9 +722,9 @@ def safe_add_strategy(manager, memory_id, strategy):
         if status != "ACTIVE":
             print(f"Memory is {status}, waiting for ACTIVE state...")
             # Could implement custom waiting logic here
-            
+
         return manager.add_strategy_and_wait(memory_id, strategy)
-        
+
     except ClientError as e:
         if e.response['Error']['Code'] == 'ConflictException':
             print("Memory is being modified, retrying...")
@@ -745,7 +745,7 @@ def validate_and_add_strategy(manager, memory_id, strategy):
         except ValidationError as e:
             print(f"Strategy validation failed: {e}")
             return None
-    
+
     return manager.add_strategy_and_wait(memory_id, strategy)
 ```
 
@@ -1011,16 +1011,16 @@ def debug_memory_state(manager, memory_id):
     try:
         memory = manager.get_memory(memory_id)
         print(f"Memory Status: {memory.status}")
-        
+
         strategies = manager.get_memory_strategies(memory_id)
         print(f"Number of strategies: {len(strategies)}")
-        
+
         for strategy in strategies:
             print(f"  Strategy: {strategy.name}")
             print(f"    ID: {strategy.strategyId}")
             print(f"    Type: {strategy.get('type', 'N/A')}")
             print(f"    Status: {strategy.get('status', 'N/A')}")
-            
+
     except Exception as e:
         print(f"Error debugging memory {memory_id}: {e}")
 

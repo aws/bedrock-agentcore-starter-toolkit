@@ -68,25 +68,25 @@ current_session = None
 def calculate(code: str) -> str:
     """Execute Python code for calculations or analysis."""
     session_id = current_session or 'default'
-    
+
     if session_id not in ci_sessions:
         ci_sessions[session_id] = {
             'client': CodeInterpreter(REGION),
             'session_id': None
         }
-    
+
     ci = ci_sessions[session_id]
     if not ci['session_id']:
         ci['session_id'] = ci['client'].start(
             name=f"session_{session_id[:30]}",
             session_timeout_seconds=1800
         )
-    
+
     result = ci['client'].invoke("executeCode", {
         "code": code,
         "language": "python"
     })
-    
+
     for event in result.get("stream", []):
         if stdout := event.get("result", {}).get("structuredContent", {}).get("stdout"):
             return stdout
@@ -95,15 +95,15 @@ def calculate(code: str) -> str:
 @app.entrypoint
 def invoke(payload, context):
     global current_session
-    
+
     if not MEMORY_ID:
         return {"error": "Memory not configured"}
-    
+
     actor_id = context.headers.get('X-Amzn-Bedrock-AgentCore-Runtime-Custom-Actor-Id', 'user') if hasattr(context, 'headers') else 'user'
-    
+
     session_id = getattr(context, 'session_id', 'default')
     current_session = session_id
-    
+
     memory_config = AgentCoreMemoryConfig(
         memory_id=MEMORY_ID,
         session_id=session_id,
@@ -113,14 +113,14 @@ def invoke(payload, context):
             f"/users/{actor_id}/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
         }
     )
-    
+
     agent = Agent(
         model=MODEL_ID,
         session_manager=AgentCoreMemorySessionManager(memory_config, REGION),
         system_prompt="You are a helpful assistant. Use tools when appropriate.",
         tools=[calculate]
     )
-    
+
     result = agent(payload.get("prompt", ""))
     return {"response": result.message.get('content', [{}])[0].get('text', str(result))}
 

@@ -1066,6 +1066,7 @@ class TestStrategyComparator:
 
         assert matches is False  # Should fail when both namespaces are non-empty but different
         assert "namespaces: mismatch" in error
+
     def test_compare_strategies_namespaces_skip_validation(self):
         """Test comparing strategies with namespaces - should skip validation when one is empty."""
         existing = [
