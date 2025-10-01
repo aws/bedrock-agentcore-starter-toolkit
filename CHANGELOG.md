@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.17] - 2025-10-01
+
+### Changes
+
+- chore: sync main with PyPI version 0.1.16 (#242) (c414fe5)
+- fix: initialize ConfigurationManager with non_interactive flag (#240) (3b92653)
+- Add cleanup section and fix documentation links (#239) (cba1169)
+
 ## [0.1.16] - 2025-10-01
 
 ### Changes
