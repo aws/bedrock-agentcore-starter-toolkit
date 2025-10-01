@@ -75,12 +75,11 @@ print("Waiting 2 minutes for semantic processing...")
 time.sleep(120)
 
 # List all memory records
-memory_records = session_manager.list_memory_records(
-    memoryId=memory.get("id"),
-    namespace="/"
+memory_records = session_manager.list_long_term_memory_records(
+    namespace_prefix="/"
 )
 
-for record in memory_records.get("memoryRecordSummaries", []):
+for record in memory_records:
     print(f"Memory record: {record}")
     print("--------------------------------------------------------------------")
 

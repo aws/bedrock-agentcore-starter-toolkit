@@ -135,9 +135,8 @@ You can list all memory records with:
 
 ```python
 # List all memory records
-memory_records = session_manager.list_memory_records(
-    memoryId=memory.get("id"),
-    namespace="/"
+session_manager.list_long_term_memory_records(
+    namespace_prefix="/"
 )
 ```
 
