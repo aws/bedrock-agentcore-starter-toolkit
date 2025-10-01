@@ -406,7 +406,7 @@ class TestUniversalComparatorEdgeCases:
 
     def test_deep_compare_normalized_namespaces_special_handling(self):
         """Test _deep_compare_normalized special handling for namespaces."""
-        # Test namespaces at root level
+        # Test namespaces at root level - should pass when both are non-empty and match (order independent)
         obj1 = ["namespace1", "namespace2"]
         obj2 = ["namespace2", "namespace1"]  # Different order
 
@@ -414,21 +414,37 @@ class TestUniversalComparatorEdgeCases:
         assert matches is True
         assert error == ""
 
-        # Test namespaces with duplicates
+        # Test namespaces with duplicates - should pass (sets remove duplicates)
         obj1 = ["namespace1", "namespace2", "namespace1"]
         obj2 = ["namespace2", "namespace1"]
 
         matches, error = UniversalComparator._deep_compare_normalized(obj1, obj2, "namespaces")
-        assert matches is True  # Sets remove duplicates
+        assert matches is True
         assert error == ""
 
-        # Test namespaces mismatch
+        # Test namespaces mismatch - should fail when both are non-empty but different
         obj1 = ["namespace1", "namespace2"]
         obj2 = ["namespace3", "namespace4"]
 
         matches, error = UniversalComparator._deep_compare_normalized(obj1, obj2, "namespaces")
         assert matches is False
         assert "namespaces: mismatch" in error
+
+        # Test empty vs non-empty namespaces - should pass (skip validation)
+        obj1 = []
+        obj2 = ["namespace1", "namespace2"]
+
+        matches, error = UniversalComparator._deep_compare_normalized(obj1, obj2, "namespaces")
+        assert matches is True
+        assert error == ""
+
+        # Test None vs non-empty namespaces - should pass (skip validation)
+        obj1 = None
+        obj2 = ["namespace1", "namespace2"]
+
+        matches, error = UniversalComparator._deep_compare_normalized(obj1, obj2, "namespaces")
+        assert matches is True
+        assert error == ""
 
     def test_deep_compare_normalized_dict_namespaces_special_handling(self):
         """Test _deep_compare_normalized special handling for namespaces in dicts."""
@@ -1026,7 +1042,7 @@ class TestStrategyComparator:
         assert "description: value mismatch" in error
 
     def test_compare_strategies_namespaces_mismatch(self):
-        """Test comparing strategies with namespaces mismatch."""
+        """Test comparing strategies with namespaces mismatch - should fail when both are non-empty."""
         existing = [
             {
                 "type": "SEMANTIC",
@@ -1048,8 +1064,33 @@ class TestStrategyComparator:
 
         matches, error = StrategyComparator.compare_strategies(existing, requested)
 
-        assert matches is False
+        assert matches is False  # Should fail when both namespaces are non-empty but different
         assert "namespaces: mismatch" in error
+    def test_compare_strategies_namespaces_skip_validation(self):
+        """Test comparing strategies with namespaces - should skip validation when one is empty."""
+        existing = [
+            {
+                "type": "SEMANTIC",
+                "name": "SemanticStrategy",
+                "description": "Test strategy",
+                "namespaces": [],  # Empty namespaces
+            }
+        ]
+
+        requested = [
+            {
+                "semanticMemoryStrategy": {
+                    "name": "SemanticStrategy",
+                    "description": "Test strategy",
+                    "namespaces": ["different/{actorId}"],  # Non-empty namespaces
+                }
+            }
+        ]
+
+        matches, error = StrategyComparator.compare_strategies(existing, requested)
+
+        assert matches is True  # Should pass when one namespace is empty
+        assert error == ""
 
     def test_compare_strategies_custom_extraction_mismatch(self):
         """Test comparing custom strategies with extraction config mismatch."""

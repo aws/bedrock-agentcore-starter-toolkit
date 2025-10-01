@@ -47,6 +47,21 @@ class UniversalComparator:
     @staticmethod
     def _deep_compare_normalized(obj1: Any, obj2: Any, path: str = "") -> tuple[bool, str]:
         """Compare normalized objects recursively."""
+        # Special handling for namespaces - check this first before general type/None handling
+        if path == "namespaces":
+            # Skip validation if either is None/empty or both are None
+            # This allows server-side namespace assignment when not provided by user
+            if not obj1 or not obj2:
+                return True, ""
+            # Only validate if both are non-empty lists
+            if isinstance(obj1, list) and isinstance(obj2, list):
+                set1 = set(obj1) if obj1 else set()
+                set2 = set(obj2) if obj2 else set()
+                if set1 != set2:
+                    return False, f"{path}: mismatch ({sorted(set1)} vs {sorted(set2)})"
+                return True, ""
+            # If not both lists, fall through to normal comparison
+
         # Handle None equivalence - treat None and empty values as equivalent
         if obj1 is None and obj2 is None:
             return True, ""
@@ -69,12 +84,18 @@ class UniversalComparator:
                 val1 = obj1.get(key)
                 val2 = obj2.get(key)
 
-                # Special handling for namespaces - compare as sets (order-independent)
-                if key == "namespaces" and isinstance(val1, list) and isinstance(val2, list):
-                    set1 = set(val1) if val1 else set()
-                    set2 = set(val2) if val2 else set()
-                    if set1 != set2:
-                        return False, f"{key_path}: mismatch ({sorted(set1)} vs {sorted(set2)})"
+                # Special handling for namespaces - only validate when both are non-empty lists
+                if key == "namespaces":
+                    # Skip validation if either is None/empty or both are None
+                    # This allows server-side namespace assignment when not provided by user
+                    if not val1 or not val2:
+                        continue
+                    # Only validate if both are non-empty lists of strings
+                    if isinstance(val1, list) and isinstance(val2, list):
+                        set1 = set(val1) if val1 else set()
+                        set2 = set(val2) if val2 else set()
+                        if set1 != set2:
+                            return False, f"{key_path}: mismatch ({sorted(set1)} vs {sorted(set2)})"
                     continue
 
                 matches, error = UniversalComparator._deep_compare_normalized(val1, val2, key_path)
@@ -84,14 +105,6 @@ class UniversalComparator:
             return True, ""
 
         elif isinstance(obj1, list):
-            # Special case: if this is a namespaces list at the root level, compare as sets
-            if path == "namespaces":
-                set1 = set(obj1) if obj1 else set()
-                set2 = set(obj2) if obj2 else set()
-                if set1 != set2:
-                    return False, f"{path}: mismatch ({sorted(set1)} vs {sorted(set2)})"
-                return True, ""
-
             if len(obj1) != len(obj2):
                 return False, f"{path}: list length mismatch ({len(obj1)} vs {len(obj2)})"
 
