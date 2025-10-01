@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.16] - 2025-10-01
+
+### Changes
+
+- Update memory quickstart by @mikewrighton in #234
+- chore: make doc titles more meaningful by @theumbrella1 in #229
+- fix: don't fail validation for empty namespaces by @jona62 in #235
+
 ## [0.1.15] - 2025-10-01
 
 ### Changes
