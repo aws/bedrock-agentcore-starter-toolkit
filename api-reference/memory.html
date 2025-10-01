@@ -19074,8 +19074,8 @@ Memory services.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">_memory_id</span> <span class="o">=</span> <span class="n">memory_id</span>
 
         <span class="c1"># Setup session and validate region consistency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">region_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_resolve_region</span><span class="p">(</span><span class="n">region_name</span><span class="p">,</span> <span class="n">boto3_session</span><span class="p">)</span>
         <span class="n">session</span> <span class="o">=</span> <span class="n">boto3_session</span> <span class="k">if</span> <span class="n">boto3_session</span> <span class="k">else</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">region_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_resolve_region</span><span class="p">(</span><span class="n">region_name</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
 
         <span class="c1"># Configure and create boto3 client</span>
         <span class="n">client_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_config</span><span class="p">(</span><span class="n">boto_client_config</span><span class="p">)</span>
@@ -19098,12 +19098,12 @@ Memory services.</p>
             <span class="s2">&quot;list_events&quot;</span><span class="p">,</span>
         <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_and_resolve_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">session</span><span class="p">:</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_and_resolve_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate region consistency and resolve the final region to use.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            region_name: Explicitly provided region name</span>
-<span class="sd">            session: Boto3 session instance</span>
+<span class="sd">            session: Optional Boto3 session instance</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The resolved region name to use</span>
@@ -19111,10 +19111,10 @@ Memory services.</p>
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If region_name conflicts with session region</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">session_region</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">region_name</span>
+        <span class="n">session_region</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">region_name</span> <span class="k">if</span> <span class="n">session</span> <span class="k">else</span> <span class="kc">None</span>
 
         <span class="c1"># Validate region consistency if both are provided</span>
-        <span class="k">if</span> <span class="n">region_name</span> <span class="ow">and</span> <span class="n">session_region</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">session_region</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">region_name</span> <span class="o">!=</span> <span class="n">session_region</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">region_name</span> <span class="ow">and</span> <span class="n">session</span> <span class="ow">and</span> <span class="n">session_region</span> <span class="ow">and</span> <span class="p">(</span><span class="n">region_name</span> <span class="o">!=</span> <span class="n">session_region</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Region mismatch: provided region_name &#39;</span><span class="si">{</span><span class="n">region_name</span><span class="si">}</span><span class="s2">&#39; does not match &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;boto3_session region &#39;</span><span class="si">{</span><span class="n">session_region</span><span class="si">}</span><span class="s2">&#39;. Please ensure both &quot;</span>
@@ -20205,8 +20205,8 @@ events = manager.list_events(...)</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_memory_id</span> <span class="o">=</span> <span class="n">memory_id</span>
 
     <span class="c1"># Setup session and validate region consistency</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">region_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_resolve_region</span><span class="p">(</span><span class="n">region_name</span><span class="p">,</span> <span class="n">boto3_session</span><span class="p">)</span>
     <span class="n">session</span> <span class="o">=</span> <span class="n">boto3_session</span> <span class="k">if</span> <span class="n">boto3_session</span> <span class="k">else</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">region_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_resolve_region</span><span class="p">(</span><span class="n">region_name</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
 
     <span class="c1"># Configure and create boto3 client</span>
     <span class="n">client_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_config</span><span class="p">(</span><span class="n">boto_client_config</span><span class="p">)</span>

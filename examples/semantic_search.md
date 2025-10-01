@@ -33,49 +33,41 @@ session_manager = MemorySessionManager(
     memory_id=memory.get("id"),
     region_name="us-west-2")
 
-# Write memory events (conversation turns)
-session_manager.add_turns(
+session = session_manager.create_memory_session(
     actor_id="User1",
-    session_id="OrderSupportSession1",
+    session_id="OrderSupportSession1"
+)
+
+# Write memory events (conversation turns)
+session.add_turns(
     messages=[
         ConversationalMessage(
             "Hi, how can I help you today?",
             MessageRole.ASSISTANT)],
 )
 
-session_manager.add_turns(
-    actor_id="User1",
-    session_id="OrderSupportSession1",
+session.add_turns(
     messages=[
         ConversationalMessage(
             "Hi, I am a new customer. I just made an order, but it hasn't arrived. The Order number is #35476",
             MessageRole.USER)],
 )
 
-session_manager.add_turns(
-    actor_id="User1",
-    session_id="OrderSupportSession1",
+session.add_turns(
     messages=[
         ConversationalMessage(
             "I'm sorry to hear that. Let me look up your order.",
             MessageRole.ASSISTANT)],
 )
 
-# List all events in the session
-events = session_manager.list_events(
-    actor_id="User1",
-    session_id="OrderSupportSession1",
-)
+# Get the last k turns in the session
+turns = session.get_last_k_turns(k=5)
 
-for event in events:
-    print(f"Event: {event}")
-    print("--------------------------------------------------------------------")
-
-print("Waiting 2 minutes for semantic processing...")
-time.sleep(120)
+for turn in turns:
+    print(f"Turn: {turn}")
 
 # List all memory records
-memory_records = session_manager.list_long_term_memory_records(
+memory_records = session.list_long_term_memory_records(
     namespace_prefix="/"
 )
 
@@ -84,7 +76,7 @@ for record in memory_records:
     print("--------------------------------------------------------------------")
 
 # Perform a semantic search
-memory_records = session_manager.search_long_term_memories(
+memory_records = session.search_long_term_memories(
     query="can you summarize the support issue",
     namespace_prefix="/",
     top_k=3
@@ -93,4 +85,10 @@ memory_records = session_manager.search_long_term_memories(
 for record in memory_records:
     print(f"retrieved memory: {record}")
     print("--------------------------------------------------------------------")
+
+
+# Cleanup - delete the memory resource
+print("Cleaning up...")
+
+memory_manager.delete_memory(memory_id=memory.get("id"))
 ```

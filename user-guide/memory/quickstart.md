@@ -26,19 +26,22 @@ pip install bedrock-agentcore
 pip install bedrock-agentcore-starter-toolkit
 ```
 
-**Note: The AgentCore Starter Toolkit is intended to help developers get started quickly. The Boto3 Python library provides the most comprehensive set of operations for AgentCore Memory. You can find the Boto3 documentation here.**
+**Note:** The AgentCore Starter Toolkit is intended to help developers get started quickly. For the complete set of AgentCore Memory operations, see the Boto3 documentation: [bedrock-agentcore-control](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore-control.html) and [bedrock-agentcore](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore.html).
+
+**Full example:** See the [complete code example](../../examples/semantic_search.html) that demonstrates steps 1-3.
 
 ## Step One: Create a Memory Resource
 
 A memory resource is needed to start storing information for your agent. By default, memory events (which we refer to as short-term memory) can be written to a memory resource. In order for insights to be extracted and placed into long term memory records, the resource requires a 'memory strategy' - a configuration that defines how conversational data should be processed, and what information to extract (such as facts, preferences, or summaries).
 
-We are going to create a memory resource with a semantic strategy so that both short term and long term memory can be utilized. This will take 1-2 minutes. Memory resources can also be created in the AWS console.
+We are going to create a memory resource with a semantic strategy so that both short term and long term memory can be utilized. This will take 2-3 minutes. Memory resources can also be created in the AWS console.
 
 ```
 from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
 from bedrock_agentcore.memory.session import MemorySessionManager
-from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import (
-    SemanticStrategy)
+from bedrock_agentcore.memory.constants import ConversationalMessage, MessageRole
+from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import SemanticStrategy
+import time
 
 memory_manager = MemoryManager(region_name="us-west-2")
 
@@ -46,10 +49,11 @@ print("Creating memory resource...")
 
 memory = memory_manager.get_or_create_memory(
     name="CustomerSupportSemantic",
-    description="Customer suppoer memory store",
+    description="Customer support memory store",
     strategies=[
         SemanticStrategy(
             name="semanticLongTermMemory",
+            namespaces=['/strategies/{memoryStrategyId}/actors/{actorId}'],
         )
     ]
 )
@@ -75,28 +79,27 @@ session_manager = MemorySessionManager(
     memory_id=memory.get("id"),
     region_name="us-west-2")
 
-# Write memory events (conversation turns)
-session_manager.add_turns(
+session = session_manager.create_memory_session(
     actor_id="User1",
-    session_id="OrderSupportSession1",
+    session_id="OrderSupportSession1"
+)
+
+# Write memory events (conversation turns)
+session.add_turns(
     messages=[
         ConversationalMessage(
             "Hi, how can I help you today?",
             MessageRole.ASSISTANT)],
 )
 
-session_manager.add_turns(
-    actor_id="User1",
-    session_id="OrderSupportSession1",
+session.add_turns(
     messages=[
         ConversationalMessage(
             "Hi, I am a new customer. I just made an order, but it hasn't arrived. The Order number is #35476",
             MessageRole.USER)],
 )
 
-session_manager.add_turns(
-    actor_id="User1",
-    session_id="OrderSupportSession1",
+session.add_turns(
     messages=[
         ConversationalMessage(
             "I'm sorry to hear that. Let me look up your order.",
@@ -104,14 +107,14 @@ session_manager.add_turns(
 )
 ```
 
-You can get events for a specific actor after they’ve been written.
+You can get events (turns) for a specific actor after they’ve been written.
 
 ```
-# List all events in the session
-events = session_manager.list_events(
-    actor_id="User1",
-    session_id="OrderSupportSession1"
-)
+# Get the last k turns in the session
+turns = session.get_last_k_turns(k=5)
+
+for turn in turns:
+    print(f"Turn: {turn}")
 ```
 
 In this case, we can see the last three events for the actor and session.
@@ -124,16 +127,20 @@ You can list all memory records with:
 
 ```
 # List all memory records
-session_manager.list_long_term_memory_records(
+memory_records = session.list_long_term_memory_records(
     namespace_prefix="/"
 )
+
+for record in memory_records:
+    print(f"Memory record: {record}")
+    print("--------------------------------------------------------------------")
 ```
 
 Or ask for the most relevant information as part of a semantic search:
 
 ```
 # Perform a semantic search
-memory_records = session_manager.search_long_term_memories(
+memory_records = session.search_long_term_memories(
     query="can you summarize the support issue",
     namespace_prefix="/",
     top_k=3
@@ -142,7 +149,14 @@ memory_records = session_manager.search_long_term_memories(
 
 Important information about the user is likely stored is long term memory. Agents can use long term memory rather than a full conversation history to make sure that LLMs are not overloaded with context.
 
-The full example source file showing steps 1 - 3 is available [here](../../examples/semantic_search.html).
+## Cleanup
+
+When you're done with the memory resource, you can delete it:
+
+```
+# Delete the memory resource
+memory_manager.delete_memory(memory_id=memory.get("id"))
+```
 
 ## What’s Next?
 

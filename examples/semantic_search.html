@@ -1608,49 +1608,41 @@
     <span class="n">memory_id</span><span class="o">=</span><span class="n">memory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">),</span>
     <span class="n">region_name</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
 
-<span class="c1"># Write memory events (conversation turns)</span>
-<span class="n">session_manager</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">session_manager</span><span class="o">.</span><span class="n">create_memory_session</span><span class="p">(</span>
     <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span>
-    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;OrderSupportSession1&quot;</span><span class="p">,</span>
+    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;OrderSupportSession1&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Write memory events (conversation turns)</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
         <span class="n">ConversationalMessage</span><span class="p">(</span>
             <span class="s2">&quot;Hi, how can I help you today?&quot;</span><span class="p">,</span>
             <span class="n">MessageRole</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">)],</span>
 <span class="p">)</span>
 
-<span class="n">session_manager</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
-    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span>
-    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;OrderSupportSession1&quot;</span><span class="p">,</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
         <span class="n">ConversationalMessage</span><span class="p">(</span>
             <span class="s2">&quot;Hi, I am a new customer. I just made an order, but it hasn&#39;t arrived. The Order number is #35476&quot;</span><span class="p">,</span>
             <span class="n">MessageRole</span><span class="o">.</span><span class="n">USER</span><span class="p">)],</span>
 <span class="p">)</span>
 
-<span class="n">session_manager</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
-    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span>
-    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;OrderSupportSession1&quot;</span><span class="p">,</span>
+<span class="n">session</span><span class="o">.</span><span class="n">add_turns</span><span class="p">(</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
         <span class="n">ConversationalMessage</span><span class="p">(</span>
             <span class="s2">&quot;I&#39;m sorry to hear that. Let me look up your order.&quot;</span><span class="p">,</span>
             <span class="n">MessageRole</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">)],</span>
 <span class="p">)</span>
 
-<span class="c1"># List all events in the session</span>
-<span class="n">events</span> <span class="o">=</span> <span class="n">session_manager</span><span class="o">.</span><span class="n">list_events</span><span class="p">(</span>
-    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span>
-    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;OrderSupportSession1&quot;</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="c1"># Get the last k turns in the session</span>
+<span class="n">turns</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_last_k_turns</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
-<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Event: </span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------------------------------&quot;</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Waiting 2 minutes for semantic processing...&quot;</span><span class="p">)</span>
-<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">turn</span> <span class="ow">in</span> <span class="n">turns</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Turn: </span><span class="si">{</span><span class="n">turn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 <span class="c1"># List all memory records</span>
-<span class="n">memory_records</span> <span class="o">=</span> <span class="n">session_manager</span><span class="o">.</span><span class="n">list_long_term_memory_records</span><span class="p">(</span>
+<span class="n">memory_records</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">list_long_term_memory_records</span><span class="p">(</span>
     <span class="n">namespace_prefix</span><span class="o">=</span><span class="s2">&quot;/&quot;</span>
 <span class="p">)</span>
 
@@ -1659,7 +1651,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------------------------------&quot;</span><span class="p">)</span>
 
 <span class="c1"># Perform a semantic search</span>
-<span class="n">memory_records</span> <span class="o">=</span> <span class="n">session_manager</span><span class="o">.</span><span class="n">search_long_term_memories</span><span class="p">(</span>
+<span class="n">memory_records</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">search_long_term_memories</span><span class="p">(</span>
     <span class="n">query</span><span class="o">=</span><span class="s2">&quot;can you summarize the support issue&quot;</span><span class="p">,</span>
     <span class="n">namespace_prefix</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span>
     <span class="n">top_k</span><span class="o">=</span><span class="mi">3</span>
@@ -1668,6 +1660,12 @@
 <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">memory_records</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;retrieved memory: </span><span class="si">{</span><span class="n">record</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------------------------------------------&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Cleanup - delete the memory resource</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleaning up...&quot;</span><span class="p">)</span>
+
+<span class="n">memory_manager</span><span class="o">.</span><span class="n">delete_memory</span><span class="p">(</span><span class="n">memory_id</span><span class="o">=</span><span class="n">memory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))</span>
 </code></pre></div>
 
 
