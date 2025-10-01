@@ -3,32 +3,30 @@
 This example demonstrates the complete workflow for creating a memory resource with semantic strategy, writing events, and retrieving memory records.
 
 ```python
+# Semantic Search Memory Example
+
+from bedrock_agentcore_starter_toolkit.operations.memory.manager import MemoryManager
+from bedrock_agentcore.memory.session import MemorySessionManager
+from bedrock_agentcore.memory.constants import StrategyType, ConversationalMessage, MessageRole
+from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies import SemanticStrategy
 import time
-from bedrock_agentcore.memory import MemoryManager
-from bedrock_agentcore.models.strategies.semantic import SemanticStrategy
-from bedrock_agentcore.session import MemorySessionManager
-from bedrock_agentcore.constants import ConversationalMessage, MessageRole
 
 memory_manager = MemoryManager(region_name="us-west-2")
 
 print("Creating memory resource...")
 
 memory = memory_manager.get_or_create_memory(
-    name="CustomerSupportSemantic5",
+    name="CustomerSupportSemantic",
     description="Customer support memory store",
     strategies=[
         SemanticStrategy(
             name="semanticLongTermMemory",
+            namespaces=['/strategies/{memoryStrategyId}/actors/{actorId}'],
         )
     ]
 )
 
 print(f"Memory ID: {memory.get('id')}")
-
-# View all memories
-memories = memory_manager.list_memories()
-for memory in memories:
-    print(f"Memory: {memory}")
 
 # Create a session to store memory events
 session_manager = MemorySessionManager(
@@ -73,8 +71,8 @@ for event in events:
     print(f"Event: {event}")
     print("--------------------------------------------------------------------")
 
-print("Waiting 30 seconds for semantic processing...")
-time.sleep(30)
+print("Waiting 2 minutes for semantic processing...")
+time.sleep(120)
 
 # List all memory records
 memory_records = session_manager.list_memory_records(
@@ -97,4 +95,5 @@ memory_records = session_manager.retrieve_memory_records(
 for record in memory_records.get("memoryRecordSummaries", []):
     print(f"retrieved memory: {record}")
     print("--------------------------------------------------------------------")
+
 ```
