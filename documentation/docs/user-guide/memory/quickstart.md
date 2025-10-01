@@ -145,12 +145,11 @@ Or ask for the most relevant information as part of a semantic search:
 
 ```python
 # Perform a semantic search
-memory_records = session_manager.retrieve_memory_records(
-    memoryId=memory.get("id"),
-    namespace="/",
-    searchCriteria={
-        "searchQuery": "can you summarize the support issue",
-        "topK": 3})
+memory_records = session_manager.search_long_term_memories(
+    query="can you summarize the support issue",
+    namespace_prefix="/",
+    top_k=3
+)
 ```
 
 
