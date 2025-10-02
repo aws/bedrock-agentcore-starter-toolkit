@@ -1,22 +1,21 @@
 
-# Amazon Bedrock AgentCore Runtime: Memory + Code Interpreter Quickstart
+# Amazon Bedrock AgentCore Quickstart
 
 ## Introduction
 
-This guide demonstrates deploying an AI agent that combines:
-
-- **AgentCore Runtime**: Managed compute service that runs your containerized agent with automatic scaling and built-in observability.
-- **Short-term and long-term memory** for conversation persistence within and across sessions
-- **Code Interpreter tool** for dynamic Python execution in AWS’s secure sandbox
-- **Built-in observability** via AWS X-Ray tracing and CloudWatch for monitoring agent behavior, memory operations, and tool usage
-
 You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.
+
+This guide demonstrates how to deploy an AI agent that combines:
+- **Runtime**: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See [AgentCore Runtime docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)
+- **Memory Service**: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See [AgentCore Memory docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
+- **Code Interpreter**: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
+- **Observability**: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html) for more details.
 
 ## Prerequisites
 
-- **AWS Permissions:** If you are a root user or using Admin credentails, then you can skip this pre-requisite. If you need specific permissions to use the starter toolkit. See the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
+- **AWS Permissions**: If you are a root user or using admin credentials, you can skip this prerequisite. If you need specific permissions to use the starter toolkit, see the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
 - AWS CLI configured (`aws configure`)
-- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with the Strands Agents see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
+- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
 
 ### Installation
@@ -30,23 +29,13 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install bedrock-agentcore-starter-toolkit strands-agents boto3
 ```
 
-## Understanding the Architecture
-
-Key components in this implementation:
-
-- **Runtime**: Managed compute service that runs your containerized agent with automatic scaling. See [AgentCore Runtime docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)
-- **Memory Service**: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See [AgentCore Memory docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
-- **Code Interpreter**: AWS-managed Python sandbox with pre-installed libraries. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
-- **Strands Framework**: Simplifies agent creation with memory session management
-- **AWS X-Ray & CloudWatch**: Automatic tracing and logging for complete visibility
-
 ## Step 1: Create the Agent
 
-Create `strands_agentcore_starter.py`:
+Create `agentcore_starter_strands.py`:
 
 ```python
 """
-Strands Agent with AgentCore Memory and Code Interpreter
+Strands Agent sample with AgentCore
 """
 import os
 from strands import Agent, tool
@@ -130,55 +119,53 @@ if __name__ == "__main__":
 
 Create `requirements.txt`:
 
-```
+```text
 strands-agents
 bedrock-agentcore
 ```
 
 ## Step 2: Configure and Deploy
 
-The AgentCore CLI automates deployment with intelligent provisioning:
+The AgentCore CLI automates deployment with provisioning.
 
 ### Configure the Agent
 
 ```bash
-agentcore configure -e strands_agentcore_starter.py
+agentcore configure -e agentcore_starter_strands.py
 
 # Interactive prompts:
-# Execution role (press Enter to auto-create)
-# ECR repository (press Enter to auto-create)
-# Memory configuration:
-#   - If existing memories found: Choose from list or press Enter to create new
-#   - If creating new: Enable long-term memory extraction? (yes/no) → yes
-#   Note: Short-term memory is always enabled by default
+#   - Execution role (press Enter to auto-create)
+#   - ECR repository (press Enter to auto-create)
+#   - Memory configuration:
+#     - If existing memories found: Choose from list or press Enter to create new
+#     - If creating new: Enable long-term memory extraction? (yes/no) → yes
+#     - **Note**: Short-term memory is always enabled by default
 ```
 
-**What’s happening:** The toolkit analyzes your code, detects the memory integration, prepares deployment configurations, and creates IAM roles with permissions for Memory. When observability is enabled, Transaction Search is automatically configured.
-
-### Deploy to Runtime
+### Deploy to AgentCore
 
 ```bash
 agentcore launch
 
 # This performs:
-# 1. Memory resource provisioning (STM + LTM strategies)
-# 2. Docker container build with dependencies
-# 3. ECR repository push
-# 4. AgentCore Runtime deployment with X-Ray tracing enabled
-# 5. CloudWatch Transaction Search configuration (automatic)
-# 6. Endpoint activation with trace collection
+#   1. Memory resource provisioning (STM + LTM strategies)
+#   2. Docker container build with dependencies
+#   3. ECR repository push
+#   4. AgentCore Runtime deployment with X-Ray tracing enabled
+#   5. CloudWatch Transaction Search configuration (automatic)
+#   6. Endpoint activation with trace collection
 ```
 
 **Expected output:**
 
-```
+```text
 ✅ Memory created: bedrock_agentcore_memory_ci_agent_memory-abc123
 Observability is enabled, configuring Transaction Search...
 ✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
 🔍 GenAI Observability Dashboard:
    https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 ✅ Container deployed to Bedrock AgentCore
-Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/memory_ci_agent-xyz
+Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-xyz
 ```
 
 ## Step 3: Monitor Deployment
@@ -189,15 +176,15 @@ Check deployment status:
 agentcore status
 
 # Shows:
-# Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123
-# Memory Status: CREATING - if still provisioning
-# Memory Type: STM+LTM (provisioning...) - if creating with LTM
-# Memory Type: STM+LTM (3 strategies) - when active with strategies
-# Memory Type: STM only - if configured without LTM
-# Observability: Enabled
+#   Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123
+#   Memory Status: CREATING (if still provisioning)
+#   Memory Type: STM+LTM (provisioning...) (if creating with LTM)
+#   Memory Type: STM+LTM (3 strategies) (when active with strategies)
+#   Memory Type: STM only (if configured without LTM)
+#   Observability: Enabled
 ```
 
-**Note:** LTM strategies require 2-5 minutes to activate. STM is available immediately.
+**Note**: LTM strategies require 2-5 minutes to activate. STM is available immediately.
 
 ## Step 4: Test Memory and Code Interpreter
 
@@ -207,21 +194,20 @@ STM works immediately after deployment. Test within a single session:
 
 ```bash
 # Store information (session IDs must be 33+ characters)
-agentcore invoke '{"prompt": "Remember that my favorite programming language is Python and I prefer tabs over spaces"}' --session-id test_session_2024_01_user123_preferences_abc
+agentcore invoke '{"prompt": "Remember that my favorite agent platform is AgentCore"}'
 
-# If invoked too early (Memory still provisioning), you'll see:
+# If invoked too early (memory still provisioning), you'll see:
 # "Memory is still provisioning (current status: CREATING).
 #  Long-term memory extraction takes 60-90 seconds to activate.
 #
 #  Please wait and check status with:
 #    agentcore status"
-# "I've noted that your favorite programming language is Python and you prefer tabs over spaces..."
 
 # Retrieve within same session
-agentcore invoke '{"prompt": "What is my favorite programming language?"}' --session-id test_session_2024_01_user123_preferences_abc
+agentcore invoke '{"prompt": "What is my favorite agent platform?"}'
 
 # Expected response:
-# "Your favorite programming language is Python."
+# "Your favorite agent platform is AgentCore."
 ```
 
 ### Test Long-Term Memory (LTM) - Cross-Session Persistence
@@ -229,35 +215,31 @@ agentcore invoke '{"prompt": "What is my favorite programming language?"}' --ses
 LTM enables information persistence across different sessions. This requires waiting for LTM extraction after storing information.
 
 ```bash
-# First verify LTM is active
-agentcore status
-# Must show: Memory Status: ACTIVE and Memory Type: STM+LTM (3 strategies)
-# If Memory Status shows "CREATING", wait 2-3 minutes
-
 # Session 1: Store facts
-agentcore invoke '{"prompt": "My email is user@example.com and I work at TechCorp as a senior engineer"}' --session-id ltm_test_session_one_2024_january_user123_xyz
+agentcore invoke '{"prompt": "My email is user@example.com and I am an AgentCore user"}'
+```
 
-# Wait for extraction
+Wait for extraction that runs in the background by AgentCore. This typically takes 10-30 seconds. If you do not see the facts, wait a few more seconds and try again.
+
+```bash
 sleep 20
-
-# Session 2: Different session retrieves the facts
-agentcore invoke '{"prompt": "What company do I work for?"}' --session-id ltm_test_session_two_2024_february_user456_abc
+# Session 2: Different runtime session retrieves the facts extracted from initial session
+SESSION_ID=$(python -c "import uuid; print(uuid.uuid4())")
+agentcore invoke '{"prompt": "Tell me about myself?"}' --session-id $SESSION_ID
 
 # Expected response:
-# "You work at TechCorp."
+# "Your email address is user@example.com."
+# "You appear to be a user of AgentCore, which seems to be your favorite agent platform."
 ```
 
 ### Test Code Interpreter
 
 ```bash
 # Store data
-agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56"}' --session-id test_session_2024_01_user123_preferences_abc
-
-# Calculate using remembered data
-agentcore invoke '{"prompt": "Calculate the mean and standard deviation of my dataset"}' --session-id test_session_2024_01_user123_preferences_abc
+agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56."}'
 
 # Create visualization
-agentcore invoke '{"prompt": "Create a text based bar chart visualization showing the distribution of values in my dataset with proper labels"}' --session-id test_session_2024_01_user123_preferences_abc
+agentcore invoke '{"prompt": "Create a text-based bar chart visualization showing the distribution of values in my dataset with proper labels"}'
 
 # Expected: Agent generates matplotlib code to create a bar chart
 ```
@@ -274,6 +256,7 @@ agentcore status
 
 # Navigate to the URL shown, or go directly to:
 # https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
+# Note: Replace the region
 ```
 
 **What you’ll see:**
@@ -315,11 +298,11 @@ aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name
 agentcore destroy
 
 # Removes:
-# - Runtime endpoint and agent
-# - Memory resources (STM + LTM)
-# - ECR repository and images
-# - IAM roles (if auto-created)
-# - CloudWatch log groups (optional)
+#   - Runtime endpoint and agent
+#   - Memory resources (STM + LTM)
+#   - ECR repository and images
+#   - IAM roles (if auto-created)
+#   - CloudWatch log groups (optional)
 ```
 
 ## Permissions Reference
@@ -617,18 +600,6 @@ The toolkit provides intelligent memory management:
 
 - Check log group exists: `/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/<memory-id>`
 - Verify IAM role has CloudWatch Logs permissions
-
-### Performance Issues
-
-**Code Interpreter timeout:**
-
-- Simplify calculations or break into smaller steps
-- Check CloudWatch logs for actual execution details
-
-**High latency (>1s):**
-
-- Check X-Ray trace breakdown to identify bottleneck
-- First Code Interpreter call is slower (~500ms for session creation)
 
 ## Summary
 
