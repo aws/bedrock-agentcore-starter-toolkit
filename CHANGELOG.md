@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.18] - 2025-10-02
+
+### Changes
+
+- fix: add non_interactive parameter for notebooks and fix code style issues (#244) (03953bb)
+- chore: bump version to 0.1.17 (#243) (99945c7)
+
 ## [0.1.17] - 2025-10-01
 
 ### Changes
