@@ -19582,7 +19582,7 @@ Memory services.</p>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_last_k_turns</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">sesssion_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">branch_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">include_branches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -19599,7 +19599,7 @@ Memory services.</p>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_events</span><span class="p">(</span>
                 <span class="n">actor_id</span><span class="o">=</span><span class="n">actor_id</span><span class="p">,</span>
-                <span class="n">session_id</span><span class="o">=</span><span class="n">sesssion_id</span><span class="p">,</span>
+                <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
                 <span class="n">branch_name</span><span class="o">=</span><span class="n">branch_name</span><span class="p">,</span>
                 <span class="n">include_parent_events</span><span class="o">=</span><span class="n">include_branches</span><span class="p">,</span>
                 <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span>
@@ -20793,7 +20793,7 @@ events = manager.list_events(...)</p>
 
 
 <h4 id="bedrock_agentcore.memory.MemorySessionManager.get_last_k_turns" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_last_k_turns</span><span class="p">(</span><span class="n">actor_id</span><span class="p">,</span> <span class="n">sesssion_id</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">branch_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_branches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">get_last_k_turns</span><span class="p">(</span><span class="n">actor_id</span><span class="p">,</span> <span class="n">session_id</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">branch_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_branches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.memory.MemorySessionManager.get_last_k_turns" class="headerlink" title="Permanent link">&para;</a></h4>
 
@@ -20889,7 +20889,7 @@ This method groups messages into logical turns for easier processing.</p>
 <span class="normal">678</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_last_k_turns</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">sesssion_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
     <span class="n">branch_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">include_branches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -20906,7 +20906,7 @@ This method groups messages into logical turns for easier processing.</p>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_events</span><span class="p">(</span>
             <span class="n">actor_id</span><span class="o">=</span><span class="n">actor_id</span><span class="p">,</span>
-            <span class="n">session_id</span><span class="o">=</span><span class="n">sesssion_id</span><span class="p">,</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
             <span class="n">branch_name</span><span class="o">=</span><span class="n">branch_name</span><span class="p">,</span>
             <span class="n">include_parent_events</span><span class="o">=</span><span class="n">include_branches</span><span class="p">,</span>
             <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">,</span>
