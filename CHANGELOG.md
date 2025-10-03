@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.19] - 2025-10-03
+
+### Changes
+
+- updates gateway created lambda to python 3.13 (#196) (c5e5642)
+- Add explicit user creation config for Cognito pools (#218) (432898e)
+- Labs (#245) (579d086)
+- chore: bump version to 0.1.18 (#246) (c8d6c29)
+
 ## [0.1.18] - 2025-10-02
 
 ### Changes
