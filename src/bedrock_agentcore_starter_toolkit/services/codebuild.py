@@ -7,7 +7,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -18,19 +18,76 @@ from ..operations.runtime.create_role import get_or_create_codebuild_execution_r
 class CodeBuildService:
     """Service for managing CodeBuild projects and builds for ARM64."""
 
-    def __init__(self, session: boto3.Session):
-        """Initialize CodeBuild service with AWS session."""
+    def __init__(self, session: boto3.Session, codebuild_role_arn: Optional[str] = None):
+        """Initialize CodeBuild service with AWS session.
+
+        Args:
+            session: Primary AWS session for deployment account
+            codebuild_role_arn: Optional CodeBuild execution role ARN (for cross-account)
+        """
         self.session = session
-        self.client = session.client("codebuild")
-        self.s3_client = session.client("s3")
-        self.iam_client = session.client("iam")
+        self.codebuild_role_arn = codebuild_role_arn
         self.logger = logging.getLogger(__name__)
+
+        # Determine if this is cross-account CodeBuild
+        self.build_account = self._extract_build_account()
+        self.deployment_account = session.client("sts").get_caller_identity()["Account"]
+        self.is_cross_account_codebuild = (
+            self.build_account is not None and self.build_account != self.deployment_account
+        )
+
+        # Create appropriate session for CodeBuild operations
+        if self.is_cross_account_codebuild:
+            self.build_session = self._create_build_session()
+            self.client = self.build_session.client("codebuild")
+            self.s3_client = self.build_session.client("s3")
+            self.iam_client = self.build_session.client("iam")
+            self.logger.info("CodeBuild initialized in cross-account mode (account: %s)", self.build_account)
+        else:
+            self.build_session = session
+            self.client = session.client("codebuild")
+            self.s3_client = session.client("s3")
+            self.iam_client = session.client("iam")
+            self.logger.info("CodeBuildService initialized in same-account mode")
+
         self.source_bucket = None
-        self.account_id = session.client("sts").get_caller_identity()["Account"]
+
+    def _extract_build_account(self) -> Optional[str]:
+        """Extract build account ID from CodeBuild role ARN."""
+        if not self.codebuild_role_arn:
+            return None
+        try:
+            # ARN format: arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME
+            return self.codebuild_role_arn.split(":")[4]
+        except (IndexError, AttributeError):
+            self.logger.warning("Invalid CodeBuild role ARN format: %s", self.codebuild_role_arn)
+            return None
+
+    def _create_build_session(self) -> boto3.Session:
+        """Create AWS session by assuming the CodeBuild role."""
+        if not self.codebuild_role_arn:
+            return self.session
+
+        try:
+            sts_client = self.session.client("sts")
+            response = sts_client.assume_role(
+                RoleArn=self.codebuild_role_arn, RoleSessionName=f"bedrock-agentcore-build-{int(time.time())}"
+            )
+
+            credentials = response["Credentials"]
+            return boto3.Session(
+                aws_access_key_id=credentials["AccessKeyId"],
+                aws_secret_access_key=credentials["SecretAccessKey"],
+                aws_session_token=credentials["SessionToken"],
+                region_name=self.session.region_name,
+            )
+        except Exception as e:
+            self.logger.error("Failed to assume CodeBuild role %s: %s", self.codebuild_role_arn, e)
+            raise RuntimeError(f"Failed to assume CodeBuild role {self.codebuild_role_arn}: {e}") from e
 
     def get_source_bucket_name(self, account_id: str) -> str:
         """Get S3 bucket name for CodeBuild sources."""
-        region = self.session.region_name
+        region = self.build_session.region_name
         return f"bedrock-agentcore-codebuild-sources-{account_id}-{region}"
 
     def ensure_source_bucket(self, account_id: str) -> str:
@@ -50,7 +107,7 @@ class CodeBuildService:
                 ) from e
 
             # Create bucket (no ExpectedBucketOwner needed for create_bucket)
-            region = self.session.region_name
+            region = self.build_session.region_name
             if region == "us-east-1":
                 self.s3_client.create_bucket(Bucket=bucket_name)
             else:
@@ -72,7 +129,9 @@ class CodeBuildService:
 
     def upload_source(self, agent_name: str) -> str:
         """Upload current directory to S3, respecting .dockerignore patterns."""
-        account_id = self.account_id
+        # Use build account for S3 bucket (cross-account) or deployment account (same-account)
+        account_id = self.build_account or self.deployment_account
+        self.logger.info("Using account %s for S3 bucket", account_id)
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 

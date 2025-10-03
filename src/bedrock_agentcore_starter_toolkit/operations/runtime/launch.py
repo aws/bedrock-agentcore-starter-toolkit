@@ -594,18 +594,46 @@ def _execute_codebuild_workflow(
     if not ecr_only:
         _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
 
-    # Prepare CodeBuild
+    # Enhanced CodeBuild preparation with cross-account support
     log.info("Preparing CodeBuild project and uploading source...")
-    codebuild_service = CodeBuildService(session)
 
-    # Use cached CodeBuild role from config if available
+    # Get CodeBuild execution role from config
+    codebuild_execution_role = None
     if hasattr(agent_config, "codebuild") and agent_config.codebuild.execution_role:
-        log.info("Using CodeBuild role from config: %s", agent_config.codebuild.execution_role)
         codebuild_execution_role = agent_config.codebuild.execution_role
-    else:
+        log.info("Using CodeBuild role from config: %s", codebuild_execution_role)
+
+    # Detect cross-account scenario
+    build_account = None
+    deployment_account = session.client("sts").get_caller_identity()["Account"]
+
+    if codebuild_execution_role:
+        try:
+            # Extract account from role ARN: arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME
+            build_account = codebuild_execution_role.split(":")[4]
+
+            if build_account != deployment_account:
+                log.info("Cross-account CodeBuild detected:")
+                log.info("  Deployment account: %s", deployment_account)
+                log.info("  Build account: %s", build_account)
+                log.info("  CodeBuild role: %s", codebuild_execution_role)
+            else:
+                log.info("Same-account CodeBuild (role in deployment account)")
+                build_account = None  # Treat as same-account
+        except (IndexError, AttributeError):
+            log.warning("Invalid CodeBuild role ARN format: %s", codebuild_execution_role)
+            build_account = None
+
+    # Initialize CodeBuild service with role information
+    codebuild_service = CodeBuildService(session, codebuild_execution_role)
+
+    # Create or use existing CodeBuild execution role
+    if not codebuild_execution_role:
+        # No role specified - create one in deployment account
         codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
             account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
         )
+        log.info("Created CodeBuild role in deployment account: %s", codebuild_execution_role)
 
     source_location = codebuild_service.upload_source(agent_name=agent_name)
 

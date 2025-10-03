@@ -84,7 +84,9 @@ class TestCodeBuildService:
         assert service.s3_client == mock_s3
         assert service.iam_client == mock_iam
         assert service.source_bucket is None
-        assert service.account_id == "123456789012"  # Verify account_id is stored
+        assert service.deployment_account == "123456789012"  # Verify deployment account is stored
+        assert service.build_account is None  # No cross-account role provided
+        assert service.is_cross_account_codebuild is False
 
     def test_get_source_bucket_name(self, codebuild_service):
         """Test S3 bucket name generation."""
@@ -188,6 +190,7 @@ class TestCodeBuildService:
         result = codebuild_service.upload_source("test-agent")
 
         expected_key = "test-agent/source.zip"
+        # Use deployment account since no cross-account role provided
         expected_s3_url = f"s3://bedrock-agentcore-codebuild-sources-123456789012-us-west-2/{expected_key}"
 
         assert result == expected_s3_url
