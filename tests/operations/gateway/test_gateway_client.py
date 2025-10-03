@@ -402,3 +402,123 @@ class TestGatewayClient:
             )
 
         assert "failed" in str(excinfo.value).lower()
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_mcp_gateway_with_kms_key_arn(self, mock_create_oauth_authorizer_with_cognito, gateway_client):
+        """Test creating MCP gateway with KMS key ARN"""
+        # Mock responses
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["allowedClient"], "discoveryUrl": "aRandomUrl"}
+            },
+            "client_info": {
+                "client_id": "client",
+                "client_secret": "clientSecret",
+                "user_pool_id": "poolId",
+                "token_endpoint": "tokenEndpoint",
+                "scope": "my-gateway/invoke",
+                "domain_prefix": "some-prefix",
+            },
+        }
+
+        # Mock gateway creation
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "TEST123",
+            "gatewayArn": "arn:aws:bedrock_agentcore:us-west-2:123:gateway/TEST123",
+            "gatewayUrl": "https://TEST456.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "roleArn",
+        }
+
+        # Mock get operations for status checking
+        mock_bedrock.get_gateway.return_value = {
+            "gatewayId": "TEST456",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:gateway/TEST456",
+            "gatewayUrl": "https://TEST456.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+        }
+
+        # Test with KMS key ARN
+        kms_key_arn = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        gateway_client.create_mcp_gateway(
+            name="test-gateway-with-kms",
+            role_arn="arn:aws:iam::123:role/TestRole",
+            kms_key_arn=kms_key_arn,
+        )
+
+        # Verify the create_gateway call includes the KMS key ARN
+        mock_bedrock.create_gateway.assert_called_once()
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        assert "kmsKeyArn" in call_args
+        assert call_args["kmsKeyArn"] == kms_key_arn
+
+        # Verify other expected parameters are still present
+        assert call_args["name"] == "test-gateway-with-kms"
+        assert call_args["roleArn"] == "arn:aws:iam::123:role/TestRole"
+        assert call_args["protocolType"] == "MCP"
+        assert call_args["authorizerType"] == "CUSTOM_JWT"
+        assert "authorizerConfiguration" in call_args
+        assert call_args["exceptionLevel"] == "DEBUG"
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_mcp_gateway_without_kms_key_arn(self, mock_create_oauth_authorizer_with_cognito, gateway_client):
+        """Test creating MCP gateway without KMS key ARN (default behavior)"""
+        # Mock responses
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["allowedClient"], "discoveryUrl": "aRandomUrl"}
+            },
+            "client_info": {
+                "client_id": "client",
+                "client_secret": "clientSecret",
+                "user_pool_id": "poolId",
+                "token_endpoint": "tokenEndpoint",
+                "scope": "my-gateway/invoke",
+                "domain_prefix": "some-prefix",
+            },
+        }
+
+        # Mock gateway creation
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "TEST123",
+            "gatewayArn": "arn:aws:bedrock_agentcore:us-west-2:123:gateway/TEST123",
+            "gatewayUrl": "https://TEST456.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "roleArn",
+        }
+
+        # Mock get operations for status checking
+        mock_bedrock.get_gateway.return_value = {
+            "gatewayId": "TEST456",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:gateway/TEST456",
+            "gatewayUrl": "https://TEST456.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+        }
+
+        # Test without KMS key ARN (default behavior)
+        gateway_client.create_mcp_gateway(
+            name="test-gateway-no-kms",
+            role_arn="arn:aws:iam::123:role/TestRole",
+        )
+
+        # Verify the create_gateway call does NOT include the KMS key ARN
+        mock_bedrock.create_gateway.assert_called_once()
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        assert "kmsKeyArn" not in call_args
+
+        # Verify other expected parameters are still present
+        assert call_args["name"] == "test-gateway-no-kms"
+        assert call_args["roleArn"] == "arn:aws:iam::123:role/TestRole"
+        assert call_args["protocolType"] == "MCP"
+        assert call_args["authorizerType"] == "CUSTOM_JWT"
+        assert "authorizerConfiguration" in call_args
+        assert call_args["exceptionLevel"] == "DEBUG"
+

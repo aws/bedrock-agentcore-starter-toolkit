@@ -58,6 +58,7 @@ class GatewayClient:
         role_arn=None,
         authorizer_config=None,
         enable_semantic_search=True,
+        kms_key_arn=None,
     ) -> dict:
         """Creates an MCP Gateway.
 
@@ -88,6 +89,8 @@ class GatewayClient:
         }
         if enable_semantic_search:
             create_request["protocolConfiguration"] = {"mcp": {"searchType": "SEMANTIC"}}
+        if kms_key_arn:
+            create_request["kmsKeyArn"] = kms_key_arn
         self.logger.info("Creating Gateway")
         self.logger.debug("Creating gateway with params: %s", json.dumps(create_request, indent=2))
         gateway = self.client.create_gateway(**create_request)
