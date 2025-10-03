@@ -19,6 +19,7 @@ def create_mcp_gateway(
     role_arn: Optional[str] = None,
     authorizer_config: Optional[str] = None,
     enable_semantic_search: Optional[bool] = typer.Option(True, "--enable_semantic_search", "-sem"),
+    kms_key_arn: Optional[str] = None,
 ) -> None:
     """Creates an MCP Gateway.
 
@@ -27,13 +28,14 @@ def create_mcp_gateway(
     :param role_arn: optional - the role arn to use (creates one if none provided).
     :param authorizer_config: optional - the serialized authorizer config (will create one if none provided).
     :param enable_semantic_search: optional - whether to enable search tool (defaults to True).
+    :param kms_key_arn: optional - the KMS key ARN to use for encryption.
     :return:
     """
     client = GatewayClient(region_name=region)
     json_authorizer_config = ""
     if authorizer_config:
         json_authorizer_config = json.loads(authorizer_config)
-    gateway = client.create_mcp_gateway(name, role_arn, json_authorizer_config, enable_semantic_search)
+    gateway = client.create_mcp_gateway(name, role_arn, json_authorizer_config, enable_semantic_search, kms_key_arn)
     console.print(gateway)
 
 
