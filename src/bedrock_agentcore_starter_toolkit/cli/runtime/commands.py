@@ -602,10 +602,11 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
     )
 
 
-def _show_success_response(content):
+def _show_success_response(content, response_only=False):
     """Show success response content below panel."""
     if content:
-        console.print("\n[bold]Response:[/bold]")
+        if not response_only:
+            console.print("\n[bold]Response:[/bold]")
         console.print(content)
 
 
@@ -670,6 +671,9 @@ def invoke(
         help="Custom headers (format: 'Header1:value,Header2:value2'). "
         "Headers will be auto-prefixed with 'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' if not already present.",
     ),
+    response_only: Optional[bool] = typer.Option(
+        False, "--response-only", "-ro", help="Return only the JSON payload response without metadata"
+    ),
 ):
     """Invoke Bedrock AgentCore endpoint."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -725,7 +729,12 @@ def invoke(
             custom_headers=custom_headers,
         )
         agent_display = config.name if config else (agent or "unknown")
-        _show_invoke_info_panel(agent_display, result, config)
+        
+        # Show info panel only if response_only is False
+        if not response_only:
+            _show_invoke_info_panel(agent_display, result, config)
+        
+        # Process response content
         if result.response != {}:
             content = result.response
             if isinstance(content, dict) and "response" in content:
@@ -752,7 +761,9 @@ def invoke(
                         content = parsed
                 except (json.JSONDecodeError, TypeError):
                     pass
-            _show_success_response(content)
+            
+            # Display the content with or without formatting based on response_only flag
+            _show_success_response(content, response_only)
 
     except FileNotFoundError:
         _show_configuration_not_found_panel()

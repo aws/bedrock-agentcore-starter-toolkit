@@ -99,6 +99,8 @@ Options:
 
 - `--user-id, -u TEXT`: User ID for authorization flows
 
+- `--response-only, -ro`: Return only the JSON payload response without metadata
+
 **Example Output:**
 
 - Session and Request IDs displayed in panel header
@@ -229,6 +231,9 @@ agentcore invoke '{"prompt": "Secure request"}' --bearer-token eyJhbGciOiJIUzI1N
 
 # Invoke local agent
 agentcore invoke '{"prompt": "Test locally"}' --local
+
+# Invoke with response-only flag (returns only the JSON payload)
+agentcore invoke '{"prompt": "Get raw response"}' --response-only
 ```
 
 ### Check Status
