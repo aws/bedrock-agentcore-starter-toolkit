@@ -2043,6 +2043,16 @@ class TestDestroyBedrockAgentCore:
             mock_iam_client.delete_role.return_value = {}
             mock_memory_manager.delete_memory.return_value = {}
 
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+            config = load_config(config_path)
+            agent_config = config.get_agent_config()
+            agent_config.memory.was_created_by_toolkit = True
+            # Save the updated config
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
+
+            save_config(config, config_path)
+
             result = destroy_bedrock_agentcore(config_path, dry_run=False)
 
             # Verify memory deletion was called

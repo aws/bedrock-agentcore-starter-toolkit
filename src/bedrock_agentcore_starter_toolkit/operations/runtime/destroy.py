@@ -79,7 +79,16 @@ def destroy_bedrock_agentcore(
         _destroy_codebuild_project(session, agent_config, result, dry_run)
 
         # 5. Remove memory resource
-        _destroy_memory(session, agent_config, result, dry_run)
+        if agent_config.memory and agent_config.memory.memory_id and agent_config.memory.mode != "NO_MEMORY":
+            if agent_config.memory.was_created_by_toolkit:
+                # Memory was created by toolkit during configure/launch - delete it
+                _destroy_memory(session, agent_config, result, dry_run)
+                if not dry_run:
+                    log.info("Deleted memory (was created by toolkit): %s", agent_config.memory.memory_id)
+            else:
+                # Memory was pre-existing - preserve it
+                result.warnings.append(f"Memory {agent_config.memory.memory_id} preserved (was pre-existing)")
+                log.info("Preserving pre-existing memory: %s", agent_config.memory.memory_id)
 
         # 6. Remove CodeBuild IAM Role
         _destroy_codebuild_iam_role(session, agent_config, result, dry_run)

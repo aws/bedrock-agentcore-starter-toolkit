@@ -3,7 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...services.ecr import get_account_id, get_region
@@ -34,6 +34,8 @@ def configure_bedrock_agentcore(
     auto_create_ecr: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
+    enable_memory: bool = True,
+    memory_mode: Optional[Literal["STM_ONLY", "STM_AND_LTM"]] = None,
     requirements_file: Optional[str] = None,
     authorizer_configuration: Optional[Dict[str, Any]] = None,
     request_header_configuration: Optional[Dict[str, Any]] = None,
@@ -54,6 +56,8 @@ def configure_bedrock_agentcore(
         auto_create_ecr: Whether to auto-create ECR repository
         auto_create_execution_role: Whether to auto-create execution role if not provided
         enable_observability: Whether to enable observability
+        enable_memory: Whether to enable memory (default: True, STM by default)
+        memory_mode: Explicit memory mode override ("STM_ONLY" or "STM_AND_LTM")
         requirements_file: Path to requirements file
         authorizer_configuration: JWT authorizer configuration dictionary
         request_header_configuration: Request header configuration dictionary
@@ -117,31 +121,50 @@ def configure_bedrock_agentcore(
                 log.debug("No execution role provided and auto-create disabled")
 
     if verbose:
-        log.debug("Prompting for memory configuration")
+        log.debug("Configuring memory (enabled=%s, mode=%s)", enable_memory, memory_mode)
 
-    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive)
-
-    # New memory selection flow
-    action, value = config_manager.prompt_memory_selection()
+    # Pass region to ConfigurationManager so it can check for existing memories
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive, region=region)
 
     memory_config = MemoryConfig()
-    if action == "USE_EXISTING":
-        # Using existing memory - just store the ID
-        memory_config.memory_id = value
-        memory_config.mode = "STM_AND_LTM"  # Assume existing has strategies
-        memory_config.memory_name = f"{agent_name}_memory"
-        log.info("Using existing memory resource: %s", value)
-    elif action == "CREATE_NEW":
-        # Create new with specified mode
-        memory_config.mode = value  # This is the mode (STM_ONLY, STM_AND_LTM, NO_MEMORY)
+
+    if not enable_memory:
+        # Memory explicitly disabled - NO_MEMORY mode
+        memory_config.mode = "NO_MEMORY"
+        memory_config.was_created_by_toolkit = False
+        log.info("Memory disabled")
+    elif memory_mode:
+        # Explicit mode provided (from notebook) - use it directly without prompting
+        memory_config.mode = memory_mode
         memory_config.event_expiry_days = 30
         memory_config.memory_name = f"{agent_name}_memory"
-        log.info("Will create new memory with mode: %s", value)
+        memory_config.was_created_by_toolkit = True  # Will be created by toolkit
+        log.info("Memory mode explicitly set to: %s", memory_mode)
+    else:
+        # Memory enabled, no explicit mode - use interactive prompts
+        action, value = config_manager.prompt_memory_selection()
+
+        if action == "USE_EXISTING":
+            # Using existing memory - just store the ID
+            memory_config.memory_id = value
+            memory_config.mode = "STM_AND_LTM"  # Assume existing has strategies
+            memory_config.memory_name = f"{agent_name}_memory"
+            memory_config.was_created_by_toolkit = False  # EXISTING - DON'T DELETE ON DESTROY
+            log.info("Using existing memory resource: %s", value)
+        elif action == "CREATE_NEW":
+            # Create new with specified mode
+            memory_config.mode = value  # This is the mode (STM_ONLY, STM_AND_LTM)
+            memory_config.event_expiry_days = 30
+            memory_config.memory_name = f"{agent_name}_memory"
+            memory_config.was_created_by_toolkit = True  # NEW - DELETE ON DESTROY
+            log.info("Will create new memory with mode: %s", value)
 
     if memory_config.mode == "STM_AND_LTM":
         log.info("Memory configuration: Short-term + Long-term memory enabled")
     elif memory_config.mode == "STM_ONLY":
         log.info("Memory configuration: Short-term memory only")
+    elif memory_config.mode == "NO_MEMORY":
+        log.info("Memory configuration: Disabled")
 
     # Check for existing memory configuration from previous launch
     config_path = build_dir / ".bedrock_agentcore.yaml"

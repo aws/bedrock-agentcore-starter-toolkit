@@ -174,6 +174,7 @@ def configure(
         None, "--requirements-file", "-rf", help="Path to requirements file"
     ),
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
+    disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory (stateless agent)"),
     authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
@@ -274,6 +275,7 @@ def configure(
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
             enable_observability=not disable_otel,
+            enable_memory=not disable_memory,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
             request_header_configuration=request_header_config,
@@ -294,6 +296,10 @@ def configure(
             headers = request_header_config.get("requestHeaderAllowlist", [])
             headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
+        memory_info = "Short-term memory (30-day retention)"
+        if disable_memory:
+            memory_info = "Disabled (stateless agent)"
+
         console.print(
             Panel(
                 f"[green]Configuration Complete[/green]\n\n"
@@ -309,7 +315,7 @@ def configure(
                 f"[/dim]\n"
                 f"Authorization: [dim]{auth_info}[/dim]\n\n"
                 f"{headers_info}\n"
-                f"Memory: [dim]Short-term memory (30-day retention)[/dim]\n\n"
+                f"Memory: [dim]{memory_info}[/dim]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",

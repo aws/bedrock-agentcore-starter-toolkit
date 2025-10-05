@@ -30,9 +30,10 @@ def invoke_bedrock_agentcore(
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
-    # Check memory status on first invoke if LTM is enabled
+    # Check memory status on first invoke if LTM is enabled AND memory is not disabled
     if (
         agent_config.memory
+        and agent_config.memory.mode != "NO_MEMORY"
         and agent_config.memory.has_ltm
         and agent_config.memory.memory_id
         and not agent_config.memory.first_invoke_memory_check_done
