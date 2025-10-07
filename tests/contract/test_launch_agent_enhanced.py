@@ -36,26 +36,26 @@ class TestLaunchAgentEnhancedContract:
     def test_launch_agent_enhanced_build_artifact_structure(self):
         """Test that build artifacts are created with correct structure."""
 
-        # Expected artifact directory structure
+        # Expected artifact directory structure (flat structure, no src/ subdirectory)
         expected_structure = {
-            "base_directory": ".packages/test-agent",
+            "base_directory": ".bedrock-agentcore/test-agent",
             "contents": [
-                "src/",  # Copied source code
                 "Dockerfile",  # Generated Dockerfile
                 "build_metadata.json",  # Build information
+                # Source code files copied directly (no src/ subdirectory)
             ],
         }
 
         # Build artifact info validation
         build_info = BuildArtifactInfo(
             base_directory=expected_structure["base_directory"],
-            source_copy_path=f"{expected_structure['base_directory']}/src",
+            source_copy_path=expected_structure["base_directory"],  # Flat structure
             dockerfile_path=f"{expected_structure['base_directory']}/Dockerfile",
             organized=True,
         )
 
         assert build_info.is_valid() is True
-        assert build_info.get_artifact_directory("test-agent") == ".packages/test-agent"
+        assert build_info.get_artifact_directory("test-agent") == ".bedrock-agentcore/test-agent"
 
     def test_launch_agent_enhanced_source_path_integration(self):
         """Test that launch operation uses tracked source path."""
@@ -156,7 +156,7 @@ class TestLaunchAgentEnhancedContract:
             artifact_dir = build_info.get_artifact_directory(agent_name)
 
             # Each agent should have its own directory
-            assert artifact_dir == f".packages/{agent_name}"
+            assert artifact_dir == f".bedrock-agentcore/{agent_name}"
 
         # Verify isolation - different agents get different directories
         artifact_dirs = [BuildArtifactInfo().get_artifact_directory(name) for name in agents]
@@ -170,7 +170,7 @@ class TestLaunchAgentEnhancedContract:
             "error": "Launch failed",
             "details": "Container build failed",
             "cleanup_performed": True,
-            "artifacts_removed": [".packages/failing-agent/src", ".packages/failing-agent/Dockerfile"],
+            "artifacts_removed": [".bedrock-agentcore/failing-agent/Dockerfile"],  # Flat structure, no /src
         }
 
         # Validate cleanup behavior contract

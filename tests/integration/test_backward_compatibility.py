@@ -94,7 +94,7 @@ class TestBackwardCompatibilityIntegration:
                     "entrypoint": "agent.py",
                     "source_path": "/path/to/source",  # New field
                     "build_artifacts": {  # New field
-                        "base_directory": ".packages/enhanced-agent",
+                        "base_directory": ".bedrock-agentcore/enhanced-agent",
                         "organized": True,
                     },
                     "aws": {"region": "us-west-2", "account": "123456789012"},

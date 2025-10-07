@@ -28,9 +28,9 @@ class TestGetAgentStatusEnhancedContract:
             "entrypoint": "agent.py",
             "source_path": "/path/to/source",
             "build_artifacts": {
-                "base_directory": ".packages/enhanced-agent",
-                "source_copy_path": ".packages/enhanced-agent/src",
-                "dockerfile_path": ".packages/enhanced-agent/Dockerfile",
+                "base_directory": ".bedrock-agentcore/enhanced-agent",
+                "source_copy_path": ".bedrock-agentcore/enhanced-agent",
+                "dockerfile_path": ".bedrock-agentcore/enhanced-agent/Dockerfile",
                 "build_timestamp": "2025-01-06T12:00:00Z",
                 "organized": True,
             },

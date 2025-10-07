@@ -20,21 +20,17 @@ def create_build_artifact_organization(agent_name: str, source_path: str | None 
     Returns:
         BuildArtifactInfo with organized structure details
     """
-    base_dir = Path(f".packages/{agent_name}")
+    base_dir = Path(f".bedrock-agentcore/{agent_name}")
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create subdirectory structure
-    src_dir = base_dir / "src"
-    src_dir.mkdir(exist_ok=True)
-
-    # Copy source files if source_path provided
+    # Copy source files if source_path provided (flat structure, no src/ subdirectory)
     source_copy_path = None
     if source_path:
         source_path_obj = Path(source_path)
         if source_path_obj.exists() and source_path_obj.is_dir():
-            # Copy source directory contents to src/
-            shutil.copytree(source_path_obj, src_dir, dirs_exist_ok=True)
-            source_copy_path = str(src_dir)
+            # Copy source directory contents directly to base_dir
+            shutil.copytree(source_path_obj, base_dir, dirs_exist_ok=True)
+            source_copy_path = str(base_dir)
 
     # Create Dockerfile path (will be generated later)
     dockerfile_path = str(base_dir / "Dockerfile")
@@ -54,7 +50,7 @@ def cleanup_build_artifacts(agent_name: str) -> None:
     Args:
         agent_name: Name of the agent whose artifacts to clean
     """
-    base_dir = Path(f".packages/{agent_name}")
+    base_dir = Path(f".bedrock-agentcore/{agent_name}")
     if base_dir.exists():
         try:
             shutil.rmtree(base_dir)
@@ -72,7 +68,7 @@ def ensure_build_artifact_directory(agent_name: str) -> Path:
     Returns:
         Path to the agent's build artifact directory
     """
-    base_dir = Path(f".packages/{agent_name}")
+    base_dir = Path(f".bedrock-agentcore/{agent_name}")
     base_dir.mkdir(parents=True, exist_ok=True)
     return base_dir
 
@@ -86,16 +82,15 @@ def get_build_artifact_info(agent_name: str) -> BuildArtifactInfo | None:
     Returns:
         BuildArtifactInfo if artifacts exist, None otherwise
     """
-    base_dir = Path(f".packages/{agent_name}")
+    base_dir = Path(f".bedrock-agentcore/{agent_name}")
     if not base_dir.exists():
         return None
 
-    src_dir = base_dir / "src"
     dockerfile_path = base_dir / "Dockerfile"
 
     return BuildArtifactInfo(
         base_directory=str(base_dir),
-        source_copy_path=str(src_dir) if src_dir.exists() else None,
+        source_copy_path=str(base_dir),  # Flat structure: source copied directly to base_dir
         dockerfile_path=str(dockerfile_path) if dockerfile_path.exists() else None,
         build_timestamp=datetime.fromtimestamp(base_dir.stat().st_mtime),
         organized=True,

@@ -706,36 +706,33 @@ class TestLaunchBedrockAgentCore:
 
         # Add a memory configuration to the agent
         from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
 
         config = load_config(config_path)
         agent = list(config.agents.values())[0]
 
-        # Add memory info to the agent
-        agent.memory = Mock()
-        agent.memory.memory_id = "test-memory-id"
-        agent.memory.memory_name = "test-memory-name"
+        # Add memory info to the agent using proper MemoryConfig
+        agent.memory = MemoryConfig(mode="STM_AND_LTM", memory_id="test-memory-id", memory_name="test-memory-name")
 
         config.agents[agent.name] = agent
         save_config(config, config_path)
 
-        # Test that launch operation adds the memory env vars
-        env_vars = {}
+        # Mock the build to return success
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+        mock_container_runtime.has_local_runtime = True
 
-        # Instead of running the full launch, just call the specific part we want to test
-        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import launch_bedrock_agentcore
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            # Launch with empty env_vars
+            result = launch_bedrock_agentcore(config_path, local=True, env_vars={})
 
-        # Mock the build operation to avoid execution
-        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.build") as mock_build:
-            mock_build.return_value = (True, ["Successfully built"])
-
-            # Launch with our env_vars dictionary
-            launch_bedrock_agentcore(config_path, local=True, env_vars=env_vars)
-
-            # Check that memory vars were added to env_vars
-            assert "BEDROCK_AGENTCORE_MEMORY_ID" in env_vars
-            assert env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "test-memory-id"
-            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in env_vars
-            assert env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test-memory-name"
+            # Check that memory vars were added to result.env_vars
+            assert "BEDROCK_AGENTCORE_MEMORY_ID" in result.env_vars
+            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "test-memory-id"
+            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in result.env_vars
+            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test-memory-name"
 
     def test_memory_configuration_handling(self, mock_container_runtime, tmp_path):
         """Test memory configuration handling in environment variables."""

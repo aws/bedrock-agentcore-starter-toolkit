@@ -69,56 +69,72 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str) -> str:
-        """Upload current directory to S3, respecting .dockerignore patterns."""
+    def upload_source(self, agent_name: str, source_directory: str = ".") -> str:
+        """Upload source directory to S3, respecting .dockerignore patterns.
+
+        Args:
+            agent_name: Name of the agent (used for S3 key organization)
+            source_directory: Directory to upload (defaults to current directory)
+
+        Returns:
+            S3 location URI (s3://bucket/key)
+        """
         account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
-        # Parse .dockerignore patterns
-        ignore_patterns = self._parse_dockerignore()
+        # Save current directory and change to source directory
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(source_directory)
 
-        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
-            try:
-                with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
-                    for root, dirs, files in os.walk("."):
-                        # Convert to relative path
-                        rel_root = os.path.relpath(root, ".")
-                        if rel_root == ".":
-                            rel_root = ""
+            # Parse .dockerignore patterns
+            ignore_patterns = self._parse_dockerignore()
 
-                        # Filter directories
-                        dirs[:] = [
-                            d
-                            for d in dirs
-                            if not self._should_ignore(
-                                os.path.join(rel_root, d) if rel_root else d, ignore_patterns, is_dir=True
-                            )
-                        ]
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
+                try:
+                    with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
+                        for root, dirs, files in os.walk("."):
+                            # Convert to relative path
+                            rel_root = os.path.relpath(root, ".")
+                            if rel_root == ".":
+                                rel_root = ""
 
-                        for file in files:
-                            file_rel_path = os.path.join(rel_root, file) if rel_root else file
+                            # Filter directories
+                            dirs[:] = [
+                                d
+                                for d in dirs
+                                if not self._should_ignore(
+                                    os.path.join(rel_root, d) if rel_root else d, ignore_patterns, is_dir=True
+                                )
+                            ]
 
-                            # Skip if matches ignore pattern
-                            if self._should_ignore(file_rel_path, ignore_patterns, is_dir=False):
-                                continue
+                            for file in files:
+                                file_rel_path = os.path.join(rel_root, file) if rel_root else file
 
-                            file_path = Path(root) / file
-                            zipf.write(file_path, file_rel_path)
+                                # Skip if matches ignore pattern
+                                if self._should_ignore(file_rel_path, ignore_patterns, is_dir=False):
+                                    continue
 
-                # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
-                s3_key = f"{agent_name}/source.zip"
+                                file_path = Path(root) / file
+                                zipf.write(file_path, file_rel_path)
 
-                self.s3_client.upload_file(
-                    temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
-                )
+                    # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
+                    s3_key = f"{agent_name}/source.zip"
 
-                self.logger.info("Uploaded source to S3: %s", s3_key)
-                return f"s3://{bucket_name}/{s3_key}"
+                    self.s3_client.upload_file(
+                        temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
+                    )
 
-            finally:
-                temp_zip.close()
-                os.unlink(temp_zip.name)
+                    self.logger.info("Uploaded source to S3: %s", s3_key)
+                    return f"s3://{bucket_name}/{s3_key}"
+
+                finally:
+                    temp_zip.close()
+                    os.unlink(temp_zip.name)
+        finally:
+            # Restore original directory
+            os.chdir(original_cwd)
 
     def _normalize_s3_location(self, source_location: str) -> str:
         """Convert s3:// URL to bucket/key format for CodeBuild."""

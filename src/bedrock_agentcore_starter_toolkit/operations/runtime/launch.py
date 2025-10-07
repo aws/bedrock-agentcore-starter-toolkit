@@ -13,6 +13,7 @@ from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...services.xray import enable_transaction_search_if_needed
+from ...utils.runtime.artifacts import create_build_artifact_organization
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.logs import get_genai_observability_url
@@ -620,9 +621,25 @@ def _execute_codebuild_workflow(
             )
             created_resources.append(f"CodeBuild Execution Role: {codebuild_execution_role}")
 
-        log.info("Uploading source code...")
-        source_location = codebuild_service.upload_source(agent_name=agent_name)
-        created_resources.append(f"Source Upload: {source_location}")
+        # Create staging directory if source_path is configured
+        if agent_config.source_path:
+            log.info("Creating build staging directory from source_path: %s", agent_config.source_path)
+            build_artifacts = create_build_artifact_organization(agent_name, agent_config.source_path)
+            agent_config.build_artifacts = build_artifacts
+
+            # Save build artifacts info to config
+            project_config.agents[agent_config.name] = agent_config
+            save_config(project_config, config_path)
+
+            log.info("Uploading source code from staging directory...")
+            source_location = codebuild_service.upload_source(
+                agent_name=agent_name, source_directory=build_artifacts.base_directory
+            )
+            created_resources.append(f"Source Upload: {source_location} (from staging)")
+        else:
+            log.info("Uploading source code from project root...")
+            source_location = codebuild_service.upload_source(agent_name=agent_name)
+            created_resources.append(f"Source Upload: {source_location}")
 
         # Use cached project name from config if available
         if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:
@@ -638,6 +655,9 @@ def _execute_codebuild_workflow(
             )
             created_resources.append(f"CodeBuild Project: {project_name}")
 
+    except ValueError:
+        # Re-raise validation errors directly without wrapping
+        raise
     except Exception as e:
         if created_resources:
             log.warning("Launch failed after creating: %s", created_resources)

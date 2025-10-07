@@ -19,19 +19,18 @@ class TestBuildArtifactOrganizationIntegration:
             build_info = BuildArtifactInfo()
             artifact_dir = build_info.get_artifact_directory("test-agent")
 
-            assert artifact_dir == ".packages/test-agent"
+            assert artifact_dir == ".bedrock-agentcore/test-agent"
 
-            # Test full artifact structure
-            full_artifact_dir = temp_path / ".packages" / "test-agent"
+            # Test full artifact structure (flat structure, no src/ subdirectory)
+            full_artifact_dir = temp_path / ".bedrock-agentcore" / "test-agent"
             full_artifact_dir.mkdir(parents=True)
 
             # Create expected structure
-            (full_artifact_dir / "src").mkdir()
             (full_artifact_dir / "Dockerfile").write_text("FROM python:3.10")
 
             build_info = BuildArtifactInfo(
                 base_directory=str(full_artifact_dir),
-                source_copy_path=str(full_artifact_dir / "src"),
+                source_copy_path=str(full_artifact_dir),  # Flat structure
                 dockerfile_path=str(full_artifact_dir / "Dockerfile"),
                 organized=True,
             )
@@ -54,7 +53,7 @@ class TestBuildArtifactOrganizationIntegration:
 
         # Each should follow expected pattern
         for i, agent_name in enumerate(agents):
-            expected_dir = f".packages/{agent_name}"
+            expected_dir = f".bedrock-agentcore/{agent_name}"
             assert artifact_dirs[i] == expected_dir
 
     def test_artifact_cleanup_integration(self):

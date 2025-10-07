@@ -114,7 +114,7 @@ class BuildArtifactInfo(BaseModel):
         Returns:
             Path to the artifact directory
         """
-        return f".packages/{agent_name}"
+        return f".bedrock-agentcore/{agent_name}"
 
     def is_valid(self) -> bool:
         """Check if artifact info represents a valid organization.
@@ -132,17 +132,16 @@ class BuildArtifactInfo(BaseModel):
     def cleanup(self) -> None:
         """Clean up build artifacts directory."""
         if self.base_directory:
-            try:
+            import contextlib
+            import shutil
+
+            with contextlib.suppress(Exception):
+                # Cleanup failures are non-critical - ignore errors
                 base_path = Path(self.base_directory)
                 if base_path.exists():
-                    import shutil
-
                     shutil.rmtree(base_path)
                     self.organized = False
                     self.build_timestamp = None
-            except Exception:
-                # Cleanup failures are non-critical
-                pass
 
 
 class BedrockAgentCoreAgentSchema(BaseModel):

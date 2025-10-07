@@ -123,18 +123,18 @@ class TestConfigureAgentEnhancedContract:
     def test_configure_agent_enhanced_with_build_artifacts(self):
         """Test configuration with build artifact information."""
 
-        # Build artifacts should be auto-populated, not user-provided
+        # Build artifacts should be auto-populated, not user-provided (flat structure)
         build_info = BuildArtifactInfo(
-            base_directory=".packages/test-agent",
-            source_copy_path=".packages/test-agent/src",
-            dockerfile_path=".packages/test-agent/Dockerfile",
+            base_directory=".bedrock-agentcore/test-agent",
+            source_copy_path=".bedrock-agentcore/test-agent",  # Flat structure
+            dockerfile_path=".bedrock-agentcore/test-agent/Dockerfile",
             organized=True,
         )
 
         # Verify build artifact info structure
-        assert build_info.base_directory == ".packages/test-agent"
-        assert build_info.source_copy_path == ".packages/test-agent/src"
-        assert build_info.dockerfile_path == ".packages/test-agent/Dockerfile"
+        assert build_info.base_directory == ".bedrock-agentcore/test-agent"
+        assert build_info.source_copy_path == ".bedrock-agentcore/test-agent"  # Flat structure
+        assert build_info.dockerfile_path == ".bedrock-agentcore/test-agent/Dockerfile"
         assert build_info.organized is True
         assert build_info.is_valid() is True
 
