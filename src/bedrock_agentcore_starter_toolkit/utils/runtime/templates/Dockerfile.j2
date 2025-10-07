@@ -40,8 +40,14 @@ ENV DOCKER_CONTAINER=1
 RUN useradd -m -u 1000 bedrock_agentcore
 USER bedrock_agentcore
 
-EXPOSE 8080
+# Expose port based on protocol
+{% if protocol == "A2A" %}
+EXPOSE 9000
+{% elif protocol == "MCP" %}
 EXPOSE 8000
+{% else %}
+EXPOSE 8080
+{% endif %}
 
 # Copy entire project (respecting .dockerignore)
 COPY . .

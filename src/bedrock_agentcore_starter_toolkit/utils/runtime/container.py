@@ -110,6 +110,7 @@ class ContainerRuntime:
         requirements_file: Optional[str] = None,
         memory_id: Optional[str] = None,
         memory_name: Optional[str] = None,
+        protocol: Optional[str] = None,
     ) -> Path:
         """Generate Dockerfile from template."""
         current_platform = self._get_current_platform()
@@ -168,6 +169,7 @@ class ContainerRuntime:
             "observability_enabled": enable_observability,
             "memory_id": memory_id,
             "memory_name": memory_name,
+            "protocol": protocol or "HTTP",
         }
 
         dockerfile_path = output_dir / "Dockerfile"

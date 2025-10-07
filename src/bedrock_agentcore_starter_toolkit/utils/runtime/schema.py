@@ -43,7 +43,16 @@ class NetworkConfiguration(BaseModel):
 class ProtocolConfiguration(BaseModel):
     """Protocol configuration for BedrockAgentCore deployment."""
 
-    server_protocol: str = Field(default="HTTP", description="Server protocol for deployment, either HTTP or MCP")
+    server_protocol: str = Field(default="HTTP", description="Server protocol for deployment, either HTTP or MCP or A2A")
+
+    @field_validator("server_protocol")
+    @classmethod
+    def validate_protocol(cls, v: str) -> str:
+        """Validate protocol is one of the supported types."""
+        allowed = ["HTTP", "MCP", "A2A"]
+        if v.upper() not in allowed:
+            raise ValueError(f"Protocol must be one of {allowed}, got: {v}")
+        return v.upper()
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
