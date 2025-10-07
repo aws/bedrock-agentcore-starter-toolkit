@@ -1,7 +1,7 @@
 """Tests for Bedrock AgentCore configure operation."""
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from bedrock_agentcore_starter_toolkit.operations.runtime.configure import (
     AGENT_NAME_ERROR,
@@ -42,9 +42,19 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager to bypass interactive prompts
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")  # Return tuple
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -70,6 +80,68 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 # Verify config file was created
                 config_path = tmp_path / ".bedrock_agentcore.yaml"
                 assert config_path.exists()
+
+                # Verify memory prompt was called
+                mock_config_manager.prompt_memory_selection.assert_called_once()
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_memory_options(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with memory options."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_AND_LTM")  # Enable LTM
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                )
+
+                # Verify configuration was created
+                assert result.config_path.exists()
+
+                # Load config and verify memory settings
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.agents["test_agent"]
+
+                assert agent_config.memory.mode == "STM_AND_LTM"
+                assert agent_config.memory.event_expiry_days == 30
+                assert agent_config.memory.memory_name == "test_agent_memory"
 
         finally:
             os.chdir(original_cwd)
@@ -99,9 +171,19 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -140,9 +222,19 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 # Test auto-create ECR (default)
                 result1 = configure_bedrock_agentcore(
@@ -190,9 +282,19 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 # Test role name (should be converted to full ARN)
                 result1 = configure_bedrock_agentcore(
@@ -239,46 +341,55 @@ bedrock_agentcore = BedrockAgentCoreApp()
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+                patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log,
             ):
-                # Mock the logger to capture verbose logging
-                with patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log:
-                    result = configure_bedrock_agentcore(
-                        agent_name="test_agent",
-                        entrypoint_path=agent_file,
-                        execution_role="TestRole",
-                        container_runtime="docker",
-                        verbose=True,  # Enable verbose mode
-                        enable_observability=True,
-                        requirements_file="requirements.txt",
-                    )
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    container_runtime="docker",
+                    verbose=True,  # Enable verbose mode
+                    enable_observability=True,
+                    requirements_file="requirements.txt",
+                )
 
-                    # Verify result structure is correct
-                    assert hasattr(result, "config_path")
-                    assert hasattr(result, "dockerfile_path")
-                    assert hasattr(result, "runtime")
-                    assert hasattr(result, "region")
-                    assert hasattr(result, "account_id")
-                    assert hasattr(result, "execution_role")
+                # Verify result structure is correct
+                assert hasattr(result, "config_path")
+                assert hasattr(result, "dockerfile_path")
+                assert hasattr(result, "runtime")
+                assert hasattr(result, "region")
+                assert hasattr(result, "account_id")
+                assert hasattr(result, "execution_role")
 
-                    # Verify values
-                    assert result.runtime == "Docker"
-                    assert result.region == "us-west-2"
-                    assert result.account_id == "123456789012"
-                    assert result.execution_role == "arn:aws:iam::123456789012:role/TestRole"
+                # Verify values
+                assert result.runtime == "Docker"
+                assert result.region == "us-west-2"
+                assert result.account_id == "123456789012"
+                assert result.execution_role == "arn:aws:iam::123456789012:role/TestRole"
 
-                    # Verify config file was created
-                    config_path = tmp_path / ".bedrock_agentcore.yaml"
-                    assert config_path.exists()
+                # Verify config file was created
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
+                assert config_path.exists()
 
-                    # Verify that verbose logging was enabled (log.setLevel called with DEBUG)
-                    mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
+                # Verify that verbose logging was enabled (log.setLevel called with DEBUG)
+                mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
 
-                    # Verify that debug messages were logged
-                    debug_calls = [call for call in mock_log.debug.call_args_list]
-                    assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
+                # Verify that debug messages were logged
+                debug_calls = [call for call in mock_log.debug.call_args_list]
+                assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
         finally:
             os.chdir(original_cwd)
 
@@ -314,9 +425,19 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 # Test with minimal parameters - only required ones, rest use defaults
                 result = configure_bedrock_agentcore(
@@ -386,9 +507,19 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -409,16 +540,16 @@ def handler(payload):
         finally:
             os.chdir(original_cwd)
 
-    def test_configure_with_request_header_configuration(
+    def test_configure_with_request_header_allowlist(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
-        """Test configuration with request_header_configuration parameter."""
-        # Create agent file
+        """Test configuration with request header allowlist."""
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
@@ -433,14 +564,27 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
                 # Test with request header configuration
                 request_header_config = {
                     "requestHeaderAllowlist": ["Authorization", "X-Custom-Header", "X-Test-Header"]
                 }
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = (
+                    "CREATE_NEW",
+                    "STM_ONLY",
+                )  # Default to STM only
+                mock_config_manager_class.return_value = mock_config_manager
 
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -499,9 +643,19 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            # Mock the ConfigurationManager
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
             ):
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -531,6 +685,7 @@ def handler(payload):
 
         original_cwd = Path.cwd()
         import os
+
         os.chdir(tmp_path)
 
         try:
@@ -545,10 +700,20 @@ def handler(payload):
                 def __new__(cls, *args, **kwargs):
                     return mock_container_runtime
 
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
-                MockContainerRuntimeClass,
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
             ):
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                mock_config_manager_class.return_value = mock_config_manager
+
                 # Test with None request header configuration
                 result = configure_bedrock_agentcore(
                     agent_name="test_agent",
@@ -569,6 +734,312 @@ def handler(payload):
                 agent_config = loaded_config.get_agent_config("test_agent")
 
                 assert agent_config.request_header_configuration is None
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_empty_request_header_configuration(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with empty dict request_header_configuration parameter."""
+        # Create agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+            # Create a mock class that preserves class attributes
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
+            ):
+                # Test with empty dict request header configuration
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                mock_config_manager_class.return_value = mock_config_manager
+
+                # Test with empty dict request header configuration
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    request_header_configuration={},
+                )
+
+                # Verify config file was created
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
+                assert config_path.exists()
+                assert result.config_path is not None
+
+                # Load and verify the configuration has empty dict for request headers
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                loaded_config = load_config(config_path)
+                agent_config = loaded_config.get_agent_config("test_agent")
+
+                assert agent_config.request_header_configuration == {}
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_verbose_logs_request_header_configuration(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that verbose mode logs request header configuration details."""
+        # Create agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+            # Create a mock class that preserves class attributes
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
+            ):
+                # Mock the logger to capture verbose logging
+                with patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log:
+                    request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]}
+
+                    # Configure mock
+                    mock_config_manager = Mock()
+                    mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                    mock_config_manager_class.return_value = mock_config_manager
+
+                    result = configure_bedrock_agentcore(
+                        agent_name="test_agent",
+                        entrypoint_path=agent_file,
+                        execution_role="TestRole",
+                        request_header_configuration=request_header_config,
+                        verbose=True,  # Enable verbose mode
+                    )
+
+                    # Verify result structure is correct
+                    assert result.runtime == "Docker"
+
+                    # Verify that verbose logging was enabled
+                    mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
+
+                    # Verify that request header configuration was logged
+                    debug_calls = [call for call in mock_log.debug.call_args_list]
+                    assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
+
+                    # Check that request header configuration appears in one of the debug calls
+                    request_header_logged = any("Request header configuration" in str(call) for call in debug_calls)
+                    assert request_header_logged, "Expected request header configuration to be logged in verbose mode"
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_complex_request_header_configuration(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with complex request_header_configuration structure."""
+        # Create agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+            # Create a mock class that preserves class attributes
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
+            ):
+                # Test with complex nested request header configuration
+                request_header_config = {
+                    "requestHeaderAllowlist": [
+                        "Authorization",
+                        "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*",
+                        "Content-Type",
+                        "User-Agent",
+                    ],
+                    "additionalSettings": {"maxHeaderSize": 8192, "caseSensitive": False, "allowWildcards": True},
+                }
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                mock_config_manager_class.return_value = mock_config_manager
+
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    request_header_configuration=request_header_config,
+                )
+
+                # Verify config file was created
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
+                assert config_path.exists()
+                assert result.config_path is not None
+
+                # Load and verify the complex configuration is preserved
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                loaded_config = load_config(config_path)
+                agent_config = loaded_config.get_agent_config("test_agent")
+
+                assert agent_config.request_header_configuration is not None
+                assert "requestHeaderAllowlist" in agent_config.request_header_configuration
+                assert len(agent_config.request_header_configuration["requestHeaderAllowlist"]) == 4
+                assert "Authorization" in agent_config.request_header_configuration["requestHeaderAllowlist"]
+                assert (
+                    "X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
+                    in agent_config.request_header_configuration["requestHeaderAllowlist"]
+                )
+
+                # Verify additional settings are preserved
+                assert "additionalSettings" in agent_config.request_header_configuration
+                assert agent_config.request_header_configuration["additionalSettings"]["maxHeaderSize"] == 8192
+                assert agent_config.request_header_configuration["additionalSettings"]["caseSensitive"] is False
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_all_authorization_options(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with both authorizer_configuration and request_header_configuration."""
+        # Create agent file
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+            # Create a mock class that preserves class attributes
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_config_manager_class,
+            ):
+                # Test with both OAuth authorizer and request headers
+                oauth_config = {
+                    "customJWTAuthorizer": {
+                        "discoveryUrl": "https://example.com/.well-known/openid_configuration",
+                        "allowedClients": ["client1", "client2"],
+                        "allowedAudience": ["aud1", "aud2"],
+                    }
+                }
+
+                request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-OAuth-Token", "X-Client-ID"]}
+
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                mock_config_manager_class.return_value = mock_config_manager
+
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    authorizer_configuration=oauth_config,
+                    request_header_configuration=request_header_config,
+                )
+
+                # Verify config file was created
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
+                assert config_path.exists()
+                assert result.config_path is not None
+
+                # Load and verify both configurations are preserved
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                loaded_config = load_config(config_path)
+                agent_config = loaded_config.get_agent_config("test_agent")
+
+                # Verify OAuth configuration
+                assert agent_config.authorizer_configuration is not None
+                assert "customJWTAuthorizer" in agent_config.authorizer_configuration
+                assert (
+                    agent_config.authorizer_configuration["customJWTAuthorizer"]["discoveryUrl"]
+                    == "https://example.com/.well-known/openid_configuration"
+                )
+
+                # Verify request header configuration
+                assert agent_config.request_header_configuration is not None
+                assert agent_config.request_header_configuration["requestHeaderAllowlist"] == [
+                    "Authorization",
+                    "X-OAuth-Token",
+                    "X-Client-ID",
+                ]
 
         finally:
             os.chdir(original_cwd)
@@ -635,3 +1106,19 @@ class TestValidateAgentName:
             is_valid, error_msg = validate_agent_name(name)
             assert is_valid is False, f"Expected '{name}' to be invalid"
             assert error_msg == AGENT_NAME_ERROR, f"Expected standard error message for '{name}'"
+
+    def test_validate_agent_name_additional_patterns(self):
+        """Test validate_agent_name with various name patterns."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.configure import validate_agent_name
+
+        # Test valid names
+        valid_names = ["agent123", "Agent_123", "A_1"]
+        for name in valid_names:
+            is_valid, _ = validate_agent_name(name)
+            assert is_valid is True, f"Expected '{name}' to be valid"
+
+        # Test invalid names
+        invalid_names = ["1agent", "agent-123", "agent.name"]
+        for name in invalid_names:
+            is_valid, _ = validate_agent_name(name)
+            assert is_valid is False, f"Expected '{name}' to be invalid"

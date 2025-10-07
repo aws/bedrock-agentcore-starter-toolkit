@@ -541,3 +541,98 @@ CMD ["python", "/app/{{ agent_file }}"]
                     "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html"
                     in warning_message
                 )
+
+    def test_generate_dockerfile_with_memory(self, tmp_path):
+        """Test Dockerfile generation with memory parameters."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create agent file
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            # Mock template, dependencies, and platform validation
+            with (
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies") as mock_deps,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.container.get_python_version", return_value="3.10"
+                ),
+                patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+            ):
+                from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+                mock_deps.return_value = DependencyInfo(file="requirements.txt", type="requirements")
+                mock_template_instance = mock_template.return_value
+                mock_template_instance.render.return_value = "# Generated Dockerfile with memory"
+
+                # Call with memory parameters
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    memory_id="mem_123456",
+                    memory_name="test_agent_memory",
+                )
+
+                assert dockerfile_path == tmp_path / "Dockerfile"
+
+                # Verify template was called with memory context
+                call_args = mock_template_instance.render.call_args
+                context = call_args[1] if call_args[1] else call_args[0][0] if call_args[0] else {}
+
+                assert context.get("memory_id") == "mem_123456"
+                assert context.get("memory_name") == "test_agent_memory"
+
+    def test_validate_module_path_with_hyphens(self, tmp_path):
+        """Test _validate_module_path with directory containing hyphens."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create test structure with hyphenated directory
+            invalid_dir = tmp_path / "my-invalid-dir"
+            invalid_dir.mkdir()
+            agent_file = invalid_dir / "agent.py"
+            agent_file.touch()
+
+            # Should raise ValueError about hyphens
+            with pytest.raises(ValueError) as excinfo:
+                runtime._validate_module_path(agent_file, tmp_path)
+            assert "contains hyphens" in str(excinfo.value)
+            assert "my-invalid-dir" in str(excinfo.value)
+
+    def test_validate_module_path_outside_project(self, tmp_path):
+        """Test _validate_module_path with file outside project directory."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            project_root = tmp_path / "project"
+            project_root.mkdir()
+
+            # Create file outside project root
+            outside_file = tmp_path / "agent.py"
+            outside_file.touch()
+
+            # Should raise ValueError about file location
+            with pytest.raises(ValueError) as excinfo:
+                runtime._validate_module_path(outside_file, project_root)
+
+            # The actual error comes from pathlib.Path.relative_to()
+            assert "is not in the subpath of" in str(excinfo.value) or "does not start with" in str(excinfo.value)
+
+    def test_ensure_dockerignore_missing_template(self, tmp_path):
+        """Test _ensure_dockerignore when template file is missing."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Mock both .dockerignore and template checks to return False
+            with patch("pathlib.Path.exists", side_effect=[False, False, False]):  # Need three False values
+                # First False for .dockerignore check
+                # Second False for template_path.exists()
+                # Third False for final .dockerignore check
+
+                runtime._ensure_dockerignore(tmp_path)
+
+                # Verify .dockerignore was not created
+                dockerignore_path = tmp_path / ".dockerignore"
+                assert not dockerignore_path.exists()

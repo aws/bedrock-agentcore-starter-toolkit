@@ -21,6 +21,7 @@ class ConfigureResult(BaseModel):
     execution_role: Optional[str] = Field(None, description="AWS execution role ARN")
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
 
 
 # Launch operation models
@@ -69,6 +70,12 @@ class StatusConfigInfo(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
+    memory_id: Optional[str] = Field(None, description="Memory resource ID")
+    memory_status: Optional[str] = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
+    memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
+    memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
+    memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
+    memory_details: Optional[Dict[str, Any]] = Field(None, description="Detailed memory resource information")
 
 
 class StatusResult(BaseModel):

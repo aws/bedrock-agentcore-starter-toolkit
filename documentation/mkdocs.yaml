@@ -72,31 +72,35 @@ nav:
   - User Guide:
     - Welcome: index.md
     - Runtime:
-      - Quickstart: user-guide/runtime/quickstart.md
-      - Overview: user-guide/runtime/overview.md
-      - Permissions: user-guide/runtime/permissions.md
-      - Async Processing: user-guide/runtime/async.md
-      - Notebook: user-guide/runtime/notebook.md
+      - Runtime Quickstart: user-guide/runtime/quickstart.md
+      - Runtime Overview: user-guide/runtime/overview.md
+      - Runtime Permissions: user-guide/runtime/permissions.md
+      - Runtime Async Processing: user-guide/runtime/async.md
+      - Runtime Notebook: user-guide/runtime/notebook.md
     - Gateway:
-      - Quickstart: user-guide/gateway/quickstart.md
+      - Gateway Quickstart: user-guide/gateway/quickstart.md
     - Memory:
-      - Quickstart: user-guide/memory/quickstart.md
+      - Memory Quickstart: user-guide/memory/quickstart.md
     - Identity:
-      - Quickstart: user-guide/identity/quickstart.md
+      - Identity Quickstart: user-guide/identity/quickstart.md
     - Built-in Tools:
       - Quickstart Browser Tool: user-guide/builtin-tools/quickstart-browser.md
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
     - Observability:
-      - Quickstart: user-guide/observability/quickstart.md
+      - Observability Quickstart: user-guide/observability/quickstart.md
     - Import Agent:
-      - Quickstart: user-guide/import-agent/quickstart.md
-      - Overview: user-guide/import-agent/overview.md
-      - Configuration: user-guide/import-agent/configuration.md
+      - Import Agent Quickstart: user-guide/import-agent/quickstart.md
+      - Import Agent Overview: user-guide/import-agent/overview.md
+      - Import Agent Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
+    - AgentCore Quickstart: examples/agentcore-quickstart-example.md
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
+    - Memory Gateway Agent: examples/memory_gateway_agent.md
+    - Runtime Framework Agents: examples/runtime-framework-agents.md
+    - Semantic Search: examples/semantic_search.md
   - Contribute ❤️: https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md
   - API Reference:
     - Bedrock AgentCore SDK:

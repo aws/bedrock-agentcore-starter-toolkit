@@ -121,6 +121,16 @@
       ]
     },
     {
+      "Sid": "BedrockAgentCoreIdentityGetCredentialProviderClientSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/oauth2/*"
+      ]
+    },
+    {
       "Sid": "BedrockAgentCoreIdentityGetResourceOauth2Token",
       "Effect": "Allow",
       "Action": [
@@ -156,7 +166,28 @@
       ],
       "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/*",
         "arn:aws:bedrock:{{ region }}:{{ account_id }}:*"
+      ]
+    },
+    {
+      "Sid": "BedrockAgentCoreCodeInterpreter",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateCodeInterpreter",
+        "bedrock-agentcore:StartCodeInterpreterSession",
+        "bedrock-agentcore:InvokeCodeInterpreter",
+        "bedrock-agentcore:StopCodeInterpreterSession",
+        "bedrock-agentcore:DeleteCodeInterpreter",
+        "bedrock-agentcore:ListCodeInterpreters",
+        "bedrock-agentcore:GetCodeInterpreter",
+        "bedrock-agentcore:GetCodeInterpreterSession",
+        "bedrock-agentcore:ListCodeInterpreterSessions"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:{{ region }}:aws:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter-custom/*"
       ]
     }
   ]

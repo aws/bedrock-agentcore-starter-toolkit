@@ -1,7 +1,7 @@
 """Constants for Bedrock AgentCore Memory SDK."""
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 class StrategyType(Enum):
@@ -88,11 +88,3 @@ class MemoryStrategyStatus(Enum):
     ACTIVE = "ACTIVE"
     DELETING = "DELETING"
     FAILED = "FAILED"
-
-
-# Default namespaces for each strategy type
-DEFAULT_NAMESPACES: Dict[StrategyType, List[str]] = {
-    StrategyType.SEMANTIC: ["/actor/{actorId}/strategy/{strategyId}/{sessionId}"],
-    StrategyType.SUMMARY: ["/actor/{actorId}/strategy/{strategyId}/{sessionId}"],
-    StrategyType.USER_PREFERENCE: ["/actor/{actorId}/strategy/{strategyId}"],
-}

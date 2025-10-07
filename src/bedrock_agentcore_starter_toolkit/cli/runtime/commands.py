@@ -280,6 +280,7 @@ def configure(
             verbose=verbose,
             region=region,
             protocol=protocol.upper() if protocol else None,
+            non_interactive=non_interactive,
         )
 
         # Prepare authorization info for summary
@@ -306,8 +307,9 @@ def configure(
                 f"ECR Repository: [dim]"
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/dim]\n"
-                f"Authorization: [dim]{auth_info}[/dim]\n"
+                f"Authorization: [dim]{auth_info}[/dim]\n\n"
                 f"{headers_info}\n"
+                f"Memory: [dim]Short-term memory (30-day retention)[/dim]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
@@ -328,7 +330,7 @@ def launch(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     local: bool = typer.Option(
-        False, "--local", "-l", help="Build locally and run container locally - requires Docker/Finch/Podman"
+        False, "--local", "-l", help="Local build + local runtime - requires Docker/Finch/Podman"
     ),
     local_build: bool = typer.Option(
         False,
@@ -852,6 +854,11 @@ def status(
 
                     # Determine overall status
                     endpoint_status = endpoint_data.get("status", "Unknown") if endpoint_data else "Not Ready"
+                    # memory_info = ""
+                    # if hasattr(status_json["config"], "memory_id") and status_json["config"].get("memory_id"):
+                    #    memory_type = status_json["config"].get("memory_type", "Short-term")
+                    #    memory_id = status_json["config"].get("memory_id")
+                    #    memory_info = f"Memory: [cyan]{memory_type}[/cyan] ([dim]{memory_id}[/dim])\n"
                     if endpoint_status == "READY":
                         status_text = "Ready - Agent deployed and endpoint available"
                     else:
@@ -867,6 +874,30 @@ def status(
                         f"([cyan]{endpoint_status}[/cyan])\n"
                         f"Region: [cyan]{status_json['config']['region']}[/cyan] | "
                         f"Account: [dim]{status_json['config'].get('account', 'Not available')}[/dim]\n\n"
+                    )
+
+                    # Add memory status with proper provisioning indication
+                    if "memory_id" in status_json.get("config", {}) and status_json["config"]["memory_id"]:
+                        memory_type = status_json["config"].get("memory_type", "Unknown")
+                        memory_id = status_json["config"]["memory_id"]
+                        memory_status = status_json["config"].get("memory_status", "Unknown")
+
+                        # Color-code based on status
+                        if memory_status == "ACTIVE":
+                            panel_content += f"Memory: [green]{memory_type}[/green] ([dim]{memory_id}[/dim])\n"
+                        elif memory_status in ["CREATING", "UPDATING"]:
+                            panel_content += f"Memory: [yellow]{memory_type}[/yellow] ([dim]{memory_id}[/dim])\n"
+                            panel_content += (
+                                "         [yellow]⚠️  Memory is provisioning. "
+                                "STM will be available once ACTIVE.[/yellow]\n"
+                            )
+                        else:
+                            panel_content += f"Memory: [red]{memory_type}[/red] ([dim]{memory_id}[/dim])\n"
+
+                        panel_content += "\n"
+
+                    # Continue building the panel
+                    panel_content += (
                         f"[bold]Deployment Info:[/bold]\n"
                         f"Created: [dim]{agent_data.get('createdAt', 'Not available')}[/dim]\n"
                         f"Last Updated: [dim]"

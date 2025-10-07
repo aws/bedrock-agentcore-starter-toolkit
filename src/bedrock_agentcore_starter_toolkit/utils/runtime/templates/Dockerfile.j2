@@ -1,8 +1,15 @@
 FROM ghcr.io/astral-sh/uv:python{{ python_version }}-bookworm-slim
 WORKDIR /app
 
-# Configure UV for container environment
-ENV UV_SYSTEM_PYTHON=1 UV_COMPILE_BYTECODE=1
+# All environment variables in one layer
+ENV UV_SYSTEM_PYTHON=1 \
+    UV_COMPILE_BYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DOCKER_CONTAINER=1{% if aws_region %} \
+    AWS_REGION={{ aws_region }} \
+    AWS_DEFAULT_REGION={{ aws_region }}{% endif %}{% if memory_id %} \
+    BEDROCK_AGENTCORE_MEMORY_ID={{ memory_id }}{% endif %}{% if memory_name %} \
+    BEDROCK_AGENTCORE_MEMORY_NAME={{ memory_name }}{% endif %}
 
 {% if dependencies_file %}
 {% if dependencies_install_path %}

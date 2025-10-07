@@ -130,6 +130,145 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
     raise ValueError("Execution role not configured and auto-create not enabled")
 
 
+def _ensure_memory_for_agent(
+    agent_config: BedrockAgentCoreAgentSchema,
+    project_config: BedrockAgentCoreConfigSchema,
+    config_path: Path,
+    agent_name: str,
+) -> Optional[str]:
+    """Ensure memory resource exists for agent. Returns memory_id or None.
+
+    This function is idempotent - it creates memory if needed or reuses existing.
+    """
+    # If memory already exists, return it
+    if agent_config.memory and agent_config.memory.memory_id:
+        log.info("Using existing memory: %s", agent_config.memory.memory_id)
+        return agent_config.memory.memory_id
+
+    # If memory not enabled, skip
+    if not agent_config.memory or not agent_config.memory.is_enabled:
+        return None
+
+    log.info("Creating memory resource for agent: %s", agent_name)
+    try:
+        from ...operations.memory.constants import StrategyType
+        from ...operations.memory.manager import MemoryManager
+
+        memory_manager = MemoryManager(region_name=agent_config.aws.region)
+        memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
+
+        # Check if memory already exists
+        existing_memory = None
+        try:
+            memories = memory_manager.list_memories()
+            for m in memories:
+                if m.id.startswith(memory_name):
+                    existing_memory = memory_manager.get_memory(m.id)
+                    log.info("Found existing memory: %s", m.id)
+                    break
+        except Exception as e:
+            log.debug("Error checking for existing memory: %s", e)
+
+        # Determine if we need to create new memory or add strategies to existing
+        if existing_memory:
+            # Check if strategies need to be added
+            existing_strategies = []
+            if hasattr(existing_memory, "strategies") and existing_memory.strategies:
+                existing_strategies = existing_memory.strategies
+
+            log.info("Existing memory has %d strategies", len(existing_strategies))
+
+            # If LTM is enabled but no strategies exist, add them
+            if agent_config.memory.has_ltm and len(existing_strategies) == 0:
+                log.info("Adding LTM strategies to existing memory...")
+                memory_manager.update_memory_strategies_and_wait(
+                    memory_id=existing_memory.id,
+                    add_strategies=[
+                        {
+                            StrategyType.USER_PREFERENCE.value: {
+                                "name": "UserPreferences",
+                                "namespaces": ["/users/{actorId}/preferences"],
+                            }
+                        },
+                        {
+                            StrategyType.SEMANTIC.value: {
+                                "name": "SemanticFacts",
+                                "namespaces": ["/users/{actorId}/facts"],
+                            }
+                        },
+                        {
+                            StrategyType.SUMMARY.value: {
+                                "name": "SessionSummaries",
+                                "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                            }
+                        },
+                    ],
+                    max_wait=30,
+                    poll_interval=5,
+                )
+                memory = existing_memory
+                log.info("✅ LTM strategies added to existing memory")
+            else:
+                memory = existing_memory
+                if agent_config.memory.has_ltm and len(existing_strategies) > 0:
+                    log.info("✅ Using existing memory with %d strategies", len(existing_strategies))
+                else:
+                    log.info("✅ Using existing STM-only memory")
+        else:
+            # Create new memory with appropriate strategies
+            strategies = []
+            if agent_config.memory.has_ltm:
+                log.info("Creating new memory with LTM strategies...")
+                strategies = [
+                    {
+                        StrategyType.USER_PREFERENCE.value: {
+                            "name": "UserPreferences",
+                            "namespaces": ["/users/{actorId}/preferences"],
+                        }
+                    },
+                    {
+                        StrategyType.SEMANTIC.value: {
+                            "name": "SemanticFacts",
+                            "namespaces": ["/users/{actorId}/facts"],
+                        }
+                    },
+                    {
+                        StrategyType.SUMMARY.value: {
+                            "name": "SessionSummaries",
+                            "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                        }
+                    },
+                ]
+            else:
+                log.info("Creating new STM-only memory...")
+
+            # Use private method to avoid waiting
+            memory = memory_manager._create_memory(
+                name=memory_name,
+                description=f"Memory for agent {agent_name} with {'STM+LTM' if strategies else 'STM only'}",
+                strategies=strategies,
+                event_expiry_days=agent_config.memory.event_expiry_days or 30,
+                memory_execution_role_arn=None,
+            )
+            log.info("✅ New memory created: %s (provisioning in background)", memory.id)
+
+        # Save memory configuration
+        agent_config.memory.memory_id = memory.id
+        agent_config.memory.memory_arn = memory.arn
+        agent_config.memory.memory_name = memory_name
+        agent_config.memory.first_invoke_memory_check_done = False
+
+        project_config.agents[agent_config.name] = agent_config
+        save_config(project_config, config_path)
+
+        return memory.id
+
+    except Exception as e:
+        log.error("Memory creation failed: %s", str(e))
+        log.warning("Continuing without memory.")
+        return None
+
+
 def _deploy_to_bedrock_agentcore(
     agent_config: BedrockAgentCoreAgentSchema,
     project_config: BedrockAgentCoreConfigSchema,
@@ -143,6 +282,16 @@ def _deploy_to_bedrock_agentcore(
 ):
     """Deploy agent to Bedrock AgentCore with retry logic for role validation."""
     log.info("Deploying to Bedrock AgentCore...")
+
+    # Prepare environment variables
+    if env_vars is None:
+        env_vars = {}
+
+    # Add memory configuration to env_vars if it exists
+    if agent_config.memory and agent_config.memory.memory_id:
+        env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
+        log.info("Passing memory configuration to agent: %s", agent_config.memory.memory_id)
 
     bedrock_agentcore_client = BedrockAgentCoreClient(region)
 
@@ -276,6 +425,18 @@ def launch_bedrock_agentcore(
     # Load project configuration
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
+
+    if env_vars is None:
+        env_vars = {}
+
+    # Ensure memory exists for non-CodeBuild paths
+    if not use_codebuild:
+        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+
+    # Add memory configuration to environment variables if available
+    if agent_config.memory and agent_config.memory.memory_id:
+        env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
 
     # Handle CodeBuild deployment (but not for local mode)
     if use_codebuild and not local:
@@ -491,6 +652,9 @@ def _launch_with_codebuild(
     env_vars: Optional[dict] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
+    # Create memory if configured
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name)
+
     # Execute shared CodeBuild workflow with full deployment mode
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(
         config_path=config_path,

@@ -1,6 +1,6 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -10,6 +10,31 @@ class NetworkModeConfig(BaseModel):
 
     security_groups: List[str] = Field(default_factory=list, description="List of security group IDs")
     subnets: List[str] = Field(default_factory=list, description="List of subnet IDs")
+
+
+class MemoryConfig(BaseModel):
+    """Memory configuration for BedrockAgentCore."""
+
+    mode: Literal["STM_ONLY", "STM_AND_LTM"] = Field(
+        default="STM_ONLY", description="Memory mode - always has STM, optionally adds LTM"
+    )
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
+    memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
+    memory_name: Optional[str] = Field(default=None, description="Memory name")
+    event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
+    first_invoke_memory_check_done: bool = Field(
+        default=False, description="Whether first invoke memory check has been performed"
+    )
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if memory is enabled (always true now)."""
+        return True
+
+    @property
+    def has_ltm(self) -> bool:
+        """Check if LTM is enabled."""
+        return self.mode == "STM_AND_LTM"
 
 
 class NetworkConfiguration(BaseModel):
@@ -116,6 +141,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")

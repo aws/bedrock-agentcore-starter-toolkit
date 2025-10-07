@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.1.19] - 2025-10-03
+
+### Changes
+
+- updates gateway created lambda to python 3.13 (#196) (c5e5642)
+- Add explicit user creation config for Cognito pools (#218) (432898e)
+- Labs (#245) (579d086)
+- chore: bump version to 0.1.18 (#246) (c8d6c29)
+
+## [0.1.18] - 2025-10-02
+
+### Changes
+
+- fix: add non_interactive parameter for notebooks and fix code style issues (#244) (03953bb)
+- chore: bump version to 0.1.17 (#243) (99945c7)
+
+## [0.1.17] - 2025-10-01
+
+### Changes
+
+- chore: sync main with PyPI version 0.1.16 (#242) (c414fe5)
+- fix: initialize ConfigurationManager with non_interactive flag (#240) (3b92653)
+- Add cleanup section and fix documentation links (#239) (cba1169)
+
+## [0.1.16] - 2025-10-01
+
+### Changes
+
+- Update memory quickstart by @mikewrighton in #234
+- chore: make doc titles more meaningful by @theumbrella1 in #229
+- fix: don't fail validation for empty namespaces by @jona62 in #235
+
+## [0.1.15] - 2025-10-01
+
+### Changes
+
+- Fixed test stability issues (#232) (ad5625d)
+- chore: Add README for MemoryManager (#231) (b9fa36d)
+- feat: Add automatic memory provisioning to Bedrock AgentCore CLI (#204) (d58b61c)
+- Add required permission to retrieve OAuth2 Credential Provider client secret (#228) (6721d12)
+- feat: Add validation to check to get_or_create_memory to provide a truly idempotent experience (#227) (29bab2e)
+- fix: allow optional strategies on create memory (#225) (db5f2e0)
+- Update Identity quickstart guide with a few corrections (#222) (6ea350f)
+- feature: typed strategies and encryption_key_arn support on create_memory (#219) (7c726ce)
+- Update quickstart with working example (#217) (1246704)
+- feat: Add boto3.session to MemoryManager constructor (#211) (a838187)
+- fix: Install mkdocs-llmstxt in deploy-docs act (#215) (80581c2)
+- Release v0.1.14 (#214) (2d98f61)
+
 ## [0.1.14] - 2025-09-25
 
 ### Changes

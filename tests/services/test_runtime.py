@@ -1,6 +1,6 @@
 """Tests for Bedrock AgentCore runtime service integration."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
@@ -422,6 +422,120 @@ class TestBedrockAgentCoreRuntime:
         assert "response" in response
         assert len(response["response"]) == 1
         assert "Error reading EventStream" in response["response"][0]
+
+    def test_find_agent_by_name_not_found(self):
+        """Test find_agent_by_name when agent not found."""
+        from bedrock_agentcore_starter_toolkit.services.runtime import BedrockAgentCoreClient
+
+        with patch("boto3.client") as mock_boto_client:
+            mock_client = MagicMock()
+            mock_client.list_agent_runtimes.return_value = {
+                "agentRuntimes": []  # No agents found
+            }
+            mock_boto_client.return_value = mock_client
+
+            client = BedrockAgentCoreClient("us-west-2")
+            result = client.find_agent_by_name("nonexistent-agent")
+
+            assert result is None
+
+    def test_list_agents_with_pagination(self, mock_boto3_clients):
+        """Test listing agents with pagination."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock responses with pagination
+        mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.side_effect = [
+            {"agentRuntimes": [{"agentRuntimeId": "agent-1"}], "nextToken": "token-1"},
+            {"agentRuntimes": [{"agentRuntimeId": "agent-2"}], "nextToken": None},
+        ]
+
+        result = client.list_agents()
+
+        # Verify results contain both pages
+        assert len(result) == 2
+        assert result[0]["agentRuntimeId"] == "agent-1"
+        assert result[1]["agentRuntimeId"] == "agent-2"
+
+        # Verify pagination was handled
+        assert mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.call_count == 2
+        # First call without token
+        mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.assert_any_call(maxResults=100)
+        # Second call with token
+        mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.assert_any_call(maxResults=100, nextToken="token-1")
+
+    def test_create_agent_with_conflict_and_no_autoupdate(self, mock_boto3_clients):
+        """Test create_agent when agent exists but auto_update_on_conflict is False."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock ConflictException
+        from botocore.exceptions import ClientError
+
+        mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ConflictException",
+                    "Message": "Agent already exists",
+                }
+            },
+            "CreateAgentRuntime",
+        )
+
+        # Try to create agent without auto_update_on_conflict
+        try:
+            client.create_agent(
+                agent_name="test-agent",
+                image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
+                execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+                auto_update_on_conflict=False,
+            )
+            raise AssertionError("Should have raised ClientError")
+        except ClientError as e:
+            assert "ConflictException" in str(e)
+            assert "use the --auto-update-on-conflict flag" in str(e)
+
+    def test_wait_for_agent_endpoint_ready_status_failed(self, mock_boto3_clients):
+        """Test wait_for_agent_endpoint_ready when endpoint update fails."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Set up a sequence of responses to simulate failing status
+        mock_responses = [
+            {
+                "status": "UPDATE_FAILED",
+                "failureReason": "Configuration error",
+            }
+        ]
+        mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.side_effect = mock_responses
+
+        # Should return timeout message after max wait
+        result = client.wait_for_agent_endpoint_ready("test-agent-id", max_wait=1)
+        assert "Endpoint is taking longer than 1 seconds to be ready" in result
+
+    def test_wait_for_agent_endpoint_ready_success(self, mock_boto3_clients):
+        """Test wait_for_agent_endpoint_ready when endpoint becomes ready."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock successful endpoint response
+        mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {
+            "status": "READY",
+            "agentRuntimeEndpointArn": "arn:aws:bedrock:us-west-2:123456789012:agent-endpoint/test-id",
+        }
+
+        # Should return the endpoint ARN
+        result = client.wait_for_agent_endpoint_ready("test-agent-id")
+        assert "arn:aws:bedrock:us-west-2:123456789012:agent-endpoint/test-id" == result
+
+    def test_wait_for_agent_endpoint_ready_timeout(self, mock_boto3_clients):
+        """Test wait_for_agent_endpoint_ready when max wait time is exceeded."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock endpoint status response for UPDATING
+        mock_boto3_clients["bedrock_agentcore"].get_agent_runtime_endpoint.return_value = {
+            "status": "UPDATING",
+        }
+
+        # Test with very short max_wait to force timeout
+        result = client.wait_for_agent_endpoint_ready("test-agent-id", max_wait=1)
+        assert "Endpoint is taking longer than 1 seconds to be ready" in result
 
 
 class TestHttpBedrockAgentCoreClient:

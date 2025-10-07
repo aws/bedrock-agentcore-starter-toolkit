@@ -95,6 +95,50 @@ def create_undeployed_config(tmp_path, agent_name="test-agent"):
     return config_path
 
 
+def create_test_config_with_memory(
+    tmp_path,
+    agent_name="test-agent",
+    memory_id="mem_123456",
+    memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456",
+    enable_ltm=False,
+):
+    """Create a test configuration with memory info."""
+    from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+    config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+    agent_config = BedrockAgentCoreAgentSchema(
+        name=agent_name,
+        entrypoint="test_agent.py",
+        container_runtime="docker",
+        aws=AWSConfig(
+            region="us-west-2",
+            account="123456789012",
+            execution_role="arn:aws:iam::123456789012:role/test-role",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent",
+            network_configuration=NetworkConfiguration(),
+            observability=ObservabilityConfig(),
+        ),
+        bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+            agent_id="test-agent-id",
+            agent_arn="arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test-agent-id",
+        ),
+        memory=MemoryConfig(
+            enabled=True,
+            enable_ltm=enable_ltm,
+            memory_id=memory_id,
+            memory_arn=memory_arn,
+            memory_name=f"{agent_name}_memory",
+            event_expiry_days=30,
+        ),
+    )
+
+    project_config = BedrockAgentCoreConfigSchema(default_agent=agent_name, agents={agent_name: agent_config})
+
+    save_config(project_config, config_path)
+    return config_path
+
+
 class TestDestroyBedrockAgentCore:
     """Test destroy_bedrock_agentcore function."""
 
@@ -1955,6 +1999,58 @@ class TestDestroyBedrockAgentCore:
         # Verify endpoint deletion was attempted
         mock_agentcore_client.delete_agent_runtime_endpoint.assert_called_once()
         assert len(result.errors) == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.operations.runtime.destroy.BedrockAgentCoreClient")
+    @patch("boto3.Session")
+    def test_destroy_with_memory_cleanup(self, mock_session, mock_client_class, tmp_path):
+        """Test destroy operation includes memory cleanup."""
+        config_path = create_test_config_with_memory(tmp_path)
+
+        # Mock AWS clients
+        mock_session_instance = MagicMock()
+        mock_session.return_value = mock_session_instance
+
+        mock_agentcore_client = MagicMock()
+        mock_client_class.return_value = mock_agentcore_client
+
+        mock_ecr_client = MagicMock()
+        mock_codebuild_client = MagicMock()
+        mock_iam_client = MagicMock()
+        mock_control_client = MagicMock()
+
+        mock_session_instance.client.side_effect = lambda service, **kwargs: {
+            "ecr": mock_ecr_client,
+            "codebuild": mock_codebuild_client,
+            "iam": mock_iam_client,
+            "bedrock-agentcore-control": mock_control_client,
+        }[service]
+
+        # Mock memory manager - FIX: Use MemoryManager not MemoryControlPlaneClient
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.destroy.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = MagicMock()
+            mock_memory_manager_class.return_value = mock_memory_manager
+
+            # Mock successful operations
+            mock_agentcore_client.get_agent_runtime_endpoint.side_effect = ClientError(
+                {"Error": {"Code": "ResourceNotFoundException", "Message": "Not found"}}, "GetAgentRuntimeEndpoint"
+            )
+            mock_ecr_client.list_images.return_value = {"imageIds": []}
+            mock_codebuild_client.delete_project.return_value = {}
+            mock_iam_client.list_attached_role_policies.return_value = {"AttachedPolicies": []}
+            mock_iam_client.list_role_policies.return_value = {"PolicyNames": []}
+            mock_iam_client.delete_role.return_value = {}
+            mock_memory_manager.delete_memory.return_value = {}
+
+            result = destroy_bedrock_agentcore(config_path, dry_run=False)
+
+            # Verify memory deletion was called
+            mock_memory_manager_class.assert_called_once_with(region_name="us-west-2")
+            mock_memory_manager.delete_memory.assert_called_once_with(memory_id="mem_123456")
+
+            # Verify memory was included in resources removed
+            assert any("Memory: mem_123456" in r for r in result.resources_removed)
 
 
 class TestDestroyHelpers:
