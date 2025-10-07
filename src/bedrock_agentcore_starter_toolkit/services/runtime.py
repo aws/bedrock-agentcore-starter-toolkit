@@ -518,7 +518,8 @@ class BedrockAgentCoreClient:
                 request
             )
 
-            response = requests.get(url, headers=dict(request.headers))
+            response = requests.get(url, headers=dict(request.headers), timeout=30)
+
             response.raise_for_status()
 
             return response.json()

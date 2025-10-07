@@ -1221,12 +1221,12 @@ def get_agent_card_command(
 
     except FileNotFoundError:
         console.print("[red]Configuration not found. Run 'agentcore configure' first.[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except ValueError as e:
         console.print(f"[red]{str(e)}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
     except RuntimeError as e:
         console.print(f"[red]Failed to get agent card: {str(e)}[/red]")
         if "403" in str(e):
             console.print("[yellow]Hint: Try --bearer-token if agent uses OAuth[/yellow]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e

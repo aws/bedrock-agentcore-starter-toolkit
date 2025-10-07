@@ -1,6 +1,5 @@
 """Tests for get_agent_card operation."""
 
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,7 +10,6 @@ from bedrock_agentcore_starter_toolkit.operations.runtime.models import GetAgent
 
 class TestGetAgentCard:
     """Test get_agent_card functionality."""
-
 
     def test_get_agent_card_with_oauth(self, tmp_path):
         """Test retrieving agent card using OAuth bearer token."""
