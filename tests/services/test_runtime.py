@@ -922,7 +922,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers[SESSION_HEADER] == "test-session-123"
 
             # Verify no custom headers were added
-            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            custom_header_keys = [k for k in headers if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
 
             # Verify response handling
@@ -968,7 +968,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers[SESSION_HEADER] == "test-session-123"
 
             # Verify no custom headers were added
-            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            custom_header_keys = [k for k in headers if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
 
             # Verify response handling
