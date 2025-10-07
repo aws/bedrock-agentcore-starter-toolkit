@@ -188,56 +188,60 @@ class TestCreateMCPGateway:
         }
         self.client.client.create_gateway.return_value = mock_gateway_response
 
-        with patch.object(self.client, "_GatewayClient__wait_for_ready"):
-            with patch(
+        with (
+            patch.object(self.client, "_GatewayClient__wait_for_ready"),
+            patch(
                 "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
-            ) as mock_create_role:
-                mock_create_role.return_value = "arn:aws:iam::123456789012:role/CreatedRole"
+            ) as mock_create_role,
+        ):
+            mock_create_role.return_value = "arn:aws:iam::123456789012:role/CreatedRole"
 
-                with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
-                    mock_auth_config = {
-                        "customJWTAuthorizer": {
-                            "discoveryUrl": "https://cognito.amazonaws.com/.well-known/openid_configuration",
-                            "allowedClients": ["cognito-client"],
-                        }
+            with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
+                mock_auth_config = {
+                    "customJWTAuthorizer": {
+                        "discoveryUrl": "https://cognito.amazonaws.com/.well-known/openid_configuration",
+                        "allowedClients": ["cognito-client"],
                     }
-                    mock_create_auth.return_value = {"authorizer_config": mock_auth_config}
+                }
+                mock_create_auth.return_value = {"authorizer_config": mock_auth_config}
 
-                    # Mock generate_random_id to return predictable value
-                    with patch.object(GatewayClient, "generate_random_id", return_value="12345678"):
-                        self.client.create_mcp_gateway()
+                # Mock generate_random_id to return predictable value
+                with patch.object(GatewayClient, "generate_random_id", return_value="12345678"):
+                    self.client.create_mcp_gateway()
 
-                        # Verify role creation was called
-                        mock_create_role.assert_called_once_with(self.client.session, self.client.logger)
+                    # Verify role creation was called
+                    mock_create_role.assert_called_once_with(self.client.session, self.client.logger)
 
-                        # Verify authorizer creation was called
-                        mock_create_auth.assert_called_once_with("TestGateway12345678")
+                    # Verify authorizer creation was called
+                    mock_create_auth.assert_called_once_with("TestGateway12345678")
 
-                        # Verify create_gateway was called with generated values
-                        call_args = self.client.client.create_gateway.call_args[1]
-                        assert call_args["name"] == "TestGateway12345678"
-                        assert call_args["roleArn"] == "arn:aws:iam::123456789012:role/CreatedRole"
-                        assert call_args["authorizerConfiguration"] == mock_auth_config
+                    # Verify create_gateway was called with generated values
+                    call_args = self.client.client.create_gateway.call_args[1]
+                    assert call_args["name"] == "TestGateway12345678"
+                    assert call_args["roleArn"] == "arn:aws:iam::123456789012:role/CreatedRole"
+                    assert call_args["authorizerConfiguration"] == mock_auth_config
 
     def test_create_mcp_gateway_without_semantic_search(self):
         """Test create_mcp_gateway with semantic search disabled."""
         mock_gateway_response = {"gatewayId": "test-gateway", "gatewayArn": "test-arn", "gatewayUrl": "test-url"}
         self.client.client.create_gateway.return_value = mock_gateway_response
 
-        with patch.object(self.client, "_GatewayClient__wait_for_ready"):
-            with patch(
+        with (
+            patch.object(self.client, "_GatewayClient__wait_for_ready"),
+            patch(
                 "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
-            ) as mock_create_role:
-                mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            ) as mock_create_role,
+        ):
+            mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
 
-                with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
-                    mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
+            with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
+                mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
 
-                    self.client.create_mcp_gateway(enable_semantic_search=False)
+                self.client.create_mcp_gateway(enable_semantic_search=False)
 
-                    # Verify protocolConfiguration is not included when semantic search is disabled
-                    call_args = self.client.client.create_gateway.call_args[1]
-                    assert "protocolConfiguration" not in call_args
+                # Verify protocolConfiguration is not included when semantic search is disabled
+                call_args = self.client.client.create_gateway.call_args[1]
+                assert "protocolConfiguration" not in call_args
 
     def test_create_mcp_gateway_client_error(self):
         """Test create_mcp_gateway handles client errors."""
@@ -296,15 +300,14 @@ class TestWaitForReady:
         mock_method = Mock()
         mock_method.return_value = {"status": "CREATING"}
 
-        with patch("time.sleep"):
-            with pytest.raises(TimeoutError, match="TestResource not ready after 3 attempts"):
-                self.client._GatewayClient__wait_for_ready(
-                    resource_name="TestResource",
-                    method=mock_method,
-                    identifiers={"id": "test-123"},
-                    max_attempts=3,
-                    delay=1,
-                )
+        with patch("time.sleep"), pytest.raises(TimeoutError, match="TestResource not ready after 3 attempts"):
+            self.client._GatewayClient__wait_for_ready(
+                resource_name="TestResource",
+                method=mock_method,
+                identifiers={"id": "test-123"},
+                max_attempts=3,
+                delay=1,
+            )
 
     def test_wait_for_ready_failure_status(self):
         """Test __wait_for_ready when resource fails."""
@@ -408,35 +411,37 @@ class TestCreateMCPGatewayTarget:
             "credential_parameter_name": "X-API-Key",
         }
 
-        with patch.object(self.client, "_GatewayClient__wait_for_ready"):
-            with patch.object(
+        with (
+            patch.object(self.client, "_GatewayClient__wait_for_ready"),
+            patch.object(
                 self.client, "_GatewayClient__handle_openapi_target_credential_provider_creation"
-            ) as mock_handle_openapi:
-                mock_cred_config = {
-                    "credentialProviderConfigurations": [
-                        {
-                            "credentialProviderType": "API_KEY",
-                            "credentialProvider": {"apiKeyCredentialProvider": {"providerArn": "test-arn"}},
-                        }
-                    ]
-                }
-                mock_handle_openapi.return_value = mock_cred_config
+            ) as mock_handle_openapi,
+        ):
+            mock_cred_config = {
+                "credentialProviderConfigurations": [
+                    {
+                        "credentialProviderType": "API_KEY",
+                        "credentialProvider": {"apiKeyCredentialProvider": {"providerArn": "test-arn"}},
+                    }
+                ]
+            }
+            mock_handle_openapi.return_value = mock_cred_config
 
-                self.client.create_mcp_gateway_target(
-                    gateway=self.gateway,
-                    name="OpenAPITarget",
-                    target_type="openApiSchema",
-                    target_payload=json.dumps(openapi_payload),
-                    credentials=credentials,
-                )
+            self.client.create_mcp_gateway_target(
+                gateway=self.gateway,
+                name="OpenAPITarget",
+                target_type="openApiSchema",
+                target_payload=json.dumps(openapi_payload),
+                credentials=credentials,
+            )
 
-                # Verify OpenAPI handler was called
-                mock_handle_openapi.assert_called_once_with(name="OpenAPITarget", credentials=credentials)
+            # Verify OpenAPI handler was called
+            mock_handle_openapi.assert_called_once_with(name="OpenAPITarget", credentials=credentials)
 
-                # Verify create_gateway_target was called
-                call_args = self.client.client.create_gateway_target.call_args[1]
-                assert call_args["name"] == "OpenAPITarget"
-                assert call_args["targetConfiguration"]["mcp"]["openApiSchema"] == json.dumps(openapi_payload)
+            # Verify create_gateway_target was called
+            call_args = self.client.client.create_gateway_target.call_args[1]
+            assert call_args["name"] == "OpenAPITarget"
+            assert call_args["targetConfiguration"]["mcp"]["openApiSchema"] == json.dumps(openapi_payload)
 
     def test_create_mcp_gateway_target_smithy_model_with_defaults(self):
         """Test create_mcp_gateway_target with smithy model and default payload."""

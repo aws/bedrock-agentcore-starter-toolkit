@@ -18,8 +18,8 @@ class TestEnhancedStatusIntegration:
     def test_status_rich_formatting_integration(self):
         """Test that status information is properly formatted for Rich display."""
 
-        # Test Rich formatting structure
-        expected_sections = ["Agent Information", "Source Configuration", "Build Artifacts", "Deployment Status"]
+        # Test Rich formatting structure - will include sections like:
+        # Agent Information, Source Configuration, Build Artifacts, Deployment Status
 
         # This will be implemented in CLI layer
         with pytest.raises(NotImplementedError):

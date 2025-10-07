@@ -622,14 +622,13 @@ class TestHttpBedrockAgentCoreClient:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
 
-        with patch("requests.post", return_value=mock_response):
-            with pytest.raises(requests.exceptions.HTTPError):
-                client.invoke_endpoint(
-                    agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/nonexistent",
-                    payload='{"test": "data"}',
-                    session_id="session-123",
-                    bearer_token="token-456",
-                )
+        with patch("requests.post", return_value=mock_response), pytest.raises(requests.exceptions.HTTPError):
+            client.invoke_endpoint(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/nonexistent",
+                payload='{"test": "data"}',
+                session_id="session-123",
+                bearer_token="token-456",
+            )
 
     def test_invoke_endpoint_connection_error(self):
         """Test handling of connection errors."""

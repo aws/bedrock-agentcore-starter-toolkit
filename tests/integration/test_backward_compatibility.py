@@ -328,7 +328,7 @@ class TestBackwardCompatibilityIntegration:
             assert isinstance(config_schema, BedrockAgentCoreConfigSchema)
 
             # All agents should have new fields defaulting to None
-            for agent_name, agent_config in config_schema.agents.items():
+            for _, agent_config in config_schema.agents.items():
                 assert agent_config.source_path is None
                 assert agent_config.build_artifacts is None
 

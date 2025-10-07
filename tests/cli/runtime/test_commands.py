@@ -181,10 +181,10 @@ def handler(payload):
             "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error",
             side_effect=mock_handle_error_side_effect,
         ) as mock_error:
-            try:
+            import contextlib
+
+            with contextlib.suppress(typer.Exit):
                 self.runner.invoke(app, ["configure", "--entrypoint", str(agent_file), "--protocol", "HTTPS"])
-            except typer.Exit:
-                pass
             mock_error.assert_called_once_with("Error: --protocol must be either HTTP or MCP")
 
     @pytest.mark.skip(reason="Skipping due to Typer CLI issues with YAML parsing")
@@ -1815,10 +1815,10 @@ agents:
                 side_effect=mock_handle_error_side_effect,
             ) as mock_error,
         ):
-            try:
+            import contextlib
+
+            with contextlib.suppress(typer.Exit):
                 config_manager._configure_oauth()
-            except typer.Exit:
-                pass  # Expected behavior
             mock_error.assert_called_once_with("OAuth discovery URL is required")
 
     def test_configure_oauth_no_client_or_audience_error(self, tmp_path):

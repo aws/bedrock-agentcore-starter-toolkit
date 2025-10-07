@@ -60,7 +60,7 @@ class TestGetAgentStatusEnhancedContract:
     def test_get_agent_status_enhanced_backward_compatibility(self):
         """Test that status works for legacy agents without source path."""
 
-        status_request = {"agent_name": "legacy-agent"}
+        # Test status for legacy agent without source path tracking
 
         expected_response = {
             "name": "legacy-agent",
@@ -120,8 +120,7 @@ class TestGetAgentStatusEnhancedContract:
     def test_get_agent_status_enhanced_error_cases(self):
         """Test error handling for status operation."""
 
-        # Test agent not found
-        status_request = {"agent_name": "non-existent-agent"}
+        # Test agent not found error handling
 
         expected_error_response = {
             "error": "Agent not found",
@@ -161,7 +160,7 @@ class TestGetAgentStatusEnhancedContract:
     def test_get_agent_status_enhanced_troubleshooting_info(self):
         """Test that status includes helpful troubleshooting information."""
 
-        status_request = {"agent_name": "problematic-agent"}
+        # Test troubleshooting information for problematic agent
 
         expected_response_with_issues = {
             "name": "problematic-agent",

@@ -264,12 +264,14 @@ class TestLaunchBedrockAgentCore:
         # Mock build failure
         mock_container_runtime.build.return_value = (False, ["Error: build failed", "Missing dependency"])
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            pytest.raises(RuntimeError, match="Build failed"),
         ):
-            with pytest.raises(RuntimeError, match="Build failed"):
-                launch_bedrock_agentcore(config_path, local=True)
+            launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_missing_config(self, tmp_path):
         """Test error when config file not found."""
@@ -819,9 +821,9 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
                 return_value=mock_container_runtime,
             ),
+            pytest.raises(ValueError, match="Missing 'aws.execution_role' for cloud deployment"),
         ):
-            with pytest.raises(ValueError, match="Missing 'aws.execution_role' for cloud deployment"):
-                launch_bedrock_agentcore(config_path, local=False)
+            launch_bedrock_agentcore(config_path, local=False)
 
     def test_launch_cloud_conflict_exception_graceful_handling(
         self, mock_boto3_clients, mock_container_runtime, tmp_path
@@ -1092,12 +1094,14 @@ class TestLaunchBedrockAgentCore:
         mock_runtime_no_docker.runtime = "none"
         mock_runtime_no_docker.has_local_runtime = False  # No Docker available
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_runtime_no_docker,
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_runtime_no_docker,
+            ),
+            pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"),
         ):
-            with pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"):
-                launch_bedrock_agentcore(config_path, local=True)
+            launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_with_codebuild_from_main_function(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test that environment variables are passed from launch_bedrock_agentcore to _launch_with_codebuild."""

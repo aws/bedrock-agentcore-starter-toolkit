@@ -132,7 +132,7 @@ class TestListAgentsEnhancedContract:
         }
 
         # Each status should have visual indicator and description
-        for status, indicator in expected_status_indicators.items():
+        for _, indicator in expected_status_indicators.items():
             assert "symbol" in indicator
             assert "description" in indicator
             assert len(indicator["symbol"]) > 0
@@ -208,7 +208,7 @@ class TestListAgentsEnhancedContract:
         assert "deployment_errors" in expected_issue_indicators
 
         # Each indicator should have count and affected agents
-        for indicator_type, indicator in expected_issue_indicators.items():
+        for _, indicator in expected_issue_indicators.items():
             assert "count" in indicator
             assert "agents" in indicator
             assert isinstance(indicator["count"], int)

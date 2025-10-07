@@ -10,7 +10,6 @@ from pathlib import Path
 import pytest
 
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
-    BedrockAgentCoreAgentSchema,
     BuildArtifactInfo,
 )
 
@@ -24,23 +23,8 @@ class TestLaunchAgentEnhancedContract:
 
         launch_request = {"agent_name": "enhanced-agent"}
 
-        # Expected response structure
-        expected_response = {
-            "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/enhanced-agent-xyz",
-            "build_artifacts": {
-                "base_directory": ".packages/enhanced-agent",
-                "source_copy_path": ".packages/enhanced-agent/src",
-                "dockerfile_path": ".packages/enhanced-agent/Dockerfile",
-                "build_timestamp": "2025-01-06T12:00:00Z",
-                "organized": True,
-            },
-            "deployment_status": "READY",
-            "observability_urls": {
-                "cloudwatch_logs": "https://console.aws.amazon.com/cloudwatch/...",
-                "xray_traces": "https://console.aws.amazon.com/xray/...",
-            },
-            "source_path_used": "/path/to/source",
-        }
+        # This test verifies the contract for enhanced launch operations
+        # Expected response would include agent_arn, build_artifacts, deployment_status, etc.
 
         # This operation should be implemented in operations/runtime/launch.py
         with pytest.raises(NotImplementedError, match="Enhanced launch operation not implemented"):
@@ -85,10 +69,7 @@ class TestLaunchAgentEnhancedContract:
             (source_dir / "agent.py").write_text("# Agent code")
             (source_dir / "requirements.txt").write_text("requests>=2.25.0")
 
-            # Agent configuration with source path
-            agent_config = BedrockAgentCoreAgentSchema(
-                name="test-agent", entrypoint="agent.py", source_path=str(source_dir)
-            )
+            # Agent configuration would be tracked with source path in real implementation
 
             # Launch should use the tracked source path
             launch_request = {"agent_name": "test-agent"}
@@ -109,9 +90,7 @@ class TestLaunchAgentEnhancedContract:
     def test_launch_agent_enhanced_backward_compatibility(self):
         """Test that enhanced launch works with legacy configurations."""
 
-        # Launch request for agent without source path tracking
-        launch_request = {"agent_name": "legacy-agent"}
-
+        # Test that enhanced launch works with legacy configurations
         # Should still work with existing launch behavior
         # Enhanced launch should detect missing source_path and fall back to existing behavior
 
@@ -132,8 +111,7 @@ class TestLaunchAgentEnhancedContract:
     def test_launch_agent_enhanced_error_handling(self):
         """Test error handling for enhanced launch operation."""
 
-        # Test invalid agent name
-        invalid_request = {"agent_name": "non-existent-agent"}
+        # Test invalid agent name - should return structured error
 
         expected_error_response = {
             "error": "Agent not found",
@@ -150,8 +128,6 @@ class TestLaunchAgentEnhancedContract:
 
     def test_launch_agent_enhanced_progress_reporting(self):
         """Test that launch operation provides progress indicators."""
-
-        launch_request = {"agent_name": "test-agent"}
 
         # Enhanced launch should provide progress indicators for operations >5 seconds
         expected_progress_stages = [
@@ -188,8 +164,6 @@ class TestLaunchAgentEnhancedContract:
 
     def test_launch_agent_enhanced_cleanup_on_failure(self):
         """Test that partial build artifacts are cleaned up on launch failure."""
-
-        launch_request = {"agent_name": "failing-agent"}
 
         # If launch fails, artifacts should be cleaned up
         expected_failure_response = {
