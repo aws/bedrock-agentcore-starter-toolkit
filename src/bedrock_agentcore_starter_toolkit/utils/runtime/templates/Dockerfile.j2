@@ -4,6 +4,7 @@ WORKDIR /app
 # All environment variables in one layer
 ENV UV_SYSTEM_PYTHON=1 \
     UV_COMPILE_BYTECODE=1 \
+    UV_NO_PROGRESS=1 \
     PYTHONUNBUFFERED=1 \
     DOCKER_CONTAINER=1{% if aws_region %} \
     AWS_REGION={{ aws_region }} \
