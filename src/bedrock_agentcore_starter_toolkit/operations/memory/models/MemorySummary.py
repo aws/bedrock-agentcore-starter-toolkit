@@ -1,6 +1,6 @@
 """Memory summary model class for AgentCore Memory resources."""
 
-from typing import Any, Dict
+from typing import Any
 
 from .DictWrapper import DictWrapper
 
@@ -8,7 +8,7 @@ from .DictWrapper import DictWrapper
 class MemorySummary(DictWrapper):
     """A class representing a memory summary."""
 
-    def __init__(self, memory_summary: Dict[str, Any]):
+    def __init__(self, memory_summary: dict[str, Any]):
         """Initialize MemorySummary with summary data.
 
         Args:

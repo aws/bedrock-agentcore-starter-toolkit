@@ -7,7 +7,6 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import List
 
 import boto3
 from botocore.exceptions import ClientError
@@ -279,13 +278,13 @@ phases:
       - echo "Build completed at $(date)"
 """
 
-    def _parse_dockerignore(self) -> List[str]:
+    def _parse_dockerignore(self) -> list[str]:
         """Parse .dockerignore file and return list of patterns."""
         dockerignore_path = Path(".dockerignore")
         patterns = []
 
         if dockerignore_path.exists():
-            with open(dockerignore_path, "r") as f:
+            with open(dockerignore_path) as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#"):
@@ -309,7 +308,7 @@ phases:
 
         return patterns
 
-    def _should_ignore(self, path: str, patterns: List[str], is_dir: bool = False) -> bool:
+    def _should_ignore(self, path: str, patterns: list[str], is_dir: bool = False) -> bool:
         """Check if path should be ignored based on dockerignore patterns."""
         # Normalize path
         if path.startswith("./"):
@@ -350,7 +349,4 @@ phases:
             return True
 
         # File in ignored directory
-        if not is_dir and any(fnmatch.fnmatch(part, pattern) for part in path.split("/")):
-            return True
-
-        return False
+        return bool(not is_dir and any(fnmatch.fnmatch(part, pattern) for part in path.split("/")))

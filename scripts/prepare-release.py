@@ -5,7 +5,7 @@ import re
 
 print("Preparing pyproject.toml for release...")
 
-with open("pyproject.toml", "r") as f:
+with open("pyproject.toml") as f:
     content = f.read()
 
 # Remove [tool.uv.sources] section

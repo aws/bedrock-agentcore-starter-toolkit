@@ -1,0 +1,272 @@
+openapi: 3.0.3
+info:
+  title: AgentCore Configuration Operations API
+  description: Internal API contracts for enhanced configuration operations
+  version: 1.0.0
+
+paths:
+  /configure/agent:
+    post:
+      summary: Configure a new agent with collision detection
+      operationId: configureAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, entrypoint]
+              properties:
+                name:
+                  type: string
+                  pattern: "^[a-zA-Z0-9_-]+$"
+                  description: "Unique agent name"
+                entrypoint:
+                  type: string
+                  description: "Path to agent entrypoint file"
+                output_directory:
+                  type: string
+                  description: "Custom output directory for configuration"
+                force_overwrite:
+                  type: boolean
+                  default: false
+                  description: "Skip confirmation for existing agent"
+      responses:
+        '200':
+          description: Agent configured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationResult'
+        '409':
+          description: Agent name conflict detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponse'
+        '400':
+          description: Invalid configuration parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /configure/agents:
+    get:
+      summary: List all configured agents
+      operationId: listAgents
+      responses:
+        '200':
+          description: List of configured agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgentSummary'
+                  default_agent:
+                    type: string
+                    nullable: true
+
+  /launch/agent:
+    post:
+      summary: Launch agent with build artifact isolation
+      operationId: launchAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_name]
+              properties:
+                agent_name:
+                  type: string
+                  description: "Name of agent to launch"
+                progress_callback:
+                  type: boolean
+                  default: true
+                  description: "Enable progress indicators"
+      responses:
+        '200':
+          description: Agent launched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaunchResult'
+        '400':
+          description: Invalid launch parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Launch failed with resource tracking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaunchFailureResponse'
+
+  /destroy/agent:
+    delete:
+      summary: Destroy agent with complete cleanup
+      operationId: destroyAgent
+      parameters:
+        - name: agent_name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cleanup_artifacts
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Agent destroyed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DestroyResult'
+        '400':
+          description: Invalid destroy parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ConfigurationResult:
+      type: object
+      properties:
+        agent_name:
+          type: string
+        configuration_path:
+          type: string
+        build_directory:
+          type: string
+        status:
+          type: string
+          enum: [configured, updated]
+
+    ConflictResponse:
+      type: object
+      properties:
+        conflict_type:
+          type: string
+          enum: [name_exists, directory_conflict]
+        existing_config:
+          $ref: '#/components/schemas/AgentSummary'
+        suggested_actions:
+          type: array
+          items:
+            type: string
+
+    LaunchResult:
+      type: object
+      properties:
+        agent_arn:
+          type: string
+        build_artifacts:
+          $ref: '#/components/schemas/BuildArtifacts'
+        deployment_status:
+          type: string
+        observability_urls:
+          type: object
+
+    LaunchFailureResponse:
+      type: object
+      properties:
+        error_message:
+          type: string
+        error_context:
+          $ref: '#/components/schemas/ErrorContext'
+        recovery_actions:
+          type: array
+          items:
+            type: string
+
+    DestroyResult:
+      type: object
+      properties:
+        agent_name:
+          type: string
+        cleanup_summary:
+          type: object
+          properties:
+            aws_resources_removed:
+              type: array
+              items:
+                type: string
+            local_files_removed:
+              type: array
+              items:
+                type: string
+
+    AgentSummary:
+      type: object
+      properties:
+        name:
+          type: string
+        entrypoint:
+          type: string
+        status:
+          type: string
+          enum: [configured, deployed, ready, error]
+        last_modified:
+          type: string
+          format: date-time
+
+    BuildArtifacts:
+      type: object
+      properties:
+        build_directory:
+          type: string
+        source_copy_path:
+          type: string
+        dockerfile_path:
+          type: string
+        build_timestamp:
+          type: string
+          format: date-time
+
+    ErrorContext:
+      type: object
+      properties:
+        operation_id:
+          type: string
+        operation_type:
+          type: string
+        aws_resources_created:
+          type: array
+          items:
+            type: object
+            properties:
+              resource_type:
+                type: string
+              resource_id:
+                type: string
+              resource_arn:
+                type: string
+        local_files_created:
+          type: array
+          items:
+            type: string
+        operation_stage:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+        suggestion:
+          type: string

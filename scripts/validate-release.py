@@ -9,7 +9,6 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
-from typing import List, Tuple
 
 
 class Colors:
@@ -37,7 +36,7 @@ def print_status(message: str, status: str = "info"):
         print(f"  {message}")
 
 
-def run_command(cmd: List[str], capture=True) -> Tuple[int, str, str]:
+def run_command(cmd: list[str], capture=True) -> tuple[int, str, str]:
     """Run a command and return exit code, stdout, and stderr."""
     result = subprocess.run(cmd, capture_output=capture, text=True)
     return result.returncode, result.stdout, result.stderr

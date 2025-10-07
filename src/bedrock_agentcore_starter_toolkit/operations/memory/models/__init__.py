@@ -34,7 +34,7 @@ Example:
 """
 
 # Memory resource models
-from typing import Any, Dict, List
+from typing import Any
 
 from .Memory import Memory
 from .MemoryStrategy import MemoryStrategy
@@ -53,7 +53,7 @@ from .strategies import (
 )
 
 
-def convert_strategies_to_dicts(strategies: List[StrategyType]) -> List[Dict[str, Any]]:
+def convert_strategies_to_dicts(strategies: list[StrategyType]) -> list[dict[str, Any]]:
     """Convert mixed strategy types to dictionary format for API calls.
 
     This function handles both new typed strategies and legacy dictionary

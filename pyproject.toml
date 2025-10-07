@@ -93,6 +93,8 @@ select = [
   "G", # logging format
   "I", # isort
   "LOG", # logging
+  "UP", # pyupgrade (modern Python patterns)
+  "SIM", # flake8-simplify (for optional field patterns)
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -3,7 +3,6 @@
 import hashlib
 import json
 import logging
-from typing import Optional
 
 from boto3 import Session
 from botocore.client import BaseClient
@@ -40,7 +39,7 @@ def get_or_create_runtime_execution_role(
     region: str,
     account_id: str,
     agent_name: str,
-    role_name: Optional[str] = None,
+    role_name: str | None = None,
 ) -> str:
     """Get existing execution role or create a new one (idempotent).
 

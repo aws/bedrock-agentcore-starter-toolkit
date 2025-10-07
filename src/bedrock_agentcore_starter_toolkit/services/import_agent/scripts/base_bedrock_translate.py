@@ -12,7 +12,6 @@ import os
 import time
 import uuid
 import zipfile
-from typing import Dict, Tuple
 
 import autopep8
 import boto3
@@ -164,7 +163,7 @@ class BaseBedrockTranslator:
         self.agent_setup_code = ""
         self.usage_code = ""
 
-    def _clean_fixtures_and_prompt(self, base_template, fixtures) -> Tuple[str, Dict]:
+    def _clean_fixtures_and_prompt(self, base_template, fixtures) -> tuple[str, dict]:
         """Clean up the base template and fixtures by removing unused keys.
 
         Args:
@@ -207,7 +206,7 @@ class BaseBedrockTranslator:
 
         return base_template, fixtures
 
-    def generate_prompt(self, config: Dict):
+    def generate_prompt(self, config: dict):
         """Generate prompt code based on the configuration."""
         prompt_type = config.get("promptType", "")
         self.enabled_prompts.append(prompt_type)
@@ -329,7 +328,6 @@ class BaseBedrockTranslator:
                 open(memory_manager_path, "a", encoding="utf-8") as target,
                 open(
                     os.path.join(get_base_dir(__file__), "assets", "memory_manager_template.py"),
-                    "r",
                     encoding="utf-8",
                 ) as template,
             ):
@@ -465,7 +463,7 @@ class BaseBedrockTranslator:
 
         return tool_code
 
-    def generate_openapi_ag_code(self, ag: Dict, platform: str) -> Tuple[list, str]:
+    def generate_openapi_ag_code(self, ag: dict, platform: str) -> tuple[list, str]:
         """Generate code for OpenAPI Action Groups."""
         tool_code = ""
         tool_instances = []
@@ -637,7 +635,7 @@ class BaseBedrockTranslator:
 
         return tool_instances, tool_code
 
-    def generate_structured_ag_code(self, ag: Dict, platform: str) -> Tuple[list, str]:
+    def generate_structured_ag_code(self, ag: dict, platform: str) -> tuple[list, str]:
         """Generate code for Structured Function Action Groups."""
         tool_code = ""
         tool_instances = []
@@ -1136,7 +1134,7 @@ class BaseBedrockTranslator:
         requirements_path = os.path.join(get_base_dir(__file__), "assets", f"requirements_{platform}.j2")
         if os.path.exists(requirements_path):
             with (
-                open(requirements_path, "r", encoding="utf-8") as src_file,
+                open(requirements_path, encoding="utf-8") as src_file,
                 open(os.path.join(self.output_dir, "requirements.txt"), "w", encoding="utf-8") as dest_file,
             ):
                 dest_file.truncate(0)

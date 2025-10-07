@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Dict
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -12,7 +11,7 @@ def _get_template_dir() -> Path:
     return Path(__file__).parent / "templates"
 
 
-def _render_template(template_name: str, variables: Dict[str, str]) -> str:
+def _render_template(template_name: str, variables: dict[str, str]) -> str:
     """Render a Jinja2 template with the provided variables."""
     template_dir = _get_template_dir()
     env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
@@ -56,7 +55,7 @@ def render_execution_policy_template(region: str, account_id: str, agent_name: s
     return _render_template("execution_role_policy.json.j2", variables)
 
 
-def validate_rendered_policy(policy_json: str) -> Dict:
+def validate_rendered_policy(policy_json: str) -> dict:
     """Validate that the rendered policy is valid JSON.
 
     Args:

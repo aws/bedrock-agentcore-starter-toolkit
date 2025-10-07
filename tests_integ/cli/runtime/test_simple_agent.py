@@ -1,6 +1,5 @@
 import logging
 import textwrap
-from typing import List
 
 from click.testing import Result
 
@@ -43,7 +42,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
             """).strip()
             file.write(content)
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         configure_invocation = CommandInvocation(
             command=[
                 "configure",

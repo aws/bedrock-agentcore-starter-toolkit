@@ -4,12 +4,11 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
 
 log = logging.getLogger(__name__)
 
 
-def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
+def parse_entrypoint(entrypoint: str) -> tuple[Path, str]:
     """Parse entrypoint into file path and name.
 
     Args:
@@ -36,10 +35,10 @@ def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
 class DependencyInfo:
     """Information about project dependencies."""
 
-    file: Optional[str]  # Relative path for Docker context
+    file: str | None  # Relative path for Docker context
     type: str  # "requirements", "pyproject", or "notfound"
-    resolved_path: Optional[str] = None  # Absolute path for validation
-    install_path: Optional[str] = None  # Path for pip install command
+    resolved_path: str | None = None  # Absolute path for validation
+    install_path: str | None = None  # Path for pip install command
 
     @property
     def found(self) -> bool:
@@ -62,7 +61,7 @@ class DependencyInfo:
         return self.is_pyproject and self.install_path == "."
 
 
-def detect_dependencies(package_dir: Path, explicit_file: Optional[str] = None) -> DependencyInfo:
+def detect_dependencies(package_dir: Path, explicit_file: str | None = None) -> DependencyInfo:
     """Detect dependency file, with optional explicit override."""
     if explicit_file:
         return _handle_explicit_file(package_dir, explicit_file)
@@ -113,12 +112,8 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
     install_path = None
 
     if file_type == "pyproject":
-        if len(relative_path.parts) > 1:
-            # pyproject.toml in subdirectory - install from that directory
-            install_path = Path(relative_path).parent
-        else:
-            # pyproject.toml in root - install from current directory
-            install_path = Path(".")
+        # pyproject.toml install path: subdirectory parent or current directory
+        install_path = Path(relative_path).parent if len(relative_path.parts) > 1 else Path(".")
 
     # Get POSIX strings for file and install path
     file_path = relative_path.as_posix()

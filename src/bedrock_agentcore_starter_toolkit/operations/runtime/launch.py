@@ -5,7 +5,6 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -135,7 +134,7 @@ def _ensure_memory_for_agent(
     project_config: BedrockAgentCoreConfigSchema,
     config_path: Path,
     agent_name: str,
-) -> Optional[str]:
+) -> str | None:
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
     This function is idempotent - it creates memory if needed or reuses existing.
@@ -277,7 +276,7 @@ def _deploy_to_bedrock_agentcore(
     ecr_uri: str,
     region: str,
     account_id: str,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
     auto_update_on_conflict: bool = False,
 ):
     """Deploy agent to Bedrock AgentCore with retry logic for role validation."""
@@ -403,10 +402,10 @@ def _deploy_to_bedrock_agentcore(
 
 def launch_bedrock_agentcore(
     config_path: Path,
-    agent_name: Optional[str] = None,
+    agent_name: str | None = None,
     local: bool = False,
     use_codebuild: bool = True,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
     auto_update_on_conflict: bool = False,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
@@ -564,7 +563,7 @@ def _execute_codebuild_workflow(
     project_config,
     ecr_only: bool = False,
     auto_update_on_conflict: bool = False,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     log.info(
@@ -573,53 +572,76 @@ def _execute_codebuild_workflow(
         agent_config.aws.account,
         agent_config.aws.region,
     )
-    # Validate configuration
-    errors = agent_config.validate(for_local=False)
-    if errors:
-        raise ValueError(f"Invalid configuration: {', '.join(errors)}")
 
-    region = agent_config.aws.region
-    if not region:
-        raise ValueError("Region not found in configuration")
+    # Track created resources for error context
+    created_resources = []
 
-    session = boto3.Session(region_name=region)
-    account_id = agent_config.aws.account  # Use existing account from config
+    try:
+        # Validate configuration
+        errors = agent_config.validate(for_local=False)
+        if errors:
+            raise ValueError(f"Invalid configuration: {', '.join(errors)}")
 
-    # Setup AWS resources
-    log.info("Setting up AWS resources (ECR repository%s)...", "" if ecr_only else ", execution roles")
-    ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region)
-    ecr_repository_arn = f"arn:aws:ecr:{region}:{account_id}:repository/{ecr_uri.split('/')[-1]}"
+        region = agent_config.aws.region
+        if not region:
+            raise ValueError("Region not found in configuration")
 
-    # Setup execution role only if not ECR-only mode
-    if not ecr_only:
-        _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
+        session = boto3.Session(region_name=region)
+        account_id = agent_config.aws.account  # Use existing account from config
 
-    # Prepare CodeBuild
-    log.info("Preparing CodeBuild project and uploading source...")
-    codebuild_service = CodeBuildService(session)
+        # Setup AWS resources
+        log.info("Setting up AWS resources (ECR repository%s)...", "" if ecr_only else ", execution roles")
 
-    # Use cached CodeBuild role from config if available
-    if hasattr(agent_config, "codebuild") and agent_config.codebuild.execution_role:
-        log.info("Using CodeBuild role from config: %s", agent_config.codebuild.execution_role)
-        codebuild_execution_role = agent_config.codebuild.execution_role
-    else:
-        codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
-            account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
-        )
+        log.info("Creating ECR repository...")
+        ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region)
+        if ecr_uri:
+            created_resources.append(f"ECR Repository: {ecr_uri}")
+        ecr_repository_arn = f"arn:aws:ecr:{region}:{account_id}:repository/{ecr_uri.split('/')[-1]}"
 
-    source_location = codebuild_service.upload_source(agent_name=agent_name)
+        # Setup execution role only if not ECR-only mode
+        if not ecr_only:
+            log.info("Creating execution roles...")
+            _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
+            if agent_config.aws.execution_role:
+                created_resources.append(f"Runtime Execution Role: {agent_config.aws.execution_role}")
 
-    # Use cached project name from config if available
-    if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:
-        log.info("Using CodeBuild project from config: %s", agent_config.codebuild.project_name)
-        project_name = agent_config.codebuild.project_name
-    else:
-        project_name = codebuild_service.create_or_update_project(
-            agent_name=agent_name,
-            ecr_repository_uri=ecr_uri,
-            execution_role=codebuild_execution_role,
-            source_location=source_location,
-        )
+        # Prepare CodeBuild
+        log.info("Preparing CodeBuild project and uploading source...")
+        codebuild_service = CodeBuildService(session)
+
+        # Use cached CodeBuild role from config if available
+        if hasattr(agent_config, "codebuild") and agent_config.codebuild.execution_role:
+            log.info("Using CodeBuild role from config: %s", agent_config.codebuild.execution_role)
+            codebuild_execution_role = agent_config.codebuild.execution_role
+        else:
+            log.info("Creating CodeBuild execution role...")
+            codebuild_execution_role = codebuild_service.create_codebuild_execution_role(
+                account_id=account_id, ecr_repository_arn=ecr_repository_arn, agent_name=agent_name
+            )
+            created_resources.append(f"CodeBuild Execution Role: {codebuild_execution_role}")
+
+        log.info("Uploading source code...")
+        source_location = codebuild_service.upload_source(agent_name=agent_name)
+        created_resources.append(f"Source Upload: {source_location}")
+
+        # Use cached project name from config if available
+        if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:
+            log.info("Using CodeBuild project from config: %s", agent_config.codebuild.project_name)
+            project_name = agent_config.codebuild.project_name
+        else:
+            log.info("Creating CodeBuild project...")
+            project_name = codebuild_service.create_or_update_project(
+                agent_name=agent_name,
+                ecr_repository_uri=ecr_uri,
+                execution_role=codebuild_execution_role,
+                source_location=source_location,
+            )
+            created_resources.append(f"CodeBuild Project: {project_name}")
+
+    except Exception as e:
+        if created_resources:
+            log.warning("Launch failed after creating: %s", created_resources)
+        raise RuntimeError(f"Launch failed. Resources created: {created_resources}") from e
 
     # Execute CodeBuild
     log.info("Starting CodeBuild build (this may take several minutes)...")
@@ -649,7 +671,7 @@ def _launch_with_codebuild(
     agent_config,
     project_config,
     auto_update_on_conflict: bool = False,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     # Create memory if configured

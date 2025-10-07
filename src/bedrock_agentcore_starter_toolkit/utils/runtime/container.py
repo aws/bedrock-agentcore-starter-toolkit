@@ -5,7 +5,6 @@ import platform
 import subprocess  # nosec B404 - Required for container runtime operations
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 from jinja2 import Template
 
@@ -21,7 +20,7 @@ class ContainerRuntime:
     DEFAULT_RUNTIME = "auto"
     DEFAULT_PLATFORM = "linux/arm64"
 
-    def __init__(self, runtime_type: Optional[str] = None):
+    def __init__(self, runtime_type: str | None = None):
         """Initialize container runtime.
 
         Args:
@@ -105,11 +104,11 @@ class ContainerRuntime:
         agent_path: Path,
         output_dir: Path,
         agent_name: str,
-        aws_region: Optional[str] = None,
+        aws_region: str | None = None,
         enable_observability: bool = True,
-        requirements_file: Optional[str] = None,
-        memory_id: Optional[str] = None,
-        memory_name: Optional[str] = None,
+        requirements_file: str | None = None,
+        memory_id: str | None = None,
+        memory_name: str | None = None,
     ) -> Path:
         """Generate Dockerfile from template."""
         current_platform = self._get_current_platform()
@@ -148,10 +147,9 @@ class ContainerRuntime:
 
         # Add logic to avoid duplicate installation
         has_current_package = False
-        if (output_dir / "pyproject.toml").exists():
+        if (output_dir / "pyproject.toml").exists() and not (deps.found and deps.is_root_package):
             # Only install current package if deps isn't already pointing to it
-            if not (deps.found and deps.is_root_package):
-                has_current_package = True
+            has_current_package = True
 
         context = {
             "python_version": get_python_version(),
@@ -227,7 +225,7 @@ class ContainerRuntime:
         arch = arch_map.get(machine, machine)
         return f"linux/{arch}"
 
-    def build(self, dockerfile_dir: Path, tag: str, platform: Optional[str] = None) -> Tuple[bool, List[str]]:
+    def build(self, dockerfile_dir: Path, tag: str, platform: str | None = None) -> tuple[bool, list[str]]:
         """Build container image."""
         if not self.has_local_runtime:
             return False, [
@@ -251,7 +249,7 @@ class ContainerRuntime:
 
         return self._execute_command(cmd)
 
-    def run_local(self, tag: str, port: int = 8080, env_vars: Optional[dict] = None) -> subprocess.CompletedProcess:
+    def run_local(self, tag: str, port: int = 8080, env_vars: dict | None = None) -> subprocess.CompletedProcess:
         """Run container locally.
 
         Args:
@@ -337,7 +335,7 @@ class ContainerRuntime:
             log.error("Failed to push image")
             return False
 
-    def _execute_command(self, cmd: List[str]) -> Tuple[bool, List[str]]:
+    def _execute_command(self, cmd: list[str]) -> tuple[bool, list[str]]:
         """Execute command and capture output."""
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)  # nosec B603

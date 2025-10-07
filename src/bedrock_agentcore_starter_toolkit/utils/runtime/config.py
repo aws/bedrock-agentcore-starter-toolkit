@@ -2,9 +2,9 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
+from pydantic import ValidationError
 
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
@@ -27,7 +27,7 @@ def is_project_config_format(config_path: Path) -> bool:
     """Check if config file uses project format (has 'agents' key)."""
     if not config_path.exists():
         return False
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         data = yaml.safe_load(f) or {}
     return isinstance(data, dict) and "agents" in data
 
@@ -48,7 +48,7 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
 
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         data = yaml.safe_load(f) or {}
 
     # Auto-detect and transform legacy format
@@ -58,11 +58,28 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     # New format
     try:
         return BedrockAgentCoreConfigSchema.model_validate(data)
+    except ValidationError as e:
+        # Convert Pydantic errors to user-friendly messages
+        friendly_errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error["loc"])
+            msg = error["msg"]
+            # Make common errors more user-friendly
+            if "Source path does not exist" in msg:
+                friendly_errors.append(f"{field}: {msg} (check if the directory exists)")
+            elif "field required" in msg:
+                friendly_errors.append(f"{field}: This field is required")
+            elif "Input should be" in msg:
+                friendly_errors.append(f"{field}: {msg}")
+            else:
+                friendly_errors.append(f"{field}: {msg}")
+
+        raise ValueError("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
         raise ValueError(f"Invalid configuration format: {e}") from e
 
 
-def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
+def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path) -> None:
     """Save configuration to YAML file.
 
     Args:
@@ -73,7 +90,7 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
         yaml.dump(config.model_dump(), f, default_flow_style=False, sort_keys=False)
 
 
-def load_config_if_exists(config_path: Path) -> Optional[BedrockAgentCoreConfigSchema]:
+def load_config_if_exists(config_path: Path) -> BedrockAgentCoreConfigSchema | None:
     """Load configuration if file exists, otherwise return None.
 
     Args:
