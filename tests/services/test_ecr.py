@@ -1,5 +1,7 @@
 """Tests for Bedrock AgentCore ECR service integration."""
 
+import os
+
 import pytest
 
 from bedrock_agentcore_starter_toolkit.services.ecr import (
@@ -86,6 +88,12 @@ class TestECRService:
         """Test AWS region detection."""
         region = get_region()
         assert region == "us-west-2"
+
+        # Test if it can be overridden with AWS_REGION
+        os.environ["AWS_REGION"] = "us-east-1"
+        region = get_region()
+        assert region == "us-east-1"
+        del os.environ["AWS_REGION"]
 
         # Test default fallback
         mock_boto3_clients["session"].region_name = None
