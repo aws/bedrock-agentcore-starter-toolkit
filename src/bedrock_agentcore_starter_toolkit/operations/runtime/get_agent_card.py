@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ...services.runtime import BedrockAgentCoreClient, HttpBedrockAgentCoreClient
+from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config
 from .models import GetAgentCardResult
 
@@ -38,9 +38,7 @@ def get_agent_card(
 
     # Check if agent is deployed
     if not agent_config.bedrock_agentcore or not agent_config.bedrock_agentcore.agent_arn:
-        raise ValueError(
-            f"Agent '{agent_config.name}' is not deployed. Run 'agentcore launch' first."
-        )
+        raise ValueError(f"Agent '{agent_config.name}' is not deployed. Run 'agentcore launch' first.")
 
     agent_arn = agent_config.bedrock_agentcore.agent_arn
     region = agent_config.aws.region
@@ -52,9 +50,9 @@ def get_agent_card(
     if bearer_token:
         # Use HTTP client with bearer token
         from ...services.runtime import HttpBedrockAgentCoreClient
-        
+
         client = HttpBedrockAgentCoreClient(region)
-        
+
         try:
             agent_card = client.get_agent_card(
                 agent_arn=agent_arn,
@@ -66,7 +64,7 @@ def get_agent_card(
     else:
         # Use SigV4 client
         client = BedrockAgentCoreClient(region)
-        
+
         try:
             agent_card = client.get_agent_card(agent_arn=agent_arn)
         except Exception as e:

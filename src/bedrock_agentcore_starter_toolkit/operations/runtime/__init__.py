@@ -8,9 +8,9 @@ from .launch import launch_bedrock_agentcore
 from .models import (
     ConfigureResult,
     DestroyResult,
+    GetAgentCardResult,
     InvokeResult,
     LaunchResult,
-    GetAgentCardResult,
     StatusConfigInfo,
     StatusResult,
 )

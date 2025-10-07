@@ -43,7 +43,9 @@ class NetworkConfiguration(BaseModel):
 class ProtocolConfiguration(BaseModel):
     """Protocol configuration for BedrockAgentCore deployment."""
 
-    server_protocol: str = Field(default="HTTP", description="Server protocol for deployment, either HTTP or MCP or A2A")
+    server_protocol: str = Field(
+        default="HTTP", description="Server protocol for deployment, either HTTP or MCP or A2A"
+    )
 
     @field_validator("server_protocol")
     @classmethod

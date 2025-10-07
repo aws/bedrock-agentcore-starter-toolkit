@@ -683,6 +683,7 @@ def invoke(
         if config.aws.protocol_configuration.server_protocol == "A2A":
             if not session_id or len(session_id) < 33:
                 import uuid
+
                 session_id = f"agentcore_session_{uuid.uuid4().hex}"
                 console.print(f"[dim]Generated A2A-compliant session ID: {session_id}[/dim]")
 
@@ -1154,10 +1155,9 @@ def destroy(
     except Exception as e:
         _handle_error(f"Destruction failed: {e}", e)
 
+
 def get_agent_card_command(
-    agent: Optional[str] = typer.Option(
-        None, "--agent", "-a", help="Agent name"
-    ),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name"),
     bearer_token: Optional[str] = typer.Option(
         None, "--bearer-token", "-bt", help="Bearer token for OAuth authentication"
     ),
@@ -1177,11 +1177,12 @@ def get_agent_card_command(
 
         if json_output:
             import json
+
             console.print(json.dumps(result.agent_card, indent=2))
         else:
             # Pretty formatted output
             agent_card = result.agent_card
-            
+
             panel_lines = [
                 f"[bold]Agent:[/bold] [cyan]{agent_card.get('name', 'Unknown')}[/cyan]",
                 f"[bold]Description:[/bold] {agent_card.get('description', 'N/A')}",

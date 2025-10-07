@@ -95,6 +95,7 @@ class DestroyResult(BaseModel):
     errors: List[str] = Field(default_factory=list, description="List of errors during destruction")
     dry_run: bool = Field(default=False, description="Whether this was a dry run")
 
+
 class GetAgentCardResult(BaseModel):
     """Result from get_agent_card operation."""
 

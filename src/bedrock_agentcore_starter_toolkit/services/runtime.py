@@ -497,10 +497,10 @@ class BedrockAgentCoreClient:
 
         # URL-encode the ARN
         escaped_arn = urllib.parse.quote(agent_arn, safe="")
-        
+
         # Construct the GetAgentCard URL
         url = f"{self.dp_endpoint}/runtimes/{escaped_arn}/invocations/.well-known/agent-card.json"
-        
+
         if qualifier and qualifier != "DEFAULT":
             url += f"?qualifier={qualifier}"
 
@@ -508,21 +508,24 @@ class BedrockAgentCoreClient:
 
         try:
             import requests
-            
+
             # Use requests with SigV4 signing
             from botocore.auth import SigV4Auth
             from botocore.awsrequest import AWSRequest
-            
+
             request = AWSRequest(method="GET", url=url)
-            SigV4Auth(self.dataplane_client._request_signer._credentials, "bedrock-agentcore", self.region).add_auth(request)
-            
+            SigV4Auth(self.dataplane_client._request_signer._credentials, "bedrock-agentcore", self.region).add_auth(
+                request
+            )
+
             response = requests.get(url, headers=dict(request.headers))
             response.raise_for_status()
-            
+
             return response.json()
         except Exception as e:
             self.logger.error("Failed to get agent card: %s", e)
             raise
+
 
 class HttpBedrockAgentCoreClient:
     """Bedrock AgentCore client for agent management using HTTP requests with bearer token."""
@@ -625,7 +628,7 @@ class HttpBedrockAgentCoreClient:
 
         # Build URL
         url = f"{self.dp_endpoint}/runtimes/{escaped_arn}/invocations/.well-known/agent-card.json"
-        
+
         if qualifier and qualifier != "DEFAULT":
             url += f"?qualifier={qualifier}"
 
@@ -643,6 +646,7 @@ class HttpBedrockAgentCoreClient:
         except requests.exceptions.RequestException as e:
             self.logger.error("Failed to get agent card: %s", str(e))
             raise
+
 
 class LocalBedrockAgentCoreClient:
     """Local Bedrock AgentCore client for invoking endpoints."""
