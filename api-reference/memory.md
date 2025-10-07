@@ -5604,10 +5604,16 @@ class MemorySession(DictWrapper):
         )
 
     def get_last_k_turns(
-        self, k: int = 5, branch_name: Optional[str] = None, max_results: int = 100
+        self,
+        k: int = 5,
+        branch_name: Optional[str] = None,
+        include_parent_events: Optional[bool] = None,
+        max_results: int = 100,
     ) -> List[List[EventMessage]]:
         """Delegates to manager.get_last_k_turns."""
-        return self._manager.get_last_k_turns(self._actor_id, self._session_id, k, branch_name, max_results=max_results)
+        return self._manager.get_last_k_turns(
+            self._actor_id, self._session_id, k, branch_name, include_parent_events, max_results
+        )
 
     def get_event(self, event_id: str) -> Event:
         """Delegates to manager.get_event."""
@@ -5789,7 +5795,7 @@ def get_event(self, event_id: str) -> Event:
     return self._manager.get_event(self._actor_id, self._session_id, event_id)
 ```
 
-#### `get_last_k_turns(k=5, branch_name=None, max_results=100)`
+#### `get_last_k_turns(k=5, branch_name=None, include_parent_events=None, max_results=100)`
 
 Delegates to manager.get_last_k_turns.
 
@@ -5797,10 +5803,16 @@ Source code in `bedrock_agentcore/memory/session.py`
 
 ```
 def get_last_k_turns(
-    self, k: int = 5, branch_name: Optional[str] = None, max_results: int = 100
+    self,
+    k: int = 5,
+    branch_name: Optional[str] = None,
+    include_parent_events: Optional[bool] = None,
+    max_results: int = 100,
 ) -> List[List[EventMessage]]:
     """Delegates to manager.get_last_k_turns."""
-    return self._manager.get_last_k_turns(self._actor_id, self._session_id, k, branch_name, max_results=max_results)
+    return self._manager.get_last_k_turns(
+        self._actor_id, self._session_id, k, branch_name, include_parent_events, max_results
+    )
 ```
 
 #### `get_memory_record(record_id)`
@@ -6595,7 +6607,7 @@ class MemorySessionManager:
         session_id: str,
         k: int = 5,
         branch_name: Optional[str] = None,
-        include_branches: bool = False,
+        include_parent_events: bool = False,
         max_results: int = 100,
     ) -> List[List[EventMessage]]:
         """Get the last K conversation turns.
@@ -6611,7 +6623,7 @@ class MemorySessionManager:
                 actor_id=actor_id,
                 session_id=session_id,
                 branch_name=branch_name,
-                include_parent_events=include_branches,
+                include_parent_events=include_parent_events,
                 max_results=max_results,
             )
 
@@ -7202,7 +7214,7 @@ def get_event(self, actor_id: str, session_id: str, event_id: str) -> Event:
         raise
 ```
 
-#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_branches=False, max_results=100)`
+#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_parent_events=False, max_results=100)`
 
 Get the last K conversation turns.
 
@@ -7223,7 +7235,7 @@ def get_last_k_turns(
     session_id: str,
     k: int = 5,
     branch_name: Optional[str] = None,
-    include_branches: bool = False,
+    include_parent_events: bool = False,
     max_results: int = 100,
 ) -> List[List[EventMessage]]:
     """Get the last K conversation turns.
@@ -7239,7 +7251,7 @@ def get_last_k_turns(
             actor_id=actor_id,
             session_id=session_id,
             branch_name=branch_name,
-            include_parent_events=include_branches,
+            include_parent_events=include_parent_events,
             max_results=max_results,
         )
 

@@ -24,12 +24,12 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 ## Examples
 
 - [Overview](/examples/index.md)
-- [Amazon Bedrock AgentCore Quickstart](/examples/agentcore-quickstart-example.md)
+- [AgentCore Quickstart](/examples/agentcore-quickstart-example.md)
 - [Async Processing](/examples/async-processing.md)
 - [Gateway Integration](/examples/gateway-integration.md)
-- [Amazon Bedrock AgentCore Quickstart](/examples/memory_gateway_agent.md)
-- [Framework Agents Examples](/examples/runtime-framework-agents.md)
-- [Semantic Search Memory Example](/examples/semantic_search.md)
+- [Memory Gateway Agent](/examples/memory_gateway_agent.md)
+- [Runtime Framework Agents](/examples/runtime-framework-agents.md)
+- [Semantic Search](/examples/semantic_search.md)
 - [Session Management](/examples/session-management.md)
 
 ## API Reference

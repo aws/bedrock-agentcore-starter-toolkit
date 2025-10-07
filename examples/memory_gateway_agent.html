@@ -11,6 +11,10 @@
     
     
     
+      <link rel="prev" href="gateway-integration.html">
+    
+    
+      <link rel="next" href="runtime-framework-agents.html">
     
     
     <link rel="icon" href=".." sizes="any">
@@ -19,7 +23,7 @@
 
     
       
-        <title>Amazon Bedrock AgentCore Quickstart - Amazon Bedrock AgentCore</title>
+        <title>Memory Gateway Agent - Amazon Bedrock AgentCore</title>
       
     
     
@@ -115,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon Bedrock AgentCore Quickstart
+              Memory Gateway Agent
             
           </span>
         </div>
@@ -238,10 +242,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="index.html" class="md-tabs__link">
           
   
@@ -1110,26 +1116,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -1142,7 +1153,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -1162,6 +1173,29 @@
   
   <span class="md-ellipsis">
     Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="agentcore-quickstart-example.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AgentCore Quickstart
     
   </span>
   
@@ -1231,6 +1265,266 @@
   
   <span class="md-ellipsis">
     Gateway Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Memory Gateway Agent
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="memory_gateway_agent.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Memory Gateway Agent
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lets-define-our-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Let's Define Our Agent
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lets-add-short-term-and-long-term-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Let's Add Short-term and Long-term Memory
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lets-add-gateway-with-a-calculator-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      Let's Add Gateway with a Calculator Tool
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lets-update-our-agent-to-use-the-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      Let's Update Our Agent to Use the Gateway
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-to-agentcore-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploying to AgentCore Runtime
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-your-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Your Agent
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing Your Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-short-term-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Short-Term Memory
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-gateway-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Gateway Calculator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-long-term-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Long-Term Memory
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-happening-behind-the-scenes" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Happening Behind the Scenes?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="runtime-framework-agents.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Runtime Framework Agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="semantic_search.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Semantic Search
     
   </span>
   

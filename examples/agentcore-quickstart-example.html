@@ -11,6 +11,10 @@
     
     
     
+      <link rel="prev" href="index.html">
+    
+    
+      <link rel="next" href="session-management.html">
     
     
     <link rel="icon" href=".." sizes="any">
@@ -19,7 +23,7 @@
 
     
       
-        <title>Amazon Bedrock AgentCore Quickstart - Amazon Bedrock AgentCore</title>
+        <title>AgentCore Quickstart - Amazon Bedrock AgentCore</title>
       
     
     
@@ -115,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon Bedrock AgentCore Quickstart
+              AgentCore Quickstart
             
           </span>
         </div>
@@ -238,10 +242,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="index.html" class="md-tabs__link">
           
   
@@ -1110,26 +1116,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -1142,7 +1153,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -1167,6 +1178,325 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    AgentCore Quickstart
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="agentcore-quickstart-example.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    AgentCore Quickstart
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Create the Agent
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-configure-and-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Configure and Deploy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Configure and Deploy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure the Agent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-to-agentcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy to AgentCore
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-monitor-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Monitor Deployment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-test-memory-and-code-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Test Memory and Code Interpreter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 4: Test Memory and Code Interpreter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-short-term-memory-stm-immediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Short-Term Memory (STM) - Immediate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-long-term-memory-ltm-cross-session-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Long-Term Memory (LTM) - Cross-Session Persistence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-code-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Code Interpreter
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-view-traces-and-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: View Traces and Logs
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5: View Traces and Logs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-cloudwatch-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access CloudWatch Dashboard
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-agent-runtime-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      View Agent Runtime Logs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clean Up
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permissions Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Permissions Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#developer-permissions-for-starter-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Developer Permissions for Starter Toolkit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-generated-execution-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto-Generated Execution Role
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-memory-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Memory Selection
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observability-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observability Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1231,6 +1561,75 @@
   
   <span class="md-ellipsis">
     Gateway Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="memory_gateway_agent.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Memory Gateway Agent
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="runtime-framework-agents.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Runtime Framework Agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="semantic_search.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Semantic Search
     
   </span>
   
@@ -1839,11 +2238,13 @@
 <h1 id="amazon-bedrock-agentcore-quickstart">Amazon Bedrock AgentCore Quickstart<a class="headerlink" href="#amazon-bedrock-agentcore-quickstart" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.</p>
-<p>This guide demonstrates how to deploy an AI agent that combines:
-- <strong>Runtime</strong>: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime docs</a>
-- <strong>Memory Service</strong>: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory docs</a>
-- <strong>Code Interpreter</strong>: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a>
-- <strong>Observability</strong>: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a> for more details.</p>
+<p>This guide demonstrates how to deploy an AI agent that combines:</p>
+<ul>
+<li><strong>Runtime</strong>: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime docs</a></li>
+<li><strong>Memory Service</strong>: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory docs</a></li>
+<li><strong>Code Interpreter</strong>: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a></li>
+<li><strong>Observability</strong>: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a> for more details.</li>
+</ul>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>AWS Permissions</strong>: If you are a root user or using admin credentials, you can skip this prerequisite. If you need specific permissions to use the starter toolkit, see the <a href="#permissions-reference">Permissions Reference</a> section for the complete IAM policy.</li>
