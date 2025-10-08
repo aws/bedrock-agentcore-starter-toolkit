@@ -394,9 +394,9 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
                 return_value=mock_container_runtime,
             ),
+            pytest.raises(ValueError, match="ECR repository not configured"),
         ):
-            with pytest.raises(ValueError, match="ECR repository not configured"):
-                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
     def test_launch_cloud_with_execution_role_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment with execution role auto-creation."""
@@ -629,13 +629,14 @@ class TestLaunchBedrockAgentCore:
         mock_container_runtime.build.return_value = (False, ["Error: failed to resolve", "No such file or directory"])
         mock_container_runtime.has_local_runtime = True
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            pytest.raises(RuntimeError, match="Build failed"),
         ):
-            # Should raise RuntimeError with build failure message
-            with pytest.raises(RuntimeError, match="Build failed"):
-                launch_bedrock_agentcore(config_path, local=True)
+            launch_bedrock_agentcore(config_path, local=True)
 
     def test_container_runtime_availability_check(self, tmp_path):
         """Test container runtime availability check."""

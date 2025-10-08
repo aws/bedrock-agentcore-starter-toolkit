@@ -143,10 +143,7 @@ def update_changelog(new_version: str, changes: str = None, sdk_version: str = N
     """Update CHANGELOG.md with new version."""
     changelog_path = Path("CHANGELOG.md")
 
-    if not changelog_path.exists():
-        content = "# Changelog\n\n"
-    else:
-        content = changelog_path.read_text()
+    content = "# Changelog\n\n" if not changelog_path.exists() else changelog_path.read_text()
 
     # Generate entry
     date = datetime.now().strftime("%Y-%m-%d")
@@ -197,10 +194,9 @@ def main():
         # Handle SDK dependency update
         sdk_updated = None
         if args.update_sdk:
-            if args.wait_for_sdk:
-                if not check_sdk_version_on_pypi(args.update_sdk):
-                    print(f"❌ SDK version {args.update_sdk} not available on PyPI after waiting")
-                    sys.exit(1)
+            if args.wait_for_sdk and not check_sdk_version_on_pypi(args.update_sdk):
+                print(f"❌ SDK version {args.update_sdk} not available on PyPI after waiting")
+                sys.exit(1)
 
             if not args.dry_run:
                 update_sdk_dependency(args.update_sdk)

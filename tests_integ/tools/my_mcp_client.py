@@ -8,15 +8,17 @@ async def main():
     mcp_url = "http://localhost:8000/mcp"
     headers = {}
 
-    async with streamablehttp_client(mcp_url, headers, timeout=120, terminate_on_close=False) as (
-        read_stream,
-        write_stream,
-        _,
+    async with (
+        streamablehttp_client(mcp_url, headers, timeout=120, terminate_on_close=False) as (
+            read_stream,
+            write_stream,
+            _,
+        ),
+        ClientSession(read_stream, write_stream) as session,
     ):
-        async with ClientSession(read_stream, write_stream) as session:
-            await session.initialize()
-            tool_result = await session.list_tools()
-            print(tool_result)
+        await session.initialize()
+        tool_result = await session.list_tools()
+        print(tool_result)
 
 
 asyncio.run(main())

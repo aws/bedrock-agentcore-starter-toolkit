@@ -87,24 +87,28 @@ class TestGatewayClientInitialization:
     @patch("boto3.Session")
     def test_init_logger_setup(self, mock_session, mock_client):
         """Test that logger is properly initialized."""
-        with patch("logging.getLogger") as mock_get_logger:
+        with (
+            patch("logging.getLogger") as mock_get_logger,
+            patch("logging.StreamHandler") as mock_stream_handler,
+            patch("logging.Formatter") as mock_formatter,
+        ):
             mock_logger = Mock()
             mock_logger.handlers = []  # No existing handlers
             mock_get_logger.return_value = mock_logger
 
             mock_handler = Mock()
-            with patch("logging.StreamHandler", return_value=mock_handler):
-                with patch("logging.Formatter") as mock_formatter:
-                    mock_formatter_instance = Mock()
-                    mock_formatter.return_value = mock_formatter_instance
+            mock_stream_handler.return_value = mock_handler
 
-                    GatewayClient()
+            mock_formatter_instance = Mock()
+            mock_formatter.return_value = mock_formatter_instance
 
-                    # Verify logger setup
-                    mock_get_logger.assert_called_once_with("bedrock_agentcore.gateway")
-                    mock_handler.setFormatter.assert_called_once_with(mock_formatter_instance)
-                    mock_logger.addHandler.assert_called_once_with(mock_handler)
-                    mock_logger.setLevel.assert_called_once_with(logging.INFO)
+            GatewayClient()
+
+            # Verify logger setup
+            mock_get_logger.assert_called_once_with("bedrock_agentcore.gateway")
+            mock_handler.setFormatter.assert_called_once_with(mock_formatter_instance)
+            mock_logger.addHandler.assert_called_once_with(mock_handler)
+            mock_logger.setLevel.assert_called_once_with(logging.INFO)
 
     def test_generate_random_id(self):
         """Test generate_random_id static method."""
@@ -193,33 +197,32 @@ class TestCreateMCPGateway:
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
             ) as mock_create_role,
+            patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth,
+            patch.object(GatewayClient, "generate_random_id", return_value="12345678"),
         ):
             mock_create_role.return_value = "arn:aws:iam::123456789012:role/CreatedRole"
 
-            with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
-                mock_auth_config = {
-                    "customJWTAuthorizer": {
-                        "discoveryUrl": "https://cognito.amazonaws.com/.well-known/openid_configuration",
-                        "allowedClients": ["cognito-client"],
-                    }
+            mock_auth_config = {
+                "customJWTAuthorizer": {
+                    "discoveryUrl": "https://cognito.amazonaws.com/.well-known/openid_configuration",
+                    "allowedClients": ["cognito-client"],
                 }
-                mock_create_auth.return_value = {"authorizer_config": mock_auth_config}
+            }
+            mock_create_auth.return_value = {"authorizer_config": mock_auth_config}
 
-                # Mock generate_random_id to return predictable value
-                with patch.object(GatewayClient, "generate_random_id", return_value="12345678"):
-                    self.client.create_mcp_gateway()
+            self.client.create_mcp_gateway()
 
-                    # Verify role creation was called
-                    mock_create_role.assert_called_once_with(self.client.session, self.client.logger)
+            # Verify role creation was called
+            mock_create_role.assert_called_once_with(self.client.session, self.client.logger)
 
-                    # Verify authorizer creation was called
-                    mock_create_auth.assert_called_once_with("TestGateway12345678")
+            # Verify authorizer creation was called
+            mock_create_auth.assert_called_once_with("TestGateway12345678")
 
-                    # Verify create_gateway was called with generated values
-                    call_args = self.client.client.create_gateway.call_args[1]
-                    assert call_args["name"] == "TestGateway12345678"
-                    assert call_args["roleArn"] == "arn:aws:iam::123456789012:role/CreatedRole"
-                    assert call_args["authorizerConfiguration"] == mock_auth_config
+            # Verify create_gateway was called with generated values
+            call_args = self.client.client.create_gateway.call_args[1]
+            assert call_args["name"] == "TestGateway12345678"
+            assert call_args["roleArn"] == "arn:aws:iam::123456789012:role/CreatedRole"
+            assert call_args["authorizerConfiguration"] == mock_auth_config
 
     def test_create_mcp_gateway_without_semantic_search(self):
         """Test create_mcp_gateway with semantic search disabled."""
@@ -231,17 +234,16 @@ class TestCreateMCPGateway:
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
             ) as mock_create_role,
+            patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth,
         ):
             mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
 
-            with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
-                mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
+            self.client.create_mcp_gateway(enable_semantic_search=False)
 
-                self.client.create_mcp_gateway(enable_semantic_search=False)
-
-                # Verify protocolConfiguration is not included when semantic search is disabled
-                call_args = self.client.client.create_gateway.call_args[1]
-                assert "protocolConfiguration" not in call_args
+            # Verify protocolConfiguration is not included when semantic search is disabled
+            call_args = self.client.client.create_gateway.call_args[1]
+            assert "protocolConfiguration" not in call_args
 
     def test_create_mcp_gateway_client_error(self):
         """Test create_mcp_gateway handles client errors."""
@@ -252,16 +254,17 @@ class TestCreateMCPGateway:
         )
         self.client.client.create_gateway.side_effect = client_error
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
-        ) as mock_create_role:
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_gateway_execution_role"
+            ) as mock_create_role,
+            patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth,
+            pytest.raises(ClientError),
+        ):
             mock_create_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
 
-            with patch.object(self.client, "create_oauth_authorizer_with_cognito") as mock_create_auth:
-                mock_create_auth.return_value = {"authorizer_config": {"test": "config"}}
-
-                with pytest.raises(ClientError):
-                    self.client.create_mcp_gateway()
+            self.client.create_mcp_gateway()
 
 
 class TestWaitForReady:
@@ -300,7 +303,10 @@ class TestWaitForReady:
         mock_method = Mock()
         mock_method.return_value = {"status": "CREATING"}
 
-        with patch("time.sleep"), pytest.raises(TimeoutError, match="TestResource not ready after 3 attempts"):
+        with (
+            patch("time.sleep"),
+            pytest.raises(TimeoutError, match="TestResource not ready after 3 attempts"),
+        ):
             self.client._GatewayClient__wait_for_ready(
                 resource_name="TestResource",
                 method=mock_method,
@@ -366,37 +372,39 @@ class TestCreateMCPGatewayTarget:
         }
         self.client.client.create_gateway_target.return_value = mock_target_response
 
-        with patch.object(self.client, "_GatewayClient__wait_for_ready"):
-            with patch.object(self.client, "_GatewayClient__handle_lambda_target_creation") as mock_handle_lambda:
-                mock_lambda_config = {
-                    "targetConfiguration": {
-                        "mcp": {"lambda": {"lambdaArn": "test-lambda-arn", "toolSchema": LAMBDA_CONFIG}}
-                    },
-                    "credentialProviderConfigurations": [{"credentialProviderType": "GATEWAY_IAM_ROLE"}],
-                }
-                mock_handle_lambda.return_value = mock_lambda_config
+        with (
+            patch.object(self.client, "_GatewayClient__wait_for_ready"),
+            patch.object(self.client, "_GatewayClient__handle_lambda_target_creation") as mock_handle_lambda,
+            patch.object(GatewayClient, "generate_random_id", return_value="12345678"),
+        ):
+            mock_lambda_config = {
+                "targetConfiguration": {
+                    "mcp": {"lambda": {"lambdaArn": "test-lambda-arn", "toolSchema": LAMBDA_CONFIG}}
+                },
+                "credentialProviderConfigurations": [{"credentialProviderType": "GATEWAY_IAM_ROLE"}],
+            }
+            mock_handle_lambda.return_value = mock_lambda_config
 
-                with patch.object(GatewayClient, "generate_random_id", return_value="12345678"):
-                    result = self.client.create_mcp_gateway_target(gateway=self.gateway, target_type="lambda")
+            result = self.client.create_mcp_gateway_target(gateway=self.gateway, target_type="lambda")
 
-                    # Verify lambda handler was called
-                    mock_handle_lambda.assert_called_once_with(self.gateway["roleArn"])
+            # Verify lambda handler was called
+            mock_handle_lambda.assert_called_once_with(self.gateway["roleArn"])
 
-                    # Verify create_gateway_target was called with correct parameters
-                    expected_request = {
-                        "gatewayIdentifier": "test-gateway-123",
-                        "name": "TestGatewayTarget12345678",
-                        "targetConfiguration": {"mcp": {"lambda": None}},
-                        **mock_lambda_config,
-                    }
-                    # Remove the duplicate targetConfiguration
-                    expected_request["targetConfiguration"] = mock_lambda_config["targetConfiguration"]
+            # Verify create_gateway_target was called with correct parameters
+            expected_request = {
+                "gatewayIdentifier": "test-gateway-123",
+                "name": "TestGatewayTarget12345678",
+                "targetConfiguration": {"mcp": {"lambda": None}},
+                **mock_lambda_config,
+            }
+            # Remove the duplicate targetConfiguration
+            expected_request["targetConfiguration"] = mock_lambda_config["targetConfiguration"]
 
-                    call_args = self.client.client.create_gateway_target.call_args[1]
-                    assert call_args["gatewayIdentifier"] == expected_request["gatewayIdentifier"]
-                    assert call_args["name"] == expected_request["name"]
+            call_args = self.client.client.create_gateway_target.call_args[1]
+            assert call_args["gatewayIdentifier"] == expected_request["gatewayIdentifier"]
+            assert call_args["name"] == expected_request["name"]
 
-                    assert result == mock_target_response
+            assert result == mock_target_response
 
     def test_create_mcp_gateway_target_openapi_schema(self):
         """Test create_mcp_gateway_target with OpenAPI schema target."""
@@ -694,52 +702,54 @@ class TestCreateOAuthAuthorizerWithCognito:
         # Mock domain status check
         self.mock_cognito_client.describe_user_pool_domain.return_value = {"DomainDescription": {"Status": "ACTIVE"}}
 
-        with patch.object(GatewayClient, "generate_random_id", side_effect=["12345678", "87654321", "abcdefgh"]):
-            with patch("time.sleep"):  # Mock sleep to speed up test
-                result = self.client.create_oauth_authorizer_with_cognito(gateway_name)
+        with (
+            patch.object(GatewayClient, "generate_random_id", side_effect=["12345678", "87654321", "abcdefgh"]),
+            patch("time.sleep"),
+        ):
+            result = self.client.create_oauth_authorizer_with_cognito(gateway_name)
 
-                # Verify user pool creation
-                self.mock_cognito_client.create_user_pool.assert_called_once_with(
-                    PoolName="agentcore-gateway-12345678", AdminCreateUserConfig={"AllowAdminCreateUserOnly": True}
-                )
+            # Verify user pool creation
+            self.mock_cognito_client.create_user_pool.assert_called_once_with(
+                PoolName="agentcore-gateway-12345678", AdminCreateUserConfig={"AllowAdminCreateUserOnly": True}
+            )
 
-                # Verify domain creation
-                self.mock_cognito_client.create_user_pool_domain.assert_called_once_with(
-                    Domain="agentcore-87654321", UserPoolId=user_pool_id
-                )
+            # Verify domain creation
+            self.mock_cognito_client.create_user_pool_domain.assert_called_once_with(
+                Domain="agentcore-87654321", UserPoolId=user_pool_id
+            )
 
-                # Verify resource server creation
-                self.mock_cognito_client.create_resource_server.assert_called_once_with(
-                    UserPoolId=user_pool_id,
-                    Identifier=gateway_name,
-                    Name=gateway_name,
-                    Scopes=[{"ScopeName": "invoke", "ScopeDescription": "Scope for invoking the agentcore gateway"}],
-                )
+            # Verify resource server creation
+            self.mock_cognito_client.create_resource_server.assert_called_once_with(
+                UserPoolId=user_pool_id,
+                Identifier=gateway_name,
+                Name=gateway_name,
+                Scopes=[{"ScopeName": "invoke", "ScopeDescription": "Scope for invoking the agentcore gateway"}],
+            )
 
-                # Verify client creation
-                self.mock_cognito_client.create_user_pool_client.assert_called_once_with(
-                    UserPoolId=user_pool_id,
-                    ClientName="agentcore-client-abcdefgh",
-                    GenerateSecret=True,
-                    AllowedOAuthFlows=["client_credentials"],
-                    AllowedOAuthScopes=[f"{gateway_name}/invoke"],
-                    AllowedOAuthFlowsUserPoolClient=True,
-                    SupportedIdentityProviders=["COGNITO"],
-                )
+            # Verify client creation
+            self.mock_cognito_client.create_user_pool_client.assert_called_once_with(
+                UserPoolId=user_pool_id,
+                ClientName="agentcore-client-abcdefgh",
+                GenerateSecret=True,
+                AllowedOAuthFlows=["client_credentials"],
+                AllowedOAuthScopes=[f"{gateway_name}/invoke"],
+                AllowedOAuthFlowsUserPoolClient=True,
+                SupportedIdentityProviders=["COGNITO"],
+            )
 
-                # Verify return value structure
-                expected_discovery_url = (
-                    f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/openid-configuration"
-                )
-                expected_token_endpoint = "https://agentcore-87654321.auth.us-east-1.amazoncognito.com/oauth2/token"
+            # Verify return value structure
+            expected_discovery_url = (
+                f"https://cognito-idp.us-east-1.amazonaws.com/{user_pool_id}/.well-known/openid-configuration"
+            )
+            expected_token_endpoint = "https://agentcore-87654321.auth.us-east-1.amazoncognito.com/oauth2/token"
 
-                assert result["authorizer_config"]["customJWTAuthorizer"]["allowedClients"] == [client_id]
-                assert result["authorizer_config"]["customJWTAuthorizer"]["discoveryUrl"] == expected_discovery_url
-                assert result["client_info"]["client_id"] == client_id
-                assert result["client_info"]["client_secret"] == client_secret
-                assert result["client_info"]["user_pool_id"] == user_pool_id
-                assert result["client_info"]["token_endpoint"] == expected_token_endpoint
-                assert result["client_info"]["scope"] == f"{gateway_name}/invoke"
+            assert result["authorizer_config"]["customJWTAuthorizer"]["allowedClients"] == [client_id]
+            assert result["authorizer_config"]["customJWTAuthorizer"]["discoveryUrl"] == expected_discovery_url
+            assert result["client_info"]["client_id"] == client_id
+            assert result["client_info"]["client_secret"] == client_secret
+            assert result["client_info"]["user_pool_id"] == user_pool_id
+            assert result["client_info"]["token_endpoint"] == expected_token_endpoint
+            assert result["client_info"]["scope"] == f"{gateway_name}/invoke"
 
     def test_create_oauth_authorizer_with_cognito_domain_not_active(self):
         """Test OAuth authorizer creation when domain is not immediately active."""

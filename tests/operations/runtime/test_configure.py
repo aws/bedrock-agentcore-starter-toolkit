@@ -836,37 +836,40 @@ def handler(payload):
                 patch(
                     "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
                 ) as mock_config_manager_class,
+                patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log,
             ):
-                # Mock the logger to capture verbose logging
-                with patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log:
-                    request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]}
+                request_header_config = {"requestHeaderAllowlist": ["Authorization", "X-Verbose-Test-Header"]}
 
-                    # Configure mock
-                    mock_config_manager = Mock()
-                    mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
-                    mock_config_manager_class.return_value = mock_config_manager
+                # Configure mock
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+                mock_config_manager_class.return_value = mock_config_manager
 
-                    result = configure_bedrock_agentcore(
-                        agent_name="test_agent",
-                        entrypoint_path=agent_file,
-                        execution_role="TestRole",
-                        request_header_configuration=request_header_config,
-                        verbose=True,  # Enable verbose mode
-                    )
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    request_header_configuration=request_header_config,
+                    verbose=True,  # Enable verbose mode
+                )
 
-                    # Verify result structure is correct
-                    assert result.runtime == "Docker"
+                # Verify result structure is correct
+                assert result.runtime == "Docker"
 
-                    # Verify that verbose logging was enabled
-                    mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
+                # Verify that verbose logging was enabled
+                mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
 
-                    # Verify that request header configuration was logged
-                    debug_calls = [call for call in mock_log.debug.call_args_list]
-                    assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
+                # Verify that request header configuration was logged
+                debug_calls = [call for call in mock_log.debug.call_args_list]
+                assert len(debug_calls) > 0, "Expected debug log calls when verbose=True"
 
-                    # Check that request header configuration appears in one of the debug calls
-                    request_header_logged = any("Request header configuration" in str(call) for call in debug_calls)
-                    assert request_header_logged, "Expected request header configuration to be logged in verbose mode"
+                # Check that request header configuration appears in one of the debug calls
+                request_header_logged = any("Request header configuration" in str(call) for call in debug_calls)
+                assert request_header_logged, "Expected request header configuration to be logged in verbose mode"
+
+                # Check execution role debug logging
+                execution_role_logs = [call for call in debug_calls if "execution role" in str(call).lower()]
+                assert len(execution_role_logs) > 0, "Expected execution role debug logging"
 
         finally:
             os.chdir(original_cwd)

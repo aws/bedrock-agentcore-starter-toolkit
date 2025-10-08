@@ -376,3 +376,12 @@ def validate_agent_name(name: str) -> tuple[bool, str]:
         return match, ""
     else:
         return match, AGENT_NAME_ERROR
+
+
+def list_agents_enhanced():
+    """Enhanced agent listing operation with source paths and build artifacts (not yet implemented).
+
+    Raises:
+        NotImplementedError: This operation is not yet implemented
+    """
+    raise NotImplementedError("Enhanced list agents operation not implemented")

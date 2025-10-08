@@ -48,12 +48,11 @@ class BaseCLIRuntimeTest(ABC):
 
                 logger.info("Running command %s with input %s", command, input)
 
-                with create_pipe_input() as pipe_input:
-                    with create_app_session(input=pipe_input):
-                        for data in input:
-                            pipe_input.send_text(data + "\n")
+                with create_pipe_input() as pipe_input, create_app_session(input=pipe_input):
+                    for data in input:
+                        pipe_input.send_text(data + "\n")
 
-                        result = runner.invoke(app, args=command)
+                    result = runner.invoke(app, args=command)
 
                 validator(result)
         finally:

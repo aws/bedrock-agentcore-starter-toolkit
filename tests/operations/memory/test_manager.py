@@ -281,17 +281,20 @@ def test_create_memory_and_wait_success():
             "memory": {"id": "test-mem-456", "status": "ACTIVE", "name": "TestMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                result = manager._create_memory_and_wait(
-                    name="TestMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                    max_wait=300,
-                    poll_interval=10,
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            result = manager._create_memory_and_wait(
+                name="TestMemory",
+                strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                max_wait=300,
+                poll_interval=10,
+            )
 
-                assert result.id == "test-mem-456"
-                assert isinstance(result, Memory)
+            assert result.id == "test-mem-456"
+            assert isinstance(result, Memory)
 
 
 def test_create_memory_and_wait_timeout():
@@ -312,18 +315,21 @@ def test_create_memory_and_wait_timeout():
         mock_control_plane_client.get_memory.return_value = {"memory": {"id": "test-mem-timeout", "status": "CREATING"}}
 
         # Mock time to simulate timeout - provide enough values for all time.time() calls
-        with patch("time.time", side_effect=[0, 0, 0, 301, 301]), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.create_memory_and_wait(
-                        name="TimeoutMemory",
-                        strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                        max_wait=300,
-                        poll_interval=10,
-                    )
-                    raise AssertionError("TimeoutError was not raised")
-                except TimeoutError as e:
-                    assert "did not become ACTIVE within 300 seconds" in str(e)
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 301, 301]),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.create_memory_and_wait(
+                    name="TimeoutMemory",
+                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                    max_wait=300,
+                    poll_interval=10,
+                )
+                raise AssertionError("TimeoutError was not raised")
+            except TimeoutError as e:
+                assert "did not become ACTIVE within 300 seconds" in str(e)
 
 
 def test_create_memory_and_wait_failure():
@@ -345,18 +351,21 @@ def test_create_memory_and_wait_failure():
             "memory": {"memoryId": "test-mem-failed", "status": "FAILED", "failureReason": "Configuration error"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.create_memory_and_wait(
-                        name="FailedMemory",
-                        strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                        max_wait=300,
-                        poll_interval=10,
-                    )
-                    raise AssertionError("RuntimeError was not raised")
-                except RuntimeError as e:
-                    assert "Memory creation failed: Configuration error" in str(e)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.create_memory_and_wait(
+                    name="FailedMemory",
+                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                    max_wait=300,
+                    poll_interval=10,
+                )
+                raise AssertionError("RuntimeError was not raised")
+            except RuntimeError as e:
+                assert "Memory creation failed: Configuration error" in str(e)
 
 
 def test_list_memories():
@@ -642,17 +651,20 @@ def test_delete_memory_and_wait():
         error_response = {"Error": {"Code": "ResourceNotFoundException", "Message": "Memory not found"}}
         mock_control_plane_client.get_memory.side_effect = ClientError(error_response, "GetMemory")
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test delete_memory_and_wait
-                result = manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test delete_memory_and_wait
+            result = manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
 
-                assert result["status"] == "DELETING"
+            assert result["status"] == "DELETING"
 
-                # Verify delete was called
-                assert mock_control_plane_client.delete_memory.called
-                args, kwargs = mock_control_plane_client.delete_memory.call_args
-                assert kwargs["memoryId"] == "mem-123"
+            # Verify delete was called
+            assert mock_control_plane_client.delete_memory.called
+            args, kwargs = mock_control_plane_client.delete_memory.call_args
+            assert kwargs["memoryId"] == "mem-123"
 
 
 def test_update_memory_strategies():
@@ -737,7 +749,10 @@ def test_wait_for_memory_active():
             "memory": {"memoryId": "mem-123", "status": "ACTIVE", "name": "Test Memory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+        ):
             # Test _wait_for_memory_active
             result = manager._wait_for_memory_active("mem-123", max_wait=60, poll_interval=5)
 
@@ -762,7 +777,10 @@ def test_wait_for_memory_active_failed_status():
             "memory": {"memoryId": "mem-failed", "status": "FAILED", "failureReason": "Strategy configuration error"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+        ):
             # Test _wait_for_memory_active with FAILED status
             try:
                 manager._wait_for_memory_active("mem-failed", max_wait=60, poll_interval=5)
@@ -787,7 +805,10 @@ def test_wait_for_memory_active_client_error():
         error_response = {"Error": {"Code": "ValidationException", "Message": "Invalid memory ID"}}
         mock_control_plane_client.get_memory.side_effect = ClientError(error_response, "GetMemory")
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+        ):
             # Test _wait_for_memory_active with ClientError
             try:
                 manager._wait_for_memory_active("mem-invalid", max_wait=60, poll_interval=5)
@@ -976,21 +997,24 @@ def test_add_semantic_strategy_and_wait():
         # Mock get_memory response (simulating ACTIVE status)
         mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-123", "status": "ACTIVE"}}
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_semantic_strategy_and_wait
-                result = manager.add_semantic_strategy_and_wait(
-                    memory_id="mem-123", name="Test Strategy", description="Test description"
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test add_semantic_strategy_and_wait
+            result = manager.add_semantic_strategy_and_wait(
+                memory_id="mem-123", name="Test Strategy", description="Test description"
+            )
 
-                assert result["memoryId"] == "mem-123"
-                assert result["status"] == "ACTIVE"
+            assert result["memoryId"] == "mem-123"
+            assert result["status"] == "ACTIVE"
 
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
+            # Verify update_memory was called
+            assert mock_control_plane_client.update_memory.called
 
-                # Verify get_memory was called (for waiting)
-                assert mock_control_plane_client.get_memory.called
+            # Verify get_memory was called (for waiting)
+            assert mock_control_plane_client.get_memory.called
 
 
 def test_add_summary_strategy_and_wait():
@@ -1008,21 +1032,24 @@ def test_add_summary_strategy_and_wait():
         # Mock get_memory response (simulating ACTIVE status)
         mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-456", "status": "ACTIVE"}}
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_summary_strategy_and_wait
-                result = manager.add_summary_strategy_and_wait(
-                    memory_id="mem-456", name="Test Summary Strategy", description="Test description"
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test add_summary_strategy_and_wait
+            result = manager.add_summary_strategy_and_wait(
+                memory_id="mem-456", name="Test Summary Strategy", description="Test description"
+            )
 
-                assert result["memoryId"] == "mem-456"
-                assert result["status"] == "ACTIVE"
+            assert result["memoryId"] == "mem-456"
+            assert result["status"] == "ACTIVE"
 
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
+            # Verify update_memory was called
+            assert mock_control_plane_client.update_memory.called
 
-                # Verify get_memory was called (for waiting)
-                assert mock_control_plane_client.get_memory.called
+            # Verify get_memory was called (for waiting)
+            assert mock_control_plane_client.get_memory.called
 
 
 def test_add_user_preference_strategy_and_wait():
@@ -1040,21 +1067,24 @@ def test_add_user_preference_strategy_and_wait():
         # Mock get_memory response (simulating ACTIVE status)
         mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-789", "status": "ACTIVE"}}
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_user_preference_strategy_and_wait
-                result = manager.add_user_preference_strategy_and_wait(
-                    memory_id="mem-789", name="Test User Preference Strategy", description="Test description"
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test add_user_preference_strategy_and_wait
+            result = manager.add_user_preference_strategy_and_wait(
+                memory_id="mem-789", name="Test User Preference Strategy", description="Test description"
+            )
 
-                assert result["memoryId"] == "mem-789"
-                assert result["status"] == "ACTIVE"
+            assert result["memoryId"] == "mem-789"
+            assert result["status"] == "ACTIVE"
 
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
+            # Verify update_memory was called
+            assert mock_control_plane_client.update_memory.called
 
-                # Verify get_memory was called (for waiting)
-                assert mock_control_plane_client.get_memory.called
+            # Verify get_memory was called (for waiting)
+            assert mock_control_plane_client.get_memory.called
 
 
 def test_add_custom_semantic_strategy_and_wait():
@@ -1072,28 +1102,31 @@ def test_add_custom_semantic_strategy_and_wait():
         # Mock get_memory response (simulating ACTIVE status)
         mock_control_plane_client.get_memory.return_value = {"memory": {"memoryId": "mem-999", "status": "ACTIVE"}}
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test add_custom_semantic_strategy_and_wait
-                extraction_config = {"prompt": "Extract key info", "modelId": "claude-3-sonnet"}
-                consolidation_config = {"prompt": "Consolidate info", "modelId": "claude-3-haiku"}
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test add_custom_semantic_strategy_and_wait
+            extraction_config = {"prompt": "Extract key info", "modelId": "claude-3-sonnet"}
+            consolidation_config = {"prompt": "Consolidate info", "modelId": "claude-3-haiku"}
 
-                result = manager.add_custom_semantic_strategy_and_wait(
-                    memory_id="mem-999",
-                    name="Test Custom Strategy",
-                    extraction_config=extraction_config,
-                    consolidation_config=consolidation_config,
-                    description="Test description",
-                )
+            result = manager.add_custom_semantic_strategy_and_wait(
+                memory_id="mem-999",
+                name="Test Custom Strategy",
+                extraction_config=extraction_config,
+                consolidation_config=consolidation_config,
+                description="Test description",
+            )
 
-                assert result["memoryId"] == "mem-999"
-                assert result["status"] == "ACTIVE"
+            assert result["memoryId"] == "mem-999"
+            assert result["status"] == "ACTIVE"
 
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
+            # Verify update_memory was called
+            assert mock_control_plane_client.update_memory.called
 
-                # Verify get_memory was called (for waiting)
-                assert mock_control_plane_client.get_memory.called
+            # Verify get_memory was called (for waiting)
+            assert mock_control_plane_client.get_memory.called
 
 
 def test_update_memory_strategies_and_wait():
@@ -1117,20 +1150,23 @@ def test_update_memory_strategies_and_wait():
         # Mock update_memory response
         mock_control_plane_client.update_memory.return_value = {"memory": {"memoryId": "mem-123", "status": "CREATING"}}
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test update_memory_strategies_and_wait
-                add_strategies = [{StrategyType.SEMANTIC.value: {"name": "New Strategy"}}]
-                result = manager.update_memory_strategies_and_wait(memory_id="mem-123", add_strategies=add_strategies)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test update_memory_strategies_and_wait
+            add_strategies = [{StrategyType.SEMANTIC.value: {"name": "New Strategy"}}]
+            result = manager.update_memory_strategies_and_wait(memory_id="mem-123", add_strategies=add_strategies)
 
-                assert result["memoryId"] == "mem-123"
-                assert result["status"] == "ACTIVE"
+            assert result["memoryId"] == "mem-123"
+            assert result["status"] == "ACTIVE"
 
-                # Verify update_memory was called
-                assert mock_control_plane_client.update_memory.called
+            # Verify update_memory was called
+            assert mock_control_plane_client.update_memory.called
 
-                # Verify get_memory was called multiple times
-                assert mock_control_plane_client.get_memory.call_count >= 2
+            # Verify get_memory was called multiple times
+            assert mock_control_plane_client.get_memory.call_count >= 2
 
 
 def test_delete_strategy():
@@ -1179,18 +1215,21 @@ def test_create_memory_and_wait_client_error():
         error_response = {"Error": {"Code": "ValidationException", "Message": "Invalid memory ID"}}
         mock_control_plane_client.get_memory.side_effect = ClientError(error_response, "GetMemory")
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.create_memory_and_wait(
-                        name="ErrorMemory",
-                        strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                        max_wait=300,
-                        poll_interval=10,
-                    )
-                    raise AssertionError("ClientError was not raised")
-                except ClientError as e:
-                    assert "ValidationException" in str(e)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.create_memory_and_wait(
+                    name="ErrorMemory",
+                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                    max_wait=300,
+                    poll_interval=10,
+                )
+                raise AssertionError("ClientError was not raised")
+            except ClientError as e:
+                assert "ValidationException" in str(e)
 
 
 def test_get_memory_strategies_client_error():
@@ -1508,7 +1547,10 @@ def test_wait_for_memory_active_with_strategy_failures():
             }
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+        ):
             try:
                 manager._wait_for_memory_active("mem-123", max_wait=60, poll_interval=5)
                 raise AssertionError("RuntimeError was not raised")
@@ -1544,7 +1586,10 @@ def test_wait_for_memory_active_with_strategies_still_creating():
         ]
         mock_control_plane_client.get_memory.side_effect = get_memory_responses
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+        ):
             result = manager._wait_for_memory_active("mem-123", max_wait=60, poll_interval=5)
 
             assert result["memoryId"] == "mem-123"
@@ -1573,7 +1618,10 @@ def test_wait_for_memory_active_timeout_with_strategies():
         # Mock time to simulate timeout - provide enough values for all time.time() calls
         # The method calls: start_time, while condition check, elapsed calc,
         # while condition check (timeout), elapsed calc
-        with patch("time.time", side_effect=[0, 0, 0, 61, 61]), patch("time.sleep"):
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 61, 61]),
+            patch("time.sleep"),
+        ):
             try:
                 manager._wait_for_memory_active("mem-123", max_wait=60, poll_interval=5)
                 raise AssertionError("TimeoutError was not raised")
@@ -1887,13 +1935,16 @@ def test_delete_memory_and_wait_timeout():
         # Mock time to simulate timeout - provide enough values for all time.time() calls
         # The while loop calls time.time() twice per iteration: once for the condition, once for elapsed calculation
         # We need: start_time, condition_check, elapsed_calc, condition_check (timeout), elapsed_calc
-        with patch("time.time", side_effect=[0, 0, 0, 61, 61]), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
-                    raise AssertionError("TimeoutError was not raised")
-                except TimeoutError as e:
-                    assert "was not deleted within 60 seconds" in str(e)
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 61, 61]),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
+                raise AssertionError("TimeoutError was not raised")
+            except TimeoutError as e:
+                assert "was not deleted within 60 seconds" in str(e)
 
 
 def test_delete_memory_and_wait_other_client_error():
@@ -1912,13 +1963,16 @@ def test_delete_memory_and_wait_other_client_error():
         error_response = {"Error": {"Code": "ValidationException", "Message": "Invalid memory ID"}}
         mock_control_plane_client.get_memory.side_effect = ClientError(error_response, "GetMemory")
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
-                    raise AssertionError("ClientError was not raised")
-                except ClientError as e:
-                    assert "ValidationException" in str(e)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
+                raise AssertionError("ClientError was not raised")
+            except ClientError as e:
+                assert "ValidationException" in str(e)
 
 
 def test_update_memory_strategies_missing_strategy_id():
@@ -2121,19 +2175,21 @@ def test_create_memory_and_wait_debug_logging():
         ]
         mock_control_plane_client.get_memory.side_effect = get_memory_responses
 
-        with patch("time.time", side_effect=[0, 0, 0, 5, 5]):  # Simulate time passing
-            with patch("time.sleep"):
-                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                    with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger:
-                        manager._create_memory_and_wait(
-                            name="TestMemory",
-                            strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                            max_wait=300,
-                            poll_interval=10,
-                        )
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 5, 5]),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+            patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger,
+        ):
+            manager._create_memory_and_wait(
+                name="TestMemory",
+                strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                max_wait=300,
+                poll_interval=10,
+            )
 
-                        # Should have logged debug message about status
-                        mock_logger.debug.assert_called()
+            # Should have logged debug message about status
+            mock_logger.debug.assert_called()
 
 
 def test_get_memory_client_error():
@@ -2241,15 +2297,17 @@ def test_delete_memory_and_wait_debug_logging():
         ]
         mock_control_plane_client.get_memory.side_effect = get_memory_responses
 
-        with patch("time.time", side_effect=[0, 0, 0, 5, 5]):  # Simulate time passing
-            with patch("time.sleep"):
-                with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                    with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger:
-                        result = manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 5, 5]),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+            patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger,
+        ):
+            result = manager.delete_memory_and_wait("mem-123", max_wait=60, poll_interval=5)
 
-                        assert result["status"] == "DELETING"
-                        # Should have logged debug message about memory still existing
-                        mock_logger.debug.assert_called()
+            assert result["status"] == "DELETING"
+            # Should have logged debug message about memory still existing
+            mock_logger.debug.assert_called()
 
 
 def test_modify_strategy_with_configuration():
@@ -2361,23 +2419,26 @@ def test_get_or_create_memory_creates_new_memory():
             "memory": {"id": "mem-new-123", "status": "ACTIVE", "name": "TestMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test get_or_create_memory
-                result = manager.get_or_create_memory(
-                    name="TestMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
-                    description="Test description",
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test get_or_create_memory
+            result = manager.get_or_create_memory(
+                name="TestMemory",
+                strategies=[{StrategyType.SEMANTIC.value: {"name": "TestStrategy"}}],
+                description="Test description",
+            )
 
-                assert result.id == "mem-new-123"
-                assert isinstance(result, Memory)
+            assert result.id == "mem-new-123"
+            assert isinstance(result, Memory)
 
-                # Verify list_memories was called to check for existing memory
-                assert mock_control_plane_client.list_memories.called
+            # Verify list_memories was called to check for existing memory
+            assert mock_control_plane_client.list_memories.called
 
-                # Verify create_memory was called since no existing memory found
-                assert mock_control_plane_client.create_memory.called
+            # Verify create_memory was called since no existing memory found
+            assert mock_control_plane_client.create_memory.called
 
 
 def test_get_or_create_memory_returns_existing_memory():
@@ -2450,20 +2511,23 @@ def test_get_or_create_memory_with_minimal_parameters():
             "memory": {"id": "mem-minimal-456", "status": "ACTIVE", "name": "MinimalMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test get_or_create_memory with only name
-                result = manager.get_or_create_memory(name="MinimalMemory")
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test get_or_create_memory with only name
+            result = manager.get_or_create_memory(name="MinimalMemory")
 
-                assert result.id == "mem-minimal-456"
-                assert isinstance(result, Memory)
+            assert result.id == "mem-minimal-456"
+            assert isinstance(result, Memory)
 
-                # Verify create_memory was called with default parameters
-                assert mock_control_plane_client.create_memory.called
-                args, kwargs = mock_control_plane_client.create_memory.call_args
-                assert kwargs["name"] == "MinimalMemory"
-                assert kwargs["eventExpiryDuration"] == 90  # default
-                assert kwargs["memoryStrategies"] == []  # empty list processed
+            # Verify create_memory was called with default parameters
+            assert mock_control_plane_client.create_memory.called
+            args, kwargs = mock_control_plane_client.create_memory.call_args
+            assert kwargs["name"] == "MinimalMemory"
+            assert kwargs["eventExpiryDuration"] == 90  # default
+            assert kwargs["memoryStrategies"] == []  # empty list processed
 
 
 def test_get_or_create_memory_with_all_parameters():
@@ -2486,27 +2550,30 @@ def test_get_or_create_memory_with_all_parameters():
             "memory": {"id": "mem-full-789", "status": "ACTIVE", "name": "FullMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test get_or_create_memory with all parameters
-                result = manager.get_or_create_memory(
-                    name="FullMemory",
-                    strategies=[{StrategyType.SEMANTIC.value: {"name": "FullStrategy"}}],
-                    description="Full test description",
-                    event_expiry_days=120,
-                    memory_execution_role_arn="arn:aws:iam::123456789012:role/MemoryRole",
-                )
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test get_or_create_memory with all parameters
+            result = manager.get_or_create_memory(
+                name="FullMemory",
+                strategies=[{StrategyType.SEMANTIC.value: {"name": "FullStrategy"}}],
+                description="Full test description",
+                event_expiry_days=120,
+                memory_execution_role_arn="arn:aws:iam::123456789012:role/MemoryRole",
+            )
 
-                assert result.id == "mem-full-789"
-                assert isinstance(result, Memory)
+            assert result.id == "mem-full-789"
+            assert isinstance(result, Memory)
 
-                # Verify create_memory was called with all parameters
-                assert mock_control_plane_client.create_memory.called
-                args, kwargs = mock_control_plane_client.create_memory.call_args
-                assert kwargs["name"] == "FullMemory"
-                assert kwargs["description"] == "Full test description"
-                assert kwargs["eventExpiryDuration"] == 120
-                assert kwargs["memoryExecutionRoleArn"] == "arn:aws:iam::123456789012:role/MemoryRole"
+            # Verify create_memory was called with all parameters
+            assert mock_control_plane_client.create_memory.called
+            args, kwargs = mock_control_plane_client.create_memory.call_args
+            assert kwargs["name"] == "FullMemory"
+            assert kwargs["description"] == "Full test description"
+            assert kwargs["eventExpiryDuration"] == 120
+            assert kwargs["memoryExecutionRoleArn"] == "arn:aws:iam::123456789012:role/MemoryRole"
 
 
 def test_get_or_create_memory_client_error_during_list():
@@ -2598,13 +2665,16 @@ def test_get_or_create_memory_creation_timeout():
         mock_control_plane_client.get_memory.return_value = {"memory": {"id": "mem-timeout-999", "status": "CREATING"}}
 
         # Mock time to simulate timeout
-        with patch("time.time", side_effect=[0, 0, 0, 301, 301]), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.get_or_create_memory(name="TimeoutMemory")
-                    raise AssertionError("TimeoutError was not raised")
-                except TimeoutError as e:
-                    assert "did not become ACTIVE within 300 seconds" in str(e)
+        with (
+            patch("time.time", side_effect=[0, 0, 0, 301, 301]),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.get_or_create_memory(name="TimeoutMemory")
+                raise AssertionError("TimeoutError was not raised")
+            except TimeoutError as e:
+                assert "did not become ACTIVE within 300 seconds" in str(e)
 
 
 def test_get_or_create_memory_creation_failure():
@@ -2629,13 +2699,16 @@ def test_get_or_create_memory_creation_failure():
             "memory": {"id": "mem-failed-888", "status": "FAILED", "failureReason": "Configuration error"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                try:
-                    manager.get_or_create_memory(name="FailedMemory")
-                    raise AssertionError("RuntimeError was not raised")
-                except RuntimeError as e:
-                    assert "Memory creation failed: Configuration error" in str(e)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            try:
+                manager.get_or_create_memory(name="FailedMemory")
+                raise AssertionError("RuntimeError was not raised")
+            except RuntimeError as e:
+                assert "Memory creation failed: Configuration error" in str(e)
 
 
 def test_get_or_create_memory_multiple_matching_memories():
@@ -2696,16 +2769,19 @@ def test_get_or_create_memory_no_matching_pattern():
             "memory": {"id": "mem-new-777", "status": "ACTIVE", "name": "TestMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test get_or_create_memory
-                result = manager.get_or_create_memory(name="TestMemory")
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test get_or_create_memory
+            result = manager.get_or_create_memory(name="TestMemory")
 
-                assert result.id == "mem-new-777"
-                assert isinstance(result, Memory)
+            assert result.id == "mem-new-777"
+            assert isinstance(result, Memory)
 
-                # Verify create_memory was called since no matching pattern found
-                assert mock_control_plane_client.create_memory.called
+            # Verify create_memory was called since no matching pattern found
+            assert mock_control_plane_client.create_memory.called
 
 
 def test_get_or_create_memory_with_strategies():
@@ -2730,22 +2806,25 @@ def test_get_or_create_memory_with_strategies():
             "memory": {"id": "mem-strategies-555", "status": "ACTIVE", "name": "StrategiesMemory"}
         }
 
-        with patch("time.time", return_value=0), patch("time.sleep"):
-            with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
-                # Test get_or_create_memory with multiple strategies
-                strategies = [
-                    {StrategyType.SEMANTIC.value: {"name": "SemanticStrategy"}},
-                    {StrategyType.SUMMARY.value: {"name": "SummaryStrategy"}},
-                ]
-                result = manager.get_or_create_memory(name="StrategiesMemory", strategies=strategies)
+        with (
+            patch("time.time", return_value=0),
+            patch("time.sleep"),
+            patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")),
+        ):
+            # Test get_or_create_memory with multiple strategies
+            strategies = [
+                {StrategyType.SEMANTIC.value: {"name": "SemanticStrategy"}},
+                {StrategyType.SUMMARY.value: {"name": "SummaryStrategy"}},
+            ]
+            result = manager.get_or_create_memory(name="StrategiesMemory", strategies=strategies)
 
-                assert result.id == "mem-strategies-555"
-                assert isinstance(result, Memory)
+            assert result.id == "mem-strategies-555"
+            assert isinstance(result, Memory)
 
-                # Verify create_memory was called with strategies
-                assert mock_control_plane_client.create_memory.called
-                args, kwargs = mock_control_plane_client.create_memory.call_args
-                assert len(kwargs["memoryStrategies"]) == 2
+            # Verify create_memory was called with strategies
+            assert mock_control_plane_client.create_memory.called
+            args, kwargs = mock_control_plane_client.create_memory.call_args
+            assert len(kwargs["memoryStrategies"]) == 2
 
 
 def test_get_or_create_memory_exception_handling():

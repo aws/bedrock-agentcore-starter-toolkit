@@ -204,3 +204,15 @@ def get_enhanced_agent_info(agent_name: str, config_path: Path = None) -> dict[s
     )
 
     return enhanced_info
+
+
+def get_agent_status_enhanced(agent_name=None):
+    """Enhanced agent status operation with source path and build artifact information (not yet implemented).
+
+    Args:
+        agent_name: Optional agent name
+
+    Raises:
+        NotImplementedError: This operation is not yet implemented
+    """
+    raise NotImplementedError("Enhanced status operation not implemented")

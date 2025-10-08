@@ -146,10 +146,7 @@ def validate_package_contents(wheel_path: Path):
         ]
 
         for pattern in required_patterns:
-            if pattern.startswith("*"):
-                found = any(f.endswith(pattern[1:]) for f in files)
-            else:
-                found = pattern in files
+            found = any(f.endswith(pattern[1:]) for f in files) if pattern.startswith("*") else pattern in files
 
             if found:
                 print_status(f"Found required: {pattern}", "success")
