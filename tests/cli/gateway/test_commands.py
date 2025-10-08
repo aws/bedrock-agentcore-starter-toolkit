@@ -59,6 +59,7 @@ class TestBedrockAgentCoreGatewayCLI:
                 "arn:aws:iam::123456789012:role/TestGatewayRole",
                 "",  # empty authorizer config
                 True,  # enable_semantic_search default
+                None,  # kms_key_arn default
             )
 
     def test_create_mcp_gateway_with_defaults(self):
@@ -84,6 +85,56 @@ class TestBedrockAgentCoreGatewayCLI:
                 None,  # role_arn default
                 "",  # empty authorizer config
                 True,  # enable_semantic_search default
+                None,  # kms_key_arn default
+            )
+
+    def test_create_mcp_gateway_with_kms_key_arn(self):
+        """Test create_mcp_gateway command with KMS key ARN."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_gateway_client:
+            mock_client_instance = Mock()
+            mock_gateway_client.return_value = mock_client_instance
+
+            mock_gateway_response = {
+                "gatewayId": "test-gateway-kms",
+                "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/test-gateway-kms",
+                "gatewayUrl": "https://test-gateway-kms.us-west-2.amazonaws.com",
+                "status": "CREATING",
+                "name": "TestGatewayWithKMS",
+                "roleArn": "arn:aws:iam::123456789012:role/TestGatewayRole",
+                "kmsKeyArn": "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012",
+            }
+            mock_client_instance.create_mcp_gateway.return_value = mock_gateway_response
+
+            # Test the command with KMS key ARN
+            kms_key_arn = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+            result = self.runner.invoke(
+                gateway_app,
+                [
+                    "create-mcp-gateway",
+                    "--region",
+                    "us-west-2",
+                    "--name",
+                    "TestGatewayWithKMS",
+                    "--role-arn",
+                    "arn:aws:iam::123456789012:role/TestGatewayRole",
+                    "--kms-key-arn",
+                    kms_key_arn,
+                ],
+            )
+
+            # Verify the command executed successfully
+            assert result.exit_code == 0
+
+            # Verify GatewayClient was initialized with correct region
+            mock_gateway_client.assert_called_once_with(region_name="us-west-2")
+
+            # Verify create_mcp_gateway was called with correct parameters including KMS key ARN
+            mock_client_instance.create_mcp_gateway.assert_called_once_with(
+                "TestGatewayWithKMS",
+                "arn:aws:iam::123456789012:role/TestGatewayRole",
+                "",  # empty authorizer config
+                True,  # enable_semantic_search default
+                kms_key_arn,  # kms_key_arn provided
             )
 
     def test_create_mcp_gateway_target_command_basic(self):

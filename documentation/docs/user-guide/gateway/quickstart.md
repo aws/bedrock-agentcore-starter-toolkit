@@ -78,6 +78,8 @@ def setup_gateway():
         authorizer_config=cognito_response["authorizer_config"],
         # enable semantic search
         enable_semantic_search=True,
+        # optional KMS key ARN for encrypting data stored on Gateway
+        kms_key_arn=None,
     )
     print(f"✓ Gateway created: {gateway['gatewayUrl']}\n")
 
