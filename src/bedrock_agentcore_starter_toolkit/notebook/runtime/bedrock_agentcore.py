@@ -44,6 +44,7 @@ class Runtime:
         auto_create_ecr: bool = True,
         auto_create_execution_role: bool = False,
         authorizer_configuration: Optional[Dict[str, Any]] = None,
+        request_header_configuration: Optional[Dict[str, Any]] = None,
         region: Optional[str] = None,
         protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
         disable_otel: bool = False,
@@ -64,6 +65,7 @@ class Runtime:
             auto_create_ecr: Whether to auto-create ECR repository
             auto_create_execution_role: Whether to auto-create execution role (makes execution_role optional)
             authorizer_configuration: JWT authorizer configuration dictionary
+            request_header_configuration: Request header configuration dictionary
             region: AWS region for deployment
             protocol: agent server protocol, must be either HTTP or MCP or A2A
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
@@ -120,6 +122,7 @@ class Runtime:
             enable_observability=not disable_otel,
             requirements_file=final_requirements_file,
             authorizer_configuration=authorizer_configuration,
+            request_header_configuration=request_header_configuration,
             region=region,
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
