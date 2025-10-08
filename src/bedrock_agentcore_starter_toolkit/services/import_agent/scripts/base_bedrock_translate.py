@@ -329,6 +329,7 @@ class BaseBedrockTranslator:
                 open(memory_manager_path, "a", encoding="utf-8") as target,
                 open(
                     os.path.join(get_base_dir(__file__), "assets", "memory_manager_template.py"),
+                    "r",
                     encoding="utf-8",
                 ) as template,
             ):
@@ -1135,7 +1136,7 @@ class BaseBedrockTranslator:
         requirements_path = os.path.join(get_base_dir(__file__), "assets", f"requirements_{platform}.j2")
         if os.path.exists(requirements_path):
             with (
-                open(requirements_path, encoding="utf-8") as src_file,
+                open(requirements_path, "r", encoding="utf-8") as src_file,
                 open(os.path.join(self.output_dir, "requirements.txt"), "w", encoding="utf-8") as dest_file,
             ):
                 dest_file.truncate(0)

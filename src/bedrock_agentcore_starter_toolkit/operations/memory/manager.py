@@ -4,7 +4,7 @@ import copy
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3
 from botocore.config import Config as BotocoreConfig
@@ -29,9 +29,9 @@ class MemoryManager:
 
     def __init__(
         self,
-        region_name: str | None = None,
-        boto3_session: boto3.Session | None = None,
-        boto_client_config: BotocoreConfig | None = None,
+        region_name: Optional[str] = None,
+        boto3_session: Optional[boto3.Session] = None,
+        boto_client_config: Optional[BotocoreConfig] = None,
     ):
         """Initialize MemoryManager with AWS region.
 
@@ -139,7 +139,7 @@ class MemoryManager:
             self._validate_namespace(namespace)
 
     def _wrap_configuration(
-        self, config: Dict[str, Any], strategy_type: str, override_type: str | None = None
+        self, config: Dict[str, Any], strategy_type: str, override_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """Wrap configuration based on strategy type using new enum methods."""
         wrapped_config = {}
@@ -190,11 +190,11 @@ class MemoryManager:
     def _create_memory(
         self,
         name: str,
-        strategies: List[Dict[str, Any]] | None = None,
-        description: str | None = None,
+        strategies: Optional[List[Dict[str, Any]]] = None,
+        description: Optional[str] = None,
         event_expiry_days: int = 90,
-        memory_execution_role_arn: str | None = None,
-        encryption_key_arn: str | None = None,
+        memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Create a memory resource and return the raw response.
 
@@ -236,13 +236,13 @@ class MemoryManager:
     def _create_memory_and_wait(
         self,
         name: str,
-        strategies: List[Dict[str, Any]] | None,
-        description: str | None = None,
+        strategies: Optional[List[Dict[str, Any]]],
+        description: Optional[str] = None,
         event_expiry_days: int = 90,
-        memory_execution_role_arn: str | None = None,
+        memory_execution_role_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
-        encryption_key_arn: str | None = None,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE.
 
@@ -310,11 +310,11 @@ class MemoryManager:
     def create_memory_and_wait(
         self,
         name: str,
-        strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
-        description: str | None = None,
+        strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
+        description: Optional[str] = None,
         event_expiry_days: int = 90,
-        memory_execution_role_arn: str | None = None,
-        encryption_key_arn: str | None = None,
+        memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -375,11 +375,11 @@ class MemoryManager:
     def get_or_create_memory(
         self,
         name: str,
-        strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
-        description: str | None = None,
+        strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
+        description: Optional[str] = None,
         event_expiry_days: int = 90,
-        memory_execution_role_arn: str | None = None,
-        encryption_key_arn: str | None = None,
+        memory_execution_role_arn: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
     ) -> Memory:
         """Fetch an existing memory resource or create the memory.
 
@@ -575,8 +575,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
     ) -> Memory:
         """Add a semantic memory strategy.
 
@@ -599,8 +599,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -619,8 +619,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
     ) -> Memory:
         """Add a summary memory strategy.
 
@@ -643,8 +643,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -656,8 +656,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
     ) -> Memory:
         """Add a user preference memory strategy.
 
@@ -680,8 +680,8 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -695,8 +695,8 @@ class MemoryManager:
         name: str,
         extraction_config: Dict[str, Any],
         consolidation_config: Dict[str, Any],
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
     ) -> Memory:
         """Add a custom semantic strategy with prompts.
 
@@ -741,8 +741,8 @@ class MemoryManager:
         name: str,
         extraction_config: Dict[str, Any],
         consolidation_config: Dict[str, Any],
-        description: str | None = None,
-        namespaces: List[str] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -756,9 +756,9 @@ class MemoryManager:
         self,
         memory_id: str,
         strategy_id: str,
-        description: str | None = None,
-        namespaces: List[str] | None = None,
-        configuration: Dict[str, Any] | None = None,
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        configuration: Optional[Dict[str, Any]] = None,
     ) -> Memory:
         """Modify a strategy with full control over configuration."""
         modify_config: Dict = {"strategyId": strategy_id}
@@ -779,9 +779,9 @@ class MemoryManager:
     def update_memory_strategies(
         self,
         memory_id: str,
-        add_strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
-        modify_strategies: List[Dict[str, Any]] | None = None,
-        delete_strategy_ids: List[str] | None = None,
+        add_strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
+        modify_strategies: Optional[List[Dict[str, Any]]] = None,
+        delete_strategy_ids: Optional[List[str]] = None,
     ) -> Memory:
         """Update memory strategies - add, modify, or delete.
 
@@ -866,9 +866,9 @@ class MemoryManager:
     def update_memory_strategies_and_wait(
         self,
         memory_id: str,
-        add_strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
-        modify_strategies: List[Dict[str, Any]] | None = None,
-        delete_strategy_ids: List[str] | None = None,
+        add_strategies: Optional[List[Union[BaseStrategy, Dict[str, Any]]]] = None,
+        modify_strategies: Optional[List[Dict[str, Any]]] = None,
+        delete_strategy_ids: Optional[List[str]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:

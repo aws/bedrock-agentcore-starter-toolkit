@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 import urllib3
@@ -23,7 +23,7 @@ from .exceptions import GatewaySetupException
 class GatewayClient:
     """High-level client for Bedrock AgentCore Gateway operations."""
 
-    def __init__(self, region_name: str | None = None, endpoint_url: str | None = None):
+    def __init__(self, region_name: Optional[str] = None, endpoint_url: Optional[str] = None):
         """Initialize the Gateway client.
 
         Args:
@@ -238,7 +238,7 @@ class GatewayClient:
         except Exception as e:
             self.logger.warning("⚠️ IAM role update failed: %s. Continuing with best effort.", str(e))
 
-    def cleanup_gateway(self, gateway_id: str, client_info: Dict | None = None) -> None:
+    def cleanup_gateway(self, gateway_id: str, client_info: Optional[Dict] = None) -> None:
         """Remove all resources associated with a gateway.
 
         :param gateway_id: the ID of the gateway to clean up

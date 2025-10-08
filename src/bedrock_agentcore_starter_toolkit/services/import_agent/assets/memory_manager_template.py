@@ -53,7 +53,7 @@ class LongTermMemoryManager:
         """Load all stored session summaries."""
         summary_file = self.storage_path
         if os.path.exists(summary_file):
-            with open(summary_file) as f:
+            with open(summary_file, "r") as f:
                 return json.load(f)
         return []
 
