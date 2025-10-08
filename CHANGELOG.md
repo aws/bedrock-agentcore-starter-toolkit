@@ -6,8 +6,7 @@
 
 - feat: Add A2A protocol support to AgentCore Runtime toolkit (#255) (84c9456)
 - Fix documentation examples display (#254) (c699e4c)
-- docs: imporvements to quickstart (#247) (3ee881b)
-- chore: bump version to 0.1.19 (#248) (7992f8e)
+- docs: improvements to quickstart (#247) (3ee881b)
 
 ## [0.1.19] - 2025-10-03
 
