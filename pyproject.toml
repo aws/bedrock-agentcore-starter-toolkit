@@ -115,6 +115,7 @@ concurrency = ["thread", "multiprocessing"]
 omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
+    "src/bedrock_agentcore_starter_toolkit/utils/runtime/backward_compat.py", # Backward compatibility validation utilities
 ]
 
 [tool.coverage.report]

@@ -1,5 +1,7 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -95,6 +97,54 @@ class BedrockAgentCoreDeploymentInfo(BaseModel):
     agent_session_id: Optional[str] = Field(default=None, description="Session ID for invocations")
 
 
+class BuildArtifactInfo(BaseModel):
+    """Build artifact organization information for enhanced configuration management."""
+
+    base_directory: Optional[str] = Field(default=None, description="Root directory for agent's build artifacts")
+    source_copy_path: Optional[str] = Field(default=None, description="Path to copied source code")
+    dockerfile_path: Optional[str] = Field(default=None, description="Path to generated Dockerfile")
+    build_timestamp: Optional[datetime] = Field(default=None, description="When artifacts were created")
+    organized: bool = Field(default=False, description="Whether artifacts are properly organized")
+
+    def get_artifact_directory(self, agent_name: str) -> str:
+        """Get the artifact directory path for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        Returns:
+            Path to the artifact directory
+        """
+        return f".bedrock-agentcore/{agent_name}"
+
+    def is_valid(self) -> bool:
+        """Check if artifact info represents a valid organization.
+
+        Returns:
+            True if artifacts are properly organized
+        """
+        if not self.organized:
+            return False
+
+        # For basic validity, we only need the fields to be present
+        # Directory existence will be checked at build time
+        return bool(self.base_directory)
+
+    def cleanup(self) -> None:
+        """Clean up build artifacts directory."""
+        if self.base_directory:
+            import contextlib
+            import shutil
+
+            with contextlib.suppress(Exception):
+                # Cleanup failures are non-critical - ignore errors
+                base_path = Path(self.base_directory)
+                if base_path.exists():
+                    shutil.rmtree(base_path)
+                    self.organized = False
+                    self.build_timestamp = None
+
+
 class BedrockAgentCoreAgentSchema(BaseModel):
     """Type-safe schema for BedrockAgentCore configuration."""
 
@@ -103,6 +153,9 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     platform: str = Field(default="linux/amd64", description="Target platform")
     container_runtime: str = Field(default="docker", description="Container runtime to use")
     source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
+    build_artifacts: Optional[BuildArtifactInfo] = Field(
+        default=None, description="Build artifact organization information"
+    )
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
