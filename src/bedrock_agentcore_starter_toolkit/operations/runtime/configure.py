@@ -3,7 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...services.ecr import get_account_id, get_region
@@ -27,21 +27,21 @@ log = logging.getLogger(__name__)
 def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
-    execution_role: str | None = None,
-    code_build_execution_role: str | None = None,
-    ecr_repository: str | None = None,
-    container_runtime: str | None = None,
+    execution_role: Optional[str] = None,
+    code_build_execution_role: Optional[str] = None,
+    ecr_repository: Optional[str] = None,
+    container_runtime: Optional[str] = None,
     auto_create_ecr: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
-    requirements_file: str | None = None,
-    authorizer_configuration: dict[str, Any] | None = None,
-    request_header_configuration: dict[str, Any] | None = None,
+    requirements_file: Optional[str] = None,
+    authorizer_configuration: Optional[Dict[str, Any]] = None,
+    request_header_configuration: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
-    region: str | None = None,
-    protocol: str | None = None,
+    region: Optional[str] = None,
+    protocol: Optional[str] = None,
     non_interactive: bool = False,
-    source_path: str | None = None,
+    source_path: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -227,7 +227,10 @@ def configure_bedrock_agentcore(
     entrypoint_path_str = entrypoint_path.as_posix()
 
     # Determine entrypoint format
-    entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}" if bedrock_agentcore_name else entrypoint_path_str
+    if bedrock_agentcore_name:
+        entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}"
+    else:
+        entrypoint = entrypoint_path_str
 
     if verbose:
         log.debug("Using entrypoint format: %s", entrypoint)
@@ -297,58 +300,6 @@ def configure_bedrock_agentcore(
     )
 
 
-def configure_agent_enhanced(agent_name: str, entrypoint: str, source_path: str, output_directory: str) -> dict:
-    """Enhanced agent configuration with source path tracking.
-
-    Args:
-        agent_name: Name of the agent
-        entrypoint: Agent entrypoint file
-        source_path: Path to agent source code
-        output_directory: Directory for configuration output
-
-    Returns:
-        Dictionary with configuration result
-
-    Raises:
-        NotImplementedError: Enhanced configure operation not yet implemented
-    """
-    # This will be implemented to provide enhanced configuration
-    raise NotImplementedError("Enhanced configure operation not implemented")
-
-
-def handle_mixed_agents(agent_names: list[str]) -> dict:
-    """Handle operations on mixed legacy and enhanced agents.
-
-    Args:
-        agent_names: List of agent names to handle
-
-    Returns:
-        Dictionary with operation results for each agent
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented to handle mixed configurations
-    raise NotImplementedError("Mixed agent handling not implemented")
-
-
-def configure_with_source_path(agent_name: str, source_path: str) -> dict:
-    """Configure agent with source path.
-
-    Args:
-        agent_name: Name of the agent
-        source_path: Path to source code
-
-    Returns:
-        Configuration result
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented for source path configuration
-    raise NotImplementedError("Source path configuration not implemented")
-
-
 AGENT_NAME_REGEX = r"^[a-zA-Z][a-zA-Z0-9_]{0,47}$"
 AGENT_NAME_ERROR = (
     "Invalid agent name. Must start with a letter, contain only letters/numbers/underscores, "
@@ -356,7 +307,7 @@ AGENT_NAME_ERROR = (
 )
 
 
-def validate_agent_name(name: str) -> tuple[bool, str]:
+def validate_agent_name(name: str) -> Tuple[bool, str]:
     """Check if name matches the pattern [a-zA-Z][a-zA-Z0-9_]{0,47}.
 
     This pattern requires:
@@ -376,12 +327,3 @@ def validate_agent_name(name: str) -> tuple[bool, str]:
         return match, ""
     else:
         return match, AGENT_NAME_ERROR
-
-
-def list_agents_enhanced():
-    """Enhanced agent listing operation with source paths and build artifacts (not yet implemented).
-
-    Raises:
-        NotImplementedError: This operation is not yet implemented
-    """
-    raise NotImplementedError("Enhanced list agents operation not implemented")

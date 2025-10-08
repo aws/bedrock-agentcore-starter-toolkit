@@ -264,14 +264,12 @@ class TestLaunchBedrockAgentCore:
         # Mock build failure
         mock_container_runtime.build.return_value = (False, ["Error: build failed", "Missing dependency"])
 
-        with (
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
-            pytest.raises(RuntimeError, match="Build failed"),
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
         ):
-            launch_bedrock_agentcore(config_path, local=True)
+            with pytest.raises(RuntimeError, match="Build failed"):
+                launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_missing_config(self, tmp_path):
         """Test error when config file not found."""
@@ -394,9 +392,9 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
                 return_value=mock_container_runtime,
             ),
-            pytest.raises(ValueError, match="ECR repository not configured"),
         ):
-            launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+            with pytest.raises(ValueError, match="ECR repository not configured"):
+                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
     def test_launch_cloud_with_execution_role_auto_create(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment with execution role auto-creation."""
@@ -629,14 +627,13 @@ class TestLaunchBedrockAgentCore:
         mock_container_runtime.build.return_value = (False, ["Error: failed to resolve", "No such file or directory"])
         mock_container_runtime.has_local_runtime = True
 
-        with (
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
-            pytest.raises(RuntimeError, match="Build failed"),
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
         ):
-            launch_bedrock_agentcore(config_path, local=True)
+            # Should raise RuntimeError with build failure message
+            with pytest.raises(RuntimeError, match="Build failed"):
+                launch_bedrock_agentcore(config_path, local=True)
 
     def test_container_runtime_availability_check(self, tmp_path):
         """Test container runtime availability check."""
@@ -707,33 +704,42 @@ class TestLaunchBedrockAgentCore:
 
         # Add a memory configuration to the agent
         from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
-        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
 
         config = load_config(config_path)
         agent = list(config.agents.values())[0]
 
-        # Add memory info to the agent using proper MemoryConfig
-        agent.memory = MemoryConfig(mode="STM_AND_LTM", memory_id="test-memory-id", memory_name="test-memory-name")
+        # Add memory info to the agent
+        agent.memory = Mock()
+        agent.memory.memory_id = "test-memory-id"
+        agent.memory.memory_name = "test-memory-name"
 
         config.agents[agent.name] = agent
         save_config(config, config_path)
 
-        # Mock the build to return success
-        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
-        mock_container_runtime.has_local_runtime = True
+        # Test that launch operation adds the memory env vars
+        env_vars = {}
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
+        # Instead of running the full launch, just call the specific part we want to test
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import launch_bedrock_agentcore
+
+        # Mock ContainerRuntime
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.build") as mock_build,
         ):
-            # Launch with empty env_vars
-            result = launch_bedrock_agentcore(config_path, local=True, env_vars={})
+            mock_build.return_value = (True, ["Successfully built"])
 
-            # Check that memory vars were added to result.env_vars
-            assert "BEDROCK_AGENTCORE_MEMORY_ID" in result.env_vars
-            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "test-memory-id"
-            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in result.env_vars
-            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test-memory-name"
+            # Launch with our env_vars dictionary
+            launch_bedrock_agentcore(config_path, local=True, env_vars=env_vars)
+
+            # Check that memory vars were added to env_vars
+            assert "BEDROCK_AGENTCORE_MEMORY_ID" in env_vars
+            assert env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "test-memory-id"
+            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in env_vars
+            assert env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test-memory-name"
 
     def test_memory_configuration_handling(self, mock_container_runtime, tmp_path):
         """Test memory configuration handling in environment variables."""
@@ -819,9 +825,9 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
                 return_value=mock_container_runtime,
             ),
-            pytest.raises(ValueError, match="Missing 'aws.execution_role' for cloud deployment"),
         ):
-            launch_bedrock_agentcore(config_path, local=False)
+            with pytest.raises(ValueError, match="Missing 'aws.execution_role' for cloud deployment"):
+                launch_bedrock_agentcore(config_path, local=False)
 
     def test_launch_cloud_conflict_exception_graceful_handling(
         self, mock_boto3_clients, mock_container_runtime, tmp_path
@@ -1092,14 +1098,12 @@ class TestLaunchBedrockAgentCore:
         mock_runtime_no_docker.runtime = "none"
         mock_runtime_no_docker.has_local_runtime = False  # No Docker available
 
-        with (
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_runtime_no_docker,
-            ),
-            pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"),
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_runtime_no_docker,
         ):
-            launch_bedrock_agentcore(config_path, local=True)
+            with pytest.raises(RuntimeError, match="Cannot run locally - no container runtime available"):
+                launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_with_codebuild_from_main_function(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test that environment variables are passed from launch_bedrock_agentcore to _launch_with_codebuild."""

@@ -323,11 +323,9 @@ class TestCodeBuildService:
             "builds": [{"buildStatus": "IN_PROGRESS", "currentPhase": "BUILD"}]
         }
 
-        with (
-            patch("bedrock_agentcore_starter_toolkit.services.codebuild.time.sleep"),
-            pytest.raises(TimeoutError, match="CodeBuild timed out"),
-        ):
-            codebuild_service.wait_for_completion("test-build-id", timeout=1)
+        with patch("bedrock_agentcore_starter_toolkit.services.codebuild.time.sleep"):
+            with pytest.raises(TimeoutError, match="CodeBuild timed out"):
+                codebuild_service.wait_for_completion("test-build-id", timeout=1)
 
     def test_get_arm64_buildspec(self, codebuild_service):
         """Test ARM64 buildspec generation - native build with parallel ECR auth."""
@@ -370,11 +368,9 @@ node_modules
 .git
 """
 
-        with (
-            patch("pathlib.Path.exists", return_value=True),
-            patch("builtins.open", mock_open(read_data=dockerignore_content)),
-        ):
-            patterns = codebuild_service._parse_dockerignore()
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("builtins.open", mock_open(read_data=dockerignore_content)):
+                patterns = codebuild_service._parse_dockerignore()
 
         expected = ["node_modules", "*.pyc", ".git"]
         assert patterns == expected

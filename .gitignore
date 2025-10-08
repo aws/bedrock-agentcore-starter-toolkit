@@ -26,3 +26,4 @@ specs/
 .claude/
 .specify/
 coverage.json
+CLAUDE.md

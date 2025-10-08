@@ -522,7 +522,7 @@ class TestBedrockAgentCoreRuntime:
 
         # Should return the endpoint ARN
         result = client.wait_for_agent_endpoint_ready("test-agent-id")
-        assert result == "arn:aws:bedrock:us-west-2:123456789012:agent-endpoint/test-id"
+        assert "arn:aws:bedrock:us-west-2:123456789012:agent-endpoint/test-id" == result
 
     def test_wait_for_agent_endpoint_ready_timeout(self, mock_boto3_clients):
         """Test wait_for_agent_endpoint_ready when max wait time is exceeded."""

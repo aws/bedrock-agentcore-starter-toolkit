@@ -93,14 +93,6 @@ select = [
   "G", # logging format
   "I", # isort
   "LOG", # logging
-  "UP", # pyupgrade (modern Python patterns)
-  "SIM", # flake8-simplify (for optional field patterns)
-]
-ignore = [
-  "UP006", # typing.List[T] → list[T]
-  "UP007", # typing.Optional[T] → T | None
-  "UP035", # typing.Dict → dict
-  "UP037", # typing.Tuple → tuple
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -123,8 +115,6 @@ concurrency = ["thread", "multiprocessing"]
 omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
-    "src/bedrock_agentcore_starter_toolkit/cli/runtime/enhanced_formatting.py", # Stub for future feature (NotImplementedError)
-    "src/bedrock_agentcore_starter_toolkit/utils/runtime/backward_compat.py", # Legacy transformation code for backward compatibility
 ]
 
 [tool.coverage.report]

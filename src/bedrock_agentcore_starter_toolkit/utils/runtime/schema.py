@@ -1,8 +1,6 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from datetime import datetime
-from pathlib import Path
-from typing import Literal
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -13,9 +11,9 @@ class MemoryConfig(BaseModel):
     mode: Literal["STM_ONLY", "STM_AND_LTM"] = Field(
         default="STM_ONLY", description="Memory mode - always has STM, optionally adds LTM"
     )
-    memory_id: str | None = Field(default=None, description="Memory resource ID")
-    memory_arn: str | None = Field(default=None, description="Memory resource ARN")
-    memory_name: str | None = Field(default=None, description="Memory name")
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
+    memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
+    memory_name: Optional[str] = Field(default=None, description="Memory name")
     event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
     first_invoke_memory_check_done: bool = Field(
         default=False, description="Whether first invoke memory check has been performed"
@@ -61,11 +59,11 @@ class ObservabilityConfig(BaseModel):
 class AWSConfig(BaseModel):
     """AWS-specific configuration."""
 
-    execution_role: str | None = Field(default=None, description="AWS IAM execution role ARN")
+    execution_role: Optional[str] = Field(default=None, description="AWS IAM execution role ARN")
     execution_role_auto_create: bool = Field(default=False, description="Whether to auto-create execution role")
-    account: str | None = Field(default=None, description="AWS account ID")
-    region: str | None = Field(default=None, description="AWS region")
-    ecr_repository: str | None = Field(default=None, description="ECR repository URI")
+    account: Optional[str] = Field(default=None, description="AWS account ID")
+    region: Optional[str] = Field(default=None, description="AWS region")
+    ecr_repository: Optional[str] = Field(default=None, description="ECR repository URI")
     ecr_auto_create: bool = Field(default=False, description="Whether to auto-create ECR repository")
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
@@ -73,75 +71,28 @@ class AWSConfig(BaseModel):
 
     @field_validator("account")
     @classmethod
-    def validate_account(cls, v: str | None) -> str | None:
+    def validate_account(cls, v: Optional[str]) -> Optional[str]:
         """Validate AWS account ID."""
-        if v is not None and (not v.isdigit() or len(v) != 12):
-            raise ValueError("Invalid AWS account ID")
+        if v is not None:
+            if not v.isdigit() or len(v) != 12:
+                raise ValueError("Invalid AWS account ID")
         return v
 
 
 class CodeBuildConfig(BaseModel):
     """CodeBuild deployment information."""
 
-    project_name: str | None = Field(default=None, description="CodeBuild project name")
-    execution_role: str | None = Field(default=None, description="CodeBuild execution role ARN")
-    source_bucket: str | None = Field(default=None, description="S3 source bucket name")
+    project_name: Optional[str] = Field(default=None, description="CodeBuild project name")
+    execution_role: Optional[str] = Field(default=None, description="CodeBuild execution role ARN")
+    source_bucket: Optional[str] = Field(default=None, description="S3 source bucket name")
 
 
 class BedrockAgentCoreDeploymentInfo(BaseModel):
     """BedrockAgentCore deployment information."""
 
-    agent_id: str | None = Field(default=None, description="BedrockAgentCore agent ID")
-    agent_arn: str | None = Field(default=None, description="BedrockAgentCore agent ARN")
-    agent_session_id: str | None = Field(default=None, description="Session ID for invocations")
-
-
-class BuildArtifactInfo(BaseModel):
-    """Build artifact organization information for enhanced configuration management."""
-
-    base_directory: str | None = Field(default=None, description="Root directory for agent's build artifacts")
-    source_copy_path: str | None = Field(default=None, description="Path to copied source code")
-    dockerfile_path: str | None = Field(default=None, description="Path to generated Dockerfile")
-    build_timestamp: datetime | None = Field(default=None, description="When artifacts were created")
-    organized: bool = Field(default=False, description="Whether artifacts are properly organized")
-
-    def get_artifact_directory(self, agent_name: str) -> str:
-        """Get the artifact directory path for an agent.
-
-        Args:
-            agent_name: Name of the agent
-
-        Returns:
-            Path to the artifact directory
-        """
-        return f".bedrock-agentcore/{agent_name}"
-
-    def is_valid(self) -> bool:
-        """Check if artifact info represents a valid organization.
-
-        Returns:
-            True if artifacts are properly organized
-        """
-        if not self.organized:
-            return False
-
-        # For basic validity, we only need the fields to be present
-        # Directory existence will be checked at build time
-        return bool(self.base_directory)
-
-    def cleanup(self) -> None:
-        """Clean up build artifacts directory."""
-        if self.base_directory:
-            import contextlib
-            import shutil
-
-            with contextlib.suppress(Exception):
-                # Cleanup failures are non-critical - ignore errors
-                base_path = Path(self.base_directory)
-                if base_path.exists():
-                    shutil.rmtree(base_path)
-                    self.organized = False
-                    self.build_timestamp = None
+    agent_id: Optional[str] = Field(default=None, description="BedrockAgentCore agent ID")
+    agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
+    agent_session_id: Optional[str] = Field(default=None, description="Session ID for invocations")
 
 
 class BedrockAgentCoreAgentSchema(BaseModel):
@@ -151,56 +102,20 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     entrypoint: str = Field(..., description="Entrypoint file path")
     platform: str = Field(default="linux/amd64", description="Target platform")
     container_runtime: str = Field(default="docker", description="Container runtime to use")
+    source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
-    authorizer_configuration: dict | None = Field(default=None, description="JWT authorizer configuration")
-    request_header_configuration: dict | None = Field(default=None, description="Request header configuration")
-    oauth_configuration: dict | None = Field(default=None, description="Oauth configuration")
+    authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
+    request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
+    oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
 
-    # Enhanced configuration management fields (backward compatible)
-    source_path: str | None = Field(default=None, description="Directory containing agent source code")
-    build_artifacts: BuildArtifactInfo | None = Field(
-        default=None, description="Build artifact organization information"
-    )
-
-    @field_validator("source_path")
-    @classmethod
-    def validate_source_path(cls, v: str | None) -> str | None:
-        """Validate source path if provided.
-
-        Args:
-            v: Source path value
-
-        Returns:
-            Validated source path or None
-
-        Raises:
-            ValueError: If source path is invalid
-        """
-        if v is None:
-            return v
-
-        # Convert to Path for validation
-        source_path = Path(v)
-
-        # Check if path exists
-        if not source_path.exists():
-            raise ValueError(f"Source path does not exist: {v}")
-
-        # Check if it's a directory
-        if not source_path.is_dir():
-            raise ValueError(f"Source path must be a directory: {v}")
-
-        # Return absolute path string
-        return str(source_path.resolve())
-
-    def get_authorizer_configuration(self) -> dict | None:
+    def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
         return self.authorizer_configuration
 
-    def validate(self, for_local: bool = False) -> list[str]:
+    def validate(self, for_local: bool = False) -> List[str]:
         """Validate configuration and return list of errors.
 
         Args:
@@ -226,18 +141,6 @@ class BedrockAgentCoreAgentSchema(BaseModel):
             if not self.aws.account:
                 errors.append("Missing 'aws.account' for cloud deployment")
 
-        # Enhanced field validation (optional)
-        if self.source_path:
-            try:
-                # Validate entrypoint exists within source path
-                source_dir = Path(self.source_path)
-                entrypoint_path = source_dir / self.entrypoint
-
-                if not entrypoint_path.exists():
-                    errors.append(f"Entrypoint file not found in source path: {entrypoint_path}")
-            except Exception as e:
-                errors.append(f"Error validating source path: {e}")
-
         return errors
 
 
@@ -247,12 +150,12 @@ class BedrockAgentCoreConfigSchema(BaseModel):
     Operations use --agent parameter to select which agent to work with.
     """
 
-    default_agent: str | None = Field(default=None, description="Default agent name for operations")
-    agents: dict[str, BedrockAgentCoreAgentSchema] = Field(
+    default_agent: Optional[str] = Field(default=None, description="Default agent name for operations")
+    agents: Dict[str, BedrockAgentCoreAgentSchema] = Field(
         default_factory=dict, description="Named agent configurations"
     )
 
-    def get_agent_config(self, agent_name: str | None = None) -> BedrockAgentCoreAgentSchema:
+    def get_agent_config(self, agent_name: Optional[str] = None) -> BedrockAgentCoreAgentSchema:
         """Get agent config by name or default.
 
         Args:

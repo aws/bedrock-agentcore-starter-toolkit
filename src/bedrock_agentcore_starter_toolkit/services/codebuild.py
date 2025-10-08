@@ -7,6 +7,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
+from typing import List
 
 import boto3
 from botocore.exceptions import ClientError
@@ -69,72 +70,56 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str, source_directory: str = ".") -> str:
-        """Upload source directory to S3, respecting .dockerignore patterns.
-
-        Args:
-            agent_name: Name of the agent (used for S3 key organization)
-            source_directory: Directory to upload (defaults to current directory)
-
-        Returns:
-            S3 location URI (s3://bucket/key)
-        """
+    def upload_source(self, agent_name: str) -> str:
+        """Upload current directory to S3, respecting .dockerignore patterns."""
         account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
-        # Save current directory and change to source directory
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(source_directory)
+        # Parse .dockerignore patterns
+        ignore_patterns = self._parse_dockerignore()
 
-            # Parse .dockerignore patterns
-            ignore_patterns = self._parse_dockerignore()
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
+            try:
+                with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
+                    for root, dirs, files in os.walk("."):
+                        # Convert to relative path
+                        rel_root = os.path.relpath(root, ".")
+                        if rel_root == ".":
+                            rel_root = ""
 
-            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
-                try:
-                    with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
-                        for root, dirs, files in os.walk("."):
-                            # Convert to relative path
-                            rel_root = os.path.relpath(root, ".")
-                            if rel_root == ".":
-                                rel_root = ""
+                        # Filter directories
+                        dirs[:] = [
+                            d
+                            for d in dirs
+                            if not self._should_ignore(
+                                os.path.join(rel_root, d) if rel_root else d, ignore_patterns, is_dir=True
+                            )
+                        ]
 
-                            # Filter directories
-                            dirs[:] = [
-                                d
-                                for d in dirs
-                                if not self._should_ignore(
-                                    os.path.join(rel_root, d) if rel_root else d, ignore_patterns, is_dir=True
-                                )
-                            ]
+                        for file in files:
+                            file_rel_path = os.path.join(rel_root, file) if rel_root else file
 
-                            for file in files:
-                                file_rel_path = os.path.join(rel_root, file) if rel_root else file
+                            # Skip if matches ignore pattern
+                            if self._should_ignore(file_rel_path, ignore_patterns, is_dir=False):
+                                continue
 
-                                # Skip if matches ignore pattern
-                                if self._should_ignore(file_rel_path, ignore_patterns, is_dir=False):
-                                    continue
+                            file_path = Path(root) / file
+                            zipf.write(file_path, file_rel_path)
 
-                                file_path = Path(root) / file
-                                zipf.write(file_path, file_rel_path)
+                # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
+                s3_key = f"{agent_name}/source.zip"
 
-                    # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
-                    s3_key = f"{agent_name}/source.zip"
+                self.s3_client.upload_file(
+                    temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
+                )
 
-                    self.s3_client.upload_file(
-                        temp_zip.name, bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id}
-                    )
+                self.logger.info("Uploaded source to S3: %s", s3_key)
+                return f"s3://{bucket_name}/{s3_key}"
 
-                    self.logger.info("Uploaded source to S3: %s", s3_key)
-                    return f"s3://{bucket_name}/{s3_key}"
-
-                finally:
-                    temp_zip.close()
-                    os.unlink(temp_zip.name)
-        finally:
-            # Restore original directory
-            os.chdir(original_cwd)
+            finally:
+                temp_zip.close()
+                os.unlink(temp_zip.name)
 
     def _normalize_s3_location(self, source_location: str) -> str:
         """Convert s3:// URL to bucket/key format for CodeBuild."""
@@ -294,13 +279,13 @@ phases:
       - echo "Build completed at $(date)"
 """
 
-    def _parse_dockerignore(self) -> list[str]:
+    def _parse_dockerignore(self) -> List[str]:
         """Parse .dockerignore file and return list of patterns."""
         dockerignore_path = Path(".dockerignore")
         patterns = []
 
         if dockerignore_path.exists():
-            with open(dockerignore_path) as f:
+            with open(dockerignore_path, "r") as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#"):
@@ -324,7 +309,7 @@ phases:
 
         return patterns
 
-    def _should_ignore(self, path: str, patterns: list[str], is_dir: bool = False) -> bool:
+    def _should_ignore(self, path: str, patterns: List[str], is_dir: bool = False) -> bool:
         """Check if path should be ignored based on dockerignore patterns."""
         # Normalize path
         if path.startswith("./"):
@@ -365,4 +350,7 @@ phases:
             return True
 
         # File in ignored directory
-        return bool(not is_dir and any(fnmatch.fnmatch(part, pattern) for part in path.split("/")))
+        if not is_dir and any(fnmatch.fnmatch(part, pattern) for part in path.split("/")):
+            return True
+
+        return False
