@@ -25,3 +25,4 @@ output*/
 specs/
 .claude/
 .specify/
+coverage.json

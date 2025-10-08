@@ -337,8 +337,9 @@ class TestImportAgent:
         """Test Bedrock to Strands import functionality."""
 
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config_multi_agent.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(
+            open(os.path.join(base_dir, "data", "bedrock_config_multi_agent.json"), encoding="utf-8")
+        )
         output_dir = os.path.join(base_dir, "output", "strands")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -350,8 +351,9 @@ class TestImportAgent:
         """Test Bedrock to LangChain import functionality."""
 
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config_multi_agent.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(
+            open(os.path.join(base_dir, "data", "bedrock_config_multi_agent.json"), encoding="utf-8")
+        )
         output_dir = os.path.join(base_dir, "output", "langchain")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -442,8 +444,7 @@ class TestImportAgent:
         mock_gateway_client.get_access_token_for_cognito.return_value = "test-access-token"
 
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8"))
         output_dir = os.path.join(base_dir, "output", "langchain_with_primitives")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -549,8 +550,7 @@ class TestImportAgent:
         mock_gateway_client.get_access_token_for_cognito.return_value = "test-access-token"
 
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8"))
         output_dir = os.path.join(base_dir, "output", "strands_with_primitives")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -576,8 +576,7 @@ class TestImportAgent:
     def test_bedrock_to_langchain_with_function_schema_no_gateway(self, enhanced_mock_boto3_clients):
         """Test Bedrock to LangChain import with function schema action groups but no gateway."""
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8"))
         output_dir = os.path.join(base_dir, "output", "langchain_function_schema")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -593,8 +592,7 @@ class TestImportAgent:
     def test_bedrock_to_strands_with_function_schema_no_gateway(self, enhanced_mock_boto3_clients):
         """Test Bedrock to Strands import with function schema action groups but no gateway."""
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(open(os.path.join(base_dir, "data", "bedrock_config.json"), encoding="utf-8"))
         output_dir = os.path.join(base_dir, "output", "strands_function_schema")
         os.makedirs(output_dir, exist_ok=True)
 
@@ -610,8 +608,9 @@ class TestImportAgent:
     def test_bedrock_to_langchain_with_no_schema_action_group(self, enhanced_mock_boto3_clients):
         """Test Bedrock to LangChain import with action group that has no schema (to cover branch coverage)."""
         base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(base_dir, "data", "bedrock_config_no_schema.json"), encoding="utf-8") as f:
-            agent_config = json.load(f)
+        agent_config = json.load(
+            open(os.path.join(base_dir, "data", "bedrock_config_no_schema.json"), encoding="utf-8")
+        )
         output_dir = os.path.join(base_dir, "output", "langchain_no_schema")
         os.makedirs(output_dir, exist_ok=True)
 

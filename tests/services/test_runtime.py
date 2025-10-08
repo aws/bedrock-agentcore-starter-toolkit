@@ -1,6 +1,5 @@
 """Tests for Bedrock AgentCore runtime service integration."""
 
-from contextlib import suppress
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -207,13 +206,15 @@ class TestBedrockAgentCoreRuntime:
         # Mock invoke_agent_runtime to raise an exception
         mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.side_effect = Exception("Invocation failed")
 
-        with suppress(Exception):
+        try:
             client.invoke_endpoint(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
                 payload='{"message": "Hello"}',
                 session_id="test-session-123",
                 custom_headers=custom_headers,
             )
+        except Exception:
+            pass  # Expected
 
         # Verify event handlers were still cleaned up despite the exception
         mock_events.register_first.assert_called_once()
@@ -621,43 +622,40 @@ class TestHttpBedrockAgentCoreClient:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
 
-        with patch("requests.post", return_value=mock_response), pytest.raises(requests.exceptions.HTTPError):
-            client.invoke_endpoint(
-                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/nonexistent",
-                payload='{"test": "data"}',
-                session_id="session-123",
-                bearer_token="token-456",
-            )
+        with patch("requests.post", return_value=mock_response):
+            with pytest.raises(requests.exceptions.HTTPError):
+                client.invoke_endpoint(
+                    agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/nonexistent",
+                    payload='{"test": "data"}',
+                    session_id="session-123",
+                    bearer_token="token-456",
+                )
 
     def test_invoke_endpoint_connection_error(self):
         """Test handling of connection errors."""
         client = HttpBedrockAgentCoreClient("us-west-2")
 
-        with (
-            patch("requests.post", side_effect=requests.exceptions.ConnectionError("Connection failed")),
-            pytest.raises(requests.exceptions.ConnectionError),
-        ):
-            client.invoke_endpoint(
-                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
-                payload='{"test": "data"}',
-                session_id="session-123",
-                bearer_token="token-456",
-            )
+        with patch("requests.post", side_effect=requests.exceptions.ConnectionError("Connection failed")):
+            with pytest.raises(requests.exceptions.ConnectionError):
+                client.invoke_endpoint(
+                    agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
+                    payload='{"test": "data"}',
+                    session_id="session-123",
+                    bearer_token="token-456",
+                )
 
     def test_invoke_endpoint_timeout(self):
         """Test handling of request timeout."""
         client = HttpBedrockAgentCoreClient("us-west-2")
 
-        with (
-            patch("requests.post", side_effect=requests.exceptions.Timeout("Request timed out")),
-            pytest.raises(requests.exceptions.Timeout),
-        ):
-            client.invoke_endpoint(
-                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
-                payload='{"test": "data"}',
-                session_id="session-123",
-                bearer_token="token-456",
-            )
+        with patch("requests.post", side_effect=requests.exceptions.Timeout("Request timed out")):
+            with pytest.raises(requests.exceptions.Timeout):
+                client.invoke_endpoint(
+                    agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
+                    payload='{"test": "data"}',
+                    session_id="session-123",
+                    bearer_token="token-456",
+                )
 
     def test_invoke_endpoint_empty_response(self):
         """Test handling of empty response."""
@@ -670,16 +668,14 @@ class TestHttpBedrockAgentCoreClient:
         mock_response.raise_for_status.return_value = None
         mock_response.headers = {"content-type": "application/json"}
 
-        with (
-            patch("requests.post", return_value=mock_response),
-            pytest.raises(ValueError, match="Empty response from agent endpoint"),
-        ):
-            client.invoke_endpoint(
-                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
-                payload='{"test": "data"}',
-                session_id="session-123",
-                bearer_token="token-456",
-            )
+        with patch("requests.post", return_value=mock_response):
+            with pytest.raises(ValueError, match="Empty response from agent endpoint"):
+                client.invoke_endpoint(
+                    agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-id",
+                    payload='{"test": "data"}',
+                    session_id="session-123",
+                    bearer_token="token-456",
+                )
 
     def test_url_encoding_special_characters(self):
         """Test proper URL encoding of agent ARN with special characters."""
@@ -927,7 +923,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers[SESSION_HEADER] == "test-session-123"
 
             # Verify no custom headers were added
-            custom_header_keys = [k for k in headers if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
 
             # Verify response handling
@@ -973,7 +969,7 @@ class TestLocalBedrockAgentCoreClient:
             assert headers[SESSION_HEADER] == "test-session-123"
 
             # Verify no custom headers were added
-            custom_header_keys = [k for k in headers if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
+            custom_header_keys = [k for k in headers.keys() if k.startswith("X-Amzn-Bedrock-AgentCore-Runtime-Custom-")]
             assert len(custom_header_keys) == 0
 
             # Verify response handling

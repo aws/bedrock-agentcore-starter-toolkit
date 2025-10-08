@@ -1,6 +1,6 @@
 """Semantic memory strategy implementation."""
 
-from typing import Any
+from typing import Any, Dict
 
 from .base import BaseStrategy
 
@@ -20,7 +20,7 @@ class SemanticStrategy(BaseStrategy):
         )
     """
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,

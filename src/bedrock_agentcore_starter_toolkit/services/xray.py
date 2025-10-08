@@ -13,9 +13,10 @@ def _need_resource_policy(logs_client, policy_name="TransactionSearchXRayAccess"
     """Check if resource policy needs to be created (fail-safe)."""
     try:
         response = logs_client.describe_resource_policies()
-        return all(
-            policy.get("policyName") != policy_name for policy in response.get("resourcePolicies", [])
-        )  # Needs creation
+        for policy in response.get("resourcePolicies", []):
+            if policy.get("policyName") == policy_name:
+                return False  # Already exists
+        return True  # Needs creation
     except Exception:
         return True  # If check fails, assume we need it (safe)
 
@@ -33,7 +34,10 @@ def _need_indexing_rule(xray_client):
     """Check if indexing rule needs to be configured (fail-safe)."""
     try:
         response = xray_client.get_indexing_rules()
-        return all(rule.get("Name") != "Default" for rule in response.get("IndexingRules", []))  # Needs configuration
+        for rule in response.get("IndexingRules", []):
+            if rule.get("Name") == "Default":
+                return False  # Already configured
+        return True  # Needs configuration
     except Exception:
         return True  # If check fails, assume we need it (safe)
 

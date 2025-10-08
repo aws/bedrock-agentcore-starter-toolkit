@@ -373,14 +373,15 @@ class TestGatewayClient:
         mock_method.return_value = {"status": "CREATING"}
 
         # Test timeout scenario
-        with pytest.raises(TimeoutError), patch("time.sleep"):  # Mock sleep to speed up the test
-            gateway_client._GatewayClient__wait_for_ready(
-                resource_name="TestResource",
-                method=mock_method,
-                identifiers={"id": "test123"},
-                max_attempts=2,  # Short timeout for testing
-                delay=0.1,
-            )
+        with pytest.raises(TimeoutError):
+            with patch("time.sleep"):  # Mock sleep to speed up the test
+                gateway_client._GatewayClient__wait_for_ready(
+                    resource_name="TestResource",
+                    method=mock_method,
+                    identifiers={"id": "test123"},
+                    max_attempts=2,  # Short timeout for testing
+                    delay=0.1,
+                )
 
         # Verify method was called multiple times
         assert mock_method.call_count == 2

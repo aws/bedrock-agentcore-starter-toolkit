@@ -4,10 +4,9 @@ import copy
 import logging
 import time
 import uuid
-from typing import Any
+from typing import Any, Dict, List, Union
 
 import boto3
-from boto3 import Session
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 
@@ -31,7 +30,7 @@ class MemoryManager:
     def __init__(
         self,
         region_name: str | None = None,
-        boto3_session: Session | None = None,
+        boto3_session: boto3.Session | None = None,
         boto_client_config: BotocoreConfig | None = None,
     ):
         """Initialize MemoryManager with AWS region.
@@ -131,7 +130,7 @@ class MemoryManager:
 
         return True
 
-    def _validate_strategy_config(self, strategy: dict[str, Any], strategy_type: str) -> None:
+    def _validate_strategy_config(self, strategy: Dict[str, Any], strategy_type: str) -> None:
         """Validate strategy configuration parameters."""
         strategy_config = strategy[strategy_type]
 
@@ -140,8 +139,8 @@ class MemoryManager:
             self._validate_namespace(namespace)
 
     def _wrap_configuration(
-        self, config: dict[str, Any], strategy_type: str, override_type: str | None = None
-    ) -> dict[str, Any]:
+        self, config: Dict[str, Any], strategy_type: str, override_type: str | None = None
+    ) -> Dict[str, Any]:
         """Wrap configuration based on strategy type using new enum methods."""
         wrapped_config = {}
 
@@ -191,7 +190,7 @@ class MemoryManager:
     def _create_memory(
         self,
         name: str,
-        strategies: list[dict[str, Any]] | None = None,
+        strategies: List[Dict[str, Any]] | None = None,
         description: str | None = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: str | None = None,
@@ -237,7 +236,7 @@ class MemoryManager:
     def _create_memory_and_wait(
         self,
         name: str,
-        strategies: list[dict[str, Any]] | None,
+        strategies: List[Dict[str, Any]] | None,
         description: str | None = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: str | None = None,
@@ -296,7 +295,7 @@ class MemoryManager:
                     # Get failure reason if available
                     response = self._control_plane_client.get_memory(memoryId=memory_id)
                     failure_reason = response["memory"].get("failureReason", "Unknown")
-                    raise RuntimeError(f"Memory creation failed: {failure_reason}")
+                    raise RuntimeError("Memory creation failed: %s" % failure_reason)
                 else:
                     logger.debug("Memory status: %s (%d seconds elapsed)", status, elapsed)
 
@@ -311,7 +310,7 @@ class MemoryManager:
     def create_memory_and_wait(
         self,
         name: str,
-        strategies: list[BaseStrategy | dict[str, Any]] | None = None,
+        strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
         description: str | None = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: str | None = None,
@@ -376,7 +375,7 @@ class MemoryManager:
     def get_or_create_memory(
         self,
         name: str,
-        strategies: list[BaseStrategy | dict[str, Any]] | None = None,
+        strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
         description: str | None = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: str | None = None,
@@ -467,7 +466,7 @@ class MemoryManager:
             logger.error("  ❌ Error retrieving memory status: %s", e)
             raise
 
-    def get_memory_strategies(self, memory_id: str) -> list[MemoryStrategy]:
+    def get_memory_strategies(self, memory_id: str) -> List[MemoryStrategy]:
         """Get all strategies for a memory."""
         try:
             response = self._control_plane_client.get_memory(memoryId=memory_id)
@@ -517,7 +516,7 @@ class MemoryManager:
             logger.error("  ❌ Error listing memories: %s", e)
             raise
 
-    def delete_memory(self, memory_id: str) -> dict[str, Any]:
+    def delete_memory(self, memory_id: str) -> Dict[str, Any]:
         """Delete a memory resource.
 
         Maps to: bedrock-agentcore-control.delete_memory.
@@ -530,7 +529,7 @@ class MemoryManager:
             logger.error("  ❌ Error deleting memory: %s", e)
             raise
 
-    def delete_memory_and_wait(self, memory_id: str, max_wait: int = 300, poll_interval: int = 10) -> dict[str, Any]:
+    def delete_memory_and_wait(self, memory_id: str, max_wait: int = 300, poll_interval: int = 10) -> Dict[str, Any]:
         """Delete a memory and wait for deletion to complete.
 
         This method deletes a memory and polls until it's fully deleted,
@@ -570,20 +569,20 @@ class MemoryManager:
 
             time.sleep(poll_interval)
 
-        raise TimeoutError(f"Memory {memory_id} was not deleted within {max_wait} seconds")
+        raise TimeoutError("Memory %s was not deleted within %d seconds" % (memory_id, max_wait))
 
     def add_semantic_strategy(
         self,
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
     ) -> Memory:
         """Add a semantic memory strategy.
 
         Note: Configuration is no longer provided for built-in strategies as per API changes.
         """
-        strategy: dict = {
+        strategy: Dict = {
             StrategyType.SEMANTIC.value: {
                 "name": name,
             }
@@ -601,7 +600,7 @@ class MemoryManager:
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -621,13 +620,13 @@ class MemoryManager:
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
     ) -> Memory:
         """Add a summary memory strategy.
 
         Note: Configuration is no longer provided for built-in strategies as per API changes.
         """
-        strategy: dict = {
+        strategy: Dict = {
             StrategyType.SUMMARY.value: {
                 "name": name,
             }
@@ -645,7 +644,7 @@ class MemoryManager:
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -658,13 +657,13 @@ class MemoryManager:
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
     ) -> Memory:
         """Add a user preference memory strategy.
 
         Note: Configuration is no longer provided for built-in strategies as per API changes.
         """
-        strategy: dict = {
+        strategy: Dict = {
             StrategyType.USER_PREFERENCE.value: {
                 "name": name,
             }
@@ -682,7 +681,7 @@ class MemoryManager:
         memory_id: str,
         name: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -694,10 +693,10 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        extraction_config: dict[str, Any],
-        consolidation_config: dict[str, Any],
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
     ) -> Memory:
         """Add a custom semantic strategy with prompts.
 
@@ -740,10 +739,10 @@ class MemoryManager:
         self,
         memory_id: str,
         name: str,
-        extraction_config: dict[str, Any],
-        consolidation_config: dict[str, Any],
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
         description: str | None = None,
-        namespaces: list[str] | None = None,
+        namespaces: List[str] | None = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -758,11 +757,11 @@ class MemoryManager:
         memory_id: str,
         strategy_id: str,
         description: str | None = None,
-        namespaces: list[str] | None = None,
-        configuration: dict[str, Any] | None = None,
+        namespaces: List[str] | None = None,
+        configuration: Dict[str, Any] | None = None,
     ) -> Memory:
         """Modify a strategy with full control over configuration."""
-        modify_config: dict = {"strategyId": strategy_id}
+        modify_config: Dict = {"strategyId": strategy_id}
 
         if description is not None:
             modify_config["description"] = description
@@ -780,9 +779,9 @@ class MemoryManager:
     def update_memory_strategies(
         self,
         memory_id: str,
-        add_strategies: list[BaseStrategy | dict[str, Any]] | None = None,
-        modify_strategies: list[dict[str, Any]] | None = None,
-        delete_strategy_ids: list[str] | None = None,
+        add_strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
+        modify_strategies: List[Dict[str, Any]] | None = None,
+        delete_strategy_ids: List[str] | None = None,
     ) -> Memory:
         """Update memory strategies - add, modify, or delete.
 
@@ -826,7 +825,7 @@ class MemoryManager:
                     strategy_info = strategy_map.get(strategy_id)
 
                     if not strategy_info:
-                        raise ValueError(f"Strategy {strategy_id} not found in memory {memory_id}")
+                        raise ValueError("Strategy %s not found in memory %s" % (strategy_id, memory_id))
 
                     # Handle field name variations for strategy type
                     strategy_type = strategy_info.get("type", strategy_info.get("memoryStrategyType", "SEMANTIC"))
@@ -867,9 +866,9 @@ class MemoryManager:
     def update_memory_strategies_and_wait(
         self,
         memory_id: str,
-        add_strategies: list[BaseStrategy | dict[str, Any]] | None = None,
-        modify_strategies: list[dict[str, Any]] | None = None,
-        delete_strategy_ids: list[str] | None = None,
+        add_strategies: List[Union[BaseStrategy, Dict[str, Any]]] | None = None,
+        modify_strategies: List[Dict[str, Any]] | None = None,
+        delete_strategy_ids: List[str] | None = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -905,7 +904,7 @@ class MemoryManager:
         # Wait for memory to return to ACTIVE
         return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
-    def add_strategy(self, memory_id: str, strategy: BaseStrategy | dict[str, Any]) -> Memory:
+    def add_strategy(self, memory_id: str, strategy: Union[BaseStrategy, Dict[str, Any]]) -> Memory:
         """Add a strategy to a memory (without waiting).
 
         WARNING: After adding a strategy, the memory enters CREATING state temporarily.
@@ -934,7 +933,7 @@ class MemoryManager:
     def add_strategy_and_wait(
         self,
         memory_id: str,
-        strategy: BaseStrategy | dict[str, Any],
+        strategy: Union[BaseStrategy, Dict[str, Any]],
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Memory:
@@ -976,7 +975,7 @@ class MemoryManager:
             memory_id=memory_id, add_strategies=[strategy], max_wait=max_wait, poll_interval=poll_interval
         )
 
-    def _check_strategies_terminal_state(self, strategies: list[dict[str, Any]]) -> tuple[bool, list[str], list[str]]:
+    def _check_strategies_terminal_state(self, strategies: List[Dict[str, Any]]) -> tuple[bool, List[str], List[str]]:
         """Check if all strategies are in terminal states.
 
         Args:
@@ -1022,7 +1021,7 @@ class MemoryManager:
                 # Check if memory itself has failed
                 if memory_status == MemoryStatus.FAILED.value:
                     failure_reason = memory.get("failureReason", "Unknown")
-                    raise RuntimeError(f"Memory update failed: {failure_reason}")
+                    raise RuntimeError("Memory update failed: %s" % failure_reason)
 
                 # Get strategies and check their statuses
                 strategies = memory.get("strategies", memory.get("memoryStrategies", []))
@@ -1042,7 +1041,7 @@ class MemoryManager:
                 if memory_status == MemoryStatus.ACTIVE.value and all_strategies_terminal:
                     # Check if any strategy failed
                     if failed_strategy_names:
-                        raise RuntimeError("Memory strategy(ies) failed: {}".format(", ".join(failed_strategy_names)))
+                        raise RuntimeError("Memory strategy(ies) failed: %s" % ", ".join(failed_strategy_names))
 
                     logger.info(
                         "Memory %s is ACTIVE and all strategies are in terminal states (took %d seconds)",
@@ -1059,8 +1058,8 @@ class MemoryManager:
                 raise
 
         raise TimeoutError(
-            f"Memory {memory_id} did not return to ACTIVE state with all strategies "
-            f"in terminal states within {max_wait} seconds"
+            "Memory %s did not return to ACTIVE state with all strategies in terminal states within %d seconds"
+            % (memory_id, max_wait)
         )
 
     def _validate_namespace(self, namespace: str) -> bool:
@@ -1073,7 +1072,7 @@ class MemoryManager:
 
         return True
 
-    def _validate_strategy_config(self, strategy: dict[str, Any], strategy_type: str) -> None:
+    def _validate_strategy_config(self, strategy: Dict[str, Any], strategy_type: str) -> None:
         """Validate strategy configuration parameters."""
         strategy_config = strategy[strategy_type]
 

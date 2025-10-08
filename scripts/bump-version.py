@@ -7,6 +7,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple
 
 import requests
 
@@ -59,7 +60,7 @@ def update_sdk_dependency(new_sdk_version: str):
     print(f"✓ Updated SDK dependency to >={new_sdk_version}")
 
 
-def parse_version(version: str) -> tuple[int, int, int, str | None]:
+def parse_version(version: str) -> Tuple[int, int, int, str | None]:
     """Parse semantic version string."""
     match = re.match(r"(\d+)\.(\d+)\.(\d+)(?:-(.+))?", version)
     if not match:
@@ -143,7 +144,10 @@ def update_changelog(new_version: str, changes: str = None, sdk_version: str = N
     """Update CHANGELOG.md with new version."""
     changelog_path = Path("CHANGELOG.md")
 
-    content = "# Changelog\n\n" if not changelog_path.exists() else changelog_path.read_text()
+    if not changelog_path.exists():
+        content = "# Changelog\n\n"
+    else:
+        content = changelog_path.read_text()
 
     # Generate entry
     date = datetime.now().strftime("%Y-%m-%d")
@@ -194,9 +198,10 @@ def main():
         # Handle SDK dependency update
         sdk_updated = None
         if args.update_sdk:
-            if args.wait_for_sdk and not check_sdk_version_on_pypi(args.update_sdk):
-                print(f"❌ SDK version {args.update_sdk} not available on PyPI after waiting")
-                sys.exit(1)
+            if args.wait_for_sdk:
+                if not check_sdk_version_on_pypi(args.update_sdk):
+                    print(f"❌ SDK version {args.update_sdk} not available on PyPI after waiting")
+                    sys.exit(1)
 
             if not args.dry_run:
                 update_sdk_dependency(args.update_sdk)

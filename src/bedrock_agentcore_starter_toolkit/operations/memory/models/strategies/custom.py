@@ -1,6 +1,6 @@
 """Custom memory strategy implementation."""
 
-from typing import Any
+from typing import Any, Dict
 
 from pydantic import Field
 
@@ -36,7 +36,7 @@ class CustomSemanticStrategy(BaseStrategy):
     extraction_config: ExtractionConfig = Field(..., description="Extraction configuration")
     consolidation_config: ConsolidationConfig = Field(..., description="Consolidation configuration")
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,
@@ -56,7 +56,7 @@ class CustomSemanticStrategy(BaseStrategy):
 
         return {"customMemoryStrategy": config}
 
-    def _convert_extraction_config(self) -> dict[str, Any]:
+    def _convert_extraction_config(self) -> Dict[str, Any]:
         """Convert extraction config to API format."""
         config = {}
         if self.extraction_config.append_to_prompt is not None:
@@ -65,7 +65,7 @@ class CustomSemanticStrategy(BaseStrategy):
             config["modelId"] = self.extraction_config.model_id
         return config
 
-    def _convert_consolidation_config(self) -> dict[str, Any]:
+    def _convert_consolidation_config(self) -> Dict[str, Any]:
         """Convert consolidation config to API format."""
         config = {}
         if self.consolidation_config.append_to_prompt is not None:
@@ -97,7 +97,7 @@ class CustomSummaryStrategy(BaseStrategy):
 
     consolidation_config: ConsolidationConfig = Field(..., description="Consolidation configuration")
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,
@@ -116,7 +116,7 @@ class CustomSummaryStrategy(BaseStrategy):
 
         return {"customMemoryStrategy": config}
 
-    def _convert_consolidation_config(self) -> dict[str, Any]:
+    def _convert_consolidation_config(self) -> Dict[str, Any]:
         """Convert consolidation config to API format."""
         config = {}
         if self.consolidation_config.append_to_prompt is not None:
@@ -155,7 +155,7 @@ class CustomUserPreferenceStrategy(BaseStrategy):
     extraction_config: ExtractionConfig = Field(..., description="Extraction configuration")
     consolidation_config: ConsolidationConfig = Field(..., description="Consolidation configuration")
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,
@@ -175,7 +175,7 @@ class CustomUserPreferenceStrategy(BaseStrategy):
 
         return {"customMemoryStrategy": config}
 
-    def _convert_extraction_config(self) -> dict[str, Any]:
+    def _convert_extraction_config(self) -> Dict[str, Any]:
         """Convert extraction config to API format."""
         config = {}
         if self.extraction_config.append_to_prompt is not None:
@@ -184,7 +184,7 @@ class CustomUserPreferenceStrategy(BaseStrategy):
             config["modelId"] = self.extraction_config.model_id
         return config
 
-    def _convert_consolidation_config(self) -> dict[str, Any]:
+    def _convert_consolidation_config(self) -> Dict[str, Any]:
         """Convert consolidation config to API format."""
         config = {}
         if self.consolidation_config.append_to_prompt is not None:

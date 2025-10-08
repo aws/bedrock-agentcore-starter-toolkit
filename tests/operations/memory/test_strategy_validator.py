@@ -1490,19 +1490,17 @@ class TestValidateExistingMemoryStrategies:
             Exception("Normalization error"),
             StrategyComparator.normalize_strategy(requested_strategies[0]),
         ]
-        with (
-            patch.object(StrategyComparator, "normalize_strategy", side_effect=side_effects),
-            patch("bedrock_agentcore_starter_toolkit.operations.memory.strategy_validator.logger") as mock_logger,
-        ):
-            # Should handle the error and continue with empty normalized list
-            matches, error = StrategyComparator.compare_strategies(memory_strategies, requested_strategies)
+        with patch.object(StrategyComparator, "normalize_strategy", side_effect=side_effects):
+            with patch("bedrock_agentcore_starter_toolkit.operations.memory.strategy_validator.logger") as mock_logger:
+                # Should handle the error and continue with empty normalized list
+                matches, error = StrategyComparator.compare_strategies(memory_strategies, requested_strategies)
 
-            # Should log warning about normalization failure
-            mock_logger.warning.assert_called()
+                # Should log warning about normalization failure
+                mock_logger.warning.assert_called()
 
-            # Should detect count mismatch (0 vs 1)
-            assert matches is False
-            assert "Strategy count mismatch" in error
+                # Should detect count mismatch (0 vs 1)
+                assert matches is False
+                assert "Strategy count mismatch" in error
 
     def test_validate_user_preference_strategy(self):
         """Test validation with user preference strategies."""

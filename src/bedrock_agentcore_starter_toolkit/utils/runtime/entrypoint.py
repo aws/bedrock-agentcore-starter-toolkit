@@ -4,11 +4,12 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
 
-def parse_entrypoint(entrypoint: str) -> tuple[Path, str]:
+def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
     """Parse entrypoint into file path and name.
 
     Args:
@@ -112,8 +113,12 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
     install_path = None
 
     if file_type == "pyproject":
-        # pyproject.toml install path: subdirectory parent or current directory
-        install_path = Path(relative_path).parent if len(relative_path.parts) > 1 else Path(".")
+        if len(relative_path.parts) > 1:
+            # pyproject.toml in subdirectory - install from that directory
+            install_path = Path(relative_path).parent
+        else:
+            # pyproject.toml in root - install from current directory
+            install_path = Path(".")
 
     # Get POSIX strings for file and install path
     file_path = relative_path.as_posix()

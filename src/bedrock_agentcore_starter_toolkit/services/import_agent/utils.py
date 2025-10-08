@@ -5,7 +5,7 @@ import os
 import re
 import secrets
 import textwrap
-from typing import Any
+from typing import Any, Dict, List, Union
 
 
 def json_to_obj_fixed(json_string: str):
@@ -91,7 +91,7 @@ def unindent_by_one(input_code, spaces_per_indent=4):
 
 
 def generate_pydantic_models(
-    schema_input: dict[str, Any] | list[dict[str, Any]] | str,
+    schema_input: Union[Dict[str, Any], List[Dict[str, Any]], str],
     root_model_name: str = "RequestModel",
     content_type_annotation: str = "",
 ) -> str:
@@ -128,7 +128,7 @@ def generate_pydantic_models(
         # Convert to CamelCase
         return "".join(word.capitalize() for word in cleaned.split("_"))
 
-    def process_schema(schema_obj: dict[str, Any], name: str) -> str:
+    def process_schema(schema_obj: Dict[str, Any], name: str) -> str:
         """Process a schema object and return the model class name."""
         # Handle schema wrapper
         if "schema" in schema_obj:
@@ -200,7 +200,7 @@ def generate_pydantic_models(
         else:
             return get_python_type(obj_type)
 
-    def get_type_hint(prop_schema: dict[str, Any], name: str) -> str:
+    def get_type_hint(prop_schema: Dict[str, Any], name: str) -> str:
         """Get the Python type hint for a property schema."""
         if "$ref" in prop_schema:
             ref_name = prop_schema["$ref"].split("/")[-1]
@@ -234,7 +234,7 @@ def generate_pydantic_models(
         }
         return type_mapping.get(openapi_type, "Any")
 
-    def process_parameter_list(params: list[dict[str, Any]], name: str) -> str:
+    def process_parameter_list(params: List[Dict[str, Any]], name: str) -> str:
         """Process OpenAPI parameter array and create a model."""
         class_name = clean_class_name(name)
         if class_name in models:
@@ -275,7 +275,10 @@ def generate_pydantic_models(
 
                 # Build the field definition
                 if is_required:
-                    field_def = f' = Field(description="{param["description"]}")' if "description" in param else ""
+                    if "description" in param:
+                        field_def = f' = Field(description="{param["description"]}")'
+                    else:
+                        field_def = ""
                 else:
                     field_type = f"Optional[{field_type}]"
                     if "description" in param:
@@ -294,7 +297,7 @@ def generate_pydantic_models(
         models[class_name] = class_def
         return class_name
 
-    def process_parameter_dict(params: dict[str, dict[str, Any]], name: str) -> str:
+    def process_parameter_dict(params: Dict[str, Dict[str, Any]], name: str) -> str:
         """Process a dictionary of named parameters."""
         class_name = clean_class_name(name)
         if class_name in models:
@@ -321,7 +324,10 @@ def generate_pydantic_models(
 
             # Build the field definition
             if is_required:
-                field_def = f' = Field(description="{param_def["description"]}")' if "description" in param_def else ""
+                if "description" in param_def:
+                    field_def = f' = Field(description="{param_def["description"]}")'
+                else:
+                    field_def = ""
             else:
                 field_type = f"Optional[{field_type}]"
                 if "description" in param_def:

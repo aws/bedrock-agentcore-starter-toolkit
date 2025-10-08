@@ -98,7 +98,10 @@ def invoke_bedrock_agentcore(
     save_config(project_config, config_path)
 
     # Convert payload to string if needed
-    payload_str = json.dumps(payload, ensure_ascii=False) if isinstance(payload, dict) else str(payload)
+    if isinstance(payload, dict):
+        payload_str = json.dumps(payload, ensure_ascii=False)
+    else:
+        payload_str = str(payload)
 
     if local_mode:
         from ...services.runtime import LocalBedrockAgentCoreClient

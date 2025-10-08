@@ -1,7 +1,7 @@
 """Base classes and types for memory strategies."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -51,10 +51,10 @@ class BaseStrategy(BaseModel, ABC):
 
     name: str = Field(..., description="Strategy name")
     description: str | None = Field(None, description="Strategy description")
-    namespaces: list[str] | None = Field(None, description="Strategy namespaces")
+    namespaces: List[str] | None = Field(None, description="Strategy namespaces")
 
     @abstractmethod
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert strategy to dictionary format for API calls.
 
         Returns:
@@ -73,5 +73,5 @@ StrategyType = Union[
     "CustomSummaryStrategy",
     "CustomUserPreferenceStrategy",
     "UserPreferenceStrategy",
-    dict[str, Any],  # Backward compatibility with dict-based strategies
+    Dict[str, Any],  # Backward compatibility with dict-based strategies
 ]

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+from typing import List, Tuple
 
 
 class Colors:
@@ -36,7 +37,7 @@ def print_status(message: str, status: str = "info"):
         print(f"  {message}")
 
 
-def run_command(cmd: list[str], capture=True) -> tuple[int, str, str]:
+def run_command(cmd: List[str], capture=True) -> Tuple[int, str, str]:
     """Run a command and return exit code, stdout, and stderr."""
     result = subprocess.run(cmd, capture_output=capture, text=True)
     return result.returncode, result.stdout, result.stderr
@@ -146,7 +147,10 @@ def validate_package_contents(wheel_path: Path):
         ]
 
         for pattern in required_patterns:
-            found = any(f.endswith(pattern[1:]) for f in files) if pattern.startswith("*") else pattern in files
+            if pattern.startswith("*"):
+                found = any(f.endswith(pattern[1:]) for f in files)
+            else:
+                found = pattern in files
 
             if found:
                 print_status(f"Found required: {pattern}", "success")

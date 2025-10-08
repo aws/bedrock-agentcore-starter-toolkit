@@ -1,9 +1,8 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, List
 
 from click.testing import Result
 from prompt_toolkit.application import create_app_session
@@ -17,8 +16,8 @@ logger = logging.getLogger("cli-runtime-base-test")
 
 @dataclass
 class CommandInvocation:
-    command: list[str]
-    user_input: list[str]
+    command: List[str]
+    user_input: List[str]
     validator: Callable[[Result], Any]
 
 
@@ -48,11 +47,12 @@ class BaseCLIRuntimeTest(ABC):
 
                 logger.info("Running command %s with input %s", command, input)
 
-                with create_pipe_input() as pipe_input, create_app_session(input=pipe_input):
-                    for data in input:
-                        pipe_input.send_text(data + "\n")
+                with create_pipe_input() as pipe_input:
+                    with create_app_session(input=pipe_input):
+                        for data in input:
+                            pipe_input.send_text(data + "\n")
 
-                    result = runner.invoke(app, args=command)
+                        result = runner.invoke(app, args=command)
 
                 validator(result)
         finally:
@@ -63,7 +63,7 @@ class BaseCLIRuntimeTest(ABC):
         return
 
     @abstractmethod
-    def get_command_invocations(self) -> list[CommandInvocation]:
+    def get_command_invocations(self) -> List[CommandInvocation]:
         """
         Get the commands to be tested.
         This method should be implemented by subclasses to return the specific commands.

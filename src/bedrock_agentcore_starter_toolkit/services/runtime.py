@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
-from typing import Any
+from typing import Any, Dict
 
 import boto3
 import requests
@@ -45,7 +45,10 @@ def _handle_aws_response(response) -> dict:
                 if isinstance(event, bytes):
                     try:
                         decoded = event.decode("utf-8")
-                        event = json.loads(decoded) if decoded.startswith('"') and decoded.endswith('"') else decoded
+                        if decoded.startswith('"') and decoded.endswith('"'):
+                            event = json.loads(decoded)
+                        else:
+                            event = decoded
                     except (UnicodeDecodeError, json.JSONDecodeError):
                         pass
                 events.append(event)
@@ -56,7 +59,7 @@ def _handle_aws_response(response) -> dict:
         return response
 
 
-def _handle_streaming_response(response) -> dict[str, Any]:
+def _handle_streaming_response(response) -> Dict[str, Any]:
     complete_text = ""
     for line in response.iter_lines(chunk_size=1):
         if line:
@@ -117,13 +120,13 @@ class BedrockAgentCoreClient:
         agent_name: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: dict | None = None,
-        authorizer_config: dict | None = None,
-        request_header_config: dict | None = None,
-        protocol_config: dict | None = None,
-        env_vars: dict | None = None,
+        network_config: Dict | None = None,
+        authorizer_config: Dict | None = None,
+        request_header_config: Dict | None = None,
+        protocol_config: Dict | None = None,
+        env_vars: Dict | None = None,
         auto_update_on_conflict: bool = False,
-    ) -> dict[str, str]:
+    ) -> Dict[str, str]:
         """Create new agent."""
         self.logger.info("Creating agent '%s' with image URI: %s", agent_name, image_uri)
         try:
@@ -216,12 +219,12 @@ class BedrockAgentCoreClient:
         agent_id: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: dict | None = None,
-        authorizer_config: dict | None = None,
-        request_header_config: dict | None = None,
-        protocol_config: dict | None = None,
-        env_vars: dict | None = None,
-    ) -> dict[str, str]:
+        network_config: Dict | None = None,
+        authorizer_config: Dict | None = None,
+        request_header_config: Dict | None = None,
+        protocol_config: Dict | None = None,
+        env_vars: Dict | None = None,
+    ) -> Dict[str, str]:
         """Update existing agent."""
         self.logger.info("Updating agent ID '%s' with image URI: %s", agent_id, image_uri)
         try:
@@ -279,7 +282,7 @@ class BedrockAgentCoreClient:
             self.logger.error("Failed to list agents: %s", str(e))
             raise
 
-    def find_agent_by_name(self, agent_name: str) -> dict | None:
+    def find_agent_by_name(self, agent_name: str) -> Dict | None:
         """Find an agent by name, reusing list_agents method."""
         try:
             # Get all agents using the existing method
@@ -301,13 +304,13 @@ class BedrockAgentCoreClient:
         agent_name: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: dict | None = None,
-        authorizer_config: dict | None = None,
-        request_header_config: dict | None = None,
-        protocol_config: dict | None = None,
-        env_vars: dict | None = None,
+        network_config: Dict | None = None,
+        authorizer_config: Dict | None = None,
+        request_header_config: Dict | None = None,
+        protocol_config: Dict | None = None,
+        env_vars: Dict | None = None,
         auto_update_on_conflict: bool = False,
-    ) -> dict[str, str]:
+    ) -> Dict[str, str]:
         """Create or update agent."""
         if agent_id:
             return self.update_agent(
@@ -372,7 +375,7 @@ class BedrockAgentCoreClient:
             f"please check status and try to invoke after some time"
         )
 
-    def get_agent_runtime(self, agent_id: str) -> dict:
+    def get_agent_runtime(self, agent_id: str) -> Dict:
         """Get agent runtime details.
 
         Args:
@@ -383,7 +386,7 @@ class BedrockAgentCoreClient:
         """
         return self.client.get_agent_runtime(agentRuntimeId=agent_id)
 
-    def get_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> dict:
+    def get_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> Dict:
         """Get agent runtime endpoint details.
 
         Args:
@@ -398,7 +401,7 @@ class BedrockAgentCoreClient:
             endpointName=endpoint_name,
         )
 
-    def delete_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> dict:
+    def delete_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> Dict:
         """Delete agent runtime endpoint.
 
         Args:
@@ -432,7 +435,7 @@ class BedrockAgentCoreClient:
         endpoint_name: str = "DEFAULT",
         user_id: str | None = None,
         custom_headers: dict | None = None,
-    ) -> dict:
+    ) -> Dict:
         """Invoke agent endpoint.
 
         Args:
@@ -503,7 +506,7 @@ class HttpBedrockAgentCoreClient:
         bearer_token: str | None,
         endpoint_name: str = "DEFAULT",
         custom_headers: dict | None = None,
-    ) -> dict:
+    ) -> Dict:
         """Invoke agent endpoint using HTTP request with bearer token.
 
         Args:

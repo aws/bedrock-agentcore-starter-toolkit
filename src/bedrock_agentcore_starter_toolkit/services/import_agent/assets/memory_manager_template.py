@@ -10,14 +10,14 @@ import json
 import os
 import weakref
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List, Set
 
 
 class LongTermMemoryManager:
     """Custom Memory Manager to have equivalent functionality with Bedrock Agents Long Term Memory and Sessions."""
 
     # Class variable to keep track of all instances
-    _instances: set[weakref.ref] = set()
+    _instances: Set[weakref.ref] = set()
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class LongTermMemoryManager:
         """Callback for when a weak reference is removed."""
         LongTermMemoryManager._instances.discard(ref)
 
-    def _load_session_summaries(self) -> list[dict[str, Any]]:
+    def _load_session_summaries(self) -> List[Dict[str, Any]]:
         """Load all stored session summaries."""
         summary_file = self.storage_path
         if os.path.exists(summary_file):
@@ -64,7 +64,7 @@ class LongTermMemoryManager:
             json.dump(self.session_summaries, f)
         self._last_memory_update_time = datetime.now().timestamp()
 
-    def add_message(self, message: dict[str, str]):
+    def add_message(self, message: Dict[str, str]):
         """Add a message to the current session."""
         self.current_session_messages.append(message)
 

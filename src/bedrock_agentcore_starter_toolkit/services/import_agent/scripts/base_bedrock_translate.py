@@ -12,6 +12,7 @@ import os
 import time
 import uuid
 import zipfile
+from typing import Dict, Tuple
 
 import autopep8
 import boto3
@@ -163,7 +164,7 @@ class BaseBedrockTranslator:
         self.agent_setup_code = ""
         self.usage_code = ""
 
-    def _clean_fixtures_and_prompt(self, base_template, fixtures) -> tuple[str, dict]:
+    def _clean_fixtures_and_prompt(self, base_template, fixtures) -> Tuple[str, Dict]:
         """Clean up the base template and fixtures by removing unused keys.
 
         Args:
@@ -206,7 +207,7 @@ class BaseBedrockTranslator:
 
         return base_template, fixtures
 
-    def generate_prompt(self, config: dict):
+    def generate_prompt(self, config: Dict):
         """Generate prompt code based on the configuration."""
         prompt_type = config.get("promptType", "")
         self.enabled_prompts.append(prompt_type)
@@ -463,7 +464,7 @@ class BaseBedrockTranslator:
 
         return tool_code
 
-    def generate_openapi_ag_code(self, ag: dict, platform: str) -> tuple[list, str]:
+    def generate_openapi_ag_code(self, ag: Dict, platform: str) -> Tuple[list, str]:
         """Generate code for OpenAPI Action Groups."""
         tool_code = ""
         tool_instances = []
@@ -635,7 +636,7 @@ class BaseBedrockTranslator:
 
         return tool_instances, tool_code
 
-    def generate_structured_ag_code(self, ag: dict, platform: str) -> tuple[list, str]:
+    def generate_structured_ag_code(self, ag: Dict, platform: str) -> Tuple[list, str]:
         """Generate code for Structured Function Action Groups."""
         tool_code = ""
         tool_instances = []

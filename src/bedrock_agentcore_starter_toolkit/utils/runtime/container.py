@@ -5,6 +5,7 @@ import platform
 import subprocess  # nosec B404 - Required for container runtime operations
 import time
 from pathlib import Path
+from typing import List, Tuple
 
 from jinja2 import Template
 
@@ -147,9 +148,10 @@ class ContainerRuntime:
 
         # Add logic to avoid duplicate installation
         has_current_package = False
-        if (output_dir / "pyproject.toml").exists() and not (deps.found and deps.is_root_package):
+        if (output_dir / "pyproject.toml").exists():
             # Only install current package if deps isn't already pointing to it
-            has_current_package = True
+            if not (deps.found and deps.is_root_package):
+                has_current_package = True
 
         context = {
             "python_version": get_python_version(),
@@ -225,7 +227,7 @@ class ContainerRuntime:
         arch = arch_map.get(machine, machine)
         return f"linux/{arch}"
 
-    def build(self, dockerfile_dir: Path, tag: str, platform: str | None = None) -> tuple[bool, list[str]]:
+    def build(self, dockerfile_dir: Path, tag: str, platform: str | None = None) -> Tuple[bool, List[str]]:
         """Build container image."""
         if not self.has_local_runtime:
             return False, [
@@ -335,7 +337,7 @@ class ContainerRuntime:
             log.error("Failed to push image")
             return False
 
-    def _execute_command(self, cmd: list[str]) -> tuple[bool, list[str]]:
+    def _execute_command(self, cmd: List[str]) -> Tuple[bool, List[str]]:
         """Execute command and capture output."""
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)  # nosec B603
