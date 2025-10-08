@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.21] - 2025-10-08
+
+### Changes
+
+- add a2a protocol notebook support (#258) (e656d63)
+- Release v0.1.20 (#257) (1de8828)
+
 ## [0.1.20] - 2025-10-08
 
 ### Changes
