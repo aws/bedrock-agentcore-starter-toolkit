@@ -23,3 +23,6 @@ documentation/.cache
 output*/
 .serena/
 specs/
+.claude/
+.specify/
+scripts/
