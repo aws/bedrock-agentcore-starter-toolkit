@@ -483,50 +483,6 @@ class BedrockAgentCoreClient:
                     "before-sign.bedrock-agentcore.InvokeAgentRuntime", handler_id
                 )
 
-    def get_agent_card(self, agent_arn: str, qualifier: str = "DEFAULT") -> dict:
-        """Get agent card from deployed A2A agent.
-
-        Args:
-            agent_arn: Agent ARN
-            qualifier: Endpoint qualifier (default: "DEFAULT")
-
-        Returns:
-            Agent card JSON document
-        """
-        import urllib.parse
-
-        # URL-encode the ARN
-        escaped_arn = urllib.parse.quote(agent_arn, safe="")
-
-        # Construct the GetAgentCard URL
-        url = f"{self.dp_endpoint}/runtimes/{escaped_arn}/invocations/.well-known/agent-card.json"
-
-        if qualifier and qualifier != "DEFAULT":
-            url += f"?qualifier={qualifier}"
-
-        self.logger.debug("Getting agent card from: %s", url)
-
-        try:
-            import requests
-
-            # Use requests with SigV4 signing
-            from botocore.auth import SigV4Auth
-            from botocore.awsrequest import AWSRequest
-
-            request = AWSRequest(method="GET", url=url)
-            SigV4Auth(self.dataplane_client._request_signer._credentials, "bedrock-agentcore", self.region).add_auth(
-                request
-            )
-
-            response = requests.get(url, headers=dict(request.headers), timeout=30)
-
-            response.raise_for_status()
-
-            return response.json()
-        except Exception as e:
-            self.logger.error("Failed to get agent card: %s", e)
-            raise
-
 
 class HttpBedrockAgentCoreClient:
     """Bedrock AgentCore client for agent management using HTTP requests with bearer token."""
@@ -604,48 +560,6 @@ class HttpBedrockAgentCoreClient:
             return _handle_http_response(response)
         except requests.exceptions.RequestException as e:
             self.logger.error("Failed to invoke agent endpoint: %s", str(e))
-            raise
-
-    def get_agent_card(
-        self,
-        agent_arn: str,
-        bearer_token: str,
-        qualifier: str = "DEFAULT",
-    ) -> dict:
-        """Get agent card using OAuth bearer token.
-
-        Args:
-            agent_arn: Agent ARN
-            bearer_token: OAuth bearer token
-            qualifier: Endpoint qualifier (default: "DEFAULT")
-
-        Returns:
-            Agent card JSON document
-        """
-        import urllib.parse
-
-        # Escape agent ARN for URL
-        escaped_arn = urllib.parse.quote(agent_arn, safe="")
-
-        # Build URL
-        url = f"{self.dp_endpoint}/runtimes/{escaped_arn}/invocations/.well-known/agent-card.json"
-
-        if qualifier and qualifier != "DEFAULT":
-            url += f"?qualifier={qualifier}"
-
-        # Headers
-        headers = {
-            "Authorization": f"Bearer {bearer_token}",
-            "Accept": "application/json",
-        }
-
-        try:
-            # Make request
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            self.logger.error("Failed to get agent card: %s", str(e))
             raise
 
 

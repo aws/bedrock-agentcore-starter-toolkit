@@ -94,10 +94,3 @@ class DestroyResult(BaseModel):
     warnings: List[str] = Field(default_factory=list, description="List of warnings during destruction")
     errors: List[str] = Field(default_factory=list, description="List of errors during destruction")
     dry_run: bool = Field(default=False, description="Whether this was a dry run")
-
-
-class GetAgentCardResult(BaseModel):
-    """Result from get_agent_card operation."""
-
-    agent_card: dict = Field(..., description="Agent card JSON document")
-    agent_name: str = Field(..., description="Name of the agent")

@@ -679,14 +679,6 @@ def invoke(
         project_config = load_config(config_path)
         config = project_config.get_agent_config(agent)
 
-        # A2A requires session IDs with 33+ characters - auto-generate if needed
-        if config.aws.protocol_configuration.server_protocol == "A2A":
-            if not session_id or len(session_id) < 33:
-                import uuid
-
-                session_id = f"agentcore_session_{uuid.uuid4().hex}"
-                console.print(f"[dim]Generated A2A-compliant session ID: {session_id}[/dim]")
-
         # Parse payload
         try:
             payload_data = json.loads(payload)
@@ -1154,79 +1146,3 @@ def destroy(
         _handle_error(f"Destruction failed: {e}", e)
     except Exception as e:
         _handle_error(f"Destruction failed: {e}", e)
-
-
-def get_agent_card_command(
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name"),
-    bearer_token: Optional[str] = typer.Option(
-        None, "--bearer-token", "-bt", help="Bearer token for OAuth authentication"
-    ),
-    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
-):
-    """Retrieve agent card from deployed A2A agent."""
-    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-
-    try:
-        from ...operations.runtime import get_agent_card
-
-        result = get_agent_card(
-            config_path=config_path,
-            agent_name=agent,
-            bearer_token=bearer_token,
-        )
-
-        if json_output:
-            import json
-
-            console.print(json.dumps(result.agent_card, indent=2))
-        else:
-            # Pretty formatted output
-            agent_card = result.agent_card
-
-            panel_lines = [
-                f"[bold]Agent:[/bold] [cyan]{agent_card.get('name', 'Unknown')}[/cyan]",
-                f"[bold]Description:[/bold] {agent_card.get('description', 'N/A')}",
-                f"[bold]Protocol:[/bold] {agent_card.get('protocolVersion', 'N/A')}",
-                "",
-                f"[bold cyan]URL:[/bold cyan] {agent_card.get('url', 'N/A')}",
-                "",
-            ]
-
-            # Capabilities
-            caps = agent_card.get("capabilities", {})
-            if caps:
-                panel_lines.append("[bold]Capabilities:[/bold]")
-                for key, value in caps.items():
-                    panel_lines.append(f"  • {key}: [green]{value}[/green]")
-                panel_lines.append("")
-
-            # Skills
-            skills = agent_card.get("skills", [])
-            if skills:
-                panel_lines.append(f"[bold]Skills:[/bold] [cyan]{len(skills)} available[/cyan]")
-                for skill in skills[:3]:
-                    skill_name = skill.get("name", skill.get("id", "Unknown"))
-                    panel_lines.append(f"  • {skill_name}")
-                if len(skills) > 3:
-                    panel_lines.append(f"  [dim]... and {len(skills) - 3} more[/dim]")
-
-            console.print(
-                Panel(
-                    "\n".join(panel_lines),
-                    title=f"Agent Card: {result.agent_name}",
-                    border_style="bright_blue",
-                )
-            )
-            console.print("\n[dim]Use --json for raw output[/dim]")
-
-    except FileNotFoundError:
-        console.print("[red]Configuration not found. Run 'agentcore configure' first.[/red]")
-        raise typer.Exit(1) from None
-    except ValueError as e:
-        console.print(f"[red]{str(e)}[/red]")
-        raise typer.Exit(1) from e
-    except RuntimeError as e:
-        console.print(f"[red]Failed to get agent card: {str(e)}[/red]")
-        if "403" in str(e):
-            console.print("[yellow]Hint: Try --bearer-token if agent uses OAuth[/yellow]")
-        raise typer.Exit(1) from e
