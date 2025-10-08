@@ -96,6 +96,12 @@ select = [
   "UP", # pyupgrade (modern Python patterns)
   "SIM", # flake8-simplify (for optional field patterns)
 ]
+ignore = [
+  "UP006", # typing.List[T] → list[T]
+  "UP007", # typing.Optional[T] → T | None
+  "UP035", # typing.Dict → dict
+  "UP037", # typing.Tuple → tuple
+]
 
 [tool.ruff.lint.per-file-ignores]
 "!src/**/*.py" = ["D"]

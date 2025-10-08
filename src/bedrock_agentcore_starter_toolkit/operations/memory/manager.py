@@ -7,6 +7,7 @@ import uuid
 from typing import Any
 
 import boto3
+from boto3 import Session
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 
@@ -30,7 +31,7 @@ class MemoryManager:
     def __init__(
         self,
         region_name: str | None = None,
-        boto3_session: boto3.Session | None = None,
+        boto3_session: Session | None = None,
         boto_client_config: BotocoreConfig | None = None,
     ):
         """Initialize MemoryManager with AWS region.
