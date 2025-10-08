@@ -5,7 +5,7 @@ import platform
 import subprocess  # nosec B404 - Required for container runtime operations
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from jinja2 import Template
 
@@ -21,7 +21,7 @@ class ContainerRuntime:
     DEFAULT_RUNTIME = "auto"
     DEFAULT_PLATFORM = "linux/arm64"
 
-    def __init__(self, runtime_type: str | None = None):
+    def __init__(self, runtime_type: Optional[str] = None):
         """Initialize container runtime.
 
         Args:
@@ -105,11 +105,11 @@ class ContainerRuntime:
         agent_path: Path,
         output_dir: Path,
         agent_name: str,
-        aws_region: str | None = None,
+        aws_region: Optional[str] = None,
         enable_observability: bool = True,
-        requirements_file: str | None = None,
-        memory_id: str | None = None,
-        memory_name: str | None = None,
+        requirements_file: Optional[str] = None,
+        memory_id: Optional[str] = None,
+        memory_name: Optional[str] = None,
     ) -> Path:
         """Generate Dockerfile from template."""
         current_platform = self._get_current_platform()
@@ -227,7 +227,7 @@ class ContainerRuntime:
         arch = arch_map.get(machine, machine)
         return f"linux/{arch}"
 
-    def build(self, dockerfile_dir: Path, tag: str, platform: str | None = None) -> Tuple[bool, List[str]]:
+    def build(self, dockerfile_dir: Path, tag: str, platform: Optional[str] = None) -> Tuple[bool, List[str]]:
         """Build container image."""
         if not self.has_local_runtime:
             return False, [
@@ -251,7 +251,7 @@ class ContainerRuntime:
 
         return self._execute_command(cmd)
 
-    def run_local(self, tag: str, port: int = 8080, env_vars: dict | None = None) -> subprocess.CompletedProcess:
+    def run_local(self, tag: str, port: int = 8080, env_vars: Optional[dict] = None) -> subprocess.CompletedProcess:
         """Run container locally.
 
         Args:

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -17,7 +18,7 @@ log = logging.getLogger(__name__)
 
 def destroy_bedrock_agentcore(
     config_path: Path,
-    agent_name: str | None = None,
+    agent_name: Optional[str] = None,
     dry_run: bool = False,
     force: bool = False,
     delete_ecr_repo: bool = False,

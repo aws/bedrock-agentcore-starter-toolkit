@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 import requests
@@ -120,11 +120,11 @@ class BedrockAgentCoreClient:
         agent_name: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: Dict | None = None,
-        authorizer_config: Dict | None = None,
-        request_header_config: Dict | None = None,
-        protocol_config: Dict | None = None,
-        env_vars: Dict | None = None,
+        network_config: Optional[Dict] = None,
+        authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
+        protocol_config: Optional[Dict] = None,
+        env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
     ) -> Dict[str, str]:
         """Create new agent."""
@@ -219,11 +219,11 @@ class BedrockAgentCoreClient:
         agent_id: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: Dict | None = None,
-        authorizer_config: Dict | None = None,
-        request_header_config: Dict | None = None,
-        protocol_config: Dict | None = None,
-        env_vars: Dict | None = None,
+        network_config: Optional[Dict] = None,
+        authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
+        protocol_config: Optional[Dict] = None,
+        env_vars: Optional[Dict] = None,
     ) -> Dict[str, str]:
         """Update existing agent."""
         self.logger.info("Updating agent ID '%s' with image URI: %s", agent_id, image_uri)
@@ -282,7 +282,7 @@ class BedrockAgentCoreClient:
             self.logger.error("Failed to list agents: %s", str(e))
             raise
 
-    def find_agent_by_name(self, agent_name: str) -> Dict | None:
+    def find_agent_by_name(self, agent_name: str) -> Optional[Dict]:
         """Find an agent by name, reusing list_agents method."""
         try:
             # Get all agents using the existing method
@@ -300,15 +300,15 @@ class BedrockAgentCoreClient:
 
     def create_or_update_agent(
         self,
-        agent_id: str | None,
+        agent_id: Optional[str],
         agent_name: str,
         image_uri: str,
         execution_role_arn: str,
-        network_config: Dict | None = None,
-        authorizer_config: Dict | None = None,
-        request_header_config: Dict | None = None,
-        protocol_config: Dict | None = None,
-        env_vars: Dict | None = None,
+        network_config: Optional[Dict] = None,
+        authorizer_config: Optional[Dict] = None,
+        request_header_config: Optional[Dict] = None,
+        protocol_config: Optional[Dict] = None,
+        env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
     ) -> Dict[str, str]:
         """Create or update agent."""
@@ -433,8 +433,8 @@ class BedrockAgentCoreClient:
         payload: str,
         session_id: str,
         endpoint_name: str = "DEFAULT",
-        user_id: str | None = None,
-        custom_headers: dict | None = None,
+        user_id: Optional[str] = None,
+        custom_headers: Optional[dict] = None,
     ) -> Dict:
         """Invoke agent endpoint.
 
@@ -503,9 +503,9 @@ class HttpBedrockAgentCoreClient:
         agent_arn: str,
         payload,
         session_id: str,
-        bearer_token: str | None,
+        bearer_token: Optional[str],
         endpoint_name: str = "DEFAULT",
-        custom_headers: dict | None = None,
+        custom_headers: Optional[dict] = None,
     ) -> Dict:
         """Invoke agent endpoint using HTTP request with bearer token.
 
@@ -574,7 +574,7 @@ class LocalBedrockAgentCoreClient:
         session_id: str,
         payload: str,
         workload_access_token: str,
-        custom_headers: dict | None = None,
+        custom_headers: Optional[dict] = None,
     ):
         """Invoke the endpoint with the given parameters."""
         from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER

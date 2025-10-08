@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from bedrock_agentcore.services.identity import IdentityClient
 
@@ -18,12 +18,12 @@ log = logging.getLogger(__name__)
 def invoke_bedrock_agentcore(
     config_path: Path,
     payload: Any,
-    agent_name: str | None = None,
-    session_id: str | None = None,
-    bearer_token: str | None = None,
-    user_id: str | None = None,
-    local_mode: bool | None = False,
-    custom_headers: dict | None = None,
+    agent_name: Optional[str] = None,
+    session_id: Optional[str] = None,
+    bearer_token: Optional[str] = None,
+    user_id: Optional[str] = None,
+    local_mode: Optional[bool] = False,
+    custom_headers: Optional[dict] = None,
 ) -> InvokeResult:
     """Invoke deployed Bedrock AgentCore endpoint."""
     # Load project configuration

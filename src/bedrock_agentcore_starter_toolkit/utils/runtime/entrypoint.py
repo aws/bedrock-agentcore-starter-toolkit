@@ -4,7 +4,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -36,10 +36,10 @@ def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
 class DependencyInfo:
     """Information about project dependencies."""
 
-    file: str | None  # Relative path for Docker context
+    file: Optional[str]  # Relative path for Docker context
     type: str  # "requirements", "pyproject", or "notfound"
-    resolved_path: str | None = None  # Absolute path for validation
-    install_path: str | None = None  # Path for pip install command
+    resolved_path: Optional[str] = None  # Absolute path for validation
+    install_path: Optional[str] = None  # Path for pip install command
 
     @property
     def found(self) -> bool:
@@ -62,7 +62,7 @@ class DependencyInfo:
         return self.is_pyproject and self.install_path == "."
 
 
-def detect_dependencies(package_dir: Path, explicit_file: str | None = None) -> DependencyInfo:
+def detect_dependencies(package_dir: Path, explicit_file: Optional[str] = None) -> DependencyInfo:
     """Detect dependency file, with optional explicit override."""
     if explicit_file:
         return _handle_explicit_file(package_dir, explicit_file)

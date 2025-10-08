@@ -391,7 +391,7 @@ def get_template_fixtures(field: str = "orchestrationBasePrompts", group: str = 
     """
     project_root = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(project_root, "assets", "template_fixtures_merged.json")
-    with open(file_path, encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     if field not in data:

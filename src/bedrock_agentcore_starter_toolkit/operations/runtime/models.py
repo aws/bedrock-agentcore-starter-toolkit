@@ -1,7 +1,7 @@
 """Pydantic models for operation requests and responses."""
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,14 +14,14 @@ class ConfigureResult(BaseModel):
 
     config_path: Path = Field(..., description="Path to configuration file")
     dockerfile_path: Path = Field(..., description="Path to generated Dockerfile")
-    dockerignore_path: Path | None = Field(None, description="Path to generated .dockerignore")
+    dockerignore_path: Optional[Path] = Field(None, description="Path to generated .dockerignore")
     runtime: str = Field(..., description="Container runtime name")
     region: str = Field(..., description="AWS region")
     account_id: str = Field(..., description="AWS account ID")
-    execution_role: str | None = Field(None, description="AWS execution role ARN")
-    ecr_repository: str | None = Field(None, description="ECR repository URI")
+    execution_role: Optional[str] = Field(None, description="AWS execution role ARN")
+    ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
-    memory_id: str | None = Field(default=None, description="Memory resource ID if created")
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
 
 
 # Launch operation models
@@ -30,22 +30,22 @@ class LaunchResult(BaseModel):
 
     mode: str = Field(..., description="Launch mode: local, cloud, or codebuild")
     tag: str = Field(..., description="Docker image tag")
-    env_vars: Dict[str, str] | None = Field(default=None, description="Environment variables for local deployment")
+    env_vars: Optional[Dict[str, str]] = Field(default=None, description="Environment variables for local deployment")
 
     # Local mode fields
-    port: int | None = Field(default=None, description="Port for local deployment")
-    runtime: ContainerRuntime | None = Field(default=None, description="Container runtime instance")
+    port: Optional[int] = Field(default=None, description="Port for local deployment")
+    runtime: Optional[ContainerRuntime] = Field(default=None, description="Container runtime instance")
 
     # Cloud mode fields
-    ecr_uri: str | None = Field(default=None, description="ECR repository URI")
-    agent_id: str | None = Field(default=None, description="BedrockAgentCore agent ID")
-    agent_arn: str | None = Field(default=None, description="BedrockAgentCore agent ARN")
+    ecr_uri: Optional[str] = Field(default=None, description="ECR repository URI")
+    agent_id: Optional[str] = Field(default=None, description="BedrockAgentCore agent ID")
+    agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
 
     # CodeBuild mode fields
-    codebuild_id: str | None = Field(default=None, description="CodeBuild build ID for ARM64 builds")
+    codebuild_id: Optional[str] = Field(default=None, description="CodeBuild build ID for ARM64 builds")
 
     # Build output (optional)
-    build_output: List[str] | None = Field(default=None, description="Docker build output")
+    build_output: Optional[List[str]] = Field(default=None, description="Docker build output")
 
     model_config = ConfigDict(arbitrary_types_allowed=True)  # For runtime field
 
@@ -55,7 +55,7 @@ class InvokeResult(BaseModel):
 
     response: Dict[str, Any] = Field(..., description="Response from Bedrock AgentCore endpoint")
     session_id: str = Field(..., description="Session ID used for invocation")
-    agent_arn: str | None = Field(default=None, description="BedrockAgentCore agent ARN")
+    agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
 
 
 # Status operation models
@@ -64,26 +64,26 @@ class StatusConfigInfo(BaseModel):
 
     name: str = Field(..., description="Bedrock AgentCore application name")
     entrypoint: str = Field(..., description="Entrypoint file path")
-    region: str | None = Field(None, description="AWS region")
-    account: str | None = Field(None, description="AWS account ID")
-    execution_role: str | None = Field(None, description="AWS execution role ARN")
-    ecr_repository: str | None = Field(None, description="ECR repository URI")
-    agent_id: str | None = Field(None, description="BedrockAgentCore agent ID")
-    agent_arn: str | None = Field(None, description="BedrockAgentCore agent ARN")
-    memory_id: str | None = Field(None, description="Memory resource ID")
-    memory_status: str | None = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
-    memory_type: str | None = Field(None, description="Memory type (STM or STM+LTM)")
-    memory_enabled: bool | None = Field(None, description="Whether memory is enabled")
-    memory_strategies: List[str] | None = Field(None, description="Active memory strategies")
-    memory_details: Dict[str, Any] | None = Field(None, description="Detailed memory resource information")
+    region: Optional[str] = Field(None, description="AWS region")
+    account: Optional[str] = Field(None, description="AWS account ID")
+    execution_role: Optional[str] = Field(None, description="AWS execution role ARN")
+    ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
+    agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
+    agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
+    memory_id: Optional[str] = Field(None, description="Memory resource ID")
+    memory_status: Optional[str] = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
+    memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
+    memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
+    memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
+    memory_details: Optional[Dict[str, Any]] = Field(None, description="Detailed memory resource information")
 
 
 class StatusResult(BaseModel):
     """Result of status operation."""
 
     config: StatusConfigInfo = Field(..., description="Configuration information")
-    agent: Dict[str, Any] | None = Field(None, description="Agent runtime details or error")
-    endpoint: Dict[str, Any] | None = Field(None, description="Endpoint details or error")
+    agent: Optional[Dict[str, Any]] = Field(None, description="Agent runtime details or error")
+    endpoint: Optional[Dict[str, Any]] = Field(None, description="Endpoint details or error")
 
 
 class DestroyResult(BaseModel):
