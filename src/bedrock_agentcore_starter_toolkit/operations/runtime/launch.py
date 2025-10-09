@@ -491,7 +491,7 @@ def launch_bedrock_agentcore(
     # When using source_path, Dockerfile is in .bedrock_agentcore/{agent_name}/ directory
     from ...utils.runtime.config import get_agentcore_directory
 
-    dockerfile_dir = get_agentcore_directory(config_path.parent, agent_name, agent_config.source_path)
+    dockerfile_dir = get_agentcore_directory(config_path.parent, agent_config.name, agent_config.source_path)
     dockerfile_path = dockerfile_dir / "Dockerfile"
 
     if not dockerfile_path.exists():

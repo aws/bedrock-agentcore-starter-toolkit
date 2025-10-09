@@ -201,9 +201,20 @@ def configure_bedrock_agentcore(
         if memory_id:
             log.debug("  Memory ID: %s", memory_id)
 
+    # Determine output directory for Dockerfile based on source_path
+    # If source_path provided: write to .bedrock_agentcore/{agent_name}/ directly
+    # Otherwise: write to project root (legacy)
+    if source_path:
+        from ...utils.runtime.config import get_agentcore_directory
+
+        dockerfile_output_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
+    else:
+        dockerfile_output_dir = build_dir
+
+    # Generate Dockerfile in the correct location (no moving needed)
     dockerfile_path = runtime.generate_dockerfile(
         entrypoint_path,
-        build_dir,
+        dockerfile_output_dir,
         bedrock_agentcore_name or "bedrock_agentcore",
         region,
         enable_observability,
@@ -213,44 +224,17 @@ def configure_bedrock_agentcore(
         source_path,
         protocol,
     )
+    log.info("Generated Dockerfile: %s", dockerfile_path)
 
-    # If source_path is provided, move Dockerfile to .bedrock_agentcore/{agent_name}/ directory
+    # Ensure .dockerignore exists at Docker build context location
     if source_path:
-        import shutil
-
-        from ...utils.runtime.config import get_agentcore_directory
-
-        agentcore_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
-        final_dockerfile_path = agentcore_dir / "Dockerfile"
-
-        # Move Dockerfile from project root to .bedrock_agentcore directory
-        shutil.move(str(dockerfile_path), str(final_dockerfile_path))
-        dockerfile_path = final_dockerfile_path
-        log.info("Generated Dockerfile: %s", dockerfile_path)
-    else:
-        # Legacy behavior: Dockerfile at project root
-        log.info("Generated Dockerfile: %s", dockerfile_path)
-
-    # Handle .dockerignore location based on source_path
-    # If source_path provided, move .dockerignore to source directory (where code is)
-    # Otherwise, keep at project root (legacy behavior)
-    if source_path:
-        import shutil
-
-        project_dockerignore = build_dir / ".dockerignore"
+        # For source_path: .dockerignore at source directory (Docker build context)
         source_dockerignore = Path(source_path) / ".dockerignore"
-
-        if project_dockerignore.exists():
-            if not source_dockerignore.exists():
-                # Move .dockerignore to source directory
-                shutil.move(str(project_dockerignore), str(source_dockerignore))
+        if not source_dockerignore.exists():
+            template_path = Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
+            if template_path.exists():
+                source_dockerignore.write_text(template_path.read_text())
                 log.info("Generated .dockerignore: %s", source_dockerignore)
-            else:
-                # Remove project root version if source already has one
-                project_dockerignore.unlink()
-                log.info("Using existing .dockerignore: %s", source_dockerignore)
-
-        # Set dockerignore_path to source location for ConfigureResult
         dockerignore_path = source_dockerignore
     else:
         # Legacy: .dockerignore at project root

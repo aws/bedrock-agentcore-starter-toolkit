@@ -145,16 +145,18 @@ class ContainerRuntime:
         with open(template_path) as f:
             template = Template(f.read())
 
-        # Generate .dockerignore if it doesn't exist
-        self._ensure_dockerignore(output_dir)
-
-        # Validate module path before generating Dockerfile
-        self._validate_module_path(agent_path, output_dir)
-
-        # Calculate module path relative to Docker build context
+        # Calculate build context root first (needed for validation)
         # If source_path provided: module path relative to source_path (Docker build context)
         # Otherwise: module path relative to project root
         build_context_root = Path(source_path) if source_path else output_dir
+
+        # Generate .dockerignore if it doesn't exist
+        self._ensure_dockerignore(output_dir)
+
+        # Validate module path against build context root
+        self._validate_module_path(agent_path, build_context_root)
+
+        # Calculate module path relative to Docker build context
         agent_module_path = self._get_module_path(agent_path, build_context_root)
 
         wheelhouse_dir = output_dir / "wheelhouse"
@@ -215,6 +217,7 @@ class ContainerRuntime:
         """Validate that the agent path can be converted to a valid Python module path."""
         try:
             agent_path = agent_path.resolve()
+            project_root = project_root.resolve()
             relative_path = agent_path.relative_to(project_root)
             for part in relative_path.parts[:-1]:  # Check all directory parts
                 if "-" in part:
