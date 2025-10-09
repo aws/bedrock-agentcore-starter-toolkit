@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from pydantic import ValidationError
 
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
@@ -58,6 +59,23 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     # New format
     try:
         return BedrockAgentCoreConfigSchema.model_validate(data)
+    except ValidationError as e:
+        # Convert Pydantic errors to user-friendly messages
+        friendly_errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error["loc"])
+            msg = error["msg"]
+            # Make common errors more user-friendly
+            if "Source path does not exist" in msg:
+                friendly_errors.append(f"{field}: {msg} (check if the directory exists)")
+            elif "field required" in msg:
+                friendly_errors.append(f"{field}: This field is required")
+            elif "Input should be" in msg:
+                friendly_errors.append(f"{field}: {msg}")
+            else:
+                friendly_errors.append(f"{field}: {msg}")
+
+        raise ValueError("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
         raise ValueError(f"Invalid configuration format: {e}") from e
 
