@@ -236,6 +236,7 @@ class ContainerRuntime:
         """Get the Python module path for the agent file."""
         try:
             agent_path = agent_path.resolve()
+            project_root = project_root.resolve()
             # Get relative path from project root
             relative_path = agent_path.relative_to(project_root)
             # Convert to module path (e.g., src/agents/my_agent.py -> src.agents.my_agent)
