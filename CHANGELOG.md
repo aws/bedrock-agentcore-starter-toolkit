@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.21] - 2025-10-08
+
+### Changes
+
+- add a2a protocol notebook support (#258) (e656d63)
+- Release v0.1.20 (#257) (1de8828)
+
+## [0.1.20] - 2025-10-08
+
+### Changes
+
+- feat: Add A2A protocol support to AgentCore Runtime toolkit (#255) (84c9456)
+- Fix documentation examples display (#254) (c699e4c)
+- docs: improvements to quickstart (#247) (3ee881b)
+
 ## [0.1.19] - 2025-10-03
 
 ### Changes

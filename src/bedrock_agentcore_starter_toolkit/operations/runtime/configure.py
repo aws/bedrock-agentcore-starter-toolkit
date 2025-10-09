@@ -60,7 +60,7 @@ def configure_bedrock_agentcore(
         request_header_configuration: Request header configuration dictionary
         verbose: Whether to provide verbose output during configuration
         region: AWS region for deployment
-        protocol: agent server protocol, must be either HTTP or MCP
+        protocol: agent server protocol, must be either HTTP or MCP or A2A
         non_interactive: Skip interactive prompts and use defaults
         source_path: Optional path to agent source code directory
 
@@ -211,6 +211,7 @@ def configure_bedrock_agentcore(
         memory_id,
         memory_name,
         source_path,
+        protocol,
     )
 
     # If source_path is provided, move Dockerfile to .bedrock_agentcore/{agent_name}/ directory

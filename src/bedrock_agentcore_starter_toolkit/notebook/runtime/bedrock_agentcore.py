@@ -45,7 +45,7 @@ class Runtime:
         auto_create_execution_role: bool = False,
         authorizer_configuration: Optional[Dict[str, Any]] = None,
         region: Optional[str] = None,
-        protocol: Optional[Literal["HTTP", "MCP"]] = None,
+        protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
         disable_otel: bool = False,
         non_interactive: bool = True,
     ) -> ConfigureResult:
@@ -65,15 +65,15 @@ class Runtime:
             auto_create_execution_role: Whether to auto-create execution role (makes execution_role optional)
             authorizer_configuration: JWT authorizer configuration dictionary
             region: AWS region for deployment
-            protocol: agent server protocol, must be either HTTP or MCP
+            protocol: agent server protocol, must be either HTTP or MCP or A2A
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
             non_interactive: Skip interactive prompts and use defaults (default: True)
 
         Returns:
             ConfigureResult with configuration details
         """
-        if protocol and protocol.upper() not in ["HTTP", "MCP"]:
-            raise ValueError("protocol must be either HTTP or MCP")
+        if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
+            raise ValueError("protocol must be either HTTP or MCP or A2A")
 
         # Parse entrypoint to get agent name
         file_path, file_name = parse_entrypoint(entrypoint)

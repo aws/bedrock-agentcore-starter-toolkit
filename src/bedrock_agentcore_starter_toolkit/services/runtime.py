@@ -98,6 +98,8 @@ class BedrockAgentCoreClient:
         control_plane_url = get_control_plane_endpoint(region)
         data_plane_url = get_data_plane_endpoint(region)
 
+        self.dp_endpoint = data_plane_url
+
         self.logger.debug("Initializing Bedrock AgentCore client for region: %s", region)
         self.logger.debug("Control plane: %s", control_plane_url)
         self.logger.debug("Data plane: %s", data_plane_url)

@@ -201,7 +201,7 @@ def configure(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
-    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
+    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
     non_interactive: bool = typer.Option(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
@@ -214,8 +214,8 @@ def configure(
     if not entrypoint:
         _handle_error("--entrypoint is required")
 
-    if protocol and protocol.upper() not in ["HTTP", "MCP"]:
-        _handle_error("Error: --protocol must be either HTTP or MCP")
+    if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
+        _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
     try:
