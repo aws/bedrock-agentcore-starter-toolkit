@@ -631,7 +631,11 @@ def _execute_codebuild_workflow(
 
         # Get source directory - use source_path if configured, otherwise use current directory
         source_dir = str(Path(agent_config.source_path)) if agent_config.source_path else "."
-        source_location = codebuild_service.upload_source(agent_name=agent_name, source_dir=source_dir)
+        # Pass project root so Dockerfile can be included if needed
+        project_root = str(config_path.parent)
+        source_location = codebuild_service.upload_source(
+            agent_name=agent_name, source_dir=source_dir, project_root=project_root
+        )
 
         # Use cached project name from config if available
         if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:

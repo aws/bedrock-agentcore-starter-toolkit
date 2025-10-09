@@ -7,7 +7,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -70,12 +70,13 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str, source_dir: str = ".") -> str:
+    def upload_source(self, agent_name: str, source_dir: str = ".", project_root: Optional[str] = None) -> str:
         """Upload source directory to S3, respecting .dockerignore patterns.
 
         Args:
             agent_name: Name of the agent
             source_dir: Directory to upload (defaults to current directory)
+            project_root: Optional project root directory (for finding Dockerfile)
         """
         account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
@@ -87,6 +88,7 @@ class CodeBuildService:
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
             try:
                 with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
+                    # First, add all files from source_dir
                     for root, dirs, files in os.walk(source_dir):
                         # Convert to relative path from source_dir
                         rel_root = os.path.relpath(root, source_dir)
@@ -111,6 +113,28 @@ class CodeBuildService:
 
                             file_path = Path(root) / file
                             zipf.write(file_path, file_rel_path)
+
+                    # If source_dir is different from project_root, check for Dockerfile
+                    if project_root and source_dir != project_root:
+                        source_path = Path(source_dir)
+                        project_path = Path(project_root)
+
+                        # Check if Dockerfile exists in project root but not in source_dir
+                        project_dockerfile = project_path / "Dockerfile"
+                        source_dockerfile = source_path / "Dockerfile"
+
+                        if project_dockerfile.exists() and not source_dockerfile.exists():
+                            # Include the Dockerfile from project root
+                            zipf.write(project_dockerfile, "Dockerfile")
+                            self.logger.info("Including Dockerfile from project root in source.zip")
+
+                        # Also check for .dockerignore if it exists in project root
+                        project_dockerignore = project_path / ".dockerignore"
+                        source_dockerignore = source_path / ".dockerignore"
+
+                        if project_dockerignore.exists() and not source_dockerignore.exists():
+                            zipf.write(project_dockerignore, ".dockerignore")
+                            self.logger.info("Including .dockerignore from project root in source.zip")
 
                 # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
                 s3_key = f"{agent_name}/source.zip"
