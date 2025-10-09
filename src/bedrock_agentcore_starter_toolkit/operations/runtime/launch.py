@@ -620,7 +620,9 @@ def _execute_codebuild_workflow(
             if codebuild_execution_role:
                 created_resources.append(f"CodeBuild Execution Role: {codebuild_execution_role}")
 
-        source_location = codebuild_service.upload_source(agent_name=agent_name)
+        # Get source directory - use source_path if configured, otherwise use current directory
+        source_dir = str(Path(agent_config.source_path)) if agent_config.source_path else "."
+        source_location = codebuild_service.upload_source(agent_name=agent_name, source_dir=source_dir)
 
         # Use cached project name from config if available
         if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:

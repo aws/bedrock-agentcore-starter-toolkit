@@ -70,21 +70,26 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str) -> str:
-        """Upload current directory to S3, respecting .dockerignore patterns."""
+    def upload_source(self, agent_name: str, source_dir: str = ".") -> str:
+        """Upload source directory to S3, respecting .dockerignore patterns.
+
+        Args:
+            agent_name: Name of the agent
+            source_dir: Directory to upload (defaults to current directory)
+        """
         account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
-        # Parse .dockerignore patterns
-        ignore_patterns = self._parse_dockerignore()
+        # Parse .dockerignore patterns from source directory
+        ignore_patterns = self._parse_dockerignore(source_dir)
 
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
             try:
                 with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
-                    for root, dirs, files in os.walk("."):
-                        # Convert to relative path
-                        rel_root = os.path.relpath(root, ".")
+                    for root, dirs, files in os.walk(source_dir):
+                        # Convert to relative path from source_dir
+                        rel_root = os.path.relpath(root, source_dir)
                         if rel_root == ".":
                             rel_root = ""
 
@@ -279,9 +284,9 @@ phases:
       - echo "Build completed at $(date)"
 """
 
-    def _parse_dockerignore(self) -> List[str]:
+    def _parse_dockerignore(self, source_dir: str = ".") -> List[str]:
         """Parse .dockerignore file and return list of patterns."""
-        dockerignore_path = Path(".dockerignore")
+        dockerignore_path = Path(source_dir) / ".dockerignore"
         patterns = []
 
         if dockerignore_path.exists():
