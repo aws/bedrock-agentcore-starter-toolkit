@@ -19,7 +19,7 @@ from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .create_role import get_or_create_runtime_execution_role
-from .exceptions import LaunchException
+from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
 
 log = logging.getLogger(__name__)
@@ -480,8 +480,9 @@ def launch_bedrock_agentcore(
             "💡 For local builds, please install Docker, Finch, or Podman"
         )
 
-    # Get build context - always use project root (where config and Dockerfile are)
-    build_dir = config_path.parent
+    # Get build context - use source_path if configured, otherwise use project root
+    build_dir = Path(agent_config.source_path) if agent_config.source_path else config_path.parent
+    log.info("Using build directory: %s", build_dir)
 
     bedrock_agentcore_name = agent_config.name
     tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"
@@ -638,7 +639,7 @@ def _execute_codebuild_workflow(
     except Exception as e:
         if created_resources:
             log.warning("Launch failed after creating the following resources: %s", created_resources)
-            raise LaunchException("Launch failed", created_resources) from e
+            raise RuntimeToolkitException("Launch failed", created_resources) from e
         raise
 
     # Execute CodeBuild

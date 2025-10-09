@@ -11,6 +11,7 @@ from ...operations.memory.manager import MemoryManager
 from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
+from .exceptions import RuntimeToolkitException
 from .models import DestroyResult
 
 log = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ def destroy_bedrock_agentcore(
 
     except Exception as e:
         log.error("Destroy operation failed: %s", str(e))
-        raise RuntimeError(f"Destroy operation failed: {e}") from e
+        raise RuntimeToolkitException(f"Destroy operation failed: {e}") from e
 
 
 def _destroy_agentcore_endpoint(

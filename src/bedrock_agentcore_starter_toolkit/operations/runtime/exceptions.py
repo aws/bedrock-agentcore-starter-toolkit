@@ -9,11 +9,11 @@ class RuntimeException(Exception):
     pass
 
 
-class LaunchException(RuntimeException):
-    """Raised when launch operations fail."""
+class RuntimeToolkitException(RuntimeException):
+    """Raised when runtime operations fail with resource tracking."""
 
     def __init__(self, message: str, created_resources: Optional[List[str]] = None):
-        """Initialize LaunchException with optional resource tracking.
+        """Initialize RuntimeToolkitException with optional resource tracking.
 
         Args:
             message: Error message
