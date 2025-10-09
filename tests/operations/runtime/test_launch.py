@@ -631,27 +631,13 @@ class TestLaunchBedrockAgentCore:
 
     def test_network_configuration_validation(self, tmp_path):
         """Test network configuration validation."""
+        from pydantic import ValidationError
+
         from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration
 
-        # Create config with invalid network mode
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="app.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                network_configuration=NetworkConfiguration(
-                    network_mode="INVALID_MODE"  # Invalid network mode
-                ),
-            ),
-        )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Should raise ValueError for invalid network mode
-        with pytest.raises(ValueError, match="Invalid configuration"):
-            launch_bedrock_agentcore(config_path)
+        # Should raise ValidationError when creating NetworkConfiguration with invalid network mode
+        with pytest.raises(ValidationError, match="Invalid network_mode"):
+            NetworkConfiguration(network_mode="INVALID_MODE")
 
     def test_container_build_failure_handling(self, mock_container_runtime, tmp_path):
         """Test handling of container build failures."""

@@ -124,6 +124,7 @@ class ContainerRuntime:
             memory_id: Optional memory ID
             memory_name: Optional memory name
             source_path: Optional source code directory (for dependency detection)
+            protocol: Optional protocol configuration (HTTP or HTTPS)
         """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM

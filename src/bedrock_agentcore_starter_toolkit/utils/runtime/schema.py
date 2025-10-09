@@ -43,8 +43,7 @@ class NetworkConfiguration(BaseModel):
 
     network_mode: str = Field(default="PUBLIC", description="Network mode for deployment")
     network_mode_config: Optional[NetworkModeConfig] = Field(
-        default=None,
-        description="Network mode configuration (required for VPC mode)"
+        default=None, description="Network mode configuration (required for VPC mode)"
     )
 
     @field_validator("network_mode")
@@ -71,7 +70,7 @@ class NetworkConfiguration(BaseModel):
         if self.network_mode_config:
             result["networkModeConfig"] = {
                 "securityGroups": self.network_mode_config.security_groups,
-                "subnets": self.network_mode_config.subnets
+                "subnets": self.network_mode_config.subnets,
             }
 
         return result

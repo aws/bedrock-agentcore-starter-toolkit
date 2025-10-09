@@ -231,7 +231,9 @@ def configure_bedrock_agentcore(
         # For source_path: .dockerignore at source directory (Docker build context)
         source_dockerignore = Path(source_path) / ".dockerignore"
         if not source_dockerignore.exists():
-            template_path = Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
+            template_path = (
+                Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
+            )
             if template_path.exists():
                 source_dockerignore.write_text(template_path.read_text())
                 log.info("Generated .dockerignore: %s", source_dockerignore)
