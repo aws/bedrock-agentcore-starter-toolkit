@@ -227,8 +227,21 @@ class ContainerRuntime:
         arch = arch_map.get(machine, machine)
         return f"linux/{arch}"
 
-    def build(self, dockerfile_dir: Path, tag: str, platform: Optional[str] = None) -> Tuple[bool, List[str]]:
-        """Build container image."""
+    def build(
+        self,
+        build_context: Path,
+        tag: str,
+        dockerfile_path: Optional[Path] = None,
+        platform: Optional[str] = None,
+    ) -> Tuple[bool, List[str]]:
+        """Build container image.
+
+        Args:
+            build_context: Directory to use as build context
+            tag: Tag for the built image
+            dockerfile_path: Optional path to Dockerfile (if not in build_context)
+            platform: Optional platform override
+        """
         if not self.has_local_runtime:
             return False, [
                 "No container runtime available for local build",
@@ -237,17 +250,29 @@ class ContainerRuntime:
                 "💡 For local builds, please install Docker, Finch, or Podman",
             ]
 
-        if not dockerfile_dir.exists():
-            return False, [f"Directory not found: {dockerfile_dir}"]
+        if not build_context.exists():
+            return False, [f"Build context directory not found: {build_context}"]
 
-        dockerfile_path = dockerfile_dir / "Dockerfile"
-        if not dockerfile_path.exists():
-            return False, [f"Dockerfile not found in {dockerfile_dir}"]
+        # Determine Dockerfile location
+        if dockerfile_path:
+            # Use provided Dockerfile path
+            if not dockerfile_path.exists():
+                return False, [f"Dockerfile not found: {dockerfile_path}"]
+        else:
+            # Look for Dockerfile in build context
+            dockerfile_path = build_context / "Dockerfile"
+            if not dockerfile_path.exists():
+                return False, [f"Dockerfile not found in {build_context}"]
 
         cmd = [self.runtime, "build", "-t", tag]
+
+        # Use -f flag if Dockerfile is not in the build context
+        if dockerfile_path.parent != build_context:
+            cmd.extend(["-f", str(dockerfile_path)])
+
         build_platform = platform or self.DEFAULT_PLATFORM
         cmd.extend(["--platform", build_platform])
-        cmd.append(str(dockerfile_dir))
+        cmd.append(str(build_context))
 
         return self._execute_command(cmd)
 

@@ -488,7 +488,16 @@ def launch_bedrock_agentcore(
     tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"
 
     # Step 1: Build Docker image (only if we need it)
-    success, output = runtime.build(build_dir, tag)
+    # When using source_path, we need to specify the Dockerfile location separately
+    dockerfile_path = None
+    if agent_config.source_path:
+        # Check if Dockerfile exists in project root (created by configure)
+        project_dockerfile = config_path.parent / "Dockerfile"
+        if project_dockerfile.exists():
+            dockerfile_path = project_dockerfile
+            log.info("Using Dockerfile from project root: %s", dockerfile_path)
+
+    success, output = runtime.build(build_dir, tag, dockerfile_path=dockerfile_path)
     if not success:
         error_lines = output[-10:] if len(output) > 10 else output
         error_message = " ".join(error_lines)
