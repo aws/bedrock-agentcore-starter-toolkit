@@ -7,6 +7,7 @@ from typing import Optional
 import yaml
 from pydantic import ValidationError
 
+from ...operations.runtime.exceptions import RuntimeToolkitException
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
 log = logging.getLogger(__name__)
@@ -75,9 +76,9 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
             else:
                 friendly_errors.append(f"{field}: {msg}")
 
-        raise ValueError("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
+        raise RuntimeToolkitException("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
-        raise ValueError(f"Invalid configuration format: {e}") from e
+        raise RuntimeToolkitException(f"Invalid configuration format: {e}") from e
 
 
 def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
