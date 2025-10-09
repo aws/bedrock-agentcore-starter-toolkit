@@ -1,15 +1,14 @@
 """Status operations for Bedrock AgentCore SDK."""
 
 from pathlib import Path
-from typing import Any
+from typing import Optional
 
 from ...services.runtime import BedrockAgentCoreClient
-from ...utils.runtime.artifacts import get_build_artifact_info
 from ...utils.runtime.config import load_config
 from .models import StatusConfigInfo, StatusResult
 
 
-def get_status(config_path: Path, agent_name: str | None = None) -> StatusResult:
+def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusResult:
     """Get Bedrock AgentCore status including config and runtime details.
 
     Args:
@@ -127,80 +126,3 @@ def get_status(config_path: Path, agent_name: str | None = None) -> StatusResult
             endpoint_details = {"error": f"Failed to initialize Bedrock AgentCore client: {e}"}
 
     return StatusResult(config=config_info, agent=agent_details, endpoint=endpoint_details)
-
-
-def get_enhanced_status(agent_name: str, config_path: Path = None) -> dict[str, Any]:
-    """Get enhanced status information including source path and build artifacts.
-
-    Args:
-        agent_name: Name of the agent to get enhanced status for
-        config_path: Optional path to configuration file
-
-    Returns:
-        Dictionary with enhanced status information
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented to support enhanced status display
-    raise NotImplementedError("Enhanced status feature not yet implemented")
-
-
-def get_enhanced_agent_info(agent_name: str, config_path: Path = None) -> dict[str, Any]:
-    """Get enhanced agent information with source path and artifacts.
-
-    Args:
-        agent_name: Name of the agent
-        config_path: Optional path to configuration file
-
-    Returns:
-        Dictionary with enhanced agent information including:
-        - source_path information
-        - build_artifacts status
-        - deployment readiness checks
-    """
-    if config_path is None:
-        config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-
-    # Load configuration
-    project_config = load_config(config_path)
-    agent_config = project_config.get_agent_config(agent_name)
-
-    # Build enhanced information
-    enhanced_info = {
-        "agent_name": agent_config.name,
-        "entrypoint": agent_config.entrypoint,
-        "source_path": agent_config.source_path,
-        "source_path_accessible": False,
-        "entrypoint_exists": False,
-        "build_artifacts_present": False,
-        "deployment_ready": False,
-    }
-
-    # Check source path accessibility
-    if agent_config.source_path:
-        source_path = Path(agent_config.source_path)
-        enhanced_info["source_path_accessible"] = source_path.exists() and source_path.is_dir()
-
-        # Check if entrypoint exists in source path
-        if enhanced_info["source_path_accessible"]:
-            entrypoint_path = source_path / agent_config.entrypoint
-            enhanced_info["entrypoint_exists"] = entrypoint_path.exists()
-
-    # Check build artifacts
-    build_artifacts = get_build_artifact_info(agent_name)
-    if build_artifacts:
-        enhanced_info["build_artifacts_present"] = build_artifacts.is_valid()
-        enhanced_info["build_artifacts"] = {
-            "base_directory": build_artifacts.base_directory,
-            "organized": build_artifacts.organized,
-            "build_timestamp": build_artifacts.build_timestamp.isoformat() if build_artifacts.build_timestamp else None,
-        }
-
-    # Determine deployment readiness
-    enhanced_info["deployment_ready"] = (
-        enhanced_info["entrypoint_exists"]
-        or not agent_config.source_path  # Either entrypoint exists in source_path or no source_path (legacy mode)
-    )
-
-    return enhanced_info

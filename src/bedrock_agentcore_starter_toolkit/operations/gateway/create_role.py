@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Optional
 
 from boto3 import Session
 from botocore.client import BaseClient
@@ -59,9 +60,9 @@ def create_gateway_execution_role(
 def _attach_policy(
     iam_client: BaseClient,
     role_name: str,
-    policy_arn: str | None = None,
-    policy_document: str | None = None,
-    policy_name: str | None = None,
+    policy_arn: Optional[str] = None,
+    policy_document: Optional[str] = None,
+    policy_name: Optional[str] = None,
 ) -> None:
     """Attach a policy to an IAM role.
 

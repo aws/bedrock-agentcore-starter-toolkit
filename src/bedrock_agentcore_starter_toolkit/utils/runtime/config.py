@@ -2,10 +2,12 @@
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from pydantic import ValidationError
 
+from ...operations.runtime.exceptions import RuntimeToolkitException
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
 log = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ def is_project_config_format(config_path: Path) -> bool:
     """Check if config file uses project format (has 'agents' key)."""
     if not config_path.exists():
         return False
-    with open(config_path) as f:
+    with open(config_path, "r") as f:
         data = yaml.safe_load(f) or {}
     return isinstance(data, dict) and "agents" in data
 
@@ -48,7 +50,7 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
 
-    with open(config_path) as f:
+    with open(config_path, "r") as f:
         data = yaml.safe_load(f) or {}
 
     # Auto-detect and transform legacy format
@@ -74,12 +76,12 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
             else:
                 friendly_errors.append(f"{field}: {msg}")
 
-        raise ValueError("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
+        raise RuntimeToolkitException("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
-        raise ValueError(f"Invalid configuration format: {e}") from e
+        raise RuntimeToolkitException(f"Invalid configuration format: {e}") from e
 
 
-def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path) -> None:
+def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
     """Save configuration to YAML file.
 
     Args:
@@ -90,7 +92,7 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path) -> None
         yaml.dump(config.model_dump(), f, default_flow_style=False, sort_keys=False)
 
 
-def load_config_if_exists(config_path: Path) -> BedrockAgentCoreConfigSchema | None:
+def load_config_if_exists(config_path: Path) -> Optional[BedrockAgentCoreConfigSchema]:
     """Load configuration if file exists, otherwise return None.
 
     Args:
@@ -144,3 +146,26 @@ def merge_agent_config(
     config.default_agent = agent_name
 
     return config
+
+
+def get_agentcore_directory(project_root: Path, agent_name: str, source_path: Optional[str] = None) -> Path:
+    """Get the agentcore directory for an agent's build artifacts.
+
+    Args:
+        project_root: Project root directory (typically Path.cwd())
+        agent_name: Name of the agent
+        source_path: Optional source path configuration
+
+    Returns:
+        Path to agentcore directory:
+        - If source_path provided: {project_root}/.bedrock_agentcore/{agent_name}/
+        - Otherwise: {project_root}/ (legacy single-agent behavior)
+    """
+    if source_path:
+        # Multi-agent support: use .bedrock_agentcore/{agent_name}/ for artifact isolation
+        agentcore_dir = project_root / ".bedrock_agentcore" / agent_name
+        agentcore_dir.mkdir(parents=True, exist_ok=True)
+        return agentcore_dir
+    else:
+        # Legacy single-agent: artifacts at project root
+        return project_root

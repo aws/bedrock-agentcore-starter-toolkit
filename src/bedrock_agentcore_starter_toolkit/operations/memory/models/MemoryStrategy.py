@@ -1,6 +1,6 @@
 """Memory strategy model class for AgentCore Memory resources."""
 
-from typing import Any
+from typing import Any, Dict
 
 from .DictWrapper import DictWrapper
 
@@ -8,7 +8,7 @@ from .DictWrapper import DictWrapper
 class MemoryStrategy(DictWrapper):
     """A class representing a memory strategy."""
 
-    def __init__(self, memory_strategy: dict[str, Any]):
+    def __init__(self, memory_strategy: Dict[str, Any]):
         """Initialize MemoryStrategy with strategy data.
 
         Args:

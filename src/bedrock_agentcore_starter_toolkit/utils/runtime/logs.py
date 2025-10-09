@@ -1,6 +1,7 @@
 """Utility functions for agent log information."""
 
 from datetime import datetime, timezone
+from typing import Optional, Tuple
 
 
 def get_genai_observability_url(region: str) -> str:
@@ -15,7 +16,7 @@ def get_genai_observability_url(region: str) -> str:
     return f"https://console.aws.amazon.com/cloudwatch/home?region={region}#gen-ai-observability/agent-core"
 
 
-def get_agent_log_paths(agent_id: str, endpoint_name: str | None = None) -> tuple[str, str]:
+def get_agent_log_paths(agent_id: str, endpoint_name: Optional[str] = None) -> Tuple[str, str]:
     """Get CloudWatch log group paths for an agent.
 
     Args:

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import List, Optional
 
 import typer
 from prompt_toolkit import prompt
@@ -57,7 +58,7 @@ def _validate_requirements_file(file_path: str) -> str:
         _handle_error(str(e), e)
 
 
-def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> str | None:
+def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> Optional[str]:
     """Prompt user for requirements file path with validation."""
     response = prompt(prompt_text, completer=PathCompleter(), default=default)
 
@@ -67,17 +68,34 @@ def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> str | 
     return None
 
 
-def _handle_requirements_file_display(requirements_file: str | None, non_interactive: bool = False) -> str | None:
-    """Handle requirements file with display logic for CLI."""
+def _handle_requirements_file_display(
+    requirements_file: Optional[str], non_interactive: bool = False, source_path: Optional[str] = None
+) -> Optional[str]:
+    """Handle requirements file with display logic for CLI.
+
+    Args:
+        requirements_file: Explicit requirements file path
+        non_interactive: Whether to skip interactive prompts
+        source_path: Optional source code directory (checks here first, then falls back to project root)
+    """
     from ...utils.runtime.entrypoint import detect_dependencies
 
     if requirements_file:
         # User provided file - validate and show confirmation
         return _validate_requirements_file(requirements_file)
 
+    # Detect dependencies:
+    # - If source_path provided: check source_path only
+    # - Otherwise: check project root (Path.cwd())
+    if source_path:
+        source_dir = Path(source_path)
+        deps = detect_dependencies(source_dir)
+    else:
+        # No source_path, check project root
+        deps = detect_dependencies(Path.cwd())
+
     if non_interactive:
         # Auto-detection for non-interactive mode
-        deps = detect_dependencies(Path.cwd())
         if deps.found:
             _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
             return None  # Use detected file
@@ -85,8 +103,6 @@ def _handle_requirements_file_display(requirements_file: str | None, non_interac
             _handle_error("No requirements file specified and none found automatically")
 
     # Auto-detection with interactive prompt
-    deps = detect_dependencies(Path.cwd())
-
     if deps.found:
         console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{deps.file}[/bold]")
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
@@ -163,18 +179,20 @@ def set_default(name: str = typer.Argument(...)):
 @configure_app.callback(invoke_without_command=True)
 def configure(
     ctx: typer.Context,
-    entrypoint: str | None = typer.Option(None, "--entrypoint", "-e", help="Python file with BedrockAgentCoreApp"),
-    agent_name: str | None = typer.Option(None, "--name", "-n"),
-    execution_role: str | None = typer.Option(None, "--execution-role", "-er"),
-    code_build_execution_role: str | None = typer.Option(None, "--code-build-execution-role", "-cber"),
-    ecr_repository: str | None = typer.Option(None, "--ecr", "-ecr"),
-    container_runtime: str | None = typer.Option(None, "--container-runtime", "-ctr"),
-    requirements_file: str | None = typer.Option(None, "--requirements-file", "-rf", help="Path to requirements file"),
+    entrypoint: Optional[str] = typer.Option(None, "--entrypoint", "-e", help="Python file with BedrockAgentCoreApp"),
+    agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
+    execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
+    code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
+    ecr_repository: Optional[str] = typer.Option(None, "--ecr", "-ecr"),
+    container_runtime: Optional[str] = typer.Option(None, "--container-runtime", "-ctr"),
+    requirements_file: Optional[str] = typer.Option(
+        None, "--requirements-file", "-rf", help="Path to requirements file"
+    ),
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
-    authorizer_config: str | None = typer.Option(
+    authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
-    request_header_allowlist: str | None = typer.Option(
+    request_header_allowlist: Optional[str] = typer.Option(
         None,
         "--request-header-allowlist",
         "-rha",
@@ -182,12 +200,12 @@ def configure(
         "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    region: str | None = typer.Option(None, "--region", "-r"),
-    protocol: str | None = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
+    region: Optional[str] = typer.Option(None, "--region", "-r"),
+    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
     non_interactive: bool = typer.Option(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
-    source_path: str | None = typer.Option(None, "--source-path", "-sp", help="Path to agent source code directory"),
+    source_path: Optional[str] = typer.Option(None, "--source-path", "-sp", help="Path to agent source code directory"),
 ):
     """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
     if ctx.invoked_subcommand is not None:
@@ -235,7 +253,7 @@ def configure(
         _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive)
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Handle OAuth authorization configuration
     oauth_config = None
@@ -325,7 +343,7 @@ def configure(
 
 
 def launch(
-    agent: str | None = typer.Option(
+    agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     local: bool = typer.Option(
@@ -343,7 +361,7 @@ def launch(
         "-auc",
         help="Automatically update existing agent instead of failing with ConflictException",
     ),
-    envs: list[str] = typer.Option(  # noqa: B008
+    envs: List[str] = typer.Option(  # noqa: B008
         None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
     ),
     code_build: bool = typer.Option(
@@ -654,16 +672,16 @@ def _parse_custom_headers(headers_str: str) -> dict:
 
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
-    agent: str | None = typer.Option(
+    agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
     ),
-    session_id: str | None = typer.Option(None, "--session-id", "-s"),
-    bearer_token: str | None = typer.Option(
+    session_id: Optional[str] = typer.Option(None, "--session-id", "-s"),
+    bearer_token: Optional[str] = typer.Option(
         None, "--bearer-token", "-bt", help="Bearer token for OAuth authentication"
     ),
-    local_mode: bool | None = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
-    user_id: str | None = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
-    headers: str | None = typer.Option(
+    local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
+    user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
+    headers: Optional[str] = typer.Option(
         None,
         "--headers",
         help="Custom headers (format: 'Header1:value,Header2:value2'). "
@@ -809,10 +827,10 @@ def invoke(
 
 
 def status(
-    agent: str | None = typer.Option(
+    agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
     ),
-    verbose: bool | None = typer.Option(
+    verbose: Optional[bool] = typer.Option(
         None, "--verbose", "-v", help="Verbose json output of config, agent and endpoint status"
     ),
 ):
@@ -975,13 +993,7 @@ def status(
             Panel(
                 f"❌ [red]Status Check Failed[/red]\n\n"
                 f"Error: {str(e)}\n\n"
-                f"[bold]Check Current Resources:[/bold]\n"
-                f"• AWS Console → IAM Roles (search: AmazonBedrockAgentCore)\n"
-                f"• AWS Console → ECR Repositories\n"
-                f"• AWS Console → CodeBuild Projects\n"
-                f"• Local config: .bedrock_agentcore.yaml\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"   [cyan]agentcore destroy --dry-run[/cyan]  # See what exists\n"
                 f"   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
                 f"   [cyan]agentcore launch[/cyan]",
                 title="❌ Status Error",
@@ -994,14 +1006,7 @@ def status(
             Panel(
                 f"❌ [red]Status Check Failed[/red]\n\n"
                 f"Unexpected error: {str(e)}\n\n"
-                f"[bold]Check Current Resources:[/bold]\n"
-                f"• AWS Console → IAM Roles (search: AmazonBedrockAgentCore)\n"
-                f"• AWS Console → ECR Repositories\n"
-                f"• AWS Console → CodeBuild Projects\n"
-                f"• AWS Console → Bedrock AgentCore Runtime\n"
-                f"• Local config: .bedrock_agentcore.yaml\n\n"
-                f"[bold]Recovery Options:[/bold]\n"
-                f"   [cyan]agentcore destroy --dry-run[/cyan]  # See what exists\n"
+                f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
                 f"   [cyan]agentcore launch[/cyan]",
                 title="❌ Status Error",
@@ -1012,7 +1017,7 @@ def status(
 
 
 def destroy(
-    agent: str | None = typer.Option(
+    agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     dry_run: bool = typer.Option(
@@ -1158,19 +1163,3 @@ def destroy(
         _handle_error(f"Destruction failed: {e}", e)
     except Exception as e:
         _handle_error(f"Destruction failed: {e}", e)
-
-
-def format_enhanced_status(status_info: dict) -> str:
-    """Format enhanced status information for Rich display.
-
-    Args:
-        status_info: Dictionary with enhanced status information
-
-    Returns:
-        Formatted status string
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented to provide Rich formatting for enhanced status
-    raise NotImplementedError("Enhanced status formatting not implemented")

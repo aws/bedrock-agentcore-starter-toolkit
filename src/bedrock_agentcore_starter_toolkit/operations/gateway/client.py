@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
-from typing import Any
+from typing import Any, Dict, Optional
 
 import boto3
 import urllib3
@@ -23,7 +23,7 @@ from .exceptions import GatewaySetupException
 class GatewayClient:
     """High-level client for Bedrock AgentCore Gateway operations."""
 
-    def __init__(self, region_name: str | None = None, endpoint_url: str | None = None):
+    def __init__(self, region_name: Optional[str] = None, endpoint_url: Optional[str] = None):
         """Initialize the Gateway client.
 
         Args:
@@ -238,7 +238,7 @@ class GatewayClient:
         except Exception as e:
             self.logger.warning("⚠️ IAM role update failed: %s. Continuing with best effort.", str(e))
 
-    def cleanup_gateway(self, gateway_id: str, client_info: dict | None = None) -> None:
+    def cleanup_gateway(self, gateway_id: str, client_info: Optional[Dict] = None) -> None:
         """Remove all resources associated with a gateway.
 
         :param gateway_id: the ID of the gateway to clean up
@@ -315,7 +315,7 @@ class GatewayClient:
 
         self.logger.info("✅ Cleanup complete")
 
-    def __handle_lambda_target_creation(self, role_arn: str) -> dict[str, Any]:
+    def __handle_lambda_target_creation(self, role_arn: str) -> Dict[str, Any]:
         """Create a test lambda.
 
         :return: the targetConfiguration for the Lambda.
@@ -327,8 +327,8 @@ class GatewayClient:
         }
 
     def __handle_openapi_target_credential_provider_creation(
-        self, name: str, credentials: dict[str, Any]
-    ) -> dict[str, Any]:
+        self, name: str, credentials: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate the credential provider config for open api target.
 
         :param name: the name of the target.
@@ -395,7 +395,7 @@ class GatewayClient:
         while True:
             response = method(**identifiers)
             status = response.get("status", "UNKNOWN")
-            if status != "CREATING":
+            if not status == "CREATING":
                 break
             time.sleep(delay)
             attempts += 1
@@ -412,7 +412,7 @@ class GatewayClient:
         """Generate a random ID for Cognito resources."""
         return str(uuid.uuid4())[:8]
 
-    def create_oauth_authorizer_with_cognito(self, gateway_name: str) -> dict[str, Any]:
+    def create_oauth_authorizer_with_cognito(self, gateway_name: str) -> Dict[str, Any]:
         """Creates Cognito OAuth authorization server.
 
         Note: This implementation uses AdminCreateUserOnly mode where only administrators
@@ -541,7 +541,7 @@ class GatewayClient:
         except Exception as e:
             raise GatewaySetupException(f"Failed to create Cognito resources: {e}") from e
 
-    def get_access_token_for_cognito(self, client_info: dict[str, Any]) -> str:
+    def get_access_token_for_cognito(self, client_info: Dict[str, Any]) -> str:
         """Get OAuth token using client credentials flow.
 
         :param client_info: credentials and context needed to get the access token

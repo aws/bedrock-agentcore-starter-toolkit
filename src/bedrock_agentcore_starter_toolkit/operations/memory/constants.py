@@ -1,6 +1,7 @@
 """Constants for Bedrock AgentCore Memory SDK."""
 
 from enum import Enum
+from typing import Optional
 
 
 class StrategyType(Enum):
@@ -11,7 +12,7 @@ class StrategyType(Enum):
     USER_PREFERENCE = "userPreferenceMemoryStrategy"
     CUSTOM = "customMemoryStrategy"
 
-    def extraction_wrapper_key(self) -> str | None:
+    def extraction_wrapper_key(self) -> Optional[str]:
         """Get the extraction wrapper key for this strategy type."""
         extraction_keys = {
             StrategyType.SEMANTIC: "semanticExtractionConfiguration",
@@ -19,7 +20,7 @@ class StrategyType(Enum):
         }
         return extraction_keys.get(self)
 
-    def consolidation_wrapper_key(self) -> str | None:
+    def consolidation_wrapper_key(self) -> Optional[str]:
         """Get the consolidation wrapper key for this strategy type."""
         # Only SUMMARY strategy has a consolidation wrapper key
         if self == StrategyType.SUMMARY:
@@ -36,7 +37,7 @@ class StrategyType(Enum):
         }
         return strategy_mapping[self]
 
-    def get_override_type(self) -> str | None:
+    def get_override_type(self) -> Optional[str]:
         """Get the override type for custom strategies."""
         # This method is primarily for CUSTOM strategy type
         # The actual override type would be determined by context
@@ -52,7 +53,7 @@ class OverrideType(Enum):
     SUMMARY_OVERRIDE = "SUMMARY_OVERRIDE"
     USER_PREFERENCE_OVERRIDE = "USER_PREFERENCE_OVERRIDE"
 
-    def extraction_wrapper_key(self) -> str | None:
+    def extraction_wrapper_key(self) -> Optional[str]:
         """Get the extraction wrapper key for this override type."""
         extraction_keys = {
             OverrideType.SEMANTIC_OVERRIDE: "semanticExtractionOverride",
@@ -60,7 +61,7 @@ class OverrideType(Enum):
         }
         return extraction_keys.get(self)
 
-    def consolidation_wrapper_key(self) -> str | None:
+    def consolidation_wrapper_key(self) -> Optional[str]:
         """Get the consolidation wrapper key for this override type."""
         consolidation_keys = {
             OverrideType.SEMANTIC_OVERRIDE: "semanticConsolidationOverride",

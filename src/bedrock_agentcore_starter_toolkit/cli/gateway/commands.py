@@ -1,6 +1,7 @@
 """Bedrock AgentCore CLI - Command line interface for Bedrock AgentCore."""
 
 import json
+from typing import Optional
 
 import typer
 
@@ -14,10 +15,10 @@ gateway_app = typer.Typer(help="Manage Bedrock AgentCore Gateways")
 @gateway_app.command()
 def create_mcp_gateway(
     region: str = None,
-    name: str | None = None,
-    role_arn: str | None = None,
-    authorizer_config: str | None = None,
-    enable_semantic_search: bool | None = typer.Option(True, "--enable_semantic_search", "-sem"),
+    name: Optional[str] = None,
+    role_arn: Optional[str] = None,
+    authorizer_config: Optional[str] = None,
+    enable_semantic_search: Optional[bool] = typer.Option(True, "--enable_semantic_search", "-sem"),
 ) -> None:
     """Creates an MCP Gateway.
 
@@ -42,10 +43,10 @@ def create_mcp_gateway_target(
     gateway_url: str = None,
     role_arn: str = None,
     region: str = None,
-    name: str | None = None,
-    target_type: str | None = None,
-    target_payload: str | None = None,
-    credentials: str | None = None,
+    name: Optional[str] = None,
+    target_type: Optional[str] = None,
+    target_payload: Optional[str] = None,
+    credentials: Optional[str] = None,
 ) -> None:
     """Creates an MCP Gateway Target.
 

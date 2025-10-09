@@ -3,7 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...services.ecr import get_account_id, get_region
@@ -27,21 +27,21 @@ log = logging.getLogger(__name__)
 def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
-    execution_role: str | None = None,
-    code_build_execution_role: str | None = None,
-    ecr_repository: str | None = None,
-    container_runtime: str | None = None,
+    execution_role: Optional[str] = None,
+    code_build_execution_role: Optional[str] = None,
+    ecr_repository: Optional[str] = None,
+    container_runtime: Optional[str] = None,
     auto_create_ecr: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
-    requirements_file: str | None = None,
-    authorizer_configuration: dict[str, Any] | None = None,
-    request_header_configuration: dict[str, Any] | None = None,
+    requirements_file: Optional[str] = None,
+    authorizer_configuration: Optional[Dict[str, Any]] = None,
+    request_header_configuration: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
-    region: str | None = None,
-    protocol: str | None = None,
+    region: Optional[str] = None,
+    protocol: Optional[str] = None,
     non_interactive: bool = False,
-    source_path: str | None = None,
+    source_path: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -75,10 +75,13 @@ def configure_bedrock_agentcore(
         log.setLevel(logging.INFO)
     # Log agent name at the start of configuration
     log.info("Configuring BedrockAgentCore agent: %s", agent_name)
+
+    # Build directory is always project root for module validation and dependency detection
     build_dir = Path.cwd()
 
     if verbose:
         log.debug("Build directory: %s", build_dir)
+        log.debug("Source path: %s", source_path or "None (using build directory)")
         log.debug("Bedrock AgentCore name: %s", agent_name)
         log.debug("Entrypoint path: %s", entrypoint_path)
 
@@ -207,14 +210,52 @@ def configure_bedrock_agentcore(
         requirements_file,
         memory_id,
         memory_name,
+        source_path,
     )
 
-    # Check if .dockerignore was created
-    dockerignore_path = build_dir / ".dockerignore"
+    # If source_path is provided, move Dockerfile to .bedrock_agentcore/{agent_name}/ directory
+    if source_path:
+        import shutil
 
-    log.info("Generated Dockerfile: %s", dockerfile_path)
-    if dockerignore_path.exists():
-        log.info("Generated .dockerignore: %s", dockerignore_path)
+        from ...utils.runtime.config import get_agentcore_directory
+
+        agentcore_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
+        final_dockerfile_path = agentcore_dir / "Dockerfile"
+
+        # Move Dockerfile from project root to .bedrock_agentcore directory
+        shutil.move(str(dockerfile_path), str(final_dockerfile_path))
+        dockerfile_path = final_dockerfile_path
+        log.info("Generated Dockerfile: %s", dockerfile_path)
+    else:
+        # Legacy behavior: Dockerfile at project root
+        log.info("Generated Dockerfile: %s", dockerfile_path)
+
+    # Handle .dockerignore location based on source_path
+    # If source_path provided, move .dockerignore to source directory (where code is)
+    # Otherwise, keep at project root (legacy behavior)
+    if source_path:
+        import shutil
+
+        project_dockerignore = build_dir / ".dockerignore"
+        source_dockerignore = Path(source_path) / ".dockerignore"
+
+        if project_dockerignore.exists():
+            if not source_dockerignore.exists():
+                # Move .dockerignore to source directory
+                shutil.move(str(project_dockerignore), str(source_dockerignore))
+                log.info("Generated .dockerignore: %s", source_dockerignore)
+            else:
+                # Remove project root version if source already has one
+                project_dockerignore.unlink()
+                log.info("Using existing .dockerignore: %s", source_dockerignore)
+
+        # Set dockerignore_path to source location for ConfigureResult
+        dockerignore_path = source_dockerignore
+    else:
+        # Legacy: .dockerignore at project root
+        dockerignore_path = build_dir / ".dockerignore"
+        if dockerignore_path.exists():
+            log.info("Generated .dockerignore: %s", dockerignore_path)
 
     # Handle project configuration (named agents)
     config_path = build_dir / ".bedrock_agentcore.yaml"
@@ -227,7 +268,10 @@ def configure_bedrock_agentcore(
     entrypoint_path_str = entrypoint_path.as_posix()
 
     # Determine entrypoint format
-    entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}" if bedrock_agentcore_name else entrypoint_path_str
+    if bedrock_agentcore_name:
+        entrypoint = f"{entrypoint_path_str}:{bedrock_agentcore_name}"
+    else:
+        entrypoint = entrypoint_path_str
 
     if verbose:
         log.debug("Using entrypoint format: %s", entrypoint)
@@ -297,58 +341,6 @@ def configure_bedrock_agentcore(
     )
 
 
-def configure_agent_enhanced(agent_name: str, entrypoint: str, source_path: str, output_directory: str) -> dict:
-    """Enhanced agent configuration with source path tracking.
-
-    Args:
-        agent_name: Name of the agent
-        entrypoint: Agent entrypoint file
-        source_path: Path to agent source code
-        output_directory: Directory for configuration output
-
-    Returns:
-        Dictionary with configuration result
-
-    Raises:
-        NotImplementedError: Enhanced configure operation not yet implemented
-    """
-    # This will be implemented to provide enhanced configuration
-    raise NotImplementedError("Enhanced configure operation not implemented")
-
-
-def handle_mixed_agents(agent_names: list[str]) -> dict:
-    """Handle operations on mixed legacy and enhanced agents.
-
-    Args:
-        agent_names: List of agent names to handle
-
-    Returns:
-        Dictionary with operation results for each agent
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented to handle mixed configurations
-    raise NotImplementedError("Mixed agent handling not implemented")
-
-
-def configure_with_source_path(agent_name: str, source_path: str) -> dict:
-    """Configure agent with source path.
-
-    Args:
-        agent_name: Name of the agent
-        source_path: Path to source code
-
-    Returns:
-        Configuration result
-
-    Raises:
-        NotImplementedError: Feature not yet implemented
-    """
-    # This will be implemented for source path configuration
-    raise NotImplementedError("Source path configuration not implemented")
-
-
 AGENT_NAME_REGEX = r"^[a-zA-Z][a-zA-Z0-9_]{0,47}$"
 AGENT_NAME_ERROR = (
     "Invalid agent name. Must start with a letter, contain only letters/numbers/underscores, "
@@ -356,7 +348,7 @@ AGENT_NAME_ERROR = (
 )
 
 
-def validate_agent_name(name: str) -> tuple[bool, str]:
+def validate_agent_name(name: str) -> Tuple[bool, str]:
     """Check if name matches the pattern [a-zA-Z][a-zA-Z0-9_]{0,47}.
 
     This pattern requires:
