@@ -75,10 +75,13 @@ def configure_bedrock_agentcore(
         log.setLevel(logging.INFO)
     # Log agent name at the start of configuration
     log.info("Configuring BedrockAgentCore agent: %s", agent_name)
+
+    # Build directory is always project root for module validation and dependency detection
     build_dir = Path.cwd()
 
     if verbose:
         log.debug("Build directory: %s", build_dir)
+        log.debug("Source path: %s", source_path or "None (using build directory)")
         log.debug("Bedrock AgentCore name: %s", agent_name)
         log.debug("Entrypoint path: %s", entrypoint_path)
 
@@ -207,14 +210,52 @@ def configure_bedrock_agentcore(
         requirements_file,
         memory_id,
         memory_name,
+        source_path,
     )
 
-    # Check if .dockerignore was created
-    dockerignore_path = build_dir / ".dockerignore"
+    # If source_path is provided, move Dockerfile to .bedrock_agentcore/{agent_name}/ directory
+    if source_path:
+        import shutil
 
-    log.info("Generated Dockerfile: %s", dockerfile_path)
-    if dockerignore_path.exists():
-        log.info("Generated .dockerignore: %s", dockerignore_path)
+        from ...utils.runtime.config import get_agentcore_directory
+
+        agentcore_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
+        final_dockerfile_path = agentcore_dir / "Dockerfile"
+
+        # Move Dockerfile from project root to .bedrock_agentcore directory
+        shutil.move(str(dockerfile_path), str(final_dockerfile_path))
+        dockerfile_path = final_dockerfile_path
+        log.info("Generated Dockerfile: %s", dockerfile_path)
+    else:
+        # Legacy behavior: Dockerfile at project root
+        log.info("Generated Dockerfile: %s", dockerfile_path)
+
+    # Handle .dockerignore location based on source_path
+    # If source_path provided, move .dockerignore to source directory (where code is)
+    # Otherwise, keep at project root (legacy behavior)
+    if source_path:
+        import shutil
+
+        project_dockerignore = build_dir / ".dockerignore"
+        source_dockerignore = Path(source_path) / ".dockerignore"
+
+        if project_dockerignore.exists():
+            if not source_dockerignore.exists():
+                # Move .dockerignore to source directory
+                shutil.move(str(project_dockerignore), str(source_dockerignore))
+                log.info("Generated .dockerignore: %s", source_dockerignore)
+            else:
+                # Remove project root version if source already has one
+                project_dockerignore.unlink()
+                log.info("Using existing .dockerignore: %s", source_dockerignore)
+
+        # Set dockerignore_path to source location for ConfigureResult
+        dockerignore_path = source_dockerignore
+    else:
+        # Legacy: .dockerignore at project root
+        dockerignore_path = build_dir / ".dockerignore"
+        if dockerignore_path.exists():
+            log.info("Generated .dockerignore: %s", dockerignore_path)
 
     # Handle project configuration (named agents)
     config_path = build_dir / ".bedrock_agentcore.yaml"

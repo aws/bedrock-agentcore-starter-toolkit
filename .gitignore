@@ -11,7 +11,7 @@ __pycache__*
 dist
 .dockerignore
 .bedrock_agentcore.yaml
-.bedrock_agentcore/*
+.bedrock_agentcore/
 .ipynb_checkpoints
 Dockerfile
 *.iml

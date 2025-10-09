@@ -146,3 +146,26 @@ def merge_agent_config(
     config.default_agent = agent_name
 
     return config
+
+
+def get_agentcore_directory(project_root: Path, agent_name: str, source_path: Optional[str] = None) -> Path:
+    """Get the agentcore directory for an agent's build artifacts.
+
+    Args:
+        project_root: Project root directory (typically Path.cwd())
+        agent_name: Name of the agent
+        source_path: Optional source path configuration
+
+    Returns:
+        Path to agentcore directory:
+        - If source_path provided: {project_root}/.bedrock_agentcore/{agent_name}/
+        - Otherwise: {project_root}/ (legacy single-agent behavior)
+    """
+    if source_path:
+        # Multi-agent support: use .bedrock_agentcore/{agent_name}/ for artifact isolation
+        agentcore_dir = project_root / ".bedrock_agentcore" / agent_name
+        agentcore_dir.mkdir(parents=True, exist_ok=True)
+        return agentcore_dir
+    else:
+        # Legacy single-agent: artifacts at project root
+        return project_root

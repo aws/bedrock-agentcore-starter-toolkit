@@ -304,7 +304,6 @@ class ConfigurationManager:
 
     def _prompt_new_memory_config(self) -> Tuple[str, str]:
         """Prompt for new memory configuration."""
-        console.print("\n🧠 [cyan]Memory Configuration[/cyan]")
         console.print("[green]✓ Short-term memory is enabled by default[/green]")
         console.print("  • Stores conversations within sessions")
         console.print("  • Provides immediate context recall")

@@ -68,6 +68,30 @@ def create_test_agent_file(tmp_path, filename="test_agent.py", content="# test a
     return agent_file
 
 
+def create_test_dockerfile(tmp_path, agent_name="test-agent", source_path=None):
+    """Create a Dockerfile in the expected location for tests.
+
+    Args:
+        tmp_path: Test temporary directory
+        agent_name: Name of the agent
+        source_path: Optional source path (if using multi-agent setup)
+
+    Returns:
+        Path to created Dockerfile
+    """
+    if source_path:
+        # Multi-agent: Dockerfile in .bedrock_agentcore/{agent_name}/
+        dockerfile_dir = tmp_path / ".bedrock_agentcore" / agent_name
+        dockerfile_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        # Legacy: Dockerfile at project root
+        dockerfile_dir = tmp_path
+
+    dockerfile = dockerfile_dir / "Dockerfile"
+    dockerfile.write_text("FROM python:3.10\nCOPY . /app\n")
+    return dockerfile
+
+
 class MockAWSClientFactory:
     """Factory for creating consistent AWS client mocks."""
 
@@ -157,6 +181,7 @@ class TestLaunchBedrockAgentCore:
         """Test local deployment."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])

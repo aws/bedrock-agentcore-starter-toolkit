@@ -162,7 +162,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "autopep8", specifier = ">=2.3.2" },
-    { name = "bedrock-agentcore", specifier = ">=0.1.4" },
+    { name = "bedrock-agentcore", specifier = ">=0.1.7" },
     { name = "boto3", specifier = ">=1.40.35" },
     { name = "botocore", specifier = ">=1.40.35" },
     { name = "docstring-parser", specifier = ">=0.15,<1.0" },

@@ -6,6 +6,7 @@ import os
 import tempfile
 import time
 import zipfile
+from importlib.resources import files
 from pathlib import Path
 from typing import List, Optional
 
@@ -70,20 +71,20 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str, source_dir: str = ".", project_root: Optional[str] = None) -> str:
+    def upload_source(self, agent_name: str, source_dir: str = ".", dockerfile_dir: Optional[str] = None) -> str:
         """Upload source directory to S3, respecting .dockerignore patterns.
 
         Args:
             agent_name: Name of the agent
             source_dir: Directory to upload (defaults to current directory)
-            project_root: Optional project root directory (for finding Dockerfile)
+            dockerfile_dir: Directory containing Dockerfile (may be different from source_dir)
         """
         account_id = self.account_id
         bucket_name = self.ensure_source_bucket(account_id)
         self.source_bucket = bucket_name
 
-        # Parse .dockerignore patterns from source directory
-        ignore_patterns = self._parse_dockerignore(source_dir)
+        # Parse .dockerignore patterns from template for consistent filtering
+        ignore_patterns = self._parse_dockerignore()
 
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
             try:
@@ -114,27 +115,15 @@ class CodeBuildService:
                             file_path = Path(root) / file
                             zipf.write(file_path, file_rel_path)
 
-                    # If source_dir is different from project_root, check for Dockerfile
-                    if project_root and source_dir != project_root:
-                        source_path = Path(source_dir)
-                        project_path = Path(project_root)
+                    # If Dockerfile is in a different directory, include it in the zip
+                    if dockerfile_dir and source_dir != dockerfile_dir:
+                        dockerfile_path = Path(dockerfile_dir) / "Dockerfile"
+                        source_dockerfile = Path(source_dir) / "Dockerfile"
 
-                        # Check if Dockerfile exists in project root but not in source_dir
-                        project_dockerfile = project_path / "Dockerfile"
-                        source_dockerfile = source_path / "Dockerfile"
-
-                        if project_dockerfile.exists() and not source_dockerfile.exists():
-                            # Include the Dockerfile from project root
-                            zipf.write(project_dockerfile, "Dockerfile")
-                            self.logger.info("Including Dockerfile from project root in source.zip")
-
-                        # Also check for .dockerignore if it exists in project root
-                        project_dockerignore = project_path / ".dockerignore"
-                        source_dockerignore = source_path / ".dockerignore"
-
-                        if project_dockerignore.exists() and not source_dockerignore.exists():
-                            zipf.write(project_dockerignore, ".dockerignore")
-                            self.logger.info("Including .dockerignore from project root in source.zip")
+                        if dockerfile_path.exists() and not source_dockerfile.exists():
+                            # Include the Dockerfile from dockerfile_dir
+                            zipf.write(dockerfile_path, "Dockerfile")
+                            self.logger.info("Including Dockerfile from %s in source.zip", dockerfile_dir)
 
                 # Create agent-organized S3 key: agentname/source.zip (fixed naming for cache consistency)
                 s3_key = f"{agent_name}/source.zip"
@@ -308,22 +297,33 @@ phases:
       - echo "Build completed at $(date)"
 """
 
-    def _parse_dockerignore(self, source_dir: str = ".") -> List[str]:
-        """Parse .dockerignore file and return list of patterns."""
-        dockerignore_path = Path(source_dir) / ".dockerignore"
-        patterns = []
+    def _parse_dockerignore(self) -> List[str]:
+        """Parse .dockerignore patterns from template for consistent filtering.
 
-        if dockerignore_path.exists():
-            with open(dockerignore_path, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        patterns.append(line)
+        Always uses the dockerignore.template to ensure consistent file filtering
+        during zip creation, regardless of source_path configuration.
+        """
+        # Use dockerignore.template from package resources
+        try:
+            template_content = (
+                files("bedrock_agentcore_starter_toolkit")
+                .joinpath("utils/runtime/templates/dockerignore.template")
+                .read_text()
+            )
 
-            self.logger.info("Using .dockerignore with %d patterns", len(patterns))
-        else:
-            # Default patterns if no .dockerignore
-            patterns = [
+            patterns = []
+            for line in template_content.splitlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    patterns.append(line)
+
+            self.logger.info("Using dockerignore.template with %d patterns for zip filtering", len(patterns))
+            return patterns
+
+        except Exception as e:
+            # Fallback to minimal default patterns if template not found
+            self.logger.warning("Could not load dockerignore.template (%s), using minimal default patterns", e)
+            return [
                 ".git",
                 "__pycache__",
                 "*.pyc",
@@ -334,9 +334,6 @@ phases:
                 "*.egg-info",
                 ".bedrock_agentcore.yaml",  # Always exclude config
             ]
-            self.logger.info("No .dockerignore found, using default exclude patterns")
-
-        return patterns
 
     def _should_ignore(self, path: str, patterns: List[str], is_dir: bool = False) -> bool:
         """Check if path should be ignored based on dockerignore patterns."""

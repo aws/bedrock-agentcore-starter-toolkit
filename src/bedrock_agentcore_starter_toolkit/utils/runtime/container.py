@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from jinja2 import Template
+from rich.console import Console
 
-from ...cli.common import _handle_warn
+from ...cli.common import _handle_warn, _print_success
 from .entrypoint import detect_dependencies, get_python_version
+
+console = Console()
 
 log = logging.getLogger(__name__)
 
@@ -40,12 +43,9 @@ class ContainerRuntime:
                     break
             else:
                 # Informational message - default CodeBuild deployment works fine
-                _handle_warn(
-                    "ℹ️  No container engine found (Docker/Finch/Podman not installed)\n"
-                    "✅ Default deployment uses CodeBuild (no container engine needed)\n"
-                    "💡 Run 'agentcore launch' for cloud-based building and deployment\n"
-                    "💡 For local builds, install Docker, Finch, or Podman"
-                )
+                console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
+                _print_success("Default deployment uses CodeBuild (no container engine needed)")
+                console.print("[dim]For local builds, install Docker, Finch, or Podman[/dim]")
                 self.runtime = "none"
                 self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
@@ -55,10 +55,9 @@ class ContainerRuntime:
             else:
                 # Convert hard error to warning - suggest CodeBuild instead
                 _handle_warn(
-                    f"⚠️  {runtime_type.capitalize()} is not installed\n"
-                    "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                    "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
-                    f"💡 For local builds, please install {runtime_type.capitalize()}"
+                    f"{runtime_type.capitalize()} is not installed\n"
+                    "Recommendation: Use CodeBuild for building containers in the cloud\n"
+                    f"For local builds, please install {runtime_type.capitalize()}"
                 )
                 self.runtime = "none"
                 self.has_local_runtime = False
@@ -110,8 +109,21 @@ class ContainerRuntime:
         requirements_file: Optional[str] = None,
         memory_id: Optional[str] = None,
         memory_name: Optional[str] = None,
+        source_path: Optional[str] = None,
     ) -> Path:
-        """Generate Dockerfile from template."""
+        """Generate Dockerfile from template.
+
+        Args:
+            agent_path: Path to agent entrypoint file
+            output_dir: Output directory for Dockerfile (project root)
+            agent_name: Name of the agent
+            aws_region: AWS region
+            enable_observability: Whether to enable observability
+            requirements_file: Optional explicit requirements file path
+            memory_id: Optional memory ID
+            memory_name: Optional memory name
+            source_path: Optional source code directory (for dependency detection)
+        """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 
@@ -138,17 +150,31 @@ class ContainerRuntime:
         # Validate module path before generating Dockerfile
         self._validate_module_path(agent_path, output_dir)
 
-        # Calculate module path relative to project root
-        agent_module_path = self._get_module_path(agent_path, output_dir)
+        # Calculate module path relative to Docker build context
+        # If source_path provided: module path relative to source_path (Docker build context)
+        # Otherwise: module path relative to project root
+        build_context_root = Path(source_path) if source_path else output_dir
+        agent_module_path = self._get_module_path(agent_path, build_context_root)
 
         wheelhouse_dir = output_dir / "wheelhouse"
 
-        # Detect dependencies using the new DependencyInfo class
-        deps = detect_dependencies(output_dir, explicit_file=requirements_file)
+        # Detect dependencies:
+        # - If source_path provided: check source_path only
+        # - Otherwise: check project root (output_dir)
+        # - If explicit requirements_file provided: use that regardless
+        if source_path and not requirements_file:
+            # Check source_path directory for dependencies
+            source_dir = Path(source_path)
+            deps = detect_dependencies(source_dir, explicit_file=None)
+        else:
+            # Check project root for dependencies (or use explicit file)
+            deps = detect_dependencies(output_dir, explicit_file=requirements_file)
 
         # Add logic to avoid duplicate installation
+        # Check for pyproject.toml in the appropriate directory
         has_current_package = False
-        if (output_dir / "pyproject.toml").exists():
+        check_dir = Path(source_path) if source_path else output_dir
+        if (check_dir / "pyproject.toml").exists():
             # Only install current package if deps isn't already pointing to it
             if not (deps.found and deps.is_root_package):
                 has_current_package = True

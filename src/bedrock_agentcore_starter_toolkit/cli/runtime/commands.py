@@ -68,17 +68,34 @@ def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> Option
     return None
 
 
-def _handle_requirements_file_display(requirements_file: Optional[str], non_interactive: bool = False) -> Optional[str]:
-    """Handle requirements file with display logic for CLI."""
+def _handle_requirements_file_display(
+    requirements_file: Optional[str], non_interactive: bool = False, source_path: Optional[str] = None
+) -> Optional[str]:
+    """Handle requirements file with display logic for CLI.
+
+    Args:
+        requirements_file: Explicit requirements file path
+        non_interactive: Whether to skip interactive prompts
+        source_path: Optional source code directory (checks here first, then falls back to project root)
+    """
     from ...utils.runtime.entrypoint import detect_dependencies
 
     if requirements_file:
         # User provided file - validate and show confirmation
         return _validate_requirements_file(requirements_file)
 
+    # Detect dependencies:
+    # - If source_path provided: check source_path only
+    # - Otherwise: check project root (Path.cwd())
+    if source_path:
+        source_dir = Path(source_path)
+        deps = detect_dependencies(source_dir)
+    else:
+        # No source_path, check project root
+        deps = detect_dependencies(Path.cwd())
+
     if non_interactive:
         # Auto-detection for non-interactive mode
-        deps = detect_dependencies(Path.cwd())
         if deps.found:
             _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
             return None  # Use detected file
@@ -86,8 +103,6 @@ def _handle_requirements_file_display(requirements_file: Optional[str], non_inte
             _handle_error("No requirements file specified and none found automatically")
 
     # Auto-detection with interactive prompt
-    deps = detect_dependencies(Path.cwd())
-
     if deps.found:
         console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{deps.file}[/bold]")
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
@@ -238,7 +253,7 @@ def configure(
         _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive)
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Handle OAuth authorization configuration
     oauth_config = None

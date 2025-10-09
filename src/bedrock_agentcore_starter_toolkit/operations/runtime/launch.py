@@ -488,14 +488,14 @@ def launch_bedrock_agentcore(
     tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"
 
     # Step 1: Build Docker image (only if we need it)
-    # When using source_path, we need to specify the Dockerfile location separately
-    dockerfile_path = None
-    if agent_config.source_path:
-        # Check if Dockerfile exists in project root (created by configure)
-        project_dockerfile = config_path.parent / "Dockerfile"
-        if project_dockerfile.exists():
-            dockerfile_path = project_dockerfile
-            log.info("Using Dockerfile from project root: %s", dockerfile_path)
+    # When using source_path, Dockerfile is in .bedrock_agentcore/{agent_name}/ directory
+    from ...utils.runtime.config import get_agentcore_directory
+
+    dockerfile_dir = get_agentcore_directory(config_path.parent, agent_name, agent_config.source_path)
+    dockerfile_path = dockerfile_dir / "Dockerfile"
+
+    if not dockerfile_path.exists():
+        raise RuntimeError(f"Dockerfile not found at {dockerfile_path}. Please run 'agentcore configure' first.")
 
     success, output = runtime.build(build_dir, tag, dockerfile_path=dockerfile_path)
     if not success:
@@ -631,10 +631,14 @@ def _execute_codebuild_workflow(
 
         # Get source directory - use source_path if configured, otherwise use current directory
         source_dir = str(Path(agent_config.source_path)) if agent_config.source_path else "."
-        # Pass project root so Dockerfile can be included if needed
-        project_root = str(config_path.parent)
+
+        # Get Dockerfile directory - use agentcore directory if source_path provided
+        from ...utils.runtime.config import get_agentcore_directory
+
+        dockerfile_dir = get_agentcore_directory(config_path.parent, agent_name, agent_config.source_path)
+
         source_location = codebuild_service.upload_source(
-            agent_name=agent_name, source_dir=source_dir, project_root=project_root
+            agent_name=agent_name, source_dir=source_dir, dockerfile_dir=str(dockerfile_dir)
         )
 
         # Use cached project name from config if available
@@ -653,7 +657,7 @@ def _execute_codebuild_workflow(
 
     except Exception as e:
         if created_resources:
-            log.warning("Launch failed after creating the following resources: %s", created_resources)
+            log.error("Launch failed after creating the following resources: %s. Error: %s", created_resources, str(e))
             raise RuntimeToolkitException("Launch failed", created_resources) from e
         raise
 
