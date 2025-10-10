@@ -1410,48 +1410,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permissions-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      Permissions Reference
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Permissions Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#developer-permissions-for-starter-toolkit" class="md-nav__link">
-    <span class="md-ellipsis">
-      Developer Permissions for Starter Toolkit
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#auto-generated-execution-role" class="md-nav__link">
-    <span class="md-ellipsis">
-      Auto-Generated Execution Role
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#understanding-memory-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      Understanding Memory Selection
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       Troubleshooting
@@ -1460,6 +1418,24 @@
   
     <nav class="md-nav" aria-label="Troubleshooting">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-configuration-not-appearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Configuration Not Appearing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-misconfiguration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Region Misconfiguration
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#memory-issues" class="md-nav__link">
@@ -2133,48 +2109,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#permissions-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      Permissions Reference
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Permissions Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#developer-permissions-for-starter-toolkit" class="md-nav__link">
-    <span class="md-ellipsis">
-      Developer Permissions for Starter Toolkit
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#auto-generated-execution-role" class="md-nav__link">
-    <span class="md-ellipsis">
-      Auto-Generated Execution Role
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#understanding-memory-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      Understanding Memory Selection
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       Troubleshooting
@@ -2183,6 +2117,24 @@
   
     <nav class="md-nav" aria-label="Troubleshooting">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#memory-configuration-not-appearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Configuration Not Appearing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-misconfiguration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Region Misconfiguration
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#memory-issues" class="md-nav__link">
@@ -2245,20 +2197,30 @@
 <li><strong>Code Interpreter</strong>: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a></li>
 <li><strong>Observability</strong>: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a> for more details.</li>
 </ul>
+<p>Updates to this quickstart example with AgentCore Gateway and Identity are coming soon. To integrate these services now, refer to the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">Identity quickstart</a>.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>AWS Permissions</strong>: If you are a root user or using admin credentials, you can skip this prerequisite. If you need specific permissions to use the starter toolkit, see the <a href="#permissions-reference">Permissions Reference</a> section for the complete IAM policy.</li>
-<li>AWS CLI configured (<code>aws configure</code>)</li>
+<li><strong>AWS Permissions</strong>: If you are a root user or using admin credentials, you can skip this prerequisite. Otherwise, attach the required IAM policy to your IAM user or role. For the complete policy, see <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit">Starter toolkit permissions</a> in the AWS documentation.</li>
+<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">AWS CLI version 2.0 or later</a> configured (<code>aws configure</code>)</li>
 <li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
 <li>Python 3.10 or newer</li>
 </ul>
+<blockquote>
+<p><strong>Important: Ensure AWS Region Consistency</strong></p>
+<p>Ensure the following are all configured to use the <strong>same AWS region</strong>:</p>
+<ul>
+<li>Your <code>aws configure</code> default region</li>
+<li>The region where you’ve enabled Bedrock model access</li>
+<li>All resources created during deployment will use this region</li>
+</ul>
+</blockquote>
 <h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Create virtual environment</span>
 python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
 <span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
 
-<span class="c1"># Install required packages</span>
-pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>strands-agents<span class="w"> </span>boto3
+<span class="c1"># Install required packages (version 0.1.21 or later)</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span><span class="w"> </span>strands-agents<span class="w"> </span>boto3
 </code></pre></div>
 <h2 id="step-1-create-the-agent">Step 1: Create the Agent<a class="headerlink" href="#step-1-create-the-agent" title="Permanent link">&para;</a></h2>
 <p>Create <code>agentcore_starter_strands.py</code>:</p>
@@ -2275,7 +2237,7 @@ pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore-star
 <span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
 
 <span class="n">MEMORY_ID</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BEDROCK_AGENTCORE_MEMORY_ID&quot;</span><span class="p">)</span>
-<span class="n">REGION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
+<span class="n">REGION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">)</span>
 <span class="n">MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;us.anthropic.claude-3-7-sonnet-20250219-v1:0&quot;</span>
 
 <span class="n">ci_sessions</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2351,7 +2313,7 @@ bedrock-agentcore
 <h2 id="step-2-configure-and-deploy">Step 2: Configure and Deploy<a class="headerlink" href="#step-2-configure-and-deploy" title="Permanent link">&para;</a></h2>
 <p>The AgentCore CLI automates deployment with provisioning.</p>
 <h3 id="configure-the-agent">Configure the Agent<a class="headerlink" href="#configure-the-agent" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>agentcore_starter_strands.py
+<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>agentcore_starter_strands.py
 
 <span class="c1"># Interactive prompts:</span>
 <span class="c1">#   - Execution role (press Enter to auto-create)</span>
@@ -2361,6 +2323,8 @@ bedrock-agentcore
 <span class="c1">#     - If creating new: Enable long-term memory extraction? (yes/no) → yes</span>
 <span class="c1">#     - **Note**: Short-term memory is always enabled by default</span>
 </code></pre></div>
+<strong>For this tutorial</strong>: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.</p>
+<p><strong>Note</strong>: If the memory configuration prompts do not appear during <code>agentcore configure</code>, refer to the <a href="#memory-configuration-not-appearing">Memory Configuration Not Appearing</a> troubleshooting section to ensure the correct toolkit version is installed.</p>
 <h3 id="deploy-to-agentcore">Deploy to AgentCore<a class="headerlink" href="#deploy-to-agentcore" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
 
@@ -2402,7 +2366,7 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 
 <span class="c1"># If invoked too early (memory still provisioning), you&#39;ll see:</span>
 <span class="c1"># &quot;Memory is still provisioning (current status: CREATING).</span>
-<span class="c1">#  Long-term memory extraction takes 60-90 seconds to activate.</span>
+<span class="c1">#  Long-term memory extraction takes 60-180 seconds to activate.</span>
 <span class="c1">#</span>
 <span class="c1">#  Please wait and check status with:</span>
 <span class="c1">#    agentcore status&quot;</span>
@@ -2439,7 +2403,7 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 </code></pre></div>
 <h2 id="step-5-view-traces-and-logs">Step 5: View Traces and Logs<a class="headerlink" href="#step-5-view-traces-and-logs" title="Permanent link">&para;</a></h2>
 <h3 id="access-cloudwatch-dashboard">Access CloudWatch Dashboard<a class="headerlink" href="#access-cloudwatch-dashboard" title="Permanent link">&para;</a></h3>
-<p>Navigate to the GenAI Observability dashboard:</p>
+<p>Navigate to the GenAI Observability dashboard to view end-to-end request traces including agent execution tracking, memory retrieval operations, code interpreter executions, agent reasoning steps, and latency breakdown by component. The dashboard provides a service map view showing agent runtime connections to Memory and Code Interpreter services with request flow visualization and latency metrics, as well as detailed X-Ray traces for debugging and performance analysis.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Get the dashboard URL from status</span>
 agentcore<span class="w"> </span>status
 
@@ -2447,21 +2411,6 @@ agentcore<span class="w"> </span>status
 <span class="c1"># https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core</span>
 <span class="c1"># Note: Replace the region</span>
 </code></pre></div>
-<p><strong>What you’ll see:</strong></p>
-<p><strong>Service Map View:</strong></p>
-<ul>
-<li>Agent runtime connections to Memory and Code Interpreter services</li>
-<li>Request flow visualization</li>
-<li>Latency by service</li>
-</ul>
-<p><strong>Traces View (via X-Ray):</strong></p>
-<ul>
-<li>End-to-end request traces</li>
-<li>Memory retrieval operations</li>
-<li>Code Interpreter executions</li>
-<li>Agent reasoning steps</li>
-<li>Latency breakdown by component</li>
-</ul>
 <h3 id="view-agent-runtime-logs">View Agent Runtime Logs<a class="headerlink" href="#view-agent-runtime-logs" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># The correct log paths are shown in the invoke or status output</span>
 agentcore<span class="w"> </span>status
@@ -2486,254 +2435,70 @@ aws<span class="w"> </span>logs<span class="w"> </span>tail<span class="w"> </sp
 <span class="c1">#   - IAM roles (if auto-created)</span>
 <span class="c1">#   - CloudWatch log groups (optional)</span>
 </code></pre></div>
-<h2 id="permissions-reference">Permissions Reference<a class="headerlink" href="#permissions-reference" title="Permanent link">&para;</a></h2>
-<h3 id="developer-permissions-for-starter-toolkit">Developer Permissions for Starter Toolkit<a class="headerlink" href="#developer-permissions-for-starter-toolkit" title="Permanent link">&para;</a></h3>
-<p>To use the starter toolkit (<code>agentcore configure</code> and <code>agentcore launch</code> commands), you need the following IAM policy attached to your AWS user or role:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreRuntimeOperations&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:CreateAgentRuntime&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:UpdateAgentRuntime&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetAgentRuntime&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetAgentRuntimeEndpoint&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListAgentRuntimes&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListAgentRuntimeEndpoints&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteAgentRuntime&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteAgentRuntimeEndpoint&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:bedrock-agentcore:*:*:runtime/*&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemoryOperations&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:CreateMemory&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:UpdateMemory&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetMemory&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:DeleteMemory&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:ListMemories&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:bedrock-agentcore:*:*:memory/*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMRoleManagement&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;iam:CreateRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DeleteRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:GetRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:PutRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DeleteRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:AttachRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DetachRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:TagRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:ListRolePolicies&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:ListAttachedRolePolicies&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/*BedrockAgentCore*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/*BedrockAgentCore*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildProjectAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:StartBuild&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetBuilds&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:ListBuildsForProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:CreateProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:UpdateProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetProjects&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:project/bedrock-agentcore-*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:build/bedrock-agentcore-*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildListAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:ListProjects&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMPassRoleAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;iam:PassRole&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/AmazonBedrockAgentCore*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudWatchLogsAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;logs:GetLogEvents&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;logs:DescribeLogGroups&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;logs:DescribeLogStreams&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;logs:PutResourcePolicy&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/codebuild/*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;S3Access&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:ListBucket&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:CreateBucket&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:PutLifecycleConfiguration&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*/*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRRepositoryAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;ecr:CreateRepository&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:DescribeRepositories&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetRepositoryPolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:InitiateLayerUpload&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:CompleteLayerUpload&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:PutImage&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:UploadLayerPart&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:BatchCheckLayerAvailability&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetDownloadUrlForLayer&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:BatchGetImage&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:ListImages&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:BatchDeleteImage&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:DeleteRepository&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:TagResource&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:ecr:*:*:repository/bedrock-agentcore-*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRAuthorizationAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetAuthorizationToken&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XRayConfiguration&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;xray:UpdateTraceSegmentDestination&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;xray:UpdateIndexingRule&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;xray:GetTraceSegmentDestination&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;xray:GetIndexingRules&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;STSGetCallerIdentity&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;sts:GetCallerIdentity&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">    </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-<h3 id="auto-generated-execution-role">Auto-Generated Execution Role<a class="headerlink" href="#auto-generated-execution-role" title="Permanent link">&para;</a></h3>
-<p><strong>Important</strong>: The starter toolkit automatically creates an execution role with all necessary permissions when you run <code>agentcore configure</code>. You do NOT need to create this role manually. The auto-generated role includes permissions for:</p>
-<ul>
-<li><strong>Memory operations</strong> (create, read, write, retrieve)</li>
-<li><strong>Code Interpreter sessions</strong> (create, invoke, manage)</li>
-<li><strong>Model invocation</strong> (Bedrock models)</li>
-<li><strong>CloudWatch logging and X-Ray tracing</strong></li>
-<li><strong>ECR image access</strong></li>
-</ul>
-<p>The execution role is created with a name pattern: <code>AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}</code></p>
-<p>For reference, the auto-generated execution role includes these additional permissions for Memory and Code Interpreter:</p>
-<p><strong>Memory Permissions (automatically included):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemoryCreateMemory&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateMemory&quot;</span>
-<span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="p">},</span>
-<span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreMemory&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateEvent&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetEvent&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetMemory&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetMemoryRecord&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListActors&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListEvents&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListMemoryRecords&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListSessions&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteEvent&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteMemoryRecord&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:RetrieveMemoryRecords&quot;</span>
-<span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*&quot;</span>
-<span class="w">    </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-<p><strong>Code Interpreter Permissions (automatically included):</strong></p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreCodeInterpreter&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:CreateCodeInterpreter&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:StartCodeInterpreterSession&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:InvokeCodeInterpreter&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:StopCodeInterpreterSession&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:DeleteCodeInterpreter&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListCodeInterpreters&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetCodeInterpreter&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:GetCodeInterpreterSession&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;bedrock-agentcore:ListCodeInterpreterSessions&quot;</span>
-<span class="w">    </span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:aws:code-interpreter/*&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter-custom/*&quot;</span>
-<span class="w">    </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-<h3 id="understanding-memory-selection">Understanding Memory Selection<a class="headerlink" href="#understanding-memory-selection" title="Permanent link">&para;</a></h3>
-<p>The toolkit provides intelligent memory management:</p>
-<p><strong>Reusing Existing Memory:</strong>
-- Lists up to 10 existing memory resources from your account
-- Useful for sharing memory across agents or redeploying
-- Preserves all existing conversation history and extracted facts</p>
-<p><strong>Creating New Memory:</strong>
-- Short-term memory (STM) always enabled - stores exact conversations
-- Optional long-term memory (LTM) - extracts facts, preferences, and summaries
-- Each agent can have its own isolated memory or share with others</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="memory-configuration-not-appearing">Memory Configuration Not Appearing<a class="headerlink" href="#memory-configuration-not-appearing" title="Permanent link">&para;</a></h3>
+<p><strong>“Memory option not showing during <code>agentcore configure</code>”:</strong></p>
+<p>This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Verify you&#39;re in the correct virtual environment</span>
+which<span class="w"> </span>python<span class="w">  </span><span class="c1"># Should show path to .venv/bin/python</span>
+
+<span class="c1"># 2. Check current version</span>
+pip<span class="w"> </span>show<span class="w"> </span>bedrock-agentcore-starter-toolkit
+
+<span class="c1"># 3. Force reinstall with cache clearing (version 0.1.21 or later required)</span>
+pip<span class="w"> </span>uninstall<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>-y
+pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span>
+
+<span class="c1"># 4. Verify the installation</span>
+pip<span class="w"> </span>show<span class="w"> </span>bedrock-agentcore-starter-toolkit
+which<span class="w"> </span>agentcore<span class="w">  </span><span class="c1"># Should show path in your .venv/bin/</span>
+
+<span class="c1"># 5. If issues persist, create a fresh virtual environment:</span>
+deactivate<span class="w">  </span><span class="c1"># Exit current environment</span>
+rm<span class="w"> </span>-rf<span class="w"> </span>.venv<span class="w">  </span><span class="c1"># Remove old environment</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w">  </span><span class="c1"># Create new environment</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span><span class="w"> </span>strands-agents<span class="w"> </span>boto3
+</code></pre></div>
+<p><strong>Additional checks:</strong></p>
+<ul>
+<li>Ensure you’re running <code>agentcore configure</code> from within the activated virtual environment</li>
+<li>If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling</li>
+<li>Verify no system-wide agentcore installation conflicts: <code>pip list | grep bedrock-agentcore</code></li>
+</ul>
+<h3 id="region-misconfiguration">Region Misconfiguration<a class="headerlink" href="#region-misconfiguration" title="Permanent link">&para;</a></h3>
+<p><strong>If you need to change your region configuration:</strong></p>
+<ol>
+<li>
+<p>Delete the generated configuration files:</p>
+</li>
+<li>
+<p><code>.bedrock_agentcore.yaml</code></p>
+</li>
+<li><code>.dockerignore</code></li>
+<li>
+<p><code>Dockerfile</code></p>
+</li>
+<li>
+<p>Remove resources created in the incorrect region:</p>
+</li>
+<li>
+<p>AgentCore Runtime</p>
+</li>
+<li>AgentCore Memory resources (STM + LTM)</li>
+<li>ECR repository and images</li>
+<li>IAM roles (if auto-created)</li>
+<li>
+<p>CloudWatch log groups (optional)</p>
+</li>
+<li>
+<p>Verify your AWS CLI is configured for the correct region:</p>
+</li>
+</ol>
+<p><div class="highlight"><pre><span></span><code>aws<span class="w"> </span>configure<span class="w"> </span>get<span class="w"> </span>region
+</code></pre></div>
+4. Ensure Bedrock model access is enabled in the target region
+5. Return to <strong>Step 2: Configure and Deploy</strong> and complete the setup with your correct region</p>
 <h3 id="memory-issues">Memory Issues<a class="headerlink" href="#memory-issues" title="Permanent link">&para;</a></h3>
 <p><strong>“Memory status is not active” error:</strong></p>
 <ul>
