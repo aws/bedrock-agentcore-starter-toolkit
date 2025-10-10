@@ -312,21 +312,34 @@ agentcore destroy
 This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:
 
 ```bash
-# Check current version
+# 1. Verify you're in the correct virtual environment
+which python  # Should show path to .venv/bin/python
+
+# 2. Check current version
 pip show bedrock-agentcore-starter-toolkit
 
-# If version is below 0.1.21, upgrade:
-pip install --upgrade "bedrock-agentcore-starter-toolkit>=0.1.21"
+# 3. Force reinstall with cache clearing (version 0.1.21 or later required)
+pip uninstall bedrock-agentcore-starter-toolkit -y
+pip install --no-cache-dir --upgrade "bedrock-agentcore-starter-toolkit>=0.1.21"
 
-# If the issue persists, try a clean reinstall:
-deactivate  # Exit current virtual environment
-rm -rf .venv  # Remove virtual environment
-python -m venv .venv  # Create new virtual environment
-source .venv/bin/activate  # Activate new environment
-pip install "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
+# 4. Verify the installation
+pip show bedrock-agentcore-starter-toolkit
+which agentcore  # Should show path in your .venv/bin/
 
-# If working in an IDE, restart the IDE after reinstalling
+# 5. If issues persist, create a fresh virtual environment:
+deactivate  # Exit current environment
+rm -rf .venv  # Remove old environment
+python3 -m venv .venv  # Create new environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
 ```
+
+**Additional checks:**
+
+- Ensure you’re running `agentcore configure` from within the activated virtual environment
+- If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling
+- Verify no system-wide agentcore installation conflicts: `pip list | grep bedrock-agentcore`
+
 
 ### Region Misconfiguration
 
