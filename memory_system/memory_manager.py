@@ -684,6 +684,284 @@ class MemoryManager:
         
         return score / factors if factors > 0 else 0.0
     
+    def update_user_profile(self, user_id: str, profile_updates: Dict[str, Any]) -> bool:
+        """
+        Update specific fields in a user behavior profile.
+        
+        Args:
+            user_id: User identifier
+            profile_updates: Dictionary of fields to update
+            
+        Returns:
+            bool: True if updated successfully
+        """
+        try:
+            # Build update expression
+            update_expression = "SET "
+            expression_values = {}
+            expression_names = {}
+            
+            for key, value in profile_updates.items():
+                if key == 'last_updated':
+                    value = value.isoformat() if isinstance(value, datetime) else value
+                
+                attr_name = f"#{key}"
+                attr_value = f":{key}"
+                
+                update_expression += f"{attr_name} = {attr_value}, "
+                expression_names[attr_name] = key
+                expression_values[attr_value] = value
+            
+            # Remove trailing comma and space
+            update_expression = update_expression.rstrip(', ')
+            
+            self.profile_table.update_item(
+                Key={'user_id': user_id},
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=expression_names,
+                ExpressionAttributeValues=expression_values
+            )
+            
+            logger.info(f"Updated user profile for {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating user profile: {str(e)}")
+            return False
+    
+    def get_user_transaction_stats(self, user_id: str, days_back: int = 30) -> Dict[str, Any]:
+        """
+        Get transaction statistics for a user.
+        
+        Args:
+            user_id: User identifier
+            days_back: Number of days to analyze
+            
+        Returns:
+            Dictionary containing transaction statistics
+        """
+        try:
+            transactions = self.get_user_transaction_history(user_id, days_back)
+            
+            if not transactions:
+                return {"error": "No transactions found"}
+            
+            amounts = [float(tx.amount) for tx in transactions]
+            merchants = [tx.merchant for tx in transactions]
+            categories = [tx.category for tx in transactions]
+            
+            from collections import Counter
+            
+            stats = {
+                "user_id": user_id,
+                "period_days": days_back,
+                "total_transactions": len(transactions),
+                "total_amount": sum(amounts),
+                "average_amount": sum(amounts) / len(amounts),
+                "min_amount": min(amounts),
+                "max_amount": max(amounts),
+                "unique_merchants": len(set(merchants)),
+                "top_merchants": dict(Counter(merchants).most_common(5)),
+                "top_categories": dict(Counter(categories).most_common(5)),
+                "transactions_per_day": len(transactions) / days_back
+            }
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error calculating transaction stats: {str(e)}")
+            return {"error": str(e)}
+    
+    def batch_store_transactions(self, transactions: List[Transaction]) -> Dict[str, int]:
+        """
+        Store multiple transactions in batch for better performance.
+        
+        Args:
+            transactions: List of Transaction objects to store
+            
+        Returns:
+            Dictionary with success and failure counts
+        """
+        try:
+            success_count = 0
+            failure_count = 0
+            
+            # Process in batches of 25 (DynamoDB limit)
+            batch_size = 25
+            
+            for i in range(0, len(transactions), batch_size):
+                batch = transactions[i:i + batch_size]
+                
+                with self.transaction_table.batch_writer() as batch_writer:
+                    for transaction in batch:
+                        try:
+                            item = {
+                                'user_id': transaction.user_id,
+                                'timestamp': transaction.timestamp.isoformat(),
+                                'transaction_id': transaction.id,
+                                'amount': transaction.amount,
+                                'currency': transaction.currency,
+                                'merchant': transaction.merchant,
+                                'category': transaction.category,
+                                'location': {
+                                    'country': transaction.location.country,
+                                    'city': transaction.location.city,
+                                    'latitude': transaction.location.latitude,
+                                    'longitude': transaction.location.longitude,
+                                    'ip_address': transaction.location.ip_address
+                                },
+                                'card_type': transaction.card_type,
+                                'device_info': {
+                                    'device_id': transaction.device_info.device_id,
+                                    'device_type': transaction.device_info.device_type,
+                                    'os': transaction.device_info.os,
+                                    'browser': transaction.device_info.browser,
+                                    'fingerprint': transaction.device_info.fingerprint
+                                },
+                                'ip_address': transaction.ip_address,
+                                'session_id': transaction.session_id,
+                                'metadata': transaction.metadata
+                            }
+                            
+                            batch_writer.put_item(Item=item)
+                            success_count += 1
+                            
+                        except Exception as e:
+                            logger.error(f"Error in batch storing transaction {transaction.id}: {str(e)}")
+                            failure_count += 1
+            
+            logger.info(f"Batch stored {success_count} transactions, {failure_count} failures")
+            return {"success": success_count, "failures": failure_count}
+            
+        except Exception as e:
+            logger.error(f"Error in batch storing transactions: {str(e)}")
+            return {"success": 0, "failures": len(transactions)}
+    
+    def get_transactions_by_merchant(self, merchant: str, limit: int = 50) -> List[Transaction]:
+        """
+        Get transactions by merchant for pattern analysis.
+        
+        Args:
+            merchant: Merchant name
+            limit: Maximum number of transactions to return
+            
+        Returns:
+            List of Transaction objects
+        """
+        try:
+            response = self.transaction_table.query(
+                IndexName='MerchantIndex',
+                KeyConditionExpression=Key('merchant').eq(merchant),
+                Limit=limit,
+                ScanIndexForward=False
+            )
+            
+            transactions = []
+            for item in response['Items']:
+                transactions.append(self._item_to_transaction(item))
+            
+            logger.info(f"Retrieved {len(transactions)} transactions for merchant {merchant}")
+            return transactions
+            
+        except Exception as e:
+            logger.error(f"Error retrieving transactions for merchant {merchant}: {str(e)}")
+            return []
+    
+    def cleanup_old_data(self, days_to_keep: int = 365) -> Dict[str, int]:
+        """
+        Clean up old transaction and decision data to manage storage costs.
+        
+        Args:
+            days_to_keep: Number of days of data to retain
+            
+        Returns:
+            Dictionary with cleanup statistics
+        """
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+            cutoff_iso = cutoff_date.isoformat()
+            
+            deleted_transactions = 0
+            deleted_decisions = 0
+            
+            # Clean up old transactions
+            response = self.transaction_table.scan(
+                FilterExpression=Attr('timestamp').lt(cutoff_iso),
+                ProjectionExpression='user_id, #ts, transaction_id',
+                ExpressionAttributeNames={'#ts': 'timestamp'}
+            )
+            
+            with self.transaction_table.batch_writer() as batch:
+                for item in response['Items']:
+                    batch.delete_item(
+                        Key={
+                            'user_id': item['user_id'],
+                            'timestamp': item['timestamp']
+                        }
+                    )
+                    deleted_transactions += 1
+            
+            # Clean up old decisions
+            response = self.decision_table.scan(
+                FilterExpression=Attr('timestamp').lt(cutoff_iso),
+                ProjectionExpression='transaction_id'
+            )
+            
+            with self.decision_table.batch_writer() as batch:
+                for item in response['Items']:
+                    batch.delete_item(
+                        Key={'transaction_id': item['transaction_id']}
+                    )
+                    deleted_decisions += 1
+            
+            logger.info(f"Cleaned up {deleted_transactions} transactions and {deleted_decisions} decisions")
+            return {
+                "deleted_transactions": deleted_transactions,
+                "deleted_decisions": deleted_decisions,
+                "cutoff_date": cutoff_date.isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error during data cleanup: {str(e)}")
+            return {"error": str(e)}
+    
+    def get_memory_usage_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about memory usage and table sizes.
+        
+        Returns:
+            Dictionary containing usage statistics
+        """
+        try:
+            stats = {}
+            table_names = [
+                'fraud-detection-transaction-history',
+                'fraud-detection-decision-context',
+                'fraud-detection-user-profiles',
+                'fraud-detection-patterns',
+                'fraud-detection-risk-profiles'
+            ]
+            
+            for table_name in table_names:
+                try:
+                    table = self.dynamodb.Table(table_name)
+                    table.load()
+                    
+                    stats[table_name] = {
+                        "item_count": table.item_count,
+                        "table_size_bytes": table.table_size_bytes,
+                        "table_status": table.table_status
+                    }
+                    
+                except Exception as e:
+                    stats[table_name] = {"error": str(e)}
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error getting memory usage stats: {str(e)}")
+            return {"error": str(e)}
+    
     def _item_to_transaction(self, item: Dict[str, Any]) -> Transaction:
         """
         Convert DynamoDB item to Transaction object.
