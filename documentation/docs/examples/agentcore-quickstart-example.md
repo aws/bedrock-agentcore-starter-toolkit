@@ -3,16 +3,14 @@
 
 ## Introduction
 
-You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in minutes.
+Build and deploy a production-ready AI agent in minutes with runtime hosting, memory, secure code execution, and observability. This guide shows how to use [AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html), [Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html), [Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html), and [Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html).
 
-This guide demonstrates how to deploy an AI agent that combines [AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html), [AgentCore Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html), [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html) and [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html).
-
-Refer to the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md) to build with AgentCore Gateway and Idenity.
+For Gateway and Identity features, see the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [
+Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
 
 ## Prerequisites
 
-- **AWS Permissions** Root users or admin/privileged credentials can skip this step. Others need to attach the [required IAM policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/
-runtime-permissions.html#runtime-permissions-starter-toolkit) to their IAM user or role.
+- **AWS Permissions** Root users or admin/privileged credentials can skip this step. Others need to attach the [required IAM policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) to their IAM user or role.
 - [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
@@ -341,27 +339,26 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 **If you need to change your region configuration:**
 
-1. Delete the generated configuration files:
+1. Clean up resources in the incorrect region:
+   ```bash
+   agentcore destroy
+   
+   # This removes:
+   #   - Runtime endpoint and agent
+   #   - Memory resources (STM + LTM)
+   #   - ECR repository and images
+   #   - IAM roles (if auto-created)
+   #   - CloudWatch log groups (optional)
+   ```
 
-- `.bedrock_agentcore.yaml`
-- `.dockerignore`
-- `Dockerfile`
-
-2. Remove resources created in the incorrect region:
-
-- AgentCore Runtime
-- AgentCore Memory resources (STM + LTM)
-- ECR repository and images
-- IAM roles (if auto-created)
-- CloudWatch log groups (optional)
-
-3. Verify your AWS CLI is configured for the correct region:
-
+2. Verify your AWS CLI is configured for the correct region:
    ```bash
    aws configure get region
+   # Or reconfigure for the correct region:
+   aws configure set region <your-desired-region>
    ```
-4. Ensure Bedrock model access is enabled in the target region
-5. Return to **Step 2: Configure and Deploy** and complete the setup with your correct region
+3. Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)
+4. Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**
 
 ### Memory Issues
 
