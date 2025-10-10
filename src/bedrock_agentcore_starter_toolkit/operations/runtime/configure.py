@@ -16,6 +16,7 @@ from ...utils.runtime.schema import (
     CodeBuildConfig,
     MemoryConfig,
     NetworkConfiguration,
+    NetworkModeConfig,
     ObservabilityConfig,
     ProtocolConfiguration,
 )
@@ -37,6 +38,8 @@ def configure_bedrock_agentcore(
     requirements_file: Optional[str] = None,
     authorizer_configuration: Optional[Dict[str, Any]] = None,
     request_header_configuration: Optional[Dict[str, Any]] = None,
+    network_mode: Optional[str] = None,
+    network_mode_config: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
     region: Optional[str] = None,
     protocol: Optional[str] = None,
@@ -295,7 +298,17 @@ def configure_bedrock_agentcore(
             region=region,
             ecr_repository=ecr_repository,
             ecr_auto_create=ecr_auto_create_value,
-            network_configuration=NetworkConfiguration(network_mode="PUBLIC"),
+            network_configuration=NetworkConfiguration(
+                network_mode=(network_mode or "PUBLIC"),
+                network_mode_config=(
+                    NetworkModeConfig(
+                        subnets=(network_mode_config or {}).get("subnets", []),
+                        security_groups=(network_mode_config or {}).get("security_groups", []),
+                    )
+                    if (network_mode or "PUBLIC") == "VPC"
+                    else None
+                ),
+            ),
             protocol_configuration=ProtocolConfiguration(server_protocol=protocol or "HTTP"),
             observability=ObservabilityConfig(enabled=enable_observability),
         ),
