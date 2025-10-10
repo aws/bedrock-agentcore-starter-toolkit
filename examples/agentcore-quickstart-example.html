@@ -2189,12 +2189,12 @@
 
 <h1 id="agentcore-quickstart">AgentCore Quickstart<a class="headerlink" href="#agentcore-quickstart" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in minutes.</p>
-<p>This guide demonstrates how to deploy an AI agent that combines <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a> and <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a>.</p>
-<p>Refer to the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">Identity quickstart</a> to build with AgentCore Gateway and Idenity.</p>
+<p>Build and deploy a production-ready AI agent in minutes with runtime hosting, memory, secure code execution, and observability. This guide shows how to use <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">Memory</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">Code Interpreter</a>, and <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">Observability</a>.</p>
+<p>For Gateway and Identity features, see the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">
+Identity quickstart</a>.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>AWS Permissions</strong> Root users or admin/privileged credentials can skip this step. Others need to attach the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/&#10;runtime-permissions.html#runtime-permissions-starter-toolkit">required IAM policy</a> to their IAM user or role.</li>
+<li><strong>AWS Permissions</strong> Root users or admin/privileged credentials can skip this step. Others need to attach the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit">required IAM policy</a> to their IAM user or role.</li>
 <li><a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">AWS CLI version 2.0 or later</a> configured (<code>aws configure</code>)</li>
 <li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
 <li>Python 3.10 or newer</li>
@@ -2464,35 +2464,27 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span cl
 <p><strong>If you need to change your region configuration:</strong></p>
 <ol>
 <li>
-<p>Delete the generated configuration files:</p>
+<p>Clean up resources in the incorrect region:
+   <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>destroy
+
+<span class="c1"># This removes:</span>
+<span class="c1">#   - Runtime endpoint and agent</span>
+<span class="c1">#   - Memory resources (STM + LTM)</span>
+<span class="c1">#   - ECR repository and images</span>
+<span class="c1">#   - IAM roles (if auto-created)</span>
+<span class="c1">#   - CloudWatch log groups (optional)</span>
+</code></pre></div></p>
 </li>
 <li>
-<p><code>.bedrock_agentcore.yaml</code></p>
+<p>Verify your AWS CLI is configured for the correct region:
+   <div class="highlight"><pre><span></span><code>aws<span class="w"> </span>configure<span class="w"> </span>get<span class="w"> </span>region
+<span class="c1"># Or reconfigure for the correct region:</span>
+aws<span class="w"> </span>configure<span class="w"> </span><span class="nb">set</span><span class="w"> </span>region<span class="w"> </span>&lt;your-desired-region&gt;
+</code></pre></div></p>
 </li>
-<li><code>.dockerignore</code></li>
-<li>
-<p><code>Dockerfile</code></p>
-</li>
-<li>
-<p>Remove resources created in the incorrect region:</p>
-</li>
-<li>
-<p>AgentCore Runtime</p>
-</li>
-<li>AgentCore Memory resources (STM + LTM)</li>
-<li>ECR repository and images</li>
-<li>IAM roles (if auto-created)</li>
-<li>
-<p>CloudWatch log groups (optional)</p>
-</li>
-<li>
-<p>Verify your AWS CLI is configured for the correct region:</p>
-</li>
+<li>Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)</li>
+<li>Copy your agent code and requirements.txt to the new folder, then return to <strong>Step 2: Configure and Deploy</strong></li>
 </ol>
-<p><div class="highlight"><pre><span></span><code>aws<span class="w"> </span>configure<span class="w"> </span>get<span class="w"> </span>region
-</code></pre></div>
-4. Ensure Bedrock model access is enabled in the target region
-5. Return to <strong>Step 2: Configure and Deploy</strong> and complete the setup with your correct region</p>
 <h3 id="memory-issues">Memory Issues<a class="headerlink" href="#memory-issues" title="Permanent link">&para;</a></h3>
 <p><strong>“Memory status is not active” error:</strong></p>
 <ul>
