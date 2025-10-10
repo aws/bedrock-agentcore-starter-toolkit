@@ -1,22 +1,18 @@
 
-# Amazon Bedrock AgentCore Quickstart
+# AgentCore Quickstart
 
 ## Introduction
 
-You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.
+You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in minutes.
 
-This guide demonstrates how to deploy an AI agent that combines:
+This guide demonstrates how to deploy an AI agent that combines [AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html), [AgentCore Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html), [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html) and [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html).
 
-- **Runtime**: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See [AgentCore Runtime docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)
-- **Memory Service**: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See [AgentCore Memory docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
-- **Code Interpreter**: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
-- **Observability**: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html) for more details.
-
-Updates to this quickstart example with AgentCore Gateway and Identity are coming soon. To integrate these services now, refer to the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
+Refer to the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md) to build with AgentCore Gateway and Idenity.
 
 ## Prerequisites
 
-- **AWS Permissions**: If you are a root user or using admin credentials, you can skip this prerequisite. Otherwise, attach the required IAM policy to your IAM user or role. For the complete policy, see [Starter toolkit permissions](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) in the AWS documentation.
+- **AWS Permissions** Root users or admin/privileged credentials can skip this step. Others need to attach the [required IAM policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/
+runtime-permissions.html#runtime-permissions-starter-toolkit) to their IAM user or role.
 - [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
@@ -198,13 +194,13 @@ agentcore status
 #   Observability: Enabled
 ```
 
-**Note**: LTM strategies require 2-5 minutes to activate. STM is available immediately.
+**Note**: LTM strategies require 2-5 minutes to activate. STM is provisioned immediately if LTM is not selected.
 
 ## Step 4: Test Memory and Code Interpreter
 
-### Test Short-Term Memory (STM) - Immediate
+### Test Short-Term Memory (STM)
 
-STM works immediately after deployment. Test within a single session:
+Tesing within a single session:
 
 ```bash
 # Store information (session IDs must be 33+ characters)
@@ -399,8 +395,8 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 You’ve deployed a production agent with:
 
-- **AgentCore Runtime** for managed container orchestration
-- **Memory Service** with STM for immediate context and LTM for cross-session persistence
+- **Runtime** for managed container orchestration
+- **Memory** with STM for immediate context and LTM for cross-session persistence
 - **Code Interpreter** for secure Python execution with data visualization capabilities
 - **AWS X-Ray Tracing** automatically configured for distributed tracing
 - **CloudWatch Integration** for logs and metrics with Transaction Search enabled
