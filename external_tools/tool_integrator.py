@@ -471,4 +471,61 @@ class ToolIntegrator:
         if tool_id not in self.circuit_breakers:
             return
         
+        breaker = self.circuit_breakers[tool_id]
+        breaker["failure_count"] = 0
+        breaker["state"] = "closed"
+    
+    def get_tool_status(self, tool_id: str) -> Optional[Dict[str, Any]]:
+        """Get status of specific tool."""
+        if tool_id not in self.tools:
+            return None
         
+        status = self.tools[tool_id].get_status()
+        status["circuit_breaker"] = self.circuit_breakers.get(tool_id, {})
+        return status
+    
+    def get_all_tools_status(self) -> Dict[str, Any]:
+        """Get status of all registered tools."""
+        return {
+            "tools": {tool_id: self.get_tool_status(tool_id) for tool_id in self.tools},
+            "tool_types": {tool_type.value: tool_ids for tool_type, tool_ids in self.tool_types.items()},
+            "fallback_chains": self.fallback_chains
+        }
+    
+    def health_check(self) -> Dict[str, Any]:
+        """Perform health check on all tools."""
+        health_status = {
+            "overall_status": "healthy",
+            "tools": {},
+            "issues": []
+        }
+        
+        for tool_id, tool in self.tools.items():
+            tool_health = {
+                "status": tool.status.value,
+                "success_rate": tool.metrics.success_rate,
+                "circuit_breaker_state": self.circuit_breakers.get(tool_id, {}).get("state", "unknown")
+            }
+            
+            # Determine tool health
+            if tool.status != ToolStatus.AVAILABLE:
+                tool_health["health"] = "unhealthy"
+                health_status["issues"].append(f"Tool {tool_id} is {tool.status.value}")
+            elif tool.metrics.success_rate < 90 and tool.metrics.total_requests > 10:
+                tool_health["health"] = "degraded"
+                health_status["issues"].append(f"Tool {tool_id} has low success rate: {tool.metrics.success_rate:.1f}%")
+            else:
+                tool_health["health"] = "healthy"
+            
+            health_status["tools"][tool_id] = tool_health
+        
+        # Determine overall status
+        unhealthy_tools = [t for t in health_status["tools"].values() if t["health"] == "unhealthy"]
+        degraded_tools = [t for t in health_status["tools"].values() if t["health"] == "degraded"]
+        
+        if unhealthy_tools:
+            health_status["overall_status"] = "unhealthy"
+        elif degraded_tools:
+            health_status["overall_status"] = "degraded"
+        
+        return health_status
