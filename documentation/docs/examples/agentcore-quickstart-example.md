@@ -12,7 +12,7 @@ This guide demonstrates how to deploy an AI agent that combines:
 - **Code Interpreter**: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
 - **Observability**: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html) for more details.
 
-Additional AgentCore services including Gateway and Identity are coming soon.
+Updates to this quickstart example with AgentCore Gateway and Identity are coming soon. To integrate these services now, refer to the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ Additional AgentCore services including Gateway and Identity are coming soon.
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
 
-> **Important: Region Consistency Required**
+> **Important: Ensure AWS Region Consistency**
 >
 > Ensure the following are all configured to use the **same AWS region**:
 >
@@ -152,6 +152,9 @@ agentcore configure -e agentcore_starter_strands.py
 #     - If creating new: Enable long-term memory extraction? (yes/no) → yes
 #     - **Note**: Short-term memory is always enabled by default
 ```
+**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.
+
+**Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Memory Configuration Not Appearing](#memory-configuration-not-appearing) troubleshooting section to ensure the correct toolkit version is installed.
 
 ### Deploy to AgentCore
 
@@ -209,7 +212,7 @@ agentcore invoke '{"prompt": "Remember that my favorite agent platform is AgentC
 
 # If invoked too early (memory still provisioning), you'll see:
 # "Memory is still provisioning (current status: CREATING).
-#  Long-term memory extraction takes 60-90 seconds to activate.
+#  Long-term memory extraction takes 60-180 seconds to activate.
 #
 #  Please wait and check status with:
 #    agentcore status"
@@ -259,7 +262,7 @@ agentcore invoke '{"prompt": "Create a text-based bar chart visualization showin
 
 ### Access CloudWatch Dashboard
 
-Navigate to the GenAI Observability dashboard:
+Navigate to the GenAI Observability dashboard to view end-to-end request traces including agent execution tracking, memory retrieval operations, code interpreter executions, agent reasoning steps, and latency breakdown by component. The dashboard provides a service map view showing agent runtime connections to Memory and Code Interpreter services with request flow visualization and latency metrics, as well as detailed X-Ray traces for debugging and performance analysis.
 
 ```bash
 # Get the dashboard URL from status
@@ -269,22 +272,6 @@ agentcore status
 # https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 # Note: Replace the region
 ```
-
-**What you’ll see:**
-
-**Service Map View:**
-
-- Agent runtime connections to Memory and Code Interpreter services
-- Request flow visualization
-- Latency by service
-
-**Traces View (via X-Ray):**
-
-- End-to-end request traces
-- Memory retrieval operations
-- Code Interpreter executions
-- Agent reasoning steps
-- Latency breakdown by component
 
 ### View Agent Runtime Logs
 
