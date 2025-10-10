@@ -420,7 +420,7 @@ class TransactionStreamProcessor:
                         ProcessingPriority.NORMAL, ProcessingPriority.LOW]:
             queue = self.priority_queues[priority]
             try:
-                transaction, trans_priority = queue.get_nowait()
+                transaction, trans_priority = queue.get(timeout=0.1)
                 return transaction, trans_priority
             except Empty:
                 continue
