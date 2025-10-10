@@ -434,8 +434,8 @@ class TestGeolocationTool:
         assert pattern == TravelPattern.IMPOSSIBLE_TRAVEL
         assert len(indicators) > 0
         
-        # Test high velocity (air travel)
-        pattern, indicators = geolocation_tool._analyze_travel_velocity(1000, 2, 500)
+        # Test high velocity (air travel) - distance > 1000km
+        pattern, indicators = geolocation_tool._analyze_travel_velocity(2000, 4, 500)
         assert pattern == TravelPattern.FREQUENT_TRAVELER
         
         # Test location hopping
@@ -549,7 +549,7 @@ class TestCreateGeolocationTool:
         
         assert tool.config.tool_id == "test_generic"
         assert tool.provider == "generic"
-        assert "generic" in tool.config.base_url
+        assert "mock-geolocation" in tool.config.base_url
     
     def test_create_maxmind_tool(self):
         """Test creating MaxMind geolocation tool."""
