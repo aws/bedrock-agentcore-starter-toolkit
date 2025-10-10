@@ -142,6 +142,7 @@
     - Build caching mechanism for frequently accessed fraud data
 
 
+
     - _Requirements: 3.2, 3.6, 1.6_
 
   - [ ] 5.3 Build Geolocation and Risk Assessment Services
