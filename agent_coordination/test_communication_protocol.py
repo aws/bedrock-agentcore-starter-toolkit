@@ -82,7 +82,7 @@ class TestMessage:
         
         assert message_dict["message_id"] == "msg_123"
         assert message_dict["message_type"] == "request"
-        assert message_dict["priority"] == "high"
+        assert message_dict["priority"] == 3  # HIGH priority value
         assert isinstance(message_dict["timestamp"], str)
         
         # Deserialize from dict
