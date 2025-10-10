@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#amazon-bedrock-agentcore-quickstart" class="md-skip">
+        <a href="#agentcore-quickstart" class="md-skip">
           Skip to content
         </a>
       
@@ -1336,9 +1336,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#test-short-term-memory-stm-immediate" class="md-nav__link">
+  <a href="#test-short-term-memory-stm" class="md-nav__link">
     <span class="md-ellipsis">
-      Test Short-Term Memory (STM) - Immediate
+      Test Short-Term Memory (STM)
     </span>
   </a>
   
@@ -2035,9 +2035,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#test-short-term-memory-stm-immediate" class="md-nav__link">
+  <a href="#test-short-term-memory-stm" class="md-nav__link">
     <span class="md-ellipsis">
-      Test Short-Term Memory (STM) - Immediate
+      Test Short-Term Memory (STM)
     </span>
   </a>
   
@@ -2187,20 +2187,14 @@
   
 
 
-<h1 id="amazon-bedrock-agentcore-quickstart">Amazon Bedrock AgentCore Quickstart<a class="headerlink" href="#amazon-bedrock-agentcore-quickstart" title="Permanent link">&para;</a></h1>
+<h1 id="agentcore-quickstart">AgentCore Quickstart<a class="headerlink" href="#agentcore-quickstart" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
-<p>You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.</p>
-<p>This guide demonstrates how to deploy an AI agent that combines:</p>
-<ul>
-<li><strong>Runtime</strong>: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime docs</a></li>
-<li><strong>Memory Service</strong>: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory docs</a></li>
-<li><strong>Code Interpreter</strong>: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a></li>
-<li><strong>Observability</strong>: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a> for more details.</li>
-</ul>
-<p>Updates to this quickstart example with AgentCore Gateway and Identity are coming soon. To integrate these services now, refer to the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">Identity quickstart</a>.</p>
+<p>You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in minutes.</p>
+<p>This guide demonstrates how to deploy an AI agent that combines <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">AgentCore Memory</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">AgentCore Code Interpreter</a> and <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability</a>.</p>
+<p>Refer to the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">Identity quickstart</a> to build with AgentCore Gateway and Idenity.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>AWS Permissions</strong>: If you are a root user or using admin credentials, you can skip this prerequisite. Otherwise, attach the required IAM policy to your IAM user or role. For the complete policy, see <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit">Starter toolkit permissions</a> in the AWS documentation.</li>
+<li><strong>AWS Permissions</strong> Root users or admin/privileged credentials can skip this step. Others need to attach the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/&#10;runtime-permissions.html#runtime-permissions-starter-toolkit">required IAM policy</a> to their IAM user or role.</li>
 <li><a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">AWS CLI version 2.0 or later</a> configured (<code>aws configure</code>)</li>
 <li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
 <li>Python 3.10 or newer</li>
@@ -2357,10 +2351,10 @@ Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-x
 <span class="c1">#   Memory Type: STM only (if configured without LTM)</span>
 <span class="c1">#   Observability: Enabled</span>
 </code></pre></div>
-<p><strong>Note</strong>: LTM strategies require 2-5 minutes to activate. STM is available immediately.</p>
+<p><strong>Note</strong>: LTM strategies require 2-5 minutes to activate. STM is provisioned immediately if LTM is not selected.</p>
 <h2 id="step-4-test-memory-and-code-interpreter">Step 4: Test Memory and Code Interpreter<a class="headerlink" href="#step-4-test-memory-and-code-interpreter" title="Permanent link">&para;</a></h2>
-<h3 id="test-short-term-memory-stm-immediate">Test Short-Term Memory (STM) - Immediate<a class="headerlink" href="#test-short-term-memory-stm-immediate" title="Permanent link">&para;</a></h3>
-<p>STM works immediately after deployment. Test within a single session:</p>
+<h3 id="test-short-term-memory-stm">Test Short-Term Memory (STM)<a class="headerlink" href="#test-short-term-memory-stm" title="Permanent link">&para;</a></h3>
+<p>Tesing within a single session:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Store information (session IDs must be 33+ characters)</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Remember that my favorite agent platform is AgentCore&quot;}&#39;</span>
 
@@ -2528,8 +2522,8 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span cl
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>You’ve deployed a production agent with:</p>
 <ul>
-<li><strong>AgentCore Runtime</strong> for managed container orchestration</li>
-<li><strong>Memory Service</strong> with STM for immediate context and LTM for cross-session persistence</li>
+<li><strong>Runtime</strong> for managed container orchestration</li>
+<li><strong>Memory</strong> with STM for immediate context and LTM for cross-session persistence</li>
 <li><strong>Code Interpreter</strong> for secure Python execution with data visualization capabilities</li>
 <li><strong>AWS X-Ray Tracing</strong> automatically configured for distributed tracing</li>
 <li><strong>CloudWatch Integration</strong> for logs and metrics with Transaction Search enabled</li>
