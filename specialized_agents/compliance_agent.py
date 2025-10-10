@@ -1262,7 +1262,7 @@ class ComplianceAgent(BaseAgent):
         return True
     
     def _get_compliance_tags(self, event_type: AuditEventType, event_data: Optional[Dict[str, Any]]) -> List[str]:
-        #Get compliance tags for audit event
+        """Get compliance tags for audit event."""
         tags = []
         
         if event_type == AuditEventType.TRANSACTION_PROCESSED:
@@ -1279,7 +1279,7 @@ class ComplianceAgent(BaseAgent):
         regulation: ComplianceRegulation,
         events: List[AuditEvent]
     ) -> ComplianceCheck:
-        "Perform aggregate compliance check for a regulation over a period."
+        """Perform aggregate compliance check for a regulation over a period."""
         violations = []
         recommendations = []
         
@@ -1312,7 +1312,7 @@ class ComplianceAgent(BaseAgent):
         )
     
     def _generate_compliance_recommendations(self, compliance_checks: List[ComplianceCheck]) -> List[str]:
-        "Generate compliance recommendations based on check results."
+        """Generate compliance recommendations based on check results."""
         recommendations = []
         
         # Collect all recommendations from checks
