@@ -7,11 +7,11 @@ import time
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from identity_verification import (
+from external_tools.identity_verification import (
     IdentityVerificationTool, IdentityData, VerificationResult,
     IdentityVerificationResult, DocumentType, create_identity_verification_tool
 )
-from tool_integrator import ToolConfiguration, ToolType
+from external_tools.tool_integrator import ToolConfiguration, ToolType
 
 
 @pytest.fixture
@@ -377,7 +377,7 @@ class TestCreateIdentityVerificationTool:
         
         assert tool.config.tool_id == "test_generic"
         assert tool.provider == "generic"
-        assert "generic" in tool.config.base_url
+        assert "mock-identity-verification" in tool.config.base_url
     
     def test_create_jumio_tool(self):
         """Test creating Jumio identity verification tool."""
