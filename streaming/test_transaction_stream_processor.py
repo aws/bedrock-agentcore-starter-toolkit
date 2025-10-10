@@ -301,8 +301,12 @@ class TestTransactionStreamProcessor:
             # Process transaction
             stream_processor.process_transaction(sample_transaction)
             
-            # Wait for processing
-            time.sleep(0.2)
+            # Wait for processing with retry
+            max_retries = 10
+            for _ in range(max_retries):
+                time.sleep(0.1)
+                if results_received:
+                    break
             
             # Check that result was handled
             assert len(results_received) > 0
@@ -330,8 +334,12 @@ class TestTransactionStreamProcessor:
             # Process transaction (should fail)
             stream_processor.process_transaction(sample_transaction)
             
-            # Wait for processing
-            time.sleep(0.2)
+            # Wait for processing with retry
+            max_retries = 10
+            for _ in range(max_retries):
+                time.sleep(0.1)
+                if errors_received:
+                    break
             
             # Check that error was handled
             assert len(errors_received) > 0
