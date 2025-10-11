@@ -8,9 +8,7 @@ For Gateway and Identity features, see the [Gateway quickstart](https://github.c
 
 ## Prerequisites
 
-- **AWS Permissions**
-  - **Root users or administrators**: Can skip this step
-  - **Non-admin users (including SageMaker notebook users)**: Need comprehensive permissions beyond the [basic toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit). See the [Complete Non-Admin User Permissions](#complete-non-admin-user-permissions) section below for the full policy required.
+- **AWS Permissions**: Root users or privileged roles (such as admins) can skip this step. Others need to attach the [starter toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) and [AmazonBedrockAgentCoreFullAccess](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/BedrockAgentCoreFullAccess.html) managed policy.
 - [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable "Claude 3.7 Sonnet" in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
@@ -350,7 +348,7 @@ agentcore --version  # Double check it's working
 # Step 8: Try configure again
 agentcore configure -e agentcore_starter_strands.py
 
-#If Step 6 still doesn’t work, the nuclear option:
+#If Step 6 still doesn't work, the nuclear option:
 cd ..
 mkdir fresh-agentcore-project && cd fresh-agentcore-project
 python3 -m venv .venv
@@ -415,23 +413,6 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 </details>
 
 <details>
-<summary><strong>Permission Errors (Non-Admin Users)</strong></summary>
-
-**Access denied errors during `agentcore configure`, `agentcore launch`, or `agentcore invoke`:**
-
-Non-admin users (including SageMaker notebook users) need comprehensive permissions beyond the basic toolkit policy. Common errors include:
-
-- `AccessDeniedException` for `bedrock-agentcore:CreateMemory`
-- `AccessDeniedException` for `bedrock-agentcore:CreateAgentRuntime`
-- `AccessDeniedException` for `bedrock-agentcore:CreateWorkloadIdentity`
-- `AccessDeniedException` for `bedrock-agentcore:InvokeAgentRuntime`
-- `AccessDeniedException` for `iam:PassRole`
-
-**Solution**: Attach the complete non-admin user permissions policy to your IAM user or role. See [Complete Non-Admin User Permissions](#complete-non-admin-user-permissions) below.
-
-</details>
-
-<details>
 <summary><strong>Observability Issues</strong></summary>
 
 **No traces appearing:**
@@ -447,151 +428,6 @@ Non-admin users (including SageMaker notebook users) need comprehensive permissi
 - Verify IAM role has CloudWatch Logs permissions
 
 </details>
-
----
-
-### Complete Non-Admin User Permissions
-
-<details>
-<summary><strong>Complete Non-Admin User Permissions</strong></summary>
-
-### Why These Permissions Are Needed
-
-The [basic toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) documented in the AWS docs is insufficient for non-admin users. It's missing critical permissions for:
-
-- **Memory operations**: Creating and managing memory resources
-- **Agent runtime operations**: Creating and invoking agents
-- **Identity operations**: Creating workload identities for authentication
-- **Data plane access**: Invoking deployed agents
-- **Cleanup operations**: Deleting resources during destroy
-
-**Who needs this:**
-- IAM users without `PowerUserAccess` or `AdministratorAccess`
-- SageMaker notebook execution roles
-- EC2 instance profiles
-- Any role-based access in managed environments
-
-**Why it works for admins but not others:**
-- Admin policies (`PowerUserAccess`, `AdministratorAccess`) include wildcard permissions like `bedrock-agentcore:*`
-- Non-admin users need every operation explicitly granted
-
-### Complete Policy
-
-Attach this policy to your IAM user or role in addition to the basic toolkit policy:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PassRoleForServices",
-            "Effect": "Allow",
-            "Action": "iam:PassRole",
-            "Resource": [
-                "arn:aws:iam::*:role/AmazonBedrockAgentCore*",
-                "arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
-            ],
-            "Condition": {
-                "StringEquals": {
-                    "iam:PassedToService": [
-                        "bedrock-agentcore.amazonaws.com",
-                        "codebuild.amazonaws.com",
-                        "ecs-tasks.amazonaws.com"
-                    ]
-                }
-            }
-        },
-        {
-            "Sid": "BedrockAgentCoreControlPlane",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:CreateAgentRuntime",
-                "bedrock-agentcore:UpdateAgentRuntime",
-                "bedrock-agentcore:DeleteAgentRuntime",
-                "bedrock-agentcore:GetAgentRuntime",
-                "bedrock-agentcore:ListAgentRuntimes",
-                "bedrock-agentcore:CreateAgentRuntimeEndpoint",
-                "bedrock-agentcore:UpdateAgentRuntimeEndpoint",
-                "bedrock-agentcore:DeleteAgentRuntimeEndpoint",
-                "bedrock-agentcore:GetAgentRuntimeEndpoint",
-                "bedrock-agentcore:ListAgentRuntimeEndpoints",
-                "bedrock-agentcore:CreateMemory",
-                "bedrock-agentcore:UpdateMemory",
-                "bedrock-agentcore:DeleteMemory",
-                "bedrock-agentcore:GetMemory",
-                "bedrock-agentcore:ListMemories"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "BedrockAgentCoreIdentity",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:CreateWorkloadIdentity",
-                "bedrock-agentcore:GetWorkloadIdentity",
-                "bedrock-agentcore:DeleteWorkloadIdentity",
-                "bedrock-agentcore:ListWorkloadIdentities",
-                "bedrock-agentcore:UpdateWorkloadIdentity"
-            ],
-            "Resource": [
-                "arn:aws:bedrock-agentcore:*:*:workload-identity-directory/*",
-                "arn:aws:bedrock-agentcore:*:*:workload-identity-directory/*/workload-identity/*"
-            ]
-        },
-        {
-            "Sid": "BedrockAgentCoreDataPlane",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:InvokeAgentRuntime"
-            ],
-            "Resource": "arn:aws:bedrock-agentcore:*:*:runtime/*"
-        },
-        {
-            "Sid": "ECRCleanup",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:BatchDeleteImage",
-                "ecr:DeleteRepository"
-            ],
-            "Resource": "arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
-        },
-        {
-            "Sid": "CodeBuildCleanup",
-            "Effect": "Allow",
-            "Action": [
-                "codebuild:DeleteProject"
-            ],
-            "Resource": "arn:aws:codebuild:*:*:project/bedrock-agentcore-*"
-        }
-    ]
-}
-```
-
-### How to Attach This Policy
-
-**For IAM Users:**
-1. Go to **IAM Console** → **Users** → Select your user
-2. Click **Add permissions** → **Create inline policy**
-3. Switch to **JSON** tab and paste the policy above
-4. Name it: `BedrockAgentCoreNonAdminAccess`
-5. Click **Create policy**
-
-**For SageMaker Execution Roles:**
-1. Go to **IAM Console** → **Roles** → Find your SageMaker execution role
-2. Click **Add permissions** → **Create inline policy**
-3. Switch to **JSON** tab and paste the policy above
-4. Name it: `BedrockAgentCoreNonAdminAccess`
-5. Click **Create policy**
-
-**For EC2 Instance Profiles or Other Roles:**
-1. Go to **IAM Console** → **Roles** → Select your role
-2. Click **Add permissions** → **Create inline policy**
-3. Switch to **JSON** tab and paste the policy above
-4. Name it: `BedrockAgentCoreNonAdminAccess`
-5. Click **Create policy**
-
-</details>
-
 
 ---
 
