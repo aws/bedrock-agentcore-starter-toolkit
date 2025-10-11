@@ -149,7 +149,7 @@ agentcore configure -e agentcore_starter_strands.py
 #    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial
 #    - Note: Short-term memory is always enabled by default
 ```
-**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.
+**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability. When prompted for long-term memory, type **yes** for this tutorial.
 
 **Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Troubleshooting](#troubleshooting) section (Memory Configuration Not Appearing) to ensure the correct toolkit version is installed.
 
