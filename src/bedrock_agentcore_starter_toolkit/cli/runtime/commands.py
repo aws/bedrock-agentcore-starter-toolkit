@@ -68,17 +68,34 @@ def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> Option
     return None
 
 
-def _handle_requirements_file_display(requirements_file: Optional[str], non_interactive: bool = False) -> Optional[str]:
-    """Handle requirements file with display logic for CLI."""
+def _handle_requirements_file_display(
+    requirements_file: Optional[str], non_interactive: bool = False, source_path: Optional[str] = None
+) -> Optional[str]:
+    """Handle requirements file with display logic for CLI.
+
+    Args:
+        requirements_file: Explicit requirements file path
+        non_interactive: Whether to skip interactive prompts
+        source_path: Optional source code directory (checks here first, then falls back to project root)
+    """
     from ...utils.runtime.entrypoint import detect_dependencies
 
     if requirements_file:
         # User provided file - validate and show confirmation
         return _validate_requirements_file(requirements_file)
 
+    # Detect dependencies:
+    # - If source_path provided: check source_path only
+    # - Otherwise: check project root (Path.cwd())
+    if source_path:
+        source_dir = Path(source_path)
+        deps = detect_dependencies(source_dir)
+    else:
+        # No source_path, check project root
+        deps = detect_dependencies(Path.cwd())
+
     if non_interactive:
         # Auto-detection for non-interactive mode
-        deps = detect_dependencies(Path.cwd())
         if deps.found:
             _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
             return None  # Use detected file
@@ -86,8 +103,6 @@ def _handle_requirements_file_display(requirements_file: Optional[str], non_inte
             _handle_error("No requirements file specified and none found automatically")
 
     # Auto-detection with interactive prompt
-    deps = detect_dependencies(Path.cwd())
-
     if deps.found:
         console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{deps.file}[/bold]")
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
@@ -187,10 +202,11 @@ def configure(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
-    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP)"),
+    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
     non_interactive: bool = typer.Option(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
+    source_path: Optional[str] = typer.Option(None, "--source-path", "-sp", help="Path to agent source code directory"),
 ):
     """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
     if ctx.invoked_subcommand is not None:
@@ -199,8 +215,8 @@ def configure(
     if not entrypoint:
         _handle_error("--entrypoint is required")
 
-    if protocol and protocol.upper() not in ["HTTP", "MCP"]:
-        _handle_error("Error: --protocol must be either HTTP or MCP")
+    if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
+        _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
     try:
@@ -238,7 +254,7 @@ def configure(
         _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive)
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Handle OAuth authorization configuration
     oauth_config = None
@@ -288,6 +304,7 @@ def configure(
             region=region,
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
+            source_path=source_path,
         )
 
         # Prepare authorization info for summary

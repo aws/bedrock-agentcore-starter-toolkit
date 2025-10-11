@@ -55,8 +55,9 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
                 TEST_ECR,
                 "--requirements-file",
                 self.requirements_file,
+                "--non-interactive",
             ],
-            user_input=["no", "no"],  # oauth config, request header allowlist
+            user_input=[],
             validator=lambda result: self.validate_configure(result),
         )
 

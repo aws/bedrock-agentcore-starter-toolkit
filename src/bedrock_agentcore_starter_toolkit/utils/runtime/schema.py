@@ -1,8 +1,16 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
+from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class NetworkModeConfig(BaseModel):
+    """Network mode configuration for VPC deployments."""
+
+    security_groups: List[str] = Field(default_factory=list, description="List of security group IDs")
+    subnets: List[str] = Field(default_factory=list, description="List of subnet IDs")
 
 
 class MemoryConfig(BaseModel):
@@ -37,16 +45,55 @@ class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
     network_mode: str = Field(default="PUBLIC", description="Network mode for deployment")
+    network_mode_config: Optional[NetworkModeConfig] = Field(
+        default=None, description="Network mode configuration (required for VPC mode)"
+    )
+
+    @field_validator("network_mode")
+    @classmethod
+    def validate_network_mode(cls, v: str) -> str:
+        """Validate network mode and ensure VPC config is provided when needed."""
+        valid_modes = ["PUBLIC", "VPC"]
+        if v not in valid_modes:
+            raise ValueError(f"Invalid network_mode: {v}. Must be one of {valid_modes}")
+        return v
+
+    @field_validator("network_mode_config")
+    @classmethod
+    def validate_network_mode_config(cls, v: Optional[NetworkModeConfig], info) -> Optional[NetworkModeConfig]:
+        """Validate that network_mode_config is provided when network_mode is VPC."""
+        if info.data.get("network_mode") == "VPC" and v is None:
+            raise ValueError("network_mode_config is required when network_mode is VPC")
+        return v
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
-        return {"networkMode": self.network_mode}
+        result = {"networkMode": self.network_mode}
+
+        if self.network_mode_config:
+            result["networkModeConfig"] = {
+                "securityGroups": self.network_mode_config.security_groups,
+                "subnets": self.network_mode_config.subnets,
+            }
+
+        return result
 
 
 class ProtocolConfiguration(BaseModel):
     """Protocol configuration for BedrockAgentCore deployment."""
 
-    server_protocol: str = Field(default="HTTP", description="Server protocol for deployment, either HTTP or MCP")
+    server_protocol: str = Field(
+        default="HTTP", description="Server protocol for deployment, either HTTP or MCP or A2A"
+    )
+
+    @field_validator("server_protocol")
+    @classmethod
+    def validate_protocol(cls, v: str) -> str:
+        """Validate protocol is one of the supported types."""
+        allowed = ["HTTP", "MCP", "A2A"]
+        if v.upper() not in allowed:
+            raise ValueError(f"Protocol must be one of {allowed}, got: {v}")
+        return v.upper()
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
@@ -105,6 +152,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     entrypoint: str = Field(..., description="Entrypoint file path")
     platform: str = Field(default="linux/amd64", description="Target platform")
     container_runtime: str = Field(default="docker", description="Container runtime to use")
+    source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
@@ -112,6 +160,37 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
+
+    @field_validator("source_path")
+    @classmethod
+    def validate_source_path(cls, v: Optional[str]) -> Optional[str]:
+        """Validate source path if provided.
+
+        Args:
+            v: Source path value
+
+        Returns:
+            Validated source path or None
+
+        Raises:
+            ValueError: If source path is invalid
+        """
+        if v is None:
+            return v
+
+        # Convert to Path for validation
+        source_path = Path(v)
+
+        # Check if path exists
+        if not source_path.exists():
+            raise ValueError(f"Source path does not exist: {v}")
+
+        # Check if it's a directory
+        if not source_path.is_dir():
+            raise ValueError(f"Source path must be a directory: {v}")
+
+        # Return absolute path string
+        return str(source_path.resolve())
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""

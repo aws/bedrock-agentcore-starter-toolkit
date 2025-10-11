@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from pydantic import ValidationError
 
+from ...operations.runtime.exceptions import RuntimeToolkitException
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
 log = logging.getLogger(__name__)
@@ -58,8 +60,25 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     # New format
     try:
         return BedrockAgentCoreConfigSchema.model_validate(data)
+    except ValidationError as e:
+        # Convert Pydantic errors to user-friendly messages
+        friendly_errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error["loc"])
+            msg = error["msg"]
+            # Make common errors more user-friendly
+            if "Source path does not exist" in msg:
+                friendly_errors.append(f"{field}: {msg} (check if the directory exists)")
+            elif "field required" in msg:
+                friendly_errors.append(f"{field}: This field is required")
+            elif "Input should be" in msg:
+                friendly_errors.append(f"{field}: {msg}")
+            else:
+                friendly_errors.append(f"{field}: {msg}")
+
+        raise RuntimeToolkitException("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
-        raise ValueError(f"Invalid configuration format: {e}") from e
+        raise RuntimeToolkitException(f"Invalid configuration format: {e}") from e
 
 
 def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
@@ -127,3 +146,26 @@ def merge_agent_config(
     config.default_agent = agent_name
 
     return config
+
+
+def get_agentcore_directory(project_root: Path, agent_name: str, source_path: Optional[str] = None) -> Path:
+    """Get the agentcore directory for an agent's build artifacts.
+
+    Args:
+        project_root: Project root directory (typically Path.cwd())
+        agent_name: Name of the agent
+        source_path: Optional source path configuration
+
+    Returns:
+        Path to agentcore directory:
+        - If source_path provided: {project_root}/.bedrock_agentcore/{agent_name}/
+        - Otherwise: {project_root}/ (legacy single-agent behavior)
+    """
+    if source_path:
+        # Multi-agent support: use .bedrock_agentcore/{agent_name}/ for artifact isolation
+        agentcore_dir = project_root / ".bedrock_agentcore" / agent_name
+        agentcore_dir.mkdir(parents=True, exist_ok=True)
+        return agentcore_dir
+    else:
+        # Legacy single-agent: artifacts at project root
+        return project_root

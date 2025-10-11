@@ -6,6 +6,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.runtime.destroy import destroy_bedrock_agentcore
+from bedrock_agentcore_starter_toolkit.operations.runtime.exceptions import RuntimeToolkitException
 from bedrock_agentcore_starter_toolkit.operations.runtime.models import DestroyResult
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
@@ -146,14 +147,14 @@ class TestDestroyBedrockAgentCore:
         """Test destroy with nonexistent configuration file."""
         config_path = tmp_path / "nonexistent.yaml"
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeToolkitException):
             destroy_bedrock_agentcore(config_path)
 
     def test_destroy_nonexistent_agent(self, tmp_path):
         """Test destroy with nonexistent agent."""
         config_path = create_test_config(tmp_path)
 
-        with pytest.raises(RuntimeError, match="Agent 'nonexistent' not found"):
+        with pytest.raises(RuntimeToolkitException, match="Agent 'nonexistent' not found"):
             destroy_bedrock_agentcore(config_path, agent_name="nonexistent")
 
     def test_destroy_undeployed_agent(self, tmp_path):
@@ -1219,7 +1220,7 @@ class TestDestroyBedrockAgentCore:
             # Simulate unexpected exception during session creation
             mock_session.side_effect = Exception("AWS credentials error")
 
-            with pytest.raises(RuntimeError, match="Destroy operation failed: AWS credentials error"):
+            with pytest.raises(RuntimeToolkitException, match="Destroy operation failed: AWS credentials error"):
                 destroy_bedrock_agentcore(config_path, dry_run=False)
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.destroy.BedrockAgentCoreClient")
@@ -1323,7 +1324,9 @@ class TestDestroyBedrockAgentCore:
         """Test destroy operation when agent is not found in config."""
         config_path = create_test_config(tmp_path)
 
-        with pytest.raises(RuntimeError, match="Destroy operation failed: Agent 'nonexistent-agent' not found"):
+        with pytest.raises(
+            RuntimeToolkitException, match="Destroy operation failed: Agent 'nonexistent-agent' not found"
+        ):
             destroy_bedrock_agentcore(config_path, agent_name="nonexistent-agent", dry_run=False)
 
     def test_destroy_get_agent_config_returns_none(self, tmp_path):
@@ -1341,7 +1344,7 @@ class TestDestroyBedrockAgentCore:
             mock_load.return_value = mock_project_config
 
             with pytest.raises(
-                RuntimeError, match="Destroy operation failed: Agent 'test-agent' not found in configuration"
+                RuntimeToolkitException, match="Destroy operation failed: Agent 'test-agent' not found in configuration"
             ):
                 destroy_bedrock_agentcore(config_path, agent_name="test-agent", dry_run=False)
 
