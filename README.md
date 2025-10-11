@@ -1,6 +1,6 @@
-<div align="center">
-  <h1>
-    Bedrock AgentCore Starter Toolkit
+# AWS Bedrock AI Agent Fraud Detection System
+
+[![Status](https://img.shields.io/bit
   </h1>
 
   <h2>

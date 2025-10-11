@@ -1,0 +1,344 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  PYTHON_VERSION: '3.11'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  # Lint and format check
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+          pip install -r requirements.txt
+      
+      - name: Run flake8
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+      - name: Check black formatting
+        run: black --check .
+      
+      - name: Check isort
+        run: isort --check-only .
+      
+      - name: Run mypy
+        run: mypy . --ignore-missing-imports
+
+  # Security scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run Bandit security scan
+        run: |
+          pip install bandit
+          bandit -r . -f json -o bandit-report.json || true
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: bandit-report.json
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Unit tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov pytest-mock
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html --asyncio-mode=auto
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            htmlcov/
+            coverage.xml
+
+  # Build and package
+  build:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Package Lambda functions
+        run: |
+          mkdir -p dist/lambda
+          
+          # Package stream processor
+          cd lambda/stream_processor
+          pip install -r requirements.txt -t .
+          zip -r ../../dist/lambda/stream_processor.zip .
+          cd ../..
+          
+          # Package alert handler
+          cd lambda/alert_handler
+          pip install -r requirements.txt -t .
+          zip -r ../../dist/lambda/alert_handler.zip .
+          cd ../..
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-packages
+          path: dist/lambda/*.zip
+
+  # Deploy to Dev
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: development
+      url: https://dev-api.fraud-detection.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Download Lambda packages
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-packages
+          path: dist/lambda
+      
+      - name: Deploy infrastructure
+        run: |
+          cd aws_infrastructure
+          python deploy_full_infrastructure.py --environment dev --region ${{ env.AWS_REGION }}
+      
+      - name: Deploy Lambda functions
+        run: |
+          # Update stream processor
+          aws lambda update-function-code \
+            --function-name fraud-detection-stream-processor-dev \
+            --zip-file fileb://dist/lambda/stream_processor.zip
+          
+          # Update alert handler
+          aws lambda update-function-code \
+            --function-name fraud-detection-alert-handler-dev \
+            --zip-file fileb://dist/lambda/alert_handler.zip
+      
+      - name: Run smoke tests
+        run: |
+          python tests/run_all_tests.py --quick --environment dev
+      
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to Dev: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [deploy-dev]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://staging-api.fraud-detection.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Download Lambda packages
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-packages
+          path: dist/lambda
+      
+      - name: Deploy infrastructure
+        run: |
+          cd aws_infrastructure
+          python deploy_full_infrastructure.py --environment staging --region ${{ env.AWS_REGION }}
+      
+      - name: Deploy Lambda functions
+        run: |
+          aws lambda update-function-code \
+            --function-name fraud-detection-stream-processor-staging \
+            --zip-file fileb://dist/lambda/stream_processor.zip
+          
+          aws lambda update-function-code \
+            --function-name fraud-detection-alert-handler-staging \
+            --zip-file fileb://dist/lambda/alert_handler.zip
+      
+      - name: Run integration tests
+        run: |
+          python tests/run_all_tests.py --suite integration --environment staging
+      
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to Staging: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Deploy to Production
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://api.fraud-detection.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Download Lambda packages
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-packages
+          path: dist/lambda
+      
+      - name: Create backup
+        run: |
+          ./scripts/backup_production.sh
+      
+      - name: Deploy with blue-green strategy
+        run: |
+          ./scripts/deploy_blue_green.sh production
+      
+      - name: Run smoke tests
+        run: |
+          python tests/run_all_tests.py --quick --environment prod
+      
+      - name: Monitor deployment
+        run: |
+          ./scripts/monitor_deployment.sh --duration 15m
+      
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ./scripts/rollback_deployment.sh production
+      
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to Production: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      
+      - name: Create GitHub release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            Automated release from CI/CD pipeline
+            Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
