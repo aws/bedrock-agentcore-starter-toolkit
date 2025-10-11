@@ -189,7 +189,7 @@ def configure(
         None, "--requirements-file", "-rf", help="Path to requirements file"
     ),
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
-    disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory (stateless agent)"),
+    disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory"),
     authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
@@ -320,7 +320,7 @@ def configure(
 
         memory_info = "Short-term memory (30-day retention)"
         if disable_memory:
-            memory_info = "Disabled (stateless agent)"
+            memory_info = "Disabled"
 
         console.print(
             Panel(
