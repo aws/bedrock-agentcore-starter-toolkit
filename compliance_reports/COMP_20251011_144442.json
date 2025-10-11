@@ -1,0 +1,91 @@
+{
+  "report_id": "COMP_20251011_144442",
+  "jurisdiction": "global",
+  "template": "Global Compliance Summary",
+  "period": {
+    "start": "2025-09-11T14:44:42.769596",
+    "end": "2025-10-11T14:44:42.769648"
+  },
+  "generated_at": "2025-10-11T14:44:42.769953",
+  "overall_compliance_score": 1.0,
+  "status": "compliant",
+  "sections": {
+    "executive_summary": {
+      "overview": "Compliance assessment covering 2 regulatory requirements",
+      "compliance_rate": "2/2 requirements met",
+      "key_findings": [
+        "2 requirements fully compliant",
+        "0 requirements partially compliant",
+        "0 requirements non-compliant"
+      ],
+      "audit_events_reviewed": 15000,
+      "period_covered": "Last 30 days"
+    },
+    "multi_jurisdiction_overview": {
+      "section": "multi_jurisdiction_overview",
+      "content": "Section content placeholder"
+    },
+    "global_compliance_status": {
+      "section": "global_compliance_status",
+      "content": "Section content placeholder"
+    },
+    "regional_variations": {
+      "section": "regional_variations",
+      "content": "Section content placeholder"
+    },
+    "harmonization_efforts": {
+      "section": "harmonization_efforts",
+      "content": "Section content placeholder"
+    }
+  },
+  "requirements_summary": {
+    "total": 2,
+    "compliant": 2,
+    "partial": 0,
+    "non_compliant": 0,
+    "pending": 0
+  },
+  "metrics": {
+    "overall_compliance_score": {
+      "metric_id": "overall_compliance_score",
+      "name": "Overall Compliance Score",
+      "description": "Aggregate compliance score across all regulations",
+      "current_value": 0.0,
+      "threshold": 0.95,
+      "status": "pending",
+      "timestamp": "2025-10-11T14:44:42.687020",
+      "trend": "stable"
+    },
+    "audit_trail_completeness": {
+      "metric_id": "audit_trail_completeness",
+      "name": "Audit Trail Completeness",
+      "description": "Percentage of transactions with complete audit trails",
+      "current_value": 0.0,
+      "threshold": 0.99,
+      "status": "pending",
+      "timestamp": "2025-10-11T14:44:42.687066",
+      "trend": "stable"
+    },
+    "data_breach_response_time": {
+      "metric_id": "data_breach_response_time",
+      "name": "Data Breach Response Time",
+      "description": "Average time to respond to data breaches (hours)",
+      "current_value": 0.0,
+      "threshold": 72.0,
+      "status": "pending",
+      "timestamp": "2025-10-11T14:44:42.687084",
+      "trend": "stable"
+    },
+    "policy_violation_rate": {
+      "metric_id": "policy_violation_rate",
+      "name": "Policy Violation Rate",
+      "description": "Percentage of transactions with policy violations",
+      "current_value": 0.0,
+      "threshold": 0.01,
+      "status": "pending",
+      "timestamp": "2025-10-11T14:44:42.687099",
+      "trend": "stable"
+    }
+  },
+  "active_alerts": []
+}
