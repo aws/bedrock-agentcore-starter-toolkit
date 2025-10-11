@@ -44,7 +44,10 @@ class ContainerRuntime:
             else:
                 # Informational message - default CodeBuild deployment works fine
                 console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
-                _print_success("Default deployment uses CodeBuild (no container engine needed), For local builds, install Docker, Finch, or Podman")
+                _print_success(
+                    "Default deployment uses CodeBuild (no container engine needed), "
+                    "For local builds, install Docker, Finch, or Podman"
+                )
                 self.runtime = "none"
                 self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
@@ -132,7 +135,7 @@ class ContainerRuntime:
             _handle_warn(
                 f"Platform mismatch: Current system is '{current_platform}' "
                 f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
-                "Please use default launch command which will do a remote cross-platform build using code build." \
+                "Please use default launch command which will do a remote cross-platform build using code build."
                 "For deployment other options and workarounds, see: "
                 "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
             )

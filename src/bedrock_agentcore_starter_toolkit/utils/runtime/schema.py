@@ -1,6 +1,5 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator

@@ -65,7 +65,7 @@ def _validate_requirements_file(file_path: str) -> str:
 
 def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: str = "") -> Optional[str]:
     """Prompt user for requirements file path with validation.
-    
+
     Args:
         prompt_text: Prompt message to display
         source_path: Source directory path for validation
@@ -75,32 +75,25 @@ def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: s
     if not default:
         rel_source = get_relative_path(Path(source_path))
         default = f"{rel_source}/"
-    
+
     # Use PathCompleter without filter - allow navigation anywhere
-    response = prompt(
-        prompt_text,
-        completer=PathCompleter(),
-        complete_while_typing=True,
-        default=default
-    )
+    response = prompt(prompt_text, completer=PathCompleter(), complete_while_typing=True, default=default)
 
     if response.strip():
         # Validate file exists and is in source directory
         req_file = Path(response.strip()).resolve()
         source_dir = Path(source_path).resolve()
-        
+
         # Check if requirements file is within source directory
         try:
             if not req_file.is_relative_to(source_dir):
                 rel_source = get_relative_path(source_dir)
-                console.print(
-                    f"[red]Error: Requirements file must be in source directory: {rel_source}[/red]"
-                )
+                console.print(f"[red]Error: Requirements file must be in source directory: {rel_source}[/red]")
                 return _prompt_for_requirements_file(prompt_text, source_path, default)
         except (ValueError, AttributeError):
             # is_relative_to not available or other error - skip validation
             pass
-        
+
         return _validate_requirements_file(response.strip())
 
     return None
@@ -135,14 +128,12 @@ def _handle_requirements_file_display(
     # Auto-detection with interactive prompt
     if deps.found:
         rel_deps_path = get_relative_path(Path(deps.resolved_path))
-            
+
         console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{rel_deps_path}[/bold]")
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
 
         result = _prompt_for_requirements_file(
-            "Path or Press Enter to use detected dependency file: ",
-            source_path=source_path,
-            default=rel_deps_path
+            "Path or Press Enter to use detected dependency file: ", source_path=source_path, default=rel_deps_path
         )
 
         if result is None:
@@ -165,10 +156,10 @@ def _handle_requirements_file_display(
 def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False) -> str:
     """Detect entrypoint file in source directory with CLI display."""
     source_dir = Path(source_path)
-    
+
     # Use operations layer for detection
     detected = detect_entrypoint(source_dir)
-    
+
     if not detected:
         # No fallback prompt - fail with clear error message
         rel_source = get_relative_path(source_dir)
@@ -177,10 +168,10 @@ def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False
             f"Expected one of: main.py, agent.py, app.py, __main__.py\n"
             f"Please specify full file path (e.g., {rel_source}/your_agent.py)"
         )
-    
+
     # Show detection and confirm
     rel_entrypoint = get_relative_path(detected)
-    
+
     _print_success(f"Using entrypoint file: [cyan]{rel_entrypoint}[/cyan]")
     return str(detected)
 
@@ -239,10 +230,10 @@ def set_default(name: str = typer.Argument(...)):
 def configure(
     ctx: typer.Context,
     entrypoint: Optional[str] = typer.Option(
-        None, 
-        "--entrypoint", 
-        "-e", 
-        help="Entry point: file path (e.g., agent.py) or directory path (auto-detects main.py, agent.py, app.py)"
+        None,
+        "--entrypoint",
+        "-e",
+        help="Entry point: file path (e.g., agent.py) or directory path (auto-detects main.py, agent.py, app.py)",
     ),
     agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
     execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
@@ -271,7 +262,7 @@ def configure(
     ),
 ):
     """Configure a Bedrock AgentCore agent interactively or with parameters.
-    
+
     Examples:
       agentcore configure                          # Fully interactive (current directory)
       agentcore configure --entrypoint writer/   # Directory (auto-detect entrypoint)
@@ -284,11 +275,11 @@ def configure(
         _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
-    
+
     # Create configuration manager early for consistent prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     config_manager = ConfigurationManager(config_path, non_interactive)
-    
+
     # Interactive entrypoint selection
     if not entrypoint:
         if non_interactive:
@@ -299,19 +290,16 @@ def configure(
             console.print("[dim]  • File path: weather/agent.py[/dim]")
             console.print("[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]")
             console.print("[dim]  • Current directory: press Enter[/dim]")
-            
-            entrypoint_input = prompt(
-                "Entrypoint: ",
-                completer=PathCompleter(),
-                complete_while_typing=True,
-                default=""
-            ).strip() or "."
+
+            entrypoint_input = (
+                prompt("Entrypoint: ", completer=PathCompleter(), complete_while_typing=True, default="").strip() or "."
+            )
     else:
         entrypoint_input = entrypoint
-    
+
     # Resolve the entrypoint_input (handles both file and directory)
     entrypoint_path = Path(entrypoint_input).resolve()
-    
+
     if entrypoint_path.is_file():
         # It's a file - use directly as entrypoint
         entrypoint = str(entrypoint_path)
@@ -328,19 +316,18 @@ def configure(
 
     # Process agent name
     entrypoint_path = Path(entrypoint)
-    
+
     # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
     if not agent_name:
         suggested_name = infer_agent_name(entrypoint_path)
         agent_name = config_manager.prompt_agent_name(suggested_name)
-    
+
     valid, error = validate_agent_name(agent_name)
     if not valid:
         _handle_error(error)
 
     # Handle dependency file selection with simplified logic
     final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
-
 
     # Interactive prompts for missing values - clean and elegant
     if not execution_role:

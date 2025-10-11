@@ -25,24 +25,24 @@ class ConfigurationManager:
 
     def prompt_agent_name(self, suggested_name: str) -> str:
         """Prompt for agent name with a suggested default.
-        
+
         Args:
             suggested_name: The suggested agent name based on entrypoint path
-            
+
         Returns:
             The selected or entered agent name
         """
         if self.non_interactive:
             _print_success(f"Agent name (inferred): {suggested_name}")
             return suggested_name
-        
+
         console.print(f"\n🏷️  [cyan]Inferred agent name[/cyan]: {suggested_name}")
-        console.print(f"[dim]Press Enter to use this name, or type a different one (alphanumeric without '-')[/dim]")    
+        console.print("[dim]Press Enter to use this name, or type a different one (alphanumeric without '-')[/dim]")
         agent_name = _prompt_with_default("Agent name", suggested_name)
-        
+
         if not agent_name:
             agent_name = suggested_name
-            
+
         _print_success(f"Using agent name: [cyan]{agent_name}[/cyan]")
         return agent_name
 
