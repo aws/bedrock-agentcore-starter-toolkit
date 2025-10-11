@@ -1,9 +1,15 @@
 """Tests for BedrockAgentCore configuration management."""
 
 import logging
+from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+import yaml
+
+from bedrock_agentcore_starter_toolkit.operations.runtime.exceptions import RuntimeToolkitException
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import (
+    get_agentcore_directory,
     is_project_config_format,
     load_config,
     merge_agent_config,
@@ -25,7 +31,6 @@ class TestProjectConfiguration:
 
     def test_load_project_config_single_agent(self):
         """Test loading project config with single agent."""
-        from pathlib import Path
 
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_single.yaml"
         project_config = load_config(fixture_path)
@@ -42,7 +47,6 @@ class TestProjectConfiguration:
 
     def test_load_project_config_multiple_agents(self):
         """Test loading project config with multiple agents."""
-        from pathlib import Path
 
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_multiple.yaml"
         project_config = load_config(fixture_path)
@@ -66,7 +70,6 @@ class TestProjectConfiguration:
 
     def test_get_agent_config_by_name(self):
         """Test getting specific agent config."""
-        from pathlib import Path
 
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_multiple.yaml"
         project_config = load_config(fixture_path)
@@ -79,7 +82,6 @@ class TestProjectConfiguration:
 
     def test_get_default_agent_config(self):
         """Test getting default agent config."""
-        from pathlib import Path
 
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_multiple.yaml"
         project_config = load_config(fixture_path)
@@ -118,7 +120,6 @@ class TestProjectConfiguration:
 
     def test_get_agent_config_error_handling(self):
         """Test error handling for agent config retrieval."""
-        from pathlib import Path
 
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_single.yaml"
         project_config = load_config(fixture_path)
@@ -132,7 +133,6 @@ class TestProjectConfiguration:
 
     def test_project_config_save_load_cycle(self, tmp_path):
         """Test saving and loading project configuration."""
-        from pathlib import Path
 
         # Load original config
         fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_multiple.yaml"
@@ -153,7 +153,6 @@ class TestProjectConfiguration:
 
     def test_is_project_config_format_detection(self):
         """Test project config format detection."""
-        from pathlib import Path
 
         # Test project format files
         single_fixture = Path(__file__).parent.parent.parent / "fixtures" / "project_config_single.yaml"
@@ -609,3 +608,168 @@ class TestRequestHeaderConfigurationSchema:
 
         loaded_agent3 = loaded_config.get_agent_config("agent3")
         assert loaded_agent3.request_header_configuration is None
+
+
+class TestLegacyFormatTransformation:
+    """Test legacy format transformation functionality."""
+
+    def test_load_legacy_format(self, tmp_path):
+        """Test loading and transforming legacy single-agent format."""
+        # Lines 44-45, 58: Test legacy format transformation
+        config_path = tmp_path / "legacy_config.yaml"
+
+        # Create legacy format config (single agent, no 'agents' key)
+        legacy_config = {
+            "name": "legacy-agent",
+            "entrypoint": "agent.py",
+            "platform": "linux/arm64",
+            "container_runtime": "docker",
+            "aws": {
+                "region": "us-west-2",
+                "account": "123456789012",
+                "network_configuration": {"network_mode": "PUBLIC"},
+                "observability": {"enabled": True},
+            },
+            "bedrock_agentcore": {},
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(legacy_config, f)
+
+        # Load the config - should auto-transform to multi-agent format
+        loaded_config = load_config(config_path)
+
+        # Verify transformation
+        assert isinstance(loaded_config, BedrockAgentCoreConfigSchema)
+        assert loaded_config.default_agent == "legacy-agent"
+        assert "legacy-agent" in loaded_config.agents
+        assert loaded_config.agents["legacy-agent"].name == "legacy-agent"
+        assert loaded_config.agents["legacy-agent"].entrypoint == "agent.py"
+
+
+class TestConfigValidationErrors:
+    """Test configuration validation error handling."""
+
+    def test_validation_error_field_required(self, tmp_path):
+        """Test validation error handling for required fields."""
+        # Lines 73: Test 'field required' error handling
+        config_path = tmp_path / "missing_field_config.yaml"
+
+        # Create config missing required field (entrypoint)
+        invalid_config = {
+            "default_agent": "test-agent",
+            "agents": {
+                "test-agent": {
+                    "name": "test-agent",
+                    # Missing 'entrypoint' field
+                    "aws": {
+                        "region": "us-west-2",
+                        "network_configuration": {"network_mode": "PUBLIC"},
+                        "observability": {"enabled": True},
+                    },
+                    "bedrock_agentcore": {},
+                }
+            },
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(invalid_config, f)
+
+        # Should raise RuntimeToolkitException with friendly error message
+        with pytest.raises(RuntimeToolkitException) as exc_info:
+            load_config(config_path)
+
+        assert "Configuration validation failed" in str(exc_info.value)
+        # Check for the friendly error message about required field
+        assert "Field required" in str(exc_info.value)
+
+    def test_validation_error_input_type(self, tmp_path):
+        """Test validation error handling for input type errors."""
+        # Lines 75: Test 'Input should be' error handling
+        config_path = tmp_path / "invalid_type_config.yaml"
+
+        # Create config with invalid type (region as integer instead of string)
+        invalid_config = {
+            "default_agent": "test-agent",
+            "agents": {
+                "test-agent": {
+                    "name": "test-agent",
+                    "entrypoint": "agent.py",
+                    "aws": {
+                        "region": 123,  # Invalid: should be string
+                        "network_configuration": {"network_mode": "PUBLIC"},
+                        "observability": {"enabled": True},
+                    },
+                    "bedrock_agentcore": {},
+                }
+            },
+        }
+
+        with open(config_path, "w") as f:
+            yaml.dump(invalid_config, f)
+
+        # Should raise RuntimeToolkitException with friendly error message
+        with pytest.raises(RuntimeToolkitException) as exc_info:
+            load_config(config_path)
+
+        assert "Configuration validation failed" in str(exc_info.value)
+
+    def test_general_exception_handling(self, tmp_path):
+        """Test general exception handling for non-ValidationError exceptions."""
+        # Lines 80-81: Test general exception handling
+        config_path = tmp_path / "corrupt_config.yaml"
+
+        # Create corrupt YAML that will raise a general exception
+        with open(config_path, "w") as f:
+            f.write("{corrupt yaml content that doesn't parse properly")
+
+        # Should raise RuntimeToolkitException for general errors
+        with pytest.raises((RuntimeToolkitException, yaml.YAMLError)):
+            load_config(config_path)
+
+
+class TestGetAgentcoreDirectory:
+    """Test get_agentcore_directory functionality."""
+
+    def test_get_agentcore_directory_with_source_path(self, tmp_path):
+        """Test agentcore directory when source_path is provided."""
+        # Lines 166-168: Test multi-agent path creation
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        agent_name = "test-agent"
+        source_path = "/some/source/path"
+
+        result = get_agentcore_directory(project_root, agent_name, source_path)
+
+        # Should create .bedrock_agentcore/{agent_name}/ directory
+        expected_path = project_root / ".bedrock_agentcore" / agent_name
+        assert result == expected_path
+        assert result.exists()
+        assert result.is_dir()
+
+    def test_get_agentcore_directory_without_source_path(self, tmp_path):
+        """Test agentcore directory when source_path is None (legacy)."""
+        # Lines 170-171: Test legacy single-agent behavior
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        agent_name = "test-agent"
+
+        result = get_agentcore_directory(project_root, agent_name, None)
+
+        # Should return project root (legacy behavior)
+        assert result == project_root
+
+    def test_get_agentcore_directory_creates_nested_dirs(self, tmp_path):
+        """Test that nested directories are created properly."""
+        # Test mkdir with parents=True functionality
+        project_root = tmp_path / "deep" / "nested" / "project"
+        # Don't create project_root manually - let the function do it
+        agent_name = "test-agent"
+        source_path = "/some/source"
+
+        result = get_agentcore_directory(project_root, agent_name, source_path)
+
+        # Should create all parent directories
+        expected_path = tmp_path / "deep" / "nested" / "project" / ".bedrock_agentcore" / "test-agent"
+        assert result.exists()
+        assert result == expected_path

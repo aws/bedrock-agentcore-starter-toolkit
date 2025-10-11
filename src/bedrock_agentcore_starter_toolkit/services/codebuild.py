@@ -14,6 +14,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from ..operations.runtime.create_role import get_or_create_codebuild_execution_role
+from .ecr import sanitize_ecr_repo_name
 
 
 class CodeBuildService:
@@ -159,7 +160,7 @@ class CodeBuildService:
         self, agent_name: str, ecr_repository_uri: str, execution_role: str, source_location: str
     ) -> str:
         """Create or update CodeBuild project for ARM64 builds."""
-        project_name = f"bedrock-agentcore-{agent_name}-builder"
+        project_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_name)}-builder"
 
         buildspec = self._get_arm64_buildspec(ecr_repository_uri)
 

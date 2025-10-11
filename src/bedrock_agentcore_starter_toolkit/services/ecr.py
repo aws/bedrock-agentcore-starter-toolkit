@@ -1,10 +1,52 @@
 """ECR (Elastic Container Registry) service integration."""
 
 import base64
+import re
 
 import boto3
 
 from ..utils.runtime.container import ContainerRuntime
+
+
+def sanitize_ecr_repo_name(name: str) -> str:
+    """Sanitize agent name for ECR repository naming requirements.
+
+    ECR repository names must:
+    - Contain only lowercase letters, numbers, hyphens (-), underscores (_), and forward slashes (/)
+    - Start with a lowercase letter or number
+    - Be between 2 and 256 characters
+
+    Args:
+        name: Agent name to sanitize
+
+    Returns:
+        Sanitized repository name component
+    """
+    # Convert to lowercase
+    name = name.lower()
+
+    # Replace invalid characters with hyphens
+    name = re.sub(r"[^a-z0-9_\-/]", "-", name)
+
+    # Ensure starts with alphanumeric
+    if name and not name[0].isalnum():
+        name = "a" + name  # Prefix with 'a' if starts with non-alphanumeric
+
+    # Remove consecutive hyphens/underscores
+    name = re.sub(r"[-_]{2,}", "-", name)
+
+    # Strip trailing hyphens/underscores
+    name = name.rstrip("-_")
+
+    # Ensure minimum length
+    if len(name) < 2:
+        name = name + "-agent"
+
+    # Truncate if too long (leave room for prefix)
+    if len(name) > 200:
+        name = name[:200].rstrip("-_")
+
+    return name
 
 
 def get_account_id() -> str:
@@ -38,8 +80,8 @@ def get_or_create_ecr_repository(agent_name: str, region: str) -> str:
     Returns:
         ECR repository URI
     """
-    # Generate deterministic repository name based on agent name
-    repo_name = f"bedrock-agentcore-{agent_name}"
+    # Generate deterministic repository name based on agent name (sanitized for ECR requirements)
+    repo_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_name)}"
 
     ecr = boto3.client("ecr", region_name=region)
 

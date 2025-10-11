@@ -1,6 +1,7 @@
 """Configure operation - creates BedrockAgentCore configuration and Dockerfile."""
 
 import logging
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple
@@ -9,6 +10,7 @@ from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...services.ecr import get_account_id, get_region
 from ...utils.runtime.config import merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.entrypoint import detect_dependencies
 from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
@@ -22,6 +24,103 @@ from ...utils.runtime.schema import (
 from .models import ConfigureResult
 
 log = logging.getLogger(__name__)
+
+
+def get_relative_path(path: Path, base: Optional[Path] = None) -> str:
+    """Convert path to relative format with OS-native separators.
+
+    Args:
+        path: Absolute or relative path
+        base: Base directory (defaults to current working directory)
+
+    Returns:
+        Path relative to base with OS-native separators
+
+    Raises:
+        ValueError: If path is empty or invalid
+    """
+    # Validate input
+    if not path or str(path).strip() == "":
+        raise ValueError("Path cannot be empty")
+
+    # Ensure path is a Path object
+    path_obj = Path(path) if not isinstance(path, Path) else path
+    base = base or Path.cwd()
+
+    try:
+        rel_path = path_obj.relative_to(base)
+        return str(rel_path)
+    except ValueError:
+        # Path is outside base - keep full path for clarity
+        # Don't lose directory structure by showing just the filename
+        return str(path_obj)
+
+
+def detect_entrypoint(source_path: Path) -> Optional[Path]:
+    """Detect entrypoint file in source directory.
+
+    Args:
+        source_path: Directory to search for entrypoint
+
+    Returns:
+        Path to detected entrypoint file, or None if not found
+    """
+    ENTRYPOINT_CANDIDATES = ["agent.py", "app.py", "main.py", "__main__.py"]
+
+    source_dir = Path(source_path)
+    for candidate in ENTRYPOINT_CANDIDATES:
+        candidate_path = source_dir / candidate
+        if candidate_path.exists():
+            log.debug("Detected entrypoint: %s", candidate_path)
+            return candidate_path
+
+    log.debug("No entrypoint found in %s", source_path)
+    return None
+
+
+def detect_requirements(source_path: Path):
+    """Detect requirements file in the source directory.
+
+    Args:
+        source_path: Source directory (where entrypoint is located)
+
+    Returns:
+        DependencyInfo object with detection results
+    """
+    # Resolve to absolute path for consistent behavior
+    source_path_resolved = Path(source_path).resolve()
+    log.debug("Checking for requirements in source directory: %s", source_path_resolved)
+
+    deps = detect_dependencies(source_path_resolved)
+    if deps.found:
+        log.debug("Found requirements in source directory: %s", deps.resolved_path)
+    else:
+        log.debug("No requirements file found in source directory: %s", source_path_resolved)
+
+    return deps
+
+
+def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
+    """Infer agent name from entrypoint path.
+
+    Args:
+        entrypoint_path: Path to agent entrypoint file
+        base: Base directory for relative path (defaults to cwd)
+
+    Returns:
+        Suggested agent name (e.g., 'agents_writer_main' from 'agents/writer/main.py')
+    """
+    rel_entrypoint = get_relative_path(entrypoint_path, base)
+
+    # Remove .py extension if present (only at the end)
+    if rel_entrypoint.endswith(".py"):
+        rel_entrypoint = rel_entrypoint[:-3]
+
+    # Replace spaces and OS path separators with underscores
+    suggested_name = rel_entrypoint.replace(" ", "_").replace(os.sep, "_")
+
+    log.debug("Inferred agent name: %s from %s", suggested_name, get_relative_path(entrypoint_path, base))
+    return suggested_name
 
 
 def configure_bedrock_agentcore(
@@ -246,7 +345,9 @@ def configure_bedrock_agentcore(
         source_path,
         protocol,
     )
-    log.info("Generated Dockerfile: %s", dockerfile_path)
+    # Log with relative path for better readability
+    rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
+    log.info("Generated Dockerfile: %s", rel_dockerfile_path)
 
     # Ensure .dockerignore exists at Docker build context location
     if source_path:

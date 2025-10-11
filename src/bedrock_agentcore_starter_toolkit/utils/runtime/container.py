@@ -44,8 +44,10 @@ class ContainerRuntime:
             else:
                 # Informational message - default CodeBuild deployment works fine
                 console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
-                _print_success("Default deployment uses CodeBuild (no container engine needed)")
-                console.print("[dim]For local builds, install Docker, Finch, or Podman[/dim]")
+                _print_success(
+                    "Default deployment uses CodeBuild (no container engine needed), "
+                    "For local builds, install Docker, Finch, or Podman"
+                )
                 self.runtime = "none"
                 self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
@@ -131,9 +133,10 @@ class ContainerRuntime:
 
         if current_platform != required_platform:
             _handle_warn(
-                f"[WARNING] Platform mismatch: Current system is '{current_platform}' "
-                f"but Bedrock AgentCore requires '{required_platform}'.\n"
-                "For deployment options and workarounds, see: "
+                f"Platform mismatch: Current system is '{current_platform}' "
+                f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
+                "Please use default launch command which will do a remote cross-platform build using code build."
+                "For deployment other options and workarounds, see: "
                 "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
             )
 
@@ -150,9 +153,8 @@ class ContainerRuntime:
         # If source_path provided: module path relative to source_path (Docker build context)
         # Otherwise: module path relative to project root
         build_context_root = Path(source_path) if source_path else output_dir
-
         # Generate .dockerignore if it doesn't exist
-        self._ensure_dockerignore(output_dir)
+        self._ensure_dockerignore(build_context_root)
 
         # Validate module path against build context root
         self._validate_module_path(agent_path, build_context_root)
@@ -167,11 +169,12 @@ class ContainerRuntime:
         # - Otherwise: check project root (output_dir)
         # - If explicit requirements_file provided: use that regardless
         if source_path and not requirements_file:
-            # Check source_path directory for dependencies
             source_dir = Path(source_path)
             deps = detect_dependencies(source_dir, explicit_file=None)
+        if source_path:
+            source_dir = Path(source_path)
+            deps = detect_dependencies(source_dir, explicit_file=requirements_file)
         else:
-            # Check project root for dependencies (or use explicit file)
             deps = detect_dependencies(output_dir, explicit_file=requirements_file)
 
         # Add logic to avoid duplicate installation

@@ -15,13 +15,16 @@ from rich.syntax import Syntax
 from ...operations.runtime import (
     configure_bedrock_agentcore,
     destroy_bedrock_agentcore,
+    detect_entrypoint,
+    detect_requirements,
+    get_relative_path,
     get_status,
+    infer_agent_name,
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
     validate_agent_name,
 )
 from ...utils.runtime.config import load_config
-from ...utils.runtime.entrypoint import parse_entrypoint
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
@@ -47,22 +50,50 @@ def _show_configuration_not_found_panel():
 
 
 def _validate_requirements_file(file_path: str) -> str:
-    """Validate requirements file and return the path."""
+    """Validate requirements file and return the absolute path."""
     from ...utils.runtime.entrypoint import validate_requirements_file
 
     try:
         deps = validate_requirements_file(Path.cwd(), file_path)
-        _print_success(f"Using requirements file: [dim]{deps.resolved_path}[/dim]")
-        return file_path
+        rel_path = get_relative_path(Path(deps.resolved_path))
+        _print_success(f"Using requirements file: [dim]{rel_path}[/dim]")
+        # Return absolute path for consistency with entrypoint handling
+        return str(Path(deps.resolved_path).resolve())
     except (FileNotFoundError, ValueError) as e:
         _handle_error(str(e), e)
 
 
-def _prompt_for_requirements_file(prompt_text: str, default: str = "") -> Optional[str]:
-    """Prompt user for requirements file path with validation."""
-    response = prompt(prompt_text, completer=PathCompleter(), default=default)
+def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: str = "") -> Optional[str]:
+    """Prompt user for requirements file path with validation.
+
+    Args:
+        prompt_text: Prompt message to display
+        source_path: Source directory path for validation
+        default: Default path to pre-populate
+    """
+    # Pre-populate with relative source directory path if no default provided
+    if not default:
+        rel_source = get_relative_path(Path(source_path))
+        default = f"{rel_source}/"
+
+    # Use PathCompleter without filter - allow navigation anywhere
+    response = prompt(prompt_text, completer=PathCompleter(), complete_while_typing=True, default=default)
 
     if response.strip():
+        # Validate file exists and is in source directory
+        req_file = Path(response.strip()).resolve()
+        source_dir = Path(source_path).resolve()
+
+        # Check if requirements file is within source directory
+        try:
+            if not req_file.is_relative_to(source_dir):
+                rel_source = get_relative_path(source_dir)
+                console.print(f"[red]Error: Requirements file must be in source directory: {rel_source}[/red]")
+                return _prompt_for_requirements_file(prompt_text, source_path, default)
+        except (ValueError, AttributeError):
+            # is_relative_to not available or other error - skip validation
+            pass
+
         return _validate_requirements_file(response.strip())
 
     return None
@@ -76,54 +107,73 @@ def _handle_requirements_file_display(
     Args:
         requirements_file: Explicit requirements file path
         non_interactive: Whether to skip interactive prompts
-        source_path: Optional source code directory (checks here first, then falls back to project root)
+        source_path: Optional source code directory
     """
-    from ...utils.runtime.entrypoint import detect_dependencies
-
     if requirements_file:
         # User provided file - validate and show confirmation
         return _validate_requirements_file(requirements_file)
 
-    # Detect dependencies:
-    # - If source_path provided: check source_path only
-    # - Otherwise: check project root (Path.cwd())
-    if source_path:
-        source_dir = Path(source_path)
-        deps = detect_dependencies(source_dir)
-    else:
-        # No source_path, check project root
-        deps = detect_dependencies(Path.cwd())
+    # Use operations layer for detection - source_path is always provided
+    deps = detect_requirements(Path(source_path))
 
     if non_interactive:
         # Auto-detection for non-interactive mode
         if deps.found:
-            _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
+            rel_deps_path = get_relative_path(Path(deps.resolved_path))
+            _print_success(f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]")
             return None  # Use detected file
         else:
             _handle_error("No requirements file specified and none found automatically")
 
     # Auto-detection with interactive prompt
     if deps.found:
-        console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{deps.file}[/bold]")
+        rel_deps_path = get_relative_path(Path(deps.resolved_path))
+
+        console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{rel_deps_path}[/bold]")
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
 
-        result = _prompt_for_requirements_file("Path or Press Enter to use detected dependency file: ", default="")
+        result = _prompt_for_requirements_file(
+            "Path or Press Enter to use detected dependency file: ", source_path=source_path, default=rel_deps_path
+        )
 
         if result is None:
             # Use detected file
-            _print_success(f"Using detected file: [dim]{deps.file}[/dim]")
+            _print_success(f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]")
 
         return result
     else:
         console.print("\n[yellow]⚠️  No dependency file found (requirements.txt or pyproject.toml)[/yellow]")
         console.print("[dim]Enter path to requirements file (use Tab for autocomplete), or press Enter to skip:[/dim]")
 
-        result = _prompt_for_requirements_file("Path: ")
+        result = _prompt_for_requirements_file("Path: ", source_path=source_path)
 
         if result is None:
             _handle_error("No requirements file specified and none found automatically")
 
         return result
+
+
+def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False) -> str:
+    """Detect entrypoint file in source directory with CLI display."""
+    source_dir = Path(source_path)
+
+    # Use operations layer for detection
+    detected = detect_entrypoint(source_dir)
+
+    if not detected:
+        # No fallback prompt - fail with clear error message
+        rel_source = get_relative_path(source_dir)
+        _handle_error(
+            f"No entrypoint file found in {rel_source}\n"
+            f"Expected one of: main.py, agent.py, app.py, __main__.py\n"
+            f"Please specify full file path (e.g., {rel_source}/your_agent.py)"
+        )
+
+    # Show detection and confirm
+    rel_entrypoint = get_relative_path(detected)
+
+    _print_success(f"Using entrypoint file: [cyan]{rel_entrypoint}[/cyan]")
+    return str(detected)
 
 
 # Define options at module level to avoid B008
@@ -179,7 +229,12 @@ def set_default(name: str = typer.Argument(...)):
 @configure_app.callback(invoke_without_command=True)
 def configure(
     ctx: typer.Context,
-    entrypoint: Optional[str] = typer.Option(None, "--entrypoint", "-e", help="Python file with BedrockAgentCoreApp"),
+    entrypoint: Optional[str] = typer.Option(
+        None,
+        "--entrypoint",
+        "-e",
+        help="Entry point: file path (e.g., agent.py) or directory path (auto-detects main.py, agent.py, app.py)",
+    ),
     agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
     execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
     code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
@@ -206,34 +261,74 @@ def configure(
     non_interactive: bool = typer.Option(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
-    source_path: Optional[str] = typer.Option(None, "--source-path", "-sp", help="Path to agent source code directory"),
 ):
-    """Configure a Bedrock AgentCore agent. The agent name defaults to your Python file name."""
+    """Configure a Bedrock AgentCore agent interactively or with parameters.
+
+    Examples:
+      agentcore configure                          # Fully interactive (current directory)
+      agentcore configure --entrypoint writer/   # Directory (auto-detect entrypoint)
+      agentcore configure --entrypoint agent.py    # File (use as entrypoint)
+    """
     if ctx.invoked_subcommand is not None:
         return
-
-    if not entrypoint:
-        _handle_error("--entrypoint is required")
 
     if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
         _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
-    try:
-        _, file_name = parse_entrypoint(entrypoint)
-        agent_name = agent_name or file_name
 
-        valid, error = validate_agent_name(agent_name)
-        if not valid:
-            _handle_error(error)
-
-        console.print(f"[dim]Agent name: {agent_name}[/dim]")
-    except ValueError as e:
-        _handle_error(f"Error: {e}", e)
-
-    # Create configuration manager for clean, elegant prompting
+    # Create configuration manager early for consistent prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     config_manager = ConfigurationManager(config_path, non_interactive)
+
+    # Interactive entrypoint selection
+    if not entrypoint:
+        if non_interactive:
+            entrypoint_input = "."
+        else:
+            console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
+            console.print("[dim]Specify the entry point (use Tab for autocomplete):[/dim]")
+            console.print("[dim]  • File path: weather/agent.py[/dim]")
+            console.print("[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]")
+            console.print("[dim]  • Current directory: press Enter[/dim]")
+
+            entrypoint_input = (
+                prompt("Entrypoint: ", completer=PathCompleter(), complete_while_typing=True, default="").strip() or "."
+            )
+    else:
+        entrypoint_input = entrypoint
+
+    # Resolve the entrypoint_input (handles both file and directory)
+    entrypoint_path = Path(entrypoint_input).resolve()
+
+    if entrypoint_path.is_file():
+        # It's a file - use directly as entrypoint
+        entrypoint = str(entrypoint_path)
+        source_path = str(entrypoint_path.parent)
+        if not non_interactive:
+            rel_path = get_relative_path(entrypoint_path)
+            _print_success(f"Using file: {rel_path}")
+    elif entrypoint_path.is_dir():
+        # It's a directory - detect entrypoint within it
+        source_path = str(entrypoint_path)
+        entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+    else:
+        _handle_error(f"Path not found: {entrypoint_input}")
+
+    # Process agent name
+    entrypoint_path = Path(entrypoint)
+
+    # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
+    if not agent_name:
+        suggested_name = infer_agent_name(entrypoint_path)
+        agent_name = config_manager.prompt_agent_name(suggested_name)
+
+    valid, error = validate_agent_name(agent_name)
+    if not valid:
+        _handle_error(error)
+
+    # Handle dependency file selection with simplified logic
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Interactive prompts for missing values - clean and elegant
     if not execution_role:
@@ -252,9 +347,6 @@ def configure(
         # User provided a specific ECR repository
         auto_create_ecr = False
         _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
-
-    # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Handle OAuth authorization configuration
     oauth_config = None
@@ -318,26 +410,26 @@ def configure(
             headers = request_header_config.get("requestHeaderAllowlist", [])
             headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
+        execution_role_display = "Auto-create" if not result.execution_role else result.execution_role
         memory_info = "Short-term memory (30-day retention)"
         if disable_memory:
             memory_info = "Disabled"
 
         console.print(
             Panel(
-                f"[green]Configuration Complete[/green]\n\n"
-                f"[bold]Agent Details:[/bold]\n"
+                f"[bold]Agent Details[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Runtime: [cyan]{result.runtime}[/cyan]\n"
                 f"Region: [cyan]{result.region}[/cyan]\n"
-                f"Account: [dim]{result.account_id}[/dim]\n\n"
-                f"[bold]Configuration:[/bold]\n"
-                f"Execution Role: [dim]{result.execution_role}[/dim]\n"
-                f"ECR Repository: [dim]"
+                f"Account: [cyan]{result.account_id}[/cyan]\n\n"
+                f"[bold]Configuration[/bold]\n"
+                f"Execution Role: [cyan]{execution_role_display}[/cyan]\n"
+                f"ECR Repository: [cyan]"
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
-                f"[/dim]\n"
-                f"Authorization: [dim]{auth_info}[/dim]\n\n"
+                f"[/cyan]\n"
+                f"Authorization: [cyan]{auth_info}[/cyan]\n\n"
                 f"{headers_info}\n"
-                f"Memory: [dim]{memory_info}[/dim]\n\n"
+                f"Memory: [cyan]{memory_info}[/cyan]\n\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
@@ -501,7 +593,6 @@ def launch(
             region = agent_config.aws.region if agent_config else "us-east-1"
 
             deploy_panel = (
-                f"✅ [green]CodeBuild Deployment Successful![/green]\n\n"
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
@@ -541,15 +632,12 @@ def launch(
 
             if local_build:
                 title = "Local Build Success"
-                deployment_type = "✅ [green]Local Build Deployment Successful![/green]"
                 icon = "🔧"
             else:
                 title = "Deployment Success"
-                deployment_type = "✅ [green]Deployment Successful![/green]"
                 icon = "🚀"
 
             deploy_panel = (
-                f"{deployment_type}\n\n"
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"

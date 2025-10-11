@@ -383,7 +383,9 @@ def _destroy_codebuild_project(
     """Remove CodeBuild project for this agent."""
     try:
         codebuild_client = session.client("codebuild", region_name=agent_config.aws.region)
-        project_name = f"bedrock-agentcore-{agent_config.name}-builder"
+        from ...services.ecr import sanitize_ecr_repo_name
+
+        project_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_config.name)}-builder"
 
         if dry_run:
             result.resources_removed.append(f"CodeBuild project: {project_name} (DRY RUN)")
