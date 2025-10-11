@@ -1030,7 +1030,23 @@ class ComplianceAgent(BaseAgent):
         if total_checkable > 0:
             integrity_results["integrity_score"] = integrity_results["verified_events"] / total_checkable
         
-        return integrity_resultsd user ID (optional)
+        return integrity_results
+    
+    def _log_audit_event_duplicate(
+        self,
+        event_type: AuditEventType,
+        description: str,
+        user_id: Optional[str] = None,
+        transaction_id: Optional[str] = None,
+        event_data: Optional[Dict[str, Any]] = None
+    ) -> AuditEvent:
+        """
+        Log an audit event (duplicate method - should be removed).
+        
+        Args:
+            event_type: Type of audit event
+            description: Event description
+            user_id: Associated user ID (optional)
             transaction_id: Associated transaction ID (optional)
             event_data: Additional event data (optional)
             
