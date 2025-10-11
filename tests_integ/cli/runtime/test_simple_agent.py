@@ -98,7 +98,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         output = result.output
         logger.info(output)
 
-        assert "Deployment Successful" in output
+        assert "Deployment Success" in output
         assert "Agent Name: agent" in output
         assert "Agent ARN:" in output
         assert "ECR URI:" in output
