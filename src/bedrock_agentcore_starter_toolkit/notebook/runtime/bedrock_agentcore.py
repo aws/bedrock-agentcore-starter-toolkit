@@ -44,8 +44,9 @@ class Runtime:
         auto_create_ecr: bool = True,
         auto_create_execution_role: bool = False,
         authorizer_configuration: Optional[Dict[str, Any]] = None,
+        request_header_configuration: Optional[Dict[str, Any]] = None,
         region: Optional[str] = None,
-        protocol: Optional[Literal["HTTP", "MCP"]] = None,
+        protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
         disable_otel: bool = False,
         memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
         non_interactive: bool = True,
@@ -65,8 +66,9 @@ class Runtime:
             auto_create_ecr: Whether to auto-create ECR repository
             auto_create_execution_role: Whether to auto-create execution role (makes execution_role optional)
             authorizer_configuration: JWT authorizer configuration dictionary
+            request_header_configuration: Request header configuration dictionary
             region: AWS region for deployment
-            protocol: agent server protocol, must be either HTTP or MCP
+            protocol: agent server protocol, must be either HTTP or MCP or A2A
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
             memory_mode: Memory configuration mode (default: "STM_ONLY")
                 - "NO_MEMORY": Disable memory entirely (stateless agent)
@@ -90,8 +92,8 @@ class Runtime:
             # Invalid - raises error
             runtime.configure(entrypoint='handler.py', disable_memory=True, memory_mode='STM_AND_LTM')
         """
-        if protocol and protocol.upper() not in ["HTTP", "MCP"]:
-            raise ValueError("protocol must be either HTTP or MCP")
+        if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
+            raise ValueError("protocol must be either HTTP or MCP or A2A")
 
         # Parse entrypoint to get agent name
         file_path, file_name = parse_entrypoint(entrypoint)
@@ -146,6 +148,7 @@ class Runtime:
             memory_mode=memory_mode,
             requirements_file=final_requirements_file,
             authorizer_configuration=authorizer_configuration,
+            request_header_configuration=request_header_configuration,
             region=region,
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,

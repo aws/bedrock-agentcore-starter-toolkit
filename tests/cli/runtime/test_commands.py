@@ -185,7 +185,7 @@ def handler(payload):
                 self.runner.invoke(app, ["configure", "--entrypoint", str(agent_file), "--protocol", "HTTPS"])
             except typer.Exit:
                 pass
-            mock_error.assert_called_once_with("Error: --protocol must be either HTTP or MCP")
+            mock_error.assert_called_once_with("Error: --protocol must be either HTTP or MCP or A2A")
 
     @pytest.mark.skip(reason="Skipping due to Typer CLI issues with YAML parsing")
     def test_launch_command_local(self, tmp_path):

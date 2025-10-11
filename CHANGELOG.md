@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.1.22] - 2025-10-09
+
+### Changes
+
+- Enhanced configuration management with source_path support and improved build workflow (#262) (949abae)
+- feat: add request_header support for runtime config (#260) (e811f4f)
+- fix: add non-interactive flag to integration tests (#261) (c99b5ee)
+- Support vpc (#221) (8a9c3b4)
+- chore: bump version to 0.1.21 (#259) (3e787bd)
+
+## [0.1.21] - 2025-10-08
+
+### Changes
+
+- add a2a protocol notebook support (#258) (e656d63)
+- Release v0.1.20 (#257) (1de8828)
+
+## [0.1.20] - 2025-10-08
+
+### Changes
+
+- feat: Add A2A protocol support to AgentCore Runtime toolkit (#255) (84c9456)
+- Fix documentation examples display (#254) (c699e4c)
+- docs: improvements to quickstart (#247) (3ee881b)
+
 ## [0.1.19] - 2025-10-03
 
 ### Changes

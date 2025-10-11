@@ -42,6 +42,7 @@ def configure_bedrock_agentcore(
     region: Optional[str] = None,
     protocol: Optional[str] = None,
     non_interactive: bool = False,
+    source_path: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -61,8 +62,9 @@ def configure_bedrock_agentcore(
         request_header_configuration: Request header configuration dictionary
         verbose: Whether to provide verbose output during configuration
         region: AWS region for deployment
-        protocol: agent server protocol, must be either HTTP or MCP
+        protocol: agent server protocol, must be either HTTP or MCP or A2A
         non_interactive: Skip interactive prompts and use defaults
+        source_path: Optional path to agent source code directory
 
     Returns:
         ConfigureResult model with configuration details
@@ -75,10 +77,13 @@ def configure_bedrock_agentcore(
         log.setLevel(logging.INFO)
     # Log agent name at the start of configuration
     log.info("Configuring BedrockAgentCore agent: %s", agent_name)
+
+    # Build directory is always project root for module validation and dependency detection
     build_dir = Path.cwd()
 
     if verbose:
         log.debug("Build directory: %s", build_dir)
+        log.debug("Source path: %s", source_path or "None (using build directory)")
         log.debug("Bedrock AgentCore name: %s", agent_name)
         log.debug("Entrypoint path: %s", entrypoint_path)
 
@@ -218,23 +223,48 @@ def configure_bedrock_agentcore(
         if memory_id:
             log.debug("  Memory ID: %s", memory_id)
 
+    # Determine output directory for Dockerfile based on source_path
+    # If source_path provided: write to .bedrock_agentcore/{agent_name}/ directly
+    # Otherwise: write to project root (legacy)
+    if source_path:
+        from ...utils.runtime.config import get_agentcore_directory
+
+        dockerfile_output_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
+    else:
+        dockerfile_output_dir = build_dir
+
+    # Generate Dockerfile in the correct location (no moving needed)
     dockerfile_path = runtime.generate_dockerfile(
         entrypoint_path,
-        build_dir,
+        dockerfile_output_dir,
         bedrock_agentcore_name or "bedrock_agentcore",
         region,
         enable_observability,
         requirements_file,
         memory_id,
         memory_name,
+        source_path,
+        protocol,
     )
-
-    # Check if .dockerignore was created
-    dockerignore_path = build_dir / ".dockerignore"
-
     log.info("Generated Dockerfile: %s", dockerfile_path)
-    if dockerignore_path.exists():
-        log.info("Generated .dockerignore: %s", dockerignore_path)
+
+    # Ensure .dockerignore exists at Docker build context location
+    if source_path:
+        # For source_path: .dockerignore at source directory (Docker build context)
+        source_dockerignore = Path(source_path) / ".dockerignore"
+        if not source_dockerignore.exists():
+            template_path = (
+                Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
+            )
+            if template_path.exists():
+                source_dockerignore.write_text(template_path.read_text())
+                log.info("Generated .dockerignore: %s", source_dockerignore)
+        dockerignore_path = source_dockerignore
+    else:
+        # Legacy: .dockerignore at project root
+        dockerignore_path = build_dir / ".dockerignore"
+        if dockerignore_path.exists():
+            log.info("Generated .dockerignore: %s", dockerignore_path)
 
     # Handle project configuration (named agents)
     config_path = build_dir / ".bedrock_agentcore.yaml"
@@ -279,6 +309,7 @@ def configure_bedrock_agentcore(
         entrypoint=entrypoint,
         platform=ContainerRuntime.DEFAULT_PLATFORM,
         container_runtime=runtime.runtime,
+        source_path=str(Path(source_path).resolve()) if source_path else None,
         aws=AWSConfig(
             execution_role=execution_role_arn,
             execution_role_auto_create=execution_role_auto_create,

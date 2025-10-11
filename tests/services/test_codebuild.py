@@ -359,8 +359,40 @@ class TestCodeBuildService:
         assert "Tagging image..." in buildspec
         assert "docker tag bedrock-agentcore-arm64:latest" in buildspec
 
+    def test_parse_dockerignore_from_template(self, codebuild_service):
+        """Test parsing .dockerignore patterns from template."""
+        patterns = codebuild_service._parse_dockerignore()
+
+        # Verify patterns from dockerignore.template are loaded
+        assert ".git/" in patterns
+        assert "__pycache__/" in patterns
+        assert "*.py[cod]" in patterns
+        assert ".bedrock_agentcore.yaml" in patterns
+        assert ".venv/" in patterns
+        assert "*.egg-info/" in patterns
+        assert "build/" in patterns
+        assert "tests/" in patterns
+
+        # Verify patterns list is non-empty
+        assert len(patterns) > 0
+
+    def test_parse_dockerignore_template_fallback(self, codebuild_service):
+        """Test fallback patterns when template cannot be loaded."""
+
+        # Mock files() to raise an exception
+        with patch("bedrock_agentcore_starter_toolkit.services.codebuild.files") as mock_files:
+            mock_files.side_effect = Exception("Template not found")
+
+            patterns = codebuild_service._parse_dockerignore()
+
+        # Should fall back to minimal default patterns
+        assert ".git" in patterns
+        assert "__pycache__" in patterns
+        assert "*.pyc" in patterns
+        assert ".bedrock_agentcore.yaml" in patterns
+
     def test_parse_dockerignore_existing_file(self, codebuild_service):
-        """Test parsing existing .dockerignore file."""
+        """Test parsing existing .dockerignore file (legacy test)."""
         dockerignore_content = """
 # Comment
 node_modules
@@ -370,20 +402,16 @@ node_modules
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("builtins.open", mock_open(read_data=dockerignore_content)):
-                patterns = codebuild_service._parse_dockerignore()
-
-        expected = ["node_modules", "*.pyc", ".git"]
-        assert patterns == expected
+                # Note: This test is now obsolete since we use template, but keeping for reference
+                # _parse_dockerignore() now uses template, not file system
+                pass
 
     def test_parse_dockerignore_no_file(self, codebuild_service):
-        """Test default patterns when no .dockerignore exists."""
+        """Test default patterns when no .dockerignore exists (legacy test)."""
         with patch("pathlib.Path.exists", return_value=False):
-            patterns = codebuild_service._parse_dockerignore()
-
-        assert ".git" in patterns
-        assert "__pycache__" in patterns
-        assert "*.pyc" in patterns
-        assert ".bedrock_agentcore.yaml" in patterns
+            # Note: This test is now obsolete since we use template, but keeping for reference
+            # _parse_dockerignore() now uses template, not file system
+            pass
 
     def test_should_ignore_basic_patterns(self, codebuild_service):
         """Test basic ignore pattern matching."""
@@ -530,6 +558,72 @@ node_modules
             assert "README.md" in written_files
             assert "test.pyc" not in written_files
             assert ".git" not in written_files
+
+            # Verify cleanup was called
+            mock_unlink.assert_called_once_with("/tmp/test.zip")
+
+    def test_source_upload_with_separate_dockerfile(self, codebuild_service, mock_clients):
+        """Test source upload with Dockerfile in separate directory (source_path scenario)."""
+        from pathlib import Path
+
+        with (
+            patch("os.walk") as mock_walk,
+            patch("zipfile.ZipFile") as mock_zipfile,
+            patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+            patch("os.unlink") as mock_unlink,
+            patch.object(codebuild_service, "_parse_dockerignore") as mock_parse,
+        ):
+            # Mock file system - source directory contains code only (no Dockerfile)
+            mock_walk.return_value = [("./my_agent", [], ["agent.py", "requirements.txt"])]
+
+            # Mock dockerignore patterns
+            mock_parse.return_value = ["*.pyc", ".git"]
+
+            # Mock temp file and zipfile
+            mock_temp = Mock()
+            mock_temp.name = "/tmp/test.zip"
+            mock_tempfile.return_value.__enter__.return_value = mock_temp
+
+            mock_zip = Mock()
+            mock_zipfile.return_value.__enter__.return_value = mock_zip
+
+            # Create a mock Dockerfile in the dockerfile_dir
+            # We'll mock Path to return the right exists() value
+            original_path = Path
+
+            class MockPath(type(Path())):
+                def __new__(cls, *args, **kwargs):
+                    instance = super().__new__(cls, *args, **kwargs)
+                    return instance
+
+                def exists(self):
+                    path_str = str(self)
+                    if ".bedrock_agentcore/test-agent/Dockerfile" in path_str:
+                        return True  # Dockerfile exists in dockerfile_dir
+                    elif "my_agent/Dockerfile" in path_str:
+                        return False  # No Dockerfile in source_dir
+                    return original_path(str(self)).exists()
+
+            with patch("bedrock_agentcore_starter_toolkit.services.codebuild.Path", MockPath):
+                # Test with separate dockerfile_dir
+                codebuild_service.upload_source(
+                    "test-agent", source_dir="./my_agent", dockerfile_dir=".bedrock_agentcore/test-agent"
+                )
+
+            # Verify files were added to zip
+            zip_calls = mock_zip.write.call_args_list
+            written_files = [call[0][1] for call in zip_calls]  # Second arg is the archive name
+
+            # Should include source files
+            assert "agent.py" in written_files
+            assert "requirements.txt" in written_files
+
+            # Should include Dockerfile from separate directory
+            assert "Dockerfile" in written_files
+
+            # Verify the Dockerfile was added with correct arguments
+            dockerfile_call = [call for call in zip_calls if "Dockerfile" in str(call)]
+            assert len(dockerfile_call) == 1
 
             # Verify cleanup was called
             mock_unlink.assert_called_once_with("/tmp/test.zip")

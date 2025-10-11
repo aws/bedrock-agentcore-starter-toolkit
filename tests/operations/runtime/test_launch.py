@@ -68,6 +68,30 @@ def create_test_agent_file(tmp_path, filename="test_agent.py", content="# test a
     return agent_file
 
 
+def create_test_dockerfile(tmp_path, agent_name="test-agent", source_path=None):
+    """Create a Dockerfile in the expected location for tests.
+
+    Args:
+        tmp_path: Test temporary directory
+        agent_name: Name of the agent
+        source_path: Optional source path (if using multi-agent setup)
+
+    Returns:
+        Path to created Dockerfile
+    """
+    if source_path:
+        # Multi-agent: Dockerfile in .bedrock_agentcore/{agent_name}/
+        dockerfile_dir = tmp_path / ".bedrock_agentcore" / agent_name
+        dockerfile_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        # Legacy: Dockerfile at project root
+        dockerfile_dir = tmp_path
+
+    dockerfile = dockerfile_dir / "Dockerfile"
+    dockerfile.write_text("FROM python:3.10\nCOPY . /app\n")
+    return dockerfile
+
+
 class MockAWSClientFactory:
     """Factory for creating consistent AWS client mocks."""
 
@@ -157,6 +181,7 @@ class TestLaunchBedrockAgentCore:
         """Test local deployment."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -182,6 +207,7 @@ class TestLaunchBedrockAgentCore:
             ecr_auto_create=True,
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -217,6 +243,7 @@ class TestLaunchBedrockAgentCore:
             ecr_auto_create=False,  # No auto-create
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -244,6 +271,7 @@ class TestLaunchBedrockAgentCore:
             agent_id="existing-agent-id",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory(account="023456789012")
@@ -260,6 +288,7 @@ class TestLaunchBedrockAgentCore:
         """Test error handling for build failures."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock build failure
         mock_container_runtime.build.return_value = (False, ["Error: build failed", "Missing dependency"])
@@ -282,6 +311,7 @@ class TestLaunchBedrockAgentCore:
         """Test validation errors."""
         config_path = create_test_config(tmp_path, entrypoint="")  # Invalid empty entrypoint
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         with pytest.raises(ValueError, match="Invalid configuration"):
             launch_bedrock_agentcore(config_path, local=False)
@@ -294,6 +324,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -366,6 +397,7 @@ class TestLaunchBedrockAgentCore:
             ecr_auto_create=False,  # No auto-create and no ECR repository
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -404,6 +436,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -497,6 +530,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -572,6 +606,7 @@ class TestLaunchBedrockAgentCore:
         """Test port configuration from environment variables."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock successful build
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -596,32 +631,19 @@ class TestLaunchBedrockAgentCore:
 
     def test_network_configuration_validation(self, tmp_path):
         """Test network configuration validation."""
+        from pydantic import ValidationError
+
         from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration
 
-        # Create config with invalid network mode
-        config_path = tmp_path / ".bedrock_agentcore.yaml"
-        agent_config = BedrockAgentCoreAgentSchema(
-            name="test-agent",
-            entrypoint="app.py",
-            aws=AWSConfig(
-                region="us-west-2",
-                account="123456789012",
-                network_configuration=NetworkConfiguration(
-                    network_mode="INVALID_MODE"  # Invalid network mode
-                ),
-            ),
-        )
-        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
-        save_config(project_config, config_path)
-
-        # Should raise ValueError for invalid network mode
-        with pytest.raises(ValueError, match="Invalid configuration"):
-            launch_bedrock_agentcore(config_path)
+        # Should raise ValidationError when creating NetworkConfiguration with invalid network mode
+        with pytest.raises(ValidationError, match="Invalid network_mode"):
+            NetworkConfiguration(network_mode="INVALID_MODE")
 
     def test_container_build_failure_handling(self, mock_container_runtime, tmp_path):
         """Test handling of container build failures."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock build failure
         mock_container_runtime.build.return_value = (False, ["Error: failed to resolve", "No such file or directory"])
@@ -644,6 +666,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock container runtime with no local runtime available
         mock_runtime = Mock()
@@ -666,6 +689,7 @@ class TestLaunchBedrockAgentCore:
         # Create config with missing execution role (invalid for cloud deployment)
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Should fail validation due to missing execution role
         with pytest.raises(ValueError, match="Missing 'aws.execution_role'"):
@@ -675,6 +699,7 @@ class TestLaunchBedrockAgentCore:
         """Test structure of LaunchResult for local mode."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock build success but don't mock run
         mock_container_runtime.has_local_runtime = True
@@ -701,6 +726,8 @@ class TestLaunchBedrockAgentCore:
     def test_env_vars_handling(self, mock_container_runtime, tmp_path):
         """Test environment variable handling."""
         config_path = create_test_config(tmp_path)
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
 
         # Add a memory configuration to the agent
         from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
@@ -722,8 +749,14 @@ class TestLaunchBedrockAgentCore:
         # Instead of running the full launch, just call the specific part we want to test
         from bedrock_agentcore_starter_toolkit.operations.runtime.launch import launch_bedrock_agentcore
 
-        # Mock the build operation to avoid execution
-        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.build") as mock_build:
+        # Mock ContainerRuntime
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime.build") as mock_build,
+        ):
             mock_build.return_value = (True, ["Successfully built"])
 
             # Launch with our env_vars dictionary
@@ -761,6 +794,8 @@ class TestLaunchBedrockAgentCore:
         )
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
 
         mock_container_runtime.has_local_runtime = True
         mock_container_runtime.build.return_value = (True, ["Successfully built"])
@@ -782,6 +817,7 @@ class TestLaunchBedrockAgentCore:
         """Test error handling for container runtime issues."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Simulate runtime error that mentions container runtime
         mock_container_runtime.has_local_runtime = True
@@ -809,6 +845,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -833,6 +870,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -928,6 +966,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -983,6 +1022,7 @@ class TestLaunchBedrockAgentCore:
             agent_session_id=existing_session_id,  # Pre-existing session ID
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -1043,6 +1083,7 @@ class TestLaunchBedrockAgentCore:
             agent_session_id=None,  # No existing session ID
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -1168,6 +1209,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1279,6 +1321,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1347,6 +1390,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1441,6 +1485,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1488,6 +1533,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1558,6 +1604,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -1622,6 +1669,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         with (
             patch(
@@ -1690,6 +1738,7 @@ class TestLaunchBedrockAgentCore:
         save_config(project_config, config_path)
 
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         with (
             # Mock the entire _ensure_memory_for_agent function - this is likely the source of the hang
@@ -1772,6 +1821,7 @@ class TestLaunchBedrockAgentCore:
         """Test local deployment with custom port configuration."""
         config_path = create_test_config(tmp_path)
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock successful build
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -1802,6 +1852,7 @@ class TestLaunchBedrockAgentCore:
             ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Setup mock AWS clients
         mock_factory = MockAWSClientFactory()
@@ -2190,6 +2241,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=True,  # Enable observability
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock successful transaction search
         mock_enable_transaction_search.return_value = True
@@ -2239,6 +2291,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=False,  # Disable observability
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
@@ -2284,6 +2337,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=True,  # Enable observability
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock failed transaction search
         mock_enable_transaction_search.return_value = False
@@ -2333,6 +2387,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=True,  # Enable observability
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock successful transaction search
         mock_enable_transaction_search.return_value = True
@@ -2384,6 +2439,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=True,
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock successful transaction search
         mock_enable_transaction_search.return_value = True
@@ -2417,6 +2473,7 @@ class TestTransactionSearchIntegration:
             observability_enabled=True,  # Enable observability
         )
         create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)  # Add Dockerfile for validation
 
         # Mock the build to return success
         mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])

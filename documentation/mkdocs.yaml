@@ -94,9 +94,13 @@ nav:
       - Import Agent Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
+    - AgentCore Quickstart: examples/agentcore-quickstart-example.md
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
+    - Memory Gateway Agent: examples/memory_gateway_agent.md
+    - Runtime Framework Agents: examples/runtime-framework-agents.md
+    - Semantic Search: examples/semantic_search.md
   - Contribute ❤️: https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md
   - API Reference:
     - Bedrock AgentCore SDK:

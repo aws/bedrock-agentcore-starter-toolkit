@@ -155,6 +155,29 @@ CMD ["python", "/app/{{ agent_file }}"]
             module_path = runtime._get_module_path(agent_file, tmp_path)
             assert module_path == "bedrock_agentcore.handler"
 
+    def test_get_module_path_with_symlink_dirs(self, tmp_path):
+        """Test module path generation when project_root contains symlinks (e.g., /tmp -> /private/tmp on macOS)."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create test structure: pkg/subpkg/agent.py
+            pkg_dir = tmp_path / "pkg"
+            pkg_dir.mkdir()
+            subpkg_dir = pkg_dir / "subpkg"
+            subpkg_dir.mkdir()
+            agent_file = subpkg_dir / "agent.py"
+            agent_file.touch()
+
+            # Simulate macOS /tmp symlink issue: agent_path is resolved, project_root is not
+            # On macOS, tmp_path might be /private/tmp/... but Path("/tmp/...") doesn't resolve to same
+            agent_resolved = agent_file.resolve()
+            # Pass project root as unresolved Path (simulates what happens in real code)
+            project_unresolved = Path(str(pkg_dir))
+
+            module_path = runtime._get_module_path(agent_resolved, project_unresolved)
+            # Should correctly compute "subpkg.agent" even if paths don't match without resolve()
+            assert module_path == "subpkg.agent"
+
     def test_validate_module_path_success(self, tmp_path):
         """Test successful module path validation."""
         with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
