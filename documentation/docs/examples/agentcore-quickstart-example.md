@@ -1,18 +1,18 @@
-
 # AgentCore Quickstart
 
 ## Introduction
 
 Build and deploy a production-ready AI agent in minutes with runtime hosting, memory, secure code execution, and observability. This guide shows how to use [AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html), [Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html), [Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html), and [Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html).
 
-For Gateway and Identity features, see the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [
-Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
+For Gateway and Identity features, see the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
 
 ## Prerequisites
 
-- **AWS Permissions** Root users or admin/privileged credentials can skip this step. Others need to attach the [required IAM policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) to their IAM user or role.
+- **AWS Permissions**
+  - **Root users or administrators**: Can skip this step
+  - **Non-admin users (including SageMaker notebook users)**: Need comprehensive permissions beyond the [basic toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit). See the [Complete Non-Admin User Permissions](#complete-non-admin-user-permissions) section below for the full policy required.
 - [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
-- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
+- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable "Claude 3.7 Sonnet" in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
 
 > **Important: Ensure AWS Region Consistency**
@@ -20,7 +20,7 @@ Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/bl
 > Ensure the following are all configured to use the **same AWS region**:
 >
 > - Your `aws configure` default region
-> - The region where you’ve enabled Bedrock model access
+> - The region where you've enabled Bedrock model access
 > - All resources created during deployment will use this region
 
 ### Installation
@@ -138,17 +138,21 @@ The AgentCore CLI automates deployment with provisioning.
 ```bash
 agentcore configure -e agentcore_starter_strands.py
 
-# Interactive prompts:
-#   - Execution role (press Enter to auto-create)
-#   - ECR repository (press Enter to auto-create)
-#   - Memory configuration:
-#     - If existing memories found: Choose from list or press Enter to create new
-#     - If creating new: Enable long-term memory extraction? (yes/no) → yes
-#     - **Note**: Short-term memory is always enabled by default
+#Interactive prompts you'll see:
+
+# 1. Execution Role: Press Enter to auto-create or provide existing role ARN/name
+# 2. ECR Repository: Press Enter to auto-create or provide existing ECR URI
+# 3. OAuth Configuration: Configure OAuth authorizer? (yes/no) - Type `no` for this tutorial
+# 4. Request Header Allowlist: Configure request header allowlist? (yes/no) - Type `no` for this tutorial
+# 5. Memory Configuration:
+#    - If existing memories found: Choose from list or press Enter to create new
+#    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial
+#    - Note: Short-term memory is always enabled by default
 ```
 **For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.
 
-**Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Memory Configuration Not Appearing](#memory-configuration-not-appearing) troubleshooting section to ensure the correct toolkit version is installed.
+**Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Troubleshooting](#troubleshooting) section (Memory Configuration Not Appearing) to ensure the correct toolkit version is installed.
+
 
 ### Deploy to AgentCore
 
@@ -167,14 +171,21 @@ agentcore launch
 **Expected output:**
 
 ```text
-✅ Memory created: bedrock_agentcore_memory_ci_agent_memory-abc123
+✅ Memory created: agentcore_starter_strands_mem-abc123
 Observability is enabled, configuring Transaction Search...
 ✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
 🔍 GenAI Observability Dashboard:
    https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 ✅ Container deployed to Bedrock AgentCore
-Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-xyz
+Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/agentcore_starter_strands-xyz
 ```
+
+**If deployment encounters errors or behaves unexpectedly**, check your configuration:
+```bash
+cat .bedrock_agentcore.yaml  # Review deployed configuration
+agentcore status              # Verify resource provisioning status
+```
+Refer to the [Troubleshooting](#troubleshooting) section if you see any issues.
 
 ## Step 3: Monitor Deployment
 
@@ -184,7 +195,7 @@ Check deployment status:
 agentcore status
 
 # Shows:
-#   Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123
+#   Memory ID: agentcore_starter_strands_mem-abc123
 #   Memory Status: CREATING (if still provisioning)
 #   Memory Type: STM+LTM (provisioning...) (if creating with LTM)
 #   Memory Type: STM+LTM (3 strategies) (when active with strategies)
@@ -198,7 +209,7 @@ agentcore status
 
 ### Test Short-Term Memory (STM)
 
-Tesing within a single session:
+Testing within a single session:
 
 ```bash
 # Store information (session IDs must be 33+ characters)
@@ -299,50 +310,72 @@ agentcore destroy
 
 ## Troubleshooting
 
-### Memory Configuration Not Appearing
+<details>
+<summary><strong>Memory Configuration Not Appearing</strong></summary>
 
-**“Memory option not showing during `agentcore configure`”:**
+**"Memory option not showing during `agentcore configure`":**
 
 This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:
 
 ```bash
-# 1. Verify you're in the correct virtual environment
-which python  # Should show path to .venv/bin/python
+# Step 1: Verify current state
+which python   # Should show .venv/bin/python
+which agentcore  # Currently showing global path
 
-# 2. Check current version
-pip show bedrock-agentcore-starter-toolkit
+# Step 2: Deactivate and reactivate venv to reset PATH
+deactivate
+source .venv/bin/activate
 
-# 3. Force reinstall with cache clearing (version 0.1.21 or later required)
-pip uninstall bedrock-agentcore-starter-toolkit -y
-pip install --no-cache-dir --upgrade "bedrock-agentcore-starter-toolkit>=0.1.21"
+# Step 3: Check if that fixed it
+which agentcore
+# If NOW showing .venv/bin/agentcore -> RESOLVED, skip to Step 7
+# If STILL showing global path -> continue to Step 4
 
-# 4. Verify the installation
-pip show bedrock-agentcore-starter-toolkit
-which agentcore  # Should show path in your .venv/bin/
+# Step 4: Force local venv to take precedence in PATH
+export PATH="$(pwd)/.venv/bin:$PATH"
 
-# 5. If issues persist, create a fresh virtual environment:
-deactivate  # Exit current environment
-rm -rf .venv  # Remove old environment
-python3 -m venv .venv  # Create new environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Step 5: Check again
+which agentcore
+# If NOW showing .venv/bin/agentcore -> RESOLVED, skip to Step 7
+# If STILL showing global path -> continue to Step 6
+
+# Step 6: Reinstall in local venv with forced precedence
+pip install --force-reinstall --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21"
+
+# Step 7: Final verification
+which agentcore  # Must show: /path/to/your-project/.venv/bin/agentcore
+pip show bedrock-agentcore-starter-toolkit  # Verify version >= 0.1.21
+agentcore --version  # Double check it's working
+
+# Step 8: Try configure again
+agentcore configure -e agentcore_starter_strands.py
+
+#If Step 6 still doesn’t work, the nuclear option:
+cd ..
+mkdir fresh-agentcore-project && cd fresh-agentcore-project
+python3 -m venv .venv
+source .venv/bin/activate
 pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
+# Copy your agent code here, then reconfigure
 ```
 
 **Additional checks:**
 
-- Ensure you’re running `agentcore configure` from within the activated virtual environment
+- Ensure you're running `agentcore configure` from within the activated virtual environment
 - If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling
 - Verify no system-wide agentcore installation conflicts: `pip list | grep bedrock-agentcore`
 
+</details>
 
-### Region Misconfiguration
+<details>
+<summary><strong>Region Misconfiguration</strong></summary>
 
 **If you need to change your region configuration:**
 
 1. Clean up resources in the incorrect region:
    ```bash
    agentcore destroy
-   
+
    # This removes:
    #   - Runtime endpoint and agent
    #   - Memory resources (STM + LTM)
@@ -357,24 +390,49 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
    # Or reconfigure for the correct region:
    aws configure set region <your-desired-region>
    ```
+
 3. Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)
+
 4. Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**
 
-### Memory Issues
+</details>
 
-**“Memory status is not active” error:**
+<details>
+<summary><strong>Memory Issues</strong></summary>
+
+**"Memory status is not active" error:**
 
 - Run `agentcore status` to check memory status
-- If showing “provisioning”, wait 2-3 minutes
-- Retry after status shows “STM+LTM (3 strategies)”
+- If showing "provisioning", wait 2-3 minutes
+- Retry after status shows "STM+LTM (3 strategies)"
 
 **Cross-session memory not working:**
 
-- Verify LTM is active (not “provisioning”)
+- Verify LTM is active (not "provisioning")
 - Wait 15-30 seconds after storing facts for extraction
 - Check extraction logs for completion
 
-### Observability Issues
+</details>
+
+<details>
+<summary><strong>Permission Errors (Non-Admin Users)</strong></summary>
+
+**Access denied errors during `agentcore configure`, `agentcore launch`, or `agentcore invoke`:**
+
+Non-admin users (including SageMaker notebook users) need comprehensive permissions beyond the basic toolkit policy. Common errors include:
+
+- `AccessDeniedException` for `bedrock-agentcore:CreateMemory`
+- `AccessDeniedException` for `bedrock-agentcore:CreateAgentRuntime`
+- `AccessDeniedException` for `bedrock-agentcore:CreateWorkloadIdentity`
+- `AccessDeniedException` for `bedrock-agentcore:InvokeAgentRuntime`
+- `AccessDeniedException` for `iam:PassRole`
+
+**Solution**: Attach the complete non-admin user permissions policy to your IAM user or role. See [Complete Non-Admin User Permissions](#complete-non-admin-user-permissions) below.
+
+</details>
+
+<details>
+<summary><strong>Observability Issues</strong></summary>
 
 **No traces appearing:**
 
@@ -388,9 +446,158 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 - Check log group exists: `/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/<memory-id>`
 - Verify IAM role has CloudWatch Logs permissions
 
+</details>
+
+---
+
+### Complete Non-Admin User Permissions
+
+<details>
+<summary><strong>Complete Non-Admin User Permissions</strong></summary>
+
+### Why These Permissions Are Needed
+
+The [basic toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) documented in the AWS docs is insufficient for non-admin users. It's missing critical permissions for:
+
+- **Memory operations**: Creating and managing memory resources
+- **Agent runtime operations**: Creating and invoking agents
+- **Identity operations**: Creating workload identities for authentication
+- **Data plane access**: Invoking deployed agents
+- **Cleanup operations**: Deleting resources during destroy
+
+**Who needs this:**
+- IAM users without `PowerUserAccess` or `AdministratorAccess`
+- SageMaker notebook execution roles
+- EC2 instance profiles
+- Any role-based access in managed environments
+
+**Why it works for admins but not others:**
+- Admin policies (`PowerUserAccess`, `AdministratorAccess`) include wildcard permissions like `bedrock-agentcore:*`
+- Non-admin users need every operation explicitly granted
+
+### Complete Policy
+
+Attach this policy to your IAM user or role in addition to the basic toolkit policy:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PassRoleForServices",
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": [
+                "arn:aws:iam::*:role/AmazonBedrockAgentCore*",
+                "arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "iam:PassedToService": [
+                        "bedrock-agentcore.amazonaws.com",
+                        "codebuild.amazonaws.com",
+                        "ecs-tasks.amazonaws.com"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "BedrockAgentCoreControlPlane",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateAgentRuntime",
+                "bedrock-agentcore:UpdateAgentRuntime",
+                "bedrock-agentcore:DeleteAgentRuntime",
+                "bedrock-agentcore:GetAgentRuntime",
+                "bedrock-agentcore:ListAgentRuntimes",
+                "bedrock-agentcore:CreateAgentRuntimeEndpoint",
+                "bedrock-agentcore:UpdateAgentRuntimeEndpoint",
+                "bedrock-agentcore:DeleteAgentRuntimeEndpoint",
+                "bedrock-agentcore:GetAgentRuntimeEndpoint",
+                "bedrock-agentcore:ListAgentRuntimeEndpoints",
+                "bedrock-agentcore:CreateMemory",
+                "bedrock-agentcore:UpdateMemory",
+                "bedrock-agentcore:DeleteMemory",
+                "bedrock-agentcore:GetMemory",
+                "bedrock-agentcore:ListMemories"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "BedrockAgentCoreIdentity",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:CreateWorkloadIdentity",
+                "bedrock-agentcore:GetWorkloadIdentity",
+                "bedrock-agentcore:DeleteWorkloadIdentity",
+                "bedrock-agentcore:ListWorkloadIdentities",
+                "bedrock-agentcore:UpdateWorkloadIdentity"
+            ],
+            "Resource": [
+                "arn:aws:bedrock-agentcore:*:*:workload-identity-directory/*",
+                "arn:aws:bedrock-agentcore:*:*:workload-identity-directory/*/workload-identity/*"
+            ]
+        },
+        {
+            "Sid": "BedrockAgentCoreDataPlane",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock-agentcore:InvokeAgentRuntime"
+            ],
+            "Resource": "arn:aws:bedrock-agentcore:*:*:runtime/*"
+        },
+        {
+            "Sid": "ECRCleanup",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:BatchDeleteImage",
+                "ecr:DeleteRepository"
+            ],
+            "Resource": "arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
+        },
+        {
+            "Sid": "CodeBuildCleanup",
+            "Effect": "Allow",
+            "Action": [
+                "codebuild:DeleteProject"
+            ],
+            "Resource": "arn:aws:codebuild:*:*:project/bedrock-agentcore-*"
+        }
+    ]
+}
+```
+
+### How to Attach This Policy
+
+**For IAM Users:**
+1. Go to **IAM Console** → **Users** → Select your user
+2. Click **Add permissions** → **Create inline policy**
+3. Switch to **JSON** tab and paste the policy above
+4. Name it: `BedrockAgentCoreNonAdminAccess`
+5. Click **Create policy**
+
+**For SageMaker Execution Roles:**
+1. Go to **IAM Console** → **Roles** → Find your SageMaker execution role
+2. Click **Add permissions** → **Create inline policy**
+3. Switch to **JSON** tab and paste the policy above
+4. Name it: `BedrockAgentCoreNonAdminAccess`
+5. Click **Create policy**
+
+**For EC2 Instance Profiles or Other Roles:**
+1. Go to **IAM Console** → **Roles** → Select your role
+2. Click **Add permissions** → **Create inline policy**
+3. Switch to **JSON** tab and paste the policy above
+4. Name it: `BedrockAgentCoreNonAdminAccess`
+5. Click **Create policy**
+
+</details>
+
+
+---
+
 ## Summary
 
-You’ve deployed a production agent with:
+You've deployed a production agent with:
 
 - **Runtime** for managed container orchestration
 - **Memory** with STM for immediate context and LTM for cross-session persistence
@@ -398,4 +605,4 @@ You’ve deployed a production agent with:
 - **AWS X-Ray Tracing** automatically configured for distributed tracing
 - **CloudWatch Integration** for logs and metrics with Transaction Search enabled
 
-All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.​​​​​​​​​​​​​​​​
+All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.
