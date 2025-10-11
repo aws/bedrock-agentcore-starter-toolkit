@@ -1,0 +1,206 @@
+{
+  "transaction_id": "txn_export",
+  "generated_timestamp": "2025-10-11T14:32:34.584535",
+  "explanation_report": {
+    "decision": "BLOCK",
+    "confidence": 0.82,
+    "risk_level": "HIGH",
+    "executive_summary": "Transaction flagged as fraudulent based on Unusual transaction amount, Unfamiliar merchant, Location mismatch with 82% confidence.",
+    "sections": [
+      {
+        "title": "Analysis Overview",
+        "content": "Our fraud detection system performed a comprehensive analysis of this transaction. The analysis examined transaction patterns, user behavior, and risk indicators to determine the likelihood of fraudulent activity.",
+        "importance": 1.0,
+        "evidence": [
+          "Amount significantly exceeds user average",
+          "Unfamiliar merchant category",
+          "No similar transactions in history",
+          "Velocity anomaly detected",
+          "Multiple risk indicators present"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "title": "Key Findings",
+        "content": "Key findings from the analysis: Unusual amount; High value transaction; Pattern deviation detected",
+        "importance": 0.9,
+        "evidence": [
+          "Amount significantly exceeds user average",
+          "Unfamiliar merchant category",
+          "Location mismatch",
+          "No similar transactions in history",
+          "Velocity anomaly detected",
+          "Multiple risk indicators present",
+          "Fraud probability: 85%"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "title": "Supporting Evidence",
+        "content": "Supporting evidence: Amount significantly exceeds user average; Unfamiliar merchant category; Location mismatch; No similar transactions in history; Velocity anomaly detected; Multiple risk indicators present; Fraud probability: 85%",
+        "importance": 0.8,
+        "evidence": [
+          "Amount significantly exceeds user average",
+          "Unfamiliar merchant category",
+          "Location mismatch",
+          "No similar transactions in history",
+          "Velocity anomaly detected",
+          "Multiple risk indicators present",
+          "Fraud probability: 85%"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "title": "Recommendations",
+        "content": "Block transaction immediately; Flag account for additional monitoring; Consider fraud investigation",
+        "importance": 1.0,
+        "evidence": [
+          "Block transaction immediately",
+          "Flag account for additional monitoring",
+          "Consider fraud investigation"
+        ],
+        "confidence": 0.82
+      }
+    ],
+    "key_factors": [
+      "Unusual transaction amount",
+      "Unfamiliar merchant",
+      "Location mismatch"
+    ],
+    "recommendations": [
+      "Block transaction immediately",
+      "Notify customer of security concern",
+      "Initiate fraud investigation"
+    ]
+  },
+  "reasoning_trail": {
+    "steps": [
+      {
+        "step_number": 1,
+        "title": "Initial Transaction Observation",
+        "reasoning": "Examining transaction details including amount, merchant, and location patterns",
+        "confidence": 0.65
+      },
+      {
+        "step_number": 2,
+        "title": "Pattern Recognition and Matching (Fraud Indicators Found)",
+        "reasoning": "Comparing current transaction with historical user behavior patterns",
+        "confidence": 0.75
+      },
+      {
+        "step_number": 3,
+        "title": "Risk Factor Evaluation",
+        "reasoning": "Calculating overall risk score based on multiple factors",
+        "confidence": 0.85
+      }
+    ]
+  },
+  "visual_data": {
+    "decision_flow": {
+      "nodes": [
+        {
+          "id": "step_0",
+          "label": "observation",
+          "confidence": 0.65,
+          "output": {
+            "risk_level": "HIGH",
+            "key_findings": [
+              "Unusual amount"
+            ],
+            "primary_concerns": [
+              "High value transaction"
+            ]
+          }
+        },
+        {
+          "id": "step_1",
+          "label": "pattern_matching",
+          "confidence": 0.75,
+          "output": {
+            "is_fraud": true,
+            "confidence": 0.75,
+            "key_findings": [
+              "Pattern deviation detected"
+            ]
+          }
+        },
+        {
+          "id": "step_2",
+          "label": "risk_assessment",
+          "confidence": 0.85,
+          "output": {
+            "risk_level": "HIGH",
+            "risk_factors": [
+              "High transaction amount",
+              "Unusual merchant",
+              "Location anomaly"
+            ],
+            "recommended_action": "BLOCK"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "step_0",
+          "to": "step_1",
+          "label": "leads to"
+        },
+        {
+          "from": "step_1",
+          "to": "step_2",
+          "label": "leads to"
+        }
+      ]
+    },
+    "confidence_progression": [
+      {
+        "step": 1,
+        "confidence": 0.65,
+        "step_type": "observation"
+      },
+      {
+        "step": 2,
+        "confidence": 0.75,
+        "step_type": "pattern_matching"
+      },
+      {
+        "step": 3,
+        "confidence": 0.85,
+        "step_type": "risk_assessment"
+      }
+    ],
+    "risk_factors": [
+      {
+        "factor": "High transaction amount",
+        "source_step": "risk_assessment"
+      },
+      {
+        "factor": "Unusual merchant",
+        "source_step": "risk_assessment"
+      },
+      {
+        "factor": "Location anomaly",
+        "source_step": "risk_assessment"
+      }
+    ],
+    "evidence_hierarchy": {
+      "high_confidence": [
+        "Multiple risk indicators present",
+        "Fraud probability: 85%"
+      ],
+      "medium_confidence": [
+        "Amount significantly exceeds user average",
+        "Unfamiliar merchant category",
+        "Location mismatch",
+        "No similar transactions in history",
+        "Velocity anomaly detected"
+      ],
+      "low_confidence": []
+    },
+    "final_decision": {
+      "decision": "BLOCK",
+      "confidence": 0.82,
+      "risk_level": "HIGH"
+    }
+  }
+}
