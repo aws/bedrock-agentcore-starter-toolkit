@@ -158,37 +158,6 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
 
-    @field_validator("source_path")
-    @classmethod
-    def validate_source_path(cls, v: Optional[str]) -> Optional[str]:
-        """Validate source path if provided.
-
-        Args:
-            v: Source path value
-
-        Returns:
-            Validated source path or None
-
-        Raises:
-            ValueError: If source path is invalid
-        """
-        if v is None:
-            return v
-
-        # Convert to Path for validation
-        source_path = Path(v)
-
-        # Check if path exists
-        if not source_path.exists():
-            raise ValueError(f"Source path does not exist: {v}")
-
-        # Check if it's a directory
-        if not source_path.is_dir():
-            raise ValueError(f"Source path must be a directory: {v}")
-
-        # Return absolute path string
-        return str(source_path.resolve())
-
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
         return self.authorizer_configuration

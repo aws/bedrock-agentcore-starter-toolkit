@@ -20,7 +20,7 @@ def _handle_error(message: str, exception: Optional[Exception] = None) -> NoRetu
 
 def _handle_warn(message: str) -> None:
     """Handle errors with consistent formatting and exit."""
-    console.print(f"⚠️  {message}", new_line_start=True, style="bold yellow underline")
+    console.print(f"⚠️ {message}", new_line_start=True, style="yellow")
 
 
 def _print_success(message: str) -> None:
