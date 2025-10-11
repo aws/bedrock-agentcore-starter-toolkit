@@ -17,7 +17,11 @@ The infrastructure includes:
 - `bedrock_agent_config.py`: Python SDK for configuring Bedrock Agent
 - `iam_roles.py`: IAM role and policy management
 - `cloudformation_template.yaml`: CloudFormation template for infrastructure
-- `deploy_bedrock_agent.py`: Orchestration script for full deployment
+- `deploy_bedrock_agent.py`: Orchestration script for Bedrock Agent deployment
+- `data_storage_config.py`: DynamoDB and S3 configuration for data storage
+- `streaming_config.py`: Kinesis, EventBridge, and Lambda configuration for streaming
+- `monitoring_config.py`: CloudWatch dashboards, alarms, and X-Ray configuration
+- `deploy_full_infrastructure.py`: Complete infrastructure deployment orchestrator
 - `README.md`: This file
 
 ## Prerequisites
@@ -32,9 +36,25 @@ The infrastructure includes:
 
 ## Deployment
 
-### Quick Start
+### Quick Start - Full Infrastructure
 
-Deploy to dev environment:
+Deploy complete infrastructure (recommended):
+
+```bash
+python deploy_full_infrastructure.py --environment dev --region us-east-1
+```
+
+This will deploy:
+- IAM roles and permissions
+- DynamoDB tables and S3 buckets
+- Kinesis streams and Lambda functions
+- AWS Bedrock Agent with action groups
+- CloudWatch dashboards and alarms
+- X-Ray tracing
+
+### Quick Start - Bedrock Agent Only
+
+Deploy only Bedrock Agent (requires existing IAM roles):
 
 ```bash
 python deploy_bedrock_agent.py --environment dev --region us-east-1
@@ -91,21 +111,38 @@ agent_details = setup_fraud_detection_agent(
 print(f"Agent ID: {agent_details['agent_id']}")
 ```
 
+### Component-Specific Deployment
+
+**Data Storage Only:**
+```bash
+python data_storage_config.py --environment dev --region us-east-1
+```
+
+**Streaming Infrastructure Only:**
+```bash
+python streaming_config.py --environment dev --region us-east-1 --lambda-role-arn <ROLE_ARN>
+```
+
+**Monitoring Only:**
+```bash
+python monitoring_config.py --environment dev --region us-east-1
+```
+
 ### Environment-Specific Deployment
 
 **Development:**
 ```bash
-python deploy_bedrock_agent.py --environment dev
+python deploy_full_infrastructure.py --environment dev
 ```
 
 **Staging:**
 ```bash
-python deploy_bedrock_agent.py --environment staging
+python deploy_full_infrastructure.py --environment staging
 ```
 
 **Production:**
 ```bash
-python deploy_bedrock_agent.py --environment prod
+python deploy_full_infrastructure.py --environment prod
 ```
 
 ## Configuration
@@ -206,15 +243,85 @@ Monitor agent performance:
 - Latency
 - Token usage
 
+## Infrastructure Components
+
+### Data Storage
+
+**DynamoDB Tables:**
+- `fraud-detection-transactions-{env}`: Transaction history with TTL
+- `fraud-detection-decisions-{env}`: Decision context and memory
+- `fraud-detection-user-profiles-{env}`: User behavior profiles
+- `fraud-detection-patterns-{env}`: Learned fraud patterns
+
+**S3 Buckets:**
+- `fraud-detection-audit-logs-{env}-{account}`: Audit logs with lifecycle policies
+- `fraud-detection-decision-trails-{env}-{account}`: Decision trails
+- `fraud-detection-models-{env}-{account}`: ML model artifacts
+
+### Streaming Infrastructure
+
+**Kinesis Streams:**
+- `fraud-detection-transactions-{env}`: Transaction ingestion (ON_DEMAND)
+- `fraud-detection-events-{env}`: Fraud events (ON_DEMAND)
+
+**Lambda Functions:**
+- `fraud-detection-stream-processor-{env}`: Process transaction streams
+- `fraud-detection-alert-handler-{env}`: Handle fraud alerts
+
+**EventBridge Rules:**
+- `fraud-detection-events-{env}`: Route fraud detection events
+
+**Dead Letter Queues:**
+- `fraud-detection-dlq-{env}`: Failed message handling
+
+### Monitoring & Observability
+
+**CloudWatch Dashboards:**
+- `fraud-detection-{env}`: Comprehensive system metrics
+
+**CloudWatch Alarms:**
+- Lambda errors, duration, and throttles
+- Kinesis iterator age and write throttles
+- DynamoDB read/write throttles
+
+**X-Ray Tracing:**
+- Enabled on all Lambda functions for distributed tracing
+
+**Custom Metrics:**
+- `FraudDetection/TransactionsProcessed`
+- `FraudDetection/FraudDetected`
+- `FraudDetection/DetectionAccuracy`
+- `FraudDetection/ProcessingLatency`
+
 ## Cleanup
 
-### Delete Agent
+### Delete All Infrastructure
 
-```python
-from bedrock_agent_config import BedrockAgentConfigurator
+```bash
+# Delete in reverse order
+python -c "
+import boto3
 
-configurator = BedrockAgentConfigurator(region_name='us-east-1')
-configurator.bedrock_agent_client.delete_agent(agentId='AGENT_ID')
+# Delete Bedrock Agent
+bedrock = boto3.client('bedrock-agent')
+# bedrock.delete_agent(agentId='AGENT_ID')
+
+# Delete Lambda functions
+lambda_client = boto3.client('lambda')
+# lambda_client.delete_function(FunctionName='function-name')
+
+# Delete Kinesis streams
+kinesis = boto3.client('kinesis')
+# kinesis.delete_stream(StreamName='stream-name')
+
+# Delete DynamoDB tables
+dynamodb = boto3.client('dynamodb')
+# dynamodb.delete_table(TableName='table-name')
+
+# Delete S3 buckets (must be empty first)
+s3 = boto3.client('s3')
+# s3.delete_bucket(Bucket='bucket-name')
+"
 ```
 
 ### Delete CloudFormation Stack
