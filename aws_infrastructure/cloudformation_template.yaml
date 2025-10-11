@@ -1,0 +1,301 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Bedrock Agent Infrastructure for Fraud Detection System'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+  
+  FoundationModel:
+    Type: String
+    Default: anthropic.claude-3-sonnet-20240229-v1:0
+    Description: Bedrock foundation model ID
+
+Resources:
+  # IAM Role for Bedrock Agent
+  BedrockAgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'BedrockAgentFraudDetection-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*'
+      ManagedPolicyArns:
+        - !Ref BedrockAgentPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # IAM Policy for Bedrock Agent
+  BedrockAgentPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub 'BedrockAgentFraudDetectionPolicy-${Environment}'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+            Resource:
+              - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/${FoundationModel}'
+              - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-*'
+          - Effect: Allow
+            Action:
+              - bedrock:Retrieve
+              - bedrock:RetrieveAndGenerate
+            Resource: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:bedrock-agent-*'
+
+  # IAM Role for Knowledge Base
+  KnowledgeBaseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'BedrockKnowledgeBaseFraudPatterns-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      ManagedPolicyArns:
+        - !Ref KnowledgeBasePolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # IAM Policy for Knowledge Base
+  KnowledgeBasePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub 'BedrockKnowledgeBasePolicy-${Environment}'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+            Resource: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v1'
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+              - !GetAtt KnowledgeBaseBucket.Arn
+              - !Sub '${KnowledgeBaseBucket.Arn}/*'
+          - Effect: Allow
+            Action:
+              - aoss:APIAccessAll
+            Resource: !Sub 'arn:aws:aoss:${AWS::Region}:${AWS::AccountId}:collection/*'
+
+  # S3 Bucket for Knowledge Base
+  KnowledgeBaseBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'fraud-detection-knowledge-base-${Environment}-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 90
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # IAM Role for Lambda Functions (Action Groups)
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'BedrockAgentActionGroupLambda-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref LambdaAccessPolicy
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # IAM Policy for Lambda Functions
+  LambdaAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub 'BedrockAgentLambdaAccessPolicy-${Environment}'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
+            Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/fraud-detection-*'
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub 'arn:aws:s3:::fraud-detection-*/*'
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/bedrock-agent-*'
+
+  # CloudWatch Log Group for Bedrock Agent
+  BedrockAgentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/bedrock/agent/fraud-detection-${Environment}'
+      RetentionInDays: 30
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # Lambda Function for Identity Verification Action Group
+  IdentityVerificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'bedrock-agent-identity-verification-${Environment}'
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: 256
+      Code:
+        ZipFile: |
+          import json
+          
+          def lambda_handler(event, context):
+              """Identity verification action group handler."""
+              
+              # Extract parameters from Bedrock Agent event
+              action = event.get('actionGroup', '')
+              api_path = event.get('apiPath', '')
+              parameters = event.get('parameters', [])
+              
+              # Mock identity verification logic
+              user_id = next((p['value'] for p in parameters if p['name'] == 'user_id'), None)
+              
+              result = {
+                  'verified': True,
+                  'confidence': 0.95,
+                  'risk_indicators': [],
+                  'user_id': user_id
+              }
+              
+              return {
+                  'messageVersion': '1.0',
+                  'response': {
+                      'actionGroup': action,
+                      'apiPath': api_path,
+                      'httpMethod': 'POST',
+                      'httpStatusCode': 200,
+                      'responseBody': {
+                          'application/json': {
+                              'body': json.dumps(result)
+                          }
+                      }
+                  }
+              }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: FraudDetection
+
+  # Lambda Permission for Bedrock Agent
+  IdentityVerificationFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref IdentityVerificationFunction
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+
+Outputs:
+  BedrockAgentRoleArn:
+    Description: ARN of the Bedrock Agent IAM Role
+    Value: !GetAtt BedrockAgentRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BedrockAgentRoleArn'
+
+  KnowledgeBaseRoleArn:
+    Description: ARN of the Knowledge Base IAM Role
+    Value: !GetAtt KnowledgeBaseRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseRoleArn'
+
+  LambdaExecutionRoleArn:
+    Description: ARN of the Lambda Execution IAM Role
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaExecutionRoleArn'
+
+  KnowledgeBaseBucketName:
+    Description: Name of the S3 bucket for Knowledge Base
+    Value: !Ref KnowledgeBaseBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseBucketName'
+
+  IdentityVerificationFunctionArn:
+    Description: ARN of the Identity Verification Lambda Function
+    Value: !GetAtt IdentityVerificationFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-IdentityVerificationFunctionArn'
+
+  BedrockAgentLogGroupName:
+    Description: Name of the CloudWatch Log Group for Bedrock Agent
+    Value: !Ref BedrockAgentLogGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-BedrockAgentLogGroupName'
