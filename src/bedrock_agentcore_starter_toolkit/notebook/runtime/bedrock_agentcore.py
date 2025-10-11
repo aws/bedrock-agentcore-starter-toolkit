@@ -48,6 +48,7 @@ class Runtime:
         region: Optional[str] = None,
         protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
         disable_otel: bool = False,
+        memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
         non_interactive: bool = True,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
@@ -69,10 +70,27 @@ class Runtime:
             region: AWS region for deployment
             protocol: agent server protocol, must be either HTTP or MCP or A2A
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
+            memory_mode: Memory configuration mode (default: "STM_ONLY")
+                - "NO_MEMORY": Disable memory entirely (stateless agent)
+                - "STM_ONLY": Short-term memory only (default)
+                - "STM_AND_LTM": Short-term + long-term memory with strategy extraction
             non_interactive: Skip interactive prompts and use defaults (default: True)
 
         Returns:
             ConfigureResult with configuration details
+
+        Example:
+            # Default: STM only (backward compatible)
+            runtime.configure(entrypoint='handler.py')
+
+            # Explicitly enable LTM
+            runtime.configure(entrypoint='handler.py', memory_mode='STM_AND_LTM')
+
+            # Disable memory entirely
+            runtime.configure(entrypoint='handler.py', memory_mode='NO_MEMORY')
+
+            # Invalid - raises error
+            runtime.configure(entrypoint='handler.py', disable_memory=True, memory_mode='STM_AND_LTM')
         """
         if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
             raise ValueError("protocol must be either HTTP or MCP or A2A")
@@ -101,13 +119,20 @@ class Runtime:
             handler_dir = Path(file_path).parent
             req_file_path = handler_dir / "requirements.txt"
 
-            all_requirements = []  # "bedrock_agentcore" # Always include bedrock_agentcore
+            all_requirements = []
             all_requirements.extend(requirements)
 
             req_file_path.write_text("\n".join(all_requirements))
             log.info("Generated requirements.txt: %s", req_file_path)
 
             final_requirements_file = str(req_file_path)
+
+        if memory_mode == "NO_MEMORY":
+            log.info("Memory disabled - agent will be stateless")
+        elif memory_mode == "STM_AND_LTM":
+            log.info("Memory configured with STM + LTM")
+        else:  # STM_ONLY
+            log.info("Memory configured with STM only")
 
         # Configure using the operations module
         result = configure_bedrock_agentcore(
@@ -120,6 +145,7 @@ class Runtime:
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
             enable_observability=not disable_otel,
+            memory_mode=memory_mode,
             requirements_file=final_requirements_file,
             authorizer_configuration=authorizer_configuration,
             request_header_configuration=request_header_configuration,

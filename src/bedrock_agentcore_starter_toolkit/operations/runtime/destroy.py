@@ -80,7 +80,16 @@ def destroy_bedrock_agentcore(
         _destroy_codebuild_project(session, agent_config, result, dry_run)
 
         # 5. Remove memory resource
-        _destroy_memory(session, agent_config, result, dry_run)
+        if agent_config.memory and agent_config.memory.memory_id and agent_config.memory.mode != "NO_MEMORY":
+            if agent_config.memory.was_created_by_toolkit:
+                # Memory was created by toolkit during configure/launch - delete it
+                _destroy_memory(session, agent_config, result, dry_run)
+                if not dry_run:
+                    log.info("Deleted memory (was created by toolkit): %s", agent_config.memory.memory_id)
+            else:
+                # Memory was pre-existing - preserve it
+                result.warnings.append(f"Memory {agent_config.memory.memory_id} preserved (was pre-existing)")
+                log.info("Preserving pre-existing memory: %s", agent_config.memory.memory_id)
 
         # 6. Remove CodeBuild IAM Role
         _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
@@ -130,10 +139,9 @@ def _destroy_agentcore_endpoint(
             endpoint_name = endpoint_response.get("name", "DEFAULT")
             endpoint_arn = endpoint_response.get("agentRuntimeEndpointArn")
 
-            # Special case: DEFAULT endpoint cannot be explicitly deleted
+            # DEFAULT endpoint is automatically deleted when agent is deleted
             if endpoint_name == "DEFAULT":
-                result.warnings.append("DEFAULT endpoint cannot be explicitly deleted, skipping")
-                log.info("Skipping deletion of DEFAULT endpoint")
+                log.info("DEFAULT endpoint will be automatically deleted with agent")
                 return
 
             if dry_run:
@@ -147,7 +155,13 @@ def _destroy_agentcore_endpoint(
                     result.resources_removed.append(f"AgentCore endpoint: {endpoint_arn}")
                     log.info("Deleted AgentCore endpoint: %s", endpoint_arn)
                 except ClientError as delete_error:
-                    if delete_error.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
+                    error_code = delete_error.response["Error"]["Code"]
+
+                    # Handle ConflictException for DEFAULT endpoint gracefully
+                    if error_code == "ConflictException":
+                        log.info("DEFAULT endpoint will be automatically deleted with agent")
+                        return
+                    elif error_code not in ["ResourceNotFoundException", "NotFound"]:
                         result.errors.append(f"Failed to delete endpoint {endpoint_arn}: {delete_error}")
                         log.error("Failed to delete endpoint: %s", delete_error)
                     else:

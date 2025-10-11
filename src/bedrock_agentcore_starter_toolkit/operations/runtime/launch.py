@@ -140,7 +140,13 @@ def _ensure_memory_for_agent(
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
     This function is idempotent - it creates memory if needed or reuses existing.
+    CRITICAL: Never overwrites was_created_by_toolkit flag - that's set by configure.
     """
+    # Check if memory is disabled
+    if agent_config.memory and agent_config.memory.mode == "NO_MEMORY":
+        log.info("Memory disabled - skipping memory creation")
+        return None
+
     # If memory already exists, return it
     if agent_config.memory and agent_config.memory.memory_id:
         log.info("Using existing memory: %s", agent_config.memory.memory_id)
@@ -158,14 +164,16 @@ def _ensure_memory_for_agent(
         memory_manager = MemoryManager(region_name=agent_config.aws.region)
         memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
 
-        # Check if memory already exists
+        # Check if memory already exists in cloud
         existing_memory = None
         try:
             memories = memory_manager.list_memories()
             for m in memories:
                 if m.id.startswith(memory_name):
                     existing_memory = memory_manager.get_memory(m.id)
-                    log.info("Found existing memory: %s", m.id)
+                    log.info("Found existing memory in cloud: %s", m.id)
+                    # DO NOT OVERWRITE was_created_by_toolkit flag
+                    # The flag from configure tells us the user's intent
                     break
         except Exception as e:
             log.debug("Error checking for existing memory: %s", e)
@@ -251,9 +259,16 @@ def _ensure_memory_for_agent(
                 event_expiry_days=agent_config.memory.event_expiry_days or 30,
                 memory_execution_role_arn=None,
             )
+
+            # Ensure was_created_by_toolkit is True since we just created it
+            # (Should already be True from configure if user chose CREATE_NEW)
+            if not agent_config.memory.was_created_by_toolkit:
+                log.warning("Memory created but flag was False - correcting to True")
+                agent_config.memory.was_created_by_toolkit = True
+
             log.info("✅ New memory created: %s (provisioning in background)", memory.id)
 
-        # Save memory configuration
+        # Save memory configuration (preserving was_created_by_toolkit flag)
         agent_config.memory.memory_id = memory.id
         agent_config.memory.memory_arn = memory.arn
         agent_config.memory.memory_name = memory_name

@@ -244,6 +244,7 @@ def configure(
         None, "--requirements-file", "-rf", help="Path to requirements file"
     ),
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
+    disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory"),
     authorizer_config: Optional[str] = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
@@ -372,6 +373,11 @@ def configure(
     else:
         request_header_config = config_manager.prompt_request_header_allowlist()
 
+    if disable_memory:
+        memory_mode_value = "NO_MEMORY"
+    else:
+        memory_mode_value = "STM_ONLY"
+
     try:
         result = configure_bedrock_agentcore(
             agent_name=agent_name,
@@ -382,6 +388,7 @@ def configure(
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
             enable_observability=not disable_otel,
+            memory_mode=memory_mode_value,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
             request_header_configuration=request_header_config,
@@ -405,6 +412,10 @@ def configure(
 
         execution_role_display = "Auto-create" if not result.execution_role else result.execution_role
         rel_config_path = get_relative_path(Path(result.config_path))
+        memory_info = "Short-term memory (30-day retention)"
+        if disable_memory:
+            memory_info = "Disabled"
+
         console.print(
             Panel(
                 f"[bold]Agent Details[/bold]\n"
@@ -419,8 +430,8 @@ def configure(
                 f"[/cyan]\n"
                 f"Authorization: [cyan]{auth_info}[/cyan]\n\n"
                 f"{headers_info}\n"
-                f"Memory: [cyan]Short-term memory (30-day retention)[/cyan]\n\n"
-                f"📄 Config saved to: [cyan]{rel_config_path}[/cyan]\n\n"
+                f"Memory: [cyan]{memory_info}[/cyan]\n\n"
+                f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
                 title="Configuration Success",

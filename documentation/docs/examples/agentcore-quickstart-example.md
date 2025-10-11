@@ -1,23 +1,27 @@
 
-# Amazon Bedrock AgentCore Quickstart
+# AgentCore Quickstart
 
 ## Introduction
 
-You’ll build and deploy an agent with runtime hosting, memory persistence, secure code execution, and full observability to production in under 15 minutes.
+Build and deploy a production-ready AI agent in minutes with runtime hosting, memory, secure code execution, and observability. This guide shows how to use [AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html), [Memory](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html), [Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html), and [Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html).
 
-This guide demonstrates how to deploy an AI agent that combines:
-
-- **Runtime**: Amazon Bedrock AgentCore Runtime provides a secure, serverless, and purpose-built hosting environment for deploying and running AI agents. See [AgentCore Runtime docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)
-- **Memory Service**: Dual-layer storage with short-term memory (chronological event storage with 30-day retention) and long-term memory (extraction of user preferences, semantic facts, and session summaries). See [AgentCore Memory docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)
-- **Code Interpreter**: The Amazon Bedrock AgentCore Code Interpreter enables AI agents to write and execute code securely in sandbox environments. See [AgentCore Code Interpreter](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html)
-- **Observability**: AgentCore Observability helps you trace, debug, and monitor agent performance in production environments. See [AgentCore Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html) for more details.
+For Gateway and Identity features, see the [Gateway quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md) and [
+Identity quickstart](https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md).
 
 ## Prerequisites
 
-- **AWS Permissions**: If you are a root user or using admin credentials, you can skip this prerequisite. If you need specific permissions to use the starter toolkit, see the [Permissions Reference](#permissions-reference) section for the complete IAM policy.
-- AWS CLI configured (`aws configure`)
+- **AWS Permissions** Root users or admin/privileged credentials can skip this step. Others need to attach the [required IAM policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) to their IAM user or role.
+- [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
 - **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
+
+> **Important: Ensure AWS Region Consistency**
+>
+> Ensure the following are all configured to use the **same AWS region**:
+>
+> - Your `aws configure` default region
+> - The region where you’ve enabled Bedrock model access
+> - All resources created during deployment will use this region
 
 ### Installation
 
@@ -26,8 +30,8 @@ This guide demonstrates how to deploy an AI agent that combines:
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install required packages
-pip install bedrock-agentcore-starter-toolkit strands-agents boto3
+# Install required packages (version 0.1.21 or later)
+pip install "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
 ```
 
 ## Step 1: Create the Agent
@@ -48,7 +52,7 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 app = BedrockAgentCoreApp()
 
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
-REGION = os.getenv("AWS_REGION", "us-west-2")
+REGION = os.getenv("AWS_REGION")
 MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
 ci_sessions = {}
@@ -142,6 +146,9 @@ agentcore configure -e agentcore_starter_strands.py
 #     - If creating new: Enable long-term memory extraction? (yes/no) → yes
 #     - **Note**: Short-term memory is always enabled by default
 ```
+**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.
+
+**Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Memory Configuration Not Appearing](#memory-configuration-not-appearing) troubleshooting section to ensure the correct toolkit version is installed.
 
 ### Deploy to AgentCore
 
@@ -185,13 +192,13 @@ agentcore status
 #   Observability: Enabled
 ```
 
-**Note**: LTM strategies require 2-5 minutes to activate. STM is available immediately.
+**Note**: LTM strategies require 2-5 minutes to activate. STM is provisioned immediately if LTM is not selected.
 
 ## Step 4: Test Memory and Code Interpreter
 
-### Test Short-Term Memory (STM) - Immediate
+### Test Short-Term Memory (STM)
 
-STM works immediately after deployment. Test within a single session:
+Tesing within a single session:
 
 ```bash
 # Store information (session IDs must be 33+ characters)
@@ -199,7 +206,7 @@ agentcore invoke '{"prompt": "Remember that my favorite agent platform is AgentC
 
 # If invoked too early (memory still provisioning), you'll see:
 # "Memory is still provisioning (current status: CREATING).
-#  Long-term memory extraction takes 60-90 seconds to activate.
+#  Long-term memory extraction takes 60-180 seconds to activate.
 #
 #  Please wait and check status with:
 #    agentcore status"
@@ -249,7 +256,7 @@ agentcore invoke '{"prompt": "Create a text-based bar chart visualization showin
 
 ### Access CloudWatch Dashboard
 
-Navigate to the GenAI Observability dashboard:
+Navigate to the GenAI Observability dashboard to view end-to-end request traces including agent execution tracking, memory retrieval operations, code interpreter executions, agent reasoning steps, and latency breakdown by component. The dashboard provides a service map view showing agent runtime connections to Memory and Code Interpreter services with request flow visualization and latency metrics, as well as detailed X-Ray traces for debugging and performance analysis.
 
 ```bash
 # Get the dashboard URL from status
@@ -259,22 +266,6 @@ agentcore status
 # https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 # Note: Replace the region
 ```
-
-**What you’ll see:**
-
-**Service Map View:**
-
-- Agent runtime connections to Memory and Code Interpreter services
-- Request flow visualization
-- Latency by service
-
-**Traces View (via X-Ray):**
-
-- End-to-end request traces
-- Memory retrieval operations
-- Code Interpreter executions
-- Agent reasoning steps
-- Latency breakdown by component
 
 ### View Agent Runtime Logs
 
@@ -306,273 +297,68 @@ agentcore destroy
 #   - CloudWatch log groups (optional)
 ```
 
-## Permissions Reference
-
-### Developer Permissions for Starter Toolkit
-
-To use the starter toolkit (`agentcore configure` and `agentcore launch` commands), you need the following IAM policy attached to your AWS user or role:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "BedrockAgentCoreRuntimeOperations",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:CreateAgentRuntime",
-                "bedrock-agentcore:UpdateAgentRuntime",
-                "bedrock-agentcore:GetAgentRuntime",
-                "bedrock-agentcore:GetAgentRuntimeEndpoint",
-                "bedrock-agentcore:ListAgentRuntimes",
-                "bedrock-agentcore:ListAgentRuntimeEndpoints",
-                "bedrock-agentcore:DeleteAgentRuntime",
-                "bedrock-agentcore:DeleteAgentRuntimeEndpoint"
-            ],
-            "Resource": "arn:aws:bedrock-agentcore:*:*:runtime/*"
-        },
-        {
-            "Sid": "BedrockAgentCoreMemoryOperations",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:CreateMemory",
-                "bedrock-agentcore:UpdateMemory",
-                "bedrock-agentcore:GetMemory",
-                "bedrock-agentcore:DeleteMemory",
-                "bedrock-agentcore:ListMemories"
-            ],
-            "Resource": [
-                "arn:aws:bedrock-agentcore:*:*:memory/*",
-                "*"
-            ]
-        },
-        {
-            "Sid": "IAMRoleManagement",
-            "Effect": "Allow",
-            "Action": [
-                "iam:CreateRole",
-                "iam:DeleteRole",
-                "iam:GetRole",
-                "iam:PutRolePolicy",
-                "iam:DeleteRolePolicy",
-                "iam:AttachRolePolicy",
-                "iam:DetachRolePolicy",
-                "iam:TagRole",
-                "iam:ListRolePolicies",
-                "iam:ListAttachedRolePolicies"
-            ],
-            "Resource": [
-                "arn:aws:iam::*:role/*BedrockAgentCore*",
-                "arn:aws:iam::*:role/service-role/*BedrockAgentCore*"
-            ]
-        },
-        {
-            "Sid": "CodeBuildProjectAccess",
-            "Effect": "Allow",
-            "Action": [
-                "codebuild:StartBuild",
-                "codebuild:BatchGetBuilds",
-                "codebuild:ListBuildsForProject",
-                "codebuild:CreateProject",
-                "codebuild:UpdateProject",
-                "codebuild:BatchGetProjects"
-            ],
-            "Resource": [
-                "arn:aws:codebuild:*:*:project/bedrock-agentcore-*",
-                "arn:aws:codebuild:*:*:build/bedrock-agentcore-*"
-            ]
-        },
-        {
-            "Sid": "CodeBuildListAccess",
-            "Effect": "Allow",
-            "Action": [
-                "codebuild:ListProjects"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "IAMPassRoleAccess",
-            "Effect": "Allow",
-            "Action": [
-                "iam:PassRole"
-            ],
-            "Resource": [
-                "arn:aws:iam::*:role/AmazonBedrockAgentCore*",
-                "arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
-            ]
-        },
-        {
-            "Sid": "CloudWatchLogsAccess",
-            "Effect": "Allow",
-            "Action": [
-                "logs:GetLogEvents",
-                "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams",
-                "logs:PutResourcePolicy"
-            ],
-            "Resource": [
-                "arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*",
-                "arn:aws:logs:*:*:log-group:/aws/codebuild/*",
-                "arn:aws:logs:*:*:log-group:*"
-            ]
-        },
-        {
-            "Sid": "S3Access",
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:ListBucket",
-                "s3:CreateBucket",
-                "s3:PutLifecycleConfiguration"
-            ],
-            "Resource": [
-                "arn:aws:s3:::bedrock-agentcore-*",
-                "arn:aws:s3:::bedrock-agentcore-*/*"
-            ]
-        },
-        {
-            "Sid": "ECRRepositoryAccess",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:CreateRepository",
-                "ecr:DescribeRepositories",
-                "ecr:GetRepositoryPolicy",
-                "ecr:InitiateLayerUpload",
-                "ecr:CompleteLayerUpload",
-                "ecr:PutImage",
-                "ecr:UploadLayerPart",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "ecr:ListImages",
-                "ecr:BatchDeleteImage",
-                "ecr:DeleteRepository",
-                "ecr:TagResource"
-            ],
-            "Resource": [
-                "arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
-            ]
-        },
-        {
-            "Sid": "ECRAuthorizationAccess",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "XRayConfiguration",
-            "Effect": "Allow",
-            "Action": [
-                "xray:UpdateTraceSegmentDestination",
-                "xray:UpdateIndexingRule",
-                "xray:GetTraceSegmentDestination",
-                "xray:GetIndexingRules"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "STSGetCallerIdentity",
-            "Effect": "Allow",
-            "Action": [
-                "sts:GetCallerIdentity"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
-### Auto-Generated Execution Role
-
-**Important**: The starter toolkit automatically creates an execution role with all necessary permissions when you run `agentcore configure`. You do NOT need to create this role manually. The auto-generated role includes permissions for:
-
-- **Memory operations** (create, read, write, retrieve)
-- **Code Interpreter sessions** (create, invoke, manage)
-- **Model invocation** (Bedrock models)
-- **CloudWatch logging and X-Ray tracing**
-- **ECR image access**
-
-The execution role is created with a name pattern: `AmazonBedrockAgentCoreSDKRuntime-{region}-{hash}`
-
-For reference, the auto-generated execution role includes these additional permissions for Memory and Code Interpreter:
-
-**Memory Permissions (automatically included):**
-
-```json
-{
-    "Sid": "BedrockAgentCoreMemoryCreateMemory",
-    "Effect": "Allow",
-    "Action": [
-        "bedrock-agentcore:CreateMemory"
-    ],
-    "Resource": "*"
-},
-{
-    "Sid": "BedrockAgentCoreMemory",
-    "Effect": "Allow",
-    "Action": [
-        "bedrock-agentcore:CreateEvent",
-        "bedrock-agentcore:GetEvent",
-        "bedrock-agentcore:GetMemory",
-        "bedrock-agentcore:GetMemoryRecord",
-        "bedrock-agentcore:ListActors",
-        "bedrock-agentcore:ListEvents",
-        "bedrock-agentcore:ListMemoryRecords",
-        "bedrock-agentcore:ListSessions",
-        "bedrock-agentcore:DeleteEvent",
-        "bedrock-agentcore:DeleteMemoryRecord",
-        "bedrock-agentcore:RetrieveMemoryRecords"
-    ],
-    "Resource": [
-        "arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*"
-    ]
-}
-```
-
-**Code Interpreter Permissions (automatically included):**
-
-```json
-{
-    "Sid": "BedrockAgentCoreCodeInterpreter",
-    "Effect": "Allow",
-    "Action": [
-        "bedrock-agentcore:CreateCodeInterpreter",
-        "bedrock-agentcore:StartCodeInterpreterSession",
-        "bedrock-agentcore:InvokeCodeInterpreter",
-        "bedrock-agentcore:StopCodeInterpreterSession",
-        "bedrock-agentcore:DeleteCodeInterpreter",
-        "bedrock-agentcore:ListCodeInterpreters",
-        "bedrock-agentcore:GetCodeInterpreter",
-        "bedrock-agentcore:GetCodeInterpreterSession",
-        "bedrock-agentcore:ListCodeInterpreterSessions"
-    ],
-    "Resource": [
-        "arn:aws:bedrock-agentcore:{region}:aws:code-interpreter/*",
-        "arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*",
-        "arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter-custom/*"
-    ]
-}
-```
-
-
-### Understanding Memory Selection
-
-The toolkit provides intelligent memory management:
-
-**Reusing Existing Memory:**
-- Lists up to 10 existing memory resources from your account
-- Useful for sharing memory across agents or redeploying
-- Preserves all existing conversation history and extracted facts
-
-**Creating New Memory:**
-- Short-term memory (STM) always enabled - stores exact conversations
-- Optional long-term memory (LTM) - extracts facts, preferences, and summaries
-- Each agent can have its own isolated memory or share with others
-
 ## Troubleshooting
+
+### Memory Configuration Not Appearing
+
+**“Memory option not showing during `agentcore configure`”:**
+
+This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:
+
+```bash
+# 1. Verify you're in the correct virtual environment
+which python  # Should show path to .venv/bin/python
+
+# 2. Check current version
+pip show bedrock-agentcore-starter-toolkit
+
+# 3. Force reinstall with cache clearing (version 0.1.21 or later required)
+pip uninstall bedrock-agentcore-starter-toolkit -y
+pip install --no-cache-dir --upgrade "bedrock-agentcore-starter-toolkit>=0.1.21"
+
+# 4. Verify the installation
+pip show bedrock-agentcore-starter-toolkit
+which agentcore  # Should show path in your .venv/bin/
+
+# 5. If issues persist, create a fresh virtual environment:
+deactivate  # Exit current environment
+rm -rf .venv  # Remove old environment
+python3 -m venv .venv  # Create new environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
+```
+
+**Additional checks:**
+
+- Ensure you’re running `agentcore configure` from within the activated virtual environment
+- If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling
+- Verify no system-wide agentcore installation conflicts: `pip list | grep bedrock-agentcore`
+
+
+### Region Misconfiguration
+
+**If you need to change your region configuration:**
+
+1. Clean up resources in the incorrect region:
+   ```bash
+   agentcore destroy
+   
+   # This removes:
+   #   - Runtime endpoint and agent
+   #   - Memory resources (STM + LTM)
+   #   - ECR repository and images
+   #   - IAM roles (if auto-created)
+   #   - CloudWatch log groups (optional)
+   ```
+
+2. Verify your AWS CLI is configured for the correct region:
+   ```bash
+   aws configure get region
+   # Or reconfigure for the correct region:
+   aws configure set region <your-desired-region>
+   ```
+3. Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)
+4. Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**
 
 ### Memory Issues
 
@@ -606,8 +392,8 @@ The toolkit provides intelligent memory management:
 
 You’ve deployed a production agent with:
 
-- **AgentCore Runtime** for managed container orchestration
-- **Memory Service** with STM for immediate context and LTM for cross-session persistence
+- **Runtime** for managed container orchestration
+- **Memory** with STM for immediate context and LTM for cross-session persistence
 - **Code Interpreter** for secure Python execution with data visualization capabilities
 - **AWS X-Ray Tracing** automatically configured for distributed tracing
 - **CloudWatch Integration** for logs and metrics with Transaction Search enabled

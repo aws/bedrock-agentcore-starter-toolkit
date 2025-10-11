@@ -30,10 +30,10 @@ def invoke_bedrock_agentcore(
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
-    # Check memory status on first invoke if LTM is enabled
+    # Check memory status on first invoke if memory is enabled (STM or LTM)
     if (
         agent_config.memory
-        and agent_config.memory.has_ltm
+        and agent_config.memory.mode != "NO_MEMORY"
         and agent_config.memory.memory_id
         and not agent_config.memory.first_invoke_memory_check_done
     ):
@@ -45,10 +45,19 @@ def invoke_bedrock_agentcore(
             memory_status = memory_manager.get_memory_status(agent_config.memory.memory_id)
 
             if memory_status != MemoryStatus.ACTIVE.value:
+                # Determine memory type for better messaging
+                memory_type = "Memory"
+                if agent_config.memory.has_ltm:
+                    memory_type = "Long-term memory"
+                    time_estimate = "60-180 seconds"
+                else:
+                    memory_type = "Short-term memory"
+                    time_estimate = "30-90 seconds"
+
                 # Provide graceful error message
                 error_message = (
                     f"Memory is still provisioning (current status: {memory_status}). "
-                    f"Long-term memory extraction takes 60-180 seconds to activate.\n\n"
+                    f"{memory_type} takes {time_estimate} to activate.\n\n"
                     f"Please wait and check status with:\n"
                     f"  agentcore status{f' --agent {agent_name}' if agent_name else ''}"
                 )

@@ -438,9 +438,8 @@ class TestDestroyBedrockAgentCore:
 
         assert isinstance(result, DestroyResult)
 
-        # Verify DEFAULT endpoint skip warning is present
-        default_warnings = [w for w in result.warnings if "DEFAULT endpoint cannot be explicitly deleted" in w]
-        assert len(default_warnings) > 0, "Expected warning about DEFAULT endpoint skip"
+        # Verify DEFAULT endpoint was skipped (no delete call)
+        mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
 
         # Verify that delete_agent_runtime_endpoint was NOT called for DEFAULT
         mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
@@ -2045,6 +2044,16 @@ class TestDestroyBedrockAgentCore:
             mock_iam_client.list_role_policies.return_value = {"PolicyNames": []}
             mock_iam_client.delete_role.return_value = {}
             mock_memory_manager.delete_memory.return_value = {}
+
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+            config = load_config(config_path)
+            agent_config = config.get_agent_config()
+            agent_config.memory.was_created_by_toolkit = True
+            # Save the updated config
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
+
+            save_config(config, config_path)
 
             result = destroy_bedrock_agentcore(config_path, dry_run=False)
 

@@ -38,7 +38,11 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
         agent_arn=agent_config.bedrock_agentcore.agent_arn,
     )
 
-    if agent_config.memory and agent_config.memory.memory_id:
+    # Check if memory is disabled first
+    if agent_config.memory and agent_config.memory.mode == "NO_MEMORY":
+        config_info.memory_type = "Disabled"
+        config_info.memory_enabled = False
+    elif agent_config.memory and agent_config.memory.memory_id:
         try:
             from ...operations.memory.manager import MemoryManager
 
@@ -91,9 +95,6 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
 
             config_info.memory_id = agent_config.memory.memory_id
             config_info.memory_status = memory_status
-
-            # Add the detailed memory info to config_info
-            # You'll need to add this field to StatusConfigInfo model
             config_info.memory_details = memory_details
 
         except Exception as e:
