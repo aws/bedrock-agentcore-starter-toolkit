@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.23] - 2025-10-11
+
+### Changes
+
+- feat: Improve multi-agent entrypoint handling (#270) (bf24fca)
+- improve memory lifecycle management  (#253) (500d4f4)
+- Update agentcore-quickstart-example.md (#269) (4b659b8)
+- docs: streamline quickstart guide language and formatting (#268) (a269d39)
+- docs: improve quickstart prerequisites and region handling (#266) (c1644df)
+- chore: bump version to 0.1.22 (#263) (77bf849)
+
 ## [0.1.22] - 2025-10-09
 
 ### Changes
