@@ -138,12 +138,6 @@ def _destroy_agentcore_endpoint(
             endpoint_name = endpoint_response.get("name", "DEFAULT")
             endpoint_arn = endpoint_response.get("agentRuntimeEndpointArn")
 
-            # Special case: DEFAULT endpoint cannot be explicitly deleted
-            if endpoint_name == "DEFAULT":
-                result.warnings.append("DEFAULT endpoint cannot be explicitly deleted, skipping")
-                log.info("Skipping deletion of DEFAULT endpoint")
-                return
-
             if dry_run:
                 result.resources_removed.append(f"AgentCore endpoint: {endpoint_name} (DRY RUN)")
                 return

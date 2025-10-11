@@ -451,7 +451,7 @@ class MemoryManager:
         logger.info("🔎 Retrieving memory resource with ID: %s...", memory_id)
         try:
             response = self._control_plane_client.get_memory(memoryId=memory_id).get("memory", {})
-            logger.info("  ✅ Found memory: %s", memory_id)
+            logger.info("  Found memory: %s", memory_id)
             return Memory(response)
         except ClientError as e:
             logger.error("  ❌ Error retrieving memory: %s", e)

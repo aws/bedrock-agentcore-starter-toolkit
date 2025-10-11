@@ -265,6 +265,11 @@ def configure(
     else:
         request_header_config = config_manager.prompt_request_header_allowlist()
 
+    if disable_memory:
+        memory_mode_value = "NO_MEMORY"
+    else:
+        memory_mode_value = "STM_ONLY"
+
     try:
         result = configure_bedrock_agentcore(
             agent_name=agent_name,
@@ -275,7 +280,7 @@ def configure(
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
             enable_observability=not disable_otel,
-            enable_memory=not disable_memory,
+            memory_mode=memory_mode_value,
             requirements_file=final_requirements_file,
             authorizer_configuration=oauth_config,
             request_header_configuration=request_header_config,

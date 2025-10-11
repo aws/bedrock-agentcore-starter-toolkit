@@ -47,8 +47,7 @@ class Runtime:
         region: Optional[str] = None,
         protocol: Optional[Literal["HTTP", "MCP"]] = None,
         disable_otel: bool = False,
-        disable_memory: bool = False,
-        memory_mode: Optional[Literal["STM_ONLY", "STM_AND_LTM"]] = None,
+        memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
         non_interactive: bool = True,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
@@ -69,8 +68,10 @@ class Runtime:
             region: AWS region for deployment
             protocol: agent server protocol, must be either HTTP or MCP
             disable_otel: Whether to disable OpenTelemetry observability (default: False)
-            disable_memory: Whether to disable memory entirely (default: False = STM enabled)
-            memory_mode: Choose "STM_ONLY" (default) or "STM_AND_LTM" (ignored if disable_memory=True)
+            memory_mode: Memory configuration mode (default: "STM_ONLY")
+                - "NO_MEMORY": Disable memory entirely (stateless agent)
+                - "STM_ONLY": Short-term memory only (default)
+                - "STM_AND_LTM": Short-term + long-term memory with strategy extraction
             non_interactive: Skip interactive prompts and use defaults (default: True)
 
         Returns:
@@ -84,21 +85,13 @@ class Runtime:
             runtime.configure(entrypoint='handler.py', memory_mode='STM_AND_LTM')
 
             # Disable memory entirely
-            runtime.configure(entrypoint='handler.py', disable_memory=True)
+            runtime.configure(entrypoint='handler.py', memory_mode='NO_MEMORY')
 
             # Invalid - raises error
             runtime.configure(entrypoint='handler.py', disable_memory=True, memory_mode='STM_AND_LTM')
         """
         if protocol and protocol.upper() not in ["HTTP", "MCP"]:
             raise ValueError("protocol must be either HTTP or MCP")
-
-        # Validate memory configuration
-        if disable_memory and memory_mode is not None:
-            raise ValueError(
-                "Cannot specify both disable_memory=True and memory_mode. "
-                "Use disable_memory=True to disable memory entirely, or "
-                "use memory_mode to choose between STM_ONLY and STM_AND_LTM."
-            )
 
         # Parse entrypoint to get agent name
         file_path, file_name = parse_entrypoint(entrypoint)
@@ -132,14 +125,12 @@ class Runtime:
 
             final_requirements_file = str(req_file_path)
 
-        if disable_memory:
+        if memory_mode == "NO_MEMORY":
             log.info("Memory disabled - agent will be stateless")
         elif memory_mode == "STM_AND_LTM":
             log.info("Memory configured with STM + LTM")
-        elif memory_mode == "STM_ONLY":
-            log.info("Memory configured with STM only (explicit)")
-        else:
-            log.info("Memory configured with STM only (default)")
+        else:  # STM_ONLY
+            log.info("Memory configured with STM only")
 
         # Configure using the operations module
         result = configure_bedrock_agentcore(
@@ -152,7 +143,6 @@ class Runtime:
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
             enable_observability=not disable_otel,
-            enable_memory=not disable_memory,
             memory_mode=memory_mode,
             requirements_file=final_requirements_file,
             authorizer_configuration=authorizer_configuration,
