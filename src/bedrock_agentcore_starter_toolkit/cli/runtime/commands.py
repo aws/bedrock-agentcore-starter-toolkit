@@ -411,7 +411,6 @@ def configure(
             headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
         execution_role_display = "Auto-create" if not result.execution_role else result.execution_role
-        rel_config_path = get_relative_path(Path(result.config_path))
         memory_info = "Short-term memory (30-day retention)"
         if disable_memory:
             memory_info = "Disabled"

@@ -30,9 +30,21 @@ def mock_boto3_clients(monkeypatch):
     mock_ecr.describe_repositories.return_value = {
         "repositories": [{"repositoryUri": "123456789012.dkr.ecr.us-west-2.amazonaws.com/existing-repo"}]
     }
-    # Mock exceptions
+
+    # Mock exceptions - create proper exception classes
+    class RepositoryAlreadyExistsException(Exception):
+        """Mock exception for repository already exists."""
+
+        pass
+
+    class RepositoryNotFoundException(Exception):
+        """Mock exception for repository not found."""
+
+        pass
+
     mock_ecr.exceptions = Mock()
-    mock_ecr.exceptions.RepositoryAlreadyExistsException = Exception
+    mock_ecr.exceptions.RepositoryAlreadyExistsException = RepositoryAlreadyExistsException
+    mock_ecr.exceptions.RepositoryNotFoundException = RepositoryNotFoundException
 
     # Mock BedrockAgentCore client
     mock_bedrock_agentcore = Mock()

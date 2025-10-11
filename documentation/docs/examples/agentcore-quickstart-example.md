@@ -342,7 +342,7 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 1. Clean up resources in the incorrect region:
    ```bash
    agentcore destroy
-   
+
    # This removes:
    #   - Runtime endpoint and agent
    #   - Memory resources (STM + LTM)

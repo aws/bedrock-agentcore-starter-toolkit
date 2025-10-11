@@ -83,7 +83,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
         output = result.output
         logger.info(output)
 
-        assert "Configuration Complete" in output
+        assert "Configuration Success" in output
         assert "Agent Name: agent" in output
         assert TEST_ROLE in output
         assert "Authorization: IAM" in output
