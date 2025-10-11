@@ -219,7 +219,8 @@ jobs:
         with:
           status: ${{ job.status }}
           text: 'Deployment to Dev: ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
   # Deploy to Staging
   deploy-staging:
@@ -272,7 +273,8 @@ jobs:
         with:
           status: ${{ job.status }}
           text: 'Deployment to Staging: ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
   # Deploy to Production
   deploy-prod:
@@ -327,7 +329,8 @@ jobs:
         with:
           status: ${{ job.status }}
           text: 'Deployment to Production: ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
       
       - name: Create GitHub release
         if: success()
