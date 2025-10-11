@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrative Interface - Fraud Detection System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; font-size: 28px; margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 14px; }
+        .tabs {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #f0f0f0;
+            color: #333;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab:hover { background: #5568d3; color: white; }
+        .content-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .content-panel.active { display: block; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .stat-label { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #333; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        tr:hover { background: #f8f9fa; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge.active { background: #d4edda; color: #155724; }
+        .badge.inactive { background: #f8d7da; color: #721c24; }
+        .badge.enabled { background: #d4edda; color: #155724; }
+        .badge.disabled { background: #f8d7da; color: #721c24; }
+        .badge.admin { background: #667eea; color: white; }
+        .badge.analyst { background: #28a745; color: white; }
+        .badge.auditor { background: #ffc107; color: #333; }
+        .badge.operator { background: #17a2b8; color: white; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            margin-right: 5px;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .search-box {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .close-modal {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Administrative Interface</h1>
+            <p class="subtitle">System configuration, user management, and audit logs</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="showTab('users')">👥 Users</button>
+            <button class="tab" onclick="showTab('rules')">📋 Rules</button>
+            <button class="tab" onclick="showTab('config')">⚙️ Configuration</button>
+            <button class="tab" onclick="showTab('audit')">📜 Audit Logs</button>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="dashboard" class="content-panel active">
+            <div class="stats-grid" id="dashboardStats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Rules</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Audit Logs (24h)</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-value">--</div>
+                </div>
+            </div>
+            <div class="section-title">Recent Activity</div>
+            <table id="recentActivity">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Resource</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Users Panel -->
+        <div id="users" class="content-panel">
+            <button class="btn btn-primary" onclick="showModal('createUser')">➕ Create User</button>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rules Panel -->
+        <div id="rules" class="content-panel">
+            <button class="btn btn-primary" onclick="showModal('createRule')">➕ Create Rule</button>
+            <table id="rulesTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Executions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div id="config" class="content-panel">
+            <div id="configList">Loading...</div>
+        </div>
+
+        <!-- Audit Logs Panel -->
+        <div id="audit" class="content-panel">
+            <input type="text" class="search-box" placeholder="Search audit logs..." onkeyup="searchAuditLogs(this.value)">
+            <table id="auditTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Resource</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'dashboard';
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            currentTab = tabName;
+            
+            loadTabData(tabName);
+        }
+
+        async function loadTabData(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    await loadDashboard();
+                    break;
+                case 'users':
+                    await loadUsers();
+                    break;
+                case 'rules':
+                    await loadRules();
+                    break;
+                case 'config':
+                    await loadConfig();
+                    break;
+                case 'audit':
+                    await loadAuditLogs();
+                    break;
+            }
+        }
+
+        async function loadDashboard() {
+            const summary = await fetchData('admin/summary');
+            if (summary) {
+                const stats = document.getElementById('dashboardStats');
+                stats.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value">${summary.users.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Rules</div>
+                        <div class="stat-value">${summary.rules.enabled}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Audit Logs (24h)</div>
+                        <div class="stat-value">${summary.audit_logs.last_24h}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">System Status</div>
+                        <div class="stat-value">${summary.system_health.status}</div>
+                    </div>
+                `;
+                
+                const tbody = document.querySelector('#recentActivity tbody');
+                tbody.innerHTML = summary.audit_logs.recent_actions.map(log => `
+                    <tr>
+                        <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td>${log.user_id}</td>
+                        <td>${log.action}</td>
+                        <td>${log.resource}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function loadUsers() {
+            const users = await fetchData('admin/users');
+            if (users) {
+                const tbody = document.querySelector('#usersTable tbody');
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td><span class="badge ${user.role}">${user.role}</span></td>
+                        <td><span class="badge ${user.active ? 'active' : 'inactive'}">${user.active ? 'Active' : 'Inactive'}</span></td>
+                        <td>${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" onclick="editUser('${user.user_id}')">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.user_id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function loadRules() {
+            const rules = await fetchData('admin/rules');
+            if (rules) {
+                const tbody = document.querySelector('#rulesTable tbody');
+                tbody.innerHTML = rules.map(rule => `
+                    <tr>
+                        <td>${rule.name}</td>
+                        <td>${rule.rule_type}</td>
+                        <td>${rule.priority}</td>
+                        <td><span class="badge ${rule.enabled ? 'enabled' : 'disabled'}">${rule.enabled ? 'Enabled' : 'Disabled'}</span></td>
+                        <td>${rule.execution_count}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleRule('${rule.rule_id}')">Toggle</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRule('${rule.rule_id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function loadConfig() {
+            const configs = await fetchData('admin/configs');
+            if (configs) {
+                const configList = document.getElementById('configList');
+                const categories = {};
+                
+                configs.forEach(config => {
+                    if (!categories[config.category]) {
+                        categories[config.category] = [];
+                    }
+                    categories[config.category].push(config);
+                });
+                
+                configList.innerHTML = Object.entries(categories).map(([category, items]) => `
+                    <div class="section-title">${category.toUpperCase()}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(config => `
+                                <tr>
+                                    <td>${config.key}</td>
+                                    <td>${config.value}</td>
+                                    <td>${config.description}</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" onclick="editConfig('${config.config_id}')">Edit</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `).join('');
+            }
+        }
+
+        async function loadAuditLogs() {
+            const response = await fetchData('admin/audit-logs?limit=50');
+            if (response && response.logs) {
+                const tbody = document.querySelector('#auditTable tbody');
+                tbody.innerHTML = response.logs.map(log => `
+                    <tr>
+                        <td>${new Date(log.timestamp).toLocaleString()}</td>
+                        <td>${log.user_id}</td>
+                        <td>${log.action}</td>
+                        <td>${log.resource}</td>
+                        <td>${log.ip_address}</td>
+                        <td>${log.status}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`http://127.0.0.1:5002/api/${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        function showModal(modalId) {
+            alert('Modal functionality would be implemented here');
+        }
+
+        function editUser(userId) {
+            alert(`Edit user: ${userId}`);
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                alert(`Delete user: ${userId}`);
+            }
+        }
+
+        function toggleRule(ruleId) {
+            alert(`Toggle rule: ${ruleId}`);
+        }
+
+        function deleteRule(ruleId) {
+            if (confirm('Are you sure you want to delete this rule?')) {
+                alert(`Delete rule: ${ruleId}`);
+            }
+        }
+
+        function editConfig(configId) {
+            alert(`Edit config: ${configId}`);
+        }
+
+        function searchAuditLogs(query) {
+            console.log('Search:', query);
+        }
+
+        // Initial load
+        loadDashboard();
+    </script>
+</body>
+</html>
