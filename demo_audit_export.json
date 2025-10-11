@@ -1,0 +1,387 @@
+[
+  {
+    "timestamp": "2025-10-11T13:47:49.689982",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_demo_001",
+    "user_id": "user_12345",
+    "agent_id": null,
+    "action": "Transaction received from API",
+    "details": {
+      "amount": 5000.0,
+      "currency": "USD",
+      "merchant": "Electronics Store",
+      "location": "New York, USA"
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry_hash": "192a4a60d77c410e2e1bd71c659bcbb6b121feaeab537f0f8875244f610a86f8"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.696801",
+    "event_type": "reasoning_step",
+    "severity": "info",
+    "transaction_id": "txn_demo_001",
+    "user_id": null,
+    "agent_id": "reasoning_engine",
+    "action": "Multi-step fraud analysis",
+    "details": {
+      "analysis_type": "chain_of_thought",
+      "steps_completed": 5
+    },
+    "reasoning_steps": [
+      "Step 1: Verify transaction amount is within normal range",
+      "Step 2: Check user's historical spending patterns",
+      "Step 3: Validate merchant and location",
+      "Step 4: Assess velocity patterns",
+      "Step 5: Calculate overall risk score"
+    ],
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "192a4a60d77c410e2e1bd71c659bcbb6b121feaeab537f0f8875244f610a86f8",
+    "entry_hash": "bf525ad06fb8657b0fe404a1ccb34849fd38dcbc06431dcd9bef43619218d810"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.710821",
+    "event_type": "external_api_call",
+    "severity": "info",
+    "transaction_id": "txn_demo_001",
+    "user_id": null,
+    "agent_id": "compliance_agent",
+    "action": "Identity verification check",
+    "details": {
+      "api": "identity_verification_service",
+      "response_time_ms": 245,
+      "status": "success"
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "bf525ad06fb8657b0fe404a1ccb34849fd38dcbc06431dcd9bef43619218d810",
+    "entry_hash": "07729b8e1bab24efc7332c70ed77d2d7abf8c1c6c37e99fb9566e94c8a8a0b8a"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.727597",
+    "event_type": "decision_made",
+    "severity": "compliance",
+    "transaction_id": "txn_demo_001",
+    "user_id": "user_12345",
+    "agent_id": "risk_assessment_agent",
+    "action": "Fraud detection decision",
+    "details": {
+      "risk_score": 0.15,
+      "factors_considered": 8,
+      "processing_time_ms": 523
+    },
+    "reasoning_steps": null,
+    "decision": "APPROVED",
+    "confidence": 0.92,
+    "evidence": [
+      "Amount within normal range for user",
+      "Location matches user's typical patterns",
+      "Merchant is verified and trusted",
+      "No velocity anomalies detected",
+      "Identity verification passed"
+    ],
+    "previous_hash": "07729b8e1bab24efc7332c70ed77d2d7abf8c1c6c37e99fb9566e94c8a8a0b8a",
+    "entry_hash": "5f46226a6fc17493d1d607ba197b57c18bbcc49f2bd0dfe17ca0cf42b4f763e8"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.743264",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_1",
+    "user_id": null,
+    "agent_id": null,
+    "action": "Transaction 1",
+    "details": {
+      "amount": 100
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry_hash": "34ddd204fb009a93a4ba4d3487077fc89681810ace93c083156144fb87635fcf"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.755760",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_2",
+    "user_id": null,
+    "agent_id": null,
+    "action": "Transaction 2",
+    "details": {
+      "amount": 200
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "34ddd204fb009a93a4ba4d3487077fc89681810ace93c083156144fb87635fcf",
+    "entry_hash": "8fd1e7b62c78117a7f0a8915941313963c41dfc0569b85305e11a79fcc0d79cc"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.758704",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_3",
+    "user_id": null,
+    "agent_id": null,
+    "action": "Transaction 3",
+    "details": {
+      "amount": 300
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "8fd1e7b62c78117a7f0a8915941313963c41dfc0569b85305e11a79fcc0d79cc",
+    "entry_hash": "e13660b9820da28be073d1ac4c396e0b73f5d8d3ee2f76836ce60833182ef78e"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.762716",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_4",
+    "user_id": null,
+    "agent_id": null,
+    "action": "Transaction 4",
+    "details": {
+      "amount": 400
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "e13660b9820da28be073d1ac4c396e0b73f5d8d3ee2f76836ce60833182ef78e",
+    "entry_hash": "860410d76a7571f872c4f051f85c823dbfab581f606312052f05969d194f40fa"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.765542",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_5",
+    "user_id": null,
+    "agent_id": null,
+    "action": "Transaction 5",
+    "details": {
+      "amount": 500
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "860410d76a7571f872c4f051f85c823dbfab581f606312052f05969d194f40fa",
+    "entry_hash": "d1d1ad57d1edc0881642e23316fc87cf2e4e0cf8d11ab4918f882a5500948875"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.795561",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_search_001",
+    "user_id": "user_alice",
+    "agent_id": null,
+    "action": "Transaction received",
+    "details": {
+      "amount": 250
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry_hash": "348d1fdb0c358205119ca04b29297bf922d9559a624085b1d5a24fd7f9d09012"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.802607",
+    "event_type": "decision_made",
+    "severity": "compliance",
+    "transaction_id": "txn_search_001",
+    "user_id": "user_alice",
+    "agent_id": "risk_agent",
+    "action": "Decision made",
+    "details": {},
+    "reasoning_steps": null,
+    "decision": "APPROVED",
+    "confidence": 0.95,
+    "evidence": null,
+    "previous_hash": "348d1fdb0c358205119ca04b29297bf922d9559a624085b1d5a24fd7f9d09012",
+    "entry_hash": "bcf6710f60593d839872a3cd4d8ab5efd17bf23c9fbd9a9ab0556c2627653a2b"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.805943",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_search_002",
+    "user_id": "user_bob",
+    "agent_id": null,
+    "action": "Transaction received",
+    "details": {
+      "amount": 10000
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "bcf6710f60593d839872a3cd4d8ab5efd17bf23c9fbd9a9ab0556c2627653a2b",
+    "entry_hash": "28bbadd94f7172bcbee409e9e0481fcbe68a8373b92e28a11693544941312287"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.808868",
+    "event_type": "decision_made",
+    "severity": "warning",
+    "transaction_id": "txn_search_002",
+    "user_id": "user_bob",
+    "agent_id": "risk_agent",
+    "action": "Decision made",
+    "details": {},
+    "reasoning_steps": null,
+    "decision": "FLAGGED",
+    "confidence": 0.78,
+    "evidence": null,
+    "previous_hash": "28bbadd94f7172bcbee409e9e0481fcbe68a8373b92e28a11693544941312287",
+    "entry_hash": "7dbec781a5c89f02a8a11a79bd110832141bd2893a5ec93dbd721de4ad82cf37"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.812078",
+    "event_type": "escalation",
+    "severity": "critical",
+    "transaction_id": "txn_search_003",
+    "user_id": "user_charlie",
+    "agent_id": null,
+    "action": "Escalated to human review",
+    "details": {
+      "reason": "High risk score"
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "7dbec781a5c89f02a8a11a79bd110832141bd2893a5ec93dbd721de4ad82cf37",
+    "entry_hash": "a8980d40000b659149f4ea985ce0fdf85948e7c7af5128ebfad44d16ba7c82ed"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.865613",
+    "event_type": "transaction_received",
+    "severity": "info",
+    "transaction_id": "txn_complete_001",
+    "user_id": "user_premium",
+    "agent_id": null,
+    "action": "Transaction received",
+    "details": {
+      "amount": 7500,
+      "merchant": "Luxury Goods Store"
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry_hash": "c688e6a148adf8265ea0dee56678221ef2a0669581275ac33e10bcccd7221d60"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.903203",
+    "event_type": "memory_access",
+    "severity": "info",
+    "transaction_id": "txn_complete_001",
+    "user_id": null,
+    "agent_id": "memory_manager",
+    "action": "Retrieved user history",
+    "details": {
+      "records_found": 45
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "c688e6a148adf8265ea0dee56678221ef2a0669581275ac33e10bcccd7221d60",
+    "entry_hash": "0756f25f1b16bdcfeb5ec277a2ff1f97887c3c750fae7b9bf722a14688876f4e"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.906481",
+    "event_type": "external_api_call",
+    "severity": "info",
+    "transaction_id": "txn_complete_001",
+    "user_id": null,
+    "agent_id": "pattern_detector",
+    "action": "Geolocation verification",
+    "details": {
+      "location": "London, UK",
+      "risk_level": "low"
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "0756f25f1b16bdcfeb5ec277a2ff1f97887c3c750fae7b9bf722a14688876f4e",
+    "entry_hash": "dec8f509758d592f0f49007b9ef3fe74525bd9e4ba26ca858e62617389ab4698"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.909551",
+    "event_type": "reasoning_step",
+    "severity": "info",
+    "transaction_id": "txn_complete_001",
+    "user_id": null,
+    "agent_id": "reasoning_engine",
+    "action": "Risk analysis",
+    "details": {},
+    "reasoning_steps": [
+      "Analyzed spending patterns",
+      "Verified merchant legitimacy",
+      "Assessed location risk",
+      "Calculated composite risk score"
+    ],
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "dec8f509758d592f0f49007b9ef3fe74525bd9e4ba26ca858e62617389ab4698",
+    "entry_hash": "f483f71179079f1d41965ef436d4f41eea6f494e1e62fbdc9b5114927abe60d7"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.924134",
+    "event_type": "agent_action",
+    "severity": "info",
+    "transaction_id": "txn_complete_001",
+    "user_id": null,
+    "agent_id": "orchestrator",
+    "action": "Multi-agent coordination",
+    "details": {
+      "agents_involved": 3
+    },
+    "reasoning_steps": null,
+    "decision": null,
+    "confidence": null,
+    "evidence": null,
+    "previous_hash": "f483f71179079f1d41965ef436d4f41eea6f494e1e62fbdc9b5114927abe60d7",
+    "entry_hash": "1a6fe575725fb75fe03d0e61a87908f0aa5e4991bf9dc4924818dab52fabc3b3"
+  },
+  {
+    "timestamp": "2025-10-11T13:47:49.926590",
+    "event_type": "decision_made",
+    "severity": "compliance",
+    "transaction_id": "txn_complete_001",
+    "user_id": "user_premium",
+    "agent_id": "risk_agent",
+    "action": "Final decision",
+    "details": {
+      "risk_score": 0.22
+    },
+    "reasoning_steps": null,
+    "decision": "APPROVED",
+    "confidence": 0.88,
+    "evidence": [
+      "Premium user with good history",
+      "Verified location",
+      "Legitimate merchant"
+    ],
+    "previous_hash": "1a6fe575725fb75fe03d0e61a87908f0aa5e4991bf9dc4924818dab52fabc3b3",
+    "entry_hash": "6375b68e833ae6765d98364e4d28cc7ca2f1f821922b03699a6a963214a79e1c"
+  }
+]
