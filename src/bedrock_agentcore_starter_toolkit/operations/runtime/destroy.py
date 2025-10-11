@@ -138,6 +138,11 @@ def _destroy_agentcore_endpoint(
             endpoint_name = endpoint_response.get("name", "DEFAULT")
             endpoint_arn = endpoint_response.get("agentRuntimeEndpointArn")
 
+            # DEFAULT endpoint is automatically deleted when agent is deleted
+            if endpoint_name == "DEFAULT":
+                log.info("DEFAULT endpoint will be automatically deleted with agent")
+                return
+
             if dry_run:
                 result.resources_removed.append(f"AgentCore endpoint: {endpoint_name} (DRY RUN)")
                 return
@@ -149,7 +154,13 @@ def _destroy_agentcore_endpoint(
                     result.resources_removed.append(f"AgentCore endpoint: {endpoint_arn}")
                     log.info("Deleted AgentCore endpoint: %s", endpoint_arn)
                 except ClientError as delete_error:
-                    if delete_error.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
+                    error_code = delete_error.response["Error"]["Code"]
+
+                    # Handle ConflictException for DEFAULT endpoint gracefully
+                    if error_code == "ConflictException":
+                        log.info("DEFAULT endpoint will be automatically deleted with agent")
+                        return
+                    elif error_code not in ["ResourceNotFoundException", "NotFound"]:
                         result.errors.append(f"Failed to delete endpoint {endpoint_arn}: {delete_error}")
                         log.error("Failed to delete endpoint: %s", delete_error)
                     else:

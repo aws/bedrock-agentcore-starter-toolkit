@@ -118,9 +118,6 @@ def configure_bedrock_agentcore(
             else:
                 log.debug("No execution role provided and auto-create disabled")
 
-#    if verbose:
-#        log.debug("Configuring memory (enabled=%s, mode=%s)", enable_memory, memory_mode)
-
     # Pass region to ConfigurationManager so it can check for existing memories
     config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive)
 
@@ -137,7 +134,7 @@ def configure_bedrock_agentcore(
         memory_config.event_expiry_days = 30
         memory_config.memory_name = f"{agent_name}_memory"
         log.info("Will create new memory with mode: %s", memory_mode)
-        
+
         if memory_mode == "STM_AND_LTM":
             log.info("Memory configuration: Short-term + Long-term memory enabled")
         else:  # STM_ONLY
@@ -145,7 +142,7 @@ def configure_bedrock_agentcore(
     else:
         # Interactive mode: prompt user (only if memory not explicitly disabled)
         action, value = config_manager.prompt_memory_selection()
-        
+
         if action == "USE_EXISTING":
             # Using existing memory - just store the ID
             memory_config.memory_id = value
@@ -158,7 +155,7 @@ def configure_bedrock_agentcore(
             memory_config.event_expiry_days = 30
             memory_config.memory_name = f"{agent_name}_memory"
             log.info("Will create new memory with mode: %s", value)
-            
+
             if value == "STM_AND_LTM":
                 log.info("Memory configuration: Short-term + Long-term memory enabled")
             else:  # STM_ONLY

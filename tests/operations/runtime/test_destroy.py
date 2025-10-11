@@ -437,9 +437,8 @@ class TestDestroyBedrockAgentCore:
 
         assert isinstance(result, DestroyResult)
 
-        # Verify DEFAULT endpoint skip warning is present
-        default_warnings = [w for w in result.warnings if "DEFAULT endpoint cannot be explicitly deleted" in w]
-        assert len(default_warnings) > 0, "Expected warning about DEFAULT endpoint skip"
+        # Verify DEFAULT endpoint was skipped (no delete call)
+        mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
 
         # Verify that delete_agent_runtime_endpoint was NOT called for DEFAULT
         mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
