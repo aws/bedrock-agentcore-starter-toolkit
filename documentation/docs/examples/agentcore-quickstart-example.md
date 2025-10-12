@@ -135,7 +135,7 @@ The AgentCore CLI automates deployment with provisioning.
 
 You’ll be prompted for the following during configuration:
 
-1. **Execution Role**: For this tutorial, Press Enter to auto-create a new role with all required permissions, or provide an existing role ARN/name
+1. **Execution Role**: For this tutorial, Press Enter to auto-create a new role with all required permissions.
 1. **ECR Repository**: Press Enter to auto-create a new repository, or provide an existing ECR URI
 1. **Requirements File**: Confirm the detected requirements.txt file or specify a different path
 1. **OAuth Configuration**: Type `no` for this tutorial (OAuth is not required)
