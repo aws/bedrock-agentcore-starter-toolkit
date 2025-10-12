@@ -144,19 +144,6 @@
       ]
     },
     {
-      "Sid": "BedrockAgentCoreIdentityGetWorkloadAccessToken",
-      "Effect": "Allow",
-      "Action": [
-        "bedrock-agentcore:GetWorkloadAccessToken",
-        "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-        "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
-      ],
-      "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
-      ]
-    },
-    {
       "Sid": "BedrockModelInvocation",
       "Effect": "Allow",
       "Action": [

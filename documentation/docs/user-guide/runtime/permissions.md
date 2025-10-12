@@ -61,121 +61,131 @@ Attach the following policy to your IAM user or role:
 
 ```json
 {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Sid": "IAMRoleManagement",
-			"Effect": "Allow",
-			"Action": [
-				"iam:CreateRole",
-				"iam:DeleteRole",
-				"iam:GetRole",
-				"iam:PutRolePolicy",
-				"iam:DeleteRolePolicy",
-				"iam:AttachRolePolicy",
-				"iam:DetachRolePolicy",
-				"iam:TagRole",
-				"iam:ListRolePolicies",
-				"iam:ListAttachedRolePolicies"
-			],
-			"Resource": [
-				"arn:aws:iam::*:role/*BedrockAgentCore*",
-				"arn:aws:iam::*:role/service-role/*BedrockAgentCore*"
-			]
-		},
-		{
-			"Sid": "CodeBuildProjectAccess",
-			"Effect": "Allow",
-			"Action": [
-				"codebuild:StartBuild",
-				"codebuild:BatchGetBuilds",
-				"codebuild:ListBuildsForProject",
-				"codebuild:CreateProject",
-				"codebuild:UpdateProject",
-				"codebuild:BatchGetProjects"
-			],
-			"Resource": [
-				"arn:aws:codebuild:*:*:project/bedrock-agentcore-*",
-				"arn:aws:codebuild:*:*:build/bedrock-agentcore-*"
-			]
-		},
-		{
-			"Sid": "CodeBuildListAccess",
-			"Effect": "Allow",
-			"Action": [
-				"codebuild:ListProjects"
-			],
-			"Resource": "*"
-		},
-		{
-			"Sid": "IAMPassRoleAccess",
-			"Effect": "Allow",
-			"Action": [
-				"iam:PassRole"
-			],
-			"Resource": [
-				"arn:aws:iam::*:role/AmazonBedrockAgentCore*",
-				"arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
-			]
-		},
-		{
-			"Sid": "CloudWatchLogsAccess",
-			"Effect": "Allow",
-			"Action": [
-				"logs:GetLogEvents",
-				"logs:DescribeLogGroups",
-				"logs:DescribeLogStreams"
-			],
-			"Resource": [
-				"arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*",
-				"arn:aws:logs:*:*:log-group:/aws/codebuild/*"
-			]
-		},
-		{
-			"Sid": "S3Access",
-			"Effect": "Allow",
-			"Action": [
-				"s3:GetObject",
-				"s3:PutObject",
-				"s3:ListBucket",
-				"s3:CreateBucket",
-				"s3:PutLifecycleConfiguration"
-			],
-			"Resource": [
-				"arn:aws:s3:::bedrock-agentcore-*",
-				"arn:aws:s3:::bedrock-agentcore-*/*"
-			]
-		},
-		{
-			"Sid": "ECRRepositoryAccess",
-			"Effect": "Allow",
-			"Action": [
-				"ecr:CreateRepository",
-				"ecr:DescribeRepositories",
-				"ecr:GetRepositoryPolicy",
-				"ecr:InitiateLayerUpload",
-				"ecr:CompleteLayerUpload",
-				"ecr:PutImage",
-				"ecr:UploadLayerPart",
-				"ecr:BatchCheckLayerAvailability",
-				"ecr:GetDownloadUrlForLayer",
-				"ecr:BatchGetImage",
-				"ecr:ListImages",
-				"ecr:TagResource"
-			],
-			"Resource": [
-				"arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
-			]
-		},
-		{
-			"Sid": "ECRAuthorizationAccess",
-			"Effect": "Allow",
-			"Action": [
-				"ecr:GetAuthorizationToken"
-			],
-			"Resource": "*"
-		}
-	]
+  "Version": "2012-10-17",
+  "Statement": [{
+      "Sid": "IAMRoleManagement",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:TagRole",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/*BedrockAgentCore*",
+        "arn:aws:iam::*:role/service-role/*BedrockAgentCore*"
+      ]
+    },
+    {
+      "Sid": "CodeBuildProjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:StartBuild",
+        "codebuild:BatchGetBuilds",
+        "codebuild:ListBuildsForProject",
+        "codebuild:CreateProject",
+        "codebuild:UpdateProject",
+        "codebuild:BatchGetProjects"
+      ],
+      "Resource": [
+        "arn:aws:codebuild:*:*:project/bedrock-agentcore-*",
+        "arn:aws:codebuild:*:*:build/bedrock-agentcore-*"
+      ]
+    },
+    {
+      "Sid": "CodeBuildListAccess",
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:ListProjects"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMPassRoleAccess",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/AmazonBedrockAgentCore*",
+        "arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogsAccess",
+      "Effect": "Allow",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*",
+        "arn:aws:logs:*:*:log-group:/aws/codebuild/*"
+      ]
+    },
+    {
+      "Sid": "S3Access",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:CreateBucket",
+        "s3:PutLifecycleConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:s3:::bedrock-agentcore-*",
+        "arn:aws:s3:::bedrock-agentcore-*/*"
+      ]
+    },
+    {
+      "Sid": "ECRRepositoryAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:CreateRepository",
+        "ecr:DescribeRepositories",
+        "ecr:GetRepositoryPolicy",
+        "ecr:InitiateLayerUpload",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:ListImages",
+        "ecr:TagResource"
+      ],
+      "Resource": [
+        "arn:aws:ecr:*:*:repository/bedrock-agentcore-*"
+      ]
+    },
+    {
+      "Sid": "ECRAuthorizationAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockAgentCoreRuntimeIdentityServiceLinkedRolePermissions",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::*:role/aws-service-role/runtime-identity.bedrock-agentcore.amazonaws.com/AWSServiceRoleForBedrockAgentCoreRuntimeIdentity",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": "runtime-identity.bedrock-agentcore.amazonaws.com"
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -315,19 +325,6 @@ The Runtime Execution Role is an IAM role that AgentCore Runtime assumes to run 
                     "cloudwatch:namespace": "bedrock-agentcore"
                 }
             }
-        },
-        {
-            "Sid": "GetAgentAccessToken",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock-agentcore:GetWorkloadAccessToken",
-                "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-                "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
-            ],
-            "Resource": [
-                "arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default",
-                "arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default/workload-identity/agentName-*"
-            ]
         },
         {
             "Sid": "BedrockModelInvocation",

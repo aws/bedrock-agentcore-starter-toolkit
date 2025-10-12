@@ -129,9 +129,6 @@ class TestPolicyTemplate:
             "xray:GetSamplingRules",
             "xray:GetSamplingTargets",
             "cloudwatch:PutMetricData",
-            "bedrock-agentcore:GetWorkloadAccessToken",
-            "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-            "bedrock-agentcore:GetWorkloadAccessTokenForUserId",
             "bedrock:InvokeModel",
             "bedrock:InvokeModelWithResponseStream",
         ]
