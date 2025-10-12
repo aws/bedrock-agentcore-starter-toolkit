@@ -10,7 +10,7 @@ For Gateway and Identity features, see the [Gateway quickstart](https://github.c
 
 - **AWS Permissions**: Root users or privileged roles (such as admins) can skip this step. Others need to attach the [starter toolkit policy](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit) and [AmazonBedrockAgentCoreFullAccess](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/BedrockAgentCoreFullAccess.html) managed policy.
 - [AWS CLI version 2.0 or later](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) configured (`aws configure`)
-- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable "Claude 3.7 Sonnet" in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
+- **Amazon Bedrock model access enabled for Claude 3.7 Sonnet** (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the [Strands Agents SDK](https://strandsagents.com/latest/documentation/docs/) documentation.
 - Python 3.10 or newer
 
 > **Important: Ensure AWS Region Consistency**
@@ -18,7 +18,7 @@ For Gateway and Identity features, see the [Gateway quickstart](https://github.c
 > Ensure the following are all configured to use the **same AWS region**:
 >
 > - Your `aws configure` default region
-> - The region where you've enabled Bedrock model access
+> - The region where you’ve enabled Bedrock model access
 > - All resources created during deployment will use this region
 
 ### Installation
@@ -133,133 +133,124 @@ The AgentCore CLI automates deployment with provisioning.
 
 ### Configure the Agent
 
+You’ll be prompted for the following during configuration:
+
+1. **Execution Role**: For this tutorial, Press Enter to auto-create a new role with all required permissions, or provide an existing role ARN/name
+1. **ECR Repository**: Press Enter to auto-create a new repository, or provide an existing ECR URI
+1. **Requirements File**: Confirm the detected requirements.txt file or specify a different path
+1. **OAuth Configuration**: Type `no` for this tutorial (OAuth is not required)
+1. **Request Header Allowlist**: Type `no` for this tutorial (headers are not required)
+1. **Memory Configuration**:
+
+- If existing memories are found, choose from the list or press Enter to create a new one
+- If creating new memory, type `yes` when asked to enable long-term memory extraction
+- Note: Short-term memory is always enabled by default
+
+
+Now run the configuration command:
+
 ```bash
 agentcore configure -e agentcore_starter_strands.py
-
-#Interactive prompts you'll see:
-
-# 1. Execution Role: Press Enter to auto-create or provide existing role ARN/name
-# 2. ECR Repository: Press Enter to auto-create or provide existing ECR URI
-# 3. OAuth Configuration: Configure OAuth authorizer? (yes/no) - Type `no` for this tutorial
-# 4. Request Header Allowlist: Configure request header allowlist? (yes/no) - Type `no` for this tutorial
-# 5. Memory Configuration:
-#    - If existing memories found: Choose from list or press Enter to create new
-#    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial
-#    - Note: Short-term memory is always enabled by default
 ```
-**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability. When prompted for long-term memory, type **yes** for this tutorial.
 
 **Note**: If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Troubleshooting](#troubleshooting) section (Memory Configuration Not Appearing) to ensure the correct toolkit version is installed.
 
-
 ### Deploy to AgentCore
+
+Run the deployment command to build your container, push it to ECR, and create the AgentCore Runtime with Memory and observability enabled:
 
 ```bash
 agentcore launch
-
-# This performs:
-#   1. Memory resource provisioning (STM + LTM strategies)
-#   2. Docker container build with dependencies
-#   3. ECR repository push
-#   4. AgentCore Runtime deployment with X-Ray tracing enabled
-#   5. CloudWatch Transaction Search configuration (automatic)
-#   6. Endpoint activation with trace collection
 ```
 
-**Expected output:**
+The deployment performs memory resource provisioning with short-term and long-term strategies, Docker container build with dependencies, ECR repository push, AgentCore Runtime deployment with X-Ray tracing enabled, CloudWatch Transaction Search configuration, and endpoint activation with trace collection.
 
-```text
-✅ Memory created: agentcore_starter_strands_mem-abc123
-Observability is enabled, configuring Transaction Search...
-✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
-🔍 GenAI Observability Dashboard:
-   https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
-✅ Container deployed to Bedrock AgentCore
-Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/agentcore_starter_strands-xyz
-```
+After successful deployment, you'll see the Memory ID, Agent ARN, and GenAI Observability Dashboard URL in the output—these indicate your deployment completed successfully.
 
-**If deployment encounters errors or behaves unexpectedly**, check your configuration:
+**If deployment encounters errors or behaves unexpectedly**, check your configuration and verify resource provisioning status:
+
 ```bash
-cat .bedrock_agentcore.yaml  # Review deployed configuration
-agentcore status              # Verify resource provisioning status
+cat .bedrock_agentcore.yaml
 ```
+
+```bash
+agentcore status
+```
+
 Refer to the [Troubleshooting](#troubleshooting) section if you see any issues.
 
 ## Step 3: Monitor Deployment
 
-Check deployment status:
+Check the deployment status to verify that your Memory resources are provisioned and your agent runtime is ready. The status command shows your Memory ID, current provisioning status, memory type configuration, and observability settings. Run this command periodically until the Memory status shows as active.
 
 ```bash
 agentcore status
-
-# Shows:
-#   Memory ID: agentcore_starter_strands_mem-abc123
-#   Memory Status: CREATING (if still provisioning)
-#   Memory Type: STM+LTM (provisioning...) (if creating with LTM)
-#   Memory Type: STM+LTM (3 strategies) (when active with strategies)
-#   Memory Type: STM only (if configured without LTM)
-#   Observability: Enabled
 ```
 
-**Note**: LTM strategies require 2-5 minutes to activate. STM is provisioned immediately if LTM is not selected.
+**Note**: Long-term memory strategies require 2-5 minutes to activate. Short-term memory is provisioned immediately if long-term memory is not selected. Wait until the Memory Type shows “STM+LTM (3 strategies)” before proceeding to testing.
 
 ## Step 4: Test Memory and Code Interpreter
 
 ### Test Short-Term Memory (STM)
 
-Testing within a single session:
+Short-term memory allows the agent to maintain context within a single session.
+
+Store information in the current session (session IDs must be 33+ characters):
 
 ```bash
-# Store information (session IDs must be 33+ characters)
 agentcore invoke '{"prompt": "Remember that my favorite agent platform is AgentCore"}'
-
-# If invoked too early (memory still provisioning), you'll see:
-# "Memory is still provisioning (current status: CREATING).
-#  Long-term memory extraction takes 60-180 seconds to activate.
-#
-#  Please wait and check status with:
-#    agentcore status"
-
-# Retrieve within same session
-agentcore invoke '{"prompt": "What is my favorite agent platform?"}'
-
-# Expected response:
-# "Your favorite agent platform is AgentCore."
 ```
+
+If you invoke too early while memory is still provisioning, you’ll see a message indicating the current status and suggesting you wait and check with `agentcore status`.
+
+Retrieve the information within the same session:
+
+```bash
+agentcore invoke '{"prompt": "What is my favorite agent platform?"}'
+```
+
+Expected response: “Your favorite agent platform is AgentCore.”
 
 ### Test Long-Term Memory (LTM) - Cross-Session Persistence
 
-LTM enables information persistence across different sessions. This requires waiting for LTM extraction after storing information.
+Long-term memory enables information persistence across different sessions through background extraction of facts and preferences.
+
+Store facts in the first session:
 
 ```bash
-# Session 1: Store facts
 agentcore invoke '{"prompt": "My email is user@example.com and I am an AgentCore user"}'
 ```
 
-Wait for extraction that runs in the background by AgentCore. This typically takes 10-30 seconds. If you do not see the facts, wait a few more seconds and try again.
+Wait for extraction that runs in the background by AgentCore. This typically takes 10-30 seconds. If you do not see the facts retrieved in the next step, wait a few more seconds and try again.
 
 ```bash
 sleep 20
-# Session 2: Different runtime session retrieves the facts extracted from initial session
+```
+
+Create a new session and retrieve the extracted facts:
+
+```bash
 SESSION_ID=$(python -c "import uuid; print(uuid.uuid4())")
 agentcore invoke '{"prompt": "Tell me about myself?"}' --session-id $SESSION_ID
-
-# Expected response:
-# "Your email address is user@example.com."
-# "You appear to be a user of AgentCore, which seems to be your favorite agent platform."
 ```
+
+Expected response: “Your email address is user@example.com.” and “You appear to be a user of AgentCore, which seems to be your favorite agent platform.”
 
 ### Test Code Interpreter
 
+Store data for analysis:
+
 ```bash
-# Store data
 agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56."}'
-
-# Create visualization
-agentcore invoke '{"prompt": "Create a text-based bar chart visualization showing the distribution of values in my dataset with proper labels"}'
-
-# Expected: Agent generates matplotlib code to create a bar chart
 ```
+
+Create a visualization:
+
+```bash
+agentcore invoke '{"prompt": "Create a text-based bar chart visualization showing the distribution of values in my dataset with proper labels"}'
+```
+
+Expected: The agent generates matplotlib code to create a bar chart visualization.
 
 ## Step 5: View Traces and Logs
 
@@ -267,43 +258,44 @@ agentcore invoke '{"prompt": "Create a text-based bar chart visualization showin
 
 Navigate to the GenAI Observability dashboard to view end-to-end request traces including agent execution tracking, memory retrieval operations, code interpreter executions, agent reasoning steps, and latency breakdown by component. The dashboard provides a service map view showing agent runtime connections to Memory and Code Interpreter services with request flow visualization and latency metrics, as well as detailed X-Ray traces for debugging and performance analysis.
 
-```bash
-# Get the dashboard URL from status
-agentcore status
+Get the dashboard URL from the status output:
 
-# Navigate to the URL shown, or go directly to:
-# https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
-# Note: Replace the region
+```bash
+agentcore status
 ```
+
+Navigate to the URL shown in the output, or go directly to the CloudWatch GenAI Observability dashboard and replace the region with yours: `https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core`
 
 ### View Agent Runtime Logs
 
+To view your agent’s runtime logs, use the log command shown in the status output. The status command displays the exact log path and AWS CLI command for your specific agent.
+
+First, get your agent’s log information:
+
 ```bash
-# The correct log paths are shown in the invoke or status output
 agentcore status
+```
 
-# You'll see log paths like:
-# aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name-prefix "YYYY/MM/DD/[runtime-logs]" --follow
+Copy the `aws logs tail` command from the status output and execute it. The command will look similar to this format but with your specific agent ID and current date:
 
-# Copy this command from the output to view logs
-# For example:
+```bash
 aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name-prefix "YYYY/MM/DD/[runtime-logs]" --follow
+```
 
-# For recent logs, use the --since option as shown in the output:
+For recent logs without following live updates, use the `--since` option shown in the status output:
+
+```bash
 aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name-prefix "YYYY/MM/DD/[runtime-logs]" --since 1h
 ```
 
+**Note**: The `--follow` flag provides a live stream of logs as they occur. If you don’t see immediate output, that’s normal—logs will appear as your agent processes requests.
+
 ## Clean Up
+
+Remove all deployed resources including the runtime endpoint, agent, memory resources, ECR repository and images, and auto-created IAM roles:
 
 ```bash
 agentcore destroy
-
-# Removes:
-#   - Runtime endpoint and agent
-#   - Memory resources (STM + LTM)
-#   - ECR repository and images
-#   - IAM roles (if auto-created)
-#   - CloudWatch log groups (optional)
 ```
 
 ## Troubleshooting
@@ -311,7 +303,7 @@ agentcore destroy
 <details>
 <summary><strong>Memory Configuration Not Appearing</strong></summary>
 
-**"Memory option not showing during `agentcore configure`":**
+**“Memory option not showing during `agentcore configure`”:**
 
 This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:
 
@@ -359,7 +351,7 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 **Additional checks:**
 
-- Ensure you're running `agentcore configure` from within the activated virtual environment
+- Ensure you’re running `agentcore configure` from within the activated virtual environment
 - If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling
 - Verify no system-wide agentcore installation conflicts: `pip list | grep bedrock-agentcore`
 
@@ -370,45 +362,46 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 **If you need to change your region configuration:**
 
-1. Clean up resources in the incorrect region:
-   ```bash
-   agentcore destroy
+Clean up resources in the incorrect region:
 
-   # This removes:
-   #   - Runtime endpoint and agent
-   #   - Memory resources (STM + LTM)
-   #   - ECR repository and images
-   #   - IAM roles (if auto-created)
-   #   - CloudWatch log groups (optional)
-   ```
+```bash
+agentcore destroy
+```
 
-2. Verify your AWS CLI is configured for the correct region:
-   ```bash
-   aws configure get region
-   # Or reconfigure for the correct region:
-   aws configure set region <your-desired-region>
-   ```
+Verify your AWS CLI is configured for the correct region:
 
-3. Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)
+```bash
+aws configure get region
+```
 
-4. Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**
+Or reconfigure for the correct region:
+
+```bash
+aws configure set region <your-desired-region>
+```
+
+Ensure Bedrock model access is enabled in the target region through AWS Console → Bedrock → Model access.
+
+Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**.
 
 </details>
 
 <details>
 <summary><strong>Memory Issues</strong></summary>
 
-**"Memory status is not active" error:**
+**“Memory status is not active” error:**
 
-- Run `agentcore status` to check memory status
-- If showing "provisioning", wait 2-3 minutes
-- Retry after status shows "STM+LTM (3 strategies)"
+Run the status command to check memory status:
+
+```bash
+agentcore status
+```
+
+If showing “provisioning”, wait 2-3 minutes and retry after status shows “STM+LTM (3 strategies)”.
 
 **Cross-session memory not working:**
 
-- Verify LTM is active (not "provisioning")
-- Wait 15-30 seconds after storing facts for extraction
-- Check extraction logs for completion
+Verify long-term memory is active (not “provisioning”) and wait 15-30 seconds after storing facts for extraction to complete. Check extraction logs for completion status.
 
 </details>
 
@@ -417,23 +410,19 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 **No traces appearing:**
 
-- Verify observability was enabled during `agentcore configure`
-- Check IAM permissions include CloudWatch and X-Ray access
-- Wait 30-60 seconds for traces to appear in CloudWatch
-- Traces are viewable at: AWS Console → CloudWatch → Service Map or X-Ray → Traces
+Verify observability was enabled during configuration, check that your IAM permissions include CloudWatch and X-Ray access, and wait 30-60 seconds for traces to appear in CloudWatch. Traces are viewable at AWS Console → CloudWatch → Service Map or X-Ray → Traces.
 
 **Missing memory logs:**
 
-- Check log group exists: `/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/<memory-id>`
-- Verify IAM role has CloudWatch Logs permissions
+Check that the log group exists at `/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/<memory-id>` and verify your IAM role has CloudWatch Logs permissions.
 
 </details>
 
----
+-----
 
 ## Summary
 
-You've deployed a production agent with:
+You’ve deployed a production agent with:
 
 - **Runtime** for managed container orchestration
 - **Memory** with STM for immediate context and LTM for cross-session persistence
