@@ -1416,48 +1416,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#memory-configuration-not-appearing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Memory Configuration Not Appearing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#region-misconfiguration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Region Misconfiguration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#memory-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Memory Issues
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#observability-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Observability Issues
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -2115,48 +2073,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#memory-configuration-not-appearing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Memory Configuration Not Appearing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#region-misconfiguration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Region Misconfiguration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#memory-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Memory Issues
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#observability-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Observability Issues
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -2190,13 +2106,12 @@
 <h1 id="agentcore-quickstart">AgentCore Quickstart<a class="headerlink" href="#agentcore-quickstart" title="Permanent link">&para;</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
 <p>Build and deploy a production-ready AI agent in minutes with runtime hosting, memory, secure code execution, and observability. This guide shows how to use <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html">AgentCore Runtime</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html">Memory</a>, <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-tool.html">Code Interpreter</a>, and <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">Observability</a>.</p>
-<p>For Gateway and Identity features, see the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">
-Identity quickstart</a>.</p>
+<p>For Gateway and Identity features, see the <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/gateway/quickstart.md">Gateway quickstart</a> and <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/blob/main/documentation/docs/user-guide/identity/quickstart.md">Identity quickstart</a>.</p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>AWS Permissions</strong> Root users or admin/privileged credentials can skip this step. Others need to attach the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit">required IAM policy</a> to their IAM user or role.</li>
+<li><strong>AWS Permissions</strong>: Root users or privileged roles (such as admins) can skip this step. Others need to attach the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html#runtime-permissions-starter-toolkit">starter toolkit policy</a> and <a href="https://docs.aws.amazon.com/aws-managed-policy/latest/reference/BedrockAgentCoreFullAccess.html">AmazonBedrockAgentCoreFullAccess</a> managed policy.</li>
 <li><a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">AWS CLI version 2.0 or later</a> configured (<code>aws configure</code>)</li>
-<li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable “Claude 3.7 Sonnet” in your region). For information about using a different model with Strands Agents, see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
+<li><strong>Amazon Bedrock model access enabled for Claude 3.7 Sonnet</strong> (Go to AWS Console → Bedrock → Model access → Enable "Claude 3.7 Sonnet" in your region). For information about using a different model with Strands Agents, see the Model Providers section in the <a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents SDK</a> documentation.</li>
 <li>Python 3.10 or newer</li>
 </ul>
 <blockquote>
@@ -2204,7 +2119,7 @@ Identity quickstart</a>.</p>
 <p>Ensure the following are all configured to use the <strong>same AWS region</strong>:</p>
 <ul>
 <li>Your <code>aws configure</code> default region</li>
-<li>The region where you’ve enabled Bedrock model access</li>
+<li>The region where you've enabled Bedrock model access</li>
 <li>All resources created during deployment will use this region</li>
 </ul>
 </blockquote>
@@ -2309,16 +2224,19 @@ bedrock-agentcore
 <h3 id="configure-the-agent">Configure the Agent<a class="headerlink" href="#configure-the-agent" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>agentcore_starter_strands.py
 
-<span class="c1"># Interactive prompts:</span>
-<span class="c1">#   - Execution role (press Enter to auto-create)</span>
-<span class="c1">#   - ECR repository (press Enter to auto-create)</span>
-<span class="c1">#   - Memory configuration:</span>
-<span class="c1">#     - If existing memories found: Choose from list or press Enter to create new</span>
-<span class="c1">#     - If creating new: Enable long-term memory extraction? (yes/no) → yes</span>
-<span class="c1">#     - **Note**: Short-term memory is always enabled by default</span>
+<span class="c1">#Interactive prompts you&#39;ll see:</span>
+
+<span class="c1"># 1. Execution Role: Press Enter to auto-create or provide existing role ARN/name</span>
+<span class="c1"># 2. ECR Repository: Press Enter to auto-create or provide existing ECR URI</span>
+<span class="c1"># 3. OAuth Configuration: Configure OAuth authorizer? (yes/no) - Type `no` for this tutorial</span>
+<span class="c1"># 4. Request Header Allowlist: Configure request header allowlist? (yes/no) - Type `no` for this tutorial</span>
+<span class="c1"># 5. Memory Configuration:</span>
+<span class="c1">#    - If existing memories found: Choose from list or press Enter to create new</span>
+<span class="c1">#    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial</span>
+<span class="c1">#    - Note: Short-term memory is always enabled by default</span>
 </code></pre></div>
-<strong>For this tutorial</strong>: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability.</p>
-<p><strong>Note</strong>: If the memory configuration prompts do not appear during <code>agentcore configure</code>, refer to the <a href="#memory-configuration-not-appearing">Memory Configuration Not Appearing</a> troubleshooting section to ensure the correct toolkit version is installed.</p>
+<strong>For this tutorial</strong>: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability. When prompted for long-term memory, type <strong>yes</strong> for this tutorial.</p>
+<p><strong>Note</strong>: If the memory configuration prompts do not appear during <code>agentcore configure</code>, refer to the <a href="#troubleshooting">Troubleshooting</a> section (Memory Configuration Not Appearing) to ensure the correct toolkit version is installed.</p>
 <h3 id="deploy-to-agentcore">Deploy to AgentCore<a class="headerlink" href="#deploy-to-agentcore" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
 
@@ -2331,20 +2249,25 @@ bedrock-agentcore
 <span class="c1">#   6. Endpoint activation with trace collection</span>
 </code></pre></div>
 <p><strong>Expected output:</strong></p>
-<div class="highlight"><pre><span></span><code>✅ Memory created: bedrock_agentcore_memory_ci_agent_memory-abc123
+<div class="highlight"><pre><span></span><code>✅ Memory created: agentcore_starter_strands_mem-abc123
 Observability is enabled, configuring Transaction Search...
 ✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
 🔍 GenAI Observability Dashboard:
    https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 ✅ Container deployed to Bedrock AgentCore
-Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-xyz
+Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/agentcore_starter_strands-xyz
 </code></pre></div>
+<p><strong>If deployment encounters errors or behaves unexpectedly</strong>, check your configuration:
+<div class="highlight"><pre><span></span><code>cat<span class="w"> </span>.bedrock_agentcore.yaml<span class="w">  </span><span class="c1"># Review deployed configuration</span>
+agentcore<span class="w"> </span>status<span class="w">              </span><span class="c1"># Verify resource provisioning status</span>
+</code></pre></div>
+Refer to the <a href="#troubleshooting">Troubleshooting</a> section if you see any issues.</p>
 <h2 id="step-3-monitor-deployment">Step 3: Monitor Deployment<a class="headerlink" href="#step-3-monitor-deployment" title="Permanent link">&para;</a></h2>
 <p>Check deployment status:</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>status
 
 <span class="c1"># Shows:</span>
-<span class="c1">#   Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123</span>
+<span class="c1">#   Memory ID: agentcore_starter_strands_mem-abc123</span>
 <span class="c1">#   Memory Status: CREATING (if still provisioning)</span>
 <span class="c1">#   Memory Type: STM+LTM (provisioning...) (if creating with LTM)</span>
 <span class="c1">#   Memory Type: STM+LTM (3 strategies) (when active with strategies)</span>
@@ -2354,7 +2277,7 @@ Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-x
 <p><strong>Note</strong>: LTM strategies require 2-5 minutes to activate. STM is provisioned immediately if LTM is not selected.</p>
 <h2 id="step-4-test-memory-and-code-interpreter">Step 4: Test Memory and Code Interpreter<a class="headerlink" href="#step-4-test-memory-and-code-interpreter" title="Permanent link">&para;</a></h2>
 <h3 id="test-short-term-memory-stm">Test Short-Term Memory (STM)<a class="headerlink" href="#test-short-term-memory-stm" title="Permanent link">&para;</a></h3>
-<p>Tesing within a single session:</p>
+<p>Testing within a single session:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Store information (session IDs must be 33+ characters)</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Remember that my favorite agent platform is AgentCore&quot;}&#39;</span>
 
@@ -2430,41 +2353,68 @@ aws<span class="w"> </span>logs<span class="w"> </span>tail<span class="w"> </sp
 <span class="c1">#   - CloudWatch log groups (optional)</span>
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="memory-configuration-not-appearing">Memory Configuration Not Appearing<a class="headerlink" href="#memory-configuration-not-appearing" title="Permanent link">&para;</a></h3>
-<p><strong>“Memory option not showing during <code>agentcore configure</code>”:</strong></p>
-<p>This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># 1. Verify you&#39;re in the correct virtual environment</span>
-which<span class="w"> </span>python<span class="w">  </span><span class="c1"># Should show path to .venv/bin/python</span>
+<details>
+<summary><strong>Memory Configuration Not Appearing</strong></summary>
 
-<span class="c1"># 2. Check current version</span>
-pip<span class="w"> </span>show<span class="w"> </span>bedrock-agentcore-starter-toolkit
+**"Memory option not showing during `agentcore configure`":**
 
-<span class="c1"># 3. Force reinstall with cache clearing (version 0.1.21 or later required)</span>
-pip<span class="w"> </span>uninstall<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>-y
-pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>--upgrade<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span>
+This typically occurs when using an outdated version of the starter toolkit. Ensure you have version 0.1.21 or later installed:
 
-<span class="c1"># 4. Verify the installation</span>
-pip<span class="w"> </span>show<span class="w"> </span>bedrock-agentcore-starter-toolkit
-which<span class="w"> </span>agentcore<span class="w">  </span><span class="c1"># Should show path in your .venv/bin/</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Step 1: Verify current state</span>
+which<span class="w"> </span>python<span class="w">   </span><span class="c1"># Should show .venv/bin/python</span>
+which<span class="w"> </span>agentcore<span class="w">  </span><span class="c1"># Currently showing global path</span>
 
-<span class="c1"># 5. If issues persist, create a fresh virtual environment:</span>
-deactivate<span class="w">  </span><span class="c1"># Exit current environment</span>
-rm<span class="w"> </span>-rf<span class="w"> </span>.venv<span class="w">  </span><span class="c1"># Remove old environment</span>
-python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w">  </span><span class="c1"># Create new environment</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
+<span class="c1"># Step 2: Deactivate and reactivate venv to reset PATH</span>
+deactivate
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Step 3: Check if that fixed it</span>
+which<span class="w"> </span>agentcore
+<span class="c1"># If NOW showing .venv/bin/agentcore -&gt; RESOLVED, skip to Step 7</span>
+<span class="c1"># If STILL showing global path -&gt; continue to Step 4</span>
+
+<span class="c1"># Step 4: Force local venv to take precedence in PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/.venv/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+
+<span class="c1"># Step 5: Check again</span>
+which<span class="w"> </span>agentcore
+<span class="c1"># If NOW showing .venv/bin/agentcore -&gt; RESOLVED, skip to Step 7</span>
+<span class="c1"># If STILL showing global path -&gt; continue to Step 6</span>
+
+<span class="c1"># Step 6: Reinstall in local venv with forced precedence</span>
+pip<span class="w"> </span>install<span class="w"> </span>--force-reinstall<span class="w"> </span>--no-cache-dir<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span>
+
+<span class="c1"># Step 7: Final verification</span>
+which<span class="w"> </span>agentcore<span class="w">  </span><span class="c1"># Must show: /path/to/your-project/.venv/bin/agentcore</span>
+pip<span class="w"> </span>show<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w">  </span><span class="c1"># Verify version &gt;= 0.1.21</span>
+agentcore<span class="w"> </span>--version<span class="w">  </span><span class="c1"># Double check it&#39;s working</span>
+
+<span class="c1"># Step 8: Try configure again</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>agentcore_starter_strands.py
+
+<span class="c1">#If Step 6 still doesn&#39;t work, the nuclear option:</span>
+<span class="nb">cd</span><span class="w"> </span>..
+mkdir<span class="w"> </span>fresh-agentcore-project<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>fresh-agentcore-project
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
 pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span><span class="w"> </span>strands-agents<span class="w"> </span>boto3
+<span class="c1"># Copy your agent code here, then reconfigure</span>
 </code></pre></div>
-<p><strong>Additional checks:</strong></p>
-<ul>
-<li>Ensure you’re running <code>agentcore configure</code> from within the activated virtual environment</li>
-<li>If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling</li>
-<li>Verify no system-wide agentcore installation conflicts: <code>pip list | grep bedrock-agentcore</code></li>
-</ul>
-<h3 id="region-misconfiguration">Region Misconfiguration<a class="headerlink" href="#region-misconfiguration" title="Permanent link">&para;</a></h3>
-<p><strong>If you need to change your region configuration:</strong></p>
-<ol>
-<li>
-<p>Clean up resources in the incorrect region:
+
+**Additional checks:**
+
+- Ensure you're running `agentcore configure` from within the activated virtual environment
+- If using an IDE (VSCode, PyCharm), restart the IDE after reinstalling
+- Verify no system-wide agentcore installation conflicts: `pip list | grep bedrock-agentcore`
+
+</details>
+
+<details>
+<summary><strong>Region Misconfiguration</strong></summary>
+
+**If you need to change your region configuration:**
+
+1. Clean up resources in the incorrect region:
    <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>destroy
 
 <span class="c1"># This removes:</span>
@@ -2473,46 +2423,57 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span cl
 <span class="c1">#   - ECR repository and images</span>
 <span class="c1">#   - IAM roles (if auto-created)</span>
 <span class="c1">#   - CloudWatch log groups (optional)</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>Verify your AWS CLI is configured for the correct region:
+</code></pre></div>
+
+2. Verify your AWS CLI is configured for the correct region:
    <div class="highlight"><pre><span></span><code>aws<span class="w"> </span>configure<span class="w"> </span>get<span class="w"> </span>region
 <span class="c1"># Or reconfigure for the correct region:</span>
 aws<span class="w"> </span>configure<span class="w"> </span><span class="nb">set</span><span class="w"> </span>region<span class="w"> </span>&lt;your-desired-region&gt;
-</code></pre></div></p>
-</li>
-<li>Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)</li>
-<li>Copy your agent code and requirements.txt to the new folder, then return to <strong>Step 2: Configure and Deploy</strong></li>
-</ol>
-<h3 id="memory-issues">Memory Issues<a class="headerlink" href="#memory-issues" title="Permanent link">&para;</a></h3>
-<p><strong>“Memory status is not active” error:</strong></p>
-<ul>
-<li>Run <code>agentcore status</code> to check memory status</li>
-<li>If showing “provisioning”, wait 2-3 minutes</li>
-<li>Retry after status shows “STM+LTM (3 strategies)”</li>
-</ul>
-<p><strong>Cross-session memory not working:</strong></p>
-<ul>
-<li>Verify LTM is active (not “provisioning”)</li>
-<li>Wait 15-30 seconds after storing facts for extraction</li>
-<li>Check extraction logs for completion</li>
-</ul>
-<h3 id="observability-issues">Observability Issues<a class="headerlink" href="#observability-issues" title="Permanent link">&para;</a></h3>
-<p><strong>No traces appearing:</strong></p>
-<ul>
-<li>Verify observability was enabled during <code>agentcore configure</code></li>
-<li>Check IAM permissions include CloudWatch and X-Ray access</li>
-<li>Wait 30-60 seconds for traces to appear in CloudWatch</li>
-<li>Traces are viewable at: AWS Console → CloudWatch → Service Map or X-Ray → Traces</li>
-</ul>
-<p><strong>Missing memory logs:</strong></p>
-<ul>
-<li>Check log group exists: <code>/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/&lt;memory-id&gt;</code></li>
-<li>Verify IAM role has CloudWatch Logs permissions</li>
-</ul>
+</code></pre></div>
+
+3. Ensure Bedrock model access is enabled in the target region (AWS Console → Bedrock → Model access)
+
+4. Copy your agent code and requirements.txt to the new folder, then return to **Step 2: Configure and Deploy**
+
+</details>
+
+<details>
+<summary><strong>Memory Issues</strong></summary>
+
+**"Memory status is not active" error:**
+
+- Run `agentcore status` to check memory status
+- If showing "provisioning", wait 2-3 minutes
+- Retry after status shows "STM+LTM (3 strategies)"
+
+**Cross-session memory not working:**
+
+- Verify LTM is active (not "provisioning")
+- Wait 15-30 seconds after storing facts for extraction
+- Check extraction logs for completion
+
+</details>
+
+<details>
+<summary><strong>Observability Issues</strong></summary>
+
+**No traces appearing:**
+
+- Verify observability was enabled during `agentcore configure`
+- Check IAM permissions include CloudWatch and X-Ray access
+- Wait 30-60 seconds for traces to appear in CloudWatch
+- Traces are viewable at: AWS Console → CloudWatch → Service Map or X-Ray → Traces
+
+**Missing memory logs:**
+
+- Check log group exists: `/aws/vendedlogs/bedrock-agentcore/memory/APPLICATION_LOGS/<memory-id>`
+- Verify IAM role has CloudWatch Logs permissions
+
+</details>
+
+<hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>You’ve deployed a production agent with:</p>
+<p>You've deployed a production agent with:</p>
 <ul>
 <li><strong>Runtime</strong> for managed container orchestration</li>
 <li><strong>Memory</strong> with STM for immediate context and LTM for cross-session persistence</li>
@@ -2520,7 +2481,7 @@ aws<span class="w"> </span>configure<span class="w"> </span><span class="nb">set
 <li><strong>AWS X-Ray Tracing</strong> automatically configured for distributed tracing</li>
 <li><strong>CloudWatch Integration</strong> for logs and metrics with Transaction Search enabled</li>
 </ul>
-<p>All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.​​​​​​​​​​​​​​​​</p>
+<p>All services are automatically instrumented with X-Ray tracing, providing complete visibility into agent behavior, memory operations, and tool executions through the CloudWatch dashboard.</p>
 
 
 
