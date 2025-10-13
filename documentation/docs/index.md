@@ -12,8 +12,6 @@ Amazon Bedrock AgentCore is a comprehensive platform for deploying and operating
   <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples" class="md-button">Samples</a>
 </div>
 
-!!! warning "Preview Status"
-    Amazon Bedrock AgentCore is currently in preview release. APIs may change as we refine the platform.
 
 ## 🚀 From Local Development to Bedrock AgentCore
 

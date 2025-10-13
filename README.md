@@ -74,10 +74,6 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 **[Import Agent Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/quickstart.html)**
 
 
-## ⚠️ Preview Status
-
-Bedrock AgentCore is currently in public preview.
-
 ## Installation
 
 ### Quick Start
