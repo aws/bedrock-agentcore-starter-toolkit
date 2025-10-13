@@ -73,7 +73,8 @@
       "Sid": "BedrockAgentCoreRuntime",
       "Effect": "Allow",
       "Action": [
-        "bedrock-agentcore:InvokeAgentRuntime"
+        "bedrock-agentcore:InvokeAgentRuntime",
+        "bedrock-agentcore:InvokeAgentRuntimeForUser"
       ],
       "Resource": [
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
