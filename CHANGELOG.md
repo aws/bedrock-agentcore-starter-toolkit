@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.24] - 2025-10-13
+
+### Changes
+
+- chore: remove workload access permissions from runtime execution policy (#274) (0f5ca36)
+- docs: Add non-admin user permissions to quickstart (#271) (4599529)
+- chore: bump version to 0.1.23 (#272) (598b292)
+
 ## [0.1.23] - 2025-10-11
 
 ### Changes
