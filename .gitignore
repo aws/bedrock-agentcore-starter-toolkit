@@ -1,24 +1,141 @@
+# Python
 build
 __pycache__*
-.coverage*
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+*.egg
+
+# Virtual Environments
 .env
 .venv
-.mypy_cache
+.venv2
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing
+.coverage*
 .pytest_cache
-.ruff_cache
-*.bak
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# IDEs
 .vscode
-dist
+.idea
+*.iml
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Caching
+.mypy_cache
+.ruff_cache
+.ipynb_checkpoints
+
+# Build artifacts
+*.bak
 .dockerignore
+Dockerfile
+
+# Project specific
 .bedrock_agentcore.yaml
 .bedrock_agentcore/*
-.ipynb_checkpoints
-Dockerfile
-*.iml
-requirements.txt
-.DS_Store
-documentation/site
-documentation/.cache
 .agentcore.yaml
 output*/
 .serena/
+documentation/site
+documentation/.cache
+
+# AWS & Secrets - CRITICAL SECURITY
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.pub
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+.aws/
+aws-credentials.json
+credentials.json
+service-account*.json
+
+# Environment variables and secrets
+.env*
+!.env.example
+*.env
+.envrc
+secrets.yaml
+secrets.yml
+config/secrets.*
+*secret*
+*password*
+*token*
+*.credentials
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!example.tfvars
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Test results
+test-results/
+.pytest_cache/
+junit.xml
+bandit-report.json
+trivy-results.sarif
+
+# Lambda packages
+lambda/*/package/
+*.zip
+
+# CDK
+cdk.out/
+.cdk.staging/
+
+# Node (if used)
+node_modules/
+package-lock.json
+yarn.lock
