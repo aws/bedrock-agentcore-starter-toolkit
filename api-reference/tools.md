@@ -522,6 +522,7 @@ class BrowserClient:
         identifier: Optional[str] = DEFAULT_IDENTIFIER,
         name: Optional[str] = None,
         session_timeout_seconds: Optional[int] = DEFAULT_SESSION_TIMEOUT,
+        viewport: Optional[Dict[str, int]] = None,
     ) -> str:
         """Start a browser sandbox session.
 
@@ -534,19 +535,31 @@ class BrowserClient:
                 will be generated using a UUID.
             session_timeout_seconds (Optional[int]): The timeout for the session in seconds.
                 Defaults to DEFAULT_TIMEOUT.
-            description (Optional[str]): A description for this session.
-                Defaults to an empty string.
+            viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.
+                Should be a dict with 'width' and 'height' keys (e.g., {'width': 1920, 'height': 1080}).
+                If not provided, the service default viewport will be used.
 
         Returns:
             str: The session ID of the newly created session.
+
+        Example:
+            >>> client = BrowserClient('us-west-2')
+            >>> session_id = client.start(viewport={'width': 1920, 'height': 1080})
         """
         self.logger.info("Starting browser session...")
 
-        response = self.client.start_browser_session(
-            browserIdentifier=identifier,
-            name=name or f"browser-session-{uuid.uuid4().hex[:8]}",
-            sessionTimeoutSeconds=session_timeout_seconds,
-        )
+        # Build the request parameters
+        request_params = {
+            "browserIdentifier": identifier,
+            "name": name or f"browser-session-{uuid.uuid4().hex[:8]}",
+            "sessionTimeoutSeconds": session_timeout_seconds,
+        }
+
+        # Add viewport if provided
+        if viewport is not None:
+            request_params["viewPort"] = viewport
+
+        response = self.client.start_browser_session(**request_params)
 
         self.identifier = response["browserIdentifier"]
         self.session_id = response["sessionId"]
@@ -954,7 +967,7 @@ def release_control(self):
     self._update_browser_stream(self.identifier, self.session_id, "ENABLED")
 ```
 
-#### `start(identifier=DEFAULT_IDENTIFIER, name=None, session_timeout_seconds=DEFAULT_SESSION_TIMEOUT)`
+#### `start(identifier=DEFAULT_IDENTIFIER, name=None, session_timeout_seconds=DEFAULT_SESSION_TIMEOUT, viewport=None)`
 
 Start a browser sandbox session.
 
@@ -962,18 +975,22 @@ This method initializes a new browser session with the provided parameters.
 
 Parameters:
 
-| Name                      | Type            | Description                                                                      | Default                   |
-| ------------------------- | --------------- | -------------------------------------------------------------------------------- | ------------------------- |
-| `identifier`              | `Optional[str]` | The browser sandbox identifier to use. Defaults to DEFAULT_IDENTIFIER.           | `DEFAULT_IDENTIFIER`      |
-| `name`                    | `Optional[str]` | A name for this session. If not provided, a name will be generated using a UUID. | `None`                    |
-| `session_timeout_seconds` | `Optional[int]` | The timeout for the session in seconds. Defaults to DEFAULT_TIMEOUT.             | `DEFAULT_SESSION_TIMEOUT` |
-| `description`             | `Optional[str]` | A description for this session. Defaults to an empty string.                     | *required*                |
+| Name                      | Type                       | Description                                                                                                                                                                                   | Default                   |
+| ------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `identifier`              | `Optional[str]`            | The browser sandbox identifier to use. Defaults to DEFAULT_IDENTIFIER.                                                                                                                        | `DEFAULT_IDENTIFIER`      |
+| `name`                    | `Optional[str]`            | A name for this session. If not provided, a name will be generated using a UUID.                                                                                                              | `None`                    |
+| `session_timeout_seconds` | `Optional[int]`            | The timeout for the session in seconds. Defaults to DEFAULT_TIMEOUT.                                                                                                                          | `DEFAULT_SESSION_TIMEOUT` |
+| `viewport`                | `Optional[Dict[str, int]]` | The viewport dimensions for the browser. Should be a dict with 'width' and 'height' keys (e.g., {'width': 1920, 'height': 1080}). If not provided, the service default viewport will be used. | `None`                    |
 
 Returns:
 
 | Name  | Type  | Description                                  |
 | ----- | ----- | -------------------------------------------- |
 | `str` | `str` | The session ID of the newly created session. |
+
+Example
+
+> > > client = BrowserClient('us-west-2') session_id = client.start(viewport={'width': 1920, 'height': 1080})
 
 Source code in `bedrock_agentcore/tools/browser_client.py`
 
@@ -983,6 +1000,7 @@ def start(
     identifier: Optional[str] = DEFAULT_IDENTIFIER,
     name: Optional[str] = None,
     session_timeout_seconds: Optional[int] = DEFAULT_SESSION_TIMEOUT,
+    viewport: Optional[Dict[str, int]] = None,
 ) -> str:
     """Start a browser sandbox session.
 
@@ -995,19 +1013,31 @@ def start(
             will be generated using a UUID.
         session_timeout_seconds (Optional[int]): The timeout for the session in seconds.
             Defaults to DEFAULT_TIMEOUT.
-        description (Optional[str]): A description for this session.
-            Defaults to an empty string.
+        viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.
+            Should be a dict with 'width' and 'height' keys (e.g., {'width': 1920, 'height': 1080}).
+            If not provided, the service default viewport will be used.
 
     Returns:
         str: The session ID of the newly created session.
+
+    Example:
+        >>> client = BrowserClient('us-west-2')
+        >>> session_id = client.start(viewport={'width': 1920, 'height': 1080})
     """
     self.logger.info("Starting browser session...")
 
-    response = self.client.start_browser_session(
-        browserIdentifier=identifier,
-        name=name or f"browser-session-{uuid.uuid4().hex[:8]}",
-        sessionTimeoutSeconds=session_timeout_seconds,
-    )
+    # Build the request parameters
+    request_params = {
+        "browserIdentifier": identifier,
+        "name": name or f"browser-session-{uuid.uuid4().hex[:8]}",
+        "sessionTimeoutSeconds": session_timeout_seconds,
+    }
+
+    # Add viewport if provided
+    if viewport is not None:
+        request_params["viewPort"] = viewport
+
+    response = self.client.start_browser_session(**request_params)
 
     self.identifier = response["browserIdentifier"]
     self.session_id = response["sessionId"]
@@ -1086,17 +1116,16 @@ def take_control(self):
     self._update_browser_stream(self.identifier, self.session_id, "DISABLED")
 ```
 
-### `browser_session(region)`
+### `browser_session(region, viewport=None)`
 
 Context manager for creating and managing a browser sandbox session.
 
-This context manager handles creating a client, starting a session, and ensuring the session is properly cleaned up when the context exits.
-
 Parameters:
 
-| Name     | Type  | Description                                    | Default    |
-| -------- | ----- | ---------------------------------------------- | ---------- |
-| `region` | `str` | The AWS region to use for the Browser service. | *required* |
+| Name       | Type                       | Description                                    | Default    |
+| ---------- | -------------------------- | ---------------------------------------------- | ---------- |
+| `region`   | `str`                      | The AWS region to use for the Browser service. | *required* |
+| `viewport` | `Optional[Dict[str, int]]` | The viewport dimensions for the browser.       | `None`     |
 
 Yields:
 
@@ -1104,34 +1133,22 @@ Yields:
 | --------------- | --------------- | ------------------------------------------ |
 | `BrowserClient` | `BrowserClient` | An initialized and started browser client. |
 
-Example
-
-> > > with browser_session('us-west-2') as client: ... browser = client.get_browser_obj() ... page = browser.new_page() ... page.goto('https://example.com')
-
 Source code in `bedrock_agentcore/tools/browser_client.py`
 
 ```
 @contextmanager
-def browser_session(region: str) -> Generator[BrowserClient, None, None]:
+def browser_session(region: str, viewport: Optional[Dict[str, int]] = None) -> Generator[BrowserClient, None, None]:
     """Context manager for creating and managing a browser sandbox session.
-
-    This context manager handles creating a client, starting a session, and
-    ensuring the session is properly cleaned up when the context exits.
 
     Args:
         region (str): The AWS region to use for the Browser service.
+        viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.
 
     Yields:
         BrowserClient: An initialized and started browser client.
-
-    Example:
-        >>> with browser_session('us-west-2') as client:
-        ...     browser = client.get_browser_obj()
-        ...     page = browser.new_page()
-        ...     page.goto('https://example.com')
     """
     client = BrowserClient(region)
-    client.start()
+    client.start(viewport=viewport)
 
     try:
         yield client

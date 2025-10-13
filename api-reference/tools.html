@@ -3831,7 +3831,20 @@ tasks in a secure, managed environment.</p>
 <span class="normal">302</span>
 <span class="normal">303</span>
 <span class="normal">304</span>
-<span class="normal">305</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BrowserClient</span><span class="p">:</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BrowserClient</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Client for interacting with the AWS Browser sandbox service.</span>
 
 <span class="sd">    This client handles the session lifecycle and browser automation for</span>
@@ -3902,6 +3915,7 @@ tasks in a secure, managed environment.</p>
         <span class="n">identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_IDENTIFIER</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">session_timeout_seconds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_SESSION_TIMEOUT</span><span class="p">,</span>
+        <span class="n">viewport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start a browser sandbox session.</span>
 
@@ -3914,19 +3928,31 @@ tasks in a secure, managed environment.</p>
 <span class="sd">                will be generated using a UUID.</span>
 <span class="sd">            session_timeout_seconds (Optional[int]): The timeout for the session in seconds.</span>
 <span class="sd">                Defaults to DEFAULT_TIMEOUT.</span>
-<span class="sd">            description (Optional[str]): A description for this session.</span>
-<span class="sd">                Defaults to an empty string.</span>
+<span class="sd">            viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.</span>
+<span class="sd">                Should be a dict with &#39;width&#39; and &#39;height&#39; keys (e.g., {&#39;width&#39;: 1920, &#39;height&#39;: 1080}).</span>
+<span class="sd">                If not provided, the service default viewport will be used.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The session ID of the newly created session.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; client = BrowserClient(&#39;us-west-2&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; session_id = client.start(viewport={&#39;width&#39;: 1920, &#39;height&#39;: 1080})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting browser session...&quot;</span><span class="p">)</span>
 
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">start_browser_session</span><span class="p">(</span>
-            <span class="n">browserIdentifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;browser-session-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="n">sessionTimeoutSeconds</span><span class="o">=</span><span class="n">session_timeout_seconds</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="c1"># Build the request parameters</span>
+        <span class="n">request_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;browserIdentifier&quot;</span><span class="p">:</span> <span class="n">identifier</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;browser-session-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sessionTimeoutSeconds&quot;</span><span class="p">:</span> <span class="n">session_timeout_seconds</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Add viewport if provided</span>
+        <span class="k">if</span> <span class="n">viewport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">request_params</span><span class="p">[</span><span class="s2">&quot;viewPort&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">viewport</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">start_browser_session</span><span class="p">(</span><span class="o">**</span><span class="n">request_params</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;browserIdentifier&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;sessionId&quot;</span><span class="p">]</span>
@@ -4401,20 +4427,7 @@ Maximum allowed value is MAX_LIVE_VIEW_PRESIGNED_URL_TIMEOUT seconds.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
@@ -4443,7 +4456,20 @@ Maximum allowed value is MAX_LIVE_VIEW_PRESIGNED_URL_TIMEOUT seconds.</p>
 <span class="normal">248</span>
 <span class="normal">249</span>
 <span class="normal">250</span>
-<span class="normal">251</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_live_view_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expires</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_LIVE_VIEW_PRESIGNED_URL_TIMEOUT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_live_view_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expires</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_LIVE_VIEW_PRESIGNED_URL_TIMEOUT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a pre-signed URL for viewing the browser session.</span>
 
 <span class="sd">    Creates a pre-signed URL that can be used to view the current browser session.</span>
@@ -4557,20 +4583,7 @@ the headers dictionary.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
 <span class="normal">168</span>
@@ -4612,7 +4625,20 @@ the headers dictionary.</p>
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
-<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate the WebSocket headers needed for connecting to the browser sandbox.</span>
 
 <span class="sd">    This method creates properly signed WebSocket headers for connecting to</span>
@@ -4693,20 +4719,20 @@ and the method returns without taking action.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">release_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">release_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Release control of the browser session by enabling the automation stream.</span>
 
 <span class="sd">    This method enables external automation capabilities of the browser session,</span>
@@ -4730,7 +4756,7 @@ and the method returns without taking action.</p>
 
 
 <h4 id="bedrock_agentcore.tools.browser_client.BrowserClient.start" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">start</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">DEFAULT_IDENTIFIER</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">session_timeout_seconds</span><span class="o">=</span><span class="n">DEFAULT_SESSION_TIMEOUT</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">start</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">DEFAULT_IDENTIFIER</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">session_timeout_seconds</span><span class="o">=</span><span class="n">DEFAULT_SESSION_TIMEOUT</span><span class="p">,</span> <span class="n">viewport</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.tools.browser_client.BrowserClient.start" class="headerlink" title="Permanent link">&para;</a></h4>
 
@@ -4805,19 +4831,20 @@ Defaults to DEFAULT_TIMEOUT.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>description</code>
+                <code>viewport</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="int">int</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A description for this session.
-Defaults to an empty string.</p>
+                <p>The viewport dimensions for the browser.
+Should be a dict with 'width' and 'height' keys (e.g., {'width': 1920, 'height': 1080}).
+If not provided, the service default viewport will be used.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -4846,6 +4873,18 @@ Defaults to an empty string.</p>
       </tbody>
     </table>
 
+
+<details class="example" open>
+  <summary>Example</summary>
+  <blockquote>
+<blockquote>
+<blockquote>
+<p>client = BrowserClient('us-west-2')
+session_id = client.start(viewport={'width': 1920, 'height': 1080})</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</details>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
@@ -4883,11 +4922,25 @@ Defaults to an empty string.</p>
 <span class="normal">128</span>
 <span class="normal">129</span>
 <span class="normal">130</span>
-<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_IDENTIFIER</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">session_timeout_seconds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_SESSION_TIMEOUT</span><span class="p">,</span>
+    <span class="n">viewport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Start a browser sandbox session.</span>
 
@@ -4900,19 +4953,31 @@ Defaults to an empty string.</p>
 <span class="sd">            will be generated using a UUID.</span>
 <span class="sd">        session_timeout_seconds (Optional[int]): The timeout for the session in seconds.</span>
 <span class="sd">            Defaults to DEFAULT_TIMEOUT.</span>
-<span class="sd">        description (Optional[str]): A description for this session.</span>
-<span class="sd">            Defaults to an empty string.</span>
+<span class="sd">        viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.</span>
+<span class="sd">            Should be a dict with &#39;width&#39; and &#39;height&#39; keys (e.g., {&#39;width&#39;: 1920, &#39;height&#39;: 1080}).</span>
+<span class="sd">            If not provided, the service default viewport will be used.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The session ID of the newly created session.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; client = BrowserClient(&#39;us-west-2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; session_id = client.start(viewport={&#39;width&#39;: 1920, &#39;height&#39;: 1080})</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting browser session...&quot;</span><span class="p">)</span>
 
-    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">start_browser_session</span><span class="p">(</span>
-        <span class="n">browserIdentifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;browser-session-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="n">sessionTimeoutSeconds</span><span class="o">=</span><span class="n">session_timeout_seconds</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="c1"># Build the request parameters</span>
+    <span class="n">request_params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;browserIdentifier&quot;</span><span class="p">:</span> <span class="n">identifier</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;browser-session-</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sessionTimeoutSeconds&quot;</span><span class="p">:</span> <span class="n">session_timeout_seconds</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Add viewport if provided</span>
+    <span class="k">if</span> <span class="n">viewport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">request_params</span><span class="p">[</span><span class="s2">&quot;viewPort&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">viewport</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">start_browser_session</span><span class="p">(</span><span class="o">**</span><span class="n">request_params</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;browserIdentifier&quot;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">session_id</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;sessionId&quot;</span><span class="p">]</span>
@@ -4964,24 +5029,24 @@ If no session is active, this method does nothing.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
-<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Stop the current browser session if one is active.</span>
 
 <span class="sd">    This method stops any active session and clears the session state.</span>
@@ -5047,25 +5112,25 @@ will be started.</p>
 
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
-<span class="normal">271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">take_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">take_control</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Take control of the browser session by disabling the automation stream.</span>
 
 <span class="sd">    This method disables external automation capabilities of the browser session,</span>
@@ -5103,7 +5168,7 @@ will be started.</p>
 
 
 <h3 id="bedrock_agentcore.tools.browser_client.browser_session" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">browser_session</span><span class="p">(</span><span class="n">region</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">browser_session</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">viewport</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#bedrock_agentcore.tools.browser_client.browser_session" class="headerlink" title="Permanent link">&para;</a></h3>
 
@@ -5111,8 +5176,6 @@ will be started.</p>
     <div class="doc doc-contents ">
 
         <p>Context manager for creating and managing a browser sandbox session.</p>
-<p>This context manager handles creating a client, starting a session, and
-ensuring the session is properly cleaned up when the context exits.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5142,6 +5205,22 @@ ensuring the session is properly cleaned up when the context exits.</p>
                 <em>required</em>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>viewport</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="int">int</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The viewport dimensions for the browser.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -5169,36 +5248,9 @@ ensuring the session is properly cleaned up when the context exits.</p>
     </table>
 
 
-<details class="example" open>
-  <summary>Example</summary>
-  <blockquote>
-<blockquote>
-<blockquote>
-<p>with browser_session('us-west-2') as client:
-...     browser = client.get_browser_obj()
-...     page = browser.new_page()
-...     page.goto('https://example.com')</p>
-</blockquote>
-</blockquote>
-</blockquote>
-</details>
-
             <details class="quote">
               <summary>Source code in <code>bedrock_agentcore/tools/browser_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">321</span>
 <span class="normal">322</span>
 <span class="normal">323</span>
 <span class="normal">324</span>
@@ -5210,27 +5262,24 @@ ensuring the session is properly cleaned up when the context exits.</p>
 <span class="normal">330</span>
 <span class="normal">331</span>
 <span class="normal">332</span>
-<span class="normal">333</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextmanager</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">browser_session</span><span class="p">(</span><span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BrowserClient</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">browser_session</span><span class="p">(</span><span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">viewport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BrowserClient</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Context manager for creating and managing a browser sandbox session.</span>
-
-<span class="sd">    This context manager handles creating a client, starting a session, and</span>
-<span class="sd">    ensuring the session is properly cleaned up when the context exits.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        region (str): The AWS region to use for the Browser service.</span>
+<span class="sd">        viewport (Optional[Dict[str, int]]): The viewport dimensions for the browser.</span>
 
 <span class="sd">    Yields:</span>
 <span class="sd">        BrowserClient: An initialized and started browser client.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; with browser_session(&#39;us-west-2&#39;) as client:</span>
-<span class="sd">        ...     browser = client.get_browser_obj()</span>
-<span class="sd">        ...     page = browser.new_page()</span>
-<span class="sd">        ...     page.goto(&#39;https://example.com&#39;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">client</span> <span class="o">=</span> <span class="n">BrowserClient</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
-    <span class="n">client</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">viewport</span><span class="o">=</span><span class="n">viewport</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">client</span>
