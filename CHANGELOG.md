@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.25] - 2025-10-13
+
+### Changes
+
+- docs: remove preview verbiage following Bedrock AgentCore GA release (#277) (232f172)
+- chore: Add InvokeAgentRuntimeForUser permissions (#275) (9c8a50e)
+- chore: bump version to 0.1.24 (#276) (316fc02)
+
 ## [0.1.24] - 2025-10-13
 
 ### Changes
