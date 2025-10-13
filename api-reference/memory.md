@@ -804,7 +804,7 @@ class MemoryClient:
         actor_id: str,
         session_id: str,
         branch_name: Optional[str] = None,
-        include_parent_events: bool = False,
+        include_parent_branches: bool = False,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Dict[str, Any]]:
@@ -818,7 +818,7 @@ class MemoryClient:
             actor_id: Actor identifier
             session_id: Session identifier
             branch_name: Optional branch name to filter events (None for all branches)
-            include_parent_events: Whether to include parent branch events (only applies with branch_name)
+            include_parent_branches: Whether to include parent branch events (only applies with branch_name)
             max_results: Maximum number of events to return
             include_payload: Whether to include event payloads in response
 
@@ -853,7 +853,9 @@ class MemoryClient:
 
                 # Add branch filter if specified (but not for "main")
                 if branch_name and branch_name != "main":
-                    params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+                    params["filter"] = {
+                        "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
+                    }
 
                 response = self.gmdp_client.list_events(**params)
 
@@ -950,7 +952,7 @@ class MemoryClient:
         actor_id: str,
         session_id: str,
         branch_name: Optional[str] = None,
-        include_parent_events: bool = False,
+        include_parent_branches: bool = False,
         max_results: int = 100,
     ) -> List[Dict[str, Any]]:
         """List events in a specific branch.
@@ -966,7 +968,7 @@ class MemoryClient:
             actor_id: Actor identifier
             session_id: Session identifier
             branch_name: Branch name (None for main branch)
-            include_parent_events: Whether to include events from parent branches
+            include_parent_branches: Whether to include events from parent branches
             max_results: Maximum events to return
 
         Returns:
@@ -982,7 +984,7 @@ class MemoryClient:
 
             # Only add filter when we have a specific branch name
             if branch_name:
-                params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+                params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_branches}}
 
             response = self.gmdp_client.list_events(**params)
             events = response.get("events", [])
@@ -1094,7 +1096,7 @@ class MemoryClient:
             actor_id=actor_id,
             session_id=session_id,
             branch_name=branch_name,
-            include_parent_events=include_parent,
+            include_parent_branches=include_parent,
             max_results=100,
         )
 
@@ -1145,7 +1147,7 @@ class MemoryClient:
                 actor_id=actor_id,
                 session_id=session_id,
                 branch_name=branch_name,
-                include_parent_events=False,
+                include_parent_branches=False,
                 max_results=max_results,
             )
 
@@ -3030,7 +3032,7 @@ def get_last_k_turns(
             actor_id=actor_id,
             session_id=session_id,
             branch_name=branch_name,
-            include_parent_events=False,
+            include_parent_branches=False,
             max_results=max_results,
         )
 
@@ -3125,7 +3127,7 @@ def get_memory_strategies(self, memory_id: str) -> List[Dict[str, Any]]:
         raise
 ```
 
-#### `list_branch_events(memory_id, actor_id, session_id, branch_name=None, include_parent_events=False, max_results=100)`
+#### `list_branch_events(memory_id, actor_id, session_id, branch_name=None, include_parent_branches=False, max_results=100)`
 
 List events in a specific branch.
 
@@ -3137,14 +3139,14 @@ This method provides complex filtering and pagination that would require signifi
 
 Parameters:
 
-| Name                    | Type            | Description                                    | Default    |
-| ----------------------- | --------------- | ---------------------------------------------- | ---------- |
-| `memory_id`             | `str`           | Memory resource ID                             | *required* |
-| `actor_id`              | `str`           | Actor identifier                               | *required* |
-| `session_id`            | `str`           | Session identifier                             | *required* |
-| `branch_name`           | `Optional[str]` | Branch name (None for main branch)             | `None`     |
-| `include_parent_events` | `bool`          | Whether to include events from parent branches | `False`    |
-| `max_results`           | `int`           | Maximum events to return                       | `100`      |
+| Name                      | Type            | Description                                    | Default    |
+| ------------------------- | --------------- | ---------------------------------------------- | ---------- |
+| `memory_id`               | `str`           | Memory resource ID                             | *required* |
+| `actor_id`                | `str`           | Actor identifier                               | *required* |
+| `session_id`              | `str`           | Session identifier                             | *required* |
+| `branch_name`             | `Optional[str]` | Branch name (None for main branch)             | `None`     |
+| `include_parent_branches` | `bool`          | Whether to include events from parent branches | `False`    |
+| `max_results`             | `int`           | Maximum events to return                       | `100`      |
 
 Returns:
 
@@ -3161,7 +3163,7 @@ def list_branch_events(
     actor_id: str,
     session_id: str,
     branch_name: Optional[str] = None,
-    include_parent_events: bool = False,
+    include_parent_branches: bool = False,
     max_results: int = 100,
 ) -> List[Dict[str, Any]]:
     """List events in a specific branch.
@@ -3177,7 +3179,7 @@ def list_branch_events(
         actor_id: Actor identifier
         session_id: Session identifier
         branch_name: Branch name (None for main branch)
-        include_parent_events: Whether to include events from parent branches
+        include_parent_branches: Whether to include events from parent branches
         max_results: Maximum events to return
 
     Returns:
@@ -3193,7 +3195,7 @@ def list_branch_events(
 
         # Only add filter when we have a specific branch name
         if branch_name:
-            params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+            params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_branches}}
 
         response = self.gmdp_client.list_events(**params)
         events = response.get("events", [])
@@ -3308,7 +3310,7 @@ def list_branches(self, memory_id: str, actor_id: str, session_id: str) -> List[
         raise
 ```
 
-#### `list_events(memory_id, actor_id, session_id, branch_name=None, include_parent_events=False, max_results=100, include_payload=True)`
+#### `list_events(memory_id, actor_id, session_id, branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
 
 List all events in a session with pagination support.
 
@@ -3316,15 +3318,15 @@ This method provides direct access to the raw events API, allowing developers to
 
 Parameters:
 
-| Name                    | Type            | Description                                                             | Default    |
-| ----------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
-| `memory_id`             | `str`           | Memory resource ID                                                      | *required* |
-| `actor_id`              | `str`           | Actor identifier                                                        | *required* |
-| `session_id`            | `str`           | Session identifier                                                      | *required* |
-| `branch_name`           | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
-| `include_parent_events` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
-| `max_results`           | `int`           | Maximum number of events to return                                      | `100`      |
-| `include_payload`       | `bool`          | Whether to include event payloads in response                           | `True`     |
+| Name                      | Type            | Description                                                             | Default    |
+| ------------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
+| `memory_id`               | `str`           | Memory resource ID                                                      | *required* |
+| `actor_id`                | `str`           | Actor identifier                                                        | *required* |
+| `session_id`              | `str`           | Session identifier                                                      | *required* |
+| `branch_name`             | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
+| `include_parent_branches` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
+| `max_results`             | `int`           | Maximum number of events to return                                      | `100`      |
+| `include_payload`         | `bool`          | Whether to include event payloads in response                           | `True`     |
 
 Returns:
 
@@ -3355,7 +3357,7 @@ def list_events(
     actor_id: str,
     session_id: str,
     branch_name: Optional[str] = None,
-    include_parent_events: bool = False,
+    include_parent_branches: bool = False,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Dict[str, Any]]:
@@ -3369,7 +3371,7 @@ def list_events(
         actor_id: Actor identifier
         session_id: Session identifier
         branch_name: Optional branch name to filter events (None for all branches)
-        include_parent_events: Whether to include parent branch events (only applies with branch_name)
+        include_parent_branches: Whether to include parent branch events (only applies with branch_name)
         max_results: Maximum number of events to return
         include_payload: Whether to include event payloads in response
 
@@ -3404,7 +3406,9 @@ def list_events(
 
             # Add branch filter if specified (but not for "main")
             if branch_name and branch_name != "main":
-                params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+                params["filter"] = {
+                    "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
+                }
 
             response = self.gmdp_client.list_events(**params)
 
@@ -3509,7 +3513,7 @@ def merge_branch_context(
         actor_id=actor_id,
         session_id=session_id,
         branch_name=branch_name,
-        include_parent_events=include_parent,
+        include_parent_branches=include_parent,
         max_results=100,
     )
 
@@ -5607,12 +5611,12 @@ class MemorySession(DictWrapper):
         self,
         k: int = 5,
         branch_name: Optional[str] = None,
-        include_parent_events: Optional[bool] = None,
+        include_parent_branches: Optional[bool] = None,
         max_results: int = 100,
     ) -> List[List[EventMessage]]:
         """Delegates to manager.get_last_k_turns."""
         return self._manager.get_last_k_turns(
-            self._actor_id, self._session_id, k, branch_name, include_parent_events, max_results
+            self._actor_id, self._session_id, k, branch_name, include_parent_branches, max_results
         )
 
     def get_event(self, event_id: str) -> Event:
@@ -5655,7 +5659,7 @@ class MemorySession(DictWrapper):
     def list_events(
         self,
         branch_name: Optional[str] = None,
-        include_parent_events: bool = False,
+        include_parent_branches: bool = False,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Event]:
@@ -5664,7 +5668,7 @@ class MemorySession(DictWrapper):
             actor_id=self._actor_id,
             session_id=self._session_id,
             branch_name=branch_name,
-            include_parent_events=include_parent_events,
+            include_parent_branches=include_parent_branches,
             include_payload=include_payload,
             max_results=max_results,
         )
@@ -5795,7 +5799,7 @@ def get_event(self, event_id: str) -> Event:
     return self._manager.get_event(self._actor_id, self._session_id, event_id)
 ```
 
-#### `get_last_k_turns(k=5, branch_name=None, include_parent_events=None, max_results=100)`
+#### `get_last_k_turns(k=5, branch_name=None, include_parent_branches=None, max_results=100)`
 
 Delegates to manager.get_last_k_turns.
 
@@ -5806,12 +5810,12 @@ def get_last_k_turns(
     self,
     k: int = 5,
     branch_name: Optional[str] = None,
-    include_parent_events: Optional[bool] = None,
+    include_parent_branches: Optional[bool] = None,
     max_results: int = 100,
 ) -> List[List[EventMessage]]:
     """Delegates to manager.get_last_k_turns."""
     return self._manager.get_last_k_turns(
-        self._actor_id, self._session_id, k, branch_name, include_parent_events, max_results
+        self._actor_id, self._session_id, k, branch_name, include_parent_branches, max_results
     )
 ```
 
@@ -5851,7 +5855,7 @@ def list_branches(self) -> List[Branch]:
     return self._manager.list_branches(self._actor_id, self._session_id)
 ```
 
-#### `list_events(branch_name=None, include_parent_events=False, max_results=100, include_payload=True)`
+#### `list_events(branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
 
 Delegates to manager.list_events.
 
@@ -5861,7 +5865,7 @@ Source code in `bedrock_agentcore/memory/session.py`
 def list_events(
     self,
     branch_name: Optional[str] = None,
-    include_parent_events: bool = False,
+    include_parent_branches: bool = False,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Event]:
@@ -5870,7 +5874,7 @@ def list_events(
         actor_id=self._actor_id,
         session_id=self._session_id,
         branch_name=branch_name,
-        include_parent_events=include_parent_events,
+        include_parent_branches=include_parent_branches,
         include_payload=include_payload,
         max_results=max_results,
     )
@@ -6435,7 +6439,7 @@ class MemorySessionManager:
         actor_id: str,
         session_id: str,
         branch_name: Optional[str] = None,
-        include_parent_events: bool = False,
+        include_parent_branches: bool = False,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Event]:
@@ -6448,7 +6452,7 @@ class MemorySessionManager:
             actor_id: Actor identifier
             session_id: Session identifier
             branch_name: Optional branch name to filter events (None for all branches)
-            include_parent_events: Whether to include parent branch events (only applies with branch_name)
+            include_parent_branches: Whether to include parent branch events (only applies with branch_name)
             max_results: Maximum number of events to return
             include_payload: Whether to include event payloads in response
 
@@ -6487,7 +6491,9 @@ class MemorySessionManager:
 
                 # Add branch filter if specified (but not for "main")
                 if branch_name and branch_name != "main":
-                    params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+                    params["filter"] = {
+                        "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
+                    }
 
                 response = self._data_plane_client.list_events(**params)
 
@@ -6607,7 +6613,7 @@ class MemorySessionManager:
         session_id: str,
         k: int = 5,
         branch_name: Optional[str] = None,
-        include_parent_events: bool = False,
+        include_parent_branches: bool = False,
         max_results: int = 100,
     ) -> List[List[EventMessage]]:
         """Get the last K conversation turns.
@@ -6623,7 +6629,7 @@ class MemorySessionManager:
                 actor_id=actor_id,
                 session_id=session_id,
                 branch_name=branch_name,
-                include_parent_events=include_parent_events,
+                include_parent_branches=include_parent_branches,
                 max_results=max_results,
             )
 
@@ -7214,7 +7220,7 @@ def get_event(self, actor_id: str, session_id: str, event_id: str) -> Event:
         raise
 ```
 
-#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_parent_events=False, max_results=100)`
+#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_parent_branches=False, max_results=100)`
 
 Get the last K conversation turns.
 
@@ -7235,7 +7241,7 @@ def get_last_k_turns(
     session_id: str,
     k: int = 5,
     branch_name: Optional[str] = None,
-    include_parent_events: bool = False,
+    include_parent_branches: bool = False,
     max_results: int = 100,
 ) -> List[List[EventMessage]]:
     """Get the last K conversation turns.
@@ -7251,7 +7257,7 @@ def get_last_k_turns(
             actor_id=actor_id,
             session_id=session_id,
             branch_name=branch_name,
-            include_parent_events=include_parent_events,
+            include_parent_branches=include_parent_branches,
             max_results=max_results,
         )
 
@@ -7474,7 +7480,7 @@ def list_branches(self, actor_id: str, session_id: str) -> List[Branch]:
         raise
 ```
 
-#### `list_events(actor_id, session_id, branch_name=None, include_parent_events=False, max_results=100, include_payload=True)`
+#### `list_events(actor_id, session_id, branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
 
 List all events in a session with pagination support.
 
@@ -7482,14 +7488,14 @@ This method provides direct access to the raw events API, allowing developers to
 
 Parameters:
 
-| Name                    | Type            | Description                                                             | Default    |
-| ----------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
-| `actor_id`              | `str`           | Actor identifier                                                        | *required* |
-| `session_id`            | `str`           | Session identifier                                                      | *required* |
-| `branch_name`           | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
-| `include_parent_events` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
-| `max_results`           | `int`           | Maximum number of events to return                                      | `100`      |
-| `include_payload`       | `bool`          | Whether to include event payloads in response                           | `True`     |
+| Name                      | Type            | Description                                                             | Default    |
+| ------------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
+| `actor_id`                | `str`           | Actor identifier                                                        | *required* |
+| `session_id`              | `str`           | Session identifier                                                      | *required* |
+| `branch_name`             | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
+| `include_parent_branches` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
+| `max_results`             | `int`           | Maximum number of events to return                                      | `100`      |
+| `include_payload`         | `bool`          | Whether to include event payloads in response                           | `True`     |
 
 Returns:
 
@@ -7519,7 +7525,7 @@ def list_events(
     actor_id: str,
     session_id: str,
     branch_name: Optional[str] = None,
-    include_parent_events: bool = False,
+    include_parent_branches: bool = False,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Event]:
@@ -7532,7 +7538,7 @@ def list_events(
         actor_id: Actor identifier
         session_id: Session identifier
         branch_name: Optional branch name to filter events (None for all branches)
-        include_parent_events: Whether to include parent branch events (only applies with branch_name)
+        include_parent_branches: Whether to include parent branch events (only applies with branch_name)
         max_results: Maximum number of events to return
         include_payload: Whether to include event payloads in response
 
@@ -7571,7 +7577,9 @@ def list_events(
 
             # Add branch filter if specified (but not for "main")
             if branch_name and branch_name != "main":
-                params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_events}}
+                params["filter"] = {
+                    "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
+                }
 
             response = self._data_plane_client.list_events(**params)
 

@@ -2343,121 +2343,131 @@ agentcore<span class="w"> </span>launch
 <h3 id="required-caller-policy">Required Caller Policy<a class="headerlink" href="#required-caller-policy" title="Permanent link">&para;</a></h3>
 <p>Attach the following policy to your IAM user or role:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMRoleManagement&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;iam:CreateRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DeleteRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:GetRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:PutRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DeleteRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:AttachRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:DetachRolePolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:TagRole&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:ListRolePolicies&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;iam:ListAttachedRolePolicies&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/*BedrockAgentCore*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/*BedrockAgentCore*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildProjectAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:StartBuild&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetBuilds&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:ListBuildsForProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:CreateProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:UpdateProject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:BatchGetProjects&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:project/bedrock-agentcore-*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:codebuild:*:*:build/bedrock-agentcore-*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildListAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;codebuild:ListProjects&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMPassRoleAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;iam:PassRole&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/AmazonBedrockAgentCore*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudWatchLogsAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;logs:GetLogEvents&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;logs:DescribeLogGroups&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;logs:DescribeLogStreams&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/codebuild/*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;S3Access&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:ListBucket&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:CreateBucket&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;s3:PutLifecycleConfiguration&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*/*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRRepositoryAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;ecr:CreateRepository&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:DescribeRepositories&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetRepositoryPolicy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:InitiateLayerUpload&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:CompleteLayerUpload&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:PutImage&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:UploadLayerPart&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:BatchCheckLayerAvailability&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetDownloadUrlForLayer&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:BatchGetImage&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:ListImages&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;ecr:TagResource&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:ecr:*:*:repository/bedrock-agentcore-*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRAuthorizationAccess&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;ecr:GetAuthorizationToken&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">  </span><span class="nt">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMRoleManagement&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;iam:CreateRole&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:DeleteRole&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:GetRole&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:PutRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:DeleteRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:AttachRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:DetachRolePolicy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:TagRole&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:ListRolePolicies&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;iam:ListAttachedRolePolicies&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:iam::*:role/*BedrockAgentCore*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/*BedrockAgentCore*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildProjectAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:StartBuild&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:BatchGetBuilds&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:ListBuildsForProject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:CreateProject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:UpdateProject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:BatchGetProjects&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:codebuild:*:*:project/bedrock-agentcore-*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:codebuild:*:*:build/bedrock-agentcore-*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CodeBuildListAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;codebuild:ListProjects&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IAMPassRoleAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;iam:PassRole&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:iam::*:role/AmazonBedrockAgentCore*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CloudWatchLogsAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;logs:GetLogEvents&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:DescribeLogGroups&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;logs:DescribeLogStreams&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:logs:*:*:log-group:/aws/codebuild/*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;S3Access&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:ListBucket&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:CreateBucket&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;s3:PutLifecycleConfiguration&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:s3:::bedrock-agentcore-*/*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRRepositoryAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;ecr:CreateRepository&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:DescribeRepositories&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:GetRepositoryPolicy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:InitiateLayerUpload&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:CompleteLayerUpload&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:PutImage&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:UploadLayerPart&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:BatchCheckLayerAvailability&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:GetDownloadUrlForLayer&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:BatchGetImage&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:ListImages&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;ecr:TagResource&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;arn:aws:ecr:*:*:repository/bedrock-agentcore-*&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ECRAuthorizationAccess&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;ecr:GetAuthorizationToken&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockAgentCoreRuntimeIdentityServiceLinkedRolePermissions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iam:CreateServiceLinkedRole&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::*:role/aws-service-role/runtime-identity.bedrock-agentcore.amazonaws.com/AWSServiceRoleForBedrockAgentCoreRuntimeIdentity&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;Condition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;StringEquals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;iam:AWSServiceName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;runtime-identity.bedrock-agentcore.amazonaws.com&quot;</span>
 <span class="w">        </span><span class="p">}</span>
-<span class="w">    </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="additional-required-permissions">Additional Required Permissions<a class="headerlink" href="#additional-required-permissions" title="Permanent link">&para;</a></h3>
@@ -2581,19 +2591,6 @@ agentcore<span class="w"> </span>launch
 <span class="w">                    </span><span class="nt">&quot;cloudwatch:namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bedrock-agentcore&quot;</span>
 <span class="w">                </span><span class="p">}</span>
 <span class="w">            </span><span class="p">}</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GetAgentAccessToken&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetWorkloadAccessToken&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetWorkloadAccessTokenForJWT&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;bedrock-agentcore:GetWorkloadAccessTokenForUserId&quot;</span>
-<span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;arn:aws:bedrock-agentcore:region:accountId:workload-identity-directory/default/workload-identity/agentName-*&quot;</span>
-<span class="w">            </span><span class="p">]</span>
 <span class="w">        </span><span class="p">},</span>
 <span class="w">        </span><span class="p">{</span>
 <span class="w">            </span><span class="nt">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BedrockModelInvocation&quot;</span><span class="p">,</span>
