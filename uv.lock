@@ -95,8 +95,8 @@ wheels = [
 
 [[package]]
 name = "bedrock-agentcore"
-version = "0.1.8"
-source = { directory = "../bedrock-agentcore-sdk-python" }
+version = "0.1.7"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
     { name = "botocore" },
@@ -106,32 +106,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "uvicorn" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3", specifier = ">=1.40.51" },
-    { name = "botocore", specifier = ">=1.40.51" },
-    { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
-    { name = "starlette", specifier = ">=0.46.2" },
-    { name = "strands-agents", marker = "extra == 'strands-agents'", specifier = ">=1.1.0" },
-    { name = "typing-extensions", specifier = ">=4.13.2,<5.0.0" },
-    { name = "urllib3", specifier = ">=1.26.0" },
-    { name = "uvicorn", specifier = ">=0.34.2" },
-]
-provides-extras = ["strands-agents"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "moto", specifier = ">=5.1.6" },
-    { name = "mypy", specifier = ">=1.16.1" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.12.0" },
-    { name = "strands-agents", specifier = ">=1.1.0" },
-    { name = "wheel", specifier = ">=0.45.1" },
+sdist = { url = "https://files.pythonhosted.org/packages/b0/87/4c0bacf09430e559657fc986cbb1003f76d597ab7e7365ab247dbef73940/bedrock_agentcore-0.1.7.tar.gz", hash = "sha256:e518e8f5e6fb5a5a80182db95757a20e32b0ac2b33d0a1909dfafcba950c6356", size = 263080, upload-time = "2025-10-01T16:18:39.255Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/f3/a9d961cfba236dc85f27f2f2c6eab88e12698754aaa02459ba7dfafc5062/bedrock_agentcore-0.1.7-py3-none-any.whl", hash = "sha256:441dde64fea596e9571e47ae37ee3b033e58d8d255018f13bdcde8ae8bef2075", size = 77216, upload-time = "2025-10-01T16:18:38.153Z" },
 ]
 
 [[package]]
@@ -185,7 +162,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "autopep8", specifier = ">=2.3.2" },
-    { name = "bedrock-agentcore", directory = "../bedrock-agentcore-sdk-python" },
+    { name = "bedrock-agentcore", specifier = ">=0.1.7" },
     { name = "boto3", specifier = ">=1.40.51" },
     { name = "botocore", specifier = ">=1.40.51" },
     { name = "docstring-parser", specifier = ">=0.15,<1.0" },
