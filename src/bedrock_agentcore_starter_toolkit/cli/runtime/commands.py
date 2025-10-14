@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from threading import Thread
 from typing import List, Optional
 
 import typer
@@ -11,6 +12,8 @@ from prompt_toolkit import prompt
 from prompt_toolkit.completion import PathCompleter
 from rich.panel import Panel
 from rich.syntax import Syntax
+
+from ...operations.identity.oauth2_callback_server import start_3lo_callback_server
 
 from ...operations.runtime import (
     configure_bedrock_agentcore,
@@ -575,12 +578,18 @@ def launch(
             _print_success(f"Docker image built: {result.tag}")
             _print_success("Ready to run locally")
             console.print("Starting server at http://localhost:8080")
+            console.print("Starting OAuth2 3LO callback server at http://localhost:8081")
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             if result.runtime is None or result.port is None:
                 _handle_error("Unable to launch locally")
 
             try:
+                oauth2_callback_endpoint = Thread(target=start_3lo_callback_server, 
+                                                  args=(config_path,agent,), 
+                                                  name='OAuth2 3LO Callback Server', 
+                                                  daemon=True)
+                oauth2_callback_endpoint.start()
                 result.runtime.run_local(result.tag, result.port, result.env_vars)
             except KeyboardInterrupt:
                 console.print("\n[yellow]Stopped[/yellow]")

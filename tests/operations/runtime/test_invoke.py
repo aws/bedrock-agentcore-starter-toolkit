@@ -289,7 +289,8 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke_endpoint was called correctly
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123", None
+                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123", 
+                "http://localhost:8081/3lo/callback", None
             )
 
             # Verify result
@@ -355,7 +356,8 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke was called with workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context", None
+                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context", 
+                "http://localhost:8081/3lo/callback", None
             )
 
             # Verify result
@@ -411,7 +413,8 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client was called with the new workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Test workload creation"}', "new-workload-token", None
+                result.session_id, '{"message": "Test workload creation"}', "new-workload-token", 
+                "http://localhost:8081/3lo/callback", None
             )
 
             # Verify config was updated with the new workload name
@@ -419,7 +422,7 @@ class TestInvokeBedrockAgentCore:
 
             updated_config = load_config(config_path)
             updated_agent = updated_config.get_agent_config("test-agent")
-            assert updated_agent.oauth_configuration == {"workload_name": "auto-created-workload-123"}
+            assert updated_agent.oauth_configuration == {"workload_name": "auto-created-workload-123", "userId": None}
 
             # Verify result
             assert result.response == {"response": "workload creation test"}
@@ -636,6 +639,7 @@ class TestGetWorkloadName:
                 result.session_id,
                 '{"message": "Hello local mode with headers"}',
                 "test-workload-token-456",
+                "http://localhost:8081/3lo/callback",
                 custom_headers,
             )
 

@@ -576,10 +576,11 @@ class LocalBedrockAgentCoreClient:
         session_id: str,
         payload: str,
         workload_access_token: str,
+        callback_url: str,
         custom_headers: Optional[dict] = None,
     ):
         """Invoke the endpoint with the given parameters."""
-        from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER
+        from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, SESSION_HEADER, CALLBACK_URL_HEADER
 
         url = f"{self.endpoint}/invocations"
 
@@ -587,6 +588,7 @@ class LocalBedrockAgentCoreClient:
             "Content-Type": "application/json",
             ACCESS_TOKEN_HEADER: workload_access_token,
             SESSION_HEADER: session_id,
+            CALLBACK_URL_HEADER: callback_url,
         }
 
         # Merge custom headers if provided
