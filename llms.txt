@@ -6,6 +6,7 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 
 ## User Guide
 
+- [Runtime Quickstart](/user-guide/runtime/quickstart.md)
 - [Agentcore runtime deployment](/mcp/agentcore_runtime_deployment.md)
 - [Runtime Overview](/user-guide/runtime/overview.md): Runtime service overview
 - [Runtime Permissions](/user-guide/runtime/permissions.md): Runtime permissions guide
