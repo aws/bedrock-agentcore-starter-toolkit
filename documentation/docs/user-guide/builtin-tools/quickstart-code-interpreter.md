@@ -2,18 +2,6 @@
 
 AgentCore Code Interpreter enables your agents to execute Python code in a secure, managed environment. The agent can perform calculations, analyze data, generate visualizations, and validate answers through code execution.
 
-## Topics
-
-* **Prerequisites**
-* **Using Code Interpreter via AWS Strands**
-    * Step 1: Install Dependencies
-    * Step 2: Create Your Agent with Code Interpreter
-    * Step 3: Run the Agent
-* **Using Code Interpreter Directly**
-    * Step 1: Choose Your Approach & Install Dependencies
-    * Step 2: Execute Code with the SDK Client
-    * Step 3: Execute Code with Boto3
-
 ## Prerequisites
 
 Before you start, ensure you have:

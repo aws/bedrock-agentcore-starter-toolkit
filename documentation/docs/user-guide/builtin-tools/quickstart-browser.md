@@ -2,24 +2,6 @@
 
 AgentCore Browser enables your agents to interact with web pages through a managed Chrome browser. The agent can navigate websites, search for information, extract content, and interact with web elements in a secure, managed environment.
 
-## Topics
-
-* **Prerequisites**
-* **Using AgentCore Browser via AWS Strands**
-    * Step 1: Install Dependencies
-    * Step 2: Create Your Agent with Browser
-    * Step 3: Run the Agent
-    * Step 4: View the Browser Session Live
-* **Session Recording and Replay**
-    * Step 1: Configure IAM Role for Recording
-    * Step 2: Create a Browser Tool with Recording
-    * Step 3: Use the Recording-Enabled Browser
-    * Step 4: Replay and Inspect Recorded Sessions in the AWS Console
-    * Step 5: Access Recordings Programmatically
-* **Using AgentCore Browser with Other Browse Libraries and Models**
-    * AgentCore Browser with Amazon NovaAct
-    * AgentCore Browser with Playwright
-
 ## Prerequisites
 
 Before you start, ensure you have:

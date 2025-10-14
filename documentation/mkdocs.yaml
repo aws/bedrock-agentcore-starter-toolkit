@@ -135,7 +135,8 @@ plugins:
       markdown_description: "Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI agents securely, at scale. It offers infrastructure purpose-built for dynamic agent workloads, powerful tools to enhance agents, and essential controls for real-world deployment. AgentCore services can be used together or independently and work with any framework including CrewAI, LangGraph, LlamaIndex, and Strands Agents, as well as any foundation model in or outside of Amazon Bedrock, giving you ultimate flexibility."
       sections:
         "User Guide":
-          - "mcp/agentcore_runtime_deployment.md"  # replace with user-guide/runtime/quickstart.md
+          - "user-guide/runtime/quickstart.md"
+          - "mcp/agentcore_runtime_deployment.md"
           - "user-guide/runtime/overview.md": "Runtime service overview"
           - "user-guide/runtime/permissions.md": "Runtime permissions guide"
           - "user-guide/runtime/async.md": "Runtime async processing"
