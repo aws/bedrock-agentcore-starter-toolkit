@@ -55,7 +55,7 @@ class BedrockAgentCoreIdentity3loCallback(Starlette):
 
         user_id = None
         if oauth2_config:
-            user_id = oauth2_config[WORKLOAD_USER_ID]
+            user_id = oauth2_config.get(WORKLOAD_USER_ID)
 
         if not user_id:
             console.print(f"Missing {WORKLOAD_USER_ID} in Agent OAuth2 Config")
