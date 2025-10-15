@@ -19,6 +19,7 @@ Before starting, make sure you have:
 
 - **AWS Account** with credentials configured (`aws configure`) with model access enabled to the Foundation Model you would like to use.
 - **Python 3.10+** installed
+- **AWS Permissions**: To create, deploy and observe an agent with the starter toolkit, you must have appropriate permissions. 
 - **Enable transaction search** on Amazon CloudWatch. Only once, first-time users must enable [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html) to view Bedrock AgentCore spans and traces
 - **Add the OpenTelemetry library** Include `aws-opentelemetry-distro` (ADOT) in your requirements.txt file.
 - Ensure that your framework is configured to emit traces (eg. `strands-agents[otel]` package), you may sometimes need to include `<your-agent-framework-auto-instrumentor>` # e.g., `opentelemetry-instrumentation-langchain`
