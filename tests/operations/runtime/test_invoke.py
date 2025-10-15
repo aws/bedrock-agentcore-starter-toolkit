@@ -266,6 +266,10 @@ class TestInvokeBedrockAgentCore:
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "test-workload-token-123"
             }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
+            }
             mock_identity_client_class.return_value = mock_identity_client
 
             # Mock LocalBedrockAgentCoreClient
@@ -289,8 +293,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke_endpoint was called correctly
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123", 
-                "http://localhost:8081/3lo/callback", None
+                result.session_id,
+                '{"message": "Hello local mode!"}',
+                "test-workload-token-123",
+                "http://localhost:8081/3lo/callback",
+                None,
             )
 
             # Verify result
@@ -331,6 +338,10 @@ class TestInvokeBedrockAgentCore:
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "workload-token-with-user-context"
             }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
+            }
             mock_identity_client_class.return_value = mock_identity_client
 
             # Mock LocalBedrockAgentCoreClient
@@ -356,8 +367,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke was called with workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context", 
-                "http://localhost:8081/3lo/callback", None
+                result.session_id,
+                '{"message": "Hello with bearer token"}',
+                "workload-token-with-user-context",
+                "http://localhost:8081/3lo/callback",
+                None,
             )
 
             # Verify result
@@ -393,6 +407,10 @@ class TestInvokeBedrockAgentCore:
             mock_identity_client = Mock()
             mock_identity_client.create_workload_identity.return_value = {"name": "auto-created-workload-123"}
             mock_identity_client.get_workload_access_token.return_value = {"workloadAccessToken": "new-workload-token"}
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
+            }
             mock_identity_client_class.return_value = mock_identity_client
 
             # Mock LocalBedrockAgentCoreClient
@@ -413,8 +431,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client was called with the new workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Test workload creation"}', "new-workload-token", 
-                "http://localhost:8081/3lo/callback", None
+                result.session_id,
+                '{"message": "Test workload creation"}',
+                "new-workload-token",
+                "http://localhost:8081/3lo/callback",
+                None,
             )
 
             # Verify config was updated with the new workload name
@@ -622,6 +643,10 @@ class TestGetWorkloadName:
             mock_identity_client = Mock()
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "test-workload-token-456"
+            }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
             }
             mock_identity_client_class.return_value = mock_identity_client
 
@@ -938,3 +963,76 @@ class TestGetWorkloadName:
             # Should continue despite import error
             result = invoke_bedrock_agentcore(config_path, {"message": "test"})
             assert result is not None
+
+
+class TestUpdateWorkloadIdentityWithCallbackUrl:
+    def test_update_workload_identity_callback_url_already_exists(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {
+            "allowedResourceOauth2ReturnUrls": ["http://localhost:8081/3lo/callback", "https://example.com/callback"]
+        }
+
+        _update_workload_identity_with_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_not_called()
+
+    def test_update_workload_identity_callback_url_new(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {
+            "allowedResourceOauth2ReturnUrls": ["https://example.com/callback"]
+        }
+
+        _update_workload_identity_with_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload",
+            allowed_resource_oauth_2_return_urls=["https://example.com/callback", "http://localhost:8081/3lo/callback"],
+        )
+
+    def test_update_workload_identity_callback_url_empty_list(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {"allowedResourceOauth2ReturnUrls": []}
+
+        _update_workload_identity_with_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/3lo/callback"]
+        )
+
+    def test_update_workload_identity_callback_url_missing_from_response(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {}
+
+        _update_workload_identity_with_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/3lo/callback"]
+        )

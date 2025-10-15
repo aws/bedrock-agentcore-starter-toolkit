@@ -121,15 +121,13 @@ def invoke_bedrock_agentcore(
         workload_access_token = identity_client.get_workload_access_token(
             workload_name=workload_name, user_token=bearer_token, user_id=user_id
         )["workloadAccessToken"]
-        
-        agent_config.oauth_configuration[WORKLOAD_USER_ID] = user_id # type: ignore : populated by _get_workload_name(...)
+
+        agent_config.oauth_configuration[WORKLOAD_USER_ID] = user_id  # type: ignore : populated by _get_workload_name(...)
         save_config(project_config, config_path)
-        
+
         callback_url = BedrockAgentCoreIdentity3loCallback.get_callback_endpoint()
         _update_workload_identity_with_callback_url(
-            identity_client, 
-            workload_name=workload_name, 
-            callback_url=callback_url
+            identity_client, workload_name=workload_name, callback_url=callback_url
         )
 
         # TODO: store and read port config of local running container
@@ -179,9 +177,17 @@ def _update_workload_identity_with_callback_url(
     workload_name: str,
     callback_url: str,
 ) -> None:
+    workload_identity = identity_client.get_workload_identity(name=workload_name)
+    allowed_resource_oauth_2_return_urls = workload_identity.get("allowedResourceOauth2ReturnUrls") or []
+    if callback_url in allowed_resource_oauth_2_return_urls:
+        return
+
     log.info("Updating workload %s with callback url [%s]", workload_name, callback_url)
-    identity_client.update_workload_identity(name=workload_name, allowed_resource_oauth_2_return_urls=[callback_url])
-    
+
+    identity_client.update_workload_identity(
+        name=workload_name, allowed_resource_oauth_2_return_urls=[*allowed_resource_oauth_2_return_urls, callback_url]
+    )
+
 
 def _get_workload_name(
     project_config: BedrockAgentCoreConfigSchema,

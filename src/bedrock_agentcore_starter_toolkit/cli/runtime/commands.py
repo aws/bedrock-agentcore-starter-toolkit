@@ -585,10 +585,15 @@ def launch(
                 _handle_error("Unable to launch locally")
 
             try:
-                oauth2_callback_endpoint = Thread(target=start_3lo_callback_server, 
-                                                  args=(config_path,agent,), 
-                                                  name='OAuth2 3LO Callback Server', 
-                                                  daemon=True)
+                oauth2_callback_endpoint = Thread(
+                    target=start_3lo_callback_server,
+                    args=(
+                        config_path,
+                        agent,
+                    ),
+                    name="OAuth2 3LO Callback Server",
+                    daemon=True,
+                )
                 oauth2_callback_endpoint.start()
                 result.runtime.run_local(result.tag, result.port, result.env_vars)
             except KeyboardInterrupt:
