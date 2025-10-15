@@ -172,7 +172,7 @@ requires-dist = [
     { name = "prance", specifier = ">=25.4.8.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.51" },
     { name = "py-openapi-schema-to-json-schema", specifier = ">=0.0.3" },
-    { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
+    { name = "pydantic", specifier = ">=2.0.0,<2.41.3" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "questionary", specifier = ">=2.1.0" },
     { name = "requests", specifier = ">=2.25.0" },
