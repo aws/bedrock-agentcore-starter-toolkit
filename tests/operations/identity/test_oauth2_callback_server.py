@@ -4,7 +4,7 @@ from bedrock_agentcore.services.identity import UserIdIdentifier
 from starlette.testclient import TestClient
 
 from bedrock_agentcore_starter_toolkit.operations.identity.oauth2_callback_server import (
-    CALLBACK_ENDPOINT,
+    OAUTH2_CALLBACK_ENDPOINT,
     WORKLOAD_USER_ID,
     BedrockAgentCoreIdentity3loCallback,
 )
@@ -52,7 +52,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         assert server.config_path == config_path
         assert server.agent_name == "test-agent"
         assert len(server.routes) == 1
-        assert server.routes[0].path == CALLBACK_ENDPOINT
+        assert server.routes[0].path == OAUTH2_CALLBACK_ENDPOINT
 
     def test_get_callback_endpoint(self):
         endpoint = BedrockAgentCoreIdentity3loCallback.get_oauth2_callback_endpoint()
@@ -62,7 +62,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         config_path = create_test_config(tmp_path)
         server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name="test-agent")
         client = TestClient(server)
-        response = client.get(CALLBACK_ENDPOINT)
+        response = client.get(OAUTH2_CALLBACK_ENDPOINT)
 
         assert response.status_code == 400
         assert response.json().get("message") == "missing session_id query parameter"
@@ -76,7 +76,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         mock_identity_client.return_value = mock_client_instance
 
         client = TestClient(server)
-        response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
+        response = client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 200
         assert response.json().get("message") == "OAuth2 3LO flow completed successfully"
@@ -89,7 +89,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         config_path = create_test_config(tmp_path, user_id="")
         server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name="test-agent")
         client = TestClient(server)
-        response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
+        response = client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 500
         assert response.json().get("message") == "Internal Server Error"
@@ -98,7 +98,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         config_path = create_test_config(tmp_path, region="")
         server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name="test-agent")
         client = TestClient(server)
-        response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
+        response = client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 500
         assert response.json().get("message") == "Internal Server Error"

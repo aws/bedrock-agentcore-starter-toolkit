@@ -12,8 +12,8 @@ from starlette.routing import Route
 from ...cli.common import console
 from ...utils.runtime.config import BedrockAgentCoreAgentSchema, load_config
 
-CALLBACK_3LO_SERVER_PORT = 8081
-CALLBACK_ENDPOINT = "/oauth2/callback"
+OAUTH2_CALLBACK_SERVER_PORT = 8081
+OAUTH2_CALLBACK_ENDPOINT = "/oauth2/callback"
 WORKLOAD_USER_ID = "userId"
 
 
@@ -31,7 +31,7 @@ class BedrockAgentCoreIdentity3loCallback(Starlette):
         self.config_path = config_path
         self.agent_name = agent_name
         routes = [
-            Route(CALLBACK_ENDPOINT, self._handle_3lo_callback, methods=["GET"]),
+            Route(OAUTH2_CALLBACK_ENDPOINT, self._handle_3lo_callback, methods=["GET"]),
         ]
         super().__init__(routes=routes, debug=debug)
 
@@ -39,7 +39,7 @@ class BedrockAgentCoreIdentity3loCallback(Starlette):
         """Start the Bedrock AgentCore Identity OAuth2 callback server."""
         uvicorn_params = {
             "host": "127.0.0.1",
-            "port": CALLBACK_3LO_SERVER_PORT,
+            "port": OAUTH2_CALLBACK_SERVER_PORT,
             "access_log": self.debug,
             "log_level": "info" if self.debug else "warning",
         }
@@ -83,4 +83,4 @@ class BedrockAgentCoreIdentity3loCallback(Starlette):
     @classmethod
     def get_oauth2_callback_endpoint(cls) -> str:
         """Returns the url for the local OAuth2 callback server."""
-        return f"http://localhost:{CALLBACK_3LO_SERVER_PORT}{CALLBACK_ENDPOINT}"
+        return f"http://localhost:{OAUTH2_CALLBACK_SERVER_PORT}{OAUTH2_CALLBACK_ENDPOINT}"
