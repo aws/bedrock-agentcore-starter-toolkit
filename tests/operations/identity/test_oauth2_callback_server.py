@@ -56,7 +56,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
 
     def test_get_callback_endpoint(self):
         endpoint = BedrockAgentCoreIdentity3loCallback.get_oauth2_callback_endpoint()
-        assert endpoint == "http://localhost:8081/3lo/callback"
+        assert endpoint == "http://localhost:8081/oauth2/callback"
 
     def test_handle_3lo_callback_missing_session_id(self, tmp_path):
         config_path = create_test_config(tmp_path)

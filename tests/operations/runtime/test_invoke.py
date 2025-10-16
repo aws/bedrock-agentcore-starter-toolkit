@@ -296,7 +296,7 @@ class TestInvokeBedrockAgentCore:
                 result.session_id,
                 '{"message": "Hello local mode!"}',
                 "test-workload-token-123",
-                "http://localhost:8081/3lo/callback",
+                "http://localhost:8081/oauth2/callback",
                 None,
             )
 
@@ -370,7 +370,7 @@ class TestInvokeBedrockAgentCore:
                 result.session_id,
                 '{"message": "Hello with bearer token"}',
                 "workload-token-with-user-context",
-                "http://localhost:8081/3lo/callback",
+                "http://localhost:8081/oauth2/callback",
                 None,
             )
 
@@ -434,7 +434,7 @@ class TestInvokeBedrockAgentCore:
                 result.session_id,
                 '{"message": "Test workload creation"}',
                 "new-workload-token",
-                "http://localhost:8081/3lo/callback",
+                "http://localhost:8081/oauth2/callback",
                 None,
             )
 
@@ -664,7 +664,7 @@ class TestGetWorkloadName:
                 result.session_id,
                 '{"message": "Hello local mode with headers"}',
                 "test-workload-token-456",
-                "http://localhost:8081/3lo/callback",
+                "http://localhost:8081/oauth2/callback",
                 custom_headers,
             )
 
@@ -973,11 +973,11 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
 
         mock_identity_client = Mock()
         mock_identity_client.get_workload_identity.return_value = {
-            "allowedResourceOauth2ReturnUrls": ["http://localhost:8081/3lo/callback", "https://example.com/callback"]
+            "allowedResourceOauth2ReturnUrls": ["http://localhost:8081/oauth2/callback", "https://example.com/callback"]
         }
 
         _update_workload_identity_with_oauth2_callback_url(
-            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
         )
 
         mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
@@ -994,13 +994,16 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
         }
 
         _update_workload_identity_with_oauth2_callback_url(
-            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
         )
 
         mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
         mock_identity_client.update_workload_identity.assert_called_once_with(
             name="test-workload",
-            allowed_resource_oauth_2_return_urls=["https://example.com/callback", "http://localhost:8081/3lo/callback"],
+            allowed_resource_oauth_2_return_urls=[
+                "https://example.com/callback",
+                "http://localhost:8081/oauth2/callback",
+            ],
         )
 
     def test_update_workload_identity_callback_url_empty_list(self):
@@ -1012,12 +1015,12 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
         mock_identity_client.get_workload_identity.return_value = {"allowedResourceOauth2ReturnUrls": []}
 
         _update_workload_identity_with_oauth2_callback_url(
-            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
         )
 
         mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
         mock_identity_client.update_workload_identity.assert_called_once_with(
-            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/3lo/callback"]
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/oauth2/callback"]
         )
 
     def test_update_workload_identity_callback_url_missing_from_response(self):
@@ -1029,10 +1032,10 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
         mock_identity_client.get_workload_identity.return_value = {}
 
         _update_workload_identity_with_oauth2_callback_url(
-            mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
         )
 
         mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
         mock_identity_client.update_workload_identity.assert_called_once_with(
-            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/3lo/callback"]
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/oauth2/callback"]
         )
