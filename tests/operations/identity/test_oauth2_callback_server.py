@@ -1,11 +1,12 @@
 from unittest.mock import Mock, patch
-from starlette.testclient import TestClient
 
 from bedrock_agentcore.services.identity import UserIdIdentifier
+from starlette.testclient import TestClient
+
 from bedrock_agentcore_starter_toolkit.operations.identity.oauth2_callback_server import (
-    BedrockAgentCoreIdentity3loCallback,
     CALLBACK_ENDPOINT,
     WORKLOAD_USER_ID,
+    BedrockAgentCoreIdentity3loCallback,
 )
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
@@ -54,7 +55,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         assert server.routes[0].path == CALLBACK_ENDPOINT
 
     def test_get_callback_endpoint(self):
-        endpoint = BedrockAgentCoreIdentity3loCallback.get_callback_endpoint()
+        endpoint = BedrockAgentCoreIdentity3loCallback.get_oauth2_callback_endpoint()
         assert endpoint == "http://localhost:8081/3lo/callback"
 
     def test_handle_3lo_callback_missing_session_id(self, tmp_path):
@@ -64,7 +65,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         response = client.get(CALLBACK_ENDPOINT)
 
         assert response.status_code == 400
-        assert response.json() == "missing session_id query parameter"
+        assert response.json().get("message") == "missing session_id query parameter"
 
     @patch("bedrock_agentcore_starter_toolkit.operations.identity.oauth2_callback_server.IdentityClient")
     def test_handle_3lo_callback_success(self, mock_identity_client, tmp_path):
@@ -78,6 +79,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 200
+        assert response.json().get("message") == "OAuth2 3LO flow completed successfully"
         mock_identity_client.assert_called_once_with("us-west-2")
         mock_client_instance.complete_resource_token_auth.assert_called_once_with(
             session_uri="test-session-123", user_identifier=UserIdIdentifier(user_id="test-user-id")
@@ -90,6 +92,7 @@ class TestBedrockAgentCoreIdentity3loCallback:
         response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 500
+        assert response.json().get("message") == "Internal Server Error"
 
     def test_handle_3lo_callback_missing_region(self, tmp_path):
         config_path = create_test_config(tmp_path, region="")
@@ -98,3 +101,4 @@ class TestBedrockAgentCoreIdentity3loCallback:
         response = client.get(f"{CALLBACK_ENDPOINT}?session_id=test-session-123")
 
         assert response.status_code == 500
+        assert response.json().get("message") == "Internal Server Error"

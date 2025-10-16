@@ -14,7 +14,6 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 
 from ...operations.identity.oauth2_callback_server import start_3lo_callback_server
-
 from ...operations.runtime import (
     configure_bedrock_agentcore,
     destroy_bedrock_agentcore,

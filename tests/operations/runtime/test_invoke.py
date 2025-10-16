@@ -968,7 +968,7 @@ class TestGetWorkloadName:
 class TestUpdateWorkloadIdentityWithCallbackUrl:
     def test_update_workload_identity_callback_url_already_exists(self):
         from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
-            _update_workload_identity_with_callback_url,
+            _update_workload_identity_with_oauth2_callback_url,
         )
 
         mock_identity_client = Mock()
@@ -976,7 +976,7 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
             "allowedResourceOauth2ReturnUrls": ["http://localhost:8081/3lo/callback", "https://example.com/callback"]
         }
 
-        _update_workload_identity_with_callback_url(
+        _update_workload_identity_with_oauth2_callback_url(
             mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
         )
 
@@ -985,7 +985,7 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
 
     def test_update_workload_identity_callback_url_new(self):
         from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
-            _update_workload_identity_with_callback_url,
+            _update_workload_identity_with_oauth2_callback_url,
         )
 
         mock_identity_client = Mock()
@@ -993,7 +993,7 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
             "allowedResourceOauth2ReturnUrls": ["https://example.com/callback"]
         }
 
-        _update_workload_identity_with_callback_url(
+        _update_workload_identity_with_oauth2_callback_url(
             mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
         )
 
@@ -1005,13 +1005,13 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
 
     def test_update_workload_identity_callback_url_empty_list(self):
         from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
-            _update_workload_identity_with_callback_url,
+            _update_workload_identity_with_oauth2_callback_url,
         )
 
         mock_identity_client = Mock()
         mock_identity_client.get_workload_identity.return_value = {"allowedResourceOauth2ReturnUrls": []}
 
-        _update_workload_identity_with_callback_url(
+        _update_workload_identity_with_oauth2_callback_url(
             mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
         )
 
@@ -1022,13 +1022,13 @@ class TestUpdateWorkloadIdentityWithCallbackUrl:
 
     def test_update_workload_identity_callback_url_missing_from_response(self):
         from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
-            _update_workload_identity_with_callback_url,
+            _update_workload_identity_with_oauth2_callback_url,
         )
 
         mock_identity_client = Mock()
         mock_identity_client.get_workload_identity.return_value = {}
 
-        _update_workload_identity_with_callback_url(
+        _update_workload_identity_with_oauth2_callback_url(
             mock_identity_client, "test-workload", "http://localhost:8081/3lo/callback"
         )
 

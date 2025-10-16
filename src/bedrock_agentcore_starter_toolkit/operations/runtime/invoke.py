@@ -7,8 +7,8 @@ from typing import Any, Optional
 
 from bedrock_agentcore.services.identity import IdentityClient
 
-from ...services.runtime import BedrockAgentCoreClient, generate_session_id
 from ...operations.identity.oauth2_callback_server import WORKLOAD_USER_ID, BedrockAgentCoreIdentity3loCallback
+from ...services.runtime import BedrockAgentCoreClient, generate_session_id
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
 from .models import InvokeResult
@@ -125,14 +125,16 @@ def invoke_bedrock_agentcore(
         agent_config.oauth_configuration[WORKLOAD_USER_ID] = user_id  # type: ignore : populated by _get_workload_name(...)
         save_config(project_config, config_path)
 
-        callback_url = BedrockAgentCoreIdentity3loCallback.get_callback_endpoint()
-        _update_workload_identity_with_callback_url(
-            identity_client, workload_name=workload_name, callback_url=callback_url
+        oauth2_callback_url = BedrockAgentCoreIdentity3loCallback.get_oauth2_callback_endpoint()
+        _update_workload_identity_with_oauth2_callback_url(
+            identity_client, workload_name=workload_name, oauth2_callback_url=oauth2_callback_url
         )
 
         # TODO: store and read port config of local running container
         client = LocalBedrockAgentCoreClient("http://127.0.0.1:8080")
-        response = client.invoke_endpoint(session_id, payload_str, workload_access_token, callback_url, custom_headers)
+        response = client.invoke_endpoint(
+            session_id, payload_str, workload_access_token, oauth2_callback_url, custom_headers
+        )
 
     else:
         if not agent_arn:
@@ -172,20 +174,21 @@ def invoke_bedrock_agentcore(
     )
 
 
-def _update_workload_identity_with_callback_url(
+def _update_workload_identity_with_oauth2_callback_url(
     identity_client: IdentityClient,
     workload_name: str,
-    callback_url: str,
+    oauth2_callback_url: str,
 ) -> None:
     workload_identity = identity_client.get_workload_identity(name=workload_name)
     allowed_resource_oauth_2_return_urls = workload_identity.get("allowedResourceOauth2ReturnUrls") or []
-    if callback_url in allowed_resource_oauth_2_return_urls:
+    if oauth2_callback_url in allowed_resource_oauth_2_return_urls:
         return
 
-    log.info("Updating workload %s with callback url [%s]", workload_name, callback_url)
+    log.info("Updating workload %s with callback url %s", workload_name, oauth2_callback_url)
 
     identity_client.update_workload_identity(
-        name=workload_name, allowed_resource_oauth_2_return_urls=[*allowed_resource_oauth_2_return_urls, callback_url]
+        name=workload_name,
+        allowed_resource_oauth_2_return_urls=[*allowed_resource_oauth_2_return_urls, oauth2_callback_url],
     )
 
 
