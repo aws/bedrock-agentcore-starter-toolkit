@@ -128,6 +128,7 @@ class BedrockAgentCoreClient:
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
+        lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
         """Create new agent."""
         self.logger.info("Creating agent '%s' with image URI: %s", agent_name, image_uri)
@@ -153,6 +154,9 @@ class BedrockAgentCoreClient:
 
             if env_vars is not None:
                 params["environmentVariables"] = env_vars
+
+            if lifecycle_config is not None:
+                params["lifecycleConfiguration"] = lifecycle_config
 
             resp = self.client.create_agent_runtime(**params)
             agent_id = resp["agentRuntimeId"]
@@ -226,6 +230,7 @@ class BedrockAgentCoreClient:
         request_header_config: Optional[Dict] = None,
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
+        lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
         """Update existing agent."""
         self.logger.info("Updating agent ID '%s' with image URI: %s", agent_id, image_uri)
@@ -251,6 +256,9 @@ class BedrockAgentCoreClient:
 
             if env_vars is not None:
                 params["environmentVariables"] = env_vars
+
+            if lifecycle_config is not None:
+                params["lifecycleConfiguration"] = lifecycle_config
 
             resp = self.client.update_agent_runtime(**params)
             agent_arn = resp["agentRuntimeArn"]
@@ -312,6 +320,7 @@ class BedrockAgentCoreClient:
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
+        lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
         """Create or update agent."""
         if agent_id:
@@ -324,6 +333,7 @@ class BedrockAgentCoreClient:
                 request_header_config,
                 protocol_config,
                 env_vars,
+                lifecycle_config,
             )
         return self.create_agent(
             agent_name,
@@ -335,6 +345,7 @@ class BedrockAgentCoreClient:
             protocol_config,
             env_vars,
             auto_update_on_conflict,
+            lifecycle_config,
         )
 
     def wait_for_agent_endpoint_ready(self, agent_id: str, endpoint_name: str = "DEFAULT", max_wait: int = 120) -> str:
@@ -482,6 +493,48 @@ class BedrockAgentCoreClient:
                 self.dataplane_client.meta.events.unregister(
                     "before-sign.bedrock-agentcore.InvokeAgentRuntime", handler_id
                 )
+
+    def stop_runtime_session(
+        self,
+        agent_arn: str,
+        session_id: str,
+        endpoint_name: str = "DEFAULT",
+    ) -> Dict:
+        """Stop a runtime session.
+
+        Args:
+            agent_arn: Agent ARN
+            session_id: Session ID to stop
+            endpoint_name: Endpoint name, defaults to "DEFAULT"
+
+        Returns:
+            Response with status code
+        """
+        self.logger.info("Stopping runtime session: %s", session_id)
+
+        try:
+            response = self.dataplane_client.stop_runtime_session(
+                agentRuntimeArn=agent_arn,
+                qualifier=endpoint_name,
+                runtimeSessionId=session_id,
+            )
+
+            self.logger.info("Successfully stopped session: %s", session_id)
+            return response
+
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+
+            if error_code in ["ResourceNotFoundException", "NotFound"]:
+                self.logger.warning("Session not found: %s (may have already been terminated)", session_id)
+                # Return a synthetic response for consistency
+                return {
+                    "statusCode": 404,
+                    "runtimeSessionId": session_id,
+                }
+            else:
+                self.logger.error("Failed to stop session %s: %s", session_id, str(e))
+                raise
 
 
 class HttpBedrockAgentCoreClient:

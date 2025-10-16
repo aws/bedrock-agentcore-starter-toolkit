@@ -3,9 +3,14 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+
 from bedrock_agentcore_starter_toolkit.operations.runtime.configure import (
     AGENT_NAME_ERROR,
     configure_bedrock_agentcore,
+    detect_entrypoint,
+    get_relative_path,
+    infer_agent_name,
     validate_agent_name,
 )
 
@@ -1122,3 +1127,775 @@ class TestValidateAgentName:
         for name in invalid_names:
             is_valid, _ = validate_agent_name(name)
             assert is_valid is False, f"Expected '{name}' to be invalid"
+
+
+class TestLifecycleConfiguration:
+    """Test lifecycle configuration parameters (idle timeout and max lifetime)."""
+
+    def test_configure_with_idle_timeout(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with idle timeout parameter."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    idle_timeout=300,  # 5 minutes
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout == 300
+                assert agent_config.aws.lifecycle_configuration.has_custom_settings is True
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_max_lifetime(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with max lifetime parameter."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    max_lifetime=3600,  # 1 hour
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.aws.lifecycle_configuration.max_lifetime == 3600
+                assert agent_config.aws.lifecycle_configuration.has_custom_settings is True
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_both_lifecycle_parameters(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with both idle timeout and max lifetime."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    idle_timeout=600,  # 10 minutes
+                    max_lifetime=7200,  # 2 hours
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout == 600
+                assert agent_config.aws.lifecycle_configuration.max_lifetime == 7200
+                assert agent_config.aws.lifecycle_configuration.has_custom_settings is True
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_verbose_logs_lifecycle_configuration(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that verbose mode logs lifecycle configuration details."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+                patch("bedrock_agentcore_starter_toolkit.operations.runtime.configure.log") as mock_log,
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    idle_timeout=1800,  # 30 minutes
+                    max_lifetime=10800,  # 3 hours
+                    verbose=True,
+                )
+
+                # Verify result was created successfully
+                assert result.config_path.exists()
+
+                # Verify verbose logging was enabled
+                mock_log.setLevel.assert_called_with(10)  # logging.DEBUG = 10
+
+                # Verify that lifecycle configuration was logged
+                debug_calls = [str(call) for call in mock_log.debug.call_args_list]
+                assert any("Lifecycle configuration" in call or "Idle timeout" in call for call in debug_calls)
+
+        finally:
+            os.chdir(original_cwd)
+
+
+class TestMemoryModeConfiguration:
+    """Test different memory mode configurations."""
+
+    def test_configure_with_no_memory_mode(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with memory explicitly disabled."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            # Mock should not be called when memory is disabled
+            mock_config_manager = Mock()
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    memory_mode="NO_MEMORY",
+                    non_interactive=True,
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.memory.mode == "NO_MEMORY"
+                # Memory prompt should not be called when NO_MEMORY is explicitly set
+                mock_config_manager.prompt_memory_selection.assert_not_called()
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_non_interactive_stm_and_ltm(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test non-interactive mode with STM_AND_LTM memory mode."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    memory_mode="STM_AND_LTM",
+                    non_interactive=True,
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.memory.mode == "STM_AND_LTM"
+                assert agent_config.memory.event_expiry_days == 30
+                assert agent_config.memory.memory_name == "test_agent_memory"
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_interactive_use_existing_memory(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test interactive mode selecting existing memory."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            # User selects existing memory
+            mock_config_manager.prompt_memory_selection.return_value = ("USE_EXISTING", "existing-memory-123")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    non_interactive=False,  # Interactive mode
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.memory.memory_id == "existing-memory-123"
+                assert agent_config.memory.mode == "STM_AND_LTM"
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_interactive_skip_memory(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test interactive mode where user skips memory setup."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            # User skips memory setup
+            mock_config_manager.prompt_memory_selection.return_value = ("SKIP", None)
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    non_interactive=False,
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.memory.mode == "NO_MEMORY"
+
+        finally:
+            os.chdir(original_cwd)
+
+
+class TestSourcePathConfiguration:
+    """Test configuration with source_path parameter."""
+
+    def test_configure_with_source_path(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with custom source path."""
+        # Create source directory structure
+        source_dir = tmp_path / "custom_source"
+        source_dir.mkdir()
+        agent_file = source_dir / "agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    source_path=str(source_dir),
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.source_path == str(source_dir.resolve())
+
+        finally:
+            os.chdir(original_cwd)
+
+
+class TestHelperFunctions:
+    """Test helper functions like get_relative_path, detect_entrypoint, infer_agent_name."""
+
+    def test_get_relative_path_with_whitespace_path(self):
+        """Test get_relative_path with whitespace-only path raises ValueError."""
+
+        # Create a mock Path object that returns whitespace when converted to string
+        class WhitespacePath:
+            def __str__(self):
+                return "   "
+
+        with pytest.raises(ValueError, match="Path cannot be empty"):
+            get_relative_path(WhitespacePath())
+
+    def test_get_relative_path_outside_base(self, tmp_path):
+        """Test get_relative_path with path outside base directory."""
+        base_dir = tmp_path / "base"
+        base_dir.mkdir()
+        outside_path = tmp_path / "outside" / "file.py"
+        outside_path.parent.mkdir()
+        outside_path.write_text("# test")
+
+        # Should return full path when outside base
+        result = get_relative_path(outside_path, base_dir)
+        assert str(outside_path) in result
+
+    def test_get_relative_path_normal_case(self, tmp_path):
+        """Test get_relative_path with normal relative path."""
+        base_dir = tmp_path / "base"
+        base_dir.mkdir()
+        sub_dir = base_dir / "subdir"
+        sub_dir.mkdir()
+        file_path = sub_dir / "file.py"
+        file_path.write_text("# test")
+
+        result = get_relative_path(file_path, base_dir)
+        # Should return relative path from base
+        assert "subdir" in result
+        assert "file.py" in result
+        assert str(base_dir) not in result  # Should not contain base path
+
+    def test_detect_entrypoint_not_found(self, tmp_path):
+        """Test detect_entrypoint when no entrypoint file exists."""
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+
+        result = detect_entrypoint(empty_dir)
+        assert result is None
+
+    def test_detect_entrypoint_finds_agent_py(self, tmp_path):
+        """Test detect_entrypoint finds agent.py."""
+        test_dir = tmp_path / "test"
+        test_dir.mkdir()
+        agent_file = test_dir / "agent.py"
+        agent_file.write_text("# agent")
+
+        result = detect_entrypoint(test_dir)
+        assert result == agent_file
+
+    def test_detect_entrypoint_finds_app_py(self, tmp_path):
+        """Test detect_entrypoint finds app.py when agent.py doesn't exist."""
+        test_dir = tmp_path / "test"
+        test_dir.mkdir()
+        app_file = test_dir / "app.py"
+        app_file.write_text("# app")
+
+        result = detect_entrypoint(test_dir)
+        assert result == app_file
+
+    def test_detect_entrypoint_finds_main_py(self, tmp_path):
+        """Test detect_entrypoint finds main.py when agent.py and app.py don't exist."""
+        test_dir = tmp_path / "test"
+        test_dir.mkdir()
+        main_file = test_dir / "main.py"
+        main_file.write_text("# main")
+
+        result = detect_entrypoint(test_dir)
+        assert result == main_file
+
+    def test_detect_entrypoint_priority_order(self, tmp_path):
+        """Test detect_entrypoint follows priority order: agent.py > app.py > main.py."""
+        test_dir = tmp_path / "test"
+        test_dir.mkdir()
+
+        # Create all three files
+        agent_file = test_dir / "agent.py"
+        agent_file.write_text("# agent")
+        app_file = test_dir / "app.py"
+        app_file.write_text("# app")
+        main_file = test_dir / "main.py"
+        main_file.write_text("# main")
+
+        result = detect_entrypoint(test_dir)
+        # Should find agent.py first (highest priority)
+        assert result == agent_file
+
+    def test_infer_agent_name_with_py_extension(self, tmp_path):
+        """Test infer_agent_name removes .py extension."""
+        test_file = tmp_path / "my_agent.py"
+        test_file.write_text("# test")
+
+        name = infer_agent_name(test_file, tmp_path)
+        assert name == "my_agent"
+        assert ".py" not in name
+
+    def test_infer_agent_name_with_nested_path(self, tmp_path):
+        """Test infer_agent_name with nested directory structure."""
+        nested_dir = tmp_path / "agents" / "writer"
+        nested_dir.mkdir(parents=True)
+        agent_file = nested_dir / "main.py"
+        agent_file.write_text("# test")
+
+        name = infer_agent_name(agent_file, tmp_path)
+        assert "agents" in name
+        assert "writer" in name
+        assert "main" in name
+        assert name == "agents_writer_main"
+
+    def test_infer_agent_name_with_spaces(self, tmp_path):
+        """Test infer_agent_name replaces spaces with underscores."""
+        test_dir = tmp_path / "my agent"
+        test_dir.mkdir()
+        agent_file = test_dir / "handler.py"
+        agent_file.write_text("# test")
+
+        name = infer_agent_name(agent_file, tmp_path)
+        assert " " not in name
+        assert "_" in name
+
+
+class TestProtocolConfiguration:
+    """Test protocol configuration options."""
+
+    def test_configure_with_mcp_protocol(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with MCP protocol."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    protocol="MCP",
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.aws.protocol_configuration.server_protocol == "MCP"
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_with_a2a_protocol(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test configuration with A2A protocol."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    protocol="A2A",
+                )
+
+                # Load and verify the configuration
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.aws.protocol_configuration.server_protocol == "A2A"
+
+        finally:
+            os.chdir(original_cwd)
