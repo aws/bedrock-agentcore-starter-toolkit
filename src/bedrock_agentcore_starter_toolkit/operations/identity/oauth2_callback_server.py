@@ -13,11 +13,11 @@ from ...cli.common import console
 from ...utils.runtime.config import BedrockAgentCoreAgentSchema, load_config
 
 CALLBACK_3LO_SERVER_PORT = 8081
-CALLBACK_ENDPOINT = "/3lo/callback"
+CALLBACK_ENDPOINT = "/oauth2/callback"
 WORKLOAD_USER_ID = "userId"
 
 
-def start_3lo_callback_server(config_path: Path, agent_name: str, debug: bool = False):
+def start_oauth2_callback_server(config_path: Path, agent_name: str, debug: bool = False):
     """Starts a server to complete the OAuth2 3LO flow with AgentCore Identity."""
     callback_server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name=agent_name, debug=debug)
     callback_server.run()

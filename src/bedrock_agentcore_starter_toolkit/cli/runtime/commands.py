@@ -13,7 +13,7 @@ from prompt_toolkit.completion import PathCompleter
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from ...operations.identity.oauth2_callback_server import start_3lo_callback_server
+from ...operations.identity.oauth2_callback_server import start_oauth2_callback_server
 from ...operations.runtime import (
     configure_bedrock_agentcore,
     destroy_bedrock_agentcore,
@@ -585,7 +585,7 @@ def launch(
 
             try:
                 oauth2_callback_endpoint = Thread(
-                    target=start_3lo_callback_server,
+                    target=start_oauth2_callback_server,
                     args=(
                         config_path,
                         agent,
