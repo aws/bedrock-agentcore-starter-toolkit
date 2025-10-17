@@ -38,6 +38,10 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
         agent_arn=agent_config.bedrock_agentcore.agent_arn,
     )
 
+    if agent_config.aws.lifecycle_configuration.has_custom_settings:
+        config_info.idle_timeout = agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout
+        config_info.max_lifetime = agent_config.aws.lifecycle_configuration.max_lifetime
+
     # Check if memory is disabled first
     if agent_config.memory and agent_config.memory.mode == "NO_MEMORY":
         config_info.memory_type = "Disabled"

@@ -257,6 +257,20 @@ def configure(
         help="Comma-separated list of allowed request headers "
         "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
     ),
+    idle_timeout: Optional[int] = typer.Option(
+        None,
+        "--idle-timeout",
+        help="Idle runtime session timeout in seconds (60-28800, default: 900)",
+        min=60,
+        max=28800,
+    ),
+    max_lifetime: Optional[int] = typer.Option(
+        None,
+        "--max-lifetime",
+        help="Maximum instance lifetime in seconds (60-28800, default: 28800)",
+        min=60,
+        max=28800,
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
@@ -276,6 +290,11 @@ def configure(
 
     if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
         _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
+
+    # Validate lifecycle configuration
+    if idle_timeout is not None and max_lifetime is not None:
+        if idle_timeout > max_lifetime:
+            _handle_error(f"Error: --idle-timeout ({idle_timeout}s) must be <= --max-lifetime ({max_lifetime}s)")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
 
@@ -399,6 +418,8 @@ def configure(
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
             source_path=source_path,
+            idle_timeout=idle_timeout,
+            max_lifetime=max_lifetime,
         )
 
         # Prepare authorization info for summary
@@ -417,6 +438,14 @@ def configure(
         if disable_memory:
             memory_info = "Disabled"
 
+        lifecycle_info = ""
+        if idle_timeout or max_lifetime:
+            lifecycle_info = "\n[bold]Lifecycle Settings:[/bold]\n"
+            if idle_timeout:
+                lifecycle_info += f"Idle Timeout: [cyan]{idle_timeout}s ({idle_timeout // 60} minutes)[/cyan]\n"
+            if max_lifetime:
+                lifecycle_info += f"Max Lifetime: [cyan]{max_lifetime}s ({max_lifetime // 3600} hours)[/cyan]\n"
+
         console.print(
             Panel(
                 f"[bold]Agent Details[/bold]\n"
@@ -432,6 +461,7 @@ def configure(
                 f"Authorization: [cyan]{auth_info}[/cyan]\n\n"
                 f"{headers_info}\n"
                 f"Memory: [cyan]{memory_info}[/cyan]\n\n"
+                f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore launch[/cyan]",
@@ -1034,6 +1064,19 @@ def status(
                         f"[/dim]\n\n"
                     )
 
+                    if status_json["config"].get("idle_timeout") or status_json["config"].get("max_lifetime"):
+                        panel_content += "[bold]Lifecycle Settings:[/bold]\n"
+
+                        idle = status_json["config"].get("idle_timeout")
+                        if idle:
+                            panel_content += f"Idle Timeout: [cyan]{idle}s ({idle // 60} minutes)[/cyan]\n"
+
+                        max_life = status_json["config"].get("max_lifetime")
+                        if max_life:
+                            panel_content += f"Max Lifetime: [cyan]{max_life}s ({max_life // 3600} hours)[/cyan]\n"
+
+                        panel_content += "\n"
+
                     # Add CloudWatch logs information
                     agent_id = status_json.get("config", {}).get("agent_id")
                     if agent_id:
@@ -1123,6 +1166,109 @@ def status(
                 f"   [cyan]agentcore launch[/cyan]",
                 title="❌ Status Error",
                 border_style="bright_blue",
+            )
+        )
+        raise typer.Exit(1) from e
+
+
+def stop_session(
+    session_id: Optional[str] = typer.Option(
+        None,
+        "--session-id",
+        "-s",
+        help="Runtime session ID to stop. If not provided, stops the last active session from invoke.",
+    ),
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
+    ),
+):
+    """Stop an active runtime session.
+
+    Terminates the compute session for the running agent. This frees up resources
+    and ends any ongoing agent processing for that session.
+
+    🔍 How to find session IDs:
+       • Last invoked session is automatically tracked (no flag needed)
+       • Check 'agentcore status' to see the tracked session ID
+       • Check CloudWatch logs for session IDs from previous invokes
+       • Session IDs are also visible in the config file: .bedrock_agentcore.yaml
+
+    ⏱️  Session Lifecycle:
+       • Runtime sessions are created when you invoke an agent
+       • They automatically expire after the configured idle timeout
+       • Stopping a session immediately frees resources without waiting for timeout
+
+    Examples:
+        # Stop the last invoked session (most common)
+        agentcore stop-session
+
+        # Stop a specific session by ID
+        agentcore stop-session --session-id abc123xyz
+
+        # Stop last session for a specific agent
+        agentcore stop-session --agent my-agent
+
+        # Get current session ID before stopping
+        agentcore status  # Shows tracked session ID
+        agentcore stop-session
+    """
+    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+
+    try:
+        from ...operations.runtime import stop_runtime_session
+
+        result = stop_runtime_session(
+            config_path=config_path,
+            session_id=session_id,
+            agent_name=agent,
+        )
+
+        # Show result panel
+        status_icon = "✅" if result.status_code == 200 else "⚠️"
+        status_color = "green" if result.status_code == 200 else "yellow"
+
+        console.print(
+            Panel(
+                f"[{status_color}]{status_icon} {result.message}[/{status_color}]\n\n"
+                f"[bold]Session Details:[/bold]\n"
+                f"Session ID: [cyan]{result.session_id}[/cyan]\n"
+                f"Agent: [cyan]{result.agent_name}[/cyan]\n"
+                f"Status Code: [cyan]{result.status_code}[/cyan]\n\n"
+                f"[dim]💡 Runtime sessions automatically expire after idle timeout.\n"
+                f"   Manually stopping frees resources immediately.[/dim]",
+                title="Session Stopped",
+                border_style="bright_blue",
+            )
+        )
+
+    except FileNotFoundError:
+        _show_configuration_not_found_panel()
+        raise typer.Exit(1) from None
+    except ValueError as e:
+        console.print(
+            Panel(
+                f"[red]❌ Failed to Stop Session[/red]\n\n"
+                f"Error: {str(e)}\n\n"
+                f"[bold]How to find session IDs:[/bold]\n"
+                f"  • Check 'agentcore status' for the tracked session ID\n"
+                f"  • Check CloudWatch logs for session IDs\n"
+                f"  • Invoke the agent first to create a session\n\n"
+                f"[dim]Note: Runtime sessions cannot be listed. You can only stop\n"
+                f"the session from your last invoke or a specific session ID.[/dim]",
+                title="Stop Session Error",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(1) from e
+    except Exception as e:
+        console.print(
+            Panel(
+                f"[red]❌ Unexpected Error[/red]\n\n{str(e)}",
+                title="Stop Session Error",
+                border_style="red",
             )
         )
         raise typer.Exit(1) from e

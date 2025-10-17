@@ -18,8 +18,10 @@ from .models import (
     LaunchResult,
     StatusConfigInfo,
     StatusResult,
+    StopSessionResult,
 )
 from .status import get_status
+from .stop_session import stop_runtime_session
 
 __all__ = [
     "configure_bedrock_agentcore",
@@ -31,6 +33,7 @@ __all__ = [
     "infer_agent_name",
     "launch_bedrock_agentcore",
     "invoke_bedrock_agentcore",
+    "stop_runtime_session",
     "get_status",
     "ConfigureResult",
     "DestroyResult",
@@ -38,4 +41,5 @@ __all__ = [
     "LaunchResult",
     "StatusResult",
     "StatusConfigInfo",
+    "StopSessionResult",
 ]

@@ -315,6 +315,15 @@ def _deploy_to_bedrock_agentcore(
     network_config = agent_config.aws.network_configuration.to_aws_dict()
     protocol_config = agent_config.aws.protocol_configuration.to_aws_dict()
 
+    lifecycle_config = None
+    if agent_config.aws.lifecycle_configuration.has_custom_settings:
+        lifecycle_config = agent_config.aws.lifecycle_configuration.to_aws_dict()
+        log.info(
+            "Applying custom lifecycle settings: idle=%s, max=%s",
+            agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout,
+            agent_config.aws.lifecycle_configuration.max_lifetime,
+        )
+
     # Execution role should be available by now (either provided or auto-created)
     if not agent_config.aws.execution_role:
         raise ValueError(
@@ -340,6 +349,7 @@ def _deploy_to_bedrock_agentcore(
                 protocol_config=protocol_config,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                lifecycle_config=lifecycle_config,
             )
             break  # Success! Exit retry loop
 

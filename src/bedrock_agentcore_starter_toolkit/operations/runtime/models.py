@@ -76,6 +76,8 @@ class StatusConfigInfo(BaseModel):
     memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
     memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
     memory_details: Optional[Dict[str, Any]] = Field(None, description="Detailed memory resource information")
+    idle_timeout: Optional[int] = Field(None, description="Idle runtime session timeout in seconds")
+    max_lifetime: Optional[int] = Field(None, description="Maximum instance lifetime in seconds")
 
 
 class StatusResult(BaseModel):
@@ -94,3 +96,12 @@ class DestroyResult(BaseModel):
     warnings: List[str] = Field(default_factory=list, description="List of warnings during destruction")
     errors: List[str] = Field(default_factory=list, description="List of errors during destruction")
     dry_run: bool = Field(default=False, description="Whether this was a dry run")
+
+
+class StopSessionResult(BaseModel):
+    """Result of stop session operation."""
+
+    session_id: str = Field(..., description="Session ID that was stopped")
+    agent_name: str = Field(..., description="Name of the agent")
+    status_code: int = Field(..., description="HTTP status code of the operation")
+    message: str = Field(default="Session stopped successfully", description="Result message")
