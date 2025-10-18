@@ -3,6 +3,8 @@
 # Web server for dashboards
 flask>=2.3.0
 flask-cors>=4.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.9.0
 
 # Optional: For enhanced features
 # websockets>=11.0  # For real-time dashboard updates

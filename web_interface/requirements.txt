@@ -1,0 +1,12 @@
+# Web Interface Requirements
+
+# Core web server
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# WebSocket support for real-time updates
+flask-socketio>=5.3.0
+python-socketio>=5.9.0
+
+# For testing
+requests>=2.31.0
