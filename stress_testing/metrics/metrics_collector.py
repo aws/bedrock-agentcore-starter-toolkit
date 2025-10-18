@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional, List
 
 from ..models import SystemMetrics, AgentMetrics, BusinessMetrics
 from .agent_metrics_collector import AgentMetricsCollector
+from .business_metrics_calculator import BusinessMetricsCalculator, CostBreakdown
 
 
 logger = logging.getLogger(__name__)
@@ -34,9 +35,13 @@ class MetricsCollector:
         self.total_transactions = 0
         self.total_fraud_detected = 0
         self.total_cost = 0.0
+        self.test_start_time = datetime.utcnow()
         
         # Agent metrics collector
         self.agent_metrics_collector = AgentMetricsCollector(agent_dashboard_api)
+        
+        # Business metrics calculator
+        self.business_calculator = BusinessMetricsCalculator()
         
         logger.info("MetricsCollector initialized")
     
@@ -144,36 +149,47 @@ class MetricsCollector:
         return agents
     
     async def collect_business_metrics(self) -> BusinessMetrics:
-        """Collect business-level metrics."""
+        """
+        Collect business-level metrics using BusinessMetricsCalculator.
+        
+        This method now uses the comprehensive BusinessMetricsCalculator to
+        calculate accurate fraud detection, cost, ROI, and competitive metrics.
+        """
         # Update counters based on load generator
         if self.load_generator:
             self.total_transactions = self.load_generator.total_sent
             # Simulate fraud detection (2% fraud rate, 95% detection accuracy)
             expected_fraud = int(self.total_transactions * 0.02)
             self.total_fraud_detected = int(expected_fraud * 0.95)
-            # Simulate cost ($0.025 per transaction)
-            self.total_cost = self.total_transactions * 0.025
         
-        fraud_prevented = self.total_fraud_detected * 300  # $300 avg fraud amount
+        # Calculate duration
+        duration_hours = (datetime.utcnow() - self.test_start_time).total_seconds() / 3600
+        if duration_hours == 0:
+            duration_hours = 0.01  # Minimum to avoid division by zero
         
-        return BusinessMetrics(
-            timestamp=datetime.utcnow(),
-            transactions_processed=self.total_transactions,
-            transactions_per_second=self.load_generator.current_tps if self.load_generator else 0,
-            fraud_detected=self.total_fraud_detected,
-            fraud_prevented_amount=fraud_prevented,
-            fraud_detection_rate=0.02,  # 2% of transactions are fraud
-            fraud_detection_accuracy=0.95,  # 95% accuracy
-            cost_per_transaction=0.025,
-            total_cost=self.total_cost,
-            roi_percentage=((fraud_prevented - self.total_cost) / self.total_cost * 100) if self.total_cost > 0 else 0,
-            money_saved=fraud_prevented - self.total_cost,
-            payback_period_months=6.0,
-            customer_impact_score=0.92,
-            false_positive_impact=0.05,
-            performance_vs_baseline=1.5,  # 50% better than baseline
-            cost_vs_baseline=0.6  # 40% cheaper than baseline
+        # Calculate cost breakdown using BusinessMetricsCalculator
+        cost_breakdown = self.business_calculator.calculate_cost_metrics(
+            total_transactions=self.total_transactions,
+            duration_hours=duration_hours,
+            # Let the calculator estimate AWS service usage
         )
+        
+        # Get system metrics for additional context
+        system_metrics = await self.collect_system_metrics()
+        
+        # Calculate comprehensive business metrics
+        business_metrics = self.business_calculator.calculate_business_metrics(
+            total_transactions=self.total_transactions,
+            fraud_detected=self.total_fraud_detected,
+            cost_breakdown=cost_breakdown,
+            duration_hours=duration_hours,
+            system_metrics=system_metrics
+        )
+        
+        # Update total cost for tracking
+        self.total_cost = cost_breakdown.total_cost
+        
+        return business_metrics
     
     async def collect_cloudwatch_metrics(self) -> Dict[str, Any]:
         """Collect CloudWatch metrics (simulated for demo)."""
@@ -251,6 +267,38 @@ class MetricsCollector:
         """
         return self.agent_metrics_collector.get_metrics_history(agent_id, limit)
     
+    async def get_competitive_benchmarks(self) -> Dict[str, Any]:
+        """
+        Get competitive benchmark comparisons.
+        
+        Returns:
+            Dictionary containing competitive benchmark data
+        """
+        # Collect current metrics
+        system_metrics = await self.collect_system_metrics()
+        business_metrics = await self.collect_business_metrics()
+        
+        # Calculate uptime (assume high uptime for demo)
+        uptime_percentage = 99.97
+        
+        # Generate competitive benchmarks
+        benchmarks = self.business_calculator.generate_competitive_benchmarks(
+            fraud_detection_accuracy=business_metrics.fraud_detection_accuracy,
+            false_positive_rate=business_metrics.false_positive_impact,
+            cost_per_transaction=business_metrics.cost_per_transaction,
+            avg_response_time_ms=system_metrics.avg_response_time_ms,
+            uptime_percentage=uptime_percentage
+        )
+        
+        return {
+            'timestamp': benchmarks.timestamp.isoformat(),
+            'our_performance': benchmarks.our_performance,
+            'competitor_avg': benchmarks.competitor_avg,
+            'improvement_percentage': benchmarks.improvement_percentage,
+            'unique_advantages': benchmarks.unique_advantages,
+            'market_position': benchmarks.market_position
+        }
+    
     def get_statistics(self) -> Dict[str, Any]:
         """Get collector statistics."""
         return {
@@ -258,6 +306,7 @@ class MetricsCollector:
             'total_transactions': self.total_transactions,
             'total_fraud_detected': self.total_fraud_detected,
             'total_cost': self.total_cost,
+            'test_duration_hours': (datetime.utcnow() - self.test_start_time).total_seconds() / 3600,
             'agent_metrics_collector': {
                 'last_collection_time': (
                     self.agent_metrics_collector.last_collection_time.isoformat()
