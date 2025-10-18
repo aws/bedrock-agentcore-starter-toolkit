@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 from ..models import SystemMetrics, AgentMetrics, BusinessMetrics
+from .agent_metrics_collector import AgentMetricsCollector
 
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,13 @@ logger = logging.getLogger(__name__)
 class MetricsCollector:
     """Collects metrics from load generator, agents, and business logic."""
     
-    def __init__(self):
-        """Initialize metrics collector."""
+    def __init__(self, agent_dashboard_api=None):
+        """
+        Initialize metrics collector.
+        
+        Args:
+            agent_dashboard_api: Optional AgentDashboardAPI instance for agent metrics
+        """
         self.load_generator = None
         self.is_collecting = False
         
@@ -29,11 +35,24 @@ class MetricsCollector:
         self.total_fraud_detected = 0
         self.total_cost = 0.0
         
+        # Agent metrics collector
+        self.agent_metrics_collector = AgentMetricsCollector(agent_dashboard_api)
+        
         logger.info("MetricsCollector initialized")
     
     def set_load_generator(self, load_generator):
         """Set load generator reference."""
         self.load_generator = load_generator
+    
+    def set_agent_dashboard_api(self, agent_dashboard_api):
+        """
+        Set AgentDashboardAPI instance for agent metrics collection.
+        
+        Args:
+            agent_dashboard_api: Instance of AgentDashboardAPI
+        """
+        self.agent_metrics_collector.set_agent_dashboard_api(agent_dashboard_api)
+        logger.info("AgentDashboardAPI set for agent metrics collection")
     
     async def collect_all_metrics(self) -> Dict[str, Any]:
         """
@@ -73,8 +92,21 @@ class MetricsCollector:
         )
     
     async def collect_agent_metrics(self) -> List[AgentMetrics]:
-        """Collect agent-specific metrics."""
-        # Simulate agent metrics for demo
+        """
+        Collect agent-specific metrics.
+        
+        Uses AgentMetricsCollector to get real metrics from AgentDashboardAPI
+        if available, otherwise falls back to simulated metrics.
+        """
+        # Try to collect real agent metrics first
+        real_metrics = await self.agent_metrics_collector.collect_agent_metrics()
+        
+        if real_metrics:
+            logger.debug(f"Collected {len(real_metrics)} real agent metrics")
+            return real_metrics
+        
+        # Fallback to simulated metrics for demo
+        logger.debug("Using simulated agent metrics (AgentDashboardAPI not available)")
         agents = []
         
         agent_names = [
@@ -167,11 +199,71 @@ class MetricsCollector:
             }
         }
     
+    async def get_coordination_efficiency(self) -> Dict[str, Any]:
+        """
+        Get coordination efficiency metrics across all agents.
+        
+        Returns:
+            Dictionary containing coordination efficiency metrics
+        """
+        return await self.agent_metrics_collector.calculate_coordination_efficiency()
+    
+    async def get_workload_distribution(self) -> Dict[str, Any]:
+        """
+        Get workload distribution metrics across all agents.
+        
+        Returns:
+            Dictionary containing workload distribution metrics
+        """
+        return await self.agent_metrics_collector.track_workload_distribution()
+    
+    async def get_agent_performance_summary(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get performance summary for a specific agent.
+        
+        Args:
+            agent_id: Agent identifier
+            
+        Returns:
+            Performance summary dictionary or None if agent not found
+        """
+        return await self.agent_metrics_collector.get_agent_performance_summary(agent_id)
+    
+    async def get_comprehensive_agent_metrics(self) -> Dict[str, Any]:
+        """
+        Get comprehensive metrics for all agents including coordination and workload.
+        
+        Returns:
+            Dictionary containing all agent-related metrics
+        """
+        return await self.agent_metrics_collector.get_all_metrics()
+    
+    def get_agent_metrics_history(self, agent_id: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
+        """
+        Get historical metrics for one or all agents.
+        
+        Args:
+            agent_id: Optional agent ID to filter by
+            limit: Maximum number of data points per agent
+            
+        Returns:
+            Dictionary containing historical metrics
+        """
+        return self.agent_metrics_collector.get_metrics_history(agent_id, limit)
+    
     def get_statistics(self) -> Dict[str, Any]:
         """Get collector statistics."""
         return {
             'is_collecting': self.is_collecting,
             'total_transactions': self.total_transactions,
             'total_fraud_detected': self.total_fraud_detected,
-            'total_cost': self.total_cost
+            'total_cost': self.total_cost,
+            'agent_metrics_collector': {
+                'last_collection_time': (
+                    self.agent_metrics_collector.last_collection_time.isoformat()
+                    if self.agent_metrics_collector.last_collection_time else None
+                ),
+                'coordination_events_count': self.agent_metrics_collector.coordination_events_count,
+                'agents_tracked': len(self.agent_metrics_collector.metrics_history)
+            }
         }
