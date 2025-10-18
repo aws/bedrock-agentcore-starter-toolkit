@@ -335,6 +335,157 @@
             padding: 40px;
             color: #666;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .controls > span {
+                margin-left: 0 !important;
+                width: 100%;
+                flex-direction: column;
+                gap: 8px !important;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .chart-card {
+                padding: 15px;
+            }
+
+            .chart-card.full-width {
+                grid-column: 1;
+            }
+
+            .chart-title {
+                font-size: 16px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .pattern-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .pattern-stats {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .indicator-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .indicator-stats {
+                width: 100%;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .accuracy-bar {
+                width: 100%;
+            }
+
+            canvas {
+                max-height: 250px !important;
+            }
+
+            .decision-explanation {
+                font-size: 14px;
+            }
+
+            .reasoning-step {
+                font-size: 13px;
+            }
+
+            .evidence-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+
+        /* Tablet Responsive Styles */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-card.full-width {
+                grid-column: 1;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-height: 44px;
+                font-size: 16px;
+            }
+
+            .pattern-item,
+            .indicator-item,
+            .metric-item {
+                min-height: 44px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -502,9 +653,12 @@
         let wsConnected = false;
         let metricsBuffer = [];
 
+        // Get the base URL dynamically (works for both local and deployed)
+        const BASE_URL = window.location.origin;
+
         async function fetchData(endpoint) {
             try {
-                const response = await fetch(`http://127.0.0.1:5001/api/${endpoint}`);
+                const response = await fetch(`${BASE_URL}/api/${endpoint}`);
                 return await response.json();
             } catch (error) {
                 console.error(`Error fetching ${endpoint}:`, error);
@@ -692,7 +846,7 @@
 
         // WebSocket connection
         function initializeWebSocket() {
-            socket = io('http://127.0.0.1:5001', {
+            socket = io(BASE_URL, {
                 transports: ['websocket', 'polling']
             });
 
