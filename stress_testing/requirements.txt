@@ -6,6 +6,10 @@ flask-cors>=4.0.0
 flask-socketio>=5.3.0
 python-socketio>=5.9.0
 
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
 # Optional: For enhanced features
 # websockets>=11.0  # For real-time dashboard updates
 # boto3>=1.28.0     # For AWS CloudWatch integration

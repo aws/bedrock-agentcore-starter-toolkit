@@ -314,7 +314,15 @@ class GracefulDegradationManager:
         )
         
         # Log level change
-        if new_level > self.previous_level:
+        # Compare enum values by their order
+        level_order = {
+            DegradationLevel.NONE: 0,
+            DegradationLevel.MODERATE: 1,
+            DegradationLevel.SEVERE: 2,
+            DegradationLevel.CRITICAL: 3
+        }
+        
+        if level_order[new_level] > level_order[self.previous_level]:
             logger.warning(
                 f"Degradation level increased: {self.previous_level.value} -> {new_level.value} "
                 f"(Reason: {trigger_reason})"
