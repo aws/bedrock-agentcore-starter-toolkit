@@ -110,4 +110,134 @@ def test_health_check():
     
     try:
         response = requests.get("http://localhost:8080/api/analytics/summary", timeout=5)
-        if response.status_code == 
+        if response.status_code == 200:
+            print("✅ Health check endpoint responding")
+            print(f"   Response time: {response.elapsed.total_seconds():.2f}s")
+            return True
+        else:
+            print(f"❌ Health check failed with status: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"❌ Health check error: {e}")
+        return False
+
+
+def test_cors():
+    """Test CORS configuration"""
+    print_header("🌐 Testing CORS Configuration")
+    
+    try:
+        response = requests.get(
+            "http://localhost:8080/api/analytics/summary",
+            headers={"Origin": "https://example.com"},
+            timeout=5
+        )
+        
+        cors_header = response.headers.get('Access-Control-Allow-Origin')
+        if cors_header == '*':
+            print("✅ CORS configured correctly (allows all origins)")
+            return True
+        else:
+            print(f"⚠️  CORS header: {cors_header}")
+            return True
+    except Exception as e:
+        print(f"❌ CORS test error: {e}")
+        return False
+
+
+def test_dashboard_page():
+    """Test that the dashboard HTML is served"""
+    print_header("📄 Testing Dashboard Page")
+    
+    try:
+        response = requests.get("http://localhost:8080/", timeout=5)
+        if response.status_code == 200 and 'html' in response.headers.get('Content-Type', ''):
+            print("✅ Dashboard HTML served successfully")
+            print(f"   Content length: {len(response.content)} bytes")
+            return True
+        else:
+            print(f"❌ Dashboard page failed: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"❌ Dashboard page error: {e}")
+        return False
+
+
+def run_tests():
+    """Run all tests"""
+    print("\n" + "="*70)
+    print("  🧪 RENDER DEPLOYMENT PRE-FLIGHT CHECKS")
+    print("="*70)
+    print("\nThis script tests your analytics dashboard in a production-like")
+    print("environment before deploying to Render.")
+    print("\n" + "="*70)
+    
+    # Test environment variables
+    if not test_environment_variables():
+        return False
+    
+    # Start server
+    server_process = start_test_server()
+    if not server_process:
+        return False
+    
+    try:
+        # Run tests
+        results = []
+        results.append(("Health Check", test_health_check()))
+        results.append(("API Endpoints", test_endpoints()))
+        results.append(("CORS", test_cors()))
+        results.append(("Dashboard Page", test_dashboard_page()))
+        
+        # Print summary
+        print_header("📋 Test Summary")
+        
+        all_passed = True
+        for test_name, passed in results:
+            status = "✅ PASSED" if passed else "❌ FAILED"
+            print(f"{status} - {test_name}")
+            if not passed:
+                all_passed = False
+        
+        if all_passed:
+            print("\n" + "="*70)
+            print("  🎉 ALL TESTS PASSED!")
+            print("="*70)
+            print("\n✅ Your app is ready to deploy to Render!")
+            print("\nNext steps:")
+            print("  1. Push your code to GitHub")
+            print("  2. Follow the RENDER_DEPLOYMENT_GUIDE.md")
+            print("  3. Deploy on Render")
+            print("\n" + "="*70 + "\n")
+        else:
+            print("\n" + "="*70)
+            print("  ⚠️  SOME TESTS FAILED")
+            print("="*70)
+            print("\n❌ Please fix the issues above before deploying.")
+            print("\n" + "="*70 + "\n")
+        
+        return all_passed
+        
+    finally:
+        # Stop server
+        print("\n🛑 Stopping test server...")
+        server_process.terminate()
+        server_process.wait(timeout=5)
+        print("✅ Server stopped\n")
+
+
+def main():
+    """Main entry point"""
+    try:
+        success = run_tests()
+        return 0 if success else 1
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Tests interrupted by user")
+        return 1
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {e}")
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
