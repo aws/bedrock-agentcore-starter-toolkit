@@ -244,7 +244,6 @@ class BusinessMetrics:
     # Cost metrics
     cost_per_transaction: float
     total_cost: float
-    aws_cost_breakdown: Dict[str, float] = field(default_factory=dict)
     
     # ROI metrics
     roi_percentage: float
@@ -258,6 +257,9 @@ class BusinessMetrics:
     # Competitive metrics
     performance_vs_baseline: float  # Percentage improvement
     cost_vs_baseline: float  # Percentage improvement
+    
+    # Optional fields with defaults (must come last)
+    aws_cost_breakdown: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
