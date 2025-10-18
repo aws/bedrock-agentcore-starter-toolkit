@@ -183,11 +183,16 @@ def stop_streaming():
 
 
 if __name__ == '__main__':
+    # Get port from environment variable (for Render deployment) or use default
+    port = int(os.environ.get('PORT', 5001))
+    host = os.environ.get('HOST', '0.0.0.0')
+    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    
     print("\n" + "="*70)
     print("🚀 ANALYTICS DASHBOARD SERVER STARTING")
     print("="*70)
     print("\n📊 Advanced Analytics Dashboard")
-    print("   URL: http://127.0.0.1:5001")
+    print(f"   URL: http://{host}:{port}")
     print("\n📡 API Endpoints:")
     print("   GET  /api/analytics/summary              - Analytics summary")
     print("   GET  /api/analytics/patterns             - Fraud patterns")
@@ -209,4 +214,4 @@ if __name__ == '__main__':
     print("Press Ctrl+C to stop the server")
     print("="*70 + "\n")
     
-    socketio.run(app, host='127.0.0.1', port=5001, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)

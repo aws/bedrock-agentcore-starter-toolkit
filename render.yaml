@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: fraud-detection-analytics
+    runtime: python
+    buildCommand: pip install -e . && pip install python-socketio
+    startCommand: python web_interface/analytics_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/analytics/summary
