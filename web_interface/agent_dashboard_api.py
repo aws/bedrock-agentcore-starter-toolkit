@@ -589,6 +589,256 @@ class AgentDashboardAPI:
         except:
             return False
     
+    def get_stress_test_metrics(self) -> Dict[str, Any]:
+        """
+        Get agent metrics specifically for stress testing visualization.
+        
+        Returns:
+            Dictionary containing stress test specific metrics
+        """
+        agents_data = []
+        
+        for agent in self.agents.values():
+            agents_data.append({
+                'agent_id': agent.agent_id,
+                'agent_name': agent.agent_name,
+                'agent_type': agent.agent_type,
+                'status': agent.status,
+                'health_score': agent.health_score,
+                'current_load': agent.metrics.current_load,
+                'requests_processed': agent.metrics.requests_processed,
+                'avg_response_time_ms': agent.metrics.average_response_time_ms,
+                'success_rate': agent.metrics.success_rate,
+                'error_count': agent.metrics.error_count,
+                'cpu_usage_percent': agent.metrics.cpu_usage_percent,
+                'memory_usage_mb': agent.metrics.memory_usage_mb
+            })
+        
+        # Calculate workload distribution metrics
+        total_requests = sum(a.metrics.requests_processed for a in self.agents.values())
+        workload_distribution = {}
+        
+        for agent in self.agents.values():
+            if total_requests > 0:
+                percentage = (agent.metrics.requests_processed / total_requests) * 100
+            else:
+                percentage = 0.0
+            
+            workload_distribution[agent.agent_id] = {
+                'agent_name': agent.agent_name,
+                'requests': agent.metrics.requests_processed,
+                'percentage': round(percentage, 2),
+                'load': agent.metrics.current_load
+            }
+        
+        # Calculate coordination efficiency
+        recent_events = [
+            e for e in self.coordination_events
+            if self._is_recent(e.timestamp, minutes=5)
+        ]
+        
+        completed_events = [e for e in recent_events if e.status == "completed"]
+        
+        coordination_efficiency = {
+            'total_events': len(recent_events),
+            'completed_events': len(completed_events),
+            'success_rate': len(completed_events) / len(recent_events) if recent_events else 1.0,
+            'avg_coordination_time_ms': (
+                sum(e.duration_ms for e in completed_events) / len(completed_events)
+                if completed_events else 0.0
+            )
+        }
+        
+        return {
+            'timestamp': datetime.now().isoformat(),
+            'agents': agents_data,
+            'workload_distribution': workload_distribution,
+            'coordination_efficiency': coordination_efficiency,
+            'summary': {
+                'total_agents': len(self.agents),
+                'healthy_agents': sum(1 for a in self.agents.values() if a.health_score >= 0.8),
+                'avg_load': sum(a.metrics.current_load for a in self.agents.values()) / len(self.agents) if self.agents else 0.0,
+                'avg_response_time': sum(a.metrics.average_response_time_ms for a in self.agents.values()) / len(self.agents) if self.agents else 0.0,
+                'total_requests': total_requests
+            }
+        }
+    
+    def get_agent_performance_under_load(self, agent_id: str) -> Dict[str, Any]:
+        """
+        Get detailed performance metrics for an agent under stress test load.
+        
+        Args:
+            agent_id: Agent identifier
+            
+        Returns:
+            Detailed performance metrics
+        """
+        if agent_id not in self.agents:
+            return {"success": False, "error": "Agent not found"}
+        
+        agent = self.agents[agent_id]
+        history = self.performance_history[agent_id][-50:]  # Last 50 data points
+        
+        # Calculate trends
+        if len(history) >= 2:
+            response_time_trend = history[-1]['response_time'] - history[0]['response_time']
+            load_trend = history[-1]['load'] - history[0]['load']
+            health_trend = history[-1]['health_score'] - history[0]['health_score']
+        else:
+            response_time_trend = 0.0
+            load_trend = 0.0
+            health_trend = 0.0
+        
+        return {
+            'success': True,
+            'agent_id': agent_id,
+            'agent_name': agent.agent_name,
+            'current_metrics': {
+                'load': agent.metrics.current_load,
+                'response_time_ms': agent.metrics.average_response_time_ms,
+                'success_rate': agent.metrics.success_rate,
+                'health_score': agent.health_score,
+                'requests_processed': agent.metrics.requests_processed,
+                'error_count': agent.metrics.error_count
+            },
+            'trends': {
+                'response_time_trend': round(response_time_trend, 2),
+                'load_trend': round(load_trend, 3),
+                'health_trend': round(health_trend, 3)
+            },
+            'history': history,
+            'status': agent.status
+        }
+    
+    def get_workload_distribution_details(self) -> Dict[str, Any]:
+        """
+        Get detailed workload distribution across all agents.
+        
+        Returns:
+            Detailed workload distribution metrics
+        """
+        total_requests = sum(a.metrics.requests_processed for a in self.agents.values())
+        total_load = sum(a.metrics.current_load for a in self.agents.values())
+        
+        distribution = []
+        
+        for agent in self.agents.values():
+            if total_requests > 0:
+                request_percentage = (agent.metrics.requests_processed / total_requests) * 100
+            else:
+                request_percentage = 0.0
+            
+            if total_load > 0:
+                load_percentage = (agent.metrics.current_load / total_load) * 100
+            else:
+                load_percentage = 0.0
+            
+            distribution.append({
+                'agent_id': agent.agent_id,
+                'agent_name': agent.agent_name,
+                'agent_type': agent.agent_type,
+                'requests_processed': agent.metrics.requests_processed,
+                'request_percentage': round(request_percentage, 2),
+                'current_load': agent.metrics.current_load,
+                'load_percentage': round(load_percentage, 2),
+                'avg_response_time_ms': agent.metrics.average_response_time_ms,
+                'health_score': agent.health_score
+            })
+        
+        # Calculate balance metrics
+        if distribution:
+            request_percentages = [d['request_percentage'] for d in distribution]
+            load_percentages = [d['load_percentage'] for d in distribution]
+            
+            # Calculate variance (lower is more balanced)
+            avg_request_pct = sum(request_percentages) / len(request_percentages)
+            avg_load_pct = sum(load_percentages) / len(load_percentages)
+            
+            request_variance = sum((p - avg_request_pct) ** 2 for p in request_percentages) / len(request_percentages)
+            load_variance = sum((p - avg_load_pct) ** 2 for p in load_percentages) / len(load_percentages)
+            
+            balance_score = 1.0 - min(1.0, (request_variance + load_variance) / 200)  # Normalize to 0-1
+        else:
+            balance_score = 1.0
+        
+        return {
+            'timestamp': datetime.now().isoformat(),
+            'distribution': distribution,
+            'balance_metrics': {
+                'balance_score': round(balance_score, 3),
+                'total_requests': total_requests,
+                'total_load': round(total_load, 3),
+                'avg_load_per_agent': round(total_load / len(self.agents), 3) if self.agents else 0.0
+            }
+        }
+    
+    def get_coordination_efficiency_metrics(self) -> Dict[str, Any]:
+        """
+        Get detailed coordination efficiency metrics.
+        
+        Returns:
+            Coordination efficiency metrics
+        """
+        # Analyze recent coordination events
+        recent_events = [
+            e for e in self.coordination_events
+            if self._is_recent(e.timestamp, minutes=10)
+        ]
+        
+        if not recent_events:
+            return {
+                'timestamp': datetime.now().isoformat(),
+                'total_events': 0,
+                'efficiency_score': 1.0,
+                'message': 'No recent coordination events'
+            }
+        
+        # Calculate metrics by event type
+        event_types = {}
+        for event in recent_events:
+            if event.event_type not in event_types:
+                event_types[event.event_type] = {
+                    'count': 0,
+                    'completed': 0,
+                    'total_duration_ms': 0.0
+                }
+            
+            event_types[event.event_type]['count'] += 1
+            if event.status == 'completed':
+                event_types[event.event_type]['completed'] += 1
+            event_types[event.event_type]['total_duration_ms'] += event.duration_ms
+        
+        # Calculate averages
+        for event_type, metrics in event_types.items():
+            if metrics['count'] > 0:
+                metrics['avg_duration_ms'] = round(metrics['total_duration_ms'] / metrics['count'], 2)
+                metrics['success_rate'] = round(metrics['completed'] / metrics['count'], 3)
+        
+        # Overall efficiency score
+        completed_events = [e for e in recent_events if e.status == 'completed']
+        overall_success_rate = len(completed_events) / len(recent_events)
+        
+        avg_duration = sum(e.duration_ms for e in completed_events) / len(completed_events) if completed_events else 0.0
+        
+        # Efficiency score: combination of success rate and speed
+        # Lower duration is better, normalize to 0-1 (assume 500ms is baseline)
+        duration_score = max(0, 1 - (avg_duration / 500))
+        efficiency_score = (overall_success_rate * 0.7) + (duration_score * 0.3)
+        
+        return {
+            'timestamp': datetime.now().isoformat(),
+            'total_events': len(recent_events),
+            'completed_events': len(completed_events),
+            'overall_success_rate': round(overall_success_rate, 3),
+            'avg_coordination_time_ms': round(avg_duration, 2),
+            'efficiency_score': round(efficiency_score, 3),
+            'event_types': event_types,
+            'agents_involved': len(set(
+                [e.source_agent for e in recent_events] +
+                [e.target_agent for e in recent_events if e.target_agent]
+            ))
+        }
+    
     def simulate_agent_activity(self):
         """Simulate agent activity for demonstration purposes"""
         import random
