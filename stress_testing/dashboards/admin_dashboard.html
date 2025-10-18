@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Stress Testing Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #1e3c72;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .health-item {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #ccc;
+            transition: all 0.3s;
+        }
+
+        .health-item.healthy {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .health-item.degraded {
+            border-left-color: #FF9800;
+            background: #fff3e0;
+        }
+
+        .health-item.unhealthy {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .health-service {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .health-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .health-status.healthy {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .health-status.degraded {
+            background: #FF9800;
+            color: white;
+        }
+
+        .health-status.unhealthy {
+            background: #f44336;
+            color: white;
+        }
+
+        .health-metric {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .health-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+
+        .utilization-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .utilization-item:last-child {
+            border-bottom: none;
+        }
+
+        .utilization-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .utilization-bar-container {
+            flex: 1;
+            margin: 0 15px;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .utilization-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .utilization-bar.warning {
+            background: linear-gradient(90deg, #FF9800, #FFC107);
+        }
+
+        .utilization-bar.critical {
+            background: linear-gradient(90deg, #f44336, #e91e63);
+        }
+
+        .utilization-value {
+            font-weight: bold;
+            color: #333;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .cost-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .cost-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .cost-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .cost-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+
+        .cost-breakdown {
+            margin-top: 20px;
+        }
+
+        .cost-service {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .cost-service:last-child {
+            border-bottom: none;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+
+        .alert-box.danger {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .alert-item {
+            padding: 5px 0;
+            color: #856404;
+        }
+
+        .alert-box.danger .alert-item {
+            color: #721c24;
+        }
+
+        .controls-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+
+        .control-item.active {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .control-info {
+            flex: 1;
+        }
+
+        .control-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .control-status {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+
+        .control-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn-secondary {
+            background: #607D8B;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #546E7A;
+        }
+
+        .emergency-section {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .emergency-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .emergency-section p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .btn-emergency {
+            background: white;
+            color: #f44336;
+            font-size: 1.2em;
+            padding: 15px 40px;
+        }
+
+        .btn-emergency:hover {
+            background: #ffebee;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+            box-shadow: 0 0 8px #4CAF50;
+        }
+
+        .status-indicator.inactive {
+            background: #9E9E9E;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .updating {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Admin Dashboard</h1>
+        <p class="subtitle">Infrastructure Health & Operational Controls</p>
+        <p class="refresh-info">Auto-refreshing every 5 seconds | Last update: <span id="lastUpdate">-</span></p>
+
+
+        <div class="dashboard-grid">
+            <!-- Infrastructure Health -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏥</div>
+                    <div class="card-title">Infrastructure Health</div>
+                </div>
+                <div class="health-grid" id="healthGrid">
+                    <div class="health-item">
+                        <div class="health-service">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Utilization -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Resource Utilization</div>
+                </div>
+                <div id="utilizationContainer">
+                    <div class="utilization-item">
+                        <span class="utilization-label">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Tracking -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">💰</div>
+                <div class="card-title">Cost Tracking</div>
+            </div>
+            <div class="cost-summary" id="costSummary">
+                <div class="cost-box">
+                    <div class="cost-label">Hourly Cost</div>
+                    <div class="cost-value">$0.00</div>
+                </div>
+                <div class="cost-box">
+                    <div class="cost-label">Daily Cost</div>
+                    <div class="cost-value">$0.00</div>
+                </div>
+                <div class="cost-box">
+                    <div class="cost-label">Monthly Projection</div>
+                    <div class="cost-value">$0.00</div>
+                </div>
+                <div class="cost-box">
+                    <div class="cost-label">Budget Used</div>
+                    <div class="cost-value">0%</div>
+                </div>
+            </div>
+            <div class="cost-breakdown" id="costBreakdown">
+                <h4 style="margin-bottom: 15px;">Cost by Service</h4>
+            </div>
+            <div id="costAlerts"></div>
+        </div>
+
+
+        <!-- Operational Controls -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🎛️</div>
+                <div class="card-title">Operational Controls</div>
+            </div>
+            <div class="controls-grid" id="controlsGrid">
+                <div class="control-item">
+                    <div class="control-info">
+                        <div class="control-name">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Stop -->
+        <div class="emergency-section">
+            <h3>🚨 Emergency Stop</h3>
+            <p>Immediately halt all stress testing operations and failure injections</p>
+            <button class="btn-emergency" onclick="emergencyStop()">EMERGENCY STOP</button>
+        </div>
+    </div>
+
+    <script>
+        let updateInterval = null;
+
+        // Initialize dashboard
+        window.addEventListener('load', () => {
+            console.log('Admin Dashboard loaded');
+            updateDashboard();
+            
+            // Auto-refresh every 5 seconds
+            updateInterval = setInterval(updateDashboard, 5000);
+        });
+
+        async function updateDashboard() {
+            try {
+                // In production, this would call the actual API
+                // For now, we'll use mock data
+                const data = await fetchDashboardData();
+                
+                updateHealthDisplay(data.infrastructure_health);
+                updateUtilizationDisplay(data.resource_utilization);
+                updateCostDisplay(data.cost_tracking);
+                updateControlsDisplay(data.operational_controls);
+                
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        async function fetchDashboardData() {
+            // Mock data - in production, this would call the API endpoint
+            return {
+                timestamp: new Date().toISOString(),
+                infrastructure_health: [
+                    {
+                        service_name: 'Lambda',
+                        status: 'healthy',
+                        metric_value: 1247,
+                        metric_unit: 'concurrent',
+                        threshold_warning: 1500,
+                        threshold_critical: 2000,
+                        details: '1247 concurrent executions'
+                    },
+                    {
+                        service_name: 'DynamoDB',
+                        status: 'degraded',
+                        metric_value: 5200,
+                        metric_unit: 'WCU',
+                        threshold_warning: 5000,
+                        threshold_critical: 8000,
+                        details: '5200 write capacity units/sec'
+                    },
+                    {
+                        service_name: 'Kinesis',
+                        status: 'healthy',
+                        metric_value: 45000,
+                        metric_unit: 'ms iterator age',
+                        threshold_warning: 60000,
+                        threshold_critical: 120000,
+                        details: '45.0s iterator age'
+                    },
+                    {
+                        service_name: 'Bedrock',
+                        status: 'degraded',
+                        metric_value: 98,
+                        metric_unit: '% quota',
+                        threshold_warning: 95,
+                        threshold_critical: 98,
+                        details: '98.0% of API quota used'
+                    },
+                    {
+                        service_name: 'S3',
+                        status: 'healthy',
+                        metric_value: 450,
+                        metric_unit: 'ops/sec',
+                        threshold_warning: 1000,
+                        threshold_critical: 2000,
+                        details: '450 operations/sec'
+                    },
+                    {
+                        service_name: 'CloudWatch',
+                        status: 'healthy',
+                        metric_value: 100,
+                        metric_unit: '% available',
+                        threshold_warning: 90,
+                        threshold_critical: 50,
+                        details: 'CloudWatch API accessible'
+                    }
+                ],
+                resource_utilization: {
+                    timestamp: new Date().toISOString(),
+                    lambda_concurrent_executions: 1247,
+                    lambda_max_concurrent: 3000,
+                    dynamodb_read_capacity_used: 3200,
+                    dynamodb_read_capacity_provisioned: 5000,
+                    dynamodb_write_capacity_used: 5200,
+                    dynamodb_write_capacity_provisioned: 8000,
+                    kinesis_incoming_records: 5247,
+                    kinesis_iterator_age_ms: 45000,
+                    s3_operations_per_second: 450,
+                    bedrock_quota_used_percentage: 98.0
+                },
+                cost_tracking: {
+                    timestamp: new Date().toISOString(),
+                    current_hourly_cost: 12.45,
+                    current_daily_cost: 298.80,
+                    projected_monthly_cost: 8964.00,
+                    budget_limit: 10000.0,
+                    budget_used_percentage: 89.64,
+                    cost_by_service: {
+                        'Lambda': 104.58,
+                        'DynamoDB': 74.70,
+                        'Kinesis': 44.82,
+                        'Bedrock': 59.76,
+                        'S3': 14.94
+                    },
+                    cost_trend: 'stable',
+                    alerts: ['Budget usage exceeds 80%', 'DynamoDB costs increasing']
+                },
+                operational_controls: [
+                    {
+                        control_id: 'test_control',
+                        control_name: 'Stress Test Execution',
+                        control_type: 'test_control',
+                        status: 'active',
+                        last_action: new Date().toISOString(),
+                        last_action_by: 'admin'
+                    },
+                    {
+                        control_id: 'failure_injection',
+                        control_name: 'Failure Injection',
+                        control_type: 'failure_injection',
+                        status: 'disabled',
+                        last_action: null,
+                        last_action_by: null
+                    },
+                    {
+                        control_id: 'emergency_stop',
+                        control_name: 'Emergency Stop',
+                        control_type: 'emergency',
+                        status: 'enabled',
+                        last_action: null,
+                        last_action_by: null
+                    }
+                ]
+            };
+        }
+
+        function updateHealthDisplay(healthData) {
+            const container = document.getElementById('healthGrid');
+            
+            container.innerHTML = healthData.map(service => `
+                <div class="health-item ${service.status}">
+                    <div class="health-service">${service.service_name}</div>
+                    <div class="health-status ${service.status}">${service.status}</div>
+                    <div class="health-metric">
+                        <span class="health-value">${service.metric_value.toFixed(0)}</span>
+                        ${service.metric_unit}
+                    </div>
+                    <div class="health-metric" style="font-size: 0.8em; margin-top: 5px;">
+                        ${service.details}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateUtilizationDisplay(utilization) {
+            const container = document.getElementById('utilizationContainer');
+            
+            const items = [
+                {
+                    label: 'Lambda Concurrent',
+                    value: utilization.lambda_concurrent_executions,
+                    max: utilization.lambda_max_concurrent,
+                    unit: 'executions'
+                },
+                {
+                    label: 'DynamoDB Read',
+                    value: utilization.dynamodb_read_capacity_used,
+                    max: utilization.dynamodb_read_capacity_provisioned,
+                    unit: 'RCU'
+                },
+                {
+                    label: 'DynamoDB Write',
+                    value: utilization.dynamodb_write_capacity_used,
+                    max: utilization.dynamodb_write_capacity_provisioned,
+                    unit: 'WCU'
+                },
+                {
+                    label: 'Kinesis Records',
+                    value: utilization.kinesis_incoming_records,
+                    max: 10000,
+                    unit: 'records/sec'
+                },
+                {
+                    label: 'Kinesis Iterator Age',
+                    value: utilization.kinesis_iterator_age_ms / 1000,
+                    max: 120,
+                    unit: 'seconds'
+                },
+                {
+                    label: 'S3 Operations',
+                    value: utilization.s3_operations_per_second,
+                    max: 2000,
+                    unit: 'ops/sec'
+                },
+                {
+                    label: 'Bedrock Quota',
+                    value: utilization.bedrock_quota_used_percentage,
+                    max: 100,
+                    unit: '%'
+                }
+            ];
+
+            container.innerHTML = items.map(item => {
+                const percentage = (item.value / item.max) * 100;
+                let barClass = '';
+                if (percentage > 90) barClass = 'critical';
+                else if (percentage > 70) barClass = 'warning';
+
+                return `
+                    <div class="utilization-item">
+                        <span class="utilization-label">${item.label}</span>
+                        <div class="utilization-bar-container">
+                            <div class="utilization-bar ${barClass}" style="width: ${Math.min(percentage, 100)}%"></div>
+                        </div>
+                        <span class="utilization-value">${item.value.toFixed(0)} / ${item.max} ${item.unit}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCostDisplay(costData) {
+            // Update summary boxes
+            const summaryBoxes = document.querySelectorAll('.cost-box .cost-value');
+            summaryBoxes[0].textContent = `$${costData.current_hourly_cost.toFixed(2)}`;
+            summaryBoxes[1].textContent = `$${costData.current_daily_cost.toFixed(2)}`;
+            summaryBoxes[2].textContent = `$${costData.projected_monthly_cost.toFixed(2)}`;
+            summaryBoxes[3].textContent = `${costData.budget_used_percentage.toFixed(1)}%`;
+
+            // Update cost breakdown
+            const breakdown = document.getElementById('costBreakdown');
+            let breakdownHTML = '<h4 style="margin-bottom: 15px;">Cost by Service</h4>';
+            
+            for (const [service, cost] of Object.entries(costData.cost_by_service)) {
+                const percentage = (cost / costData.current_daily_cost) * 100;
+                breakdownHTML += `
+                    <div class="cost-service">
+                        <span>${service}</span>
+                        <span><strong>$${cost.toFixed(2)}</strong> (${percentage.toFixed(1)}%)</span>
+                    </div>
+                `;
+            }
+            
+            breakdown.innerHTML = breakdownHTML;
+
+            // Update alerts
+            const alertsContainer = document.getElementById('costAlerts');
+            if (costData.alerts && costData.alerts.length > 0) {
+                const isDanger = costData.budget_used_percentage > 90;
+                alertsContainer.innerHTML = `
+                    <div class="alert-box ${isDanger ? 'danger' : ''}">
+                        <strong>⚠️ Cost Alerts:</strong>
+                        ${costData.alerts.map(alert => `<div class="alert-item">• ${alert}</div>`).join('')}
+                    </div>
+                `;
+            } else {
+                alertsContainer.innerHTML = '';
+            }
+        }
+
+        function updateControlsDisplay(controls) {
+            const container = document.getElementById('controlsGrid');
+            
+            container.innerHTML = controls.map(control => {
+                const isActive = control.status === 'active';
+                const isEnabled = control.status === 'enabled' || control.status === 'active';
+                
+                let actions = '';
+                if (control.control_type === 'test_control') {
+                    if (isActive) {
+                        actions = `
+                            <button class="btn-warning" onclick="pauseTest()">Pause</button>
+                            <button class="btn-danger" onclick="stopTest()">Stop</button>
+                        `;
+                    } else {
+                        actions = `
+                            <button class="btn-primary" onclick="startTest()">Start Test</button>
+                        `;
+                    }
+                } else if (control.control_type === 'failure_injection') {
+                    actions = `
+                        <button class="btn-warning" onclick="injectFailure()">Inject Failure</button>
+                    `;
+                }
+
+                return `
+                    <div class="control-item ${isActive ? 'active' : ''}">
+                        <div class="control-info">
+                            <div class="control-name">
+                                <span class="status-indicator ${isActive ? 'active' : 'inactive'}"></span>
+                                ${control.control_name}
+                            </div>
+                            <div class="control-status">
+                                Status: ${control.status.toUpperCase()}
+                                ${control.last_action ? ` | Last action: ${new Date(control.last_action).toLocaleString()}` : ''}
+                            </div>
+                        </div>
+                        <div class="control-actions">
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Control actions
+        async function startTest() {
+            if (!confirm('Start stress test?')) return;
+            
+            try {
+                console.log('Starting stress test...');
+                // In production: await fetch('/api/admin/start-test', { method: 'POST', ... })
+                alert('Stress test started successfully');
+                updateDashboard();
+            } catch (error) {
+                console.error('Error starting test:', error);
+                alert('Failed to start stress test');
+            }
+        }
+
+        async function pauseTest() {
+            if (!confirm('Pause stress test?')) return;
+            
+            try {
+                console.log('Pausing stress test...');
+                // In production: await fetch('/api/admin/pause-test', { method: 'POST', ... })
+                alert('Stress test paused');
+                updateDashboard();
+            } catch (error) {
+                console.error('Error pausing test:', error);
+                alert('Failed to pause stress test');
+            }
+        }
+
+        async function stopTest() {
+            if (!confirm('Stop stress test? This will end the current test.')) return;
+            
+            try {
+                console.log('Stopping stress test...');
+                // In production: await fetch('/api/admin/stop-test', { method: 'POST', ... })
+                alert('Stress test stopped');
+                updateDashboard();
+            } catch (error) {
+                console.error('Error stopping test:', error);
+                alert('Failed to stop stress test');
+            }
+        }
+
+        async function injectFailure() {
+            const failureType = prompt('Enter failure type (lambda_failure, dynamodb_throttle, network_latency, bedrock_rate_limit):');
+            if (!failureType) return;
+            
+            const duration = prompt('Enter duration in seconds:', '60');
+            if (!duration) return;
+            
+            try {
+                console.log(`Injecting failure: ${failureType} for ${duration}s`);
+                // In production: await fetch('/api/admin/inject-failure', { method: 'POST', body: JSON.stringify({ failure_type: failureType, duration_seconds: parseInt(duration) }), ... })
+                alert(`Failure ${failureType} injected for ${duration} seconds`);
+                updateDashboard();
+            } catch (error) {
+                console.error('Error injecting failure:', error);
+                alert('Failed to inject failure');
+            }
+        }
+
+        async function emergencyStop() {
+            if (!confirm('⚠️ EMERGENCY STOP ⚠️\n\nThis will immediately halt ALL operations.\n\nAre you sure?')) return;
+            if (!confirm('This action cannot be undone. Confirm emergency stop?')) return;
+            
+            try {
+                console.log('EMERGENCY STOP initiated');
+                // In production: await fetch('/api/admin/emergency-stop', { method: 'POST', ... })
+                alert('🚨 EMERGENCY STOP executed. All operations halted.');
+                updateDashboard();
+            } catch (error) {
+                console.error('Error during emergency stop:', error);
+                alert('Failed to execute emergency stop');
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>
