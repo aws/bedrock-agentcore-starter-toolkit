@@ -4,6 +4,13 @@ from .metrics_collector import MetricsCollector
 from .agent_metrics_collector import AgentMetricsCollector
 from .business_metrics_calculator import BusinessMetricsCalculator, FraudDetectionStats, CostBreakdown
 from .realtime_metrics_streamer import RealTimeMetricsStreamer, MetricType, ClientSubscription, MetricsBatch
+from .competitive_benchmark_calculator import (
+    CompetitiveBenchmarkCalculator,
+    CompetitorType,
+    BenchmarkCategory,
+    CompetitorProfile,
+    BenchmarkComparison
+)
 
 __all__ = [
     'MetricsCollector',
@@ -14,5 +21,10 @@ __all__ = [
     'RealTimeMetricsStreamer',
     'MetricType',
     'ClientSubscription',
-    'MetricsBatch'
+    'MetricsBatch',
+    'CompetitiveBenchmarkCalculator',
+    'CompetitorType',
+    'BenchmarkCategory',
+    'CompetitorProfile',
+    'BenchmarkComparison'
 ]
