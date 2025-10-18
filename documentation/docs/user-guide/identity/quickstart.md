@@ -155,6 +155,21 @@ aws bedrock-agentcore-control create-oauth2-credential-provider \
   }'
 ```
 
+## Step 1.5: Update Identity Provider with OAuth2 Credential Provider Callback URL
+
+The response from the [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) and the [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) APIs, includes a `callbackUrl` which should be used in the IdP.
+
+```bash
+aws cognito-idp update-user-pool-client \
+    --user-pool-id <insert_user_poold_id> \
+    --client-id <insert_client_id> \
+    --allowed-o-auth-flows "code" \
+    --allowed-o-auth-scopes "openid" "profile" "email" \
+    --allowed-o-auth-flows-user-pool-client \
+    --supported-identity-providers "COGNITO" \
+    --callback-urls "https://example.com/callback"
+```
+
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
 
 In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user.
