@@ -456,6 +456,79 @@ class AnalyticsDashboardAPI:
             "timestamp": datetime.now().isoformat()
         }
     
+    def get_stress_test_metrics(self) -> Dict[str, Any]:
+        """
+        Get stress test specific metrics
+        
+        Returns:
+            Stress test metrics including accuracy under load
+        """
+        return {
+            "current_load_tps": random.randint(1000, 5000),
+            "peak_load_tps": 10000,
+            "test_duration_seconds": random.randint(300, 3600),
+            "fraud_detection_accuracy": 0.94 + random.uniform(-0.02, 0.02),
+            "pattern_recognition_rate": 0.87 + random.uniform(-0.03, 0.03),
+            "ml_model_performance": {
+                "inference_time_ms": random.uniform(50, 150),
+                "accuracy": 0.95 + random.uniform(-0.02, 0.02),
+                "precision": 0.93 + random.uniform(-0.02, 0.02),
+                "recall": 0.91 + random.uniform(-0.02, 0.02)
+            },
+            "accuracy_vs_load": self._generate_accuracy_vs_load(),
+            "pattern_detection_rates": self._generate_pattern_detection_rates(),
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    def _generate_accuracy_vs_load(self) -> List[Dict[str, Any]]:
+        """Generate accuracy vs load data points"""
+        data_points = []
+        for tps in range(0, 10001, 500):
+            # Accuracy degrades slightly at higher loads
+            base_accuracy = 0.95
+            load_factor = tps / 10000
+            accuracy = base_accuracy - (load_factor * 0.05) + random.uniform(-0.01, 0.01)
+            
+            data_points.append({
+                "tps": tps,
+                "accuracy": max(0.85, min(0.98, accuracy)),
+                "precision": max(0.83, min(0.96, accuracy + random.uniform(-0.02, 0.02))),
+                "recall": max(0.82, min(0.95, accuracy + random.uniform(-0.03, 0.01)))
+            })
+        
+        return data_points
+    
+    def _generate_pattern_detection_rates(self) -> Dict[str, Any]:
+        """Generate pattern detection rates for heatmap"""
+        patterns = [p.value for p in FraudPattern]
+        load_levels = ["low", "medium", "high", "peak"]
+        
+        heatmap_data = []
+        for pattern in patterns:
+            for load in load_levels:
+                # Detection rate varies by load
+                base_rate = 0.90
+                if load == "medium":
+                    base_rate = 0.88
+                elif load == "high":
+                    base_rate = 0.85
+                elif load == "peak":
+                    base_rate = 0.82
+                
+                rate = base_rate + random.uniform(-0.05, 0.05)
+                
+                heatmap_data.append({
+                    "pattern": pattern,
+                    "load_level": load,
+                    "detection_rate": max(0.75, min(0.98, rate))
+                })
+        
+        return {
+            "data": heatmap_data,
+            "patterns": patterns,
+            "load_levels": load_levels
+        }
+    
     def simulate_analytics_activity(self):
         """Simulate analytics activity for demo purposes"""
         # Update fraud statistics
