@@ -7,6 +7,11 @@ from .admin_dashboard_api import (
     CostTracking,
     OperationalControl
 )
+from .business_storytelling_engine import (
+    BusinessStorytellingEngine,
+    InvestorProfile,
+    NarrativeStyle
+)
 from .investor_dashboard_api import InvestorDashboardAPI
 
 __all__ = [
@@ -15,5 +20,8 @@ __all__ = [
     'ResourceUtilization',
     'CostTracking',
     'OperationalControl',
+    'BusinessStorytellingEngine',
+    'InvestorProfile',
+    'NarrativeStyle',
     'InvestorDashboardAPI'
 ]

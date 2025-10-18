@@ -17,6 +17,11 @@ from ..models import (
     DegradationLevel,
     TransactionFlowNode
 )
+from .business_storytelling_engine import (
+    BusinessStorytellingEngine,
+    InvestorProfile,
+    NarrativeStyle
+)
 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +35,7 @@ class InvestorDashboardAPI:
         self.metrics_aggregator = None
         self.metrics_collector = None
         self.failure_injector = None
+        self.storytelling_engine = BusinessStorytellingEngine()
         
         logger.info("InvestorDashboardAPI initialized")
     
@@ -301,40 +307,100 @@ class InvestorDashboardAPI:
         )
     
     async def _generate_business_narrative(self, investor_profile: str, hero_metrics: HeroMetrics, business_metrics) -> str:
-        """Generate executive-friendly business narrative."""
-        if investor_profile == "financial":
-            return f"""Our AI-powered fraud detection system delivers exceptional ROI of {hero_metrics.roi_percentage:.0f}% 
-with a payback period of just 6 months. Processing {hero_metrics.total_transactions:,} transactions, 
-we've blocked {hero_metrics.fraud_blocked:,} fraudulent attempts, saving ${hero_metrics.money_saved:,.0f}. 
-At just ${hero_metrics.cost_per_transaction:.3f} per transaction, we're 40% more cost-effective than competitors."""
+        """Generate executive-friendly business narrative using storytelling engine."""
+        # Map string profile to enum
+        profile_map = {
+            'general': InvestorProfile.GENERAL,
+            'technical': InvestorProfile.TECHNICAL,
+            'financial': InvestorProfile.FINANCIAL,
+            'strategic': InvestorProfile.STRATEGIC,
+            'warren_buffett': InvestorProfile.WARREN_BUFFETT,
+            'mark_cuban': InvestorProfile.MARK_CUBAN,
+            'kevin_oleary': InvestorProfile.KEVIN_OLEARY,
+            'richard_branson': InvestorProfile.RICHARD_BRANSON
+        }
         
-        elif investor_profile == "technical":
-            return f"""Our multi-agent AI architecture achieves {hero_metrics.transactions_per_second:,} TPS 
-with {hero_metrics.avg_response_time_ms:.0f}ms average response time. The system maintains {hero_metrics.ai_accuracy*100:.1f}% 
-accuracy with {hero_metrics.uptime_percentage:.1f}% uptime, demonstrating enterprise-grade reliability and performance."""
+        profile_enum = profile_map.get(investor_profile.lower(), InvestorProfile.GENERAL)
         
-        elif investor_profile == "strategic":
-            return f"""We're disrupting the fraud detection market with AI-powered innovation that's 67% faster 
-and 40% cheaper than traditional solutions. Our unique multi-agent coordination approach provides a sustainable 
-competitive advantage, positioning us as the market leader in next-generation fraud prevention."""
-        
-        else:  # general
-            return f"""Our revolutionary AI fraud detection system processes {hero_metrics.total_transactions:,} transactions 
-with {hero_metrics.ai_accuracy*100:.1f}% accuracy, blocking {hero_metrics.fraud_blocked:,} fraudulent attempts and saving 
-${hero_metrics.money_saved:,.0f}. With {hero_metrics.roi_percentage:.0f}% ROI and industry-leading performance, 
-we're transforming how businesses protect themselves from fraud."""
+        return self.storytelling_engine.generate_narrative(
+            hero_metrics=hero_metrics,
+            business_metrics=business_metrics,
+            system_metrics=self.metrics_aggregator.current_system_metrics if self.metrics_aggregator else None,
+            investor_profile=profile_enum,
+            style=NarrativeStyle.EXECUTIVE_SUMMARY
+        )
     
     async def _generate_key_highlights(self, hero_metrics: HeroMetrics, business_metrics) -> List[str]:
-        """Generate key highlights for presentation."""
-        return [
-            f"{hero_metrics.transactions_per_second:,} TPS throughput capacity",
-            f"{hero_metrics.ai_accuracy*100:.1f}% fraud detection accuracy",
-            f"${hero_metrics.money_saved:,.0f} in fraud prevented",
-            f"{hero_metrics.roi_percentage:.0f}% return on investment",
-            f"{hero_metrics.avg_response_time_ms:.0f}ms average response time",
-            f"{hero_metrics.uptime_percentage:.1f}% system uptime",
-            "40% lower cost than competitors",
-            "67% faster than traditional solutions",
-            "Real-time AI-powered decision making",
-            "Enterprise-grade reliability and scale"
-        ]
+        """Generate key highlights for presentation using storytelling engine."""
+        return self.storytelling_engine.generate_key_highlights(
+            hero_metrics=hero_metrics,
+            business_metrics=business_metrics,
+            investor_profile=InvestorProfile.GENERAL
+        )
+
+    async def get_custom_narrative(
+        self,
+        investor_profile: str = "general",
+        style: str = "executive_summary"
+    ) -> Dict[str, Any]:
+        """
+        Get customized narrative for specific investor profile.
+        
+        Args:
+            investor_profile: Type of investor (general, technical, financial, strategic,
+                            warren_buffett, mark_cuban, kevin_oleary, richard_branson)
+            style: Narrative style (executive_summary, elevator_pitch, problem_solution,
+                  hero_journey, detailed_analysis)
+            
+        Returns:
+            Customized narrative package
+        """
+        # Get current metrics
+        system_metrics = self.metrics_aggregator.current_system_metrics if self.metrics_aggregator else None
+        business_metrics = self.metrics_aggregator.current_business_metrics if self.metrics_aggregator else None
+        
+        # Generate hero metrics
+        hero_metrics = await self._generate_hero_metrics(system_metrics, business_metrics)
+        
+        # Map string inputs to enums
+        profile_map = {
+            'general': InvestorProfile.GENERAL,
+            'technical': InvestorProfile.TECHNICAL,
+            'financial': InvestorProfile.FINANCIAL,
+            'strategic': InvestorProfile.STRATEGIC,
+            'warren_buffett': InvestorProfile.WARREN_BUFFETT,
+            'mark_cuban': InvestorProfile.MARK_CUBAN,
+            'kevin_oleary': InvestorProfile.KEVIN_OLEARY,
+            'richard_branson': InvestorProfile.RICHARD_BRANSON
+        }
+        
+        style_map = {
+            'executive_summary': NarrativeStyle.EXECUTIVE_SUMMARY,
+            'elevator_pitch': NarrativeStyle.ELEVATOR_PITCH,
+            'problem_solution': NarrativeStyle.PROBLEM_SOLUTION,
+            'hero_journey': NarrativeStyle.HERO_JOURNEY,
+            'detailed_analysis': NarrativeStyle.DETAILED_ANALYSIS
+        }
+        
+        profile_enum = profile_map.get(investor_profile.lower(), InvestorProfile.GENERAL)
+        style_enum = style_map.get(style.lower(), NarrativeStyle.EXECUTIVE_SUMMARY)
+        
+        # Generate customized package
+        return self.storytelling_engine.generate_investor_customization(
+            hero_metrics=hero_metrics,
+            business_metrics=business_metrics,
+            investor_profile=profile_enum
+        )
+    
+    async def translate_metric(self, technical_term: str, value: Any) -> str:
+        """
+        Translate technical metric to business language.
+        
+        Args:
+            technical_term: Technical metric name
+            value: Metric value
+            
+        Returns:
+            Business-friendly description
+        """
+        return self.storytelling_engine.translate_technical_to_business(technical_term, value)
