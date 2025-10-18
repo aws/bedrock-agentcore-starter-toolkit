@@ -1,0 +1,11 @@
+# Stress Testing Framework Requirements
+
+# Web server for dashboards
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Optional: For enhanced features
+# websockets>=11.0  # For real-time dashboard updates
+# boto3>=1.28.0     # For AWS CloudWatch integration
+# matplotlib>=3.7.0 # For chart generation
+# pandas>=2.0.0     # For data analysis
