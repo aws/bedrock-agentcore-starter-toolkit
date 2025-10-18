@@ -19,11 +19,16 @@ logger = logging.getLogger(__name__)
 class FailureInjector:
     """Injects failures for resilience testing."""
     
-    def __init__(self):
-        """Initialize failure injector."""
+    def __init__(self, resilience_validator=None):
+        """Initialize failure injector.
+        
+        Args:
+            resilience_validator: Optional ResilienceValidator for tracking recovery
+        """
         self.active_failures: List[FailureScenario] = []
         self.is_running = False
         self.failure_history: List[Dict[str, Any]] = []
+        self.resilience_validator = resilience_validator
         
         logger.info("FailureInjector initialized")
     
@@ -78,6 +83,29 @@ class FailureInjector:
                 'duration': scenario.duration_seconds,
                 'severity': scenario.severity
             })
+            
+            # Register with resilience validator if available
+            if self.resilience_validator:
+                from .models import SystemMetrics
+                # Create mock metrics for registration
+                mock_metrics = SystemMetrics(
+                    timestamp=datetime.utcnow(),
+                    throughput_tps=1000.0,
+                    requests_total=10000,
+                    requests_successful=9990,
+                    requests_failed=10,
+                    avg_response_time_ms=150.0,
+                    p50_response_time_ms=100.0,
+                    p95_response_time_ms=300.0,
+                    p99_response_time_ms=500.0,
+                    max_response_time_ms=800.0,
+                    error_rate=0.001,
+                    timeout_rate=0.0,
+                    cpu_utilization=0.60,
+                    memory_utilization=0.70,
+                    network_throughput_mbps=100.0
+                )
+                await self.resilience_validator.register_failure(scenario, mock_metrics)
             
             # Simulate failure for duration
             await self._inject_failure(scenario)
