@@ -1,6 +1,6 @@
 """Tests for Bedrock AgentCore status operation."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -605,3 +605,159 @@ class TestStatusOperation:
 
             assert result.config.memory_id == "mem-12345"
             assert result.config.memory_type == "STM only"
+
+    def test_status_with_vpc_configuration(self, mock_boto3_clients, tmp_path):
+        """Test status displays VPC network configuration."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
+                        security_groups=["sg-abc123xyz789", "sg-def456ghi012"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock EC2 client for VPC ID retrieval
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [{"SubnetId": "subnet-abc123def456", "VpcId": "vpc-test123456"}]
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.status.BedrockAgentCoreClient"
+            ) as mock_client_class,
+        ):
+            # Setup mock client to return dicts (not Mock objects)
+            mock_client = MagicMock()
+            mock_client.get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_client.get_agent_runtime_endpoint.return_value = {"status": "READY"}
+            mock_client_class.return_value = mock_client
+
+            result = get_status(config_path)
+
+            # Verify VPC configuration is included in status
+            assert result.config.network_mode == "VPC"
+            assert result.config.network_subnets == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            assert result.config.network_security_groups == ["sg-abc123xyz789", "sg-def456ghi012"]
+
+    def test_status_with_public_network_configuration(self, mock_boto3_clients, tmp_path):
+        """Test status displays PUBLIC network configuration."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                network_configuration=NetworkConfiguration(network_mode="PUBLIC"),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # REPLACE THIS SECTION:
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.status.BedrockAgentCoreClient"
+        ) as mock_client_class:
+            # Setup mock client to return dicts (not Mock objects)
+            mock_client = MagicMock()
+            mock_client.get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_client.get_agent_runtime_endpoint.return_value = {"status": "READY"}
+            mock_client_class.return_value = mock_client
+
+            result = get_status(config_path)
+
+            # Verify PUBLIC configuration
+            assert result.config.network_mode == "PUBLIC"
+            assert result.config.network_subnets is None
+            assert result.config.network_security_groups is None
+            assert result.config.network_vpc_id is None
+
+    def test_status_vpc_id_retrieval_failure(self, mock_boto3_clients, tmp_path):
+        """Test status handles VPC ID retrieval failure gracefully."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_id="test-agent-id",
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock EC2 client to fail
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.side_effect = Exception("EC2 API unavailable")
+
+        # REPLACE THIS SECTION:
+        with (
+            patch("boto3.client", return_value=mock_ec2),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.status.BedrockAgentCoreClient"
+            ) as mock_client_class,
+        ):
+            # Setup mock client to return dicts (not Mock objects)
+            mock_client = MagicMock()
+            mock_client.get_agent_runtime.return_value = {
+                "agentRuntimeId": "test-agent-id",
+                "status": "READY",
+            }
+            mock_client.get_agent_runtime_endpoint.return_value = {"status": "READY"}
+            mock_client_class.return_value = mock_client
+
+            result = get_status(config_path)
+
+            # Verify VPC info is still populated but VPC ID is None
+            assert result.config.network_mode == "VPC"
+            assert result.config.network_subnets == ["subnet-abc123def456"]
+            assert result.config.network_security_groups == ["sg-abc123xyz789"]
+            assert result.config.network_vpc_id is None  # Failed to retrieve

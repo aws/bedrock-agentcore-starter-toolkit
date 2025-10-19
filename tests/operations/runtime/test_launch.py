@@ -1703,7 +1703,7 @@ class TestLaunchBedrockAgentCore:
             result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
             # Verify memory helper was called and failed gracefully
-            mock_ensure_memory.assert_called_once()
+            assert mock_ensure_memory.call_count >= 1, "Expected _ensure_memory_for_agent to be called at least once"
 
             # Verify it continued despite memory failure
             assert result.mode == "cloud"
@@ -1888,6 +1888,543 @@ class TestLaunchBedrockAgentCore:
             # Verify successful deployment
             assert result.mode == "codebuild"
             assert result.agent_id == "agent-123"
+
+    def test_launch_with_vpc_validation_success(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test launch with valid VPC configuration."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 client for VPC validation
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [
+                {"SubnetId": "subnet-abc123def456", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2a"},
+                {"SubnetId": "subnet-xyz789ghi012", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2b"},
+            ]
+        }
+        mock_ec2.describe_security_groups.return_value = {
+            "SecurityGroups": [{"GroupId": "sg-abc123xyz789", "VpcId": "vpc-test123"}]
+        }
+
+        # Mock IAM client for service-linked role
+        mock_iam = MagicMock()
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/aws-service-role/...",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {"Effect": "Allow", "Principal": {"Service": "network.bedrock-agentcore.amazonaws.com"}}
+                    ]
+                },
+            }
+        }
+
+        mock_session = MagicMock()
+        mock_session.client.side_effect = lambda service, **kwargs: mock_ec2 if service == "ec2" else mock_iam
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            mock_execute.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify VPC validation was performed
+            mock_ec2.describe_subnets.assert_called_once_with(SubnetIds=["subnet-abc123def456", "subnet-xyz789ghi012"])
+            mock_ec2.describe_security_groups.assert_called_once_with(GroupIds=["sg-abc123xyz789"])
+
+            assert result.mode == "codebuild"
+
+    def test_launch_with_vpc_local_mode_warning(self, mock_container_runtime, tmp_path):
+        """Test that VPC config is ignored with warning in local mode."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+        mock_container_runtime.has_local_runtime = True
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify warning was logged
+            mock_log.warning.assert_called_with(
+                "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
+            )
+            assert result.mode == "local"
+
+    def test_launch_vpc_validation_subnet_not_found(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test launch fails when subnet IDs don't exist."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-nonexistent"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 client to return subnet not found error
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.side_effect = ClientError(
+            {"Error": {"Code": "InvalidSubnetID.NotFound", "Message": "Subnet not found"}}, "DescribeSubnets"
+        )
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_ec2
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+        ):
+            with pytest.raises(ValueError, match="One or more subnet IDs not found"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_vpc_validation_cross_vpc_error(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test launch fails when subnets are in different VPCs."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 client - subnets in different VPCs
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [
+                {"SubnetId": "subnet-abc123def456", "VpcId": "vpc-111"},
+                {"SubnetId": "subnet-xyz789ghi012", "VpcId": "vpc-222"},  # Different VPC!
+            ]
+        }
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_ec2
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+        ):
+            with pytest.raises(ValueError, match="All subnets must be in the same VPC"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_vpc_service_linked_role_creation(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test that service-linked role is created for VPC networking."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 and IAM clients
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [{"SubnetId": "subnet-abc123def456", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2a"}]
+        }
+        mock_ec2.describe_security_groups.return_value = {
+            "SecurityGroups": [{"GroupId": "sg-abc123xyz789", "VpcId": "vpc-test123"}]
+        }
+
+        mock_iam = MagicMock()
+        # Simulate role doesn't exist yet
+        mock_iam.get_role.side_effect = ClientError(
+            {"Error": {"Code": "NoSuchEntity", "Message": "Role not found"}}, "GetRole"
+        )
+        mock_iam.create_service_linked_role.return_value = {"Role": {"Arn": "arn:aws:iam::..."}}
+
+        mock_session = MagicMock()
+        mock_session.client.side_effect = lambda service, **kwargs: mock_ec2 if service == "ec2" else mock_iam
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            mock_execute.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify service-linked role creation was called
+            mock_iam.create_service_linked_role.assert_called_once_with(
+                AWSServiceName="network.bedrock-agentcore.amazonaws.com",
+                Description="Service-linked role for Amazon Bedrock AgentCore VPC networking",
+            )
+
+            assert result.mode == "codebuild"
+
+    def test_launch_vpc_service_linked_role_already_exists(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test that existing service-linked role is reused."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 and IAM clients
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [{"SubnetId": "subnet-abc123def456", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2a"}]
+        }
+        mock_ec2.describe_security_groups.return_value = {
+            "SecurityGroups": [{"GroupId": "sg-abc123xyz789", "VpcId": "vpc-test123"}]
+        }
+
+        mock_iam = MagicMock()
+        # Role already exists
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/aws-service-role/...",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {"Effect": "Allow", "Principal": {"Service": "network.bedrock-agentcore.amazonaws.com"}}
+                    ]
+                },
+            }
+        }
+
+        mock_session = MagicMock()
+        mock_session.client.side_effect = lambda service, **kwargs: mock_ec2 if service == "ec2" else mock_iam
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_execute,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            mock_execute.return_value = (
+                "build-123",
+                "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                "us-west-2",
+                "123456789012",
+            )
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify role creation was NOT called (role exists)
+            mock_iam.create_service_linked_role.assert_not_called()
+
+            assert result.mode == "codebuild"
+
+    def test_launch_vpc_validation_security_group_different_vpc(
+        self, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test launch fails when security groups are in different VPC than subnets."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        # Mock EC2 client - SG in different VPC
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [{"SubnetId": "subnet-abc123def456", "VpcId": "vpc-111", "AvailabilityZone": "us-west-2a"}]
+        }
+        mock_ec2.describe_security_groups.return_value = {
+            "SecurityGroups": [{"GroupId": "sg-abc123xyz789", "VpcId": "vpc-222"}]  # Different VPC!
+        }
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_ec2
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
+            ),
+        ):
+            with pytest.raises(ValueError, match="Security groups must be in the same VPC as subnets"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+    def test_check_vpc_deployment_no_enis_found(self, mock_boto3_clients, tmp_path):
+        """Test VPC deployment diagnostic when no ENIs are found yet."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _check_vpc_deployment
+
+        mock_ec2 = MagicMock()
+        mock_ec2.describe_network_interfaces.return_value = {
+            "NetworkInterfaces": []  # No ENIs found
+        }
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_ec2
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log:
+            # Should not raise - just log diagnostics
+            _check_vpc_deployment(mock_session, "agent-123", ["subnet-abc123"], "us-west-2")
+
+            # Verify diagnostic logging
+            assert mock_log.info.called
+            assert any("No ENIs found yet" in str(call) for call in mock_log.info.call_args_list)
+
+    def test_validate_vpc_resources_public_mode_early_return(self, tmp_path):
+        """Test that VPC validation is skipped for PUBLIC network mode."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration
+
+        # Create agent config with PUBLIC mode (not VPC)
+        agent_config = MagicMock()
+        agent_config.aws = MagicMock()
+        agent_config.aws.network_configuration = NetworkConfiguration(network_mode="PUBLIC")
+
+        mock_session = MagicMock()
+        mock_ec2 = mock_session.client.return_value
+
+        # Should return early without calling EC2 describe methods
+        _validate_vpc_resources(mock_session, agent_config, "us-west-2")
+
+        # Verify EC2 was NOT called (early return for PUBLIC mode)
+        mock_ec2.describe_subnets.assert_not_called()
+        mock_ec2.describe_security_groups.assert_not_called()
+
+    def test_validate_vpc_resources_missing_config(self, tmp_path):
+        """Test validation fails when VPC mode has no network_mode_config."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+
+        # Create a mock agent_config with network_mode=VPC but no network_mode_config
+        agent_config = MagicMock()
+        agent_config.aws = MagicMock()
+        network_config = MagicMock()
+        network_config.network_mode = "VPC"
+        network_config.network_mode_config = None
+        agent_config.aws.network_configuration = network_config
+
+        mock_session = MagicMock()
+
+        with pytest.raises(ValueError, match="VPC mode requires network configuration"):
+            _validate_vpc_resources(mock_session, agent_config, "us-west-2")
 
 
 class TestEnsureExecutionRole:

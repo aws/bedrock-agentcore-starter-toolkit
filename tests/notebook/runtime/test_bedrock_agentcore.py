@@ -737,3 +737,153 @@ bedrock_agentcore:
             error_msg = str(exc_info.value)
             assert "Docker/Finch/Podman is required for local mode" in error_msg
             assert "Use CodeBuild mode instead: runtime.launch()" in error_msg
+
+    def test_configure_with_vpc_parameters(self, tmp_path):
+        """Test configure with VPC networking parameters."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.configure_bedrock_agentcore"
+            ) as mock_configure,
+        ):
+            mock_result = Mock()
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.network_mode = "VPC"
+            mock_result.network_subnets = ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            mock_result.network_security_groups = ["sg-abc123xyz789"]
+            mock_configure.return_value = mock_result
+
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
+                vpc_security_groups=["sg-abc123xyz789"],
+            )
+
+            # Verify configure was called with VPC parameters
+            mock_configure.assert_called_once()
+            args, kwargs = mock_configure.call_args
+            assert kwargs["vpc_enabled"] is True
+            assert kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            assert kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
+
+            assert bedrock_agentcore._config_path == tmp_path / ".bedrock_agentcore.yaml"
+
+    def test_configure_vpc_validation_errors(self, tmp_path):
+        """Test configure with invalid VPC configuration."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        # Test VPC enabled without subnets
+        with pytest.raises(ValueError, match="VPC mode requires both vpc_subnets and vpc_security_groups"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=None,
+                vpc_security_groups=["sg-abc123xyz789"],
+            )
+
+        # Test VPC enabled without security groups
+        with pytest.raises(ValueError, match="VPC mode requires both vpc_subnets and vpc_security_groups"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["subnet-abc123def456"],
+                vpc_security_groups=None,
+            )
+
+    def test_configure_vpc_subnet_format_validation_notebook(self, tmp_path):
+        """Test subnet ID format validation in notebook interface."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        # Invalid subnet prefix
+        with pytest.raises(ValueError, match="Invalid subnet ID format"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["invalid-abc123"],
+                vpc_security_groups=["sg-abc123xyz789"],
+            )
+
+        # Subnet too short
+        with pytest.raises(ValueError, match="Subnet ID is too short"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["subnet-abc"],
+                vpc_security_groups=["sg-abc123xyz789"],
+            )
+
+    def test_configure_vpc_security_group_format_validation_notebook(self, tmp_path):
+        """Test security group ID format validation in notebook interface."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        # Invalid SG prefix
+        with pytest.raises(ValueError, match="Invalid security group ID format"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["subnet-abc123def456"],
+                vpc_security_groups=["invalid-xyz789"],
+            )
+
+        # SG too short
+        with pytest.raises(ValueError, match="Security group ID is too short"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=True,
+                vpc_subnets=["subnet-abc123def456"],
+                vpc_security_groups=["sg-xyz"],
+            )
+
+    def test_configure_vpc_resources_without_flag_error(self, tmp_path):
+        """Test error when VPC resources provided without vpc_enabled=True."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        bedrock_agentcore = Runtime()
+
+        with pytest.raises(ValueError, match="require vpc_enabled=True"):
+            bedrock_agentcore.configure(
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                vpc_enabled=False,
+                vpc_subnets=["subnet-abc123def456"],  # Provided without vpc_enabled
+                vpc_security_groups=["sg-abc123xyz789"],
+            )
+
+    def test_help_vpc_networking(self, capsys):
+        """Test help_vpc_networking displays VPC guidance."""
+        bedrock_agentcore = Runtime()
+
+        bedrock_agentcore.help_vpc_networking()
+
+        captured = capsys.readouterr()
+
+        # Verify key VPC concepts are mentioned
+        assert "VPC Networking for Bedrock AgentCore" in captured.out
+        assert "Prerequisites" in captured.out
+        assert "vpc_enabled=True" in captured.out
+        assert "vpc_subnets" in captured.out
+        assert "vpc_security_groups" in captured.out
+        assert "IMMUTABLE" in captured.out
+        assert "Security Group Requirements" in captured.out

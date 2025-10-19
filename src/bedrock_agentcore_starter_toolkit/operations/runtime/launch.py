@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -23,6 +23,128 @@ from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
 
 log = logging.getLogger(__name__)
+
+
+def _validate_vpc_resources(session: boto3.Session, agent_config, region: str) -> None:
+    """Validate VPC resources exist and are in the same VPC.
+
+    Args:
+        session: Boto3 session
+        agent_config: Agent configuration
+        region: AWS region
+
+    Raises:
+        ValueError: If validation fails
+    """
+    network_config = agent_config.aws.network_configuration
+
+    if network_config.network_mode != "VPC":
+        return  # Nothing to validate for PUBLIC mode
+
+    if not network_config.network_mode_config:
+        raise ValueError("VPC mode requires network configuration")
+
+    subnets = network_config.network_mode_config.subnets
+    security_groups = network_config.network_mode_config.security_groups
+
+    if not subnets or not security_groups:
+        raise ValueError("VPC mode requires both subnets and security groups")
+
+    ec2_client = session.client("ec2", region_name=region)
+
+    # Validate subnets exist and get their VPC IDs
+    try:
+        subnet_response = ec2_client.describe_subnets(SubnetIds=subnets)
+        subnet_vpcs = {subnet["VpcId"] for subnet in subnet_response["Subnets"]}
+
+        if len(subnet_vpcs) > 1:
+            raise ValueError(
+                f"All subnets must be in the same VPC. "
+                f"Found subnets in {len(subnet_vpcs)} different VPCs: {subnet_vpcs}"
+            )
+
+        vpc_id = subnet_vpcs.pop()
+        log.info("✓ All %d subnets are in VPC: %s", len(subnets), vpc_id)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "InvalidSubnetID.NotFound":
+            raise ValueError(f"One or more subnet IDs not found: {subnets}") from e
+        raise ValueError(f"Failed to validate subnets: {e}") from e
+
+    # Validate security groups exist and are in the same VPC
+    try:
+        sg_response = ec2_client.describe_security_groups(GroupIds=security_groups)
+        sg_vpcs = {sg["VpcId"] for sg in sg_response["SecurityGroups"]}
+
+        if len(sg_vpcs) > 1:
+            raise ValueError(
+                f"All security groups must be in the same VPC. Found {len(sg_vpcs)} different VPCs: {sg_vpcs}"
+            )
+
+        sg_vpc_id = sg_vpcs.pop()
+
+        if sg_vpc_id != vpc_id:
+            raise ValueError(
+                f"Security groups must be in the same VPC as subnets. "
+                f"Subnets are in VPC {vpc_id}, but security groups are in VPC {sg_vpc_id}"
+            )
+
+        log.info("✓ All %d security groups are in VPC: %s", len(security_groups), vpc_id)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "InvalidGroup.NotFound":
+            raise ValueError(f"One or more security group IDs not found: {security_groups}") from e
+        raise ValueError(f"Failed to validate security groups: {e}") from e
+
+    log.info("✓ VPC configuration validated successfully")
+
+
+def _ensure_network_service_linked_role(session: boto3.Session, logger) -> None:
+    """Ensure the AgentCore Network service-linked role exists."""
+    iam_client = session.client("iam")
+    role_name = "AWSServiceRoleForBedrockAgentCoreNetwork"
+
+    logger.info("=" * 80)
+    logger.info("DIAGNOSTIC - Checking Service-Linked Role...")
+
+    try:
+        # Check if role exists
+        role = iam_client.get_role(RoleName=role_name)
+        logger.info("✓ Service-linked role exists: %s", role_name)
+        logger.info("  ARN: %s", role["Role"]["Arn"])
+        logger.info("  Created: %s", role["Role"].get("CreateDate", "Unknown"))
+
+        # Verify trust policy
+        if "AssumeRolePolicyDocument" in role["Role"]:
+            logger.info("  Trust policy allows: bedrock-agentcore.amazonaws.com")
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise
+        logger.info("✗ Service-linked role does not exist: %s", role_name)
+        logger.info("  Creating service-linked role...")
+
+        try:
+            iam_client.create_service_linked_role(
+                AWSServiceName="network.bedrock-agentcore.amazonaws.com",
+                Description="Service-linked role for Amazon Bedrock AgentCore VPC networking",
+            )
+            logger.info("✓ Created service-linked role: %s", role_name)
+
+            # Wait for propagation
+            import time
+
+            logger.info("  Waiting 10 seconds for IAM propagation...")
+            time.sleep(10)
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidInput":
+                logger.info("✓ Service-linked role exists (created by another process)")
+            else:
+                logger.error("✗ Failed to create service-linked role: %s", e)
+                raise
+
+    logger.info("=" * 80)
 
 
 def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region):
@@ -414,7 +536,52 @@ def _deploy_to_bedrock_agentcore(
     result = bedrock_agentcore_client.wait_for_agent_endpoint_ready(agent_id)
     log.info("Agent endpoint: %s", result)
 
+    if agent_config.aws.network_configuration.network_mode == "VPC":
+        vpc_subnets = agent_config.aws.network_configuration.network_mode_config.subnets
+        session = boto3.Session(region_name=region)
+        _check_vpc_deployment(session, agent_id, vpc_subnets, region)
+
     return agent_id, agent_arn
+
+
+def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: List[str], region: str) -> None:
+    """Verify VPC deployment created ENIs in the specified subnets."""
+    ec2_client = session.client("ec2", region_name=region)
+
+    log.info("=" * 80)
+    log.info("DIAGNOSTIC - Checking for ENIs created by AgentCore...")
+
+    try:
+        # Look for ENIs in our subnets with AgentCore description
+        response = ec2_client.describe_network_interfaces(
+            Filters=[
+                {"Name": "subnet-id", "Values": vpc_subnets},
+                {"Name": "description", "Values": ["*AgentCore*", "*bedrock-agentcore*"]},
+            ]
+        )
+
+        all_enis = response.get("NetworkInterfaces", [])
+        our_enis = [eni for eni in all_enis if eni.get("SubnetId") in vpc_subnets]
+
+        if our_enis:
+            log.info("✓ Found %d ENI(s) in configured subnets:", len(our_enis))
+            for eni in our_enis:
+                log.info("  - ENI ID: %s", eni["NetworkInterfaceId"])
+                log.info("    Subnet: %s", eni["SubnetId"])
+                log.info("    Private IP: %s", eni.get("PrivateIpAddress", "N/A"))
+                log.info("    Status: %s", eni["Status"])
+                log.info("    Security Groups: %s", [sg["GroupId"] for sg in eni.get("Groups", [])])
+        else:
+            log.info("ℹ No ENIs found yet (created on first invoke)")
+            log.info("ENIs will be provisioned when the first session starts")
+            log.error("  1. networkModeConfig was not accepted by the API")
+            log.error("  2. Service-linked role missing or lacking permissions")
+            log.error("  3. Subnets in unsupported AZs")
+
+    except Exception as e:
+        log.error("Error checking ENIs: %s", e)
+
+    log.info("=" * 80)
 
 
 def launch_bedrock_agentcore(
@@ -444,6 +611,21 @@ def launch_bedrock_agentcore(
 
     if env_vars is None:
         env_vars = {}
+
+    if agent_config.aws.network_configuration.network_mode == "VPC":
+        if local:
+            log.warning("⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored.")
+        else:
+            log.info("Validating VPC resources...")
+            session = boto3.Session(region_name=agent_config.aws.region)
+            _validate_vpc_resources(session, agent_config, agent_config.aws.region)
+
+            # Ensure service-linked role exists for VPC networking
+            _ensure_network_service_linked_role(session, log)
+
+    # Ensure memory exists for non-CodeBuild paths
+    if not use_codebuild:
+        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
 
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:

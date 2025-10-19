@@ -50,6 +50,9 @@ class Runtime:
         disable_otel: bool = False,
         memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
         non_interactive: bool = True,
+        vpc_enabled: bool = False,
+        vpc_subnets: Optional[List[str]] = None,
+        vpc_security_groups: Optional[List[str]] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
 
@@ -75,6 +78,9 @@ class Runtime:
                 - "STM_ONLY": Short-term memory only (default)
                 - "STM_AND_LTM": Short-term + long-term memory with strategy extraction
             non_interactive: Skip interactive prompts and use defaults (default: True)
+            vpc_enabled: Enable VPC networking mode (requires vpc_subnets and vpc_security_groups)
+            vpc_subnets: List of VPC subnet IDs (required if vpc_enabled=True)
+            vpc_security_groups: List of VPC security group IDs (required if vpc_enabled=True)
 
         Returns:
             ConfigureResult with configuration details
@@ -82,6 +88,14 @@ class Runtime:
         Example:
             # Default: STM only (backward compatible)
             runtime.configure(entrypoint='handler.py')
+
+            # With VPC networking
+            runtime.configure(
+                entrypoint='handler.py',
+                vpc_enabled=True,
+                vpc_subnets=['subnet-abc123', 'subnet-def456'],
+                vpc_security_groups=['sg-xyz789']
+            )
 
             # Explicitly enable LTM
             runtime.configure(entrypoint='handler.py', memory_mode='STM_AND_LTM')
@@ -94,6 +108,49 @@ class Runtime:
         """
         if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
             raise ValueError("protocol must be either HTTP or MCP or A2A")
+
+        # Validate VPC configuration
+        if vpc_enabled:
+            if not vpc_subnets or not vpc_security_groups:
+                raise ValueError(
+                    "VPC mode requires both vpc_subnets and vpc_security_groups.\n"
+                    "Example: runtime.configure(entrypoint='handler.py', vpc_enabled=True, "
+                    "vpc_subnets=['subnet-abc123', 'subnet-def456'], "
+                    "vpc_security_groups=['sg-xyz789'])"
+                )
+
+            # Validate subnet ID format - UPDATED
+            for subnet_id in vpc_subnets:
+                if not subnet_id.startswith("subnet-"):
+                    raise ValueError(f"Invalid subnet ID format: {subnet_id}\nSubnet IDs must start with 'subnet-'")
+                if len(subnet_id) < 15:  # "subnet-" + 8 chars minimum
+                    raise ValueError(
+                        f"Invalid subnet ID format: {subnet_id}\n"
+                        f"Subnet ID is too short. Expected: subnet-xxxxxxxx (at least 8 hex chars)"
+                    )
+
+            # Validate security group ID format - UPDATED
+            for sg_id in vpc_security_groups:
+                if not sg_id.startswith("sg-"):
+                    raise ValueError(
+                        f"Invalid security group ID format: {sg_id}\nSecurity group IDs must start with 'sg-'"
+                    )
+                if len(sg_id) < 11:  # "sg-" + 8 chars minimum
+                    raise ValueError(
+                        f"Invalid security group ID format: {sg_id}\n"
+                        f"Security group ID is too short. Expected: sg-xxxxxxxx (at least 8 hex chars)"
+                    )
+
+            log.info(
+                "VPC mode enabled with %d subnets and %d security groups", len(vpc_subnets), len(vpc_security_groups)
+            )
+
+        elif vpc_subnets or vpc_security_groups:
+            raise ValueError(
+                "vpc_subnets and vpc_security_groups require vpc_enabled=True.\n"
+                "Use: runtime.configure(entrypoint='handler.py', vpc_enabled=True, "
+                "vpc_subnets=[...], vpc_security_groups=[...])"
+            )
 
         # Parse entrypoint to get agent name
         file_path, file_name = parse_entrypoint(entrypoint)
@@ -152,6 +209,9 @@ class Runtime:
             region=region,
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
+            vpc_enabled=vpc_enabled,
+            vpc_subnets=vpc_subnets,
+            vpc_security_groups=vpc_security_groups,
         )
 
         self._config_path = result.config_path
@@ -369,4 +429,67 @@ class Runtime:
         print("   runtime.configure(entrypoint='my_agent.py')")
         print("   runtime.launch()  # Uses CodeBuild by default")
         print('   runtime.invoke({"prompt": "Hello"})')
+        print()
+
+    def help_vpc_networking(self):
+        """Display information about VPC networking configuration."""
+        print("\n🔒 VPC Networking for Bedrock AgentCore")
+        print("=" * 50)
+
+        print("\n📋 What is VPC Networking?")
+        print("   VPC (Virtual Private Cloud) mode allows your agent to:")
+        print("   • Access private resources (databases, internal APIs)")
+        print("   • Run in isolated network environments")
+        print("   • Comply with enterprise security requirements")
+
+        print("\n⚙️  Prerequisites:")
+        print("   You must have existing AWS resources:")
+        print("   • VPC with private subnets")
+        print("   • Security groups with appropriate rules")
+        print("   • (Optional) NAT Gateway for internet access")
+        print("   • (Optional) VPC endpoints for AWS services")
+
+        print("\n🚀 Basic Usage:")
+        print("   runtime.configure(")
+        print("       entrypoint='my_agent.py',")
+        print("       vpc_enabled=True,")
+        print("       vpc_subnets=['subnet-abc123', 'subnet-def456'],")
+        print("       vpc_security_groups=['sg-xyz789']")
+        print("   )")
+        print("   runtime.launch()")
+
+        print("\n📝 Requirements:")
+        print("   • All subnets must be in the same VPC")
+        print("   • Security groups must be in the same VPC as subnets")
+        print("   • Use subnets from multiple AZs for high availability")
+        print("   • Security groups must allow outbound HTTPS (443) traffic")
+
+        print("\n⚠️  Important Notes:")
+        print("   • Network configuration is IMMUTABLE after agent creation")
+        print("   • Cannot migrate existing PUBLIC agents to VPC mode")
+        print("   • Create a new agent if you need to change network settings")
+        print("   • Without NAT gateway, agent cannot pull container images")
+
+        print("\n🔍 Security Group Requirements:")
+        print("   Your security groups must allow:")
+        print("   • Outbound HTTPS (443) - for AWS API calls")
+        print("   • Outbound to your private resources (as needed)")
+        print("   • Inbound rules are typically not required")
+
+        print("\n💡 Example with All Features:")
+        print("   runtime.configure(")
+        print("       entrypoint='my_agent.py',")
+        print("       execution_role='arn:aws:iam::123456789012:role/MyRole',")
+        print("       vpc_enabled=True,")
+        print("       vpc_subnets=['subnet-abc123', 'subnet-def456'],")
+        print("       vpc_security_groups=['sg-xyz789'],")
+        print("       memory_mode='STM_AND_LTM'")
+        print("   )")
+
+        print("\n📚 Related Commands:")
+        print("   runtime.status()  # View network configuration")
+        print("   runtime.help_deployment_modes()  # Deployment options")
+
+        print("\n🔗 More Information:")
+        print("   See AWS VPC documentation for networking setup")
         print()

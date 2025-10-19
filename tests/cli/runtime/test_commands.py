@@ -3097,3 +3097,299 @@ agents:
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:
                 os.chdir(original_cwd)
+
+    def test_configure_with_vpc_flags(self, tmp_path):
+        """Test configure command with VPC flags."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req_display,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+        ):
+            mock_infer_name.return_value = "test_agent"
+            mock_rel_path.return_value = "test_agent.py"
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.network_mode = "VPC"
+            mock_result.network_subnets = ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            mock_result.network_security_groups = ["sg-abc123xyz789"]
+            mock_configure.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "subnet-abc123def456,subnet-xyz789ghi012",
+                        "--security-groups",
+                        "sg-abc123xyz789",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "VPC mode enabled" in result.stdout
+                assert "2 subnets" in result.stdout
+                assert "1 security groups" in result.stdout
+
+                # Verify VPC params were passed
+                call_args = mock_configure.call_args
+                assert call_args.kwargs["vpc_enabled"] is True
+                assert call_args.kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+                assert call_args.kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
+
+            finally:
+                os.chdir(original_cwd)
+
+    def test_configure_vpc_without_flag_but_with_resources_error(self, tmp_path):
+        """Test error when VPC resources provided without --vpc flag."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--subnets",
+                    "subnet-abc123def456",  # No --vpc flag
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "require --vpc flag" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_vpc_invalid_subnet_format(self, tmp_path):
+        """Test configure with invalid subnet ID format."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--vpc",
+                    "--subnets",
+                    "invalid-subnet",
+                    "--security-groups",
+                    "sg-abc123xyz789",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "Invalid subnet ID format" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_vpc_invalid_security_group_format(self, tmp_path):
+        """Test configure with invalid security group ID format."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--vpc",
+                    "--subnets",
+                    "subnet-abc123def456",
+                    "--security-groups",
+                    "invalid-sg",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "Invalid security group ID format" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_status_displays_vpc_info(self, tmp_path):
+        """Test status command displays VPC information."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: us-west-2
+      account: "123456789012"
+      execution_role: arn:aws:iam::123456789012:role/TestRole
+      network_configuration:
+        network_mode: VPC
+        network_mode_config:
+          subnets:
+            - subnet-abc123def456
+            - subnet-xyz789ghi012
+          security_groups:
+            - sg-abc123xyz789
+    bedrock_agentcore:
+      agent_id: test-agent-id
+      agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "VPC",
+                    "network_vpc_id": "vpc-test123456",
+                    "network_subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                    "network_security_groups": ["sg-abc123xyz789"],
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "VPC",
+                        "networkModeConfig": {
+                            "subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                            "securityGroups": ["sg-abc123xyz789"],
+                        },
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "name": "DEFAULT",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: VPC" in result.stdout
+                assert "vpc-test123456" in result.stdout
+                assert "2 subnets, 1 security groups" in result.stdout
+
+            finally:
+                os.chdir(original_cwd)
+
+    def test_status_displays_public_network_info(self, tmp_path):
+        """Test status command displays PUBLIC network mode."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: us-west-2
+      network_configuration:
+        network_mode: PUBLIC
+    bedrock_agentcore:
+      agent_id: test-agent-id
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "network_mode": "PUBLIC",
+                    "network_subnets": None,
+                    "network_security_groups": None,
+                    "network_vpc_id": None,
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "entrypoint": "test.py",
+                    "execution_role": None,
+                    "ecr_repository": None,
+                    "agent_arn": None,
+                },
+                "agent": {
+                    "agentRuntimeId": "test-agent-id",
+                    "status": "READY",
+                    "createdAt": "2024-01-01",
+                    "networkConfiguration": {"networkMode": "PUBLIC"},
+                },
+                "endpoint": {"status": "READY", "name": "DEFAULT"},
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                # Debug output if test fails
+                if result.exit_code != 0:
+                    print(f"\n=== Command Output ===\n{result.output}")
+                    if result.exception:
+                        import traceback
+
+                        print("\n=== Exception ===")
+                        traceback.print_exception(
+                            type(result.exception), result.exception, result.exception.__traceback__
+                        )
+
+                assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
+            finally:
+                os.chdir(original_cwd)
