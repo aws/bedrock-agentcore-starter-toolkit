@@ -330,7 +330,7 @@ class UnifiedFraudDetectionSystem:
             return False
         
         try:
-from src.transaction_stream_processor import Transaction as StreamTransaction
+            from src.transaction_stream_processor import Transaction as StreamTransaction
             
             # Convert to stream transaction format
             stream_transaction = StreamTransaction.from_dict(transaction_data)
@@ -439,7 +439,7 @@ from src.transaction_stream_processor import Transaction as StreamTransaction
     def _store_decision_context(self, transaction, result: Dict[str, Any]):
         """Store decision context in memory system."""
         try:
-from src.models import DecisionContext, FraudDecision as MemoryFraudDecision
+            from src.models import DecisionContext, FraudDecision as MemoryFraudDecision
             
             # Map decision to enum
             decision_map = {
