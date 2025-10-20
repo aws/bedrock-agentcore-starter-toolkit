@@ -139,7 +139,7 @@ This credential provider will be used by your agent's code to get access tokens 
 ```bash
 #!/bin/bash
 # please note the expected ISSUER_URL format for Bedrock AgentCore is the full url, including .well-known/openid-configuration
-OAUTH2_CREDENTIAL_PROVIDER=$(aws bedrock-agentcore-control create-oauth2-credential-provider \
+OAUTH2_CREDENTIAL_PROVIDER_RESPONSE=$(aws bedrock-agentcore-control create-oauth2-credential-provider \
   --name "AgentCoreIdentityQuickStartProvider" \
   --credential-provider-vendor "CustomOauth2" \
   --no-cli-pager \
@@ -153,7 +153,7 @@ OAUTH2_CREDENTIAL_PROVIDER=$(aws bedrock-agentcore-control create-oauth2-credent
     }
   }')
 
-OAUTH2_CALLBACK_URL=$(echo $CLIENT_RESPONSE | jq -r '.callbackUrl')
+OAUTH2_CALLBACK_URL=$(echo $OAUTH2_CREDENTIAL_PROVIDER_RESPONSE | jq -r '.callbackUrl')
 
 echo "OAuth2 Callback URL: $OAUTH2_CALLBACK_URL"
 
@@ -169,7 +169,7 @@ The [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentco
 
 If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your Identity Provider callback URL settings. 
 
-If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool cliens with the OAuth2 credential provider callback URL.
+If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.
 
 
 ```bash
@@ -352,7 +352,7 @@ rm agentcore-identity-policy.json
 
 ## Step 4: Invoke the agent!
 
-**Prerequisite:**: A callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
+**Prerequisite**: A callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
 
 Now that this is all set up, you can invoke the agent. For this demo, we will use the `agentcore invoke` command and our IAM credentials. We will need to pass the `--user-id` and `--session-id` arguments when using IAM authentication.
 
