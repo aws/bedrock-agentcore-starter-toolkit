@@ -135,7 +135,8 @@
 
 
 
-- [ ] 3.2 Update imports in moved core files
+- [x] 3.2 Update imports in moved core files
+
 
   - Run import update script on core files
   - Update relative imports to absolute imports
@@ -153,11 +154,16 @@
 
 
 
-- [ ] 3.4 Move memory system to src/fraud_detection/memory/
+
+- [x] 3.4 Move memory system to src/fraud_detection/memory/
+
+
   - Move memory_system/ contents to src/fraud_detection/memory/
   - Update imports in memory modules
   - Verify memory system functionality
   - _Requirements: 2.1, 11.1_
+
+
 
 - [ ] 3.5 Move reasoning engine to src/fraud_detection/reasoning/
   - Move reasoning_engine/ contents to src/fraud_detection/reasoning/
