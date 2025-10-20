@@ -72,7 +72,6 @@ CLIENT_RESPONSE=$(aws cognito-idp create-user-pool-client \
   --user-pool-id $USER_POOL_ID \
   --client-name AgentCoreQuickStart \
   --generate-secret \
-  --callback-urls "https://bedrock-agentcore.$REGION.amazonaws.com/identities/oauth2/callback" \
   --allowed-o-auth-flows "code" \
   --allowed-o-auth-scopes "openid" "profile" "email" \
   --allowed-o-auth-flows-user-pool-client \
@@ -140,7 +139,7 @@ This credential provider will be used by your agent's code to get access tokens 
 ```bash
 #!/bin/bash
 # please note the expected ISSUER_URL format for Bedrock AgentCore is the full url, including .well-known/openid-configuration
-aws bedrock-agentcore-control create-oauth2-credential-provider \
+OAUTH2_CREDENTIAL_PROVIDER=$(aws bedrock-agentcore-control create-oauth2-credential-provider \
   --name "AgentCoreIdentityQuickStartProvider" \
   --credential-provider-vendor "CustomOauth2" \
   --no-cli-pager \
@@ -152,22 +151,38 @@ aws bedrock-agentcore-control create-oauth2-credential-provider \
       "clientId": "'$CLIENT_ID'",
       "clientSecret": "'$CLIENT_SECRET'"
     }
-  }'
+  }')
+
+OAUTH2_CALLBACK_URL=$(echo $CLIENT_RESPONSE | jq -r '.callbackUrl')
+
+echo "OAuth2 Callback URL: $OAUTH2_CALLBACK_URL"
+
+echo ""
+echo "# Copy and paste these exports to set environment variables for later use:"
+echo "export OAUTH2_CALLBACK_URL='$OAUTH2_CALLBACK_URL'"
 ```
 
-## Step 1.5: Update Identity Provider with OAuth2 Credential Provider Callback URL
 
-The response from the [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) and the [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) APIs, includes a `callbackUrl` which should be used in the IdP.
+## Step 1.5: Update Identity Provider with OAuth2 credential provider callback URL
+
+The [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) and [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) APIs return a `callbackUrl` that must be configured in the Identity Provider.
+
+If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your Identity Provider callback URL settings. 
+
+If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool cliens with the OAuth2 credential provider callback URL.
+
 
 ```bash
+#!/bin/bash
+
 aws cognito-idp update-user-pool-client \
-    --user-pool-id <insert_user_poold_id> \
-    --client-id <insert_client_id> \
+    --user-pool-id $USER_POOL_ID \
+    --client-id $CLIENT_ID \
     --allowed-o-auth-flows "code" \
     --allowed-o-auth-scopes "openid" "profile" "email" \
     --allowed-o-auth-flows-user-pool-client \
     --supported-identity-providers "COGNITO" \
-    --callback-urls "https://example.com/callback"
+    --callback-urls '$OAUTH2_CALLBACK_URL'
 ```
 
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
@@ -336,6 +351,8 @@ rm agentcore-identity-policy.json
 ```
 
 ## Step 4: Invoke the agent!
+
+**Prerequisite:**: A callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
 
 Now that this is all set up, you can invoke the agent. For this demo, we will use the `agentcore invoke` command and our IAM credentials. We will need to pass the `--user-id` and `--session-id` arguments when using IAM authentication.
 
