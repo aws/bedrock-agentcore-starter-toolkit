@@ -3,16 +3,378 @@
     "created": "2025-10-20",
     "description": "File movement plan for repository reorganization",
     "movements": {
-        "core_modules": [],
-        "tests": [],
-        "demos": [],
-        "documentation": [],
-        "infrastructure": [],
-        "scripts": [],
-        "archive": []
+        "core_modules": [
+            {
+                "old_path": "fraud_detection_agent.py",
+                "new_path": "src/fraud_detection/core/fraud_detection_agent.py",
+                "type": "core"
+            },
+            {
+                "old_path": "fraud_detection_api.py",
+                "new_path": "src/fraud_detection/core/fraud_detection_api.py",
+                "type": "core"
+            },
+            {
+                "old_path": "transaction_processing_pipeline.py",
+                "new_path": "src/fraud_detection/core/transaction_processing_pipeline.py",
+                "type": "core"
+            },
+            {
+                "old_path": "unified_fraud_detection_system.py",
+                "new_path": "src/fraud_detection/core/unified_fraud_detection_system.py",
+                "type": "core"
+            },
+            {
+                "old_path": "agent_coordination/",
+                "new_path": "src/fraud_detection/agents/coordination/",
+                "type": "directory"
+            },
+            {
+                "old_path": "specialized_agents/",
+                "new_path": "src/fraud_detection/agents/specialized/",
+                "type": "directory"
+            },
+            {
+                "old_path": "memory_system/",
+                "new_path": "src/fraud_detection/memory/",
+                "type": "directory"
+            },
+            {
+                "old_path": "reasoning_engine/",
+                "new_path": "src/fraud_detection/reasoning/",
+                "type": "directory"
+            },
+            {
+                "old_path": "streaming/",
+                "new_path": "src/fraud_detection/streaming/",
+                "type": "directory"
+            },
+            {
+                "old_path": "external_tools/",
+                "new_path": "src/fraud_detection/external/",
+                "type": "directory"
+            },
+            {
+                "old_path": "web_interface/",
+                "new_path": "src/fraud_detection/web/dashboards/",
+                "type": "directory"
+            },
+            {
+                "old_path": "stress_testing/dashboards/",
+                "new_path": "src/fraud_detection/web/dashboards/",
+                "type": "directory",
+                "note": "Merge with web_interface"
+            }
+        ],
+        "tests": [
+            {
+                "old_path": "test_fraud_detection.py",
+                "new_path": "tests/unit/core/test_fraud_detection.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_api.py",
+                "new_path": "tests/unit/core/test_api.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_agent.py",
+                "new_path": "tests/unit/agents/test_agent.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_memory_integration.py",
+                "new_path": "tests/unit/memory/test_memory_integration.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_multicurrency.py",
+                "new_path": "tests/unit/core/test_multicurrency.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_bedrock_foundation.py",
+                "new_path": "tests/unit/agents/test_bedrock_foundation.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_with_files.py",
+                "new_path": "tests/unit/test_with_files.py",
+                "type": "test"
+            },
+            {
+                "old_path": "test_render_deployment.py",
+                "new_path": "tests/integration/test_render_deployment.py",
+                "type": "test"
+            },
+            {
+                "old_path": "tests_integ/",
+                "new_path": "tests/integration/",
+                "type": "directory",
+                "note": "Merge with tests/integration"
+            }
+        ],
+        "demos": [
+            {
+                "old_path": "demo_transaction_stream.py",
+                "new_path": "examples/basic/transaction_stream.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_agent_communication.py",
+                "new_path": "examples/agents/agent_communication.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_workload_distribution.py",
+                "new_path": "examples/agents/workload_distribution.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_pattern_detector.py",
+                "new_path": "examples/agents/pattern_detector.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_risk_assessor.py",
+                "new_path": "examples/agents/risk_assessor.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_adaptive_reasoning.py",
+                "new_path": "examples/reasoning/adaptive_reasoning.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_explanation_system.py",
+                "new_path": "examples/reasoning/explanation_system.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_audit_trail.py",
+                "new_path": "examples/reasoning/audit_trail.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_memory_manager.py",
+                "new_path": "examples/memory/memory_manager.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_pattern_learning.py",
+                "new_path": "examples/memory/pattern_learning.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_context_aware_decisions.py",
+                "new_path": "examples/memory/context_aware_decisions.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_admin_dashboard.py",
+                "new_path": "examples/dashboards/admin_dashboard.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_agent_dashboard.py",
+                "new_path": "examples/dashboards/agent_dashboard.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "demo_analytics_dashboard.py",
+                "new_path": "examples/dashboards/analytics_dashboard.py",
+                "type": "demo"
+            },
+            {
+                "old_path": "stress_testing/demo_*.py",
+                "new_path": "examples/stress_testing/",
+                "type": "pattern",
+                "note": "Move all stress testing demos"
+            }
+        ],
+        "documentation": [
+            {
+                "old_path": "API_DOCUMENTATION.md",
+                "new_path": "docs/api/API_DOCUMENTATION.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "SECURITY.md",
+                "new_path": "docs/project/SECURITY.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "CHANGELOG.md",
+                "new_path": "docs/project/CHANGELOG.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "CONTRIBUTING.md",
+                "new_path": "docs/project/CONTRIBUTING.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "CODE-OF-CONDUCT.md",
+                "new_path": "docs/project/CODE-OF-CONDUCT.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "aws_infrastructure/DEPLOYMENT_GUIDE.md",
+                "new_path": "docs/guides/deployment-guide.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "RENDER_DEPLOYMENT_GUIDE.md",
+                "new_path": "docs/guides/render-deployment.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "RENDER_QUICK_START.md",
+                "new_path": "docs/guides/render-quick-start.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "stress_testing/ADMIN_DASHBOARD_QUICK_START.md",
+                "new_path": "docs/guides/admin-dashboard.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "stress_testing/AGENT_DASHBOARD_QUICK_START.md",
+                "new_path": "docs/guides/agent-dashboard.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "stress_testing/REALTIME_STREAMING_QUICK_START.md",
+                "new_path": "docs/guides/realtime-streaming.md",
+                "type": "doc"
+            },
+            {
+                "old_path": "documentation/",
+                "new_path": "docs/",
+                "type": "directory",
+                "note": "Merge with docs/"
+            }
+        ],
+        "infrastructure": [
+            {
+                "old_path": "aws_infrastructure/",
+                "new_path": "infrastructure/aws/",
+                "type": "directory"
+            },
+            {
+                "old_path": "aws_bedrock_agent/",
+                "new_path": "infrastructure/aws/bedrock/",
+                "type": "directory"
+            },
+            {
+                "old_path": "infrastructure/cdk_app.py",
+                "new_path": "infrastructure/cdk/cdk_app.py",
+                "type": "file"
+            },
+            {
+                "old_path": "deploy.py",
+                "new_path": "infrastructure/aws/deployment/deploy.py",
+                "type": "file"
+            }
+        ],
+        "scripts": [
+            {
+                "old_path": "security_check.py",
+                "new_path": "scripts/security/security_check.py",
+                "type": "script"
+            },
+            {
+                "old_path": "run_security_audit.py",
+                "new_path": "scripts/security/run_security_audit.py",
+                "type": "script"
+            },
+            {
+                "old_path": "quick_security_check.sh",
+                "new_path": "scripts/security/quick_security_check.sh",
+                "type": "script"
+            },
+            {
+                "old_path": "currency_converter.py",
+                "new_path": "scripts/utilities/currency_converter.py",
+                "type": "script"
+            },
+            {
+                "old_path": "data_loader.py",
+                "new_path": "scripts/utilities/data_loader.py",
+                "type": "script"
+            },
+            {
+                "old_path": "transaction_generator.py",
+                "new_path": "scripts/utilities/transaction_generator.py",
+                "type": "script"
+            },
+            {
+                "old_path": "check_models.py",
+                "new_path": "scripts/utilities/check_models.py",
+                "type": "script"
+            },
+            {
+                "old_path": "interactive_test.py",
+                "new_path": "scripts/development/interactive_test.py",
+                "type": "script"
+            }
+        ],
+        "archive": [
+            {
+                "old_path": "TASK_*.md",
+                "new_path": ".archive/task-summaries/",
+                "type": "pattern"
+            },
+            {
+                "old_path": "*_COMPLETION_SUMMARY.md",
+                "new_path": ".archive/task-summaries/",
+                "type": "pattern"
+            },
+            {
+                "old_path": "*_SUMMARY.md",
+                "new_path": ".archive/task-summaries/",
+                "type": "pattern"
+            },
+            {
+                "old_path": "PROJECT_COMPLETION_SUMMARY.md",
+                "new_path": ".archive/project-reports/PROJECT_COMPLETION_SUMMARY.md",
+                "type": "file"
+            },
+            {
+                "old_path": "PROJECT_STATUS_REPORT.md",
+                "new_path": ".archive/project-reports/PROJECT_STATUS_REPORT.md",
+                "type": "file"
+            },
+            {
+                "old_path": "FINAL_PROJECT_SUMMARY.md",
+                "new_path": ".archive/project-reports/FINAL_PROJECT_SUMMARY.md",
+                "type": "file"
+            },
+            {
+                "old_path": "MOBILE_UPDATE_SUMMARY.md",
+                "new_path": ".archive/project-reports/MOBILE_UPDATE_SUMMARY.md",
+                "type": "file"
+            },
+            {
+                "old_path": "STRESS_TESTING_IMPLEMENTATION_COMPLETE.md",
+                "new_path": ".archive/project-reports/STRESS_TESTING_IMPLEMENTATION_COMPLETE.md",
+                "type": "file"
+            },
+            {
+                "old_path": "STRESS_TESTING_READY.md",
+                "new_path": ".archive/project-reports/STRESS_TESTING_READY.md",
+                "type": "file"
+            }
+        ]
     },
     "validation": {
-        "total_files_to_move": 0,
-        "estimated_import_updates": 0
+        "total_files_to_move": 150,
+        "estimated_import_updates": 300,
+        "notes": [
+            "Patterns (*.py) need to be expanded to actual files before execution",
+            "Directory moves will recursively move all contents",
+            "Merge operations require manual conflict resolution",
+            "All __init__.py files will be created as needed"
+        ]
     }
 }
