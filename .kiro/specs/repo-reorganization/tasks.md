@@ -214,7 +214,11 @@
   - Verify test discovery
   - _Requirements: 4.1, 4.2, 4.6_
 
-- [ ] 4.1 Move unit tests to tests/unit/
+- [x] 4.1 Move unit tests to tests/unit/
+
+
+
+
   - Move module-level test files to appropriate tests/unit/ subdirectories
   - Mirror src/ structure in tests/unit/
   - Update test imports to reference new module paths

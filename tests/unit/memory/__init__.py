@@ -1,1 +1,1 @@
-"""Memory system tests."""
+"""Unit tests for memory management system."""
