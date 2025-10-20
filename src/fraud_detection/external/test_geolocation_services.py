@@ -7,12 +7,12 @@ import math
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from src.geolocation_services import (
+from src.fraud_detection.external.geolocation_services import (
     GeolocationTool, GeographicLocation, LocationRiskAssessment, TravelAnalysis,
     LocationRiskLevel, LocationVerificationStatus, TravelPattern,
     create_geolocation_tool
 )
-from src.tool_integrator import ToolConfiguration, ToolType
+from src.fraud_detection.external.tool_integrator import ToolConfiguration, ToolType
 
 
 @pytest.fixture

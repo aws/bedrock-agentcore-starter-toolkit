@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from src.transaction_stream_processor import (
+from src.fraud_detection.streaming.transaction_stream_processor import (
     TransactionStreamProcessor, StreamingFraudDetector, Transaction, 
     ProcessingResult, ProcessingPriority, StreamStatus
 )

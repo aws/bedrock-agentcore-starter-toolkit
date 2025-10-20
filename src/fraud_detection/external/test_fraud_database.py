@@ -6,11 +6,11 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from fraud_database import (
+from src.fraud_detection.external.fraud_database import (
     FraudDatabaseTool, FraudCase, SimilarCase, FraudPattern, PatternMatch,
     FraudType, FraudCaseStatus, SimilarityMetric, create_fraud_database_tool
 )
-from tool_integrator import ToolConfiguration, ToolType
+from src.fraud_detection.external.tool_integrator import ToolConfiguration, ToolType
 
 
 @pytest.fixture

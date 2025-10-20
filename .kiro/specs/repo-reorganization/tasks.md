@@ -173,7 +173,10 @@
   - _Requirements: 2.1, 11.1_
 
 
-- [ ] 3.6 Move streaming and external modules
+- [x] 3.6 Move streaming and external modules
+
+
+
 
   - Move streaming/ to src/fraud_detection/streaming/
   - Move external_tools/ to src/fraud_detection/external/
