@@ -1,6 +1,7 @@
 # Implementation Plan
 
-- [-] 1. Pre-Migration Preparation
+- [ ] 1. Pre-Migration Preparation
+
 
 
 
