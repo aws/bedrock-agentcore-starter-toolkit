@@ -224,7 +224,12 @@
   - Update test imports to reference new module paths
   - _Requirements: 4.1, 4.2_
 
-- [ ] 4.2 Move integration tests to tests/integration/
+- [x] 4.2 Move integration tests to tests/integration/
+
+
+
+
+
   - Move tests_integ/ contents to tests/integration/
   - Organize by integration type (cli/, gateway/, identity/, memory/, tools/)
   - Update test imports and fixture paths

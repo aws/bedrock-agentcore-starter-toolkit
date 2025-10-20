@@ -8,6 +8,16 @@ Comprehensive test suite for the AWS Bedrock-powered fraud detection system with
 
 ```
 tests/
+├── integration/                 # Integration tests organized by type
+│   ├── cli/                    # CLI integration tests
+│   ├── gateway/                # Gateway integration tests
+│   ├── identity/               # Identity integration tests
+│   ├── memory/                 # Memory integration tests
+│   ├── notebook/               # Notebook integration tests
+│   ├── strands_agent/          # Agent integration tests
+│   ├── tools/                  # Tools integration tests
+│   └── utils/                  # Integration test utilities
+├── unit/                        # Unit tests
 ├── test_integration.py          # Integration tests for agent coordination
 ├── test_load_performance.py     # Load and performance testing
 ├── test_ai_agent_validation.py  # AI agent capabilities validation
