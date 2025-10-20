@@ -165,13 +165,16 @@
 
 
 
-- [ ] 3.5 Move reasoning engine to src/fraud_detection/reasoning/
+- [x] 3.5 Move reasoning engine to src/fraud_detection/reasoning/
+
   - Move reasoning_engine/ contents to src/fraud_detection/reasoning/
   - Update imports in reasoning modules
   - Verify reasoning functionality
   - _Requirements: 2.1, 11.1_
 
+
 - [ ] 3.6 Move streaming and external modules
+
   - Move streaming/ to src/fraud_detection/streaming/
   - Move external_tools/ to src/fraud_detection/external/
   - Update imports in both modules
