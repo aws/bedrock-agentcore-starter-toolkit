@@ -287,6 +287,8 @@ if __name__ == "__main__":
 
 ## Step 3:  Deploy the agent to AgentCore Runtime
 
+**Prerequisite**: An OAuth2 callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html). This is automatically configured when launching and invoking the agent **locally**.
+
 We will host this agent on AgentCore Runtime. We can do this easily with the AgentCore SDK we installed earlier.
 
 From your terminal, run `agentcore configure -e agentcoreidentityquickstart.py` and `agentcore launch` . The deployment will work with the defaults set by `agentcore configure`, but you may customize them. Ensure that you select "No" for the `Configure OAuth authorizer instead` step. We want to use IAM authorization for this guide.
@@ -352,8 +354,6 @@ rm agentcore-identity-policy.json
 
 ## Step 4: Invoke the agent!
 
-**Prerequisite**: A callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
-
 Now that this is all set up, you can invoke the agent. For this demo, we will use the `agentcore invoke` command and our IAM credentials. We will need to pass the `--user-id` and `--session-id` arguments when using IAM authentication.
 
 `agentcore invoke "TestPayload" --agent agentcoreidentityquickstart --user-id "SampleUserID" --session-id "ALongThirtyThreeCharacterMinimumSessionIdYouCanChangeThisAsYouNeed"`
@@ -362,7 +362,7 @@ The agent will then return a URL to your `agentcore invoke` command. Copy and pa
 
 Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.
 
-Your browser should redirect you to the AgentCore Identity Success Page, and you should have a success message in your terminal
+Your browser will redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error messages to indicate the authorization status.
 
 Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (`--session-id` parameter).
 
