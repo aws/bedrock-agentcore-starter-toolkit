@@ -362,7 +362,7 @@ The agent will then return a URL to your `agentcore invoke` command. Copy and pa
 
 Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.
 
-Your browser will redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error messages to indicate the authorization status.
+Your browser should redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error messages to indicate the authorization status.
 
 Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (`--session-id` parameter).
 
