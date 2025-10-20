@@ -12,9 +12,9 @@ from .pattern_detector import (
     TrendAnalysis, PatternDetectionResult
 )
 from .base_agent import AgentConfiguration, AgentCapability
-from memory_system.models import Transaction, Location, DeviceInfo, FraudPattern
-from memory_system.memory_manager import MemoryManager
-from memory_system.pattern_learning import PatternLearningEngine
+from src.models import Transaction, Location, DeviceInfo, FraudPattern
+from src.memory_manager import MemoryManager
+from src.pattern_learning import PatternLearningEngine
 
 
 @pytest.fixture

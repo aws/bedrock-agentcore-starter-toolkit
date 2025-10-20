@@ -21,7 +21,7 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from agent_coordination.communication_protocol import (
+from src.communication_protocol import (
     CommunicationProtocol, MessageType, MessagePriority, AgentStatus,
     RequestHandler, NotificationHandler
 )

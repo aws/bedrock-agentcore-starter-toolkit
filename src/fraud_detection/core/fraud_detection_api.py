@@ -27,7 +27,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
-from transaction_processing_pipeline import TransactionProcessingPipeline, SystemConfiguration
+from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline, SystemConfiguration
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

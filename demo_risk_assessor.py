@@ -11,10 +11,10 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Dict, Any
 
-from specialized_agents.risk_assessor import RiskAssessor
-from specialized_agents.base_agent import AgentConfiguration, AgentCapability
-from memory_system.memory_manager import MemoryManager
-from memory_system.models import Transaction, Location, DeviceInfo, UserBehaviorProfile
+from src.risk_assessor import RiskAssessor
+from src.base_agent import AgentConfiguration, AgentCapability
+from src.memory_manager import MemoryManager
+from src.models import Transaction, Location, DeviceInfo, UserBehaviorProfile
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

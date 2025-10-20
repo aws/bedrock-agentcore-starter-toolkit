@@ -16,8 +16,8 @@ import logging
 from datetime import datetime
 import random
 
-from stress_testing.models import SystemMetrics, AgentMetrics, BusinessMetrics
-from stress_testing.metrics import RealTimeMetricsStreamer, MetricType
+from src.models import SystemMetrics, AgentMetrics, BusinessMetrics
+from src.metrics import RealTimeMetricsStreamer, MetricType
 
 # Configure logging
 logging.basicConfig(

@@ -13,7 +13,7 @@ from compliance_agent import (
     AuditEvent, ComplianceCheck, ComplianceReport, PolicyViolation
 )
 from base_agent import AgentConfiguration, AgentCapability
-from memory_system.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
+from src.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
 
 
 @pytest.fixture

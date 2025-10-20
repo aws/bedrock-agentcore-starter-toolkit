@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Test fraud detection using data from files"""
 
-from data_loader import DataLoader
-from fraud_detection_agent import fraud_detection_handler
-from transaction_generator import TransactionGenerator
+from scripts.utilities.data_loader import DataLoader
+from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler
+from scripts.utilities.transaction_generator import TransactionGenerator
 
 def test_with_file_data():
     """Test fraud detection using file-based data"""

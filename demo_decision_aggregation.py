@@ -8,7 +8,7 @@ and weighted voting for coordinated fraud detection decisions.
 
 import logging
 from datetime import datetime
-from agent_coordination.decision_aggregation import (
+from src.decision_aggregation import (
     DecisionAggregator, AgentDecision, DecisionRequest, 
     DecisionType, AggregationMethod, ConflictResolutionStrategy
 )

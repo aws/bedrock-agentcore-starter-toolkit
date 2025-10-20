@@ -8,7 +8,7 @@ into the MetricsCollector and works correctly in the stress testing context.
 import asyncio
 import pytest
 
-from stress_testing.metrics import MetricsCollector, BusinessMetricsCalculator
+from src.metrics import MetricsCollector, BusinessMetricsCalculator
 
 
 @pytest.mark.asyncio
@@ -73,7 +73,7 @@ async def test_get_competitive_benchmarks_integration():
 @pytest.mark.asyncio
 async def test_business_metrics_with_load_generator():
     """Test business metrics calculation with simulated load generator."""
-    from stress_testing.load_generator.load_generator import LoadGenerator
+from src.load_generator.load_generator import LoadGenerator
     
     collector = MetricsCollector()
     

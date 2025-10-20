@@ -9,7 +9,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import Mock, MagicMock
 
-from stress_testing.metrics.agent_metrics_collector import AgentMetricsCollector
+from src.metrics.agent_metrics_collector import AgentMetricsCollector
 
 
 class TestAgentMetricsCollector:

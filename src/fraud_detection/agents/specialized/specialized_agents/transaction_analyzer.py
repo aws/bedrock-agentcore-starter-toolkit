@@ -14,9 +14,9 @@ import statistics
 import re
 
 from .base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
-from memory_system.models import Transaction, Location, DeviceInfo, FraudDecision
-from memory_system.memory_manager import MemoryManager
-from memory_system.context_manager import ContextManager
+from src.models import Transaction, Location, DeviceInfo, FraudDecision
+from src.memory_manager import MemoryManager
+from src.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 

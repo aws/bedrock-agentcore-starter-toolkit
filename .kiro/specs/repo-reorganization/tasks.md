@@ -115,6 +115,8 @@
 
 - [-] 3. Move core source code to src/fraud_detection/
 
+
+
   - Move main fraud detection modules
   - Update internal imports
   - Validate core functionality
@@ -132,7 +134,9 @@
 
 
 
+
 - [ ] 3.2 Update imports in moved core files
+
   - Run import update script on core files
   - Update relative imports to absolute imports
   - Verify all imports resolve

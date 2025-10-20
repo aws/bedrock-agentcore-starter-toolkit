@@ -13,12 +13,12 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from stress_testing.graceful_degradation import (
+from src.graceful_degradation import (
     GracefulDegradationManager,
     DegradationThresholds,
     DegradationEvent
 )
-from stress_testing.models import SystemMetrics, DegradationLevel
+from src.models import SystemMetrics, DegradationLevel
 
 
 # Configure logging

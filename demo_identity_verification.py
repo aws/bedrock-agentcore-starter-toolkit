@@ -19,8 +19,8 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from external_tools.tool_integrator import ToolIntegrator
-from external_tools.identity_verification import (
+from src.tool_integrator import ToolIntegrator
+from src.identity_verification import (
     IdentityVerificationTool, IdentityData, DocumentType,
     create_identity_verification_tool
 )

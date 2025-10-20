@@ -9,11 +9,11 @@ benchmarking.
 import asyncio
 from datetime import datetime
 
-from stress_testing.metrics.business_metrics_calculator import (
+from src.metrics.business_metrics_calculator import (
     BusinessMetricsCalculator,
     CostBreakdown
 )
-from stress_testing.models import SystemMetrics
+from src.models import SystemMetrics
 
 
 def print_section(title: str):

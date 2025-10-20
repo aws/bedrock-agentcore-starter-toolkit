@@ -13,9 +13,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 import json
 
-from unified_fraud_detection_system import UnifiedFraudDetectionSystem
+from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
 from agent_orchestrator import AgentOrchestrator
-from reasoning_engine import ReasoningEngine
+from src import ReasoningEngine
 
 
 class TestReasoningQuality:

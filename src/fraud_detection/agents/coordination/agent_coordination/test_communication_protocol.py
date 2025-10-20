@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from agent_coordination.communication_protocol import (
+from src.communication_protocol import (
     CommunicationProtocol, Message, MessageType, MessagePriority, AgentStatus,
     AgentInfo, MessageDelivery, MessageDeliveryStatus, RequestHandler, NotificationHandler
 )

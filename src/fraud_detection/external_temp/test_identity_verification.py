@@ -7,11 +7,11 @@ import time
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from external_tools.identity_verification import (
+from src.identity_verification import (
     IdentityVerificationTool, IdentityData, VerificationResult,
     IdentityVerificationResult, DocumentType, create_identity_verification_tool
 )
-from external_tools.tool_integrator import ToolConfiguration, ToolType
+from src.tool_integrator import ToolConfiguration, ToolType
 
 
 @pytest.fixture

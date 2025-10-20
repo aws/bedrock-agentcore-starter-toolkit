@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 from pathlib import Path
 
-from streaming.scalable_event_processor import (
+from src.scalable_event_processor import (
     ScalableEventProcessor, EventBatch, ProcessingMetrics, ScalingDecision,
     ProcessingMode, ScalingStrategy, create_scalable_processor
 )

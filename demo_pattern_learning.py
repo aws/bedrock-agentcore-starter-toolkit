@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List
 
-from memory_system.pattern_learning import PatternLearningEngine, LearningFeedback
-from memory_system.memory_manager import MemoryManager
-from memory_system.models import (
+from src.pattern_learning import PatternLearningEngine, LearningFeedback
+from src.memory_manager import MemoryManager
+from src.models import (
     Transaction, FraudPattern, FraudDecision, DecisionContext,
     Location, DeviceInfo, UserBehaviorProfile, RiskLevel
 )

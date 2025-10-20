@@ -13,9 +13,9 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from web_interface.agent_dashboard_api import AgentDashboardAPI
-from stress_testing.metrics.agent_metrics_collector import AgentMetricsCollector
-from stress_testing.metrics.metrics_collector import MetricsCollector
+from src.agent_dashboard_api import AgentDashboardAPI
+from src.metrics.agent_metrics_collector import AgentMetricsCollector
+from src.metrics.metrics_collector import MetricsCollector
 
 
 def print_section(title: str):

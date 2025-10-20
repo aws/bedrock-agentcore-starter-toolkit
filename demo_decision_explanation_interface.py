@@ -8,7 +8,7 @@ Showcases interactive explanation capabilities with:
 - Export functionality
 """
 
-from reasoning_engine.decision_explanation_interface import (
+from src.decision_explanation_interface import (
     DecisionExplanationInterface,
     ExportFormat,
     ExplanationStyle,

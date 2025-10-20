@@ -11,7 +11,7 @@ Demonstrates:
 import time
 import random
 from datetime import datetime
-from web_interface.agent_dashboard_api import (
+from src.agent_dashboard_api import (
     AgentDashboardAPI,
     AgentStatus,
     AgentType

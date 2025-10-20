@@ -11,12 +11,12 @@ This module tests all business metrics calculation functionality including:
 import pytest
 from datetime import datetime
 
-from stress_testing.metrics.business_metrics_calculator import (
+from src.metrics.business_metrics_calculator import (
     BusinessMetricsCalculator,
     FraudDetectionStats,
     CostBreakdown
 )
-from stress_testing.models import SystemMetrics
+from src.models import SystemMetrics
 
 
 class TestBusinessMetricsCalculator:

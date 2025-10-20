@@ -13,10 +13,10 @@ from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, List
 
 # Import system components
-from unified_fraud_detection_system import UnifiedFraudDetectionSystem
+from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
 from agent_orchestrator import AgentOrchestrator
 from memory_manager import MemoryManager
-from transaction_processing_pipeline import TransactionProcessingPipeline
+from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline
 
 
 class TestAgentCoordination:

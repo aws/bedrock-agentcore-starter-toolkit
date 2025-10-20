@@ -9,12 +9,12 @@ from datetime import datetime
 # Configure pytest-asyncio
 pytest_plugins = ('pytest_asyncio',)
 
-from stress_testing.graceful_degradation import (
+from src.graceful_degradation import (
     GracefulDegradationManager,
     DegradationThresholds,
     DegradationEvent
 )
-from stress_testing.models import (
+from src.models import (
     SystemMetrics,
     AgentMetrics,
     DegradationLevel

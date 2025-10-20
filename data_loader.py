@@ -6,7 +6,7 @@ import csv
 import os
 from typing import Dict, List, Any
 from dataclasses import dataclass
-from currency_converter import CurrencyConverter
+from scripts.utilities.currency_converter import CurrencyConverter
 
 @dataclass
 class UserProfile:

@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from web_interface.agent_dashboard_api import AgentDashboardAPI, AgentStatus
+from src.agent_dashboard_api import AgentDashboardAPI, AgentStatus
 
 # Initialize Flask app
 app = Flask(__name__, 

@@ -18,8 +18,8 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from external_tools.tool_integrator import ToolIntegrator
-from external_tools.geolocation_services import (
+from src.tool_integrator import ToolIntegrator
+from src.geolocation_services import (
     GeolocationTool, GeographicLocation, LocationRiskLevel, TravelPattern,
     create_geolocation_tool
 )

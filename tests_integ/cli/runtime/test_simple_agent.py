@@ -4,8 +4,8 @@ from typing import List
 
 from click.testing import Result
 
-from tests_integ.cli.runtime.base_test import BaseCLIRuntimeTest, CommandInvocation
-from tests_integ.utils.config import TEST_ECR, TEST_ROLE
+from tests.cli.runtime.base_test import BaseCLIRuntimeTest, CommandInvocation
+from tests.utils.config import TEST_ECR, TEST_ROLE
 
 logger = logging.getLogger("cli-runtime-simple-agent-test")
 

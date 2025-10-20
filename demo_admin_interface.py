@@ -16,7 +16,7 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from web_interface.admin_interface_api import AdminInterfaceAPI
+from src.admin_interface_api import AdminInterfaceAPI
 
 
 def demo_user_management():

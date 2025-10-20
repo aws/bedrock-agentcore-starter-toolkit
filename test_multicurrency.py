@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Test multi-currency fraud detection"""
 
-from currency_converter import CurrencyConverter
-from fraud_detection_agent import fraud_detection_handler
-from transaction_generator import TransactionGenerator
+from scripts.utilities.currency_converter import CurrencyConverter
+from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler
+from scripts.utilities.transaction_generator import TransactionGenerator
 from datetime import datetime
 
 def test_multicurrency_fraud_detection():

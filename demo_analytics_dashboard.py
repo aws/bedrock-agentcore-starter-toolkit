@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from web_interface.analytics_dashboard_api import AnalyticsDashboardAPI
+from src.analytics_dashboard_api import AnalyticsDashboardAPI
 
 
 def demo_fraud_patterns():

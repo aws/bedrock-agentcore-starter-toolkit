@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Dict, Any
 
-from memory_system.context_manager import ContextManager, ContextualInsight
-from memory_system.memory_manager import MemoryManager
-from memory_system.models import (
+from src.context_manager import ContextManager, ContextualInsight
+from src.memory_manager import MemoryManager
+from src.models import (
     Transaction, DecisionContext, UserBehaviorProfile, 
     FraudPattern, SimilarCase, RiskProfile, FraudDecision,
     Location, DeviceInfo, RiskLevel

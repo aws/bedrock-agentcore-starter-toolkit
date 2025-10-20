@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from bedrock_agentcore import BedrockAgentCoreApp
 from strands import Agent
-from currency_converter import CurrencyConverter
+from scripts.utilities.currency_converter import CurrencyConverter
 
 load_dotenv()
 

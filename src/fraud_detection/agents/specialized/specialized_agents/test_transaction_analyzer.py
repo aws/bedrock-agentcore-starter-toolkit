@@ -12,9 +12,9 @@ from .transaction_analyzer import (
     TransactionAnalysis
 )
 from .base_agent import AgentConfiguration, AgentCapability
-from memory_system.models import Transaction, Location, DeviceInfo, FraudDecision
-from memory_system.memory_manager import MemoryManager
-from memory_system.context_manager import ContextManager
+from src.models import Transaction, Location, DeviceInfo, FraudDecision
+from src.memory_manager import MemoryManager
+from src.context_manager import ContextManager
 
 
 @pytest.fixture

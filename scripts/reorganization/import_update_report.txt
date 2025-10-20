@@ -1,0 +1,592 @@
+================================================================================
+IMPORT UPDATE REPORT
+================================================================================
+
+Total updates: 149
+Files affected: 67
+
+================================================================================
+DETAILED CHANGES
+================================================================================
+
+
+data_loader.py:
+  Line 9:
+    - from currency_converter import CurrencyConverter
+    + from scripts.utilities.currency_converter import CurrencyConverter
+
+demo_admin_interface.py:
+  Line 19:
+    - from web_interface.admin_interface_api import AdminInterfaceAPI
+    + from src.admin_interface_api import AdminInterfaceAPI
+
+demo_agent_communication.py:
+  Line 24:
+    - from agent_coordination.communication_protocol import (
+    + from src.communication_protocol import (
+
+demo_agent_dashboard.py:
+  Line 14:
+    - from web_interface.agent_dashboard_api import (
+    + from src.agent_dashboard_api import (
+
+demo_analytics_dashboard.py:
+  Line 20:
+    - from web_interface.analytics_dashboard_api import AnalyticsDashboardAPI
+    + from src.analytics_dashboard_api import AnalyticsDashboardAPI
+
+demo_audit_trail.py:
+  Line 12:
+    - from reasoning_engine.audit_trail import (
+    + from src.audit_trail import (
+
+demo_compliance_agent.py:
+  Line 23:
+    - from specialized_agents.compliance_agent import (
+    + from src.compliance_agent import (
+  Line 26:
+    - from specialized_agents.base_agent import AgentConfiguration, AgentCapability
+    + from src.base_agent import AgentConfiguration, AgentCapability
+  Line 27:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 28:
+    - from memory_system.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
+    + from src.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
+
+demo_compliance_reporting.py:
+  Line 13:
+    - from reasoning_engine.compliance_reporting import (
+    + from src.compliance_reporting import (
+
+demo_context_aware_decisions.py:
+  Line 13:
+    - from memory_system.context_manager import ContextManager, ContextualInsight
+    + from src.context_manager import ContextManager, ContextualInsight
+  Line 14:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 15:
+    - from memory_system.models import (
+    + from src.models import (
+
+demo_decision_aggregation.py:
+  Line 11:
+    - from agent_coordination.decision_aggregation import (
+    + from src.decision_aggregation import (
+
+demo_decision_explanation_interface.py:
+  Line 11:
+    - from reasoning_engine.decision_explanation_interface import (
+    + from src.decision_explanation_interface import (
+
+demo_fraud_database.py:
+  Line 21:
+    - from external_tools.tool_integrator import ToolIntegrator
+    + from src.tool_integrator import ToolIntegrator
+  Line 22:
+    - from external_tools.fraud_database import (
+    + from src.fraud_database import (
+
+demo_geolocation_services.py:
+  Line 21:
+    - from external_tools.tool_integrator import ToolIntegrator
+    + from src.tool_integrator import ToolIntegrator
+  Line 22:
+    - from external_tools.geolocation_services import (
+    + from src.geolocation_services import (
+
+demo_identity_verification.py:
+  Line 22:
+    - from external_tools.tool_integrator import ToolIntegrator
+    + from src.tool_integrator import ToolIntegrator
+  Line 23:
+    - from external_tools.identity_verification import (
+    + from src.identity_verification import (
+
+demo_memory_manager.py:
+  Line 21:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 22:
+    - from memory_system.models import (
+    + from src.models import (
+
+demo_pattern_detector.py:
+  Line 14:
+    - from specialized_agents.pattern_detector import PatternDetector
+    + from src.pattern_detector import PatternDetector
+  Line 15:
+    - from specialized_agents.base_agent import AgentConfiguration, AgentCapability
+    + from src.base_agent import AgentConfiguration, AgentCapability
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 17:
+    - from memory_system.pattern_learning import PatternLearningEngine
+    + from src.pattern_learning import PatternLearningEngine
+  Line 18:
+    - from memory_system.models import Transaction, Location, DeviceInfo, FraudPattern
+    + from src.models import Transaction, Location, DeviceInfo, FraudPattern
+  Line 520:
+    - from memory_system.models import Transaction, Location, DeviceInfo
+    + from src.models import Transaction, Location, DeviceInfo
+
+demo_pattern_learning.py:
+  Line 13:
+    - from memory_system.pattern_learning import PatternLearningEngine, LearningFeedback
+    + from src.pattern_learning import PatternLearningEngine, LearningFeedback
+  Line 14:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 15:
+    - from memory_system.models import (
+    + from src.models import (
+
+demo_risk_assessor.py:
+  Line 14:
+    - from specialized_agents.risk_assessor import RiskAssessor
+    + from src.risk_assessor import RiskAssessor
+  Line 15:
+    - from specialized_agents.base_agent import AgentConfiguration, AgentCapability
+    + from src.base_agent import AgentConfiguration, AgentCapability
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 17:
+    - from memory_system.models import Transaction, Location, DeviceInfo, UserBehaviorProfile
+    + from src.models import Transaction, Location, DeviceInfo, UserBehaviorProfile
+
+demo_transaction_analyzer.py:
+  Line 14:
+    - from specialized_agents.transaction_analyzer import TransactionAnalyzer
+    + from src.transaction_analyzer import TransactionAnalyzer
+  Line 15:
+    - from specialized_agents.base_agent import AgentConfiguration, AgentCapability
+    + from src.base_agent import AgentConfiguration, AgentCapability
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 17:
+    - from memory_system.context_manager import ContextManager
+    + from src.context_manager import ContextManager
+  Line 18:
+    - from memory_system.models import Transaction, Location, DeviceInfo
+    + from src.models import Transaction, Location, DeviceInfo
+
+demo_transaction_stream.py:
+  Line 13:
+    - from streaming.transaction_stream_processor import (
+    + from src.transaction_stream_processor import (
+
+demo_workload_distribution.py:
+  Line 13:
+    - from agent_coordination.workload_distribution import (
+    + from src.workload_distribution import (
+
+src\fraud_detection\agents\coordination\agent_coordination\test_communication_protocol.py:
+  Line 10:
+    - from agent_coordination.communication_protocol import (
+    + from src.communication_protocol import (
+
+src\fraud_detection\agents\coordination\agent_coordination\test_decision_aggregation.py:
+  Line 7:
+    - from agent_coordination.decision_aggregation import (
+    + from src.decision_aggregation import (
+
+src\fraud_detection\agents\coordination\agent_coordination\test_workload_distribution.py:
+  Line 10:
+    - from agent_coordination.workload_distribution import (
+    + from src.workload_distribution import (
+
+src\fraud_detection\agents\specialized\specialized_agents\compliance_agent.py:
+  Line 29:
+    - from memory_system.models import Transaction, DecisionContext, FraudDecision
+    + from src.models import Transaction, DecisionContext, FraudDecision
+  Line 30:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+
+src\fraud_detection\agents\specialized\specialized_agents\pattern_detector.py:
+  Line 18:
+    - from memory_system.models import Transaction, DecisionContext, UserBehaviorProfile, FraudDecision
+    + from src.models import Transaction, DecisionContext, UserBehaviorProfile, FraudDecision
+  Line 19:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 20:
+    - from memory_system.pattern_learning import PatternLearningEngine
+    + from src.pattern_learning import PatternLearningEngine
+  Line 217:
+    - from memory_system.models import Location, DeviceInfo
+    + from src.models import Location, DeviceInfo
+
+src\fraud_detection\agents\specialized\specialized_agents\risk_assessor.py:
+  Line 18:
+    - from memory_system.models import Transaction, RiskProfile, RiskLevel, Location, DecisionContext
+    + from src.models import Transaction, RiskProfile, RiskLevel, Location, DecisionContext
+  Line 19:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 246:
+    - from memory_system.models import Location, DeviceInfo
+    + from src.models import Location, DeviceInfo
+
+src\fraud_detection\agents\specialized\specialized_agents\test_compliance_agent.py:
+  Line 16:
+    - from memory_system.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
+    + from src.models import Transaction, DecisionContext, FraudDecision, Location, DeviceInfo
+
+src\fraud_detection\agents\specialized\specialized_agents\test_pattern_detector.py:
+  Line 15:
+    - from memory_system.models import Transaction, Location, DeviceInfo, FraudPattern
+    + from src.models import Transaction, Location, DeviceInfo, FraudPattern
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 17:
+    - from memory_system.pattern_learning import PatternLearningEngine
+    + from src.pattern_learning import PatternLearningEngine
+
+src\fraud_detection\agents\specialized\specialized_agents\test_risk_assessor.py:
+  Line 15:
+    - from memory_system.models import Transaction, Location, DeviceInfo, UserBehaviorProfile, RiskLevel
+    + from src.models import Transaction, Location, DeviceInfo, UserBehaviorProfile, RiskLevel
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+
+src\fraud_detection\agents\specialized\specialized_agents\test_transaction_analyzer.py:
+  Line 15:
+    - from memory_system.models import Transaction, Location, DeviceInfo, FraudDecision
+    + from src.models import Transaction, Location, DeviceInfo, FraudDecision
+  Line 16:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 17:
+    - from memory_system.context_manager import ContextManager
+    + from src.context_manager import ContextManager
+
+src\fraud_detection\agents\specialized\specialized_agents\transaction_analyzer.py:
+  Line 17:
+    - from memory_system.models import Transaction, Location, DeviceInfo, FraudDecision
+    + from src.models import Transaction, Location, DeviceInfo, FraudDecision
+  Line 18:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 19:
+    - from memory_system.context_manager import ContextManager
+    + from src.context_manager import ContextManager
+
+src\fraud_detection\core\fraud_detection_agent.py:
+  Line 13:
+    - from currency_converter import CurrencyConverter
+    + from scripts.utilities.currency_converter import CurrencyConverter
+
+src\fraud_detection\core\fraud_detection_api.py:
+  Line 30:
+    - from transaction_processing_pipeline import TransactionProcessingPipeline, SystemConfiguration
+    + from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline, SystemConfiguration
+
+src\fraud_detection\core\transaction_processing_pipeline.py:
+  Line 19:
+    - from unified_fraud_detection_system import UnifiedFraudDetectionSystem, SystemConfiguration
+    + from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem, SystemConfiguration
+
+src\fraud_detection\core\unified_fraud_detection_system.py:
+  Line 18:
+    - from aws_bedrock_agent.agent_orchestrator import (
+    + from infrastructure.agent_orchestrator import (
+  Line 22:
+    - from specialized_agents.transaction_analyzer import TransactionAnalyzer
+    + from src.transaction_analyzer import TransactionAnalyzer
+  Line 23:
+    - from specialized_agents.pattern_detector import PatternDetector
+    + from src.pattern_detector import PatternDetector
+  Line 24:
+    - from specialized_agents.risk_assessor import RiskAssessor
+    + from src.risk_assessor import RiskAssessor
+  Line 25:
+    - from specialized_agents.compliance_agent import ComplianceAgent
+    + from src.compliance_agent import ComplianceAgent
+  Line 26:
+    - from reasoning_engine.adaptive_reasoning import AdaptiveReasoningEngine, LearningMode
+    + from src.adaptive_reasoning import AdaptiveReasoningEngine, LearningMode
+  Line 27:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 28:
+    - from memory_system.context_manager import ContextManager
+    + from src.context_manager import ContextManager
+  Line 29:
+    - from memory_system.pattern_learning import PatternLearningEngine
+    + from src.pattern_learning import PatternLearningEngine
+  Line 30:
+    - from external_tools.tool_integrator import ToolIntegrator
+    + from src.tool_integrator import ToolIntegrator
+  Line 31:
+    - from external_tools.identity_verification import IdentityVerificationTool
+    + from src.identity_verification import IdentityVerificationTool
+  Line 32:
+    - from external_tools.fraud_database import FraudDatabaseTool
+    + from src.fraud_database import FraudDatabaseTool
+  Line 33:
+    - from external_tools.geolocation_services import GeolocationTool
+    + from src.geolocation_services import GeolocationTool
+  Line 34:
+    - from streaming.transaction_stream_processor import TransactionStreamProcessor, StreamingFraudDetector
+    + from src.transaction_stream_processor import TransactionStreamProcessor, StreamingFraudDetector
+  Line 35:
+    - from streaming.event_response_system import EventResponseSystem
+    + from src.event_response_system import EventResponseSystem
+  Line 333:
+    - from streaming.transaction_stream_processor import Transaction as StreamTransaction
+    + from src.transaction_stream_processor import Transaction as StreamTransaction
+  Line 442:
+    - from memory_system.models import DecisionContext, FraudDecision as MemoryFraudDecision
+    + from src.models import DecisionContext, FraudDecision as MemoryFraudDecision
+
+src\fraud_detection\external_temp\test_geolocation_services.py:
+  Line 10:
+    - from external_tools.geolocation_services import (
+    + from src.geolocation_services import (
+  Line 15:
+    - from external_tools.tool_integrator import ToolConfiguration, ToolType
+    + from src.tool_integrator import ToolConfiguration, ToolType
+
+src\fraud_detection\external_temp\test_identity_verification.py:
+  Line 10:
+    - from external_tools.identity_verification import (
+    + from src.identity_verification import (
+  Line 14:
+    - from external_tools.tool_integrator import ToolConfiguration, ToolType
+    + from src.tool_integrator import ToolConfiguration, ToolType
+
+src\fraud_detection\reasoning_temp\decision_explanation_interface.py:
+  Line 17:
+    - from reasoning_engine.explanation_generator import ExplanationGenerator, ExplanationStyle, ExplanationLevel, ExplanationReport
+    + from src.explanation_generator import ExplanationGenerator, ExplanationStyle, ExplanationLevel, ExplanationReport
+  Line 18:
+    - from reasoning_engine.reasoning_trail import ReasoningTrailFormatter, TrailFormat, ReasoningTrail
+    + from src.reasoning_trail import ReasoningTrailFormatter, TrailFormat, ReasoningTrail
+  Line 19:
+    - from reasoning_engine.audit_trail import AuditTrailSystem, AuditEventType, AuditSeverity
+    + from src.audit_trail import AuditTrailSystem, AuditEventType, AuditSeverity
+
+src\fraud_detection\streaming_temp\test_event_response_system.py:
+  Line 10:
+    - from streaming.event_response_system import (
+    + from src.event_response_system import (
+
+src\fraud_detection\streaming_temp\test_scalable_event_processor.py:
+  Line 14:
+    - from streaming.scalable_event_processor import (
+    + from src.scalable_event_processor import (
+
+src\fraud_detection\streaming_temp\test_transaction_stream_processor.py:
+  Line 10:
+    - from streaming.transaction_stream_processor import (
+    + from src.transaction_stream_processor import (
+
+standalone_fraud_api.py:
+  Line 14:
+    - from currency_converter import CurrencyConverter
+    + from scripts.utilities.currency_converter import CurrencyConverter
+  Line 15:
+    - from transaction_generator import TransactionGenerator
+    + from scripts.utilities.transaction_generator import TransactionGenerator
+  Line 16:
+    - from data_loader import DataLoader
+    + from scripts.utilities.data_loader import DataLoader
+
+stress_testing\demo_admin_dashboard.py:
+  Line 31:
+    - from stress_testing.dashboards.admin_dashboard_api import AdminDashboardAPI
+    + from src.dashboards.admin_dashboard_api import AdminDashboardAPI
+  Line 32:
+    - from stress_testing.orchestrator.stress_test_orchestrator import StressTestOrchestrator
+    + from src.orchestrator.stress_test_orchestrator import StressTestOrchestrator
+  Line 33:
+    - from stress_testing.models import StressTestConfig
+    + from src.models import StressTestConfig
+
+stress_testing\demo_agent_dashboard.py:
+  Line 24:
+    - from web_interface.agent_dashboard_api import AgentDashboardAPI, AgentStatus
+    + from src.agent_dashboard_api import AgentDashboardAPI, AgentStatus
+
+stress_testing\demo_agent_metrics.py:
+  Line 16:
+    - from web_interface.agent_dashboard_api import AgentDashboardAPI
+    + from src.agent_dashboard_api import AgentDashboardAPI
+  Line 17:
+    - from stress_testing.metrics.agent_metrics_collector import AgentMetricsCollector
+    + from src.metrics.agent_metrics_collector import AgentMetricsCollector
+  Line 18:
+    - from stress_testing.metrics.metrics_collector import MetricsCollector
+    + from src.metrics.metrics_collector import MetricsCollector
+
+stress_testing\demo_business_metrics.py:
+  Line 12:
+    - from stress_testing.metrics.business_metrics_calculator import (
+    + from src.metrics.business_metrics_calculator import (
+  Line 16:
+    - from stress_testing.models import SystemMetrics
+    + from src.models import SystemMetrics
+
+stress_testing\demo_business_storytelling.py:
+  Line 16:
+    - from stress_testing.models import HeroMetrics, BusinessMetrics, SystemMetrics
+    + from src.models import HeroMetrics, BusinessMetrics, SystemMetrics
+  Line 17:
+    - from stress_testing.dashboards.business_storytelling_engine import (
+    + from src.dashboards.business_storytelling_engine import (
+
+stress_testing\demo_competitive_benchmarks.py:
+  Line 15:
+    - from stress_testing.metrics.competitive_benchmark_calculator import (
+    + from src.metrics.competitive_benchmark_calculator import (
+
+stress_testing\demo_graceful_degradation.py:
+  Line 16:
+    - from stress_testing.graceful_degradation import (
+    + from src.graceful_degradation import (
+  Line 21:
+    - from stress_testing.models import SystemMetrics, DegradationLevel
+    + from src.models import SystemMetrics, DegradationLevel
+
+stress_testing\demo_realtime_streaming.py:
+  Line 19:
+    - from stress_testing.models import SystemMetrics, AgentMetrics, BusinessMetrics
+    + from src.models import SystemMetrics, AgentMetrics, BusinessMetrics
+  Line 20:
+    - from stress_testing.metrics import RealTimeMetricsStreamer, MetricType
+    + from src.metrics import RealTimeMetricsStreamer, MetricType
+
+stress_testing\demo_resilience_validation.py:
+  Line 19:
+    - from stress_testing.resilience_validator import ResilienceValidator
+    + from src.resilience_validator import ResilienceValidator
+  Line 20:
+    - from stress_testing.models import (
+    + from src.models import (
+
+stress_testing\examples.py:
+  Line 8:
+    - from stress_testing.models import (
+    + from src.models import (
+  Line 21:
+    - from stress_testing.config import ConfigurationManager, ScenarioBuilder
+    + from src.config import ConfigurationManager, ScenarioBuilder
+
+stress_testing\metrics\test_agent_metrics_collector.py:
+  Line 12:
+    - from stress_testing.metrics.agent_metrics_collector import AgentMetricsCollector
+    + from src.metrics.agent_metrics_collector import AgentMetricsCollector
+
+stress_testing\metrics\test_business_metrics_calculator.py:
+  Line 14:
+    - from stress_testing.metrics.business_metrics_calculator import (
+    + from src.metrics.business_metrics_calculator import (
+  Line 19:
+    - from stress_testing.models import SystemMetrics
+    + from src.models import SystemMetrics
+
+stress_testing\test_graceful_degradation.py:
+  Line 12:
+    - from stress_testing.graceful_degradation import (
+    + from src.graceful_degradation import (
+  Line 17:
+    - from stress_testing.models import (
+    + from src.models import (
+
+stress_testing\test_integration_business_metrics.py:
+  Line 11:
+    - from stress_testing.metrics import MetricsCollector, BusinessMetricsCalculator
+    + from src.metrics import MetricsCollector, BusinessMetricsCalculator
+  Line 76:
+    - from stress_testing.load_generator.load_generator import LoadGenerator
+    + from src.load_generator.load_generator import LoadGenerator
+
+test_fraud_detection.py:
+  Line 6:
+    - from fraud_detection_agent import fraud_detection_handler, fraud_agent
+    + from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler, fraud_agent
+  Line 7:
+    - from transaction_generator import TransactionGenerator
+    + from scripts.utilities.transaction_generator import TransactionGenerator
+
+test_memory_integration.py:
+  Line 17:
+    - from memory_system.memory_manager import MemoryManager
+    + from src.memory_manager import MemoryManager
+  Line 18:
+    - from memory_system.models import (
+    + from src.models import (
+  Line 290:
+    - from memory_system.dynamodb_config import DynamoDBConfig
+    + from src.dynamodb_config import DynamoDBConfig
+
+test_multicurrency.py:
+  Line 4:
+    - from currency_converter import CurrencyConverter
+    + from scripts.utilities.currency_converter import CurrencyConverter
+  Line 5:
+    - from fraud_detection_agent import fraud_detection_handler
+    + from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler
+  Line 6:
+    - from transaction_generator import TransactionGenerator
+    + from scripts.utilities.transaction_generator import TransactionGenerator
+
+test_with_files.py:
+  Line 4:
+    - from data_loader import DataLoader
+    + from scripts.utilities.data_loader import DataLoader
+  Line 5:
+    - from fraud_detection_agent import fraud_detection_handler
+    + from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler
+  Line 6:
+    - from transaction_generator import TransactionGenerator
+    + from scripts.utilities.transaction_generator import TransactionGenerator
+
+tests\test_ai_agent_validation.py:
+  Line 16:
+    - from unified_fraud_detection_system import UnifiedFraudDetectionSystem
+    + from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
+  Line 18:
+    - from reasoning_engine import ReasoningEngine
+    + from src import ReasoningEngine
+
+tests\test_integration.py:
+  Line 16:
+    - from unified_fraud_detection_system import UnifiedFraudDetectionSystem
+    + from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
+  Line 19:
+    - from transaction_processing_pipeline import TransactionProcessingPipeline
+    + from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline
+
+tests\test_load_performance.py:
+  Line 18:
+    - from unified_fraud_detection_system import UnifiedFraudDetectionSystem
+    + from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
+  Line 19:
+    - from transaction_processing_pipeline import TransactionProcessingPipeline
+    + from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline
+
+tests_integ\cli\runtime\test_simple_agent.py:
+  Line 7:
+    - from tests_integ.cli.runtime.base_test import BaseCLIRuntimeTest, CommandInvocation
+    + from tests.cli.runtime.base_test import BaseCLIRuntimeTest, CommandInvocation
+  Line 8:
+    - from tests_integ.utils.config import TEST_ECR, TEST_ROLE
+    + from tests.utils.config import TEST_ECR, TEST_ROLE
+
+transaction_generator.py:
+  Line 10:
+    - from data_loader import DataLoader
+    + from scripts.utilities.data_loader import DataLoader
+
+web_interface\dashboard_server.py:
+  Line 20:
+    - from web_interface.agent_dashboard_api import AgentDashboardAPI, AgentStatus
+    + from src.agent_dashboard_api import AgentDashboardAPI, AgentStatus

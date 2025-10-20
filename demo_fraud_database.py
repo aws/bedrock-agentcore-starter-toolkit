@@ -18,8 +18,8 @@ PROJECT_ROOT = os.path.abspath(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from external_tools.tool_integrator import ToolIntegrator
-from external_tools.fraud_database import (
+from src.tool_integrator import ToolIntegrator
+from src.fraud_database import (
     FraudDatabaseTool, FraudCase, FraudType, FraudCaseStatus,
     create_fraud_database_tool
 )

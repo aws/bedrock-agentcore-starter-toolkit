@@ -12,8 +12,8 @@ from .risk_assessor import (
     CrossReferenceResult, RiskAssessmentResult
 )
 from .base_agent import AgentConfiguration, AgentCapability
-from memory_system.models import Transaction, Location, DeviceInfo, UserBehaviorProfile, RiskLevel
-from memory_system.memory_manager import MemoryManager
+from src.models import Transaction, Location, DeviceInfo, UserBehaviorProfile, RiskLevel
+from src.memory_manager import MemoryManager
 
 
 @pytest.fixture

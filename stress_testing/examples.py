@@ -5,7 +5,7 @@ This module demonstrates how to use the core data models and configuration.
 """
 
 from datetime import datetime
-from stress_testing.models import (
+from src.models import (
     StressTestConfig,
     LoadProfile,
     LoadProfileType,
@@ -18,7 +18,7 @@ from stress_testing.models import (
     HeroMetrics,
     TestStatus
 )
-from stress_testing.config import ConfigurationManager, ScenarioBuilder
+from src.config import ConfigurationManager, ScenarioBuilder
 
 
 def example_create_basic_config():

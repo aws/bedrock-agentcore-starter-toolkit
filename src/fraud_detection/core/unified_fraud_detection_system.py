@@ -15,24 +15,24 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
 # Import core components
-from aws_bedrock_agent.agent_orchestrator import (
+from infrastructure.agent_orchestrator import (
     AgentOrchestrator, Transaction as OrchestratorTransaction, 
     FraudDecision as OrchestratorDecision
 )
-from specialized_agents.transaction_analyzer import TransactionAnalyzer
-from specialized_agents.pattern_detector import PatternDetector
-from specialized_agents.risk_assessor import RiskAssessor
-from specialized_agents.compliance_agent import ComplianceAgent
-from reasoning_engine.adaptive_reasoning import AdaptiveReasoningEngine, LearningMode
-from memory_system.memory_manager import MemoryManager
-from memory_system.context_manager import ContextManager
-from memory_system.pattern_learning import PatternLearningEngine
-from external_tools.tool_integrator import ToolIntegrator
-from external_tools.identity_verification import IdentityVerificationTool
-from external_tools.fraud_database import FraudDatabaseTool
-from external_tools.geolocation_services import GeolocationTool
-from streaming.transaction_stream_processor import TransactionStreamProcessor, StreamingFraudDetector
-from streaming.event_response_system import EventResponseSystem
+from src.transaction_analyzer import TransactionAnalyzer
+from src.pattern_detector import PatternDetector
+from src.risk_assessor import RiskAssessor
+from src.compliance_agent import ComplianceAgent
+from src.adaptive_reasoning import AdaptiveReasoningEngine, LearningMode
+from src.memory_manager import MemoryManager
+from src.context_manager import ContextManager
+from src.pattern_learning import PatternLearningEngine
+from src.tool_integrator import ToolIntegrator
+from src.identity_verification import IdentityVerificationTool
+from src.fraud_database import FraudDatabaseTool
+from src.geolocation_services import GeolocationTool
+from src.transaction_stream_processor import TransactionStreamProcessor, StreamingFraudDetector
+from src.event_response_system import EventResponseSystem
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -330,7 +330,7 @@ class UnifiedFraudDetectionSystem:
             return False
         
         try:
-            from streaming.transaction_stream_processor import Transaction as StreamTransaction
+from src.transaction_stream_processor import Transaction as StreamTransaction
             
             # Convert to stream transaction format
             stream_transaction = StreamTransaction.from_dict(transaction_data)
@@ -439,7 +439,7 @@ class UnifiedFraudDetectionSystem:
     def _store_decision_context(self, transaction, result: Dict[str, Any]):
         """Store decision context in memory system."""
         try:
-            from memory_system.models import DecisionContext, FraudDecision as MemoryFraudDecision
+from src.models import DecisionContext, FraudDecision as MemoryFraudDecision
             
             # Map decision to enum
             decision_map = {

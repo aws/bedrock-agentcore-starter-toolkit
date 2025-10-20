@@ -10,7 +10,7 @@ import logging
 import time
 import random
 from datetime import datetime, timedelta
-from streaming.transaction_stream_processor import (
+from src.transaction_stream_processor import (
     TransactionStreamProcessor, StreamingFraudDetector,
     Transaction, ProcessingResult, ProcessingPriority
 )

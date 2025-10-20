@@ -10,7 +10,7 @@ import logging
 import time
 import random
 from datetime import datetime, timedelta
-from agent_coordination.workload_distribution import (
+from src.workload_distribution import (
     WorkloadDistributor, AgentCapabilities, Task, TaskAssignment,
     TaskType, TaskPriority, AgentStatus, create_task
 )

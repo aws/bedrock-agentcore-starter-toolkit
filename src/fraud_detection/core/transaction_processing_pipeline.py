@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
-from unified_fraud_detection_system import UnifiedFraudDetectionSystem, SystemConfiguration
+from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem, SystemConfiguration
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from web_interface.agent_dashboard_api import AgentDashboardAPI, AgentStatus
+from src.agent_dashboard_api import AgentDashboardAPI, AgentStatus
 
 
 def simulate_stress_test_activity(api: AgentDashboardAPI, duration_seconds: int = 60):

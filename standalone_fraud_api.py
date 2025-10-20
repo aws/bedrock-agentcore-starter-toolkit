@@ -11,9 +11,9 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import threading
 import time
-from currency_converter import CurrencyConverter
-from transaction_generator import TransactionGenerator
-from data_loader import DataLoader
+from scripts.utilities.currency_converter import CurrencyConverter
+from scripts.utilities.transaction_generator import TransactionGenerator
+from scripts.utilities.data_loader import DataLoader
 
 # Create Flask app
 app = Flask(__name__)

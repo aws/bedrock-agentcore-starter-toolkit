@@ -3,8 +3,8 @@
 
 import json
 from datetime import datetime
-from fraud_detection_agent import fraud_detection_handler, fraud_agent
-from transaction_generator import TransactionGenerator
+from src.fraud_detection.core.fraud_detection_agent import fraud_detection_handler, fraud_agent
+from scripts.utilities.transaction_generator import TransactionGenerator
 
 def test_fraud_detection():
     """Test fraud detection with sample transactions"""

@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-from streaming.event_response_system import (
+from src.event_response_system import (
     EventResponseSystem, FraudEvent, ResponseRule, ResponseExecution,
     EventType, EventSeverity, ResponseAction, create_fraud_event, create_response_rule
 )

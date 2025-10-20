@@ -9,7 +9,7 @@ This demo showcases the audit trail system with:
 """
 
 from datetime import datetime, timedelta
-from reasoning_engine.audit_trail import (
+from src.audit_trail import (
     AuditTrailSystem,
     AuditEventType,
     AuditSeverity

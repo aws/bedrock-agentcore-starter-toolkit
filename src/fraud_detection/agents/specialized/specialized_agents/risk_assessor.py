@@ -15,8 +15,8 @@ from collections import defaultdict
 import statistics
 
 from .base_agent import BaseAgent, AgentConfiguration, AgentCapability, ProcessingResult
-from memory_system.models import Transaction, RiskProfile, RiskLevel, Location, DecisionContext
-from memory_system.memory_manager import MemoryManager
+from src.models import Transaction, RiskProfile, RiskLevel, Location, DecisionContext
+from src.memory_manager import MemoryManager
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +243,7 @@ class RiskAssessor(BaseAgent):
                 tx_data = request_data
             
             # Create transaction object (simplified for demo)
-            from memory_system.models import Location, DeviceInfo
+from src.models import Location, DeviceInfo
             
             location = Location(
                 country=tx_data.get("location", {}).get("country", ""),

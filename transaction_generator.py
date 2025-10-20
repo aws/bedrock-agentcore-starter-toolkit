@@ -7,7 +7,7 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 import requests
-from data_loader import DataLoader
+from scripts.utilities.data_loader import DataLoader
 
 fake = Faker()
 

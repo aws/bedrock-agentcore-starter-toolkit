@@ -11,11 +11,11 @@ from decimal import Decimal
 from typing import List, Dict, Any
 import json
 
-from specialized_agents.pattern_detector import PatternDetector
-from specialized_agents.base_agent import AgentConfiguration, AgentCapability
-from memory_system.memory_manager import MemoryManager
-from memory_system.pattern_learning import PatternLearningEngine
-from memory_system.models import Transaction, Location, DeviceInfo, FraudPattern
+from src.pattern_detector import PatternDetector
+from src.base_agent import AgentConfiguration, AgentCapability
+from src.memory_manager import MemoryManager
+from src.pattern_learning import PatternLearningEngine
+from src.models import Transaction, Location, DeviceInfo, FraudPattern
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -517,7 +517,7 @@ def main():
                 
                 # Create realistic transaction history
                 for i in range(min(20, limit)):
-                    from memory_system.models import Transaction, Location, DeviceInfo
+from src.models import Transaction, Location, DeviceInfo
                     
                     tx = Transaction(
                         id=f"mock_tx_{i:03d}",

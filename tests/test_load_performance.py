@@ -15,8 +15,8 @@ from typing import List, Dict
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from unified_fraud_detection_system import UnifiedFraudDetectionSystem
-from transaction_processing_pipeline import TransactionProcessingPipeline
+from src.fraud_detection.core.unified_fraud_detection_system import UnifiedFraudDetectionSystem
+from src.fraud_detection.core.transaction_processing_pipeline import TransactionProcessingPipeline
 
 
 class PerformanceMetrics:

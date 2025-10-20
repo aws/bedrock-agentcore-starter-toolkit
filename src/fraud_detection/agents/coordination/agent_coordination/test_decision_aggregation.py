@@ -4,7 +4,7 @@ Unit tests for Decision Aggregation System.
 
 import pytest
 from datetime import datetime, timedelta
-from agent_coordination.decision_aggregation import (
+from src.decision_aggregation import (
     DecisionAggregator, AgentDecision, DecisionRequest, AggregatedDecision,
     DecisionType, AggregationMethod, ConflictResolutionStrategy
 )

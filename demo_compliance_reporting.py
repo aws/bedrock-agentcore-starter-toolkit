@@ -10,7 +10,7 @@ Demonstrates:
 
 import json
 from datetime import datetime, timedelta
-from reasoning_engine.compliance_reporting import (
+from src.compliance_reporting import (
     ComplianceReportingSystem,
     Jurisdiction,
     ReportFormat,

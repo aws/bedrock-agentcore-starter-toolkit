@@ -16,8 +16,8 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from stress_testing.resilience_validator import ResilienceValidator
-from stress_testing.models import (
+from src.resilience_validator import ResilienceValidator
+from src.models import (
     FailureScenario,
     FailureType,
     SystemMetrics

@@ -14,9 +14,9 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum
 
-from reasoning_engine.explanation_generator import ExplanationGenerator, ExplanationStyle, ExplanationLevel, ExplanationReport
-from reasoning_engine.reasoning_trail import ReasoningTrailFormatter, TrailFormat, ReasoningTrail
-from reasoning_engine.audit_trail import AuditTrailSystem, AuditEventType, AuditSeverity
+from src.explanation_generator import ExplanationGenerator, ExplanationStyle, ExplanationLevel, ExplanationReport
+from src.reasoning_trail import ReasoningTrailFormatter, TrailFormat, ReasoningTrail
+from src.audit_trail import AuditTrailSystem, AuditEventType, AuditSeverity
 
 
 class ExportFormat(Enum):
