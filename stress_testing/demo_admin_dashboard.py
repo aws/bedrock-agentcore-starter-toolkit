@@ -28,9 +28,9 @@ async def demo_admin_dashboard():
     print("="*80 + "\n")
     
     # Import components
-from src.dashboards.admin_dashboard_api import AdminDashboardAPI
-from src.orchestrator.stress_test_orchestrator import StressTestOrchestrator
-from src.models import StressTestConfig
+    from src.fraud_detection.web.api.admin_dashboard_api import AdminDashboardAPI
+    from stress_testing.orchestrator.stress_test_orchestrator import StressTestOrchestrator
+    from stress_testing.models import StressTestConfig
     
     # Initialize components
     print("1. Initializing Admin Dashboard API...")
