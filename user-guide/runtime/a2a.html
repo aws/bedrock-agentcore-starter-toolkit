@@ -11,10 +11,10 @@
     
     
     
-      <link rel="prev" href="../observability/quickstart.html">
+      <link rel="prev" href="notebook.html">
     
     
-      <link rel="next" href="overview.html">
+      <link rel="next" href="../gateway/quickstart.html">
     
     
     <link rel="icon" href="../.." sizes="any">
@@ -23,7 +23,7 @@
 
     
       
-        <title>Import Agent Quickstart - Amazon Bedrock AgentCore</title>
+        <title>Runtime A2A Server Deployment - Amazon Bedrock AgentCore</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#import-agent-quick-start" class="md-skip">
+        <a href="#deploy-a2a-servers-in-agentcore-runtime" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Agent Quickstart
+              Runtime A2A Server Deployment
             
           </span>
         </div>
@@ -435,6 +435,8 @@
                 
   
   
+    
+  
   
   
     
@@ -450,11 +452,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" checked>
         
           
           <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="">
@@ -470,7 +472,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_2">
             <span class="md-nav__icon md-icon"></span>
             Runtime
@@ -484,7 +486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../runtime/quickstart.html" class="md-nav__link">
+      <a href="quickstart.html" class="md-nav__link">
         
   
   
@@ -507,7 +509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../runtime/overview.html" class="md-nav__link">
+      <a href="overview.html" class="md-nav__link">
         
   
   
@@ -530,7 +532,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../runtime/permissions.html" class="md-nav__link">
+      <a href="permissions.html" class="md-nav__link">
         
   
   
@@ -553,7 +555,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../runtime/async.html" class="md-nav__link">
+      <a href="async.html" class="md-nav__link">
         
   
   
@@ -576,7 +578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../runtime/notebook.html" class="md-nav__link">
+      <a href="notebook.html" class="md-nav__link">
         
   
   
@@ -596,10 +598,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../runtime/a2a.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Runtime A2A Server Deployment
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="a2a.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -610,6 +634,331 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Topics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-amazon-bedrock-agentcore-supports-a2a" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Amazon Bedrock AgentCore supports A2A
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a2a-with-agentcore-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using A2A with AgentCore Runtime
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using A2A with AgentCore Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Topics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-your-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Create your A2A server
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 1: Create your A2A server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-required-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install required packages
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-your-first-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create your first A2A server
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the code
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-test-your-a2a-server-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Test your A2A server locally
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Test your A2A server locally">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-your-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start your A2A server
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invoke-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invoke agent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-agent-card-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test agent card retrieval
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-deploy-your-a2a-server-to-bedrock-agentcore-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Deploy your A2A server to Bedrock AgentCore Runtime
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: Deploy your A2A server to Bedrock AgentCore Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-deployment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install deployment tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-cognito-user-pool-for-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up Cognito user pool for authentication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-your-a2a-server-for-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure your A2A server for deployment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-to-aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy to AWS
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-get-the-agent-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Get the agent card
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 4: Get the agent card">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set-up-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up environment variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-agent-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieve agent card
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-invoke-your-deployed-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Invoke your deployed A2A server
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topics_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Topics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-cognito-user-pool-for-authentication_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up Cognito user pool for authentication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remote-testing-with-a2a-inspector" class="md-nav__link">
+    <span class="md-ellipsis">
+      Remote testing with A2A inspector
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-a2a-specific-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common A2A-specific issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exception-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Exception handling
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1158,8 +1507,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1175,11 +1522,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
         
           
           <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="">
@@ -1195,7 +1542,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1_9">
             <span class="md-nav__icon md-icon"></span>
             Import Agent
@@ -1206,32 +1553,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Import Agent Quickstart
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="quickstart.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
         
   
   
@@ -1242,232 +1567,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      Interactive Mode (Recommended)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Line Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step-by-Step Walkthrough
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Launch the Import Utility
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Configure AWS Region
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Select Your Agent
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Choose Agent Alias
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1480,7 +1579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="overview.html" class="md-nav__link">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -1503,7 +1602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -2086,6 +2185,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Topics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-amazon-bedrock-agentcore-supports-a2a" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Amazon Bedrock AgentCore supports A2A
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a2a-with-agentcore-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using A2A with AgentCore Runtime
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using A2A with AgentCore Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Topics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       Prerequisites
@@ -2093,30 +2229,179 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-your-a2a-server" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Usage
+      Step 1: Create your A2A server
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage">
+    <nav class="md-nav" aria-label="Step 1: Create your A2A server">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
+  <a href="#install-required-packages" class="md-nav__link">
     <span class="md-ellipsis">
-      Interactive Mode (Recommended)
+      Install required packages
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
+  <a href="#create-your-first-a2a-server" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Mode
+      Create your first A2A server
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the code
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-test-your-a2a-server-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Test your A2A server locally
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Test your A2A server locally">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-your-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start your A2A server
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invoke-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invoke agent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-agent-card-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test agent card retrieval
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-deploy-your-a2a-server-to-bedrock-agentcore-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Deploy your A2A server to Bedrock AgentCore Runtime
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: Deploy your A2A server to Bedrock AgentCore Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-deployment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install deployment tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-cognito-user-pool-for-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up Cognito user pool for authentication
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-your-a2a-server-for-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure your A2A server for deployment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-to-aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy to AWS
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-get-the-agent-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Get the agent card
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 4: Get the agent card">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set-up-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Set up environment variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieve-agent-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieve agent card
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-invoke-your-deployed-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Invoke your deployed A2A server
     </span>
   </a>
   
@@ -2128,64 +2413,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
+  <a href="#appendix" class="md-nav__link">
     <span class="md-ellipsis">
-      Step-by-Step Walkthrough
+      Appendix
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
+    <nav class="md-nav" aria-label="Appendix">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
+  <a href="#topics_2" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Launch the Import Utility
+      Topics
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
+  <a href="#set-up-cognito-user-pool-for-authentication_1" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Configure AWS Region
+      Set up Cognito user pool for authentication
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
+  <a href="#remote-testing-with-a2a-inspector" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Select Your Agent
+      Remote testing with A2A inspector
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
-      4. Choose Agent Alias
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-a2a-specific-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common A2A-specific issues
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
+  <a href="#exception-handling" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
+      Exception handling
     </span>
   </a>
   
@@ -2195,97 +2481,9 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
   
 </li>
       
@@ -2308,111 +2506,452 @@
   
 
 
-<h1 id="import-agent-quick-start">Import Agent Quick Start<a class="headerlink" href="#import-agent-quick-start" title="Permanent link">&para;</a></h1>
-<p>Get started with importing your Bedrock Agent to AgentCore in just a few minutes.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h1 id="deploy-a2a-servers-in-agentcore-runtime">Deploy A2A servers in AgentCore Runtime<a class="headerlink" href="#deploy-a2a-servers-in-agentcore-runtime" title="Permanent link">&para;</a></h1>
+<p>Amazon Bedrock AgentCore AgentCore Runtime lets you deploy and run Agent-to-Agent (A2A)
+servers in the AgentCore Runtime. This guide walks you through creating, testing, and deploying your
+first A2A server.</p>
+<p>In this section, you learn:</p>
 <ul>
-<li>AWS credentials configured with access to Bedrock Agents</li>
-<li>Use <code>ada</code> or <code>aws configure</code> to ensure that your credentials are available for the utility to assume.</li>
-<li>Bedrock AgentCore Starter Toolkit installed</li>
-<li>An existing Amazon Bedrock Agent</li>
+<li>How
+  Amazon Bedrock AgentCore supports A2A</li>
+<li>How to create an A2A server with agent capabilities</li>
+<li>How to test your server locally</li>
+<li>How to deploy your server to AWS</li>
+<li>How to invoke your deployed server</li>
+<li>How to retrieve agent cards for discovery</li>
 </ul>
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<h3 id="interactive-mode-recommended">Interactive Mode (Recommended)<a class="headerlink" href="#interactive-mode-recommended" title="Permanent link">&para;</a></h3>
-<p>The simplest way to get started is with interactive mode:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+<h6 id="topics">Topics<a class="headerlink" href="#topics" title="Permanent link">&para;</a></h6>
+<ul>
+<li><a href="#runtime-a2a-how-agentcore-supports" title="#runtime-a2a-how-agentcore-supports">How
+  Amazon Bedrock AgentCore supports A2A</a></li>
+<li><a href="#runtime-a2a-steps" title="#runtime-a2a-steps">Using A2A with AgentCore Runtime</a></li>
+<li><a href="#runtime-a2a-appendix" title="#runtime-a2a-appendix">Appendix</a></li>
+</ul>
+<h2 id="how-amazon-bedrock-agentcore-supports-a2a">How Amazon Bedrock AgentCore supports A2A<a class="headerlink" href="#how-amazon-bedrock-agentcore-supports-a2a" title="Permanent link">&para;</a></h2>
+<p>Amazon Bedrock AgentCore's A2A protocol support enables seamless integration with
+A2A servers by acting as a transparent proxy layer. When configured for A2A,
+Amazon Bedrock AgentCore expects containers to run stateless, streamable HTTP servers on port
+<code>9000</code> at the root path (<code>0.0.0.0:9000/</code>), which aligns with the default A2A server
+configuration.</p>
+<p>The service provides enterprise-grade session isolation while maintaining protocol
+transparency - JSON-RPC payloads from the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_InvokeAgentRuntime.html" title="https://docs.aws.amazon.com/bedrock-agentcore/latest/APIReference/API_InvokeAgentRuntime.html">InvokeAgentRuntime</a> API are passed
+through directly to the A2A container without modification. This architecture preserves
+the standard A2A protocol features like built-in agent discovery through Agent Cards at
+<code>/.well-known/agent-card.json</code> and JSON-RPC communication, while adding enterprise
+authentication (SigV4/OAuth 2.0) and scalability.</p>
+<p>The key differentiators from other protocols are the port (9000 vs 8080 for HTTP),
+mount path (<code>/</code> vs <code>/invocations</code>), and the standardized agent discovery mechanism, making
+Amazon Bedrock AgentCore an ideal deployment platform for A2A agents in production
+environments.</p>
+<p>Key differences from other
+protocols:</p>
+<p><strong>Port</strong>
+:   A2A servers run on port 9000 (vs 8080 for HTTP, 8000 for MCP)</p>
+<p><strong>Path</strong>
+:   A2A servers are mounted at <code>/</code> (vs
+    <code>/invocations</code> for HTTP, <code>/mcp</code> for
+    MCP)</p>
+<p><strong>Agent Cards</strong>
+:   A2A provides built-in agent discovery through Agent Cards at
+    <code>/.well-known/agent-card.json</code></p>
+<p><strong>Protocol</strong>
+:   Uses JSON-RPC for agent-to-agent communication</p>
+<p><strong>Authentication</strong>
+:   Supports both SigV4 and OAuth 2.0 authentication schemes</p>
+<p>For more information, see <a href="https://a2a-protocol.org/" title="https://a2a-protocol.org/">https://a2a-protocol.org/</a>.</p>
+<h2 id="using-a2a-with-agentcore-runtime">Using A2A with AgentCore Runtime<a class="headerlink" href="#using-a2a-with-agentcore-runtime" title="Permanent link">&para;</a></h2>
+<p>In this tutorial you create, test, and deploy an A2A server.</p>
+<h6 id="topics_1">Topics<a class="headerlink" href="#topics_1" title="Permanent link">&para;</a></h6>
+<ul>
+<li><a href="#runtime-a2a-prerequisites" title="#runtime-a2a-prerequisites">Prerequisites</a></li>
+<li><a href="#runtime-a2a-create-server" title="#runtime-a2a-create-server">Step 1: Create your A2A server</a></li>
+<li><a href="#runtime-a2a-test-locally" title="#runtime-a2a-test-locally">Step 2: Test your A2A server locally</a></li>
+<li><a href="#runtime-a2a-deploy" title="#runtime-a2a-deploy">Step 3: Deploy your A2A server to Bedrock
+  AgentCore Runtime</a></li>
+<li><a href="#runtime-a2a-step-4" title="#runtime-a2a-step-4">Step 4: Get the agent card</a></li>
+<li><a href="#runtime-a2a-step-5" title="#runtime-a2a-step-5">Step 5: Invoke your deployed A2A server</a></li>
+</ul>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Python 3.10 or higher installed and basic understanding of Python</li>
+<li>An AWS account with appropriate permissions and local credentials
+  configured</li>
+<li>Understanding of the A2A protocol and agent-to-agent communication
+  concepts</li>
+</ul>
+<h3 id="step-1-create-your-a2a-server">Step 1: Create your A2A server<a class="headerlink" href="#step-1-create-your-a2a-server" title="Permanent link">&para;</a></h3>
+<p>We are showing an example with strands, but you can use other ways to build with
+A2A.</p>
+<h4 id="install-required-packages">Install required packages<a class="headerlink" href="#install-required-packages" title="Permanent link">&para;</a></h4>
+<p>First, install the required packages for A2A:</p>
+<div class="highlight"><pre><span></span><code>pip install strands-agents[a2a]  
+pip install bedrock-agentcore  
+pip install strands-agents-tools
 </code></pre></div>
-<p>The utility will guide you through:</p>
+<h4 id="create-your-first-a2a-server">Create your first A2A server<a class="headerlink" href="#create-your-first-a2a-server" title="Permanent link">&para;</a></h4>
+<p>Create a new file called <code>my_a2a_server.py</code>:</p>
+<div class="highlight"><pre><span></span><code>import logging  
+import os  
+from strands_tools.calculator import calculator  
+from strands import Agent  
+from strands.multiagent.a2a import A2AServer  
+import uvicorn  
+from fastapi import FastAPI  
+
+logging.basicConfig(level=logging.INFO)  
+
+# Use the complete runtime URL from environment variable, fallback to local  
+runtime_url = os.environ.get(&#39;AGENTCORE_RUNTIME_URL&#39;, &#39;http://127.0.0.1:9000/&#39;)  
+
+logging.info(f&quot;Runtime URL: {runtime_url}&quot;)  
+
+strands_agent = Agent(  
+    name=&quot;Calculator Agent&quot;,  
+    description=&quot;A calculator agent that can perform basic arithmetic operations.&quot;,  
+    tools=[calculator],  
+    callback_handler=None  
+)  
+
+host, port = &quot;0.0.0.0&quot;, 9000  
+
+# Pass runtime_url to http_url parameter AND use serve_at_root=True  
+a2a_server = A2AServer(  
+    agent=strands_agent,  
+    http_url=runtime_url,  
+    serve_at_root=True  # Serves locally at root (/) regardless of remote URL path complexity  
+)  
+
+app = FastAPI()  
+
+@app.get(&quot;/ping&quot;)  
+def ping():  
+    return {&quot;status&quot;: &quot;healthy&quot;}  
+
+app.mount(&quot;/&quot;, a2a_server.to_fastapi_app())  
+
+if __name__ == &quot;__main__&quot;:  
+    uvicorn.run(app, host=host, port=port)
+</code></pre></div>
+<h4 id="understanding-the-code">Understanding the code<a class="headerlink" href="#understanding-the-code" title="Permanent link">&para;</a></h4>
+<p><strong>Strands Agent</strong>
+:   Creates an agent with specific tools and capabilities</p>
+<p><strong>A2AServer</strong>
+:   Wraps the agent to provide A2A protocol compatibility</p>
+<p><strong>Agent Card URL</strong>
+:   Dynamically constructs the correct URL based on deployment context
+    using the <code>AGENTCORE_RUNTIME_URL</code> environment
+    variable</p>
+<p><strong>Port 9000</strong>
+:   A2A servers run on port 9000 by default in AgentCore Runtime</p>
+<h3 id="step-2-test-your-a2a-server-locally">Step 2: Test your A2A server locally<a class="headerlink" href="#step-2-test-your-a2a-server-locally" title="Permanent link">&para;</a></h3>
+<p>Run and test your A2A server in a local development environment.</p>
+<h4 id="start-your-a2a-server">Start your A2A server<a class="headerlink" href="#start-your-a2a-server" title="Permanent link">&para;</a></h4>
+<p>Run your A2A server locally:</p>
+<div class="highlight"><pre><span></span><code>python my_a2a_server.py
+</code></pre></div>
+<p>You should see output indicating the server is running on port
+<code>9000</code>.</p>
+<h4 id="invoke-agent">Invoke agent<a class="headerlink" href="#invoke-agent" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>curl -X POST http://0.0.0.0:9000 \\
+-H &quot;Content-Type: application/json&quot; \\
+-d &#39;{  
+  &quot;jsonrpc&quot;: &quot;2.0&quot;,  
+  &quot;id&quot;: &quot;req-001&quot;,  
+  &quot;method&quot;: &quot;message/send&quot;,  
+  &quot;params&quot;: {  
+    &quot;message&quot;: {  
+      &quot;role&quot;: &quot;user&quot;,  
+      &quot;parts&quot;: [  
+        {  
+          &quot;kind&quot;: &quot;text&quot;,  
+          &quot;text&quot;: &quot;what is 101 * 11?&quot;  
+        }  
+      ],  
+      &quot;messageId&quot;: &quot;12345678-1234-1234-1234-123456789012&quot;  
+    }  
+  } 
+}&#39; | jq . 
+</code></pre></div>
+<h4 id="test-agent-card-retrieval">Test agent card retrieval<a class="headerlink" href="#test-agent-card-retrieval" title="Permanent link">&para;</a></h4>
+<p>You can test the agent card endpoint locally:</p>
+<div class="highlight"><pre><span></span><code>curl http://localhost:9000/.well-known/agent-card.json | jq .
+</code></pre></div>
+<p>You can also test your deployed server using the A2A Inspector as described in
+<a href="https://github.com/a2aproject/a2a-inspector" title="https://github.com/a2aproject/a2a-inspector">Remote testing with A2A inspector</a>.</p>
+<h3 id="step-3-deploy-your-a2a-server-to-bedrock-agentcore-runtime">Step 3: Deploy your A2A server to Bedrock AgentCore Runtime<a class="headerlink" href="#step-3-deploy-your-a2a-server-to-bedrock-agentcore-runtime" title="Permanent link">&para;</a></h3>
+<p>Deploy your A2A server to AWS using the Amazon Bedrock AgentCore starter toolkit.</p>
+<h4 id="install-deployment-tools">Install deployment tools<a class="headerlink" href="#install-deployment-tools" title="Permanent link">&para;</a></h4>
+<p>Install the Amazon Bedrock AgentCore starter toolkit:</p>
+<div class="highlight"><pre><span></span><code>pip install bedrock-agentcore-starter-toolkit 
+</code></pre></div>
+<p>Start by creating a project folder with the following structure:</p>
+<div class="highlight"><pre><span></span><code>## Project Folder Structure  
+your_project_directory/  
+├── a2a_server.py          # Your main agent code  
+├── requirements.txt       # Dependencies for your agent
+</code></pre></div>
+<p>Create a new file called <code>requirements.txt</code>, add the
+following to it:</p>
+<div class="highlight"><pre><span></span><code>strands-agents[a2a]  
+bedrock-agentcore  
+strands-agents-tools 
+</code></pre></div>
+<h4 id="set-up-cognito-user-pool-for-authentication">Set up Cognito user pool for authentication<a class="headerlink" href="#set-up-cognito-user-pool-for-authentication" title="Permanent link">&para;</a></h4>
+<p>Configure authentication for secure access to your deployed
+server. For detailed Cognito setup instructions, see <a href="./runtime-mcp.html#runtime-mcp-appendix-a" title="./runtime-mcp.html#runtime-mcp-appendix-a">Set up Cognito user
+pool for authentication</a>. This provides the OAuth tokens required for
+secure access to your deployed server.</p>
+<h4 id="configure-your-a2a-server-for-deployment">Configure your A2A server for deployment<a class="headerlink" href="#configure-your-a2a-server-for-deployment" title="Permanent link">&para;</a></h4>
+<p>After setting up authentication, create the deployment configuration:</p>
+<div class="highlight"><pre><span></span><code>agentcore configure -e my_a2a_server.py --protocol A2A
+</code></pre></div>
+<ul>
+<li>Select protocol as A2A</li>
+<li>Configure with OAuth configuration as setup in the previous
+  step</li>
+</ul>
+<h4 id="deploy-to-aws">Deploy to AWS<a class="headerlink" href="#deploy-to-aws" title="Permanent link">&para;</a></h4>
+<p>Deploy your agent:</p>
+<div class="highlight"><pre><span></span><code>agentcore launch
+</code></pre></div>
+<p>After deployment, you'll receive an agent runtime ARN that looks like:</p>
+<div class="highlight"><pre><span></span><code>arn:aws:bedrock-agentcore:us-west-2:accountId:runtime/my_a2a_server-xyz123
+</code></pre></div>
+<h3 id="step-4-get-the-agent-card">Step 4: Get the agent card<a class="headerlink" href="#step-4-get-the-agent-card" title="Permanent link">&para;</a></h3>
+<p>Agent Cards are JSON metadata documents that describe an A2A server's identity, capabilities, skills, service endpoint, and authentication requirements. They enable automatic agent discovery in the A2A ecosystem.</p>
+<h4 id="set-up-environment-variables">Set up environment variables<a class="headerlink" href="#set-up-environment-variables" title="Permanent link">&para;</a></h4>
+<p>Set up environment variables</p>
 <ol>
-<li><strong>Agent Selection</strong>: Choose your Bedrock Agent and alias</li>
-<li><strong>Target Platform</strong>: Select LangChain/LangGraph or Strands</li>
-<li><strong>AgentCore Primitives</strong>: Configure Memory, Code Interpreter, Observability</li>
-<li><strong>Deployment Options</strong>: Deploy to AgentCore Runtime or run locally</li>
+<li>Export bearer token as an environment variable. For bearer token setup, see <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp.html#runtime-mcp-appendix" title="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp.html#runtime-mcp-appendix">Bearer token setup</a>.</li>
 </ol>
-<h3 id="command-line-mode">Command Line Mode<a class="headerlink" href="#command-line-mode" title="Permanent link">&para;</a></h3>
-<p>For automation or when you know your parameters:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-id<span class="w"> </span>ABCD1234<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-alias-id<span class="w"> </span>TSTALIASID<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--target-platform<span class="w"> </span>strands<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-dir<span class="w"> </span>./my-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--deploy-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--run-option<span class="w"> </span>runtime
+<p><div class="highlight"><pre><span></span><code>export BEARER_TOKEN=&quot;&lt;BEARER_TOKEN&gt;&quot;
 </code></pre></div>
-<h2 id="step-by-step-walkthrough">Step-by-Step Walkthrough<a class="headerlink" href="#step-by-step-walkthrough" title="Permanent link">&para;</a></h2>
-<h3 id="1-launch-the-import-utility">1. Launch the Import Utility<a class="headerlink" href="#1-launch-the-import-utility" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+2. Export the agent ARN.</p>
+<div class="highlight"><pre><span></span><code>export AGENT_ARN=&quot;arn:aws:bedrock-agentcore:us-west-2:accountId:runtime/my_a2a_server-xyz123&quot;
 </code></pre></div>
-<h3 id="2-configure-aws-region">2. Configure AWS Region<a class="headerlink" href="#2-configure-aws-region" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select AWS Region: us-east-1
+<h4 id="retrieve-agent-card">Retrieve agent card<a class="headerlink" href="#retrieve-agent-card" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>import os
+import json
+import requests
+from uuid import uuid4
+from urllib.parse import quote
+
+def fetch_agent_card():
+    # Get environment variables
+    agent_arn = os.environ.get(&#39;AGENT_ARN&#39;)
+    bearer_token = os.environ.get(&#39;BEARER_TOKEN&#39;)
+
+    if not agent_arn:
+        print(&quot;Error: AGENT_ARN environment variable not set&quot;)
+        return
+
+    if not bearer_token:
+        print(&quot;Error: BEARER_TOKEN environment variable not set&quot;)
+        return
+
+    # URL encode the agent ARN
+    escaped_agent_arn = quote(agent_arn, safe=&#39;&#39;)
+
+    # Construct the URL
+    url = f&quot;https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/{escaped_agent_arn}/invocations/.well-known/agent-card.json&quot;
+
+    # Generate a unique session ID
+    session_id = str(uuid4())
+    print(f&quot;Generated session ID: {session_id}&quot;)
+
+    # Set headers
+    headers = {
+        &#39;Accept&#39;: &#39;*/*&#39;,
+        &#39;Authorization&#39;: f&#39;Bearer {bearer_token}&#39;,
+        &#39;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&#39;: session_id
+    }
+
+    try:
+        # Make the request
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        # Parse and pretty print JSON
+        agent_card = response.json()
+        print(json.dumps(agent_card, indent=2))
+
+        return agent_card
+
+    except requests.exceptions.RequestException as e:
+        print(f&quot;Error fetching agent card: {e}&quot;)
+        return None
+
+if __name__ == &quot;__main__&quot;:
+    fetch_agent_card()
 </code></pre></div>
-<h3 id="3-select-your-agent">3. Select Your Agent<a class="headerlink" href="#3-select-your-agent" title="Permanent link">&para;</a></h3>
-<p>The utility will list your available Bedrock Agents in the selected region:</p>
-<div class="highlight"><pre><span></span><code>? Select Bedrock Agent:
-  &gt; my-customer-service-agent (ID: ABCD1234)
-    my-research-agent (ID: EFGH5678)
-    my-code-assistant (ID: IJKL9012)
+<p>After you get the URL from the Agent Card, export <code>AGENTCORE_RUNTIME_URL</code> as an environment variable:</p>
+<div class="highlight"><pre><span></span><code>export AGENTCORE_RUNTIME_URL=&quot;https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/&lt;ARN&gt;/invocations/&quot;
 </code></pre></div>
-<h3 id="4-choose-agent-alias">4. Choose Agent Alias<a class="headerlink" href="#4-choose-agent-alias" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select Agent Alias:
-  &gt; TSTALIASID (Test)
-    PRODALIASID (Production)
+<h3 id="step-5-invoke-your-deployed-a2a-server">Step 5: Invoke your deployed A2A server<a class="headerlink" href="#step-5-invoke-your-deployed-a2a-server" title="Permanent link">&para;</a></h3>
+<p>Create client code to invoke your deployed Amazon Bedrock AgentCore A2A server and send
+messages to test the functionality.</p>
+<p>Create a new file <code>my_a2a_client_remote.py</code> to invoke your deployed A2A server:</p>
+<div class="highlight"><pre><span></span><code>import asyncio
+import logging
+import os
+from uuid import uuid4
+
+import httpx
+from a2a.client import A2ACardResolver, ClientConfig, ClientFactory
+from a2a.types import Message, Part, Role, TextPart
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+DEFAULT_TIMEOUT = 300  # set request timeout to 5 minutes
+
+def create_message(*, role: Role = Role.user, text: str) -&gt; Message:
+    return Message(
+        kind=&quot;message&quot;,
+        role=role,
+        parts=[Part(TextPart(kind=&quot;text&quot;, text=text))],
+        message_id=uuid4().hex,
+    )
+
+async def send_sync_message(message: str):
+    # Get runtime URL from environment variable
+    runtime_url = os.environ.get(&#39;AGENTCORE_RUNTIME_URL&#39;)
+
+    # Generate a unique session ID
+    session_id = str(uuid4())
+    print(f&quot;Generated session ID: {session_id}&quot;)
+
+    # Add authentication headers for Amazon Bedrock AgentCore
+    headers = {&quot;Authorization&quot;: f&quot;Bearer {os.environ.get(&#39;BEARER_TOKEN&#39;)}&quot;,
+        &#39;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&#39;: session_id}
+
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT, headers=headers) as httpx_client:
+        # Get agent card from the runtime URL
+        resolver = A2ACardResolver(httpx_client=httpx_client, base_url=runtime_url)
+        agent_card = await resolver.get_agent_card()
+
+        # Agent card contains the correct URL (same as runtime_url in this case)
+        # No manual override needed - this is the path-based mounting pattern
+
+        # Create client using factory
+        config = ClientConfig(
+            httpx_client=httpx_client,
+            streaming=False,  # Use non-streaming mode for sync response
+        )
+        factory = ClientFactory(config)
+        client = factory.create(agent_card)
+
+        # Create and send message
+        msg = create_message(text=message)
+
+        # With streaming=False, this will yield exactly one result
+        async for event in client.send_message(msg):
+            if isinstance(event, Message):
+                logger.info(event.model_dump_json(exclude_none=True, indent=2))
+                return event
+            elif isinstance(event, tuple) and len(event) == 2:
+                # (Task, UpdateEvent) tuple
+                task, update_event = event
+                logger.info(f&quot;Task: {task.model_dump_json(exclude_none=True, indent=2)}&quot;)
+                if update_event:
+                    logger.info(f&quot;Update: {update_event.model_dump_json(exclude_none=True, indent=2)}&quot;)
+                return task
+            else:
+                # Fallback for other response types
+                logger.info(f&quot;Response: {str(event)}&quot;)
+                return event
+
+# Usage - Uses AGENTCORE_RUNTIME_URL environment variable
+asyncio.run(send_sync_message(&quot;what is 101 * 11&quot;))
 </code></pre></div>
-<h3 id="5-select-target-platform">5. Select Target Platform<a class="headerlink" href="#5-select-target-platform" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Choose target platform:
-  &gt; strands (1.0.x)
-    langchain (0.3.x) + langgraph (0.5.x)
-</code></pre></div>
-<h3 id="7-deployment-options">7. Deployment Options<a class="headerlink" href="#7-deployment-options" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Deploy to AgentCore Runtime? [y/N]: Y
-? How would you like to run the agent?
-  &gt; Run on AgentCore Runtime
-    Install dependencies and run locally
-    Don&#39;t run now
-</code></pre></div>
-<h2 id="generated-output">Generated Output<a class="headerlink" href="#generated-output" title="Permanent link">&para;</a></h2>
-<p>After completion, you'll find:</p>
-<div class="highlight"><pre><span></span><code>./output/
-├── strands_agent.py          # Your converted agent
-├── requirements.txt          # Dependencies
-├── .agentcore-config.yaml   # Deployment configuration
-└── README.md                # Generated documentation
-</code></pre></div>
-<h2 id="testing-your-agent">Testing Your Agent<a class="headerlink" href="#testing-your-agent" title="Permanent link">&para;</a></h2>
-<h3 id="local-testing">Local Testing<a class="headerlink" href="#local-testing" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-python<span class="w"> </span>strands_agent.py
-</code></pre></div>
-<h3 id="agentcore-runtime-testing">AgentCore Runtime Testing<a class="headerlink" href="#agentcore-runtime-testing" title="Permanent link">&para;</a></h3>
-<p>If deployed to runtime:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s2">&quot;Hello, test message&quot;</span>
-</code></pre></div>
-<h2 id="common-options">Common Options<a class="headerlink" href="#common-options" title="Permanent link">&para;</a></h2>
-<h3 id="enable-debug-mode">Enable Debug Mode<a class="headerlink" href="#enable-debug-mode" title="Permanent link">&para;</a></h3>
-<p>Get detailed logging in the output agent:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--debug
-</code></pre></div>
-<h3 id="disable-specific-primitives">Disable Specific Primitives<a class="headerlink" href="#disable-specific-primitives" title="Permanent link">&para;</a></h3>
-<p>Skip certain AgentCore features:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-memory<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-code-interpreter
-</code></pre></div>
-<h3 id="custom-output-directory">Custom Output Directory<a class="headerlink" href="#custom-output-directory" title="Permanent link">&para;</a></h3>
-<p>Specify where to generate files:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--output-dir<span class="w"> </span>./my-custom-agent
-</code></pre></div>
-<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<h2 id="appendix">Appendix<a class="headerlink" href="#appendix" title="Permanent link">&para;</a></h2>
+<h6 id="topics_2">Topics<a class="headerlink" href="#topics_2" title="Permanent link">&para;</a></h6>
 <ul>
-<li><strong>Review Generated Code</strong>: Examine the converted agent implementation</li>
-<li><strong>Test Functionality</strong>: Verify your agent works as expected</li>
-<li><strong>Customize Integration</strong>: Add custom AgentCore primitive configurations</li>
-<li><strong>Production Deployment</strong>: Deploy to AgentCore Runtime for production usage</li>
+<li><a href="#runtime-a2a-setup-cognito-appendix" title="#runtime-a2a-setup-cognito-appendix">Set up Cognito user pool for
+  authentication</a></li>
+<li><a href="#runtime-a2a-remote-testing" title="#runtime-a2a-remote-testing">Remote testing with A2A
+  inspector</a></li>
+<li><a href="#runtime-a2a-troubleshooting" title="#runtime-a2a-troubleshooting">Troubleshooting</a></li>
 </ul>
-<p>For detailed configuration options, see the <a href="configuration.html">Configuration Reference</a>.</p>
+<h3 id="set-up-cognito-user-pool-for-authentication_1">Set up Cognito user pool for authentication<a class="headerlink" href="#set-up-cognito-user-pool-for-authentication_1" title="Permanent link">&para;</a></h3>
+<p>For detailed Cognito setup instructions, see Set up
+<a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp.html#set-up-cognito-user-pool-for-authentication" title="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp.html#set-up-cognito-user-pool-for-authentication">Cognito user pool for authentication</a>
+in the MCP documentation.</p>
+<h3 id="remote-testing-with-a2a-inspector">Remote testing with A2A inspector<a class="headerlink" href="#remote-testing-with-a2a-inspector" title="Permanent link">&para;</a></h3>
+<p>See <a href="https://github.com/a2aproject/a2a-inspector" title="https://github.com/a2aproject/a2a-inspector">https://github.com/a2aproject/a2a-inspector</a>.</p>
+<h3 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h3>
+<h6 id="common-a2a-specific-issues">Common A2A-specific issues<a class="headerlink" href="#common-a2a-specific-issues" title="Permanent link">&para;</a></h6>
+<p>The following are common issues you might encounter:</p>
+<p>Port conflicts
+:   A2A servers must run on port 9000 in the AgentCore Runtime environment</p>
+<p>JSON-RPC errors
+:   Check that your client is sending properly formatted JSON-RPC 2.0
+    messages</p>
+<p>Authorization method mismatch
+:   Make sure your request uses the same authentication method (OAuth or
+    SigV4) that the agent was configured with</p>
+<h6 id="exception-handling">Exception handling<a class="headerlink" href="#exception-handling" title="Permanent link">&para;</a></h6>
+<p>A2A specifications for Error handling: <a href="https://a2a-protocol.org/latest/specification/#81-standard-json-rpc-errors" title="https://a2a-protocol.org/latest/specification/#81-standard-json-rpc-errors">https://a2a-protocol.org/latest/specification/#81-standard-json-rpc-errors</a></p>
+<p>A2A servers return errors as standard JSON-RPC error responses with HTTP 200
+status codes. Internal Runtime errors are automatically translated to JSON-RPC
+internal errors to maintain protocol compliance.</p>
+<p>The service now provides proper A2A-compliant error responses with standardized
+JSON-RPC error codes:</p>
+<p>JSON-RPC Error Codes</p>
+<table>
+<thead>
+<tr>
+<th>JSON-RPC Error Code</th>
+<th>Runtime Exception</th>
+<th>HTTP Error Code</th>
+<th>JSON-RPC Error Message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N/A</td>
+<td><code>AccessDeniedException</code></td>
+<td>403</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>-32501</td>
+<td><code>ResourceNotFoundException</code></td>
+<td>404</td>
+<td>Resource not found – Requested resource does not exist</td>
+</tr>
+<tr>
+<td>-32502</td>
+<td><code>ValidationException</code></td>
+<td>400</td>
+<td>Validation error – Invalid request data</td>
+</tr>
+<tr>
+<td>-32503</td>
+<td><code>ThrottlingException</code></td>
+<td>429</td>
+<td>Rate limit exceeded – Too many requests</td>
+</tr>
+<tr>
+<td>-32503</td>
+<td><code>ServiceQuotaExceededException</code></td>
+<td>429</td>
+<td>Rate limit exceeded – Too many requests</td>
+</tr>
+<tr>
+<td>-32504</td>
+<td><code>ResourceConflictException</code></td>
+<td>409</td>
+<td>Resource conflict – Resource already exists</td>
+</tr>
+<tr>
+<td>-32505</td>
+<td><code>RuntimeClientError</code></td>
+<td>424</td>
+<td>Runtime client error – Check your CloudWatch logs for more information.</td>
+</tr>
+</tbody>
+</table>
 
 
 

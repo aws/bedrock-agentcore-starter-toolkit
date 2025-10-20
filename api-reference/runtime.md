@@ -24,12 +24,18 @@ Source code in `bedrock_agentcore/runtime/app.py`
 class BedrockAgentCoreApp(Starlette):
     """Bedrock AgentCore application class that extends Starlette for AI agent deployment."""
 
-    def __init__(self, debug: bool = False, lifespan: Optional[Lifespan] = None):
+    def __init__(
+        self,
+        debug: bool = False,
+        lifespan: Optional[Lifespan] = None,
+        middleware: Sequence[Middleware] | None = None,
+    ):
         """Initialize Bedrock AgentCore application.
 
         Args:
             debug: Enable debug actions for task management (default: False)
             lifespan: Optional lifespan context manager for startup/shutdown
+            middleware: Optional sequence of Starlette Middleware objects (or Middleware(...) entries)
         """
         self.handlers: Dict[str, Callable] = {}
         self._ping_handler: Optional[Callable] = None
@@ -42,7 +48,7 @@ class BedrockAgentCoreApp(Starlette):
             Route("/invocations", self._handle_invocation, methods=["POST"]),
             Route("/ping", self._handle_ping, methods=["GET"]),
         ]
-        super().__init__(routes=routes, lifespan=lifespan)
+        super().__init__(routes=routes, lifespan=lifespan, middleware=middleware)
         self.debug = debug  # Set after super().__init__ to avoid override
 
         self.logger = logging.getLogger("bedrock_agentcore.app")
@@ -232,6 +238,10 @@ class BedrockAgentCoreApp(Starlette):
             agent_identity_token = headers.get(ACCESS_TOKEN_HEADER)
             if agent_identity_token:
                 BedrockAgentCoreContext.set_workload_access_token(agent_identity_token)
+
+            oauth2_callback_url = headers.get(OAUTH2_CALLBACK_URL_HEADER)
+            if oauth2_callback_url:
+                BedrockAgentCoreContext.set_oauth2_callback_url(oauth2_callback_url)
 
             # Collect relevant request headers (Authorization + Custom headers)
             request_headers = {}
@@ -485,26 +495,33 @@ class BedrockAgentCoreApp(Starlette):
             yield self._convert_to_sse(error_event)
 ```
 
-#### `__init__(debug=False, lifespan=None)`
+#### `__init__(debug=False, lifespan=None, middleware=None)`
 
 Initialize Bedrock AgentCore application.
 
 Parameters:
 
-| Name       | Type                 | Description                                               | Default |
-| ---------- | -------------------- | --------------------------------------------------------- | ------- |
-| `debug`    | `bool`               | Enable debug actions for task management (default: False) | `False` |
-| `lifespan` | `Optional[Lifespan]` | Optional lifespan context manager for startup/shutdown    | `None`  |
+| Name         | Type                   | Description                                               | Default                                                                        |
+| ------------ | ---------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `debug`      | `bool`                 | Enable debug actions for task management (default: False) | `False`                                                                        |
+| `lifespan`   | `Optional[Lifespan]`   | Optional lifespan context manager for startup/shutdown    | `None`                                                                         |
+| `middleware` | \`Sequence[Middleware] | None\`                                                    | Optional sequence of Starlette Middleware objects (or Middleware(...) entries) |
 
 Source code in `bedrock_agentcore/runtime/app.py`
 
 ```
-def __init__(self, debug: bool = False, lifespan: Optional[Lifespan] = None):
+def __init__(
+    self,
+    debug: bool = False,
+    lifespan: Optional[Lifespan] = None,
+    middleware: Sequence[Middleware] | None = None,
+):
     """Initialize Bedrock AgentCore application.
 
     Args:
         debug: Enable debug actions for task management (default: False)
         lifespan: Optional lifespan context manager for startup/shutdown
+        middleware: Optional sequence of Starlette Middleware objects (or Middleware(...) entries)
     """
     self.handlers: Dict[str, Callable] = {}
     self._ping_handler: Optional[Callable] = None
@@ -517,7 +534,7 @@ def __init__(self, debug: bool = False, lifespan: Optional[Lifespan] = None):
         Route("/invocations", self._handle_invocation, methods=["POST"]),
         Route("/ping", self._handle_ping, methods=["GET"]),
     ]
-    super().__init__(routes=routes, lifespan=lifespan)
+    super().__init__(routes=routes, lifespan=lifespan, middleware=middleware)
     self.debug = debug  # Set after super().__init__ to avoid override
 
     self.logger = logging.getLogger("bedrock_agentcore.app")
@@ -896,6 +913,7 @@ class BedrockAgentCoreContext:
     """Unified context manager for Bedrock AgentCore."""
 
     _workload_access_token: ContextVar[Optional[str]] = ContextVar("workload_access_token")
+    _oauth2_callback_url: ContextVar[Optional[str]] = ContextVar("oauth2_callback_url")
     _request_id: ContextVar[Optional[str]] = ContextVar("request_id")
     _session_id: ContextVar[Optional[str]] = ContextVar("session_id")
     _request_headers: ContextVar[Optional[Dict[str, str]]] = ContextVar("request_headers")
@@ -910,6 +928,19 @@ class BedrockAgentCoreContext:
         """Get the workload access token from the context."""
         try:
             return cls._workload_access_token.get()
+        except LookupError:
+            return None
+
+    @classmethod
+    def set_oauth2_callback_url(cls, workload_callback_url: str):
+        """Set the oauth2 callback url in the context."""
+        cls._oauth2_callback_url.set(workload_callback_url)
+
+    @classmethod
+    def get_oauth2_callback_url(cls) -> Optional[str]:
+        """Get the oauth2 callback url from the context."""
+        try:
+            return cls._oauth2_callback_url.get()
         except LookupError:
             return None
 
@@ -947,6 +978,22 @@ class BedrockAgentCoreContext:
             return cls._request_headers.get()
         except LookupError:
             return None
+```
+
+#### `get_oauth2_callback_url()`
+
+Get the oauth2 callback url from the context.
+
+Source code in `bedrock_agentcore/runtime/context.py`
+
+```
+@classmethod
+def get_oauth2_callback_url(cls) -> Optional[str]:
+    """Get the oauth2 callback url from the context."""
+    try:
+        return cls._oauth2_callback_url.get()
+    except LookupError:
+        return None
 ```
 
 #### `get_request_headers()`
@@ -1011,6 +1058,19 @@ def get_workload_access_token(cls) -> Optional[str]:
         return cls._workload_access_token.get()
     except LookupError:
         return None
+```
+
+#### `set_oauth2_callback_url(workload_callback_url)`
+
+Set the oauth2 callback url in the context.
+
+Source code in `bedrock_agentcore/runtime/context.py`
+
+```
+@classmethod
+def set_oauth2_callback_url(cls, workload_callback_url: str):
+    """Set the oauth2 callback url in the context."""
+    cls._oauth2_callback_url.set(workload_callback_url)
 ```
 
 #### `set_request_context(request_id, session_id=None)`

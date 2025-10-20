@@ -5573,21 +5573,23 @@ class MemorySession(DictWrapper):
         self,
         messages: List[Union[ConversationalMessage, BlobMessage]],
         branch: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Event:
         """Delegates to manager.add_turns."""
-        return self._manager.add_turns(self._actor_id, self._session_id, messages, branch, event_timestamp)
+        return self._manager.add_turns(self._actor_id, self._session_id, messages, branch, metadata, event_timestamp)
 
     def fork_conversation(
         self,
         messages: List[Union[ConversationalMessage, BlobMessage]],
         root_event_id: str,
         branch_name: str,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Event:
         """Delegates to manager.fork_conversation."""
         return self._manager.fork_conversation(
-            self._actor_id, self._session_id, root_event_id, branch_name, messages, event_timestamp
+            self._actor_id, self._session_id, root_event_id, branch_name, messages, metadata, event_timestamp
         )
 
     def process_turn_with_llm(
@@ -5595,6 +5597,7 @@ class MemorySession(DictWrapper):
         user_input: str,
         llm_callback: Callable[[str, List[Dict[str, Any]]], str],
         retrieval_config: Optional[Dict[str, RetrievalConfig]],
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
         """Delegates to manager.process_turn_with_llm."""
@@ -5604,6 +5607,7 @@ class MemorySession(DictWrapper):
             user_input,
             llm_callback,
             retrieval_config,
+            metadata,
             event_timestamp,
         )
 
@@ -5660,6 +5664,7 @@ class MemorySession(DictWrapper):
         self,
         branch_name: Optional[str] = None,
         include_parent_branches: bool = False,
+        eventMetadata: Optional[List[EventMetadataFilter]] = None,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Event]:
@@ -5669,6 +5674,7 @@ class MemorySession(DictWrapper):
             session_id=self._session_id,
             branch_name=branch_name,
             include_parent_branches=include_parent_branches,
+            eventMetadata=eventMetadata,
             include_payload=include_payload,
             max_results=max_results,
         )
@@ -5714,7 +5720,7 @@ def __init__(self, memory_id: str, actor_id: str, session_id: str, manager: Memo
     super().__init__(self._construct_session_dict())
 ```
 
-#### `add_turns(messages, branch=None, event_timestamp=None)`
+#### `add_turns(messages, branch=None, metadata=None, event_timestamp=None)`
 
 Delegates to manager.add_turns.
 
@@ -5725,10 +5731,11 @@ def add_turns(
     self,
     messages: List[Union[ConversationalMessage, BlobMessage]],
     branch: Optional[Dict[str, str]] = None,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Event:
     """Delegates to manager.add_turns."""
-    return self._manager.add_turns(self._actor_id, self._session_id, messages, branch, event_timestamp)
+    return self._manager.add_turns(self._actor_id, self._session_id, messages, branch, metadata, event_timestamp)
 ```
 
 #### `delete_event(event_id)`
@@ -5755,7 +5762,7 @@ def delete_memory_record(self, record_id: str):
     return self._manager.delete_memory_record(record_id)
 ```
 
-#### `fork_conversation(messages, root_event_id, branch_name, event_timestamp=None)`
+#### `fork_conversation(messages, root_event_id, branch_name, metadata=None, event_timestamp=None)`
 
 Delegates to manager.fork_conversation.
 
@@ -5767,11 +5774,12 @@ def fork_conversation(
     messages: List[Union[ConversationalMessage, BlobMessage]],
     root_event_id: str,
     branch_name: str,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Event:
     """Delegates to manager.fork_conversation."""
     return self._manager.fork_conversation(
-        self._actor_id, self._session_id, root_event_id, branch_name, messages, event_timestamp
+        self._actor_id, self._session_id, root_event_id, branch_name, messages, metadata, event_timestamp
     )
 ```
 
@@ -5855,7 +5863,7 @@ def list_branches(self) -> List[Branch]:
     return self._manager.list_branches(self._actor_id, self._session_id)
 ```
 
-#### `list_events(branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
+#### `list_events(branch_name=None, include_parent_branches=False, eventMetadata=None, max_results=100, include_payload=True)`
 
 Delegates to manager.list_events.
 
@@ -5866,6 +5874,7 @@ def list_events(
     self,
     branch_name: Optional[str] = None,
     include_parent_branches: bool = False,
+    eventMetadata: Optional[List[EventMetadataFilter]] = None,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Event]:
@@ -5875,6 +5884,7 @@ def list_events(
         session_id=self._session_id,
         branch_name=branch_name,
         include_parent_branches=include_parent_branches,
+        eventMetadata=eventMetadata,
         include_payload=include_payload,
         max_results=max_results,
     )
@@ -5894,7 +5904,7 @@ def list_long_term_memory_records(
     return self._manager.list_long_term_memory_records(namespace_prefix, strategy_id, max_results)
 ```
 
-#### `process_turn_with_llm(user_input, llm_callback, retrieval_config, event_timestamp=None)`
+#### `process_turn_with_llm(user_input, llm_callback, retrieval_config, metadata=None, event_timestamp=None)`
 
 Delegates to manager.process_turn_with_llm.
 
@@ -5906,6 +5916,7 @@ def process_turn_with_llm(
     user_input: str,
     llm_callback: Callable[[str, List[Dict[str, Any]]], str],
     retrieval_config: Optional[Dict[str, RetrievalConfig]],
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
     """Delegates to manager.process_turn_with_llm."""
@@ -5915,6 +5926,7 @@ def process_turn_with_llm(
         user_input,
         llm_callback,
         retrieval_config,
+        metadata,
         event_timestamp,
     )
 ```
@@ -6232,6 +6244,7 @@ class MemorySessionManager:
         user_input: str,
         llm_callback: Callable[[str, List[Dict[str, Any]]], str],
         retrieval_config: Optional[Dict[str, RetrievalConfig]],
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
         r"""Complete conversation turn with LLM callback integration.
@@ -6249,6 +6262,7 @@ class MemorySessionManager:
             retrieval_config: Optional dictionary mapping namespaces to RetrievalConfig objects.
                             Each namespace can contain template variables like {actorId}, {sessionId},
                             {memoryStrategyId} that will be resolved at runtime.
+            metadata: Optional custom key-value metadata to attach to an event.
             event_timestamp: Optional timestamp for the event
 
         Returns:
@@ -6326,6 +6340,7 @@ class MemorySessionManager:
                 ConversationalMessage(user_input, MessageRole.USER),
                 ConversationalMessage(agent_response, MessageRole.ASSISTANT),
             ],
+            metadata=metadata,
             event_timestamp=event_timestamp,
         )
 
@@ -6338,6 +6353,7 @@ class MemorySessionManager:
         session_id: str,
         messages: List[Union[ConversationalMessage, BlobMessage]],
         branch: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Event:
         """Adds conversational turns or blob objects to short-term memory.
@@ -6351,12 +6367,14 @@ class MemorySessionManager:
                 - ConversationalMessage objects for conversational messages
                 - BlobMessage objects for blob data
             branch: Optional branch info
+            metadata: Optional custom key-value metadata to attach to an event.
             event_timestamp: Optional timestamp for the event
 
         Returns:
             Created event
 
         Example:
+        ```
             manager.add_turns(
                 actor_id="user-123",
                 session_id="session-456",
@@ -6364,8 +6382,16 @@ class MemorySessionManager:
                     ConversationalMessage("Hello", USER),
                     BlobMessage({"file_data": "base64_content"}),
                     ConversationalMessage("How can I help?", ASSISTANT)
+                ],
+                metadata=[
+                    {
+                        'location': {
+                            'stringValue': 'NYC'
+                        }
+                    }
                 ]
             )
+        ```
         """
         logger.info("  -> Storing %d messages in short-term memory...", len(messages))
 
@@ -6398,6 +6424,10 @@ class MemorySessionManager:
 
         if branch:
             params["branch"] = branch
+
+        if metadata:
+            params["metadata"] = metadata
+
         try:
             response = self._data_plane_client.create_event(**params)
             logger.info("     ✅ Turn stored successfully with Event ID: %s", response.get("eventId"))
@@ -6413,6 +6443,7 @@ class MemorySessionManager:
         root_event_id: str,
         branch_name: str,
         messages: List[Union[ConversationalMessage, BlobMessage]],
+        metadata: Optional[Dict[str, MetadataValue]] = None,
         event_timestamp: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """Fork a conversation from a specific event to create a new branch."""
@@ -6425,6 +6456,7 @@ class MemorySessionManager:
                 messages=messages,
                 event_timestamp=event_timestamp,
                 branch=branch,
+                metadata=metadata,
             )
 
             logger.info("Created branch '%s' from event %s", branch_name, root_event_id)
@@ -6440,6 +6472,7 @@ class MemorySessionManager:
         session_id: str,
         branch_name: Optional[str] = None,
         include_parent_branches: bool = False,
+        eventMetadata: Optional[List[EventMetadataFilter]] = None,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Event]:
@@ -6453,6 +6486,7 @@ class MemorySessionManager:
             session_id: Session identifier
             branch_name: Optional branch name to filter events (None for all branches)
             include_parent_branches: Whether to include parent branch events (only applies with branch_name)
+            eventMetadata: Optional list of event metadata filters to apply
             max_results: Maximum number of events to return
             include_payload: Whether to include event payloads in response
 
@@ -6468,6 +6502,49 @@ class MemorySessionManager:
 
             # Get events from a specific branch
             branch_events = client.list_events(actor_id, session_id, branch_name="test-branch")
+
+            #### Get events with event metadata filter
+            ```
+            filtered_events_with_metadata = client.list_events(
+                actor_id=actor_id,
+                session_id=session_id,
+                eventMetadata=[
+                    {
+                        'left': {
+                            'metadataKey': 'location'
+                        },
+                        'operator': 'EQUALS_TO',
+                        'right': {
+                            'metadataValue': {
+                                'stringValue': 'NYC'
+                            }
+                        }
+                    }
+                ]
+            )
+            ```
+
+            #### Get events with event metadata filter + specific branch filter
+            ```
+            branch_with_metadata_filtered_events = client.list_events(
+                actor_id=actor_id,
+                session_id=session_id,
+                branch_name="test-branch",
+                eventMetadata=[
+                    {
+                        'left': {
+                            'metadataKey': 'location'
+                        },
+                        'operator': 'EQUALS_TO',
+                        'right': {
+                            'metadataValue': {
+                                'stringValue': 'NYC'
+                            }
+                        }
+                    }
+                ]
+            )
+            ```
         """
         try:
             all_events: List[Event] = []
@@ -6494,6 +6571,10 @@ class MemorySessionManager:
                     params["filter"] = {
                         "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
                     }
+
+                # Add eventMetadata filter if specified
+                if eventMetadata:
+                    params["filter"] = {"eventMetadata": eventMetadata}
 
                 response = self._data_plane_client.list_events(**params)
 
@@ -6992,7 +7073,7 @@ def __init__(
     }
 ```
 
-#### `add_turns(actor_id, session_id, messages, branch=None, event_timestamp=None)`
+#### `add_turns(actor_id, session_id, messages, branch=None, metadata=None, event_timestamp=None)`
 
 Adds conversational turns or blob objects to short-term memory.
 
@@ -7006,6 +7087,7 @@ Parameters:
 | `session_id`      | `str`                                             | Session identifier                                                                                              | *required* |
 | `messages`        | `List[Union[ConversationalMessage, BlobMessage]]` | List of either: - ConversationalMessage objects for conversational messages - BlobMessage objects for blob data | *required* |
 | `branch`          | `Optional[Dict[str, str]]`                        | Optional branch info                                                                                            | `None`     |
+| `metadata`        | `Optional[Dict[str, MetadataValue]]`              | Optional custom key-value metadata to attach to an event.                                                       | `None`     |
 | `event_timestamp` | `Optional[datetime]`                              | Optional timestamp for the event                                                                                | `None`     |
 
 Returns:
@@ -7014,19 +7096,37 @@ Returns:
 | ------- | ------------- |
 | `Event` | Created event |
 
-Example
+Example:
 
-manager.add_turns( actor_id="user-123", session_id="session-456", messages=[ ConversationalMessage("Hello", USER), BlobMessage({"file_data": "base64_content"}), ConversationalMessage("How can I help?", ASSISTANT) ] )
+```
+    manager.add_turns(
+        actor_id="user-123",
+        session_id="session-456",
+        messages=[
+            ConversationalMessage("Hello", USER),
+            BlobMessage({"file_data": "base64_content"}),
+            ConversationalMessage("How can I help?", ASSISTANT)
+        ],
+        metadata=[
+            {
+                'location': {
+                    'stringValue': 'NYC'
+                }
+            }
+        ]
+    )
+```
 
 Source code in `bedrock_agentcore/memory/session.py`
 
-```
+````
 def add_turns(
     self,
     actor_id: str,
     session_id: str,
     messages: List[Union[ConversationalMessage, BlobMessage]],
     branch: Optional[Dict[str, str]] = None,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Event:
     """Adds conversational turns or blob objects to short-term memory.
@@ -7040,12 +7140,14 @@ def add_turns(
             - ConversationalMessage objects for conversational messages
             - BlobMessage objects for blob data
         branch: Optional branch info
+        metadata: Optional custom key-value metadata to attach to an event.
         event_timestamp: Optional timestamp for the event
 
     Returns:
         Created event
 
     Example:
+    ```
         manager.add_turns(
             actor_id="user-123",
             session_id="session-456",
@@ -7053,8 +7155,16 @@ def add_turns(
                 ConversationalMessage("Hello", USER),
                 BlobMessage({"file_data": "base64_content"}),
                 ConversationalMessage("How can I help?", ASSISTANT)
+            ],
+            metadata=[
+                {
+                    'location': {
+                        'stringValue': 'NYC'
+                    }
+                }
             ]
         )
+    ```
     """
     logger.info("  -> Storing %d messages in short-term memory...", len(messages))
 
@@ -7087,6 +7197,10 @@ def add_turns(
 
     if branch:
         params["branch"] = branch
+
+    if metadata:
+        params["metadata"] = metadata
+
     try:
         response = self._data_plane_client.create_event(**params)
         logger.info("     ✅ Turn stored successfully with Event ID: %s", response.get("eventId"))
@@ -7094,7 +7208,7 @@ def add_turns(
     except ClientError as e:
         logger.error("     ❌ Error storing turn: %s", e)
         raise
-```
+````
 
 #### `create_memory_session(actor_id, session_id=None)`
 
@@ -7158,7 +7272,7 @@ def delete_memory_record(self, record_id: str):
         raise
 ```
 
-#### `fork_conversation(actor_id, session_id, root_event_id, branch_name, messages, event_timestamp=None)`
+#### `fork_conversation(actor_id, session_id, root_event_id, branch_name, messages, metadata=None, event_timestamp=None)`
 
 Fork a conversation from a specific event to create a new branch.
 
@@ -7172,6 +7286,7 @@ def fork_conversation(
     root_event_id: str,
     branch_name: str,
     messages: List[Union[ConversationalMessage, BlobMessage]],
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """Fork a conversation from a specific event to create a new branch."""
@@ -7184,6 +7299,7 @@ def fork_conversation(
             messages=messages,
             event_timestamp=event_timestamp,
             branch=branch,
+            metadata=metadata,
         )
 
         logger.info("Created branch '%s' from event %s", branch_name, root_event_id)
@@ -7480,7 +7596,7 @@ def list_branches(self, actor_id: str, session_id: str) -> List[Branch]:
         raise
 ```
 
-#### `list_events(actor_id, session_id, branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
+#### `list_events(actor_id, session_id, branch_name=None, include_parent_branches=False, eventMetadata=None, max_results=100, include_payload=True)`
 
 List all events in a session with pagination support.
 
@@ -7488,14 +7604,15 @@ This method provides direct access to the raw events API, allowing developers to
 
 Parameters:
 
-| Name                      | Type            | Description                                                             | Default    |
-| ------------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
-| `actor_id`                | `str`           | Actor identifier                                                        | *required* |
-| `session_id`              | `str`           | Session identifier                                                      | *required* |
-| `branch_name`             | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
-| `include_parent_branches` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
-| `max_results`             | `int`           | Maximum number of events to return                                      | `100`      |
-| `include_payload`         | `bool`          | Whether to include event payloads in response                           | `True`     |
+| Name                      | Type                                  | Description                                                             | Default    |
+| ------------------------- | ------------------------------------- | ----------------------------------------------------------------------- | ---------- |
+| `actor_id`                | `str`                                 | Actor identifier                                                        | *required* |
+| `session_id`              | `str`                                 | Session identifier                                                      | *required* |
+| `branch_name`             | `Optional[str]`                       | Optional branch name to filter events (None for all branches)           | `None`     |
+| `include_parent_branches` | `bool`                                | Whether to include parent branch events (only applies with branch_name) | `False`    |
+| `eventMetadata`           | `Optional[List[EventMetadataFilter]]` | Optional list of event metadata filters to apply                        | `None`     |
+| `max_results`             | `int`                                 | Maximum number of events to return                                      | `100`      |
+| `include_payload`         | `bool`                                | Whether to include event payloads in response                           | `True`     |
 
 Returns:
 
@@ -7517,15 +7634,61 @@ main_events = client.list_events(actor_id, session_id, branch_name="main")
 
 branch_events = client.list_events(actor_id, session_id, branch_name="test-branch")
 
-Source code in `bedrock_agentcore/memory/session.py`
+###### Get events with event metadata filter
 
 ```
+filtered_events_with_metadata = client.list_events(
+    actor_id=actor_id,
+    session_id=session_id,
+    eventMetadata=[
+        {
+            'left': {
+                'metadataKey': 'location'
+            },
+            'operator': 'EQUALS_TO',
+            'right': {
+                'metadataValue': {
+                    'stringValue': 'NYC'
+                }
+            }
+        }
+    ]
+)
+```
+
+###### Get events with event metadata filter + specific branch filter
+
+```
+branch_with_metadata_filtered_events = client.list_events(
+    actor_id=actor_id,
+    session_id=session_id,
+    branch_name="test-branch",
+    eventMetadata=[
+        {
+            'left': {
+                'metadataKey': 'location'
+            },
+            'operator': 'EQUALS_TO',
+            'right': {
+                'metadataValue': {
+                    'stringValue': 'NYC'
+                }
+            }
+        }
+    ]
+)
+```
+
+Source code in `bedrock_agentcore/memory/session.py`
+
+````
 def list_events(
     self,
     actor_id: str,
     session_id: str,
     branch_name: Optional[str] = None,
     include_parent_branches: bool = False,
+    eventMetadata: Optional[List[EventMetadataFilter]] = None,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Event]:
@@ -7539,6 +7702,7 @@ def list_events(
         session_id: Session identifier
         branch_name: Optional branch name to filter events (None for all branches)
         include_parent_branches: Whether to include parent branch events (only applies with branch_name)
+        eventMetadata: Optional list of event metadata filters to apply
         max_results: Maximum number of events to return
         include_payload: Whether to include event payloads in response
 
@@ -7554,6 +7718,49 @@ def list_events(
 
         # Get events from a specific branch
         branch_events = client.list_events(actor_id, session_id, branch_name="test-branch")
+
+        #### Get events with event metadata filter
+        ```
+        filtered_events_with_metadata = client.list_events(
+            actor_id=actor_id,
+            session_id=session_id,
+            eventMetadata=[
+                {
+                    'left': {
+                        'metadataKey': 'location'
+                    },
+                    'operator': 'EQUALS_TO',
+                    'right': {
+                        'metadataValue': {
+                            'stringValue': 'NYC'
+                        }
+                    }
+                }
+            ]
+        )
+        ```
+
+        #### Get events with event metadata filter + specific branch filter
+        ```
+        branch_with_metadata_filtered_events = client.list_events(
+            actor_id=actor_id,
+            session_id=session_id,
+            branch_name="test-branch",
+            eventMetadata=[
+                {
+                    'left': {
+                        'metadataKey': 'location'
+                    },
+                    'operator': 'EQUALS_TO',
+                    'right': {
+                        'metadataValue': {
+                            'stringValue': 'NYC'
+                        }
+                    }
+                }
+            ]
+        )
+        ```
     """
     try:
         all_events: List[Event] = []
@@ -7581,6 +7788,10 @@ def list_events(
                     "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
                 }
 
+            # Add eventMetadata filter if specified
+            if eventMetadata:
+                params["filter"] = {"eventMetadata": eventMetadata}
+
             response = self._data_plane_client.list_events(**params)
 
             events = response.get("events", [])
@@ -7605,7 +7816,7 @@ def list_events(
     except ClientError as e:
         logger.error("Failed to list events: %s", e)
         raise
-```
+````
 
 #### `list_long_term_memory_records(namespace_prefix, strategy_id=None, max_results=10)`
 
@@ -7659,7 +7870,7 @@ def list_long_term_memory_records(
         raise
 ```
 
-#### `process_turn_with_llm(actor_id, session_id, user_input, llm_callback, retrieval_config, event_timestamp=None)`
+#### `process_turn_with_llm(actor_id, session_id, user_input, llm_callback, retrieval_config, metadata=None, event_timestamp=None)`
 
 Complete conversation turn with LLM callback integration.
 
@@ -7674,6 +7885,7 @@ Parameters:
 | `user_input`       | `str`                                        | The user's message                                                                                                                                                                                 | *required* |
 | `llm_callback`     | `Callable[[str, List[Dict[str, Any]]], str]` | Function that takes (user_input, memories) and returns agent_response The callback receives the user input and retrieved memories, and should return the agent's response string                   | *required* |
 | `retrieval_config` | `Optional[Dict[str, RetrievalConfig]]`       | Optional dictionary mapping namespaces to RetrievalConfig objects. Each namespace can contain template variables like {actorId}, {sessionId}, {memoryStrategyId} that will be resolved at runtime. | *required* |
+| `metadata`         | `Optional[Dict[str, MetadataValue]]`         | Optional custom key-value metadata to attach to an event.                                                                                                                                          | `None`     |
 | `event_timestamp`  | `Optional[datetime]`                         | Optional timestamp for the event                                                                                                                                                                   | `None`     |
 
 Returns:
@@ -7717,6 +7929,7 @@ def process_turn_with_llm(
     user_input: str,
     llm_callback: Callable[[str, List[Dict[str, Any]]], str],
     retrieval_config: Optional[Dict[str, RetrievalConfig]],
+    metadata: Optional[Dict[str, MetadataValue]] = None,
     event_timestamp: Optional[datetime] = None,
 ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
     r"""Complete conversation turn with LLM callback integration.
@@ -7734,6 +7947,7 @@ def process_turn_with_llm(
         retrieval_config: Optional dictionary mapping namespaces to RetrievalConfig objects.
                         Each namespace can contain template variables like {actorId}, {sessionId},
                         {memoryStrategyId} that will be resolved at runtime.
+        metadata: Optional custom key-value metadata to attach to an event.
         event_timestamp: Optional timestamp for the event
 
     Returns:
@@ -7811,6 +8025,7 @@ def process_turn_with_llm(
             ConversationalMessage(user_input, MessageRole.USER),
             ConversationalMessage(agent_response, MessageRole.ASSISTANT),
         ],
+        metadata=metadata,
         event_timestamp=event_timestamp,
     )
 

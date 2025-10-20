@@ -61,12 +61,46 @@ class IdentityClient:
         self.logger.info("Successfully retrieved workload access token")
         return resp
 
-    def create_workload_identity(self, name: Optional[str] = None) -> Dict:
+    def create_workload_identity(
+        self, name: Optional[str] = None, allowed_resource_oauth_2_return_urls: Optional[list[str]] = None
+    ) -> Dict:
         """Create workload identity with optional name."""
         self.logger.info("Creating workload identity...")
         if not name:
             name = f"workload-{uuid.uuid4().hex[:8]}"
-        return self.identity_client.create_workload_identity(name=name)
+        return self.identity_client.create_workload_identity(
+            name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls or []
+        )
+
+    def update_workload_identity(self, name: str, allowed_resource_oauth_2_return_urls: list[str]) -> Dict:
+        """Update an existing workload identity with allowed resource OAuth2 callback urls."""
+        self.logger.info(
+            "Updating workload identity '%s' with callback urls: %s", name, allowed_resource_oauth_2_return_urls
+        )
+        return self.identity_client.update_workload_identity(
+            name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls
+        )
+
+    def get_workload_identity(self, name: str) -> Dict:
+        """Retrieves information about a workload identity."""
+        self.logger.info("Fetching workload identity '%s'", name)
+        return self.cp_client.get_workload_identity(name=name)
+
+    def complete_resource_token_auth(
+        self, session_uri: str, user_identifier: Union[UserTokenIdentifier, UserIdIdentifier]
+    ):
+        """Confirms the user authentication session for obtaining OAuth2.0 tokens for a resource."""
+        self.logger.info("Completing 3LO OAuth2 flow...")
+
+        user_identifier_value = {}
+        if isinstance(user_identifier, UserIdIdentifier):
+            user_identifier_value["userId"] = user_identifier.user_id
+        elif isinstance(user_identifier, UserTokenIdentifier):
+            user_identifier_value["userToken"] = user_identifier.user_token
+        else:
+            raise ValueError(f"Unexpected UserIdentifier: {user_identifier}")
+
+        return self.dp_client.complete_resource_token_auth(userIdentifier=user_identifier_value, sessionUri=session_uri)
 
     async def get_token(
         self,
@@ -79,6 +113,7 @@ class IdentityClient:
         callback_url: Optional[str] = None,
         force_authentication: bool = False,
         token_poller: Optional[TokenPoller] = None,
+        custom_state: Optional[str] = None,
     ) -> str:
         """Get an OAuth2 access token for the specified provider.
 
@@ -91,6 +126,7 @@ class IdentityClient:
             callback_url: OAuth2 callback URL (must be pre-registered)
             force_authentication: Force re-authentication even if token exists in the token vault
             token_poller: Custom token poller implementation
+            custom_state: A state that allows applications to verify the validity of callbacks to callback_url
 
         Returns:
             The access token string
@@ -114,6 +150,8 @@ class IdentityClient:
             req["resourceOauth2ReturnUrl"] = callback_url
         if force_authentication:
             req["forceAuthentication"] = force_authentication
+        if custom_state:
+            req["customState"] = custom_state
 
         response = self.dp_client.get_resource_oauth2_token(**req)
 
@@ -134,6 +172,9 @@ class IdentityClient:
             # only the initial request should have force authentication
             if force_authentication:
                 req["forceAuthentication"] = False
+
+            if "sessionUri" in response:
+                req["sessionUri"] = response["sessionUri"]
 
             # Poll for the token
             active_poller = token_poller or _DefaultApiTokenPoller(
@@ -173,6 +214,30 @@ def __init__(self, region: str):
     self.logger = logging.getLogger("bedrock_agentcore.identity_client")
 ```
 
+##### `complete_resource_token_auth(session_uri, user_identifier)`
+
+Confirms the user authentication session for obtaining OAuth2.0 tokens for a resource.
+
+Source code in `bedrock_agentcore/services/identity.py`
+
+```
+def complete_resource_token_auth(
+    self, session_uri: str, user_identifier: Union[UserTokenIdentifier, UserIdIdentifier]
+):
+    """Confirms the user authentication session for obtaining OAuth2.0 tokens for a resource."""
+    self.logger.info("Completing 3LO OAuth2 flow...")
+
+    user_identifier_value = {}
+    if isinstance(user_identifier, UserIdIdentifier):
+        user_identifier_value["userId"] = user_identifier.user_id
+    elif isinstance(user_identifier, UserTokenIdentifier):
+        user_identifier_value["userToken"] = user_identifier.user_token
+    else:
+        raise ValueError(f"Unexpected UserIdentifier: {user_identifier}")
+
+    return self.dp_client.complete_resource_token_auth(userIdentifier=user_identifier_value, sessionUri=session_uri)
+```
+
 ##### `create_api_key_credential_provider(req)`
 
 Create an API key credential provider.
@@ -199,19 +264,23 @@ def create_oauth2_credential_provider(self, req):
     return self.cp_client.create_oauth2_credential_provider(**req)
 ```
 
-##### `create_workload_identity(name=None)`
+##### `create_workload_identity(name=None, allowed_resource_oauth_2_return_urls=None)`
 
 Create workload identity with optional name.
 
 Source code in `bedrock_agentcore/services/identity.py`
 
 ```
-def create_workload_identity(self, name: Optional[str] = None) -> Dict:
+def create_workload_identity(
+    self, name: Optional[str] = None, allowed_resource_oauth_2_return_urls: Optional[list[str]] = None
+) -> Dict:
     """Create workload identity with optional name."""
     self.logger.info("Creating workload identity...")
     if not name:
         name = f"workload-{uuid.uuid4().hex[:8]}"
-    return self.identity_client.create_workload_identity(name=name)
+    return self.identity_client.create_workload_identity(
+        name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls or []
+    )
 ```
 
 ##### `get_api_key(*, provider_name, agent_identity_token)`
@@ -229,22 +298,23 @@ async def get_api_key(self, *, provider_name: str, agent_identity_token: str) ->
     return self.dp_client.get_resource_api_key(**req)["apiKey"]
 ```
 
-##### `get_token(*, provider_name, scopes=None, agent_identity_token, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None)`
+##### `get_token(*, provider_name, scopes=None, agent_identity_token, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None)`
 
 Get an OAuth2 access token for the specified provider.
 
 Parameters:
 
-| Name                   | Type                                | Description                                                     | Default    |
-| ---------------------- | ----------------------------------- | --------------------------------------------------------------- | ---------- |
-| `provider_name`        | `str`                               | The credential provider name                                    | *required* |
-| `scopes`               | `Optional[List[str]]`               | Optional list of OAuth2 scopes to request                       | `None`     |
-| `agent_identity_token` | `str`                               | Agent identity token for authentication                         | *required* |
-| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                        | `None`     |
-| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")           | *required* |
-| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL (must be pre-registered)                    | `None`     |
-| `force_authentication` | `bool`                              | Force re-authentication even if token exists in the token vault | `False`    |
-| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                              | `None`     |
+| Name                   | Type                                | Description                                                                          | Default    |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------ | ---------- |
+| `provider_name`        | `str`                               | The credential provider name                                                         | *required* |
+| `scopes`               | `Optional[List[str]]`               | Optional list of OAuth2 scopes to request                                            | `None`     |
+| `agent_identity_token` | `str`                               | Agent identity token for authentication                                              | *required* |
+| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                             | `None`     |
+| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                | *required* |
+| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL (must be pre-registered)                                         | `None`     |
+| `force_authentication` | `bool`                              | Force re-authentication even if token exists in the token vault                      | `False`    |
+| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                   | `None`     |
+| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url | `None`     |
 
 Returns:
 
@@ -272,6 +342,7 @@ async def get_token(
     callback_url: Optional[str] = None,
     force_authentication: bool = False,
     token_poller: Optional[TokenPoller] = None,
+    custom_state: Optional[str] = None,
 ) -> str:
     """Get an OAuth2 access token for the specified provider.
 
@@ -284,6 +355,7 @@ async def get_token(
         callback_url: OAuth2 callback URL (must be pre-registered)
         force_authentication: Force re-authentication even if token exists in the token vault
         token_poller: Custom token poller implementation
+        custom_state: A state that allows applications to verify the validity of callbacks to callback_url
 
     Returns:
         The access token string
@@ -307,6 +379,8 @@ async def get_token(
         req["resourceOauth2ReturnUrl"] = callback_url
     if force_authentication:
         req["forceAuthentication"] = force_authentication
+    if custom_state:
+        req["customState"] = custom_state
 
     response = self.dp_client.get_resource_oauth2_token(**req)
 
@@ -327,6 +401,9 @@ async def get_token(
         # only the initial request should have force authentication
         if force_authentication:
             req["forceAuthentication"] = False
+
+        if "sessionUri" in response:
+            req["sessionUri"] = response["sessionUri"]
 
         # Poll for the token
         active_poller = token_poller or _DefaultApiTokenPoller(
@@ -364,6 +441,36 @@ def get_workload_access_token(
     return resp
 ```
 
+##### `get_workload_identity(name)`
+
+Retrieves information about a workload identity.
+
+Source code in `bedrock_agentcore/services/identity.py`
+
+```
+def get_workload_identity(self, name: str) -> Dict:
+    """Retrieves information about a workload identity."""
+    self.logger.info("Fetching workload identity '%s'", name)
+    return self.cp_client.get_workload_identity(name=name)
+```
+
+##### `update_workload_identity(name, allowed_resource_oauth_2_return_urls)`
+
+Update an existing workload identity with allowed resource OAuth2 callback urls.
+
+Source code in `bedrock_agentcore/services/identity.py`
+
+```
+def update_workload_identity(self, name: str, allowed_resource_oauth_2_return_urls: list[str]) -> Dict:
+    """Update an existing workload identity with allowed resource OAuth2 callback urls."""
+    self.logger.info(
+        "Updating workload identity '%s' with callback urls: %s", name, allowed_resource_oauth_2_return_urls
+    )
+    return self.identity_client.update_workload_identity(
+        name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls
+    )
+```
+
 #### `TokenPoller`
 
 Bases: `ABC`
@@ -395,28 +502,59 @@ async def poll_for_token(self) -> str:
     raise NotImplementedError
 ```
 
+#### `UserIdIdentifier`
+
+Bases: `BaseModel`
+
+The ID of the user for whom you have retrieved a workload access token for.
+
+Source code in `bedrock_agentcore/services/identity.py`
+
+```
+class UserIdIdentifier(BaseModel):
+    """The ID of the user for whom you have retrieved a workload access token for."""
+
+    user_id: str
+```
+
+#### `UserTokenIdentifier`
+
+Bases: `BaseModel`
+
+The OAuth2.0 token issued by the user's identity provider.
+
+Source code in `bedrock_agentcore/services/identity.py`
+
+```
+class UserTokenIdentifier(BaseModel):
+    """The OAuth2.0 token issued by the user's identity provider."""
+
+    user_token: str
+```
+
 ## Decorators
 
 ### `bedrock_agentcore.identity`
 
 Bedrock AgentCore SDK identity package.
 
-#### `requires_access_token(*, provider_name, into='access_token', scopes, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None)`
+#### `requires_access_token(*, provider_name, into='access_token', scopes, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None)`
 
 Decorator that fetches an OAuth2 access token before calling the decorated function.
 
 Parameters:
 
-| Name                   | Type                                | Description                                           | Default          |
-| ---------------------- | ----------------------------------- | ----------------------------------------------------- | ---------------- |
-| `provider_name`        | `str`                               | The credential provider name                          | *required*       |
-| `into`                 | `str`                               | Parameter name to inject the token into               | `'access_token'` |
-| `scopes`               | `List[str]`                         | OAuth2 scopes to request                              | *required*       |
-| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs              | `None`           |
-| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION") | *required*       |
-| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL                                   | `None`           |
-| `force_authentication` | `bool`                              | Force re-authentication                               | `False`          |
-| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                    | `None`           |
+| Name                   | Type                                | Description                                                                          | Default          |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------ | ---------------- |
+| `provider_name`        | `str`                               | The credential provider name                                                         | *required*       |
+| `into`                 | `str`                               | Parameter name to inject the token into                                              | `'access_token'` |
+| `scopes`               | `List[str]`                         | OAuth2 scopes to request                                                             | *required*       |
+| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                             | `None`           |
+| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                | *required*       |
+| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL                                                                  | `None`           |
+| `force_authentication` | `bool`                              | Force re-authentication                                                              | `False`          |
+| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                   | `None`           |
+| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url | `None`           |
 
 Returns:
 
@@ -437,6 +575,7 @@ def requires_access_token(
     callback_url: Optional[str] = None,
     force_authentication: bool = False,
     token_poller: Optional[TokenPoller] = None,
+    custom_state: Optional[str] = None,
 ) -> Callable:
     """Decorator that fetches an OAuth2 access token before calling the decorated function.
 
@@ -449,6 +588,7 @@ def requires_access_token(
         callback_url: OAuth2 callback URL
         force_authentication: Force re-authentication
         token_poller: Custom token poller implementation
+        custom_state: A state that allows applications to verify the validity of callbacks to callback_url
 
     Returns:
         Decorator function
@@ -465,9 +605,10 @@ def requires_access_token(
                 scopes=scopes,
                 on_auth_url=on_auth_url,
                 auth_flow=auth_flow,
-                callback_url=callback_url,
+                callback_url=_get_oauth2_callback_url(callback_url),
                 force_authentication=force_authentication,
                 token_poller=token_poller,
+                custom_state=custom_state,
             )
 
         @wraps(func)

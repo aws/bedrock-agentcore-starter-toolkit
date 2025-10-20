@@ -11,10 +11,10 @@
     
     
     
-      <link rel="prev" href="../observability/quickstart.html">
+      <link rel="prev" href="../builtin-tools/quickstart-code-interpreter.html">
     
     
-      <link rel="next" href="overview.html">
+      <link rel="next" href="agentcore-vpc.html">
     
     
     <link rel="icon" href="../.." sizes="any">
@@ -23,7 +23,7 @@
 
     
       
-        <title>Import Agent Quickstart - Amazon Bedrock AgentCore</title>
+        <title>VPC Interface Endpoints - Amazon Bedrock AgentCore</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#import-agent-quick-start" class="md-skip">
+        <a href="#use-interface-vpc-endpoints-aws-privatelink-to-create-a-private-connection-between-your-vpc-and-your-agentcore-resources" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Agent Quickstart
+              VPC Interface Endpoints
             
           </span>
         </div>
@@ -958,6 +958,8 @@
                 
   
   
+    
+  
   
   
     
@@ -973,11 +975,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" checked>
         
           
           <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="">
@@ -993,7 +995,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_7">
             <span class="md-nav__icon md-icon"></span>
             Security
@@ -1004,10 +1006,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../security/vpc-interface-endpoints.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    VPC Interface Endpoints
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="vpc-interface-endpoints.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1018,6 +1042,94 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#considerations-for-agentcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      Considerations for AgentCore
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Considerations for AgentCore">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Note
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorization-considerations-for-data-plane-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authorization considerations for data plane APIs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-an-interface-endpoint-for-agentcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create an interface endpoint for AgentCore
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-an-endpoint-policy-for-your-interface-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create an endpoint policy for your interface endpoint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Create an endpoint policy for your interface endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#endpoint-policies-for-various-primitives" class="md-nav__link">
+    <span class="md-ellipsis">
+      Endpoint policies for various primitives
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1030,7 +1142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../security/agentcore-vpc.html" class="md-nav__link">
+      <a href="agentcore-vpc.html" class="md-nav__link">
         
   
   
@@ -1053,7 +1165,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../security/security-vpc-condition.html" class="md-nav__link">
+      <a href="security-vpc-condition.html" class="md-nav__link">
         
   
   
@@ -1158,8 +1270,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1175,11 +1285,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
         
           
           <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="">
@@ -1195,7 +1305,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1_9">
             <span class="md-nav__icon md-icon"></span>
             Import Agent
@@ -1206,32 +1316,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Import Agent Quickstart
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="quickstart.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
         
   
   
@@ -1242,232 +1330,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      Interactive Mode (Recommended)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Line Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step-by-Step Walkthrough
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Launch the Import Utility
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Configure AWS Region
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Select Your Agent
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Choose Agent Alias
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1480,7 +1342,7 @@
   
   
     <li class="md-nav__item">
-      <a href="overview.html" class="md-nav__link">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -1503,7 +1365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -2086,37 +1948,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#considerations-for-agentcore" class="md-nav__link">
     <span class="md-ellipsis">
-      Prerequisites
+      Considerations for AgentCore
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Usage">
+    <nav class="md-nav" aria-label="Considerations for AgentCore">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
+  <a href="#note" class="md-nav__link">
     <span class="md-ellipsis">
-      Interactive Mode (Recommended)
+      Note
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
+  <a href="#authorization-considerations-for-data-plane-apis" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Mode
+      Authorization considerations for data plane APIs
     </span>
   </a>
   
@@ -2128,64 +1981,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
+  <a href="#create-an-interface-endpoint-for-agentcore" class="md-nav__link">
     <span class="md-ellipsis">
-      Step-by-Step Walkthrough
+      Create an interface endpoint for AgentCore
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-an-endpoint-policy-for-your-interface-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create an endpoint policy for your interface endpoint
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Create an endpoint policy for your interface endpoint">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
+  <a href="#endpoint-policies-for-various-primitives" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Launch the Import Utility
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Configure AWS Region
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Select Your Agent
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Choose Agent Alias
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
+      Endpoint policies for various primitives
     </span>
   </a>
   
@@ -2193,99 +2010,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
   
 </li>
       
@@ -2308,111 +2032,301 @@
   
 
 
-<h1 id="import-agent-quick-start">Import Agent Quick Start<a class="headerlink" href="#import-agent-quick-start" title="Permanent link">&para;</a></h1>
-<p>Get started with importing your Bedrock Agent to AgentCore in just a few minutes.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h1 id="use-interface-vpc-endpoints-aws-privatelink-to-create-a-private-connection-between-your-vpc-and-your-agentcore-resources">Use interface VPC endpoints (AWS PrivateLink) to create a private connection between your VPC and your AgentCore resources<a class="headerlink" href="#use-interface-vpc-endpoints-aws-privatelink-to-create-a-private-connection-between-your-vpc-and-your-agentcore-resources" title="Permanent link">&para;</a></h1>
+<p>You can use AWS PrivateLink to create a private connection between your VPC and
+Amazon Bedrock AgentCore. You can access AgentCore as if it were in your VPC, without the use of an
+internet gateway, NAT device, VPN connection, or AWS Direct Connect connection. Instances in your VPC
+don't need public IP addresses to access AgentCore.</p>
+<p>You establish this private connection by creating an <em>interface
+endpoint</em>, powered by AWS PrivateLink. We create an endpoint network interface
+in each subnet that you enable for the interface endpoint. These are requester-managed
+network interfaces that serve as the entry point for traffic destined for AgentCore.</p>
+<p>For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html" title="https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html">Access AWS services
+through AWS PrivateLink</a> in the
+<em>AWS PrivateLink Guide</em>.</p>
+<h2 id="considerations-for-agentcore">Considerations for AgentCore<a class="headerlink" href="#considerations-for-agentcore" title="Permanent link">&para;</a></h2>
+<p>Before you set up an interface endpoint for AgentCore, review <a href="https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#considerations-interface-endpoints" title="https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#considerations-interface-endpoints">Considerations</a> in the <em>AWS PrivateLink Guide</em>.</p>
+<p>AgentCore supports the following through interface endpoints:</p>
 <ul>
-<li>AWS credentials configured with access to Bedrock Agents</li>
-<li>Use <code>ada</code> or <code>aws configure</code> to ensure that your credentials are available for the utility to assume.</li>
-<li>Bedrock AgentCore Starter Toolkit installed</li>
-<li>An existing Amazon Bedrock Agent</li>
+<li>Data plane operations (runtime APIs)</li>
+<li>Invoking gateways</li>
 </ul>
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<h3 id="interactive-mode-recommended">Interactive Mode (Recommended)<a class="headerlink" href="#interactive-mode-recommended" title="Permanent link">&para;</a></h3>
-<p>The simplest way to get started is with interactive mode:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
-</code></pre></div>
-<p>The utility will guide you through:</p>
-<ol>
-<li><strong>Agent Selection</strong>: Choose your Bedrock Agent and alias</li>
-<li><strong>Target Platform</strong>: Select LangChain/LangGraph or Strands</li>
-<li><strong>AgentCore Primitives</strong>: Configure Memory, Code Interpreter, Observability</li>
-<li><strong>Deployment Options</strong>: Deploy to AgentCore Runtime or run locally</li>
-</ol>
-<h3 id="command-line-mode">Command Line Mode<a class="headerlink" href="#command-line-mode" title="Permanent link">&para;</a></h3>
-<p>For automation or when you know your parameters:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-id<span class="w"> </span>ABCD1234<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-alias-id<span class="w"> </span>TSTALIASID<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--target-platform<span class="w"> </span>strands<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-dir<span class="w"> </span>./my-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--deploy-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--run-option<span class="w"> </span>runtime
-</code></pre></div>
-<h2 id="step-by-step-walkthrough">Step-by-Step Walkthrough<a class="headerlink" href="#step-by-step-walkthrough" title="Permanent link">&para;</a></h2>
-<h3 id="1-launch-the-import-utility">1. Launch the Import Utility<a class="headerlink" href="#1-launch-the-import-utility" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
-</code></pre></div>
-<h3 id="2-configure-aws-region">2. Configure AWS Region<a class="headerlink" href="#2-configure-aws-region" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select AWS Region: us-east-1
-</code></pre></div>
-<h3 id="3-select-your-agent">3. Select Your Agent<a class="headerlink" href="#3-select-your-agent" title="Permanent link">&para;</a></h3>
-<p>The utility will list your available Bedrock Agents in the selected region:</p>
-<div class="highlight"><pre><span></span><code>? Select Bedrock Agent:
-  &gt; my-customer-service-agent (ID: ABCD1234)
-    my-research-agent (ID: EFGH5678)
-    my-code-assistant (ID: IJKL9012)
-</code></pre></div>
-<h3 id="4-choose-agent-alias">4. Choose Agent Alias<a class="headerlink" href="#4-choose-agent-alias" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select Agent Alias:
-  &gt; TSTALIASID (Test)
-    PRODALIASID (Production)
-</code></pre></div>
-<h3 id="5-select-target-platform">5. Select Target Platform<a class="headerlink" href="#5-select-target-platform" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Choose target platform:
-  &gt; strands (1.0.x)
-    langchain (0.3.x) + langgraph (0.5.x)
-</code></pre></div>
-<h3 id="7-deployment-options">7. Deployment Options<a class="headerlink" href="#7-deployment-options" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Deploy to AgentCore Runtime? [y/N]: Y
-? How would you like to run the agent?
-  &gt; Run on AgentCore Runtime
-    Install dependencies and run locally
-    Don&#39;t run now
-</code></pre></div>
-<h2 id="generated-output">Generated Output<a class="headerlink" href="#generated-output" title="Permanent link">&para;</a></h2>
-<p>After completion, you'll find:</p>
-<div class="highlight"><pre><span></span><code>./output/
-├── strands_agent.py          # Your converted agent
-├── requirements.txt          # Dependencies
-├── .agentcore-config.yaml   # Deployment configuration
-└── README.md                # Generated documentation
-</code></pre></div>
-<h2 id="testing-your-agent">Testing Your Agent<a class="headerlink" href="#testing-your-agent" title="Permanent link">&para;</a></h2>
-<h3 id="local-testing">Local Testing<a class="headerlink" href="#local-testing" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-python<span class="w"> </span>strands_agent.py
-</code></pre></div>
-<h3 id="agentcore-runtime-testing">AgentCore Runtime Testing<a class="headerlink" href="#agentcore-runtime-testing" title="Permanent link">&para;</a></h3>
-<p>If deployed to runtime:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s2">&quot;Hello, test message&quot;</span>
-</code></pre></div>
-<h2 id="common-options">Common Options<a class="headerlink" href="#common-options" title="Permanent link">&para;</a></h2>
-<h3 id="enable-debug-mode">Enable Debug Mode<a class="headerlink" href="#enable-debug-mode" title="Permanent link">&para;</a></h3>
-<p>Get detailed logging in the output agent:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--debug
-</code></pre></div>
-<h3 id="disable-specific-primitives">Disable Specific Primitives<a class="headerlink" href="#disable-specific-primitives" title="Permanent link">&para;</a></h3>
-<p>Skip certain AgentCore features:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-memory<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-code-interpreter
-</code></pre></div>
-<h3 id="custom-output-directory">Custom Output Directory<a class="headerlink" href="#custom-output-directory" title="Permanent link">&para;</a></h3>
-<p>Specify where to generate files:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--output-dir<span class="w"> </span>./my-custom-agent
-</code></pre></div>
-<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<h6 id="note">Note<a class="headerlink" href="#note" title="Permanent link">&para;</a></h6>
+<p>AWS PrivateLink is currently not supported for Amazon Bedrock AgentCore control plane endpoints.</p>
+<p>AgentCore interface endpoints are available in the following AWS Regions:</p>
 <ul>
-<li><strong>Review Generated Code</strong>: Examine the converted agent implementation</li>
-<li><strong>Test Functionality</strong>: Verify your agent works as expected</li>
-<li><strong>Customize Integration</strong>: Add custom AgentCore primitive configurations</li>
-<li><strong>Production Deployment</strong>: Deploy to AgentCore Runtime for production usage</li>
+<li>US East (N. Virginia)</li>
+<li>US West (Oregon)</li>
+<li>Europe (Frankfurt)</li>
+<li>Asia Pacific (Sydney)</li>
 </ul>
-<p>For detailed configuration options, see the <a href="configuration.html">Configuration Reference</a>.</p>
+<h6 id="authorization-considerations-for-data-plane-apis">Authorization considerations for data plane APIs<a class="headerlink" href="#authorization-considerations-for-data-plane-apis" title="Permanent link">&para;</a></h6>
+<p>The data plane APIs support both AWS Signature Version 4 (SigV4) headers for
+authentication and Bearer Token (OAuth) authentication. VPC endpoint policies can
+only restrict callers based on IAM principals and not OAuth users. For OAuth-based
+requests to succeed through the VPC endpoint, the principal must be set to
+<code>*</code> in the endpoint policy. Otherwise, only SigV4 allowlisted callers
+can make successful calls over the VPC endpoint.</p>
+<p>AWS IAM global condition context keys are supported. By default, full access to
+AgentCore is allowed through the interface endpoint. You can control access by attaching
+an endpoint policy to the interface endpoint or by associating a security group with the
+endpoint network interfaces.</p>
+<h2 id="create-an-interface-endpoint-for-agentcore">Create an interface endpoint for AgentCore<a class="headerlink" href="#create-an-interface-endpoint-for-agentcore" title="Permanent link">&para;</a></h2>
+<p>You can create an interface endpoint for AgentCore using either the Amazon VPC console or
+the AWS Command Line Interface (AWS CLI). For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint-aws" title="https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint-aws">Create an interface endpoint</a> in the
+<em>AWS PrivateLink Guide</em>.</p>
+<p>Create an interface endpoint for AgentCore using the following service name
+format:</p>
+<ul>
+<li>Data plane operations:
+  <code>com.amazonaws.region.bedrock-agentcore</code></li>
+<li>For AgentCore Gateway:
+  <code>com.amazonaws.region.bedrock-agentcore.gateway</code></li>
+</ul>
+<p>If you enable private DNS for the interface endpoint, you can make API requests to
+AgentCore using its default Regional DNS name. For example,
+<code>bedrock-agentcore.us-east-1.amazonaws.com</code>.</p>
+<h2 id="create-an-endpoint-policy-for-your-interface-endpoint">Create an endpoint policy for your interface endpoint<a class="headerlink" href="#create-an-endpoint-policy-for-your-interface-endpoint" title="Permanent link">&para;</a></h2>
+<p>An endpoint policy is an IAM resource that you can attach to an interface endpoint.
+The default endpoint policy allows full access to AgentCore through the interface
+endpoint. To control the access allowed to AgentCore from your VPC, attach a custom
+endpoint policy to the interface endpoint.</p>
+<p>An endpoint policy specifies the following information:</p>
+<ul>
+<li>
+<p>The principals that can perform actions (AWS accounts, IAM users, and
+  IAM roles).</p>
+</li>
+<li>
+<p>For AgentCore Gateway, if your gateway ingress isn't <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html" title="https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html">AWS
+    Signature Version 4 (SigV4)</a>-based (for example, if you use
+    OAuth instead), you must specify the <code>Principal</code> field as the
+    wildcard <code>*</code>. SigV4 -based authentication allows you to
+    define the <code>Principal</code> as a specific AWS identity.</p>
+</li>
+<li>The actions that can be performed.</li>
+<li>The resources on which the actions can be performed.</li>
+</ul>
+<p>For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html" title="https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html">Control access to services using endpoint policies</a> in the
+<em>AWS PrivateLink Guide</em>.</p>
+<h6 id="endpoint-policies-for-various-primitives">Endpoint policies for various primitives<a class="headerlink" href="#endpoint-policies-for-various-primitives" title="Permanent link">&para;</a></h6>
+<p>The following examples show endpoint policies for different AgentCore components:</p>
+<p>Runtime
+:   The following endpoint policy allows specific IAM principals to invoke agent runtime resources.</p>
+<div class="codehilite"><pre><span></span><code><span class="n n-Quoted">`</span><span class="n n-Quoted n-Quoted-Escape">``</span>
+<span class="n n-Quoted">{</span>
+<span class="n n-Quoted">   &quot;Statement&quot;: [</span>
+<span class="n n-Quoted">      {</span>
+<span class="n n-Quoted">         &quot;Effect&quot;: &quot;Allow&quot;,</span>
+<span class="n n-Quoted">         &quot;Principal&quot;: {</span>
+<span class="n n-Quoted">            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:user/USERNAME&quot;</span>
+<span class="n n-Quoted">         },</span>
+<span class="n n-Quoted">         &quot;Action&quot;: [</span>
+<span class="n n-Quoted">            &quot;bedrock-agentcore:InvokeAgentRuntime&quot;</span>
+<span class="n n-Quoted">         ],</span>
+<span class="n n-Quoted">         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/RUNTIME_ID&quot;</span>
+<span class="n n-Quoted">      }</span>
+<span class="n n-Quoted">   ]</span>
+<span class="n n-Quoted">}</span>
+<span class="n n-Quoted n-Quoted-Escape">``</span><span class="n n-Quoted">`</span>
+
+<span class="c1">###### Mixed IAM and OAuth authentication</span>
+
+<span class="n">The</span><span class="w"> </span><span class="n n-Quoted">`InvokeAgentRuntime`</span><span class="w"> </span><span class="n">API</span><span class="w"> </span><span class="n">supports</span><span class="w"> </span><span class="n">two</span><span class="w"> </span><span class="n">modes</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">VPC</span><span class="w"> </span><span class="n">endpoint</span><span class="w"> </span><span class="n">authorization</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">following</span><span class="w"> </span><span class="n">example</span><span class="w"> </span><span class="n">policy</span><span class="w"> </span><span class="n">allows</span><span class="w"> </span><span class="k">both</span><span class="w"> </span><span class="n">IAM</span><span class="w"> </span><span class="n">principals</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">OAuth</span><span class="w"> </span><span class="n">callers</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">access</span><span class="w"> </span><span class="n">different</span><span class="w"> </span><span class="n">agent</span><span class="w"> </span><span class="n">runtime</span><span class="w"> </span><span class="n">resources</span><span class="p">.</span>
+
+<span class="n n-Quoted">`</span><span class="n n-Quoted n-Quoted-Escape">``</span>
+<span class="n n-Quoted">{</span>
+<span class="n n-Quoted">   &quot;Statement&quot;: [</span>
+<span class="n n-Quoted">      {</span>
+<span class="n n-Quoted">         &quot;Effect&quot;: &quot;Allow&quot;,</span>
+<span class="n n-Quoted">         &quot;Principal&quot;: {</span>
+<span class="n n-Quoted">            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;</span>
+<span class="n n-Quoted">         },</span>
+<span class="n n-Quoted">         &quot;Action&quot;: [</span>
+<span class="n n-Quoted">            &quot;bedrock-agentcore:InvokeAgentRuntime&quot;</span>
+<span class="n n-Quoted">         ],</span>
+<span class="n n-Quoted">         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/customAgent1&quot;</span>
+<span class="n n-Quoted">      },</span>
+<span class="n n-Quoted">      {</span>
+<span class="n n-Quoted">         &quot;Effect&quot;: &quot;Allow&quot;,</span>
+<span class="n n-Quoted">         &quot;Principal&quot;: &quot;*&quot;,</span>
+<span class="n n-Quoted">         &quot;Action&quot;: [</span>
+<span class="n n-Quoted">            &quot;bedrock-agentcore:InvokeAgentRuntime&quot;</span>
+<span class="n n-Quoted">         ],</span>
+<span class="n n-Quoted">         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/customAgent2&quot;</span>
+<span class="n n-Quoted">      }</span>
+<span class="n n-Quoted">   ]</span>
+<span class="n n-Quoted">}</span>
+<span class="n n-Quoted n-Quoted-Escape">``</span><span class="n n-Quoted">`</span>
+
+<span class="n">The</span><span class="w"> </span><span class="n">above</span><span class="w"> </span><span class="n">policy</span><span class="w"> </span><span class="n">allows</span><span class="w"> </span><span class="k">only</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">IAM</span><span class="w"> </span><span class="n">principal</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n n-Quoted">`InvokeAgentRuntime`</span><span class="w"> </span><span class="n">calls</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n n-Quoted">`customAgent1`</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">also</span><span class="w"> </span><span class="n">allows</span><span class="w"> </span><span class="k">both</span><span class="w"> </span><span class="n">IAM</span><span class="w"> </span><span class="n">principals</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">OAuth</span><span class="w"> </span><span class="n">callers</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n n-Quoted">`InvokeAgentRuntime`</span><span class="w"> </span><span class="n">calls</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n n-Quoted">`customAgent2`</span><span class="p">.</span>
+</code></pre></div>
+
+<p>Code Interpreter
+:   The following endpoint policy allows specific IAM principals to invoke Code Interpreter resources.</p>
+<div class="codehilite"><pre><span></span><code><span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: {
+            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;
+         },
+         &quot;Action&quot;: [
+            &quot;bedrock-agentcore:InvokeCodeInterpreter&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:code-interpreter/CODE_INTERPRETER_ID&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+</code></pre></div>
+
+<p>Memory
+:   ###### All data plane operations</p>
+<div class="codehilite"><pre><span></span><code>The following endpoint policy allows specific IAM principals to access us-east-1 data plane operations
+for a specific AgentCore Memory.
+
+<span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: {
+            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;
+         },
+         &quot;Action&quot;: [
+            &quot;bedrock-agentcore:CreateEvent&quot;,
+            &quot;bedrock-agentcore:DeleteEvent&quot;,
+            &quot;bedrock-agentcore:GetEvent&quot;,
+            &quot;bedrock-agentcore:ListEvents&quot;,
+            &quot;bedrock-agentcore:DeleteMemoryRecord&quot;,
+            &quot;bedrock-agentcore:GetMemoryRecord&quot;,
+            &quot;bedrock-agentcore:ListMemoryRecords&quot;,
+            &quot;bedrock-agentcore:RetrieveMemoryRecords&quot;,
+            &quot;bedrock-agentcore:ListActors&quot;,
+            &quot;bedrock-agentcore:ListSessions&quot;,
+            &quot;bedrock-agentcore:BatchCreateMemoryRecords&quot;,
+            &quot;bedrock-agentcore:BatchDeleteMemoryRecords&quot;,
+            &quot;bedrock-agentcore:BatchUpdateMemoryRecords&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:memory/MEMORY_ID&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+
+<span class="gu">##</span>#### Access to all memories
+
+The following endpoint policy allows specific IAM principals access to all memories.
+
+<span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: {
+            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;
+         },
+         &quot;Action&quot;: [
+            &quot;bedrock-agentcore:CreateEvent&quot;,
+            &quot;bedrock-agentcore:DeleteEvent&quot;,
+            &quot;bedrock-agentcore:GetEvent&quot;,
+            &quot;bedrock-agentcore:ListEvents&quot;,
+            &quot;bedrock-agentcore:DeleteMemoryRecord&quot;,
+            &quot;bedrock-agentcore:GetMemoryRecord&quot;,
+            &quot;bedrock-agentcore:ListMemoryRecords&quot;,
+            &quot;bedrock-agentcore:RetrieveMemoryRecords&quot;,
+            &quot;bedrock-agentcore:ListActors&quot;,
+            &quot;bedrock-agentcore:ListSessions&quot;,
+            &quot;bedrock-agentcore:BatchCreateMemoryRecords&quot;,
+            &quot;bedrock-agentcore:BatchDeleteMemoryRecords&quot;,
+            &quot;bedrock-agentcore:BatchUpdateMemoryRecords&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:memory/*&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+
+<span class="gu">##</span>#### Access restriction by APIs
+
+The following endpoint policy grants permission for a specific IAM principal to create events in a
+specific AgentCore Memory resource.
+
+<span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: {
+            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;
+         },
+         &quot;Action&quot;: [
+            &quot;bedrock-agentcore:CreateEvent&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:memory/MEMORY_ID&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+</code></pre></div>
+
+<p>Browser Tool
+:   The following endpoint policy allows specific IAM principals to connect to Browser Tool resources.</p>
+<div class="codehilite"><pre><span></span><code><span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: {
+            &quot;AWS&quot;: &quot;arn:aws::iam::ACCOUNT_ID:root&quot;
+         },
+         &quot;Action&quot;: [
+            &quot;bedrock-agentcore:ConnectBrowserAutomationStream&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1:ACCOUNT_ID:browser/BROWSER_ID&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+</code></pre></div>
+
+<p>Gateway
+:   The following is an example of a custom endpoint policy. When you attach this policy to your interface endpoint, it allows all principals to invoke the gateway specified in the <code>Resource</code> field.</p>
+<div class="codehilite"><pre><span></span><code><span class="s">```</span>
+{
+   &quot;Statement&quot;: [
+      {
+         &quot;Effect&quot;: &quot;Allow&quot;,
+         &quot;Principal&quot;: &quot;*&quot;,
+         &quot;Action&quot;: [
+            &quot;bedrock:InvokeGateway&quot;
+         ],
+         &quot;Resource&quot;: &quot;arn:aws::bedrock-agentcore:us-east-1::gateway/my-gateway&quot;
+      }
+   ]
+}
+<span class="s">```</span>
+</code></pre></div>
+
+<p>Identity
+:   The following endpoint policy allows access to Identity resources.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">```</span>
+<span class="p">{</span>
+<span class="w">   </span><span class="s2">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">         </span><span class="s2">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+<span class="w">         </span><span class="s2">&quot;Principal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+<span class="w">         </span><span class="s2">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;*&quot;</span>
+<span class="w">         </span><span class="p">],</span>
+<span class="w">         </span><span class="s2">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:workload-identity-directory/default/workload-identity/WORKLOAD_IDENTITY_ID&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">   </span><span class="p">]</span>
+<span class="p">}</span>
+<span class="err">```</span>
+</code></pre></div>
 
 
 

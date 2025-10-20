@@ -11,10 +11,10 @@
     
     
     
-      <link rel="prev" href="../observability/quickstart.html">
+      <link rel="prev" href="agentcore-vpc.html">
     
     
-      <link rel="next" href="overview.html">
+      <link rel="next" href="../observability/quickstart.html">
     
     
     <link rel="icon" href="../.." sizes="any">
@@ -23,7 +23,7 @@
 
     
       
-        <title>Import Agent Quickstart - Amazon Bedrock AgentCore</title>
+        <title>VPC Condition Keys - Amazon Bedrock AgentCore</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#import-agent-quick-start" class="md-skip">
+        <a href="#use-iam-condition-keys-with-agentcore-runtime-and-built-in-tools-vpc-settings" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Agent Quickstart
+              VPC Condition Keys
             
           </span>
         </div>
@@ -958,6 +958,8 @@
                 
   
   
+    
+  
   
   
     
@@ -973,11 +975,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" checked>
         
           
           <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="">
@@ -993,7 +995,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_7">
             <span class="md-nav__icon md-icon"></span>
             Security
@@ -1007,7 +1009,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../security/vpc-interface-endpoints.html" class="md-nav__link">
+      <a href="vpc-interface-endpoints.html" class="md-nav__link">
         
   
   
@@ -1030,7 +1032,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../security/agentcore-vpc.html" class="md-nav__link">
+      <a href="agentcore-vpc.html" class="md-nav__link">
         
   
   
@@ -1050,10 +1052,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../security/security-vpc-condition.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    VPC Condition Keys
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="security-vpc-condition.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1064,6 +1088,70 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-policies-with-condition-keys-for-vpc-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example policies with condition keys for VPC settings
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example policies with condition keys for VPC settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#require-that-users-deploy-only-vpc-connected-runtimes-and-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Require that users deploy only VPC-connected runtimes and tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deny-users-access-to-specific-subnets-or-security-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deny users access to specific subnets or security groups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allow-users-to-create-and-update-agentcore-runtimes-and-tools-with-specific-vpc-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Allow users to create and update AgentCore Runtimes and tools with specific VPC settings
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1158,8 +1246,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1175,11 +1261,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
         
           
           <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="">
@@ -1195,7 +1281,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1_9">
             <span class="md-nav__icon md-icon"></span>
             Import Agent
@@ -1206,32 +1292,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Import Agent Quickstart
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="quickstart.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
         
   
   
@@ -1242,232 +1306,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      Interactive Mode (Recommended)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Line Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step-by-Step Walkthrough
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Launch the Import Utility
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Configure AWS Region
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Select Your Agent
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Choose Agent Alias
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1480,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="overview.html" class="md-nav__link">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -1503,7 +1341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -2086,37 +1924,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#example-policies-with-condition-keys-for-vpc-settings" class="md-nav__link">
     <span class="md-ellipsis">
-      Prerequisites
+      Example policies with condition keys for VPC settings
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Usage">
+    <nav class="md-nav" aria-label="Example policies with condition keys for VPC settings">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
+  <a href="#require-that-users-deploy-only-vpc-connected-runtimes-and-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      Interactive Mode (Recommended)
+      Require that users deploy only VPC-connected runtimes and tools
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
+  <a href="#deny-users-access-to-specific-subnets-or-security-groups" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Mode
+      Deny users access to specific subnets or security groups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allow-users-to-create-and-update-agentcore-runtimes-and-tools-with-specific-vpc-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Allow users to create and update AgentCore Runtimes and tools with specific VPC settings
     </span>
   </a>
   
@@ -2124,168 +1962,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step-by-Step Walkthrough
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Launch the Import Utility
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Configure AWS Region
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Select Your Agent
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Choose Agent Alias
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. Select Target Platform
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Deployment Options
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      Generated Output
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Your Agent
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Local Testing
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      AgentCore Runtime Testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disable Specific Primitives
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Output Directory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next Steps
-    </span>
-  </a>
   
 </li>
       
@@ -2308,111 +1984,137 @@
   
 
 
-<h1 id="import-agent-quick-start">Import Agent Quick Start<a class="headerlink" href="#import-agent-quick-start" title="Permanent link">&para;</a></h1>
-<p>Get started with importing your Bedrock Agent to AgentCore in just a few minutes.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h1 id="use-iam-condition-keys-with-agentcore-runtime-and-built-in-tools-vpc-settings">Use IAM condition keys with AgentCore Runtime and built-in tools VPC settings<a class="headerlink" href="#use-iam-condition-keys-with-agentcore-runtime-and-built-in-tools-vpc-settings" title="Permanent link">&para;</a></h1>
+<p>You can use Amazon Bedrock AgentCore-specific condition keys for VPC settings to
+provide additional permission controls for your AgentCore Runtime and
+built-in tools. For example, you can require that all runtimes in your organization are connected
+to a VPC. You can also specify the subnets and security groups that users of the AgentCore Runtime can and
+can't use.</p>
+<p>AgentCore supports the following condition keys in IAM
+policies:</p>
 <ul>
-<li>AWS credentials configured with access to Bedrock Agents</li>
-<li>Use <code>ada</code> or <code>aws configure</code> to ensure that your credentials are available for the utility to assume.</li>
-<li>Bedrock AgentCore Starter Toolkit installed</li>
-<li>An existing Amazon Bedrock Agent</li>
+<li><strong>bedrock-agentcore:subnets</strong> – Allow or deny one or more
+  subnets.</li>
+<li><strong>bedrock-agentcore:securityGroups</strong> – Allow or deny one or
+  more security groups.</li>
 </ul>
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<h3 id="interactive-mode-recommended">Interactive Mode (Recommended)<a class="headerlink" href="#interactive-mode-recommended" title="Permanent link">&para;</a></h3>
-<p>The simplest way to get started is with interactive mode:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+<p>The AgentCore Control Plane API operations
+<code>CreateAgentRuntime</code>, <code>UpdateAgentRuntime</code>,
+<code>CreateCodeInterpreter</code>, and <code>CreateBrowser</code> support these condition keys.
+For more information about using condition keys in IAM policies, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html" title="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html">IAM JSON Policy Elements: Condition</a> in the IAM User Guide.</p>
+<h2 id="example-policies-with-condition-keys-for-vpc-settings">Example policies with condition keys for VPC settings<a class="headerlink" href="#example-policies-with-condition-keys-for-vpc-settings" title="Permanent link">&para;</a></h2>
+<p>The following examples demonstrate how to use condition keys for VPC settings. After you
+create a policy statement with the desired restrictions, attach the policy statement to the
+target user or role.</p>
+<h3 id="require-that-users-deploy-only-vpc-connected-runtimes-and-tools">Require that users deploy only VPC-connected runtimes and tools<a class="headerlink" href="#require-that-users-deploy-only-vpc-connected-runtimes-and-tools" title="Permanent link">&para;</a></h3>
+<p>To require that all users deploy only VPC-connected AgentCore Runtime and built-in tools, you can
+deny runtime and tool create and update operations that don't include valid subnets and
+security groups.</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;                ,
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;EnforceVPCRuntime&quot;,
+      &quot;Action&quot;: [
+        &quot;bedrock-agentcore:CreateAgentRuntime&quot;,
+        &quot;bedrock-agentcore:UpdateAgentRuntime&quot;,
+        &quot;bedrock-agentcore:CreateCodeInterpreter&quot;,
+        &quot;bedrock-agentcore:CreateBrowser&quot;
+      ],
+      &quot;Effect&quot;: &quot;Deny&quot;,
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;Null&quot;: {
+          &quot;bedrock-agentcore:Subnets&quot;: &quot;true&quot;,
+          &quot;bedrock-agentcore:SecurityGroups&quot;: &quot;true&quot;
+        }
+      }
+    }
+  ]
+}
 </code></pre></div>
-<p>The utility will guide you through:</p>
-<ol>
-<li><strong>Agent Selection</strong>: Choose your Bedrock Agent and alias</li>
-<li><strong>Target Platform</strong>: Select LangChain/LangGraph or Strands</li>
-<li><strong>AgentCore Primitives</strong>: Configure Memory, Code Interpreter, Observability</li>
-<li><strong>Deployment Options</strong>: Deploy to AgentCore Runtime or run locally</li>
-</ol>
-<h3 id="command-line-mode">Command Line Mode<a class="headerlink" href="#command-line-mode" title="Permanent link">&para;</a></h3>
-<p>For automation or when you know your parameters:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-id<span class="w"> </span>ABCD1234<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-alias-id<span class="w"> </span>TSTALIASID<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--target-platform<span class="w"> </span>strands<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-dir<span class="w"> </span>./my-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--deploy-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--run-option<span class="w"> </span>runtime
+<h3 id="deny-users-access-to-specific-subnets-or-security-groups">Deny users access to specific subnets or security groups<a class="headerlink" href="#deny-users-access-to-specific-subnets-or-security-groups" title="Permanent link">&para;</a></h3>
+<p>To deny users access to specific subnets, use <code>StringEquals</code> to check the value
+of the <code>bedrock-agentcore:subnets</code> condition. The following example denies users
+access to <code>subnet-1</code> and <code>subnet-2</code>.</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;Sid&quot;: &quot;EnforceOutOfSubnet&quot;,
+  &quot;Action&quot;: [
+    &quot;bedrock-agentcore:CreateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:UpdateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:CreateCodeInterpreter&quot;,
+    &quot;bedrock-agentcore:CreateBrowser&quot;
+  ],
+  &quot;Effect&quot;: &quot;Deny&quot;,
+  &quot;Resource&quot;: &quot;*&quot;,
+  &quot;Condition&quot;: {
+    &quot;ForAnyValue:StringEquals&quot;: {
+      &quot;bedrock-agentcore:subnets&quot;: [&quot;subnet-1&quot;, &quot;subnet-2&quot;]
+    }
+  }
+}
 </code></pre></div>
-<h2 id="step-by-step-walkthrough">Step-by-Step Walkthrough<a class="headerlink" href="#step-by-step-walkthrough" title="Permanent link">&para;</a></h2>
-<h3 id="1-launch-the-import-utility">1. Launch the Import Utility<a class="headerlink" href="#1-launch-the-import-utility" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+<p>To deny users access to specific security groups, use <code>StringEquals</code> to check
+the value of the <code>bedrock-agentcore:securityGroups</code> condition. The following example
+denies users access to <code>sg-1</code> and <code>sg-2</code>.</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;Sid&quot;: &quot;EnforceOutOfSecurityGroups&quot;,
+  &quot;Action&quot;: [
+    &quot;bedrock-agentcore:CreateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:UpdateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:CreateCodeInterpreter&quot;,
+    &quot;bedrock-agentcore:CreateBrowser&quot;
+  ],
+  &quot;Effect&quot;: &quot;Deny&quot;,
+  &quot;Resource&quot;: &quot;*&quot;,
+  &quot;Condition&quot;: {
+    &quot;ForAnyValue:StringEquals&quot;: {
+      &quot;bedrock-agentcore:securityGroups&quot;: [&quot;sg-1&quot;, &quot;sg-2&quot;]
+    }
+  }
+}
 </code></pre></div>
-<h3 id="2-configure-aws-region">2. Configure AWS Region<a class="headerlink" href="#2-configure-aws-region" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select AWS Region: us-east-1
+<h3 id="allow-users-to-create-and-update-agentcore-runtimes-and-tools-with-specific-vpc-settings">Allow users to create and update AgentCore Runtimes and tools with specific VPC settings<a class="headerlink" href="#allow-users-to-create-and-update-agentcore-runtimes-and-tools-with-specific-vpc-settings" title="Permanent link">&para;</a></h3>
+<p>To allow users to access specific subnets, use <code>StringEquals</code> to check the
+value of the <code>bedrock-agentcore:subnets</code> condition. The following example allows
+users to access <code>subnet-1</code> and <code>subnet-2</code>.</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;Sid&quot;: &quot;EnforceStayInSpecificSubnets&quot;,
+  &quot;Action&quot;: [
+    &quot;bedrock-agentcore:CreateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:UpdateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:CreateCodeInterpreter&quot;,
+    &quot;bedrock-agentcore:CreateBrowser&quot;
+  ],
+  &quot;Effect&quot;: &quot;Allow&quot;,
+  &quot;Resource&quot;: &quot;*&quot;,
+  &quot;Condition&quot;: {
+    &quot;ForAllValues:StringEquals&quot;: {
+      &quot;bedrock-agentcore:subnets&quot;: [&quot;subnet-1&quot;, &quot;subnet-2&quot;]
+    }
+  }
+}
 </code></pre></div>
-<h3 id="3-select-your-agent">3. Select Your Agent<a class="headerlink" href="#3-select-your-agent" title="Permanent link">&para;</a></h3>
-<p>The utility will list your available Bedrock Agents in the selected region:</p>
-<div class="highlight"><pre><span></span><code>? Select Bedrock Agent:
-  &gt; my-customer-service-agent (ID: ABCD1234)
-    my-research-agent (ID: EFGH5678)
-    my-code-assistant (ID: IJKL9012)
+<p>To allow users to access specific security groups, use <code>StringEquals</code> to check
+the value of the <code>bedrock-agentcore:SecurityGroups</code> condition. The following example
+allows users to access <code>sg-1</code> and <code>sg-2</code>.</p>
+<div class="highlight"><pre><span></span><code>{
+  &quot;Sid&quot;: &quot;EnforceStayInSpecificSecurityGroups&quot;,
+  &quot;Action&quot;: [
+    &quot;bedrock-agentcore:CreateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:UpdateAgentRuntime&quot;,
+    &quot;bedrock-agentcore:CreateCodeInterpreter&quot;,
+    &quot;bedrock-agentcore:CreateBrowser&quot;
+  ],
+  &quot;Effect&quot;: &quot;Allow&quot;,
+  &quot;Resource&quot;: &quot;*&quot;,
+  &quot;Condition&quot;: {
+    &quot;ForAllValues:StringEquals&quot;: {
+      &quot;bedrock-agentcore:SecurityGroups&quot;: [&quot;sg-1&quot;, &quot;sg-2&quot;]
+    }
+  }
+}
 </code></pre></div>
-<h3 id="4-choose-agent-alias">4. Choose Agent Alias<a class="headerlink" href="#4-choose-agent-alias" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select Agent Alias:
-  &gt; TSTALIASID (Test)
-    PRODALIASID (Production)
-</code></pre></div>
-<h3 id="5-select-target-platform">5. Select Target Platform<a class="headerlink" href="#5-select-target-platform" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Choose target platform:
-  &gt; strands (1.0.x)
-    langchain (0.3.x) + langgraph (0.5.x)
-</code></pre></div>
-<h3 id="7-deployment-options">7. Deployment Options<a class="headerlink" href="#7-deployment-options" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Deploy to AgentCore Runtime? [y/N]: Y
-? How would you like to run the agent?
-  &gt; Run on AgentCore Runtime
-    Install dependencies and run locally
-    Don&#39;t run now
-</code></pre></div>
-<h2 id="generated-output">Generated Output<a class="headerlink" href="#generated-output" title="Permanent link">&para;</a></h2>
-<p>After completion, you'll find:</p>
-<div class="highlight"><pre><span></span><code>./output/
-├── strands_agent.py          # Your converted agent
-├── requirements.txt          # Dependencies
-├── .agentcore-config.yaml   # Deployment configuration
-└── README.md                # Generated documentation
-</code></pre></div>
-<h2 id="testing-your-agent">Testing Your Agent<a class="headerlink" href="#testing-your-agent" title="Permanent link">&para;</a></h2>
-<h3 id="local-testing">Local Testing<a class="headerlink" href="#local-testing" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-python<span class="w"> </span>strands_agent.py
-</code></pre></div>
-<h3 id="agentcore-runtime-testing">AgentCore Runtime Testing<a class="headerlink" href="#agentcore-runtime-testing" title="Permanent link">&para;</a></h3>
-<p>If deployed to runtime:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s2">&quot;Hello, test message&quot;</span>
-</code></pre></div>
-<h2 id="common-options">Common Options<a class="headerlink" href="#common-options" title="Permanent link">&para;</a></h2>
-<h3 id="enable-debug-mode">Enable Debug Mode<a class="headerlink" href="#enable-debug-mode" title="Permanent link">&para;</a></h3>
-<p>Get detailed logging in the output agent:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--debug
-</code></pre></div>
-<h3 id="disable-specific-primitives">Disable Specific Primitives<a class="headerlink" href="#disable-specific-primitives" title="Permanent link">&para;</a></h3>
-<p>Skip certain AgentCore features:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-memory<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-code-interpreter
-</code></pre></div>
-<h3 id="custom-output-directory">Custom Output Directory<a class="headerlink" href="#custom-output-directory" title="Permanent link">&para;</a></h3>
-<p>Specify where to generate files:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--output-dir<span class="w"> </span>./my-custom-agent
-</code></pre></div>
-<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Review Generated Code</strong>: Examine the converted agent implementation</li>
-<li><strong>Test Functionality</strong>: Verify your agent works as expected</li>
-<li><strong>Customize Integration</strong>: Add custom AgentCore primitive configurations</li>
-<li><strong>Production Deployment</strong>: Deploy to AgentCore Runtime for production usage</li>
-</ul>
-<p>For detailed configuration options, see the <a href="configuration.html">Configuration Reference</a>.</p>
 
 
 
