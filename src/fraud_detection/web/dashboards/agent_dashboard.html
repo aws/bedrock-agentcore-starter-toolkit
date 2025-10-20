@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Management Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active { background: #d4edda; color: #155724; }
+        .status-idle { background: #fff3cd; color: #856404; }
+        .status-busy { background: #cce5ff; color: #004085; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-offline { background: #e2e3e5; color: #383d41; }
+
+        .health-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .health-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .health-dot.healthy {
+            background: #4caf50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+        }
+
+        .health-dot.warning {
+            background: #ff9800;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+        }
+
+        .health-dot.critical {
+            background: #f44336;
+            box-shadow: 0 0 8px rgba(244, 67, 54, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .load-meter {
+            position: relative;
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .load-fill {
+            height: 100%;
+            transition: width 0.5s ease, background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .load-fill.low {
+            background: linear-gradient(90deg, #4caf50, #66bb6a);
+        }
+
+        .load-fill.medium {
+            background: linear-gradient(90deg, #2196f3, #42a5f5);
+        }
+
+        .load-fill.high {
+            background: linear-gradient(90deg, #ff9800, #ffa726);
+        }
+
+        .load-fill.critical {
+            background: linear-gradient(90deg, #f44336, #ef5350);
+        }
+
+        .alert-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #856404;
+            margin-top: 8px;
+        }
+
+        .alert-indicator.error {
+            background: #f8d7da;
+            border-color: #f44336;
+            color: #721c24;
+        }
+
+        .alert-indicator.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .response-time-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .response-time-bar {
+            flex: 1;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .response-time-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .response-time-fill.fast {
+            background: #4caf50;
+        }
+
+        .response-time-fill.normal {
+            background: #2196f3;
+        }
+
+        .response-time-fill.slow {
+            background: #ff9800;
+        }
+
+        .response-time-fill.very-slow {
+            background: #f44336;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .agent-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .agent-type {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .agent-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.3s ease;
+        }
+
+        .health-fill.warning {
+            background: linear-gradient(90deg, #ff9800, #ffc107);
+        }
+
+        .health-fill.critical {
+            background: linear-gradient(90deg, #f44336, #e91e63);
+        }
+
+        .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .capability-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .coordination-timeline {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-event {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            border-left: 3px solid #667eea;
+            margin-left: 10px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .timeline-event:hover {
+            background: #e9ecef;
+        }
+
+        .event-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .event-content {
+            flex: 1;
+        }
+
+        .event-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .event-details {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .event-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+
+        .auto-refresh {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .auto-refresh input {
+            margin-right: 6px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #f5c6cb;
+        }
+
+        .workflow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .workflow-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .workflow-node-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 3px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .workflow-node-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+
+        .workflow-node-circle.active {
+            animation: nodeActive 2s infinite;
+            border-color: #4caf50;
+        }
+
+        .workflow-node-circle.processing {
+            animation: nodeProcessing 1.5s infinite;
+            border-color: #2196f3;
+        }
+
+        .workflow-node-circle.error {
+            border-color: #f44336;
+            animation: nodeError 1s infinite;
+        }
+
+        @keyframes nodeActive {
+            0%, 100% { box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(76, 175, 80, 0.6); }
+        }
+
+        @keyframes nodeProcessing {
+            0%, 100% { box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.6); }
+        }
+
+        @keyframes nodeError {
+            0%, 100% { box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(244, 67, 54, 0.6); }
+        }
+
+        .workflow-node-icon {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+
+        .workflow-node-label {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            max-width: 100px;
+        }
+
+        .workflow-node-stats {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+        }
+
+        .workflow-arrow {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            z-index: 1;
+            transform-origin: left center;
+        }
+
+        .workflow-arrow::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #764ba2;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .workflow-arrow.animated {
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: arrowFlow 2s linear infinite;
+        }
+
+        @keyframes arrowFlow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .workflow-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .workflow-metric-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workflow-metric-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .workflow-metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .bottleneck-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #856404;
+            margin-top: 5px;
+        }
+
+        .bottleneck-indicator.critical {
+            background: #f8d7da;
+            border-color: #f44336;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Agent Management Dashboard</h1>
+        <div class="subtitle">Real-time monitoring and management of AI fraud detection agents</div>
+    </div>
+
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <button class="refresh-btn" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
+            <label class="auto-refresh">
+                <input type="checkbox" id="autoRefresh" checked onchange="toggleAutoRefresh()">
+                Auto-refresh (5s)
+            </label>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards" id="summaryCards">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading dashboard data...
+            </div>
+        </div>
+
+        <!-- Stress Test Metrics Section -->
+        <h2 class="section-title">🔥 Stress Test Performance</h2>
+        <div class="summary-cards" id="stressTestCards">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading stress test metrics...
+            </div>
+        </div>
+
+        <!-- Workload Distribution Chart -->
+        <div class="chart-container">
+            <h3 style="margin-bottom: 15px; color: #333;">Workload Distribution</h3>
+            <canvas id="workloadChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Coordination Efficiency -->
+        <div class="chart-container">
+            <h3 style="margin-bottom: 15px; color: #333;">Coordination Efficiency</h3>
+            <div id="coordinationEfficiency">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading coordination metrics...
+                </div>
+            </div>
+        </div>
+
+        <!-- Agents Grid -->
+        <h2 class="section-title">Active Agents</h2>
+        <div class="agents-grid" id="agentsGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading agents...
+            </div>
+        </div>
+
+        <!-- Coordination Workflow Visualization -->
+        <h2 class="section-title">🔄 Coordination Workflow</h2>
+        <div class="chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #333;">Transaction Flow Through Agents</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                        <div style="width: 12px; height: 12px; background: #4caf50; border-radius: 50%;"></div>
+                        <span>Completed</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                        <div style="width: 12px; height: 12px; background: #2196f3; border-radius: 50%;"></div>
+                        <span>In Progress</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; font-size: 12px;">
+                        <div style="width: 12px; height: 12px; background: #f44336; border-radius: 50%;"></div>
+                        <span>Failed</span>
+                    </div>
+                </div>
+            </div>
+            <div id="workflowVisualization" style="min-height: 300px; position: relative;">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading workflow...
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordination Timeline -->
+        <h2 class="section-title">Recent Coordination Events</h2>
+        <div class="coordination-timeline" id="coordinationTimeline">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading coordination events...
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        let autoRefreshInterval = null;
+        let mockData = null;
+        let workloadChart = null;
+
+        // Initialize mock data
+        function initializeMockData() {
+            mockData = {
+                summary: {
+                    timestamp: new Date().toISOString(),
+                    agents: {
+                        total: 5,
+                        active: 4,
+                        idle: 1,
+                        busy: 0,
+                        error: 0,
+                        offline: 0
+                    },
+                    performance: {
+                        total_requests_processed: 15847,
+                        total_errors: 23,
+                        overall_success_rate: 0.9985,
+                        average_health_score: 0.952,
+                        average_response_time_ms: 145.3
+                    },
+                    coordination: {
+                        total_events: 342,
+                        recent_events: 28
+                    },
+                    alerts: {
+                        total: 2,
+                        critical: 0
+                    }
+                },
+                agents: [
+                    {
+                        agent_id: "txn_analyzer_001",
+                        agent_name: "Transaction Analyzer",
+                        agent_type: "transaction_analyzer",
+                        status: "active",
+                        version: "1.2.0",
+                        capabilities: ["real_time_processing", "velocity_detection", "amount_analysis"],
+                        metrics: {
+                            requests_processed: 5234,
+                            average_response_time_ms: 123.5,
+                            success_rate: 0.998,
+                            error_count: 10,
+                            current_load: 0.45,
+                            uptime_seconds: 86400,
+                            memory_usage_mb: 256.3,
+                            cpu_usage_percent: 34.2
+                        },
+                        health_score: 0.965
+                    },
+                    {
+                        agent_id: "pattern_detector_001",
+                        agent_name: "Pattern Detector",
+                        agent_type: "pattern_detector",
+                        status: "active",
+                        version: "1.1.5",
+                        capabilities: ["anomaly_detection", "behavioral_analysis", "trend_prediction"],
+                        metrics: {
+                            requests_processed: 3421,
+                            average_response_time_ms: 187.2,
+                            success_rate: 0.995,
+                            error_count: 17,
+                            current_load: 0.62,
+                            uptime_seconds: 86400,
+                            memory_usage_mb: 412.7,
+                            cpu_usage_percent: 52.8
+                        },
+                        health_score: 0.923
+                    },
+                    {
+                        agent_id: "risk_assessor_001",
+                        agent_name: "Risk Assessor",
+                        agent_type: "risk_assessor",
+                        status: "active",
+                        version: "1.3.2",
+                        capabilities: ["multi_factor_scoring", "geographic_analysis", "temporal_analysis"],
+                        metrics: {
+                            requests_processed: 4892,
+                            average_response_time_ms: 98.7,
+                            success_rate: 0.999,
+                            error_count: 5,
+                            current_load: 0.38,
+                            uptime_seconds: 86400,
+                            memory_usage_mb: 198.5,
+                            cpu_usage_percent: 28.3
+                        },
+                        health_score: 0.982
+                    },
+                    {
+                        agent_id: "compliance_001",
+                        agent_name: "Compliance Agent",
+                        agent_type: "compliance",
+                        status: "idle",
+                        version: "1.0.0",
+                        capabilities: ["regulatory_checking", "audit_trail", "policy_enforcement"],
+                        metrics: {
+                            requests_processed: 1245,
+                            average_response_time_ms: 234.1,
+                            success_rate: 1.0,
+                            error_count: 0,
+                            current_load: 0.12,
+                            uptime_seconds: 86400,
+                            memory_usage_mb: 145.2,
+                            cpu_usage_percent: 15.7
+                        },
+                        health_score: 0.958
+                    },
+                    {
+                        agent_id: "orchestrator_001",
+                        agent_name: "Agent Orchestrator",
+                        agent_type: "orchestrator",
+                        status: "active",
+                        version: "2.0.1",
+                        capabilities: ["coordination", "decision_aggregation", "workflow_management"],
+                        metrics: {
+                            requests_processed: 1055,
+                            average_response_time_ms: 67.3,
+                            success_rate: 0.997,
+                            error_count: 3,
+                            uptime_seconds: 86400,
+                            memory_usage_mb: 178.9,
+                            cpu_usage_percent: 22.1
+                        },
+                        health_score: 0.975
+                    }
+                ],
+                coordination_events: [
+                    {
+                        event_id: "evt_001",
+                        timestamp: new Date(Date.now() - 30000).toISOString(),
+                        event_type: "request",
+                        source_agent: "orchestrator_001",
+                        target_agent: "txn_analyzer_001",
+                        transaction_id: "tx_12345",
+                        status: "completed",
+                        duration_ms: 125.3
+                    },
+                    {
+                        event_id: "evt_002",
+                        timestamp: new Date(Date.now() - 28000).toISOString(),
+                        event_type: "response",
+                        source_agent: "txn_analyzer_001",
+                        target_agent: "orchestrator_001",
+                        transaction_id: "tx_12345",
+                        status: "completed",
+                        duration_ms: 98.7
+                    },
+                    {
+                        event_id: "evt_003",
+                        timestamp: new Date(Date.now() - 25000).toISOString(),
+                        event_type: "coordination",
+                        source_agent: "orchestrator_001",
+                        target_agent: "risk_assessor_001",
+                        transaction_id: "tx_12345",
+                        status: "completed",
+                        duration_ms: 87.2
+                    },
+                    {
+                        event_id: "evt_004",
+                        timestamp: new Date(Date.now() - 20000).toISOString(),
+                        event_type: "request",
+                        source_agent: "orchestrator_001",
+                        target_agent: "pattern_detector_001",
+                        transaction_id: "tx_12346",
+                        status: "completed",
+                        duration_ms: 156.8
+                    },
+                    {
+                        event_id: "evt_005",
+                        timestamp: new Date(Date.now() - 15000).toISOString(),
+                        event_type: "escalation",
+                        source_agent: "risk_assessor_001",
+                        target_agent: "compliance_001",
+                        transaction_id: "tx_12347",
+                        status: "in_progress",
+                        duration_ms: 0
+                    }
+                ]
+            };
+        }
+
+        function renderSummaryCards(summary) {
+            const container = document.getElementById('summaryCards');
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-title">Total Agents</div>
+                    <div class="card-value">${summary.agents.total}</div>
+                    <div class="card-subtitle">${summary.agents.active} active, ${summary.agents.error} errors</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Requests Processed</div>
+                    <div class="card-value">${summary.performance.total_requests_processed.toLocaleString()}</div>
+                    <div class="card-subtitle">${summary.performance.total_errors} errors</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Success Rate</div>
+                    <div class="card-value">${(summary.performance.overall_success_rate * 100).toFixed(2)}%</div>
+                    <div class="card-subtitle">Overall system performance</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Avg Response Time</div>
+                    <div class="card-value">${summary.performance.average_response_time_ms.toFixed(1)}<span style="font-size: 16px;">ms</span></div>
+                    <div class="card-subtitle">Across all agents</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Health Score</div>
+                    <div class="card-value">${(summary.performance.average_health_score * 100).toFixed(1)}%</div>
+                    <div class="card-subtitle">System health</div>
+                </div>
+            `;
+        }
+
+        function getHealthBarClass(score) {
+            if (score >= 0.9) return '';
+            if (score >= 0.7) return 'warning';
+            return 'critical';
+        }
+
+        function getHealthStatus(healthScore) {
+            if (healthScore >= 0.9) return { class: 'healthy', text: 'Healthy' };
+            if (healthScore >= 0.7) return { class: 'warning', text: 'Warning' };
+            return { class: 'critical', text: 'Critical' };
+        }
+
+        function getLoadClass(load) {
+            if (load < 0.5) return 'low';
+            if (load < 0.7) return 'medium';
+            if (load < 0.85) return 'high';
+            return 'critical';
+        }
+
+        function getResponseTimeClass(responseTime) {
+            if (responseTime < 100) return 'fast';
+            if (responseTime < 300) return 'normal';
+            if (responseTime < 500) return 'slow';
+            return 'very-slow';
+        }
+
+        function getResponseTimePercent(responseTime) {
+            // Normalize to 0-100% (0ms = 0%, 1000ms = 100%)
+            return Math.min(100, (responseTime / 1000) * 100);
+        }
+
+        function getAlerts(agent) {
+            const alerts = [];
+            
+            if (agent.metrics.error_count > 50) {
+                alerts.push({ type: 'error', message: `High error count: ${agent.metrics.error_count}` });
+            }
+            
+            if (agent.metrics.current_load > 0.85) {
+                alerts.push({ type: 'error', message: 'Load exceeding 85%' });
+            } else if (agent.metrics.current_load > 0.7) {
+                alerts.push({ type: 'info', message: 'Load above 70%' });
+            }
+            
+            if (agent.metrics.average_response_time_ms > 500) {
+                alerts.push({ type: 'error', message: 'Slow response times' });
+            } else if (agent.metrics.average_response_time_ms > 300) {
+                alerts.push({ type: 'info', message: 'Elevated response times' });
+            }
+            
+            if (agent.health_score < 0.7) {
+                alerts.push({ type: 'error', message: 'Health score below threshold' });
+            }
+            
+            return alerts;
+        }
+
+        function renderAgents(agents) {
+            const container = document.getElementById('agentsGrid');
+            container.innerHTML = agents.map(agent => {
+                const healthStatus = getHealthStatus(agent.health_score);
+                const loadClass = getLoadClass(agent.metrics.current_load);
+                const responseClass = getResponseTimeClass(agent.metrics.average_response_time_ms);
+                const responsePercent = getResponseTimePercent(agent.metrics.average_response_time_ms);
+                const alerts = getAlerts(agent);
+                
+                return `
+                <div class="agent-card">
+                    <div class="agent-header">
+                        <div>
+                            <div class="agent-name">${agent.agent_name}</div>
+                            <div class="agent-type">${agent.agent_type.replace(/_/g, ' ')}</div>
+                        </div>
+                        <span class="status-badge status-${agent.status}">${agent.status}</span>
+                    </div>
+                    
+                    <!-- Health Indicator -->
+                    <div class="health-indicator">
+                        <div class="health-dot ${healthStatus.class}"></div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 12px; font-weight: 600; color: #333;">
+                                ${healthStatus.text} - ${(agent.health_score * 100).toFixed(1)}%
+                            </div>
+                            <div style="font-size: 10px; color: #666;">
+                                ${agent.metrics.requests_processed.toLocaleString()} requests | 
+                                ${(agent.metrics.success_rate * 100).toFixed(1)}% success
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Load Meter -->
+                    <div style="margin-top: 12px;">
+                        <div class="metric-label">Current Load</div>
+                        <div class="load-meter">
+                            <div class="load-fill ${loadClass}" style="width: ${agent.metrics.current_load * 100}%">
+                                ${(agent.metrics.current_load * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Time Indicator -->
+                    <div style="margin-top: 12px;">
+                        <div class="metric-label">Response Time: ${agent.metrics.average_response_time_ms.toFixed(0)}ms</div>
+                        <div class="response-time-indicator">
+                            <div class="response-time-bar">
+                                <div class="response-time-fill ${responseClass}" style="width: ${responsePercent}%"></div>
+                            </div>
+                            <div style="font-size: 11px; color: #666; min-width: 40px;">
+                                ${responseClass === 'fast' ? '⚡ Fast' : 
+                                  responseClass === 'normal' ? '✓ OK' : 
+                                  responseClass === 'slow' ? '⚠ Slow' : '🔴 Critical'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Metrics -->
+                    <div class="agent-metrics" style="margin-top: 12px;">
+                        <div class="metric">
+                            <div class="metric-label">Errors</div>
+                            <div class="metric-value" style="color: ${agent.metrics.error_count > 50 ? '#f44336' : '#333'}">
+                                ${agent.metrics.error_count}
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">CPU</div>
+                            <div class="metric-value">${agent.metrics.cpu_usage_percent.toFixed(1)}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Memory</div>
+                            <div class="metric-value">${agent.metrics.memory_usage_mb.toFixed(0)}MB</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Uptime</div>
+                            <div class="metric-value">${Math.floor(agent.metrics.uptime_seconds / 3600)}h</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts -->
+                    ${alerts.length > 0 ? `
+                        <div style="margin-top: 12px;">
+                            ${alerts.map(alert => `
+                                <div class="alert-indicator ${alert.type}">
+                                    ${alert.type === 'error' ? '⚠️' : 'ℹ️'} ${alert.message}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Capabilities -->
+                    <div class="capabilities">
+                        ${agent.capabilities.map(cap => 
+                            `<span class="capability-tag">${cap.replace(/_/g, ' ')}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function getEventIcon(eventType) {
+            const icons = {
+                'request': '📤',
+                'response': '📥',
+                'coordination': '🔄',
+                'escalation': '⚠️',
+                'configuration_change': '⚙️'
+            };
+            return icons[eventType] || '📋';
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            
+            if (diff < 60) return `${diff}s ago`;
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return date.toLocaleString();
+        }
+
+        function renderCoordinationEvents(events) {
+            const container = document.getElementById('coordinationTimeline');
+            if (events.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No recent coordination events</div>';
+                return;
+            }
+            
+            container.innerHTML = events.map(event => `
+                <div class="timeline-event">
+                    <div class="event-icon">${getEventIcon(event.event_type)}</div>
+                    <div class="event-content">
+                        <div class="event-title">${event.event_type.replace(/_/g, ' ').toUpperCase()}</div>
+                        <div class="event-details">
+                            ${event.source_agent} ${event.target_agent ? `→ ${event.target_agent}` : ''}
+                            ${event.transaction_id ? `| Transaction: ${event.transaction_id}` : ''}
+                        </div>
+                        <div class="event-time">
+                            ${formatTimestamp(event.timestamp)} | 
+                            Duration: ${event.duration_ms.toFixed(1)}ms | 
+                            Status: ${event.status}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStressTestCards(stressMetrics) {
+            const container = document.getElementById('stressTestCards');
+            const summary = stressMetrics.summary;
+            const coordination = stressMetrics.coordination_efficiency;
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-title">Agents Under Load</div>
+                    <div class="card-value">${summary.healthy_agents}/${summary.total_agents}</div>
+                    <div class="card-subtitle">Healthy agents</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Avg Load</div>
+                    <div class="card-value">${(summary.avg_load * 100).toFixed(1)}%</div>
+                    <div class="card-subtitle">Across all agents</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Avg Response</div>
+                    <div class="card-value">${summary.avg_response_time.toFixed(0)}<span style="font-size: 16px;">ms</span></div>
+                    <div class="card-subtitle">Under stress load</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Coordination Efficiency</div>
+                    <div class="card-value">${(coordination.success_rate * 100).toFixed(1)}%</div>
+                    <div class="card-subtitle">${coordination.total_events} events</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Total Requests</div>
+                    <div class="card-value">${summary.total_requests.toLocaleString()}</div>
+                    <div class="card-subtitle">Processed by agents</div>
+                </div>
+            `;
+        }
+
+        function renderWorkloadChart(workloadData) {
+            const ctx = document.getElementById('workloadChart');
+            
+            if (!ctx) return;
+            
+            const distribution = Object.values(workloadData);
+            const labels = distribution.map(d => d.agent_name);
+            const requestData = distribution.map(d => d.requests);
+            const loadData = distribution.map(d => (d.load * 100).toFixed(1));
+            
+            // Destroy existing chart if it exists
+            if (workloadChart) {
+                workloadChart.destroy();
+            }
+            
+            workloadChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Requests Processed',
+                            data: requestData,
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Current Load (%)',
+                            data: loadData,
+                            backgroundColor: 'rgba(118, 75, 162, 0.6)',
+                            borderColor: 'rgba(118, 75, 162, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Requests Processed'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Load (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.datasetIndex === 0) {
+                                        label += context.parsed.y.toLocaleString();
+                                    } else {
+                                        label += context.parsed.y + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCoordinationEfficiency(coordMetrics) {
+            const container = document.getElementById('coordinationEfficiency');
+            
+            const efficiencyPercent = (coordMetrics.efficiency_score * 100).toFixed(1);
+            const successPercent = (coordMetrics.overall_success_rate * 100).toFixed(1);
+            
+            let efficiencyClass = 'health-fill';
+            if (coordMetrics.efficiency_score < 0.7) {
+                efficiencyClass = 'health-fill critical';
+            } else if (coordMetrics.efficiency_score < 0.9) {
+                efficiencyClass = 'health-fill warning';
+            }
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <div class="metric-label">Efficiency Score</div>
+                        <div class="metric-value">${efficiencyPercent}%</div>
+                        <div class="health-bar" style="margin-top: 8px;">
+                            <div class="${efficiencyClass}" style="width: ${efficiencyPercent}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value">${successPercent}%</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Avg Coordination Time</div>
+                        <div class="metric-value">${coordMetrics.avg_coordination_time_ms.toFixed(0)}ms</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Total Events</div>
+                        <div class="metric-value">${coordMetrics.total_events}</div>
+                    </div>
+                </div>
+                
+                ${coordMetrics.event_types ? `
+                <div style="margin-top: 20px;">
+                    <h4 style="color: #666; font-size: 14px; margin-bottom: 10px;">Event Types Breakdown</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                        ${Object.entries(coordMetrics.event_types).map(([type, metrics]) => `
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">
+                                    ${type.replace(/_/g, ' ')}
+                                </div>
+                                <div style="font-size: 16px; font-weight: 600; color: #333;">
+                                    ${metrics.count} events
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 3px;">
+                                    ${(metrics.success_rate * 100).toFixed(0)}% success | ${metrics.avg_duration_ms.toFixed(0)}ms avg
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function renderWorkflowVisualization(agents, coordinationEvents) {
+            const container = document.getElementById('workflowVisualization');
+            
+            // Calculate workflow metrics
+            const recentEvents = coordinationEvents.slice(-50);
+            const avgTimings = {};
+            const eventCounts = {};
+            
+            agents.forEach(agent => {
+                const agentEvents = recentEvents.filter(e => 
+                    e.source_agent === agent.agent_id || e.target_agent === agent.agent_id
+                );
+                
+                if (agentEvents.length > 0) {
+                    const totalTime = agentEvents.reduce((sum, e) => sum + e.duration_ms, 0);
+                    avgTimings[agent.agent_id] = totalTime / agentEvents.length;
+                    eventCounts[agent.agent_id] = agentEvents.length;
+                } else {
+                    avgTimings[agent.agent_id] = 0;
+                    eventCounts[agent.agent_id] = 0;
+                }
+            });
+            
+            // Identify bottlenecks (agents with high response times)
+            const maxTiming = Math.max(...Object.values(avgTimings));
+            const bottlenecks = Object.entries(avgTimings)
+                .filter(([id, time]) => time > maxTiming * 0.8 && time > 200)
+                .map(([id]) => id);
+            
+            // Create workflow nodes
+            const workflowNodes = agents.map((agent, index) => {
+                const isBottleneck = bottlenecks.includes(agent.agent_id);
+                const nodeClass = agent.status === 'active' ? 'active' : 
+                                 agent.status === 'busy' ? 'processing' : 
+                                 agent.status === 'error' ? 'error' : '';
+                
+                const icon = agent.agent_type === 'orchestrator' ? '🎯' :
+                            agent.agent_type === 'transaction_analyzer' ? '📊' :
+                            agent.agent_type === 'pattern_detector' ? '🔍' :
+                            agent.agent_type === 'risk_assessor' ? '⚖️' :
+                            agent.agent_type === 'compliance' ? '✅' : '🤖';
+                
+                return `
+                    <div class="workflow-node">
+                        <div class="workflow-node-circle ${nodeClass}" title="${agent.agent_name}">
+                            <div class="workflow-node-icon">${icon}</div>
+                            <div style="font-size: 10px; font-weight: 600; color: #666;">
+                                ${(agent.metrics.current_load * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                        <div class="workflow-node-label">${agent.agent_name}</div>
+                        <div class="workflow-node-stats">
+                            ${avgTimings[agent.agent_id].toFixed(0)}ms avg
+                            <br>
+                            ${eventCounts[agent.agent_id]} events
+                        </div>
+                        ${isBottleneck ? `
+                            <div class="bottleneck-indicator ${avgTimings[agent.agent_id] > 400 ? 'critical' : ''}">
+                                ⚠️ Bottleneck
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Calculate total workflow metrics
+            const totalEvents = recentEvents.length;
+            const completedEvents = recentEvents.filter(e => e.status === 'completed').length;
+            const avgWorkflowTime = recentEvents.length > 0 
+                ? recentEvents.reduce((sum, e) => sum + e.duration_ms, 0) / recentEvents.length 
+                : 0;
+            const successRate = totalEvents > 0 ? (completedEvents / totalEvents) * 100 : 100;
+            
+            // Calculate end-to-end transaction time (sum of all agent timings)
+            const endToEndTime = Object.values(avgTimings).reduce((sum, time) => sum + time, 0);
+            
+            container.innerHTML = `
+                <div class="workflow-container">
+                    ${workflowNodes}
+                </div>
+                
+                <div class="workflow-metrics">
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">Total Events</div>
+                        <div class="workflow-metric-value">${totalEvents}</div>
+                    </div>
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">Success Rate</div>
+                        <div class="workflow-metric-value">${successRate.toFixed(1)}%</div>
+                    </div>
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">Avg Step Time</div>
+                        <div class="workflow-metric-value">${avgWorkflowTime.toFixed(0)}ms</div>
+                    </div>
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">End-to-End Time</div>
+                        <div class="workflow-metric-value">${endToEndTime.toFixed(0)}ms</div>
+                    </div>
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">Bottlenecks</div>
+                        <div class="workflow-metric-value" style="color: ${bottlenecks.length > 0 ? '#f44336' : '#4caf50'}">
+                            ${bottlenecks.length}
+                        </div>
+                    </div>
+                    <div class="workflow-metric-item">
+                        <div class="workflow-metric-label">Agents Active</div>
+                        <div class="workflow-metric-value">
+                            ${agents.filter(a => a.status === 'active').length}/${agents.length}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add animated arrows between nodes (simplified for demo)
+            const workflowContainer = container.querySelector('.workflow-container');
+            if (workflowContainer && agents.length > 1) {
+                const nodes = workflowContainer.querySelectorAll('.workflow-node-circle');
+                
+                // Add arrows between consecutive nodes
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const fromNode = nodes[i];
+                    const toNode = nodes[i + 1];
+                    
+                    const fromRect = fromNode.getBoundingClientRect();
+                    const toRect = toNode.getBoundingClientRect();
+                    const containerRect = workflowContainer.getBoundingClientRect();
+                    
+                    const fromX = fromRect.right - containerRect.left;
+                    const fromY = fromRect.top + fromRect.height / 2 - containerRect.top;
+                    const toX = toRect.left - containerRect.left;
+                    const toY = toRect.top + toRect.height / 2 - containerRect.top;
+                    
+                    const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                    const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+                    
+                    const arrow = document.createElement('div');
+                    arrow.className = 'workflow-arrow animated';
+                    arrow.style.width = `${length - 80}px`;
+                    arrow.style.left = `${fromX}px`;
+                    arrow.style.top = `${fromY}px`;
+                    arrow.style.transform = `rotate(${angle}deg)`;
+                    
+                    workflowContainer.appendChild(arrow);
+                }
+            }
+        }
+
+        function generateStressTestMetrics() {
+            // Generate mock stress test metrics based on current agent data
+            const agents = mockData.agents;
+            const totalRequests = agents.reduce((sum, a) => sum + a.metrics.requests_processed, 0);
+            
+            const workloadDistribution = {};
+            agents.forEach(agent => {
+                const percentage = totalRequests > 0 ? (agent.metrics.requests_processed / totalRequests) * 100 : 0;
+                workloadDistribution[agent.agent_id] = {
+                    agent_name: agent.agent_name,
+                    requests: agent.metrics.requests_processed,
+                    percentage: percentage.toFixed(2),
+                    load: agent.metrics.current_load
+                };
+            });
+            
+            const healthyAgents = agents.filter(a => a.health_score >= 0.8).length;
+            const avgLoad = agents.reduce((sum, a) => sum + a.metrics.current_load, 0) / agents.length;
+            const avgResponseTime = agents.reduce((sum, a) => sum + a.metrics.average_response_time_ms, 0) / agents.length;
+            
+            const recentEvents = mockData.coordination_events.slice(-20);
+            const completedEvents = recentEvents.filter(e => e.status === 'completed');
+            const successRate = recentEvents.length > 0 ? completedEvents.length / recentEvents.length : 1.0;
+            const avgCoordTime = completedEvents.length > 0 
+                ? completedEvents.reduce((sum, e) => sum + e.duration_ms, 0) / completedEvents.length 
+                : 0;
+            
+            // Calculate efficiency score
+            const durationScore = Math.max(0, 1 - (avgCoordTime / 500));
+            const efficiencyScore = (successRate * 0.7) + (durationScore * 0.3);
+            
+            // Event types breakdown
+            const eventTypes = {};
+            recentEvents.forEach(event => {
+                if (!eventTypes[event.event_type]) {
+                    eventTypes[event.event_type] = {
+                        count: 0,
+                        completed: 0,
+                        total_duration_ms: 0
+                    };
+                }
+                eventTypes[event.event_type].count++;
+                if (event.status === 'completed') {
+                    eventTypes[event.event_type].completed++;
+                }
+                eventTypes[event.event_type].total_duration_ms += event.duration_ms;
+            });
+            
+            // Calculate averages for event types
+            Object.keys(eventTypes).forEach(type => {
+                const metrics = eventTypes[type];
+                metrics.avg_duration_ms = metrics.total_duration_ms / metrics.count;
+                metrics.success_rate = metrics.completed / metrics.count;
+            });
+            
+            return {
+                timestamp: new Date().toISOString(),
+                agents: agents.map(a => ({
+                    agent_id: a.agent_id,
+                    agent_name: a.agent_name,
+                    agent_type: a.agent_type,
+                    status: a.status,
+                    health_score: a.health_score,
+                    current_load: a.metrics.current_load,
+                    requests_processed: a.metrics.requests_processed,
+                    avg_response_time_ms: a.metrics.average_response_time_ms,
+                    success_rate: a.metrics.success_rate,
+                    error_count: a.metrics.error_count
+                })),
+                workload_distribution: workloadDistribution,
+                coordination_efficiency: {
+                    total_events: recentEvents.length,
+                    completed_events: completedEvents.length,
+                    success_rate: successRate,
+                    avg_coordination_time_ms: avgCoordTime,
+                    efficiency_score: efficiencyScore,
+                    event_types: eventTypes
+                },
+                summary: {
+                    total_agents: agents.length,
+                    healthy_agents: healthyAgents,
+                    avg_load: avgLoad,
+                    avg_response_time: avgResponseTime,
+                    total_requests: totalRequests
+                }
+            };
+        }
+
+        function refreshDashboard() {
+            // Simulate data updates
+            if (mockData) {
+                // Update metrics with some randomness
+                mockData.agents.forEach(agent => {
+                    agent.metrics.requests_processed += Math.floor(Math.random() * 10);
+                    agent.metrics.current_load = Math.max(0.1, Math.min(0.9, agent.metrics.current_load + (Math.random() - 0.5) * 0.1));
+                    agent.metrics.average_response_time_ms += (Math.random() - 0.5) * 10;
+                });
+                
+                // Update summary
+                mockData.summary.performance.total_requests_processed = mockData.agents.reduce((sum, a) => sum + a.metrics.requests_processed, 0);
+            }
+            
+            renderSummaryCards(mockData.summary);
+            renderAgents(mockData.agents);
+            renderCoordinationEvents(mockData.coordination_events);
+            
+            // Render stress test metrics
+            const stressMetrics = generateStressTestMetrics();
+            renderStressTestCards(stressMetrics);
+            renderWorkloadChart(stressMetrics.workload_distribution);
+            renderCoordinationEfficiency(stressMetrics.coordination_efficiency);
+            
+            // Render workflow visualization
+            renderWorkflowVisualization(mockData.agents, mockData.coordination_events);
+        }
+
+        function toggleAutoRefresh() {
+            const checkbox = document.getElementById('autoRefresh');
+            if (checkbox.checked) {
+                autoRefreshInterval = setInterval(refreshDashboard, 5000);
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMockData();
+            refreshDashboard();
+            toggleAutoRefresh();
+        });
+    </script>
+</body>
+</html>
