@@ -11,7 +11,8 @@
   - _Requirements: 1.6, 13.5_
 
 
-- [ ] 1.1 Create backup branch and run baseline tests
+- [x] 1.1 Create backup branch and run baseline tests
+
 
   - Create `backup-pre-reorganization` branch
   - Run full test suite and record results
@@ -19,13 +20,16 @@
   - Document current test pass/fail status
   - _Requirements: 1.6_
 
-- [ ] 1.2 Build dependency scanner script
+
+- [x] 1.2 Build dependency scanner script
+
   - Create `scripts/reorganization/scan_dependencies.py`
   - Implement AST-based import parser
   - Build dependency graph of all modules
   - Identify circular dependencies
   - Generate dependency report
   - _Requirements: 1.5, 11.5_
+
 
 - [ ] 1.3 Create file movement mapping
   - Create `scripts/reorganization/movement_plan.json`
@@ -36,7 +40,10 @@
   - Document files to archive
   - _Requirements: 2.1, 2.2, 12.2_
 
-- [ ] 1.4 Create automated import update script
+- [x] 1.4 Create automated import update script
+
+
+
   - Create `scripts/reorganization/update_imports.py`
   - Implement import statement parser
   - Implement import path replacement logic
