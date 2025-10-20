@@ -113,13 +113,16 @@
   - Create README.md files for both
   - _Requirements: 7.1, 7.4, 9.1_
 
-- [ ] 3. Move core source code to src/fraud_detection/
+- [-] 3. Move core source code to src/fraud_detection/
+
   - Move main fraud detection modules
   - Update internal imports
   - Validate core functionality
   - _Requirements: 1.1, 2.1, 11.1_
 
-- [ ] 3.1 Move core fraud detection files
+
+- [x] 3.1 Move core fraud detection files
+
   - Move fraud_detection_agent.py to src/fraud_detection/core/
   - Move transaction_processing_pipeline.py to src/fraud_detection/core/
   - Move unified_fraud_detection_system.py to src/fraud_detection/core/
@@ -127,18 +130,24 @@
   - Use `git mv` to preserve history
   - _Requirements: 1.1, 2.1_
 
+
+
 - [ ] 3.2 Update imports in moved core files
   - Run import update script on core files
   - Update relative imports to absolute imports
   - Verify all imports resolve
+
   - _Requirements: 11.1, 11.2_
 
-- [ ] 3.3 Move agent modules to src/fraud_detection/agents/
+- [x] 3.3 Move agent modules to src/fraud_detection/agents/
+
   - Move agent_coordination/ to src/fraud_detection/agents/coordination/
   - Move specialized_agents/ to src/fraud_detection/agents/specialized/
   - Move aws_bedrock_agent/ content to src/fraud_detection/agents/bedrock/
   - Update __init__.py files
   - _Requirements: 2.1, 2.2_
+
+
 
 - [ ] 3.4 Move memory system to src/fraud_detection/memory/
   - Move memory_system/ contents to src/fraud_detection/memory/
