@@ -72,6 +72,7 @@ CLIENT_RESPONSE=$(aws cognito-idp create-user-pool-client \
   --user-pool-id $USER_POOL_ID \
   --client-name AgentCoreQuickStart \
   --generate-secret \
+  --callback-urls "https://bedrock-agentcore.$REGION.amazonaws.com/identities/oauth2/callback" \
   --allowed-o-auth-flows "code" \
   --allowed-o-auth-scopes "openid" "profile" "email" \
   --allowed-o-auth-flows-user-pool-client \
@@ -84,7 +85,7 @@ CLIENT_SECRET=$(echo $CLIENT_RESPONSE | jq -r '.ClientSecret')
 
 # Generate random username and password
 USERNAME="AgentCoreTestUser$(printf "%04d" $((RANDOM % 10000)))"
-PASSWORD="$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?' < /dev/urandom | head -c 16)"
+PASSWORD="$(LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?' < /dev/urandom | head -c 16)$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 1)"
 
 # Create user with permanent password
 aws cognito-idp admin-create-user \
