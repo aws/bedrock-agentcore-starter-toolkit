@@ -42,6 +42,10 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
@@ -54,6 +58,17 @@ def handler(payload):
 
             # Mock the OAuth prompt to return "no" (default behavior)
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists (used by ConfigurationManager initialization)
+            mock_load_if_exists.return_value = None  # No existing config
+
+            # Mock load_config (used at the end to display config)
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"  # Default memory mode
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -97,6 +112,10 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
@@ -109,6 +128,17 @@ def handler(payload):
 
             # Mock the OAuth prompt to return "no" (default behavior)
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -151,12 +181,27 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -381,11 +426,26 @@ agents:
                 "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
             ) as mock_req_display,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"

@@ -133,7 +133,7 @@ def configure_bedrock_agentcore(
     auto_create_ecr: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
-    memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
+    memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
     requirements_file: Optional[str] = None,
     authorizer_configuration: Optional[Dict[str, Any]] = None,
     request_header_configuration: Optional[Dict[str, Any]] = None,
@@ -244,7 +244,7 @@ def configure_bedrock_agentcore(
         else:  # STM_ONLY
             log.info("Memory configuration: Short-term memory only")
     else:
-        # Interactive mode: prompt user (only if memory not explicitly disabled)
+        # Interactive mode - let user choose
         action, value = config_manager.prompt_memory_selection()
 
         if action == "USE_EXISTING":
@@ -331,6 +331,11 @@ def configure_bedrock_agentcore(
         dockerfile_output_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
     else:
         dockerfile_output_dir = build_dir
+
+    if memory_config.mode == "NO_MEMORY":
+        memory_id = None
+        memory_name = None
+        log.debug("Cleared memory_id/name for Dockerfile generation (memory disabled)")
 
     # Generate Dockerfile in the correct location (no moving needed)
     dockerfile_path = runtime.generate_dockerfile(

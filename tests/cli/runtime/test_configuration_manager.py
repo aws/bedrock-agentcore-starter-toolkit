@@ -624,15 +624,11 @@ class TestConfigurationManager:
             mock_manager.list_memories.return_value = [{"id": "mem-123", "name": "memory"}]
             mock_mm.return_value = mock_manager
 
-            # User types 's' - now falls back to CREATE_NEW flow
-            mock_prompt.side_effect = [
-                "s",  # First prompt - invalid response falls through to create new
-                "no",  # Second prompt - LTM choice in _prompt_new_memory_config
-            ]
+            # User types 's' to skip memory configuration
+            mock_prompt.return_value = "s"
 
             action, value = config_manager.prompt_memory_selection()
 
-            # Update assertions to match actual behavior
-            assert action == "CREATE_NEW"
-            assert value == "STM_ONLY"
-            mock_success.assert_called_with("Using short-term memory only")
+            assert action == "SKIP"
+            assert value is None
+            mock_success.assert_called_with("Skipping memory configuration")

@@ -1007,7 +1007,12 @@ class MemoryManager:
             "Waiting for memory %s to return to ACTIVE state and strategies to reach terminal states...", memory_id
         )
 
+        from rich.console import Console
+
+        console = Console()
+
         start_time = time.time()
+        last_status = None
 
         while time.time() - start_time < max_wait:
             elapsed = int(time.time() - start_time)
@@ -1017,6 +1022,10 @@ class MemoryManager:
                 response = self._control_plane_client.get_memory(memoryId=memory_id)
                 memory = response["memory"]
                 memory_status = memory["status"]
+
+                if memory_status != last_status:
+                    console.print(f"   Memory status: {memory_status} ({elapsed}s elapsed)")
+                    last_status = memory_status
 
                 # Check if memory itself has failed
                 if memory_status == MemoryStatus.FAILED.value:
@@ -1048,6 +1057,7 @@ class MemoryManager:
                         memory_id,
                         elapsed,
                     )
+                    console.print(f"   ✅ Memory is ACTIVE (took {elapsed}s)")
                     return Memory(memory)
 
                 # Wait before next check

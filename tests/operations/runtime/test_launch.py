@@ -1253,10 +1253,7 @@ class TestLaunchBedrockAgentCore:
             memory_data = {"id": "mem_123456", "arn": "arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456"}
             memory_result = SimpleNamespace(**memory_data)
 
-            # REMOVE THIS LINE: memory_result_dict = memory_data.copy()
-
             # Set the methods to return the SimpleNamespace object
-            mock_memory_manager._create_memory.return_value = memory_result
             mock_memory_manager.create_memory_and_wait.return_value = memory_result
 
             # Add item access
@@ -1277,10 +1274,10 @@ class TestLaunchBedrockAgentCore:
             result = launch_bedrock_agentcore(config_path, local=False)
 
             # Verify memory creation was called with the right parameters
-            mock_memory_manager._create_memory.assert_called_once()
+            mock_memory_manager.create_memory_and_wait.assert_called_once()  # CHANGED: Check create_memory_and_wait
 
-            # Check parameters for _create_memory, NOT create_memory_and_wait
-            call_args = mock_memory_manager._create_memory.call_args
+            # Check parameters for create_memory_and_wait
+            call_args = mock_memory_manager.create_memory_and_wait.call_args
             assert "name" in call_args[1]
             assert "description" in call_args[1]
             assert "strategies" in call_args[1]
@@ -1380,8 +1377,7 @@ class TestLaunchBedrockAgentCore:
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             memory=MemoryConfig(
-                enabled=True,
-                enable_ltm=False,  # Test with STM only
+                mode="STM_ONLY",  # CHANGED: Use mode instead of enabled/enable_ltm
                 memory_name="test-agent_memory",
                 event_expiry_days=30,
             ),
@@ -1427,11 +1423,19 @@ class TestLaunchBedrockAgentCore:
                 "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
             )
 
-            # Setup memory manager mock with SimpleNamespace
+            # Setup memory manager mock - FIXED VERSION
             mock_memory_manager = Mock()
             mock_memory_manager.list_memories.return_value = []
-            mock_memory_manager._create_memory.side_effect = Exception("Memory service unavailable")
-            mock_memory_manager.list_memories.return_value = []
+
+            # Create a proper SimpleNamespace object with string attributes
+            from types import SimpleNamespace
+
+            memory_result = SimpleNamespace(
+                id="mem_stm_123456", arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_stm_123456"
+            )
+
+            # Mock create_memory_and_wait to return the SimpleNamespace
+            mock_memory_manager.create_memory_and_wait.return_value = memory_result
             mock_memory_manager_class.return_value = mock_memory_manager
 
             # Mock container runtime for Dockerfile regeneration
@@ -1442,12 +1446,16 @@ class TestLaunchBedrockAgentCore:
             # Call the function
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            # Verify memory creation was called
-            mock_memory_manager._create_memory.assert_called_once()
+            # Verify memory creation was called - FIXED
+            mock_memory_manager.create_memory_and_wait.assert_called_once()
 
-            # Check that no strategies were added (STM only)
-            call_args = mock_memory_manager._create_memory.call_args
+            # Check parameters for create_memory_and_wait
+            call_args = mock_memory_manager.create_memory_and_wait.call_args
+            assert "name" in call_args[1]
+            assert "description" in call_args[1]
             assert "strategies" in call_args[1]
+
+            # Verify NO strategies for STM-only (strategies list should be empty)
             strategies = call_args[1]["strategies"]
             assert len(strategies) == 0  # Should have no strategies for STM-only
 
@@ -1888,6 +1896,153 @@ class TestLaunchBedrockAgentCore:
             # Verify successful deployment
             assert result.mode == "codebuild"
             assert result.agent_id == "agent-123"
+
+    def test_launch_with_dockerfile_missing(self, mock_container_runtime, tmp_path):
+        """Test error when Dockerfile is missing."""
+        config_path = create_test_config(tmp_path, execution_role="arn:aws:iam::123456789012:role/TestRole")
+        create_test_agent_file(tmp_path)
+        # Note: NOT creating Dockerfile here
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            with pytest.raises(RuntimeError, match="Dockerfile not found"):
+                launch_bedrock_agentcore(config_path, local=True)
+
+    def test_launch_with_build_context_source_path(self, mock_container_runtime, tmp_path):
+        """Test launch with custom source_path for build context."""
+        # Create source directory
+        source_dir = tmp_path / "src"
+        source_dir.mkdir()
+
+        config_path = create_test_config(tmp_path)
+        create_test_agent_file(source_dir)  # Agent file in source dir
+
+        # Create Dockerfile in agentcore directory
+        agentcore_dir = tmp_path / ".bedrock_agentcore" / "test-agent"
+        agentcore_dir.mkdir(parents=True)
+        dockerfile = agentcore_dir / "Dockerfile"
+        dockerfile.write_text("FROM python:3.10\nCOPY . /app\n")
+
+        # Update config to have source_path
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
+
+        config = load_config(config_path)
+        agent = list(config.agents.values())[0]
+        agent.source_path = str(source_dir)
+        config.agents[agent.name] = agent
+        save_config(config, config_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+        mock_container_runtime.has_local_runtime = True
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify build was called with source directory as build context
+            mock_container_runtime.build.assert_called_once()
+            call_args = mock_container_runtime.build.call_args
+            assert call_args[0][0] == source_dir  # build_dir should be source_dir
+            assert result.mode == "local"
+
+    def test_launch_with_memory_no_memory_mode(self, mock_container_runtime, tmp_path):
+        """Test launch with memory mode set to NO_MEMORY."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+            ),
+            memory=MemoryConfig(mode="NO_MEMORY"),  # Explicitly no memory
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+        mock_container_runtime.has_local_runtime = True
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Should not have memory env vars
+            assert "BEDROCK_AGENTCORE_MEMORY_ID" not in result.env_vars
+            assert "BEDROCK_AGENTCORE_MEMORY_NAME" not in result.env_vars
+            assert result.mode == "local"
+
+    def test_launch_cloud_with_region_from_config(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test cloud deployment uses region from agent config."""
+        custom_region = "eu-central-1"
+        config_path = create_test_config(
+            tmp_path,
+            region=custom_region,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.eu-central-1.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory(region=custom_region)
+        mock_factory.setup_session_mock(mock_boto3_clients)
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+        ):
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment used custom region
+            assert result.mode == "cloud"
+            # The region should be used in ECR and other AWS operations
+
+    def test_launch_with_missing_region_error(self, mock_container_runtime, tmp_path):
+        """Test error when region is missing from config."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region=None,  # Missing region
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            with pytest.raises(ValueError, match="Missing 'aws.region' for cloud deployment"):
+                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
 
 class TestEnsureExecutionRole:

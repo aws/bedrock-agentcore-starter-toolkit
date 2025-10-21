@@ -201,7 +201,7 @@ AWS SDK (Python)
 
     # Initialize the boto3 client
     cp_client = boto3.client(
-        'bedrock-agentcore-control', 
+        'bedrock-agentcore-control',
         region_name="<Region>",
         endpoint_url="https://bedrock-agentcore-control.<Region>.amazonaws.com"
     )
@@ -252,12 +252,12 @@ AWS CLI
           "securityGroups": ["sg-0123456789abcdef0"]
         }
       }' \
-      --recording '{ 
-        "enabled": true, 
-        "s3Location": { 
-          "bucket": "my-bucket-name", 
-          "prefix": "sessionreplay" 
-        } 
+      --recording '{
+        "enabled": true,
+        "s3Location": {
+          "bucket": "my-bucket-name",
+          "prefix": "sessionreplay"
+        }
       }' \
       --execution-role-arn "arn:aws:iam::123456789012:role/my-execution-role"
     ```
@@ -268,7 +268,7 @@ AWS SDK (Python)
 
     # Initialize the boto3 client
     cp_client = boto3.client(
-        'bedrock-agentcore-control', 
+        'bedrock-agentcore-control',
         region_name="<Region>",
         endpoint_url="https://bedrock-agentcore-control.<Region>.amazonaws.com"
     )
@@ -290,7 +290,7 @@ AWS SDK (Python)
             "s3Location": {
                 "bucket": "session-record-123456789012",
                 "prefix": "replay-data"
-            } 
+            }
         }
     )
     ```
@@ -424,10 +424,10 @@ awscurl -X POST \
   -H "x-amzn-code-interpreter-session-id: your-session-id" \
   --service bedrock-agentcore \
   --region <Region> \
-  -d '{ 
-    "name": "executeCommand", 
-    "arguments": { 
-      "command": "curl amazon.com" 
-    } 
+  -d '{
+    "name": "executeCommand",
+    "arguments": {
+      "command": "curl amazon.com"
+    }
   }'
 ```

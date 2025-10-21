@@ -48,7 +48,7 @@ class Runtime:
         region: Optional[str] = None,
         protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
         disable_otel: bool = False,
-        memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
+        memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
         non_interactive: bool = True,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
