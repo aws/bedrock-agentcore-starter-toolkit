@@ -142,7 +142,6 @@ This credential provider will be used by your agent's code to get access tokens 
 OAUTH2_CREDENTIAL_PROVIDER_RESPONSE=$(aws bedrock-agentcore-control create-oauth2-credential-provider \
   --name "AgentCoreIdentityQuickStartProvider" \
   --credential-provider-vendor "CustomOauth2" \
-  --no-cli-pager \
   --oauth2-provider-config-input '{
     "customOauth2ProviderConfig": {
       "oauthDiscovery": {
@@ -151,7 +150,8 @@ OAUTH2_CREDENTIAL_PROVIDER_RESPONSE=$(aws bedrock-agentcore-control create-oauth
       "clientId": "'$CLIENT_ID'",
       "clientSecret": "'$CLIENT_SECRET'"
     }
-  }')
+  }' \
+  --output json)
 
 OAUTH2_CALLBACK_URL=$(echo $OAUTH2_CREDENTIAL_PROVIDER_RESPONSE | jq -r '.callbackUrl')
 
@@ -160,6 +160,7 @@ echo "OAuth2 Callback URL: $OAUTH2_CALLBACK_URL"
 echo ""
 echo "# Copy and paste these exports to set environment variables for later use:"
 echo "export OAUTH2_CALLBACK_URL='$OAUTH2_CALLBACK_URL'"
+
 ```
 
 
@@ -182,7 +183,7 @@ aws cognito-idp update-user-pool-client \
     --allowed-o-auth-scopes "openid" "profile" "email" \
     --allowed-o-auth-flows-user-pool-client \
     --supported-identity-providers "COGNITO" \
-    --callback-urls '$OAUTH2_CALLBACK_URL'
+    --callback-urls "$OAUTH2_CALLBACK_URL"
 ```
 
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
