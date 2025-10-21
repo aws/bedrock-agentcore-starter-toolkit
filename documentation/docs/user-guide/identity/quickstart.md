@@ -46,7 +46,7 @@ This quickstart requires an OAuth 2.0 authorization server. If you do not have o
 
 Deleting the Cognito user pool AgentCoreIdentityQuickStartPool will delete the associated client_id and user as well.
 
-You may choose to save this script as create_cognito.sh and execute it from your command line, or paste the script into your command line.
+You may choose to save this script as `create_cognito.sh` and execute it from your command line, or paste the script into your command line.
 
 ```bash
 #!/bin/bash
@@ -364,7 +364,7 @@ The agent will then return a URL to your `agentcore invoke` command. Copy and pa
 
 Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.
 
-Your browser should redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error messages to indicate the authorization status.
+Your browser should redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error responses to indicate the authorization status.
 
 Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (`--session-id` parameter).
 
