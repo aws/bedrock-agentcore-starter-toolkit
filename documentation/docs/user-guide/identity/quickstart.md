@@ -10,6 +10,7 @@ Before you begin, ensure you have:
 - Python 3.10+ installed
 - The latest AWS CLI installed
 - AWS credentials and region configured (`aws configure`)
+- `jq` installed
 
 This quickstart requires that you have an OAuth 2.0 authorization server. If you do not have one, Step 0.5 will create one for you using Amazon Cognito user pools. If you have an OAuth 2.0 authorization server with a client id, client secret, and a user configured, you may proceed to step 1. This authorization server will act as a resource credential provider, representing the authority that grants the agent an outbound OAuth 2.0 access token.
 
@@ -165,13 +166,13 @@ echo "export OAUTH2_CALLBACK_URL='$OAUTH2_CALLBACK_URL'"
 ```
 
 
-## Step 1.5: Update Identity Provider with OAuth2 credential provider callback URL
+## Step 1.5: Update identity credential provider with OAuth2 credential provider callback URL
 
-The [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) and [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) APIs return a `callbackUrl` that must be configured in the Identity Provider.
+Set the OAuth 2.0 callback URL in your identity credential provider to the callback URL retrieved from [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) or [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html).
 
-If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your Identity Provider callback URL settings. 
+If you are using your own identity credential provider, configure the OAuth2 credential provider callback URL in your identity credential provider callback URL settings. 
 
-If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.
+If you are using the previous script to create an identity credential provider with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.
 
 
 ```bash
@@ -189,6 +190,10 @@ aws cognito-idp update-user-pool-client \
 ```
 
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
+
+**Prerequisite**: An OAuth2 callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
+
+The `requires_access_token` usage must set the `callback_url` to the same value configured on the workload identity. This is not required when launching and invoking the agent **locally**, as the configuration is done automatically by the starter toolkit.
 
 In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user.
 
@@ -254,6 +259,7 @@ async def handle_auth_url(url):
     auth_flow="USER_FEDERATION",
     on_auth_url=handle_auth_url, # streams authorization URL to client
     force_authentication=True
+    callback_url='<insert_oauth2_callback_url_for_session_binding; not required for *local* agent launch and invocations>'
 )
 async def introspect_with_decorator(*, access_token: str):
     """Introspect token using decorator"""
@@ -289,8 +295,6 @@ if __name__ == "__main__":
 ```
 
 ## Step 3:  Deploy the agent to AgentCore Runtime
-
-**Prerequisite**: An OAuth2 callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html). This is automatically configured when launching and invoking the agent **locally**.
 
 We will host this agent on AgentCore Runtime. We can do this easily with the AgentCore SDK we installed earlier.
 
