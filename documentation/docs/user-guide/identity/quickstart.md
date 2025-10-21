@@ -179,6 +179,7 @@ If you are using the previous script to create an authorization server with Cogn
 aws cognito-idp update-user-pool-client \
     --user-pool-id $USER_POOL_ID \
     --client-id $CLIENT_ID \
+    --client-name AgentCoreQuickStart \
     --allowed-o-auth-flows "code" \
     --allowed-o-auth-scopes "openid" "profile" "email" \
     --allowed-o-auth-flows-user-pool-client \
