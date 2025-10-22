@@ -52,7 +52,11 @@ class TestValidateVPCConfiguration:
         mock_ec2.describe_subnets.return_value = {
             "Subnets": [
                 {"SubnetId": "subnet-abc123def456", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2a"},
-                {"SubnetId": "subnet-xyz789ghi012", "VpcId": "vpc-test123", "AvailabilityZone": "us-west-2a"},  # Same AZ
+                {
+                    "SubnetId": "subnet-xyz789ghi012",
+                    "VpcId": "vpc-test123",
+                    "AvailabilityZone": "us-west-2a",
+                },  # Same AZ
             ]
         }
         mock_ec2.describe_security_groups.return_value = {
@@ -99,8 +103,7 @@ class TestValidateVPCConfiguration:
         """Test error when subnet ID doesn't exist."""
         mock_ec2 = MagicMock()
         mock_ec2.describe_subnets.side_effect = ClientError(
-            {"Error": {"Code": "InvalidSubnetID.NotFound", "Message": "Subnet not found"}},
-            "DescribeSubnets"
+            {"Error": {"Code": "InvalidSubnetID.NotFound", "Message": "Subnet not found"}}, "DescribeSubnets"
         )
 
         mock_session = MagicMock()
@@ -167,7 +170,7 @@ class TestValidateVPCConfiguration:
         }
         mock_ec2.describe_security_groups.side_effect = ClientError(
             {"Error": {"Code": "InvalidGroup.NotFound", "Message": "Security group not found"}},
-            "DescribeSecurityGroups"
+            "DescribeSecurityGroups",
         )
 
         mock_session = MagicMock()
@@ -191,7 +194,9 @@ class TestValidateVPCConfiguration:
             "SecurityGroups": [{"GroupId": "sg-abc123xyz789", "VpcId": "vpc-test123"}]
         }
 
-        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.vpc_validation.boto3.Session") as mock_session_class:
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.vpc_validation.boto3.Session"
+        ) as mock_session_class:
             mock_session = MagicMock()
             mock_session.client.return_value = mock_ec2
             mock_session_class.return_value = mock_session
