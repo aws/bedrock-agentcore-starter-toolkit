@@ -5611,6 +5611,25 @@ class MemorySession(DictWrapper):
             event_timestamp,
         )
 
+    async def process_turn_with_llm_async(
+        self,
+        user_input: str,
+        llm_callback: Callable[[str, List[Dict[str, Any]]], Awaitable[str]],
+        retrieval_config: Optional[Dict[str, RetrievalConfig]],
+        metadata: Optional[Dict[str, MetadataValue]] = None,
+        event_timestamp: Optional[datetime] = None,
+    ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
+        """Delegates to manager.process_turn_with_llm_async."""
+        return await self._manager.process_turn_with_llm_async(
+            self._actor_id,
+            self._session_id,
+            user_input,
+            llm_callback,
+            retrieval_config,
+            metadata,
+            event_timestamp,
+        )
+
     def get_last_k_turns(
         self,
         k: int = 5,
@@ -5921,6 +5940,33 @@ def process_turn_with_llm(
 ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
     """Delegates to manager.process_turn_with_llm."""
     return self._manager.process_turn_with_llm(
+        self._actor_id,
+        self._session_id,
+        user_input,
+        llm_callback,
+        retrieval_config,
+        metadata,
+        event_timestamp,
+    )
+```
+
+#### `process_turn_with_llm_async(user_input, llm_callback, retrieval_config, metadata=None, event_timestamp=None)`
+
+Delegates to manager.process_turn_with_llm_async.
+
+Source code in `bedrock_agentcore/memory/session.py`
+
+```
+async def process_turn_with_llm_async(
+    self,
+    user_input: str,
+    llm_callback: Callable[[str, List[Dict[str, Any]]], Awaitable[str]],
+    retrieval_config: Optional[Dict[str, RetrievalConfig]],
+    metadata: Optional[Dict[str, MetadataValue]] = None,
+    event_timestamp: Optional[datetime] = None,
+) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
+    """Delegates to manager.process_turn_with_llm_async."""
+    return await self._manager.process_turn_with_llm_async(
         self._actor_id,
         self._session_id,
         user_input,
@@ -6298,6 +6344,82 @@ class MemorySessionManager:
             )
         """
         # Step 1: Retrieve relevant memories
+        retrieved_memories = self._retrieve_memories_for_llm(actor_id, session_id, user_input, retrieval_config)
+
+        # Step 2: Invoke LLM callback
+        try:
+            agent_response = llm_callback(user_input, retrieved_memories)
+            if not isinstance(agent_response, str):
+                raise ValueError("LLM callback must return a string response")
+            logger.info("LLM callback generated response")
+        except Exception as e:
+            logger.error("LLM callback failed: %s", e)
+            raise
+
+        # Step 3: Save the conversation turn
+        event = self._save_conversation_turn(
+            actor_id, session_id, user_input, agent_response, metadata, event_timestamp
+        )
+        return retrieved_memories, agent_response, event
+
+    async def process_turn_with_llm_async(
+        self,
+        actor_id: str,
+        session_id: str,
+        user_input: str,
+        llm_callback: Callable[[str, List[Dict[str, Any]]], Awaitable[str]],
+        retrieval_config: Optional[Dict[str, RetrievalConfig]],
+        metadata: Optional[Dict[str, MetadataValue]] = None,
+        event_timestamp: Optional[datetime] = None,
+    ) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
+        r"""Complete conversation turn with async LLM callback integration.
+
+        This method combines memory retrieval, LLM invocation, and response storage
+        in a single call using an async callback pattern.
+
+        Args:
+            actor_id: Actor identifier (e.g., "user-123")
+            session_id: Session identifier
+            user_input: The user's message
+            llm_callback: Async function that takes (user_input, memories) and returns agent_response.
+                         The callback receives the user input and retrieved memories,
+                         and should return the agent's response string
+            retrieval_config: Optional dictionary mapping namespaces to RetrievalConfig objects.
+                            Each namespace can contain template variables like {actorId}, {sessionId},
+                            {memoryStrategyId} that will be resolved at runtime.
+            metadata: Optional custom key-value metadata to attach to an event.
+            event_timestamp: Optional timestamp for the event
+
+        Returns:
+            Tuple of (retrieved_memories, agent_response, created_event)
+        """
+        # Step 1: Retrieve relevant memories
+        retrieved_memories = self._retrieve_memories_for_llm(actor_id, session_id, user_input, retrieval_config)
+
+        # Step 2: Invoke async LLM callback
+        try:
+            agent_response = await llm_callback(user_input, retrieved_memories)
+            if not isinstance(agent_response, str):
+                raise ValueError("LLM callback must return a string response")
+            logger.info("LLM callback generated response")
+        except Exception as e:
+            logger.error("LLM callback failed: %s", e)
+            raise
+
+        # Step 3: Save the conversation turn
+        event = self._save_conversation_turn(
+            actor_id, session_id, user_input, agent_response, metadata, event_timestamp
+        )
+        return retrieved_memories, agent_response, event
+
+    def _retrieve_memories_for_llm(
+        self,
+        actor_id: str,
+        session_id: str,
+        user_input: str,
+        retrieval_config: Optional[Dict[str, RetrievalConfig]],
+    ) -> List[Dict[str, Any]]:
+        """Helper method to retrieve memories for LLM context."""
         retrieved_memories = []
         if retrieval_config:
             for namespace, config in retrieval_config.items():
@@ -6317,22 +6439,21 @@ class MemorySessionManager:
                         for record in memory_records
                         if record.get("relevanceScore", config.relevance_score) >= config.relevance_score
                     ]
-
                 retrieved_memories.extend(memory_records)
 
         logger.info("Retrieved %d memories for LLM context", len(retrieved_memories))
+        return retrieved_memories
 
-        # Step 2: Invoke LLM callback
-        try:
-            agent_response = llm_callback(user_input, retrieved_memories)
-            if not isinstance(agent_response, str):
-                raise ValueError("LLM callback must return a string response")
-            logger.info("LLM callback generated response")
-        except Exception as e:
-            logger.error("LLM callback failed: %s", e)
-            raise
-
-        # Step 3: Save the conversation turn
+    def _save_conversation_turn(
+        self,
+        actor_id: str,
+        session_id: str,
+        user_input: str,
+        agent_response: str,
+        metadata: Optional[Dict[str, MetadataValue]],
+        event_timestamp: Optional[datetime],
+    ) -> Dict[str, Any]:
+        """Helper method to save conversation turn."""
         event = self.add_turns(
             actor_id=actor_id,
             session_id=session_id,
@@ -6343,9 +6464,8 @@ class MemorySessionManager:
             metadata=metadata,
             event_timestamp=event_timestamp,
         )
-
         logger.info("Completed full conversation turn with LLM")
-        return retrieved_memories, agent_response, event
+        return event
 
     def add_turns(
         self,
@@ -7983,29 +8103,7 @@ def process_turn_with_llm(
         )
     """
     # Step 1: Retrieve relevant memories
-    retrieved_memories = []
-    if retrieval_config:
-        for namespace, config in retrieval_config.items():
-            resolved_namespace = namespace.format(
-                actorId=actor_id,
-                sessionId=session_id,
-                strategyId=config.strategy_id or "",
-            )
-            search_query = f"{config.retrieval_query} {user_input}" if config.retrieval_query else user_input
-            memory_records = self.search_long_term_memories(
-                query=search_query, namespace_prefix=resolved_namespace, top_k=config.top_k
-            )
-            # Filter memory records with a relevance score which is lower than config.relevance_score
-            if config.relevance_score:
-                memory_records = [
-                    record
-                    for record in memory_records
-                    if record.get("relevanceScore", config.relevance_score) >= config.relevance_score
-                ]
-
-            retrieved_memories.extend(memory_records)
-
-    logger.info("Retrieved %d memories for LLM context", len(retrieved_memories))
+    retrieved_memories = self._retrieve_memories_for_llm(actor_id, session_id, user_input, retrieval_config)
 
     # Step 2: Invoke LLM callback
     try:
@@ -8018,18 +8116,87 @@ def process_turn_with_llm(
         raise
 
     # Step 3: Save the conversation turn
-    event = self.add_turns(
-        actor_id=actor_id,
-        session_id=session_id,
-        messages=[
-            ConversationalMessage(user_input, MessageRole.USER),
-            ConversationalMessage(agent_response, MessageRole.ASSISTANT),
-        ],
-        metadata=metadata,
-        event_timestamp=event_timestamp,
+    event = self._save_conversation_turn(
+        actor_id, session_id, user_input, agent_response, metadata, event_timestamp
     )
+    return retrieved_memories, agent_response, event
+```
 
-    logger.info("Completed full conversation turn with LLM")
+#### `process_turn_with_llm_async(actor_id, session_id, user_input, llm_callback, retrieval_config, metadata=None, event_timestamp=None)`
+
+Complete conversation turn with async LLM callback integration.
+
+This method combines memory retrieval, LLM invocation, and response storage in a single call using an async callback pattern.
+
+Parameters:
+
+| Name               | Type                                                    | Description                                                                                                                                                                                        | Default    |
+| ------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `actor_id`         | `str`                                                   | Actor identifier (e.g., "user-123")                                                                                                                                                                | *required* |
+| `session_id`       | `str`                                                   | Session identifier                                                                                                                                                                                 | *required* |
+| `user_input`       | `str`                                                   | The user's message                                                                                                                                                                                 | *required* |
+| `llm_callback`     | `Callable[[str, List[Dict[str, Any]]], Awaitable[str]]` | Async function that takes (user_input, memories) and returns agent_response. The callback receives the user input and retrieved memories, and should return the agent's response string            | *required* |
+| `retrieval_config` | `Optional[Dict[str, RetrievalConfig]]`                  | Optional dictionary mapping namespaces to RetrievalConfig objects. Each namespace can contain template variables like {actorId}, {sessionId}, {memoryStrategyId} that will be resolved at runtime. | *required* |
+| `metadata`         | `Optional[Dict[str, MetadataValue]]`                    | Optional custom key-value metadata to attach to an event.                                                                                                                                          | `None`     |
+| `event_timestamp`  | `Optional[datetime]`                                    | Optional timestamp for the event                                                                                                                                                                   | `None`     |
+
+Returns:
+
+| Type                                               | Description                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| `Tuple[List[Dict[str, Any]], str, Dict[str, Any]]` | Tuple of (retrieved_memories, agent_response, created_event) |
+
+Source code in `bedrock_agentcore/memory/session.py`
+
+```
+async def process_turn_with_llm_async(
+    self,
+    actor_id: str,
+    session_id: str,
+    user_input: str,
+    llm_callback: Callable[[str, List[Dict[str, Any]]], Awaitable[str]],
+    retrieval_config: Optional[Dict[str, RetrievalConfig]],
+    metadata: Optional[Dict[str, MetadataValue]] = None,
+    event_timestamp: Optional[datetime] = None,
+) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any]]:
+    r"""Complete conversation turn with async LLM callback integration.
+
+    This method combines memory retrieval, LLM invocation, and response storage
+    in a single call using an async callback pattern.
+
+    Args:
+        actor_id: Actor identifier (e.g., "user-123")
+        session_id: Session identifier
+        user_input: The user's message
+        llm_callback: Async function that takes (user_input, memories) and returns agent_response.
+                     The callback receives the user input and retrieved memories,
+                     and should return the agent's response string
+        retrieval_config: Optional dictionary mapping namespaces to RetrievalConfig objects.
+                        Each namespace can contain template variables like {actorId}, {sessionId},
+                        {memoryStrategyId} that will be resolved at runtime.
+        metadata: Optional custom key-value metadata to attach to an event.
+        event_timestamp: Optional timestamp for the event
+
+    Returns:
+        Tuple of (retrieved_memories, agent_response, created_event)
+    """
+    # Step 1: Retrieve relevant memories
+    retrieved_memories = self._retrieve_memories_for_llm(actor_id, session_id, user_input, retrieval_config)
+
+    # Step 2: Invoke async LLM callback
+    try:
+        agent_response = await llm_callback(user_input, retrieved_memories)
+        if not isinstance(agent_response, str):
+            raise ValueError("LLM callback must return a string response")
+        logger.info("LLM callback generated response")
+    except Exception as e:
+        logger.error("LLM callback failed: %s", e)
+        raise
+
+    # Step 3: Save the conversation turn
+    event = self._save_conversation_turn(
+        actor_id, session_id, user_input, agent_response, metadata, event_timestamp
+    )
     return retrieved_memories, agent_response, event
 ```
 

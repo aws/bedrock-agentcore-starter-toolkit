@@ -10,6 +10,8 @@
     
     
     
+      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/agentcore-quickstart-example.html">
+    
     
       <link rel="prev" href="index.html">
     
@@ -23,7 +25,7 @@
 
     
       
-        <title>AgentCore Quickstart - Amazon Bedrock AgentCore</title>
+        <title>Runtime Transform and Deploy Quickstart - Amazon Bedrock AgentCore</title>
       
     
     
@@ -119,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AgentCore Quickstart
+              Runtime Transform and Deploy Quickstart
             
           </span>
         </div>
@@ -1347,7 +1349,7 @@
   
   
   <span class="md-ellipsis">
-    AgentCore Quickstart
+    Runtime Transform and Deploy Quickstart
     
   </span>
   
@@ -1360,7 +1362,7 @@
   
   
   <span class="md-ellipsis">
-    AgentCore Quickstart
+    Runtime Transform and Deploy Quickstart
     
   </span>
   
@@ -1404,9 +1406,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#installation-version-0121-or-later" class="md-nav__link">
     <span class="md-ellipsis">
-      Installation
+      Installation (version 0.1.21 or later)
     </span>
   </a>
   
@@ -1418,9 +1420,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-the-agent" class="md-nav__link">
+  <a href="#step-1a-create-a-new-agent" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Create the Agent
+      Step 1A: Create a New Agent
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1b-transform-an-existing-agent-to-be-compatible-with-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1B: Transform an Existing Agent to be Compatible with Runtime
     </span>
   </a>
   
@@ -2061,9 +2072,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#installation-version-0121-or-later" class="md-nav__link">
     <span class="md-ellipsis">
-      Installation
+      Installation (version 0.1.21 or later)
     </span>
   </a>
   
@@ -2075,9 +2086,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-1-create-the-agent" class="md-nav__link">
+  <a href="#step-1a-create-a-new-agent" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Create the Agent
+      Step 1A: Create a New Agent
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1b-transform-an-existing-agent-to-be-compatible-with-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1B: Transform an Existing Agent to be Compatible with Runtime
     </span>
   </a>
   
@@ -2266,15 +2286,15 @@
 <li>All resources created during deployment will use this region</li>
 </ul>
 </blockquote>
-<h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
+<h3 id="installation-version-0121-or-later">Installation (version 0.1.21 or later)<a class="headerlink" href="#installation-version-0121-or-later" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Create virtual environment</span>
 python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
 <span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
 
-<span class="c1"># Install required packages (version 0.1.21 or later)</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;bedrock-agentcore-starter-toolkit&gt;=0.1.21&quot;</span><span class="w"> </span>strands-agents<span class="w"> </span>boto3
+<span class="c1"># Install required packages</span>
+pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>strands-agents<span class="w"> </span>boto3
 </code></pre></div>
-<h2 id="step-1-create-the-agent">Step 1: Create the Agent<a class="headerlink" href="#step-1-create-the-agent" title="Permanent link">&para;</a></h2>
+<h2 id="step-1a-create-a-new-agent">Step 1A: Create a New Agent<a class="headerlink" href="#step-1a-create-a-new-agent" title="Permanent link">&para;</a></h2>
 <p>Create <code>agentcore_starter_strands.py</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Strands Agent sample with AgentCore</span>
@@ -2362,6 +2382,14 @@ pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot
 <div class="highlight"><pre><span></span><code>strands-agents
 bedrock-agentcore
 </code></pre></div>
+<h2 id="step-1b-transform-an-existing-agent-to-be-compatible-with-runtime">Step 1B: Transform an Existing Agent to be Compatible with Runtime<a class="headerlink" href="#step-1b-transform-an-existing-agent-to-be-compatible-with-runtime" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Import the Runtime App with from bedrock_agentcore.runtime import BedrockAgentCoreApp</li>
+<li>Initialize the App in your code with app = BedrockAgentCoreApp()</li>
+<li>Decorate the invocation function with the @app.entrypoint decorator</li>
+<li>Create a requirements.txt file with needed packages. Note: if strands-tools is detected, the correct library to add is strands-agents-tools</li>
+<li>Let AgentCore Runtime control the running of the agent with app.run() </li>
+</ol>
 <h2 id="step-2-configure-and-deploy">Step 2: Configure and Deploy<a class="headerlink" href="#step-2-configure-and-deploy" title="Permanent link">&para;</a></h2>
 <p>The AgentCore CLI automates deployment with provisioning.</p>
 <h3 id="configure-the-agent">Configure the Agent<a class="headerlink" href="#configure-the-agent" title="Permanent link">&para;</a></h3>
@@ -2377,6 +2405,7 @@ bedrock-agentcore
 <span class="c1">#    - If existing memories found: Choose from list or press Enter to create new</span>
 <span class="c1">#    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial</span>
 <span class="c1">#    - Note: Short-term memory is always enabled by default</span>
+<span class="c1"># If interactive mode fails, use &quot;--non-interactive&quot; for default configs</span>
 </code></pre></div>
 <strong>For this tutorial</strong>: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability. When prompted for long-term memory, type <strong>yes</strong> for this tutorial.</p>
 <p><strong>Note</strong>: If the memory configuration prompts do not appear during <code>agentcore configure</code>, refer to the <a href="#troubleshooting">Troubleshooting</a> section (Memory Configuration Not Appearing) to ensure the correct toolkit version is installed.</p>
@@ -2698,8 +2727,6 @@ aws<span class="w"> </span>configure<span class="w"> </span><span class="nb">set
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
-      
-        <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
       
         <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
       
