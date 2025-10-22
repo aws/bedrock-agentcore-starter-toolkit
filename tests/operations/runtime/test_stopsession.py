@@ -1,8 +1,7 @@
 """Tests for Bedrock AgentCore stop session operation."""
 
-from unittest.mock import Mock, patch
-
 import pytest
+from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.runtime.stop_session import stop_runtime_session
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config, save_config
@@ -43,9 +42,7 @@ class TestStopSessionOperation:
         save_config(project_config, config_path)
 
         # Mock successful stop_runtime_session response
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 200
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 200}
 
         result = stop_runtime_session(
             config_path=config_path,
@@ -90,9 +87,7 @@ class TestStopSessionOperation:
         save_config(project_config, config_path)
 
         # Mock successful stop_runtime_session response
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 200
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 200}
 
         result = stop_runtime_session(
             config_path=config_path,
@@ -141,9 +136,7 @@ class TestStopSessionOperation:
         save_config(project_config, config_path)
 
         # Mock successful stop_runtime_session response
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 200
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 200}
 
         # Stop the tracked session explicitly
         result = stop_runtime_session(
@@ -183,9 +176,7 @@ class TestStopSessionOperation:
         save_config(project_config, config_path)
 
         # Mock successful stop_runtime_session response
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 200
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 200}
 
         # Stop a different session
         result = stop_runtime_session(
@@ -287,11 +278,15 @@ class TestStopSessionOperation:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        # Mock ResourceNotFoundException
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = Exception(
-            "ResourceNotFoundException: Session not found"
-        )
+        error_response = {
+            "Error": {"Code": "ResourceNotFoundException", "Message": "Session not found"},
+            "ResponseMetadata": {"HTTPStatusCode": 404},
+        }
 
+        # Mock ResourceNotFoundException
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = ClientError(
+            error_response, "stop_runtime_session"
+        )
         result = stop_runtime_session(
             config_path=config_path,
             session_id="session-not-found",
@@ -330,9 +325,18 @@ class TestStopSessionOperation:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
+        # Mock NotFound error as ClientError
+        error_response = {
+            "Error": {
+                "Code": "NotFound",  # or 'ResourceNotFoundException'
+                "Message": "Session does not exist",
+            },
+            "ResponseMetadata": {"HTTPStatusCode": 404},
+        }
+
         # Mock NotFound error
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = Exception(
-            "NotFound: Session does not exist"
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = ClientError(
+            error_response, "stop_runtime_session"
         )
 
         result = stop_runtime_session(
@@ -428,15 +432,12 @@ class TestStopSessionOperation:
             ),
         )
         project_config = BedrockAgentCoreConfigSchema(
-            default_agent="agent-1",
-            agents={"agent-1": agent1_config, "agent-2": agent2_config}
+            default_agent="agent-1", agents={"agent-1": agent1_config, "agent-2": agent2_config}
         )
         save_config(project_config, config_path)
 
         # Mock successful stop_runtime_session response
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 200
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 200}
 
         # Stop session for agent-2
         result = stop_runtime_session(
@@ -486,9 +487,7 @@ class TestStopSessionOperation:
         save_config(project_config, config_path)
 
         # Mock response with custom status code
-        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
-            "statusCode": 204
-        }
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {"statusCode": 204}
 
         result = stop_runtime_session(
             config_path=config_path,

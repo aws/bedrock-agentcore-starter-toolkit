@@ -509,32 +509,21 @@ class BedrockAgentCoreClient:
 
         Returns:
             Response with status code
+
+        Raises:
+            ClientError: If the operation fails, including ResourceNotFoundException
+                        if the session doesn't exist
         """
         self.logger.info("Stopping runtime session: %s", session_id)
 
-        try:
-            response = self.dataplane_client.stop_runtime_session(
-                agentRuntimeArn=agent_arn,
-                qualifier=endpoint_name,
-                runtimeSessionId=session_id,
-            )
+        response = self.dataplane_client.stop_runtime_session(
+            agentRuntimeArn=agent_arn,
+            qualifier=endpoint_name,
+            runtimeSessionId=session_id,
+        )
 
-            self.logger.info("Successfully stopped session: %s", session_id)
-            return response
-
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "")
-
-            if error_code in ["ResourceNotFoundException", "NotFound"]:
-                self.logger.warning("Session not found: %s (may have already been terminated)", session_id)
-                # Return a synthetic response for consistency
-                return {
-                    "statusCode": 404,
-                    "runtimeSessionId": session_id,
-                }
-            else:
-                self.logger.error("Failed to stop session %s: %s", session_id, str(e))
-                raise
+        self.logger.info("Successfully stopped session: %s", session_id)
+        return response
 
 
 class HttpBedrockAgentCoreClient:

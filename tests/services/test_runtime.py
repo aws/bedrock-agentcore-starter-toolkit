@@ -698,14 +698,12 @@ class TestBedrockAgentCoreRuntime:
             {"Error": {"Code": "ResourceNotFoundException", "Message": "Session not found"}}, "StopRuntimeSession"
         )
 
-        result = client.stop_runtime_session(
-            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-            session_id="nonexistent-session",
-        )
-
-        # Should return synthetic 404 response
-        assert result["statusCode"] == 404
-        assert result["runtimeSessionId"] == "nonexistent-session"
+        # Now it should raise the exception instead of returning 404
+        with pytest.raises(ClientError, match="ResourceNotFoundException"):
+            client.stop_runtime_session(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                session_id="nonexistent-session",
+            )
 
     def test_stop_runtime_session_not_found_alternative_code(self, mock_boto3_clients):
         """Test stopping session with 'NotFound' error code."""
@@ -718,14 +716,12 @@ class TestBedrockAgentCoreRuntime:
             {"Error": {"Code": "NotFound", "Message": "Session not found"}}, "StopRuntimeSession"
         )
 
-        result = client.stop_runtime_session(
-            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-            session_id="another-nonexistent-session",
-        )
-
-        # Should return synthetic 404 response
-        assert result["statusCode"] == 404
-        assert result["runtimeSessionId"] == "another-nonexistent-session"
+        # Now it should raise the exception instead of returning 404
+        with pytest.raises(ClientError, match="NotFound"):
+            client.stop_runtime_session(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                session_id="another-nonexistent-session",
+            )
 
     def test_stop_runtime_session_other_client_error(self, mock_boto3_clients):
         """Test stopping session with other ClientError (should re-raise)."""

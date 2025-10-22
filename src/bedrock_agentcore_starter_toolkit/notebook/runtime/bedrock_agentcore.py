@@ -9,6 +9,7 @@ from ...operations.runtime import (
     get_status,
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
+    stop_runtime_session,
     validate_agent_name,
 )
 from ...operations.runtime.models import ConfigureResult, LaunchResult, StatusResult
@@ -348,8 +349,6 @@ class Runtime:
             log.warning("Agent not configured")
             log.info("Call .configure() first to set up your agent")
             raise ValueError("Must configure first. Call .configure() first.")
-
-        from ...operations.runtime import stop_runtime_session
 
         result = stop_runtime_session(
             config_path=self._config_path,

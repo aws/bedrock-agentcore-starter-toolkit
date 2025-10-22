@@ -167,8 +167,10 @@ def configure_bedrock_agentcore(
         protocol: agent server protocol, must be either HTTP or MCP or A2A
         non_interactive: Skip interactive prompts and use defaults
         source_path: Optional path to agent source code directory
-        idle_timeout: Idle runtime session timeout in seconds (60-28800)
-        max_lifetime: Maximum instance lifetime in seconds (60-28800)
+        idle_timeout: Idle runtime session timeout in seconds (60-28800).
+            If not specified, AWS API default (900s / 15 minutes) is used.
+        max_lifetime: Maximum instance lifetime in seconds (60-28800).
+            If not specified, AWS API default (28800s / 8 hours) is used.
 
     Returns:
         ConfigureResult model with configuration details
