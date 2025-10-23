@@ -3097,3 +3097,74 @@ agents:
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:
                 os.chdir(original_cwd)
+                
+    def test_invoke_with_response_only_flag(self, tmp_path):
+        """Test invoke command with response_only flag."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.console.print") as mock_print,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._show_invoke_info_panel") as mock_show_panel,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._show_success_response") as mock_show_response,
+        ):
+            # Mock project config and agent config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.authorizer_configuration = None
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Create a response with nested structure
+            mock_result = Mock()
+            mock_result.response = {"response": "This is the raw response"}
+            mock_result.session_id = "test-session"
+            mock_invoke.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                # Test with response_only flag
+                result = self.runner.invoke(
+                    app, ["invoke", '{"message": "hello"}', "--response-only"]
+                )
+
+                assert result.exit_code == 0
+                
+                # Verify response_only was passed to invoke_bedrock_agentcore
+                call_args = mock_invoke.call_args
+                
+                # Verify the info panel was not shown when response_only is True
+                mock_show_panel.assert_not_called()
+                mock_show_response.assert_not_called()
+                
+                # Verify console.print was called directly with the content
+                mock_print.assert_any_call("This is the raw response")
+                
+                # Test without response_only flag
+                mock_show_panel.reset_mock()
+                mock_show_response.reset_mock()
+                mock_print.reset_mock()
+                
+                result = self.runner.invoke(
+                    app, ["invoke", '{"message": "hello"}']
+                )
+                
+                assert result.exit_code == 0
+                
+                # Verify the info panel was shown when response_only is False
+                mock_show_panel.assert_called_once()
+                mock_show_response.assert_called_once()
+                
+            finally:
+                os.chdir(original_cwd)
