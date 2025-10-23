@@ -21,18 +21,18 @@ For Gateway and Identity features, see the [Gateway quickstart](https://github.c
 > - The region where you've enabled Bedrock model access
 > - All resources created during deployment will use this region
 
-### Installation
+### Installation (version 0.1.21 or later)
 
 ```bash
 # Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install required packages (version 0.1.21 or later)
-pip install "bedrock-agentcore-starter-toolkit>=0.1.21" strands-agents boto3
+# Install required packages
+pip install bedrock-agentcore-starter-toolkit strands-agents boto3
 ```
 
-## Step 1: Create the Agent
+## Step 1A: Create a New Agent
 
 Create `agentcore_starter_strands.py`:
 
@@ -127,6 +127,14 @@ strands-agents
 bedrock-agentcore
 ```
 
+## Step 1B: Transform an Existing Agent to be Compatible with Runtime
+
+1. Import the Runtime App with from bedrock_agentcore.runtime import BedrockAgentCoreApp
+2. Initialize the App in your code with app = BedrockAgentCoreApp()
+3. Decorate the invocation function with the @app.entrypoint decorator
+4. Create a requirements.txt file with needed packages. Note: if strands-tools is detected, the correct library to add is strands-agents-tools
+5. Let AgentCore Runtime control the running of the agent with app.run() 
+
 ## Step 2: Configure and Deploy
 
 The AgentCore CLI automates deployment with provisioning.
@@ -146,6 +154,7 @@ agentcore configure -e agentcore_starter_strands.py
 #    - If existing memories found: Choose from list or press Enter to create new
 #    - If creating new: Enable long-term memory extraction? (yes/no) - Type `yes` for this tutorial
 #    - Note: Short-term memory is always enabled by default
+# If interactive mode fails, use "--non-interactive" for default configs
 ```
 **For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for Runtime, Memory, Code Interpreter, and Observability. When prompted for long-term memory, type **yes** for this tutorial.
 

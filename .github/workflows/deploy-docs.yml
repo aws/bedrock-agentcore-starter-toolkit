@@ -42,7 +42,7 @@ jobs:
           uv venv
           source .venv/bin/activate
           uv pip install mkdocs-material mkdocstrings-python pymdown-extensions
-          uv pip install mike mkdocs-macros-plugin mkdocs-llmstxt
+          uv pip install mike mkdocs-macros-plugin mkdocs-llmstxt mkdocs-include-markdown-plugin
 
           # Install the SDK package from PyPI
           uv pip install bedrock-agentcore

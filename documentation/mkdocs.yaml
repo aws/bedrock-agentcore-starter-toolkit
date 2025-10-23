@@ -1,7 +1,7 @@
 site_name: Amazon Bedrock AgentCore
 site_description: Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents
 site_dir: site
-site_url: ""
+site_url: "https://aws.github.io/bedrock-agentcore-starter-toolkit"
 use_directory_urls: false
 
 repo_url: https://github.com/aws/bedrock-agentcore-starter-toolkit
@@ -99,7 +99,7 @@ nav:
       - Import Agent Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
-    - AgentCore Quickstart: examples/agentcore-quickstart-example.md
+    - Runtime Transform and Deploy Quickstart: examples/agentcore-quickstart-example.md
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
@@ -125,6 +125,7 @@ plugins:
   - search
   - privacy
   - macros
+  - include-markdown
   - mike:
       alias_type: symlink
       canonical_version: latest
