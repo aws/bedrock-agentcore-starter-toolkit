@@ -23,7 +23,7 @@ from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
 
-console = Console()
+# console = Console()
 
 log = logging.getLogger(__name__)
 
@@ -139,6 +139,7 @@ def _ensure_memory_for_agent(
     project_config: BedrockAgentCoreConfigSchema,
     config_path: Path,
     agent_name: str,
+    console: Optional[Console] = None,
 ) -> Optional[str]:
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
@@ -164,7 +165,10 @@ def _ensure_memory_for_agent(
         from ...operations.memory.constants import StrategyType
         from ...operations.memory.manager import MemoryManager
 
-        memory_manager = MemoryManager(region_name=agent_config.aws.region)
+        memory_manager = MemoryManager(
+            region_name=agent_config.aws.region,
+            console=console,  # ADD THIS
+        )
         memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
 
         # Check if memory already exists in cloud
@@ -437,6 +441,7 @@ def launch_bedrock_agentcore(
     use_codebuild: bool = True,
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -447,10 +452,14 @@ def launch_bedrock_agentcore(
         use_codebuild: Whether to use CodeBuild for ARM64 builds
         env_vars: Environment variables to pass to local container (dict of key-value pairs)
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
+        console: Optional Rich Console instance for progress output. Used to maintain
+                output hierarchy with CLI status contexts.
 
     Returns:
         LaunchResult model with launch details
     """
+    if console is None:
+        console = Console()
     # Load project configuration
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
@@ -460,7 +469,7 @@ def launch_bedrock_agentcore(
 
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:
-        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name, console=console)
 
     # Add memory configuration to environment variables if available
     if agent_config.memory and agent_config.memory.memory_id:
@@ -718,10 +727,13 @@ def _launch_with_codebuild(
     project_config,
     auto_update_on_conflict: bool = False,
     env_vars: Optional[dict] = None,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
+    if console is None:
+        console = Console()
     # Create memory if configured
-    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name)
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name, console=console)
 
     # Execute shared CodeBuild workflow with full deployment mode
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(

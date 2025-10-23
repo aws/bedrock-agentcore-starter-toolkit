@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 import typer
@@ -1509,6 +1509,7 @@ agents:
                     use_codebuild=False,  # Should be False due to --local-build
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -1555,6 +1556,7 @@ agents:
                     use_codebuild=True,  # Default CodeBuild mode
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -2186,6 +2188,7 @@ agents:
                     use_codebuild=True,
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)

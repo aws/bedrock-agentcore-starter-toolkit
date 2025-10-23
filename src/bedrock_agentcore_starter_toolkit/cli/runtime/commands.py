@@ -575,6 +575,7 @@ def launch(
                 use_codebuild=not local_build,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                console=console,
             )
 
         project_config = load_config(config_path)
