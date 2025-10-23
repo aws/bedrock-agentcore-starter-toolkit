@@ -168,8 +168,6 @@ echo "export OAUTH2_CALLBACK_URL='$OAUTH2_CALLBACK_URL'"
 
 ## Step 1.5: Add the callback URL to your OAuth 2.0 authorization server
 
-
-
 To prevent unauthorized redirects, add the callback URL retrieved from [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) or [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) to your OAuth 2.0 authorization server.
 
 If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your authorization server callback URL settings. 
