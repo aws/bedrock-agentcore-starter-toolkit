@@ -10,6 +10,7 @@ Before you begin, ensure you have:
 - Python 3.10+ installed
 - The latest AWS CLI installed
 - AWS credentials and region configured (`aws configure`)
+- jq installed
 
 This quickstart requires that you have an OAuth 2.0 authorization server. If you do not have one, Step 0.5 will create one for you using Amazon Cognito user pools. If you have an OAuth 2.0 authorization server with a client id, client secret, and a user configured, you may proceed to step 1. This authorization server will act as a resource credential provider, representing the authority that grants the agent an outbound OAuth 2.0 access token.
 

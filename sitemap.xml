@@ -2,274 +2,274 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/index.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/cli.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/identity.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/memory.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/runtime.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/tools.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/index.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/agentcore-quickstart-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/async-processing.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/gateway-integration.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/memory_gateway_agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/runtime-framework-agents.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/semantic_search.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/session-management.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cdk/basic-runtime/basic-cdk-deploy-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cdk/basic-runtime/basic-cdk-deploy-sample.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-deploy-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-template.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-deploy-bash-script.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-bash-script.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-template.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudfomation-deploy-with-mcp-tool-bash-script.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-template.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-bash-script.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-template.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/adk/adk-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/adk/adk-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/autogen/autogen-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/autogen/autogen-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/claude-sdk/claude-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/claude-sdk/claude-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/langgraph/langgraph-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/langgraph/langgraph-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/llamaindex/llama-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/llamaindex/llama-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/openai/openai-agent-basic-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/openai/openai-agent-handoff-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/openai/openai-agent-readme.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/pydanticai/pydanticai-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/strands/strands-agent-basic-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/strands/strands-agent-openai-identity-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/strands/strands-agent-streaming-example.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/observability/dynatrace/observability-agent-and-dynatrace-init.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/observability/dynatrace/observability-basic-agent.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/observability/dynatrace/observability-dynatrace.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/mcp/agentcore_runtime_deployment.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/builtin-tools/quickstart-browser.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/builtin-tools/quickstart-code-interpreter.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/gateway/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/identity/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/configuration.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/design.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/overview.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/memory/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/observability/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/a2a.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/async.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/notebook.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/overview.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/permissions.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/security/agentcore-vpc.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/security/security-vpc-condition.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
     <url>
          <loc>https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/security/vpc-interface-endpoints.html</loc>
-         <lastmod>2025-10-22</lastmod>
+         <lastmod>2025-10-23</lastmod>
     </url>
 </urlset>
