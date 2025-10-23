@@ -166,13 +166,15 @@ echo "export OAUTH2_CALLBACK_URL='$OAUTH2_CALLBACK_URL'"
 ```
 
 
-## Step 1.5: Update identity credential provider with OAuth2 credential provider callback URL
+## Step 1.5: Add the callback URL to your OAuth 2.0 authorization server
 
-Set the OAuth 2.0 callback URL in your identity credential provider to the callback URL retrieved from [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) or [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html).
 
-If you are using your own identity credential provider, configure the OAuth2 credential provider callback URL in your identity credential provider callback URL settings. 
 
-If you are using the previous script to create an identity credential provider with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.
+To prevent unauthorized redirects, add the callback URL retrieved from [CreateOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html) or [GetOauth2CredentialProvider](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html) to your OAuth 2.0 authorization server.
+
+If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your authorization server callback URL settings. 
+
+If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.
 
 
 ```bash
@@ -191,7 +193,7 @@ aws cognito-idp update-user-pool-client \
 
 ## Step 2: Create a sample agent that initiates an OAuth 2.0 flow
 
-**Prerequisite**: An OAuth2 callback server must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
+**Prerequisite**: An OAuth2 callback URL must be configured on the workload identity during creation via [CreateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html) or updated using [UpdateWorkloadIdentity](https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html) to handle the session binding flow. For more details, see [OAuth2 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html).
 
 The `requires_access_token` usage must set the `callback_url` to the same value configured on the workload identity. This is not required when launching and invoking the agent **locally**, as the configuration is done automatically by the starter toolkit.
 
@@ -369,7 +371,7 @@ The agent will then return a URL to your `agentcore invoke` command. Copy and pa
 
 Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.
 
-Your browser should redirect to your configured OAuth2 callback server, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error responses to indicate the authorization status.
+Your browser should redirect to your configured OAuth2 callback URL, which handles the [session binding flow](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) and displays the authorization result. Ensure your OAuth2 callback server provides clear success and error responses to indicate the authorization status.
 
 Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (`--session-id` parameter).
 
