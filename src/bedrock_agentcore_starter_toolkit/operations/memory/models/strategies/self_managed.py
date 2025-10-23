@@ -10,22 +10,20 @@ from .base import BaseStrategy
 class MessageBasedTrigger(BaseModel):
     """Trigger configuration based on message."""
 
-    message_count: int = Field(default=6, ge=1, le=50, description="Number of messages that trigger memory processing.")
+    message_count: int = Field(default=6, description="Number of messages that trigger memory processing.")
 
 
 class TokenBasedTrigger(BaseModel):
     """Trigger configuration based on tokens."""
 
-    token_count: int = Field(
-        default=5000, ge=100, le=500000, description="Number of tokens that trigger memory processing."
-    )
+    token_count: int = Field(default=5000, description="Number of tokens that trigger memory processing.")
 
 
 class TimeBasedTrigger(BaseModel):
     """Trigger configuration based on time."""
 
     idle_session_timeout: int = Field(
-        default=20, ge=10, le=3000, description="Idle session timeout (seconds) that triggers memory processing."
+        default=20, description="Idle session timeout (seconds) that triggers memory processing."
     )
 
 
@@ -67,7 +65,9 @@ class SelfManagedStrategy(BaseStrategy):
         default_factory=list
     )
     invocation_config: InvocationConfig
-    historical_context_window_size: int = Field(default=4, ge=0, le=50)
+    historical_context_window_size: int = Field(
+        default=4, description="Number of historical messages to include in processing context."
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format for API calls."""
