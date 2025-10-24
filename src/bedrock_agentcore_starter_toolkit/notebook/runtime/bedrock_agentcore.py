@@ -9,6 +9,7 @@ from ...operations.runtime import (
     get_status,
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
+    stop_runtime_session,
     validate_agent_name,
 )
 from ...operations.runtime.models import ConfigureResult, LaunchResult, StatusResult
@@ -50,6 +51,8 @@ class Runtime:
         disable_otel: bool = False,
         memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
         non_interactive: bool = True,
+        idle_timeout: Optional[int] = None,
+        max_lifetime: Optional[int] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
 
@@ -75,6 +78,8 @@ class Runtime:
                 - "STM_ONLY": Short-term memory only (default)
                 - "STM_AND_LTM": Short-term + long-term memory with strategy extraction
             non_interactive: Skip interactive prompts and use defaults (default: True)
+            idle_timeout: Idle runtime session timeout in seconds (60-28800)
+            max_lifetime: Maximum instance lifetime in seconds (60-28800)
 
         Returns:
             ConfigureResult with configuration details
@@ -91,6 +96,13 @@ class Runtime:
 
             # Invalid - raises error
             runtime.configure(entrypoint='handler.py', disable_memory=True, memory_mode='STM_AND_LTM')
+
+            # With lifecycle settings
+            runtime.configure(
+                entrypoint='handler.py',
+                idle_timeout=1800,  # 30 minutes
+                max_lifetime=7200   # 2 hours
+            )
         """
         if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
             raise ValueError("protocol must be either HTTP or MCP or A2A")
@@ -152,6 +164,8 @@ class Runtime:
             region=region,
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
+            idle_timeout=idle_timeout,
+            max_lifetime=max_lifetime,
         )
 
         self._config_path = result.config_path
@@ -318,6 +332,36 @@ class Runtime:
             user_id=user_id,
         )
         return result.response
+
+    def stop_session(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Stop an active runtime session.
+
+        Args:
+            session_id: Optional session ID to stop. If not provided, uses tracked session.
+
+        Returns:
+            Dictionary with stop session result details
+
+        Raises:
+            ValueError: If no session ID provided or found, or agent not configured
+        """
+        if not self._config_path:
+            log.warning("Agent not configured")
+            log.info("Call .configure() first to set up your agent")
+            raise ValueError("Must configure first. Call .configure() first.")
+
+        result = stop_runtime_session(
+            config_path=self._config_path,
+            session_id=session_id,
+        )
+
+        log.info("Session stopped: %s", result.session_id)
+        return {
+            "session_id": result.session_id,
+            "agent_name": result.agent_name,
+            "status_code": result.status_code,
+            "message": result.message,
+        }
 
     def status(self) -> StatusResult:
         """Get Bedrock AgentCore status including config and runtime details.

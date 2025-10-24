@@ -637,6 +637,229 @@ class TestBedrockAgentCoreRuntime:
         with pytest.raises(Exception, match="Deletion error"):
             client.delete_agent_runtime_endpoint("test-agent-id")
 
+    def test_stop_runtime_session_success(self, mock_boto3_clients):
+        """Test successful runtime session stopping."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock successful response
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
+            "statusCode": 200,
+            "runtimeSessionId": "test-session-123",
+        }
+
+        result = client.stop_runtime_session(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            session_id="test-session-123",
+        )
+
+        # Verify call was made correctly
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.assert_called_once_with(
+            agentRuntimeArn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            qualifier="DEFAULT",
+            runtimeSessionId="test-session-123",
+        )
+
+        # Verify response
+        assert result["statusCode"] == 200
+        assert result["runtimeSessionId"] == "test-session-123"
+
+    def test_stop_runtime_session_with_custom_endpoint(self, mock_boto3_clients):
+        """Test runtime session stopping with custom endpoint name."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.return_value = {
+            "statusCode": 200,
+            "runtimeSessionId": "test-session-456",
+        }
+
+        result = client.stop_runtime_session(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            session_id="test-session-456",
+            endpoint_name="CUSTOM",
+        )
+
+        # Verify custom endpoint was used
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.assert_called_once_with(
+            agentRuntimeArn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            qualifier="CUSTOM",
+            runtimeSessionId="test-session-456",
+        )
+
+        assert result["statusCode"] == 200
+
+    def test_stop_runtime_session_not_found(self, mock_boto3_clients):
+        """Test stopping non-existent runtime session."""
+        from botocore.exceptions import ClientError
+
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock ResourceNotFoundException
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException", "Message": "Session not found"}}, "StopRuntimeSession"
+        )
+
+        # Now it should raise the exception instead of returning 404
+        with pytest.raises(ClientError, match="ResourceNotFoundException"):
+            client.stop_runtime_session(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                session_id="nonexistent-session",
+            )
+
+    def test_stop_runtime_session_not_found_alternative_code(self, mock_boto3_clients):
+        """Test stopping session with 'NotFound' error code."""
+        from botocore.exceptions import ClientError
+
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock NotFound error (alternative error code)
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = ClientError(
+            {"Error": {"Code": "NotFound", "Message": "Session not found"}}, "StopRuntimeSession"
+        )
+
+        # Now it should raise the exception instead of returning 404
+        with pytest.raises(ClientError, match="NotFound"):
+            client.stop_runtime_session(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                session_id="another-nonexistent-session",
+            )
+
+    def test_stop_runtime_session_other_client_error(self, mock_boto3_clients):
+        """Test stopping session with other ClientError (should re-raise)."""
+        from botocore.exceptions import ClientError
+
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock other type of ClientError
+        mock_boto3_clients["bedrock_agentcore"].stop_runtime_session.side_effect = ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "Access denied"}}, "StopRuntimeSession"
+        )
+
+        # Should re-raise the exception
+        with pytest.raises(ClientError, match="Access denied"):
+            client.stop_runtime_session(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+                session_id="test-session-123",
+            )
+
+    def test_delete_agent_runtime_endpoint_success(self, mock_boto3_clients):
+        """Test successful agent runtime endpoint deletion."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        mock_boto3_clients["bedrock_agentcore"].delete_agent_runtime_endpoint.return_value = {
+            "agentRuntimeId": "test-agent-id",
+            "endpointName": "DEFAULT",
+        }
+
+        result = client.delete_agent_runtime_endpoint("test-agent-id")
+
+        # Verify call was made correctly
+        mock_boto3_clients["bedrock_agentcore"].delete_agent_runtime_endpoint.assert_called_once_with(
+            agentRuntimeId="test-agent-id", endpointName="DEFAULT"
+        )
+
+        # Verify response
+        assert result["agentRuntimeId"] == "test-agent-id"
+        assert result["endpointName"] == "DEFAULT"
+
+    def test_delete_agent_runtime_endpoint_custom_name(self, mock_boto3_clients):
+        """Test deleting agent runtime endpoint with custom name."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        mock_boto3_clients["bedrock_agentcore"].delete_agent_runtime_endpoint.return_value = {
+            "agentRuntimeId": "test-agent-id",
+            "endpointName": "CUSTOM",
+        }
+
+        result = client.delete_agent_runtime_endpoint("test-agent-id", "CUSTOM")
+
+        # Verify custom endpoint name was used
+        mock_boto3_clients["bedrock_agentcore"].delete_agent_runtime_endpoint.assert_called_once_with(
+            agentRuntimeId="test-agent-id", endpointName="CUSTOM"
+        )
+
+        assert result["endpointName"] == "CUSTOM"
+
+    def test_list_agents_error_handling(self, mock_boto3_clients):
+        """Test list_agents error handling."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock an exception
+        mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.side_effect = Exception("List error")
+
+        with pytest.raises(Exception, match="List error"):
+            client.list_agents()
+
+    def test_find_agent_by_name_error_handling(self, mock_boto3_clients):
+        """Test find_agent_by_name error handling."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        # Mock an exception in list_agents (which find_agent_by_name calls)
+        mock_boto3_clients["bedrock_agentcore"].list_agent_runtimes.side_effect = Exception("Search error")
+
+        with pytest.raises(Exception, match="Search error"):
+            client.find_agent_by_name("test-agent")
+
+    def test_create_agent_with_lifecycle_config(self, mock_boto3_clients):
+        """Test create agent with lifecycle configuration."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        lifecycle_config = {"timeoutInSeconds": 300, "maxConcurrentInvocations": 5}
+
+        result = client.create_agent(
+            agent_name="test-agent",
+            image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            lifecycle_config=lifecycle_config,
+        )
+
+        assert result["id"] == "test-agent-id"
+
+        # Verify lifecycle config was included
+        call_args = mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.call_args[1]
+        assert call_args["lifecycleConfiguration"] == lifecycle_config
+
+    def test_update_agent_with_lifecycle_config(self, mock_boto3_clients):
+        """Test update agent with lifecycle configuration."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        lifecycle_config = {"timeoutInSeconds": 600, "maxConcurrentInvocations": 10}
+
+        result = client.update_agent(
+            agent_id="existing-agent-id",
+            image_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test:latest",
+            execution_role_arn="arn:aws:iam::123456789012:role/TestRole",
+            lifecycle_config=lifecycle_config,
+        )
+
+        assert result["id"] == "existing-agent-id"
+
+        # Verify lifecycle config was included
+        call_args = mock_boto3_clients["bedrock_agentcore"].update_agent_runtime.call_args[1]
+        assert call_args["lifecycleConfiguration"] == lifecycle_config
+
+    def test_invoke_endpoint_with_user_id(self, mock_boto3_clients):
+        """Test invoke endpoint with user ID."""
+        client = BedrockAgentCoreClient("us-west-2")
+
+        response = client.invoke_endpoint(
+            agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            payload='{"message": "Hello"}',
+            session_id="test-session-123",
+            user_id="user-456",
+        )
+
+        # Verify user ID was included in the call
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once_with(
+            agentRuntimeArn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
+            qualifier="DEFAULT",
+            runtimeSessionId="test-session-123",
+            payload='{"message": "Hello"}',
+            runtimeUserId="user-456",
+        )
+
+        # Verify response
+        assert "response" in response
+
 
 class TestHttpBedrockAgentCoreClient:
     """Test HttpBedrockAgentCoreClient functionality."""

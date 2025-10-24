@@ -16,6 +16,7 @@ from ...utils.runtime.schema import (
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
     CodeBuildConfig,
+    LifecycleConfiguration,
     MemoryConfig,
     NetworkConfiguration,
     ObservabilityConfig,
@@ -142,6 +143,8 @@ def configure_bedrock_agentcore(
     protocol: Optional[str] = None,
     non_interactive: bool = False,
     source_path: Optional[str] = None,
+    idle_timeout: Optional[int] = None,
+    max_lifetime: Optional[int] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -164,6 +167,10 @@ def configure_bedrock_agentcore(
         protocol: agent server protocol, must be either HTTP or MCP or A2A
         non_interactive: Skip interactive prompts and use defaults
         source_path: Optional path to agent source code directory
+        idle_timeout: Idle runtime session timeout in seconds (60-28800).
+            If not specified, AWS API default (900s / 15 minutes) is used.
+        max_lifetime: Maximum instance lifetime in seconds (60-28800).
+            If not specified, AWS API default (28800s / 8 hours) is used.
 
     Returns:
         ConfigureResult model with configuration details
@@ -273,6 +280,21 @@ def configure_bedrock_agentcore(
     config_path = build_dir / ".bedrock_agentcore.yaml"
     memory_id = None
     memory_name = None
+
+    # Handle lifecycle configuration
+    lifecycle_config = LifecycleConfiguration()
+    if idle_timeout is not None or max_lifetime is not None:
+        lifecycle_config = LifecycleConfiguration(
+            idle_runtime_session_timeout=idle_timeout,
+            max_lifetime=max_lifetime,
+        )
+
+        if verbose:
+            log.debug("Lifecycle configuration:")
+            if idle_timeout:
+                log.debug("  Idle timeout: %ds (%d minutes)", idle_timeout, idle_timeout / 60)
+            if max_lifetime:
+                log.debug("  Max lifetime: %ds (%d hours)", max_lifetime, max_lifetime / 3600)
 
     if config_path.exists():
         try:
@@ -421,6 +443,7 @@ def configure_bedrock_agentcore(
             network_configuration=NetworkConfiguration(network_mode="PUBLIC"),
             protocol_configuration=ProtocolConfiguration(server_protocol=protocol or "HTTP"),
             observability=ObservabilityConfig(enabled=enable_observability),
+            lifecycle_configuration=lifecycle_config,
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         codebuild=CodeBuildConfig(
