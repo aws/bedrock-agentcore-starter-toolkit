@@ -1,6 +1,5 @@
 """Launch operation - deploys Bedrock AgentCore locally or to cloud."""
 
-
 import json
 import logging
 import time
