@@ -1750,6 +1750,7 @@ class TestMemoryModeConfiguration:
                     agent_name="test_agent",
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
+                    memory_mode="STM_ONLY",
                     non_interactive=False,  # Interactive mode
                 )
 
