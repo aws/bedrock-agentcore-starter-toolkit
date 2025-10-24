@@ -20,6 +20,13 @@ from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies.custo
     CustomSummaryStrategy,
     CustomUserPreferenceStrategy,
 )
+from bedrock_agentcore_starter_toolkit.operations.memory.models.strategies.self_managed import (
+    InvocationConfig,
+    MessageBasedTrigger,
+    SelfManagedStrategy,
+    TimeBasedTrigger,
+    TokenBasedTrigger,
+)
 
 
 class TestExtractionConfig:
@@ -960,3 +967,72 @@ class TestConfigurationEdgeCases:
             assert isinstance(result, dict)
             assert "customMemoryStrategy" in result
             assert "name" in result["customMemoryStrategy"]
+
+
+class TestSelfManagedStrategy:
+    """Test SelfManagedStrategy functionality."""
+
+    def test_self_managed_strategy_creation(self):
+        """Test basic SelfManagedStrategy creation."""
+        invocation_config = InvocationConfig(
+            topic_arn="arn:aws:sns:us-east-1:123456789012:test-topic", payload_delivery_bucket_name="test-bucket"
+        )
+
+        strategy = SelfManagedStrategy(
+            name="TestSelfManaged",
+            description="Test self-managed strategy",
+            trigger_conditions=[
+                MessageBasedTrigger(message_count=10),
+                TokenBasedTrigger(token_count=5000),
+                TimeBasedTrigger(idle_session_timeout=40),
+            ],
+            invocation_config=invocation_config,
+            historical_context_window_size=6,
+        )
+
+        assert strategy.name == "TestSelfManaged"
+        assert strategy.description == "Test self-managed strategy"
+        assert len(strategy.trigger_conditions) == 3
+        assert strategy.historical_context_window_size == 6
+
+    def test_self_managed_strategy_to_dict(self):
+        """Test SelfManagedStrategy to_dict conversion."""
+        invocation_config = InvocationConfig(
+            topic_arn="arn:aws:sns:us-east-1:123456789012:test-topic", payload_delivery_bucket_name="test-bucket"
+        )
+
+        strategy = SelfManagedStrategy(
+            name="TestSelfManaged",
+            description="Test self-managed strategy",
+            trigger_conditions=[
+                MessageBasedTrigger(message_count=10),
+                TokenBasedTrigger(token_count=5000),
+                TimeBasedTrigger(idle_session_timeout=40),
+            ],
+            invocation_config=invocation_config,
+            historical_context_window_size=6,
+        )
+
+        result = strategy.to_dict()
+        expected = {
+            "customMemoryStrategy": {
+                "name": "TestSelfManaged",
+                "description": "Test self-managed strategy",
+                "configuration": {
+                    "selfManagedConfiguration": {
+                        "triggerConditions": [
+                            {"messageBasedTrigger": {"messageCount": 10}},
+                            {"tokenBasedTrigger": {"tokenCount": 5000}},
+                            {"timeBasedTrigger": {"idleSessionTimeout": 40}},
+                        ],
+                        "invocationConfiguration": {
+                            "topicArn": "arn:aws:sns:us-east-1:123456789012:test-topic",
+                            "payloadDeliveryBucketName": "test-bucket",
+                        },
+                        "historicalContextWindowSize": 6,
+                    }
+                },
+            }
+        }
+
+        assert result == expected
