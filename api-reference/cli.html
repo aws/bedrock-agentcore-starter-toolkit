@@ -1859,6 +1859,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#stop-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stop Session
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2064,6 +2073,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#stop-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stop Session
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2225,6 +2243,12 @@
 <p><code>--authorizer-config, -ac TEXT</code>: OAuth authorizer configuration as JSON string</p>
 </li>
 <li>
+<p><code>--idle-timeout, -it INTEGER</code>: Seconds before idle session terminates (60-28800, default: 900)</p>
+</li>
+<li>
+<p><code>--max-lifetime, -ml INTEGER</code>: Maximum instance lifetime in seconds (60-28800, default: 28800)</p>
+</li>
+<li>
 <p><code>--verbose, -v</code>: Enable verbose output</p>
 </li>
 <li>
@@ -2251,6 +2275,18 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class=
 <span class="c1"># 1. --region flag</span>
 <span class="c1"># 2. AWS_DEFAULT_REGION environment variable</span>
 <span class="c1"># 3. AWS CLI configured region</span>
+</code></pre></div>
+<p><strong>Lifecycle Configuration:</strong></p>
+<p>Session lifecycle management controls when runtime sessions automatically terminate:</p>
+<ul>
+<li><strong>Idle Timeout</strong>: Terminates session after specified seconds of inactivity (60-28800 seconds)</li>
+<li><strong>Max Lifetime</strong>: Terminates session after maximum runtime regardless of activity (60-28800 seconds)</li>
+<li>Validation ensures <code>max-lifetime &gt;= idle-timeout</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># Configure with lifecycle settings</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--idle-timeout<span class="w"> </span><span class="m">1800</span><span class="w"> </span><span class="se">\ </span><span class="w">   </span><span class="c1"># 30 minutes idle before termination</span>
+<span class="w">  </span>--max-lifetime<span class="w"> </span><span class="m">7200</span><span class="w">      </span><span class="c1"># 2 hours max regardless of activity</span>
 </code></pre></div>
 <h3 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h3>
 <p>Deploy agents to AWS or run locally.</p>
@@ -2328,6 +2364,31 @@ Your formatted response here
 <p><code>--verbose, -v</code>: Verbose JSON output of config, agent, and endpoint status</p>
 </li>
 </ul>
+<h3 id="stop-session">Stop Session<a class="headerlink" href="#stop-session" title="Permanent link">&para;</a></h3>
+<p>Terminate active runtime sessions to free resources and reduce costs.</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>stop-session<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</code></pre></div>
+<p><strong>Session Tracking:</strong></p>
+<p>The CLI automatically tracks the runtime session ID from the last <code>agentcore invoke</code> command. This allows you to stop sessions without manually specifying the session ID.</p>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Stop the last invoked session (tracked automatically)</span>
+agentcore<span class="w"> </span>stop-session
+
+<span class="c1"># Stop a specific session by ID</span>
+agentcore<span class="w"> </span>stop-session<span class="w"> </span>--session-id<span class="w"> </span>abc123xyz
+
+<span class="c1"># Stop session for specific agent</span>
+agentcore<span class="w"> </span>stop-session<span class="w"> </span>--agent<span class="w"> </span>my-agent<span class="w"> </span>--session-id<span class="w"> </span>abc123xyz
+</code></pre></div>
+<p>Options:</p>
+<ul>
+<li>
+<p><code>--session-id, -s TEXT</code>: Specific session ID to stop (optional)</p>
+</li>
+<li>
+<p><code>--agent, -a TEXT</code>: Agent name</p>
+</li>
+</ul>
 <h2 id="gateway-commands">Gateway Commands<a class="headerlink" href="#gateway-commands" title="Permanent link">&para;</a></h2>
 <p>Access gateway subcommands:</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>gateway<span class="w"> </span><span class="o">[</span>COMMAND<span class="o">]</span>
@@ -2390,6 +2451,18 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 
 <span class="c1"># Configure with execution role</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--execution-role<span class="w"> </span>arn:aws:iam::123456789012:role/MyRole
+
+<span class="c1"># Configure with lifecycle management</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--idle-timeout<span class="w"> </span><span class="m">1800</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--max-lifetime<span class="w"> </span><span class="m">7200</span>
+
+<span class="c1"># Configure with all options</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--execution-role<span class="w"> </span>arn:aws:iam::123456789012:role/MyRole<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--idle-timeout<span class="w"> </span><span class="m">1800</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--max-lifetime<span class="w"> </span><span class="m">7200</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--region<span class="w"> </span>us-east-1
 
 <span class="c1"># List configured agents</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>list
