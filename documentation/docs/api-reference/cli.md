@@ -39,6 +39,10 @@ Options:
 
 - `--request-header-allowlist, -rha TEXT`: Comma-separated list of allowed request headers
 
+- `--idle-timeout, -it INTEGER`: Seconds before idle session terminates (60-28800, default: 900)
+
+- `--max-lifetime, -ml INTEGER`: Maximum instance lifetime in seconds (60-28800, default: 28800)
+
 - `--verbose, -v`: Enable verbose output
 
 - `--region, -r TEXT`: AWS region
@@ -88,6 +92,21 @@ agentcore configure -e agent.py --region us-east-1
 # 1. --region flag
 # 2. AWS_DEFAULT_REGION environment variable
 # 3. AWS CLI configured region
+```
+
+**Lifecycle Configuration:**
+
+Session lifecycle management controls when runtime sessions automatically terminate:
+
+- **Idle Timeout**: Terminates session after specified seconds of inactivity (60-28800 seconds)
+- **Max Lifetime**: Terminates session after maximum runtime regardless of activity (60-28800 seconds)
+- Validation ensures `max-lifetime >= idle-timeout`
+
+```bash
+# Configure with lifecycle settings
+agentcore configure --entrypoint agent.py \
+  --idle-timeout 1800 \    # 30 minutes idle before termination
+  --max-lifetime 7200      # 2 hours max regardless of activity
 ```
 
 ### Launch
@@ -257,6 +276,37 @@ agentcore destroy --agent my-agent --force
 # Destroy and delete ECR repository
 agentcore destroy --agent my-agent --delete-ecr-repo
 ```
+### Stop Session
+
+Terminate active runtime sessions to free resources and reduce costs.
+
+```bash
+agentcore stop-session [OPTIONS]
+```
+
+**Session Tracking:**
+
+The CLI automatically tracks the runtime session ID from the last `agentcore invoke` command. This allows you to stop sessions without manually specifying the session ID.
+
+**Examples:**
+
+```bash
+# Stop the last invoked session (tracked automatically)
+agentcore stop-session
+
+# Stop a specific session by ID
+agentcore stop-session --session-id abc123xyz
+
+# Stop session for specific agent
+agentcore stop-session --agent my-agent --session-id abc123xyz
+```
+
+
+Options:
+
+- `--session-id, -s TEXT`: Specific session ID to stop (optional)
+
+- `--agent, -a TEXT`: Agent name
 
 ## Gateway Commands
 
@@ -324,6 +374,18 @@ agentcore configure --entrypoint agent_example.py --execution-role arn:aws:iam::
 
 # Non-interactive with defaults
 agentcore configure --entrypoint agent_example.py --non-interactive
+
+# Configure with lifecycle management
+agentcore configure --entrypoint agent_example.py \
+  --idle-timeout 1800 \
+  --max-lifetime 7200
+
+# Configure with all options
+agentcore configure --entrypoint agent_example.py \
+  --execution-role arn:aws:iam::123456789012:role/MyRole \
+  --idle-timeout 1800 \
+  --max-lifetime 7200 \
+  --region us-east-1
 
 # List configured agents
 agentcore configure list

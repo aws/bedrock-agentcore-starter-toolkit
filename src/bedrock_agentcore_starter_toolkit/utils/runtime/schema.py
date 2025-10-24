@@ -99,6 +99,48 @@ class ProtocolConfiguration(BaseModel):
         return {"serverProtocol": self.server_protocol}
 
 
+class LifecycleConfiguration(BaseModel):
+    """Lifecycle configuration for runtime sessions."""
+
+    idle_runtime_session_timeout: Optional[int] = Field(
+        default=None,
+        description="Timeout in seconds for idle runtime sessions (60-28800)",
+        ge=60,
+        le=28800,
+    )
+    max_lifetime: Optional[int] = Field(
+        default=None, description="Maximum lifetime for the instance in seconds (60-28800)", ge=60, le=28800
+    )
+
+    @field_validator("max_lifetime")
+    @classmethod
+    def validate_lifecycle_relationship(cls, v: Optional[int], info) -> Optional[int]:
+        """Validate that max_lifetime >= idle_timeout if both are set."""
+        if v is None:
+            return v
+
+        idle = info.data.get("idle_runtime_session_timeout")
+        if idle is not None and v < idle:
+            raise ValueError(
+                f"max_lifetime ({v}s) must be greater than or equal to idle_runtime_session_timeout ({idle}s)"
+            )
+        return v
+
+    def to_aws_dict(self) -> dict:
+        """Convert to AWS API format with camelCase keys."""
+        result = {}
+        if self.idle_runtime_session_timeout is not None:
+            result["idleRuntimeSessionTimeout"] = self.idle_runtime_session_timeout
+        if self.max_lifetime is not None:
+            result["maxLifetime"] = self.max_lifetime
+        return result
+
+    @property
+    def has_custom_settings(self) -> bool:
+        """Check if any custom lifecycle settings are configured."""
+        return self.idle_runtime_session_timeout is not None or self.max_lifetime is not None
+
+
 class ObservabilityConfig(BaseModel):
     """Observability configuration."""
 
@@ -117,6 +159,7 @@ class AWSConfig(BaseModel):
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
+    lifecycle_configuration: LifecycleConfiguration = Field(default_factory=LifecycleConfiguration)
 
     @field_validator("account")
     @classmethod
