@@ -2024,10 +2024,10 @@ uv<span class="w"> </span>venv
 </code></pre></div>
 <h3 id="4-configure-and-launch-with-bedrock-agentcore-toolkit">4. Configure and Launch with Bedrock AgentCore Toolkit<a class="headerlink" href="#4-configure-and-launch-with-bedrock-agentcore-toolkit" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Configure your agent for deployment</span>
-bedrock-agentcore-toolkit<span class="w"> </span>configure
+agentcore<span class="w"> </span>configure
 
 <span class="c1"># Deploy your agent</span>
-bedrock-agentcore-toolkit<span class="w"> </span>deploy<span class="w"> </span>--app-file<span class="w"> </span>langgraph_agent_web_search.py
+agentcore<span class="w"> </span>launch<span class="w"> </span>-e<span class="w"> </span>langgraph_agent_web_search.py
 </code></pre></div>
 <p>During configuration, you'll be prompted to:
 - Select your AWS region
@@ -2035,7 +2035,7 @@ bedrock-agentcore-toolkit<span class="w"> </span>deploy<span class="w"> </span>-
 - Configure other deployment settings</p>
 <h3 id="5-testing-your-agent">5. Testing Your Agent<a class="headerlink" href="#5-testing-your-agent" title="Permanent link">&para;</a></h3>
 <p>Once deployed, you can test your agent using:</p>
-<div class="highlight"><pre><span></span><code>bedrock-agentcore-toolkit<span class="w"> </span>invoke<span class="w"> </span>--prompt<span class="w"> </span><span class="s2">&quot;What are the latest developments in quantum computing?&quot;</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="o">{</span><span class="s2">&quot;prompt&quot;</span>:<span class="s2">&quot;What are the latest developments in quantum computing?&quot;</span><span class="o">}</span>
 </code></pre></div>
 <p>The agent will:
 1. Process your query
@@ -2043,7 +2043,7 @@ bedrock-agentcore-toolkit<span class="w"> </span>deploy<span class="w"> </span>-
 3. Provide a comprehensive response based on the search results</p>
 <h3 id="6-cleanup">6. Cleanup<a class="headerlink" href="#6-cleanup" title="Permanent link">&para;</a></h3>
 <p>To remove your deployed agent:</p>
-<div class="highlight"><pre><span></span><code>bedrock-agentcore-toolkit<span class="w"> </span>delete
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>destroy
 </code></pre></div>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <p>This agent uses LangGraph to create a directed graph for agent reasoning:</p>

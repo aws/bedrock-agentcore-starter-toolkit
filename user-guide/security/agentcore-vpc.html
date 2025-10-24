@@ -2779,7 +2779,7 @@ response = client.create_runtime(
     import boto3</p>
 <div class="codehilite"><pre><span></span><code><span class="p">#</span><span class="w"> </span><span class="n">Initialize</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">boto3</span><span class="w"> </span><span class="n">client</span>
 <span class="n">cp_client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">boto3</span><span class="p">.</span><span class="n">client</span><span class="p">(</span>
-<span class="w">    </span><span class="p">&#39;</span><span class="n">bedrock</span><span class="o">-</span><span class="n">agentcore</span><span class="o">-</span><span class="n">control</span><span class="p">&#39;,</span><span class="w"> </span>
+<span class="w">    </span><span class="p">&#39;</span><span class="n">bedrock</span><span class="o">-</span><span class="n">agentcore</span><span class="o">-</span><span class="n">control</span><span class="p">&#39;,</span>
 <span class="w">    </span><span class="n">region_name</span><span class="o">=</span><span class="s">&quot;&lt;Region&gt;&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="n">endpoint_url</span><span class="o">=</span><span class="s">&quot;https://bedrock-agentcore-control.&lt;Region&gt;.amazonaws.com&quot;</span>
 <span class="p">)</span>
@@ -2828,12 +2828,12 @@ response = client.create_runtime(
           "securityGroups": ["sg-0123456789abcdef0"]
         }
       }' \
-      --recording '{ 
-        "enabled": true, 
-        "s3Location": { 
-          "bucket": "my-bucket-name", 
-          "prefix": "sessionreplay" 
-        } 
+      --recording '{
+        "enabled": true,
+        "s3Location": {
+          "bucket": "my-bucket-name",
+          "prefix": "sessionreplay"
+        }
       }' \
       --execution-role-arn "arn:aws:iam::123456789012:role/my-execution-role"</code></p>
 <p>AWS SDK (Python)
@@ -2841,7 +2841,7 @@ response = client.create_runtime(
     import boto3</p>
 <div class="codehilite"><pre><span></span><code><span class="p">#</span><span class="w"> </span><span class="n">Initialize</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">boto3</span><span class="w"> </span><span class="n">client</span>
 <span class="n">cp_client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">boto3</span><span class="p">.</span><span class="n">client</span><span class="p">(</span>
-<span class="w">    </span><span class="p">&#39;</span><span class="n">bedrock</span><span class="o">-</span><span class="n">agentcore</span><span class="o">-</span><span class="n">control</span><span class="p">&#39;,</span><span class="w"> </span>
+<span class="w">    </span><span class="p">&#39;</span><span class="n">bedrock</span><span class="o">-</span><span class="n">agentcore</span><span class="o">-</span><span class="n">control</span><span class="p">&#39;,</span>
 <span class="w">    </span><span class="n">region_name</span><span class="o">=</span><span class="s">&quot;&lt;Region&gt;&quot;</span><span class="p">,</span>
 <span class="w">    </span><span class="n">endpoint_url</span><span class="o">=</span><span class="s">&quot;https://bedrock-agentcore-control.&lt;Region&gt;.amazonaws.com&quot;</span>
 <span class="p">)</span>
@@ -2863,7 +2863,7 @@ response = client.create_runtime(
 <span class="w">        </span><span class="s">&quot;s3Location&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="s">&quot;bucket&quot;</span><span class="o">:</span><span class="w"> </span><span class="s">&quot;session-record-123456789012&quot;</span><span class="p">,</span>
 <span class="w">            </span><span class="s">&quot;prefix&quot;</span><span class="o">:</span><span class="w"> </span><span class="s">&quot;replay-data&quot;</span>
-<span class="w">        </span><span class="p">}</span><span class="w"> </span>
+<span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">)</span>
 <span class="err">```</span>
@@ -3008,11 +3008,11 @@ awscurl -X POST \
   -H &quot;x-amzn-code-interpreter-session-id: your-session-id&quot; \
   --service bedrock-agentcore \
   --region &lt;Region&gt; \
-  -d &#39;{ 
-    &quot;name&quot;: &quot;executeCommand&quot;, 
-    &quot;arguments&quot;: { 
-      &quot;command&quot;: &quot;curl amazon.com&quot; 
-    } 
+  -d &#39;{
+    &quot;name&quot;: &quot;executeCommand&quot;,
+    &quot;arguments&quot;: {
+      &quot;command&quot;: &quot;curl amazon.com&quot;
+    }
   }&#39;
 </code></pre></div>
 

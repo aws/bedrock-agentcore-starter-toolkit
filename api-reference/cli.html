@@ -1860,6 +1860,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#destroy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Destroy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#stop-session" class="md-nav__link">
     <span class="md-ellipsis">
       Stop Session
@@ -1953,6 +1962,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#destroy-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Destroy Resources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#gateway-operations" class="md-nav__link">
     <span class="md-ellipsis">
       Gateway Operations
@@ -1965,6 +1983,30 @@
   <a href="#importing-from-bedrock-agents" class="md-nav__link">
     <span class="md-ellipsis">
       Importing from Bedrock Agents
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Memory Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-code-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Code Pattern
     </span>
   </a>
   
@@ -2074,6 +2116,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#destroy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Destroy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#stop-session" class="md-nav__link">
     <span class="md-ellipsis">
       Stop Session
@@ -2167,6 +2218,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#destroy-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Destroy Resources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#gateway-operations" class="md-nav__link">
     <span class="md-ellipsis">
       Gateway Operations
@@ -2179,6 +2239,30 @@
   <a href="#importing-from-bedrock-agents" class="md-nav__link">
     <span class="md-ellipsis">
       Importing from Bedrock Agents
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Memory Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-code-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Code Pattern
     </span>
   </a>
   
@@ -2228,7 +2312,10 @@
 <p><code>--execution-role, -er TEXT</code>: IAM execution role ARN</p>
 </li>
 <li>
-<p><code>--ecr, -ecr TEXT</code>: ECR repository name (use "auto" for automatic creation)</p>
+<p><code>--code-build-execution-role, -cber TEXT</code>: CodeBuild execution role ARN (uses execution-role if not provided)</p>
+</li>
+<li>
+<p><code>--ecr, -ecr TEXT</code>: ECR repository name (use “auto” for automatic creation)</p>
 </li>
 <li>
 <p><code>--container-runtime, -ctr TEXT</code>: Container runtime</p>
@@ -2240,7 +2327,13 @@
 <p><code>--disable-otel, -do</code>: Disable OpenTelemetry</p>
 </li>
 <li>
+<p><code>--disable-memory, -dm</code>: Disable memory (skip memory setup entirely)</p>
+</li>
+<li>
 <p><code>--authorizer-config, -ac TEXT</code>: OAuth authorizer configuration as JSON string</p>
+</li>
+<li>
+<p><code>--request-header-allowlist, -rha TEXT</code>: Comma-separated list of allowed request headers</p>
 </li>
 <li>
 <p><code>--idle-timeout, -it INTEGER</code>: Seconds before idle session terminates (60-28800, default: 900)</p>
@@ -2255,7 +2348,10 @@
 <p><code>--region, -r TEXT</code>: AWS region</p>
 </li>
 <li>
-<p><code>--protocol, -p TEXT</code>: Agent server protocol (HTTP or MCP)</p>
+<p><code>--protocol, -p TEXT</code>: Agent server protocol (HTTP or MCP or A2A)</p>
+</li>
+<li>
+<p><code>--non-interactive, -ni</code>: Skip prompts; use defaults unless overridden</p>
 </li>
 </ul>
 <p>Subcommands:</p>
@@ -2266,6 +2362,27 @@
 <li>
 <p><code>set-default</code>: Set default agent</p>
 </li>
+</ul>
+<p><strong>Memory Configuration:</strong></p>
+<p>Memory is <strong>opt-in</strong> by default. To enable memory:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Interactive mode - prompts for memory setup</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent.py
+<span class="c1"># Options during prompt:</span>
+<span class="c1">#   - Use existing memory (select by number)</span>
+<span class="c1">#   - Create new memory (press Enter, then choose STM only or STM+LTM)</span>
+<span class="c1">#   - Skip memory setup (type &#39;s&#39;)</span>
+
+<span class="c1"># Explicitly disable memory</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent.py<span class="w"> </span>--disable-memory
+
+<span class="c1"># Non-interactive mode (uses STM only by default)</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent.py<span class="w"> </span>--non-interactive
+</code></pre></div>
+<p><strong>Memory Modes:</strong></p>
+<ul>
+<li><strong>NO_MEMORY</strong> (default): No memory resources created</li>
+<li><strong>STM_ONLY</strong>: Short-term memory (30-day retention, stores conversations within sessions)</li>
+<li><strong>STM_AND_LTM</strong>: Short-term + Long-term memory (extracts preferences, facts, and summaries across sessions)</li>
 </ul>
 <p><strong>Region Configuration:</strong></p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Use specific region</span>
@@ -2298,14 +2415,36 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 <p><code>--agent, -a TEXT</code>: Agent name</p>
 </li>
 <li>
-<p><code>--local, -l</code>: Run locally</p>
+<p><code>--local, -l</code>: Build and run locally (requires Docker/Finch/Podman)</p>
 </li>
 <li>
-<p><code>--push-ecr, -p</code>: Build and push to ECR only (no deployment)</p>
+<p><code>--local-build, -lb</code>: Build locally and deploy to cloud (requires Docker/Finch/Podman)</p>
+</li>
+<li>
+<p><code>--auto-update-on-conflict, -auc</code>: Automatically update existing agent instead of failing</p>
 </li>
 <li>
 <p><code>--env, -env TEXT</code>: Environment variables for agent (format: KEY=VALUE)</p>
 </li>
+</ul>
+<p><strong>Deployment Modes:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># CodeBuild (default) - Cloud build, no Docker required</span>
+agentcore<span class="w"> </span>launch
+
+<span class="c1"># Local mode - Build and run locally</span>
+agentcore<span class="w"> </span>launch<span class="w"> </span>--local
+
+<span class="c1"># Local build mode - Build locally, deploy to cloud</span>
+agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build
+</code></pre></div>
+<p><strong>Memory Provisioning:</strong></p>
+<p>During launch, if memory is enabled:</p>
+<ul>
+<li>Memory resources are created and provisioned</li>
+<li>Launch waits for memory to become ACTIVE before proceeding</li>
+<li>STM provisioning: ~30-90 seconds</li>
+<li>LTM provisioning: ~120-180 seconds</li>
+<li>Progress updates displayed during wait</li>
 </ul>
 <h3 id="invoke">Invoke<a class="headerlink" href="#invoke" title="Permanent link">&para;</a></h3>
 <p>Invoke deployed agents.</p>
@@ -2332,11 +2471,21 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 <li>
 <p><code>--user-id, -u TEXT</code>: User ID for authorization flows</p>
 </li>
+<li>
+<p><code>--headers TEXT</code>: Custom headers (format: ‘Header1:value,Header2:value2’)</p>
+</li>
 </ul>
+<p><strong>Custom Headers:</strong></p>
+<p>Headers will be auto-prefixed with <code>X-Amzn-Bedrock-AgentCore-Runtime-Custom-</code> if not already present:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># These are equivalent:</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;test&quot;}&#39;</span><span class="w"> </span>--headers<span class="w"> </span><span class="s2">&quot;Actor-Id:user123&quot;</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;test&quot;}&#39;</span><span class="w"> </span>--headers<span class="w"> </span><span class="s2">&quot;X-Amzn-Bedrock-AgentCore-Runtime-Custom-Actor-Id:user123&quot;</span>
+</code></pre></div>
 <p><strong>Example Output:</strong></p>
 <ul>
 <li>Session and Request IDs displayed in panel header</li>
 <li>CloudWatch log commands ready to copy</li>
+<li>GenAI Observability Dashboard link (when OTEL enabled)</li>
 <li>Proper UTF-8 character rendering</li>
 <li>Clean response formatting without raw data structures</li>
 </ul>
@@ -2346,6 +2495,7 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 │ Request ID: req-456             │
 │ ARN: arn:aws:bedrock...         │
 │ Logs: aws logs tail ... --follow│
+│ GenAI Dashboard: https://...    │
 ╰─────────────────────────────────╯
 
 Response:
@@ -2364,6 +2514,56 @@ Your formatted response here
 <p><code>--verbose, -v</code>: Verbose JSON output of config, agent, and endpoint status</p>
 </li>
 </ul>
+<p><strong>Status Display:</strong></p>
+<p>Shows comprehensive agent information including:</p>
+<ul>
+<li>Agent deployment status</li>
+<li>Memory configuration and status (Disabled/CREATING/ACTIVE)</li>
+<li>Endpoint readiness</li>
+<li>CloudWatch log paths</li>
+<li>GenAI Observability Dashboard link (when OTEL enabled)</li>
+</ul>
+<h3 id="destroy">Destroy<a class="headerlink" href="#destroy" title="Permanent link">&para;</a></h3>
+<p>Destroy Bedrock AgentCore resources.</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>destroy<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</code></pre></div>
+<p>Options:</p>
+<ul>
+<li>
+<p><code>--agent, -a TEXT</code>: Agent name</p>
+</li>
+<li>
+<p><code>--dry-run</code>: Show what would be destroyed without actually destroying</p>
+</li>
+<li>
+<p><code>--force</code>: Skip confirmation prompts</p>
+</li>
+<li>
+<p><code>--delete-ecr-repo</code>: Also delete the ECR repository after removing images</p>
+</li>
+</ul>
+<p><strong>Destroyed Resources:</strong></p>
+<ul>
+<li>AgentCore endpoint</li>
+<li>AgentCore agent runtime</li>
+<li>ECR images</li>
+<li>CodeBuild project</li>
+<li>IAM execution role (if not used by other agents)</li>
+<li>Memory resources (if created by toolkit)</li>
+<li>Agent deployment configuration</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># Preview what would be destroyed</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--dry-run
+
+<span class="c1"># Destroy with confirmation</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--agent<span class="w"> </span>my-agent
+
+<span class="c1"># Destroy without confirmation</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--agent<span class="w"> </span>my-agent<span class="w"> </span>--force
+
+<span class="c1"># Destroy and delete ECR repository</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--agent<span class="w"> </span>my-agent<span class="w"> </span>--delete-ecr-repo
+</code></pre></div>
 <h3 id="stop-session">Stop Session<a class="headerlink" href="#stop-session" title="Permanent link">&para;</a></h3>
 <p>Terminate active runtime sessions to free resources and reduce costs.</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>stop-session<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
@@ -2446,11 +2646,17 @@ agentcore<span class="w"> </span>stop-session<span class="w"> </span>--agent<spa
 </ul>
 <h2 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">&para;</a></h2>
 <h3 id="configure-an-agent">Configure an Agent<a class="headerlink" href="#configure-an-agent" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># Basic configuration</span>
-agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.pt
+<div class="highlight"><pre><span></span><code><span class="c1"># Interactive configuration with memory prompts</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py
+
+<span class="c1"># Configure without memory</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--disable-memory
 
 <span class="c1"># Configure with execution role</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--execution-role<span class="w"> </span>arn:aws:iam::123456789012:role/MyRole
+
+<span class="c1"># Non-interactive with defaults</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--non-interactive
 
 <span class="c1"># Configure with lifecycle management</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span><span class="se">\</span>
@@ -2471,14 +2677,20 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>list
 agentcore<span class="w"> </span>configure<span class="w"> </span>set-default<span class="w"> </span>my_agent
 </code></pre></div>
 <h3 id="deploy-and-run-agents">Deploy and Run Agents<a class="headerlink" href="#deploy-and-run-agents" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># Deploy to AWS</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Deploy to AWS (default - uses CodeBuild)</span>
 agentcore<span class="w"> </span>launch
 
 <span class="c1"># Run locally</span>
 agentcore<span class="w"> </span>launch<span class="w"> </span>--local
 
+<span class="c1"># Build locally, deploy to cloud</span>
+agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build
+
 <span class="c1"># Launch with environment variables</span>
 agentcore<span class="w"> </span>launch<span class="w"> </span>--env<span class="w"> </span><span class="nv">API_KEY</span><span class="o">=</span>abc123<span class="w"> </span>--env<span class="w"> </span><span class="nv">DEBUG</span><span class="o">=</span><span class="nb">true</span>
+
+<span class="c1"># Auto-update if agent exists</span>
+agentcore<span class="w"> </span>launch<span class="w"> </span>--auto-update-on-conflict
 </code></pre></div>
 <h3 id="invoke-agents">Invoke Agents<a class="headerlink" href="#invoke-agents" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Basic invocation</span>
@@ -2490,6 +2702,9 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 <span class="c1"># Invoke with OAuth authentication</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Secure request&quot;}&#39;</span><span class="w"> </span>--bearer-token<span class="w"> </span>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
+<span class="c1"># Invoke with custom headers</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Test&quot;}&#39;</span><span class="w"> </span>--headers<span class="w"> </span><span class="s2">&quot;Actor-Id:user123,Trace-Id:abc&quot;</span>
+
 <span class="c1"># Invoke local agent</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Test locally&quot;}&#39;</span><span class="w"> </span>--local
 </code></pre></div>
@@ -2499,6 +2714,19 @@ agentcore<span class="w"> </span>status
 
 <span class="c1"># Get status of specific agent</span>
 agentcore<span class="w"> </span>status<span class="w"> </span>--agent<span class="w"> </span>my-agent
+
+<span class="c1"># Verbose output with full JSON</span>
+agentcore<span class="w"> </span>status<span class="w"> </span>--verbose
+</code></pre></div>
+<h3 id="destroy-resources">Destroy Resources<a class="headerlink" href="#destroy-resources" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Preview destruction</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--dry-run
+
+<span class="c1"># Destroy with confirmation</span>
+agentcore<span class="w"> </span>destroy
+
+<span class="c1"># Destroy specific agent without confirmation</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--agent<span class="w"> </span>my-agent<span class="w"> </span>--force
 </code></pre></div>
 <h3 id="gateway-operations">Gateway Operations<a class="headerlink" href="#gateway-operations" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Create MCP Gateway</span>
@@ -2526,6 +2754,34 @@ agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class
 
 <span class="c1"># AgentCore Primitive Opt-out</span>
 agentcore<span class="w"> </span>import-agent<span class="w"> </span>--disable-gateway<span class="w"> </span>--disable-memory<span class="w"> </span>--disable-code-interpreter<span class="w"> </span>--disable-observability
+</code></pre></div>
+<h2 id="memory-best-practices">Memory Best Practices<a class="headerlink" href="#memory-best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="agent-code-pattern">Agent Code Pattern<a class="headerlink" href="#agent-code-pattern" title="Permanent link">&para;</a></h3>
+<p>When using memory in agent code, conditionally create memory configuration:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.memory.integrations.strands.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentCoreMemoryConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.memory.integrations.strands.session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentCoreMemorySessionManager</span>
+
+<span class="n">MEMORY_ID</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;BEDROCK_AGENTCORE_MEMORY_ID&quot;</span><span class="p">)</span>
+<span class="n">REGION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="c1"># Only create memory config if MEMORY_ID exists</span>
+    <span class="n">session_manager</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">MEMORY_ID</span><span class="p">:</span>
+        <span class="n">memory_config</span> <span class="o">=</span> <span class="n">AgentCoreMemoryConfig</span><span class="p">(</span>
+            <span class="n">memory_id</span><span class="o">=</span><span class="n">MEMORY_ID</span><span class="p">,</span>
+            <span class="n">session_id</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span>
+            <span class="n">actor_id</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">actor_id</span>
+        <span class="p">)</span>
+        <span class="n">session_manager</span> <span class="o">=</span> <span class="n">AgentCoreMemorySessionManager</span><span class="p">(</span><span class="n">memory_config</span><span class="p">,</span> <span class="n">REGION</span><span class="p">)</span>
+
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+        <span class="n">session_manager</span><span class="o">=</span><span class="n">session_manager</span><span class="p">,</span>  <span class="c1"># None when memory disabled</span>
+        <span class="o">...</span>
+    <span class="p">)</span>
 </code></pre></div>
 
 

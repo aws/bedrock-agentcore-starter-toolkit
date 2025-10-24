@@ -2586,52 +2586,52 @@ protocols:</p>
 A2A.</p>
 <h4 id="install-required-packages">Install required packages<a class="headerlink" href="#install-required-packages" title="Permanent link">&para;</a></h4>
 <p>First, install the required packages for A2A:</p>
-<div class="highlight"><pre><span></span><code>pip install strands-agents[a2a]  
-pip install bedrock-agentcore  
+<div class="highlight"><pre><span></span><code>pip install strands-agents[a2a]
+pip install bedrock-agentcore
 pip install strands-agents-tools
 </code></pre></div>
 <h4 id="create-your-first-a2a-server">Create your first A2A server<a class="headerlink" href="#create-your-first-a2a-server" title="Permanent link">&para;</a></h4>
 <p>Create a new file called <code>my_a2a_server.py</code>:</p>
-<div class="highlight"><pre><span></span><code>import logging  
-import os  
-from strands_tools.calculator import calculator  
-from strands import Agent  
-from strands.multiagent.a2a import A2AServer  
-import uvicorn  
-from fastapi import FastAPI  
+<div class="highlight"><pre><span></span><code>import logging
+import os
+from strands_tools.calculator import calculator
+from strands import Agent
+from strands.multiagent.a2a import A2AServer
+import uvicorn
+from fastapi import FastAPI
 
-logging.basicConfig(level=logging.INFO)  
+logging.basicConfig(level=logging.INFO)
 
-# Use the complete runtime URL from environment variable, fallback to local  
-runtime_url = os.environ.get(&#39;AGENTCORE_RUNTIME_URL&#39;, &#39;http://127.0.0.1:9000/&#39;)  
+# Use the complete runtime URL from environment variable, fallback to local
+runtime_url = os.environ.get(&#39;AGENTCORE_RUNTIME_URL&#39;, &#39;http://127.0.0.1:9000/&#39;)
 
-logging.info(f&quot;Runtime URL: {runtime_url}&quot;)  
+logging.info(f&quot;Runtime URL: {runtime_url}&quot;)
 
-strands_agent = Agent(  
-    name=&quot;Calculator Agent&quot;,  
-    description=&quot;A calculator agent that can perform basic arithmetic operations.&quot;,  
-    tools=[calculator],  
-    callback_handler=None  
-)  
+strands_agent = Agent(
+    name=&quot;Calculator Agent&quot;,
+    description=&quot;A calculator agent that can perform basic arithmetic operations.&quot;,
+    tools=[calculator],
+    callback_handler=None
+)
 
-host, port = &quot;0.0.0.0&quot;, 9000  
+host, port = &quot;0.0.0.0&quot;, 9000
 
-# Pass runtime_url to http_url parameter AND use serve_at_root=True  
-a2a_server = A2AServer(  
-    agent=strands_agent,  
-    http_url=runtime_url,  
-    serve_at_root=True  # Serves locally at root (/) regardless of remote URL path complexity  
-)  
+# Pass runtime_url to http_url parameter AND use serve_at_root=True
+a2a_server = A2AServer(
+    agent=strands_agent,
+    http_url=runtime_url,
+    serve_at_root=True  # Serves locally at root (/) regardless of remote URL path complexity
+)
 
-app = FastAPI()  
+app = FastAPI()
 
-@app.get(&quot;/ping&quot;)  
-def ping():  
-    return {&quot;status&quot;: &quot;healthy&quot;}  
+@app.get(&quot;/ping&quot;)
+def ping():
+    return {&quot;status&quot;: &quot;healthy&quot;}
 
-app.mount(&quot;/&quot;, a2a_server.to_fastapi_app())  
+app.mount(&quot;/&quot;, a2a_server.to_fastapi_app())
 
-if __name__ == &quot;__main__&quot;:  
+if __name__ == &quot;__main__&quot;:
     uvicorn.run(app, host=host, port=port)
 </code></pre></div>
 <h4 id="understanding-the-code">Understanding the code<a class="headerlink" href="#understanding-the-code" title="Permanent link">&para;</a></h4>
@@ -2656,23 +2656,23 @@ if __name__ == &quot;__main__&quot;:
 <h4 id="invoke-agent">Invoke agent<a class="headerlink" href="#invoke-agent" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code>curl -X POST http://0.0.0.0:9000 \\
 -H &quot;Content-Type: application/json&quot; \\
--d &#39;{  
-  &quot;jsonrpc&quot;: &quot;2.0&quot;,  
-  &quot;id&quot;: &quot;req-001&quot;,  
-  &quot;method&quot;: &quot;message/send&quot;,  
-  &quot;params&quot;: {  
-    &quot;message&quot;: {  
-      &quot;role&quot;: &quot;user&quot;,  
-      &quot;parts&quot;: [  
-        {  
-          &quot;kind&quot;: &quot;text&quot;,  
-          &quot;text&quot;: &quot;what is 101 * 11?&quot;  
-        }  
-      ],  
-      &quot;messageId&quot;: &quot;12345678-1234-1234-1234-123456789012&quot;  
-    }  
-  } 
-}&#39; | jq . 
+-d &#39;{
+  &quot;jsonrpc&quot;: &quot;2.0&quot;,
+  &quot;id&quot;: &quot;req-001&quot;,
+  &quot;method&quot;: &quot;message/send&quot;,
+  &quot;params&quot;: {
+    &quot;message&quot;: {
+      &quot;role&quot;: &quot;user&quot;,
+      &quot;parts&quot;: [
+        {
+          &quot;kind&quot;: &quot;text&quot;,
+          &quot;text&quot;: &quot;what is 101 * 11?&quot;
+        }
+      ],
+      &quot;messageId&quot;: &quot;12345678-1234-1234-1234-123456789012&quot;
+    }
+  }
+}&#39; | jq .
 </code></pre></div>
 <h4 id="test-agent-card-retrieval">Test agent card retrieval<a class="headerlink" href="#test-agent-card-retrieval" title="Permanent link">&para;</a></h4>
 <p>You can test the agent card endpoint locally:</p>
@@ -2684,19 +2684,19 @@ if __name__ == &quot;__main__&quot;:
 <p>Deploy your A2A server to AWS using the Amazon Bedrock AgentCore starter toolkit.</p>
 <h4 id="install-deployment-tools">Install deployment tools<a class="headerlink" href="#install-deployment-tools" title="Permanent link">&para;</a></h4>
 <p>Install the Amazon Bedrock AgentCore starter toolkit:</p>
-<div class="highlight"><pre><span></span><code>pip install bedrock-agentcore-starter-toolkit 
+<div class="highlight"><pre><span></span><code>pip install bedrock-agentcore-starter-toolkit
 </code></pre></div>
 <p>Start by creating a project folder with the following structure:</p>
-<div class="highlight"><pre><span></span><code>## Project Folder Structure  
-your_project_directory/  
-├── a2a_server.py          # Your main agent code  
+<div class="highlight"><pre><span></span><code>## Project Folder Structure
+your_project_directory/
+├── a2a_server.py          # Your main agent code
 ├── requirements.txt       # Dependencies for your agent
 </code></pre></div>
 <p>Create a new file called <code>requirements.txt</code>, add the
 following to it:</p>
-<div class="highlight"><pre><span></span><code>strands-agents[a2a]  
-bedrock-agentcore  
-strands-agents-tools 
+<div class="highlight"><pre><span></span><code>strands-agents[a2a]
+bedrock-agentcore
+strands-agents-tools
 </code></pre></div>
 <h4 id="set-up-cognito-user-pool-for-authentication">Set up Cognito user pool for authentication<a class="headerlink" href="#set-up-cognito-user-pool-for-authentication" title="Permanent link">&para;</a></h4>
 <p>Configure authentication for secure access to your deployed

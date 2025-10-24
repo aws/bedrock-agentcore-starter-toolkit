@@ -192,7 +192,7 @@ AWS SDK (Python) : \`\`\` import boto3
 ```
 # Initialize the boto3 client
 cp_client = boto3.client(
-    'bedrock-agentcore-control', 
+    'bedrock-agentcore-control',
     region_name="<Region>",
     endpoint_url="https://bedrock-agentcore-control.<Region>.amazonaws.com"
 )
@@ -214,7 +214,7 @@ response = cp_client.create_browser(
         "s3Location": {
             "bucket": "session-record-123456789012",
             "prefix": "replay-data"
-        } 
+        }
     }
 )
 ```
