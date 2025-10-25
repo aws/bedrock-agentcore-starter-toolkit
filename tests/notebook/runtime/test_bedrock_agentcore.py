@@ -1,5 +1,6 @@
 """Tests for Bedrock AgentCore Jupyter notebook interface."""
 
+import logging
 from unittest.mock import Mock, patch
 
 import pytest
@@ -737,3 +738,417 @@ bedrock_agentcore:
             error_msg = str(exc_info.value)
             assert "Docker/Finch/Podman is required for local mode" in error_msg
             assert "Use CodeBuild mode instead: runtime.launch()" in error_msg
+
+    def test_destroy_without_config(self):
+        """Test destroy fails when not configured."""
+        bedrock_agentcore = Runtime()
+
+        with pytest.raises(ValueError, match="Must configure first"):
+            bedrock_agentcore.destroy()
+
+    @pytest.mark.parametrize(
+        "dry_run,delete_ecr_repo,resources_removed,should_clear_state,test_id",
+        [
+            (False, False, ["agent-runtime", "lambda-function", "iam-role"], True, "success"),
+            (True, False, ["agent-runtime", "lambda-function", "iam-role"], False, "dry_run"),
+            (False, True, ["agent-runtime", "lambda-function", "ecr-repository"], True, "with_ecr_deletion"),
+            (True, True, ["agent-runtime", "ecr-repository"], False, "dry_run_with_ecr"),
+        ],
+        ids=lambda x: x if isinstance(x, str) else "",
+    )
+    def test_destroy_with_parameters(
+        self, tmp_path, dry_run, delete_ecr_repo, resources_removed, should_clear_state, test_id
+    ):
+        """Test destroy with various parameter combinations."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+        ) as mock_destroy:
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = resources_removed
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = dry_run
+            mock_destroy.return_value = mock_result
+
+            result = bedrock_agentcore.destroy(dry_run=dry_run, delete_ecr_repo=delete_ecr_repo)
+
+            # Verify the call was made with correct parameters
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=dry_run,
+                force=True,  # Always True in notebook interface
+                delete_ecr_repo=delete_ecr_repo,
+            )
+
+            # Verify results
+            assert result.agent_name == "test-agent"
+            assert result.resources_removed == resources_removed
+            assert result.dry_run == dry_run
+
+            # Verify state handling
+            if should_clear_state:
+                # State should be cleared after successful destroy (not dry run, no errors)
+                assert bedrock_agentcore._config_path is None
+                assert bedrock_agentcore.name is None
+            else:
+                # State should be preserved during dry run
+                assert bedrock_agentcore._config_path == config_path
+                assert bedrock_agentcore.name == "test-agent"
+
+    def test_destroy_success(self, tmp_path):
+        """Test successful destroy operation."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "lambda-function", "iam-role"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            result = bedrock_agentcore.destroy()
+
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=False,
+                force=True,  # Always True in notebook interface
+                delete_ecr_repo=False,
+            )
+            assert result.agent_name == "test-agent"
+            assert len(result.resources_removed) == 3
+            assert result.dry_run is False
+
+            # Verify internal state was cleared after successful destroy
+            assert bedrock_agentcore._config_path is None
+            assert bedrock_agentcore.name is None
+
+    def test_destroy_dry_run(self, tmp_path):
+        """Test destroy dry run mode."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "lambda-function", "iam-role"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = True
+            mock_destroy.return_value = mock_result
+
+            result = bedrock_agentcore.destroy(dry_run=True)
+
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=True,
+                force=True,
+                delete_ecr_repo=False,
+            )
+            assert result.dry_run is True
+
+            # Verify internal state was NOT cleared during dry run
+            assert bedrock_agentcore._config_path == config_path
+            assert bedrock_agentcore.name == "test-agent"
+
+    def test_destroy_always_forces_in_notebook(self, tmp_path):
+        """Test destroy always uses force=True internally in notebook interface."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            # Call destroy - should internally use force=True
+            bedrock_agentcore.destroy()
+
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=False,
+                force=True,  # Always True in notebook interface
+                delete_ecr_repo=False,
+            )
+
+    def test_destroy_with_delete_ecr_repo(self, tmp_path):
+        """Test destroy with delete_ecr_repo flag."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "lambda-function", "ecr-repository"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            result = bedrock_agentcore.destroy(delete_ecr_repo=True)
+
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=False,
+                force=True,
+                delete_ecr_repo=True,
+            )
+            assert "ecr-repository" in result.resources_removed
+
+    def test_destroy_combined_parameters(self, tmp_path):
+        """Test destroy with multiple parameters combined."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "ecr-repository"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = True
+            mock_destroy.return_value = mock_result
+
+            bedrock_agentcore.destroy(dry_run=True, delete_ecr_repo=True)
+
+            mock_destroy.assert_called_once_with(
+                config_path=config_path,
+                agent_name="test-agent",
+                dry_run=True,
+                force=True,  # Always True in notebook interface
+                delete_ecr_repo=True,
+            )
+
+    @pytest.mark.parametrize(
+        "warnings,errors,should_clear_state,test_id",
+        [
+            (["ECR repository not found", "Some resources already deleted"], [], True, "with_warnings"),
+            ([], ["Failed to delete IAM role", "Access denied for ECR repository"], False, "with_errors"),
+            (["Minor warning"], ["Critical error"], False, "with_both_warnings_and_errors"),
+        ],
+        ids=lambda x: x if isinstance(x, str) else "",
+    )
+    def test_destroy_with_warnings_and_errors(self, tmp_path, warnings, errors, should_clear_state, test_id):
+        """Test destroy operation with different warning/error combinations."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+        ) as mock_destroy:
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime"]
+            mock_result.warnings = warnings
+            mock_result.errors = errors
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            result = bedrock_agentcore.destroy()
+
+            # Verify warnings
+            assert len(result.warnings) == len(warnings)
+            for warning in warnings:
+                assert warning in result.warnings
+
+            # Verify errors
+            assert len(result.errors) == len(errors)
+            for error in errors:
+                assert error in result.errors
+
+            # Verify state handling
+            if should_clear_state:
+                # State should be cleared when no errors (warnings are OK)
+                assert bedrock_agentcore._config_path is None
+                assert bedrock_agentcore.name is None
+            else:
+                # State should be preserved when errors occurred
+                assert bedrock_agentcore._config_path == config_path
+                assert bedrock_agentcore.name == "test-agent"
+
+    def test_destroy_operation_exception(self, tmp_path):
+        """Test destroy handles exceptions from operations layer."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_destroy.side_effect = Exception("AWS API error")
+
+            with pytest.raises(Exception, match="AWS API error"):
+                bedrock_agentcore.destroy()
+
+            # Verify state is preserved when exception occurs
+            assert bedrock_agentcore._config_path == config_path
+            assert bedrock_agentcore.name == "test-agent"
+
+    def test_destroy_logging_output(self, tmp_path, caplog):
+        """Test destroy produces appropriate logging output."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "lambda-function"]
+            mock_result.warnings = ["Minor warning"]
+            mock_result.errors = []
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            with caplog.at_level(logging.INFO):
+                bedrock_agentcore.destroy()
+
+            # Check for expected log messages
+            log_messages = [record.message for record in caplog.records]
+            assert any("Destroying Bedrock AgentCore resources" in msg for msg in log_messages)
+            assert any("Destroy completed. Removed 2 resources" in msg for msg in log_messages)
+            assert any("Minor warning" in record.message for record in caplog.records if record.levelname == "WARNING")
+
+    def test_destroy_dry_run_logging(self, tmp_path, caplog):
+        """Test destroy dry run produces appropriate logging output."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "lambda-function"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = True
+            mock_destroy.return_value = mock_result
+
+            with caplog.at_level(logging.INFO):
+                bedrock_agentcore.destroy(dry_run=True)
+
+            # Check for expected log messages
+            log_messages = [record.message for record in caplog.records]
+            assert any("Dry run mode: showing what would be destroyed" in msg for msg in log_messages)
+            assert any("Dry run completed. Would destroy 2 resources" in msg for msg in log_messages)
+
+    def test_destroy_with_delete_ecr_repo_logging(self, tmp_path, caplog):
+        """Test destroy with delete_ecr_repo produces appropriate logging output."""
+        bedrock_agentcore = Runtime()
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        bedrock_agentcore._config_path = config_path
+        bedrock_agentcore.name = "test-agent"
+
+        # Create a minimal config file
+        config_path.write_text("name: test-agent\nplatform: linux/amd64\nentrypoint: test_agent.py\n")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore.destroy_bedrock_agentcore"
+            ) as mock_destroy,
+        ):
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.resources_removed = ["agent-runtime", "ecr-repository"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_result.dry_run = False
+            mock_destroy.return_value = mock_result
+
+            with caplog.at_level(logging.INFO):
+                bedrock_agentcore.destroy(delete_ecr_repo=True)
+
+            # Check for expected log messages
+            log_messages = [record.message for record in caplog.records]
+            assert any("Including ECR repository deletion" in msg for msg in log_messages)

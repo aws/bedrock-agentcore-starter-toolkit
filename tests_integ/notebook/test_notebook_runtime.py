@@ -7,4 +7,6 @@ if __name__ == "__main__":
 
     resp = runtime.launch()
 
+    resp = runtime.destroy()
+
     print(resp)

@@ -6,12 +6,13 @@ from typing import Any, Dict, List, Literal, Optional
 
 from ...operations.runtime import (
     configure_bedrock_agentcore,
+    destroy_bedrock_agentcore,
     get_status,
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
     validate_agent_name,
 )
-from ...operations.runtime.models import ConfigureResult, LaunchResult, StatusResult
+from ...operations.runtime.models import ConfigureResult, DestroyResult, LaunchResult, StatusResult
 
 # Setup centralized logging for SDK usage (notebooks, scripts, imports)
 from ...utils.logging_config import setup_toolkit_logging
@@ -334,6 +335,76 @@ class Runtime:
         result = get_status(self._config_path)
         log.info("Retrieved Bedrock AgentCore status for: %s", self.name or "Bedrock AgentCore")
         return result
+
+    def destroy(
+        self,
+        dry_run: bool = False,
+        delete_ecr_repo: bool = False,
+    ) -> DestroyResult:
+        """Destroy Bedrock AgentCore resources from notebook.
+
+        Args:
+            dry_run: If True, only show what would be destroyed without actually doing it
+            delete_ecr_repo: If True, also delete the ECR repository after removing images
+
+        Returns:
+            DestroyResult with details of what was destroyed or would be destroyed
+
+        Example:
+            # Preview what would be destroyed
+            result = runtime.destroy(dry_run=True)
+
+            # Destroy resources (keeping ECR repository)
+            result = runtime.destroy()
+
+            # Destroy resources including ECR repository
+            result = runtime.destroy(delete_ecr_repo=True)
+        """
+        if not self._config_path:
+            log.warning("Configuration not found")
+            log.info("Call .configure() first to set up your agent")
+            log.info("Example: runtime.configure(entrypoint='my_agent.py')")
+            raise ValueError("Must configure first. Call .configure() first.")
+
+        if dry_run:
+            log.info("🔍 Dry run mode: showing what would be destroyed")
+        else:
+            log.info("🗑️ Destroying Bedrock AgentCore resources")
+            if delete_ecr_repo:
+                log.info("   • Including ECR repository deletion")
+
+        try:
+            result = destroy_bedrock_agentcore(
+                config_path=self._config_path,
+                agent_name=self.name,
+                dry_run=dry_run,
+                force=True,  # Always force in notebook interface to avoid interactive prompts
+                delete_ecr_repo=delete_ecr_repo,
+            )
+
+            # Log summary
+            if dry_run:
+                log.info("Dry run completed. Would destroy %d resources", len(result.resources_removed))
+            else:
+                log.info("Destroy completed. Removed %d resources", len(result.resources_removed))
+
+                # Clear our internal state if destruction was successful and not a dry run
+                if not result.errors:
+                    self._config_path = None
+                    self.name = None
+
+            # Log warnings and errors
+            for warning in result.warnings:
+                log.warning("⚠️ %s", warning)
+
+            for error in result.errors:
+                log.error("❌ %s", error)
+
+            return result
+
+        except Exception as e:
+            log.error("Destroy operation failed: %s", str(e))
+            raise
 
     def help_deployment_modes(self):
         """Display information about available deployment modes and migration guidance."""
