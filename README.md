@@ -82,11 +82,16 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Create the virtual environment (requires python 3.10) and activate it
+uv venv --python 3.10
+source .venv/bin/activate
+
 # Install using uv (recommended)
 uv pip install bedrock-agentcore-starter-toolkit
 
 # Or alternatively with pip
 pip install bedrock-agentcore-starter-toolkit
+
 ```
 
 
