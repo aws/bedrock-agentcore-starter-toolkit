@@ -107,32 +107,23 @@ def _ensure_network_service_linked_role(session: boto3.Session, logger) -> None:
     iam_client = session.client("iam")
     role_name = "AWSServiceRoleForBedrockAgentCoreNetwork"
 
-    logger.info("=" * 80)
-    logger.info("DIAGNOSTIC - Checking Service-Linked Role...")
-
     try:
         # Check if role exists
-        role = iam_client.get_role(RoleName=role_name)
-        logger.info("✓ Service-linked role exists: %s", role_name)
-        logger.info("  ARN: %s", role["Role"]["Arn"])
-        logger.info("  Created: %s", role["Role"].get("CreateDate", "Unknown"))
-
-        # Verify trust policy
-        if "AssumeRolePolicyDocument" in role["Role"]:
-            logger.info("  Trust policy allows: bedrock-agentcore.amazonaws.com")
+        iam_client.get_role(RoleName=role_name)
+        logger.info("✓ VPC service-linked role verified: %s", role_name)
 
     except ClientError as e:
         if e.response["Error"]["Code"] != "NoSuchEntity":
             raise
-        logger.info("✗ Service-linked role does not exist: %s", role_name)
-        logger.info("  Creating service-linked role...")
+
+        logger.info("Creating VPC service-linked role...")
 
         try:
             iam_client.create_service_linked_role(
                 AWSServiceName="network.bedrock-agentcore.amazonaws.com",
                 Description="Service-linked role for Amazon Bedrock AgentCore VPC networking",
             )
-            logger.info("✓ Created service-linked role: %s", role_name)
+            logger.info("✓ VPC service-linked role created: %s", role_name)
 
             # Wait for propagation
             import time
@@ -142,12 +133,10 @@ def _ensure_network_service_linked_role(session: boto3.Session, logger) -> None:
 
         except ClientError as e:
             if e.response["Error"]["Code"] == "InvalidInput":
-                logger.info("✓ Service-linked role exists (created by another process)")
+                logger.info("✓ VPC service-linked role verified (created by another process)")
             else:
                 logger.error("✗ Failed to create service-linked role: %s", e)
                 raise
-
-    logger.info("=" * 80)
 
 
 def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region):
@@ -575,9 +564,6 @@ def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: Li
     """Verify VPC deployment created ENIs in the specified subnets."""
     ec2_client = session.client("ec2", region_name=region)
 
-    log.info("=" * 80)
-    log.info("DIAGNOSTIC - Checking for ENIs created by AgentCore...")
-
     try:
         # Look for ENIs in our subnets with AgentCore description
         response = ec2_client.describe_network_interfaces(
@@ -599,16 +585,10 @@ def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: Li
                 log.info("    Status: %s", eni["Status"])
                 log.info("    Security Groups: %s", [sg["GroupId"] for sg in eni.get("Groups", [])])
         else:
-            log.info("ℹ No ENIs found yet (created on first invoke)")
-            log.info("ENIs will be provisioned when the first session starts")
-            log.error("  1. networkModeConfig was not accepted by the API")
-            log.error("  2. Service-linked role missing or lacking permissions")
-            log.error("  3. Subnets in unsupported AZs")
+            log.info(":information_source:  VPC network interfaces will be created on first invocation")
 
     except Exception as e:
         log.error("Error checking ENIs: %s", e)
-
-    log.info("=" * 80)
 
 
 def launch_bedrock_agentcore(

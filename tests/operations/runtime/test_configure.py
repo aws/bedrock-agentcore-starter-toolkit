@@ -1055,12 +1055,74 @@ def handler(payload):
         finally:
             os.chdir(original_cwd)
 
-<<<<<<< HEAD
     def test_configure_with_vpc_enabled_valid_resources(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test configuration with valid VPC resources."""
-=======
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    vpc_enabled=True,
+                    vpc_subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
+                    vpc_security_groups=["sg-abc123xyz789"],
+                    non_interactive=True,
+                )
+
+                # Verify VPC configuration in result
+                assert result.network_mode == "VPC"
+                assert result.network_subnets == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+                assert result.network_security_groups == ["sg-abc123xyz789"]
+
+                # Load config and verify VPC settings
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.agents["test_agent"]
+
+                assert agent_config.aws.network_configuration.network_mode == "VPC"
+                assert agent_config.aws.network_configuration.network_mode_config.subnets == [
+                    "subnet-abc123def456",
+                    "subnet-xyz789ghi012",
+                ]
+                assert agent_config.aws.network_configuration.network_mode_config.security_groups == ["sg-abc123xyz789"]
+
+        finally:
+            os.chdir(original_cwd)
+
     def test_configure_with_source_path_parameter(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
@@ -1119,7 +1181,6 @@ def handler(payload):
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test configuration with protocol parameter."""
->>>>>>> origin/main
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
 
@@ -1157,10 +1218,11 @@ def handler(payload):
                     agent_name="test_agent",
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
-<<<<<<< HEAD
                     vpc_enabled=True,
                     vpc_subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
                     vpc_security_groups=["sg-abc123xyz789"],
+                    protocol="MCP",  # Test different protocol
+                    non_interactive=True,
                 )
 
                 # Verify VPC configuration in result
@@ -1168,19 +1230,11 @@ def handler(payload):
                 assert result.network_subnets == ["subnet-abc123def456", "subnet-xyz789ghi012"]
                 assert result.network_security_groups == ["sg-abc123xyz789"]
 
-                # Load config and verify VPC settings
-=======
-                    protocol="MCP",  # Test different protocol
-                    non_interactive=True,
-                )
-
                 # Verify protocol was set
->>>>>>> origin/main
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
                 config = load_config(result.config_path)
                 agent_config = config.agents["test_agent"]
-<<<<<<< HEAD
 
                 assert agent_config.aws.network_configuration.network_mode == "VPC"
                 assert agent_config.aws.network_configuration.network_mode_config.subnets == [
@@ -1188,14 +1242,11 @@ def handler(payload):
                     "subnet-xyz789ghi012",
                 ]
                 assert agent_config.aws.network_configuration.network_mode_config.security_groups == ["sg-abc123xyz789"]
-=======
                 assert agent_config.aws.protocol_configuration.server_protocol == "MCP"
->>>>>>> origin/main
 
         finally:
             os.chdir(original_cwd)
 
-<<<<<<< HEAD
     def test_configure_vpc_requires_both_subnets_and_security_groups(
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
@@ -1392,12 +1443,6 @@ def handler(payload):
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test that VPC configuration cannot be changed after agent creation."""
-=======
-    def test_configure_interactive_memory_selection_use_existing(
-        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
-    ):
-        """Test interactive memory selection choosing existing memory."""
->>>>>>> origin/main
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
 
@@ -1419,7 +1464,6 @@ def handler(payload):
                     return mock_container_runtime
 
             mock_config_manager = Mock()
-<<<<<<< HEAD
             mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
 
             with (
@@ -1440,6 +1484,7 @@ def handler(payload):
                     vpc_enabled=True,
                     vpc_subnets=["subnet-abc123def456"],
                     vpc_security_groups=["sg-xyz789abc123"],
+                    non_interactive=True,
                 )
 
                 # Try to reconfigure with PUBLIC mode - should fail
@@ -1449,6 +1494,7 @@ def handler(payload):
                         entrypoint_path=agent_file,
                         execution_role="TestRole",
                         vpc_enabled=False,  # Trying to change to PUBLIC
+                        non_interactive=True,
                     )
 
                 # Try to reconfigure with different subnets - should fail
@@ -1460,6 +1506,7 @@ def handler(payload):
                         vpc_enabled=True,
                         vpc_subnets=["subnet-different123"],  # Different subnets
                         vpc_security_groups=["sg-xyz789abc123"],
+                        non_interactive=True,
                     )
 
         finally:
@@ -1491,10 +1538,8 @@ def handler(payload):
 
             mock_config_manager = Mock()
             mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
-=======
             # Simulate user choosing existing memory
             mock_config_manager.prompt_memory_selection.return_value = ("USE_EXISTING", "mem-existing-123")
->>>>>>> origin/main
 
             with (
                 patch(
@@ -1510,8 +1555,9 @@ def handler(payload):
                     agent_name="test_agent",
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
-<<<<<<< HEAD
                     # vpc_enabled not specified - should default to PUBLIC
+                    memory_mode="STM_ONLY",  # This should be overridden by interactive choice
+                    non_interactive=False,  # Interactive mode
                 )
 
                 # Verify PUBLIC mode is default
@@ -1519,23 +1565,14 @@ def handler(payload):
                 assert result.network_subnets is None
                 assert result.network_security_groups is None
 
-                # Load config and verify
-=======
-                    memory_mode="STM_ONLY",  # This should be overridden by interactive choice
-                    non_interactive=False,  # Interactive mode
-                )
-
                 # Verify existing memory was used
->>>>>>> origin/main
                 from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
 
                 config = load_config(result.config_path)
                 agent_config = config.agents["test_agent"]
-<<<<<<< HEAD
 
                 assert agent_config.aws.network_configuration.network_mode == "PUBLIC"
                 assert agent_config.aws.network_configuration.network_mode_config is None
-=======
                 assert agent_config.memory.memory_id == "mem-existing-123"
 
         finally:
@@ -1593,7 +1630,6 @@ def handler(payload):
                 config = load_config(result.config_path)
                 agent_config = config.agents["test_agent"]
                 assert agent_config.memory.mode == "NO_MEMORY"
->>>>>>> origin/main
 
         finally:
             os.chdir(original_cwd)

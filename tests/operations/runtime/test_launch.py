@@ -1996,18 +1996,49 @@ class TestLaunchBedrockAgentCore:
     def test_launch_with_vpc_local_mode_warning(self, mock_container_runtime, tmp_path):
         """Test that VPC config is ignored with warning in local mode."""
         from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
-    def test_launch_with_dockerfile_missing(self, mock_container_runtime, tmp_path):
-        """Test error when Dockerfile is missing."""
-        config_path = create_test_config(tmp_path, execution_role="arn:aws:iam::123456789012:role/TestRole")
-        create_test_agent_file(tmp_path)
-        # Note: NOT creating Dockerfile here
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(
+                    network_mode="VPC",
+                    network_mode_config=NetworkModeConfig(
+                        subnets=["subnet-abc123def456"],
+                        security_groups=["sg-abc123xyz789"],
+                    ),
+                ),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+        mock_container_runtime.has_local_runtime = True
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
         ):
-            with pytest.raises(RuntimeError, match="Dockerfile not found"):
-                launch_bedrock_agentcore(config_path, local=True)
+            result = launch_bedrock_agentcore(config_path, local=True)
+
+            # Verify warning was logged
+            mock_log.warning.assert_called_with(
+                "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
+            )
+            assert result.mode == "local"
 
     def test_launch_with_build_context_source_path(self, mock_container_runtime, tmp_path):
         """Test launch with custom source_path for build context."""
@@ -2060,19 +2091,11 @@ class TestLaunchBedrockAgentCore:
             aws=AWSConfig(
                 region="us-west-2",
                 account="123456789012",
-                network_configuration=NetworkConfiguration(
-                    network_mode="VPC",
-                    network_mode_config=NetworkModeConfig(
-                        subnets=["subnet-abc123def456"],
-                        security_groups=["sg-abc123xyz789"],
-                    ),
-                ),
+                network_configuration=NetworkConfiguration(),
                 observability=ObservabilityConfig(),
             ),
-            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-                network_configuration=NetworkConfiguration(),
-            ),
             memory=MemoryConfig(mode="NO_MEMORY"),  # Explicitly no memory
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         )
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
@@ -2083,7 +2106,6 @@ class TestLaunchBedrockAgentCore:
         mock_container_runtime.build.return_value = (True, ["Successfully built"])
         mock_container_runtime.has_local_runtime = True
 
-        with (
         with patch(
             "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
             return_value=mock_container_runtime,
@@ -2119,15 +2141,24 @@ class TestLaunchBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
                 return_value=mock_container_runtime,
             ),
-            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
         ):
-            result = launch_bedrock_agentcore(config_path, local=True)
-
-            # Verify warning was logged
-            mock_log.warning.assert_called_with(
-                "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
+            # Mock deployment return values
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:eu-central-1:123456789012:agent-runtime/agent-123",
             )
-            assert result.mode == "local"
+
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify deployment used custom region
+            assert result.mode == "cloud"
 
     def test_launch_vpc_validation_subnet_not_found(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test launch fails when subnet IDs don't exist."""
@@ -2135,15 +2166,6 @@ class TestLaunchBedrockAgentCore:
 
         from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkConfiguration, NetworkModeConfig
 
-        ):
-            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
-
-            # Verify deployment used custom region
-            assert result.mode == "cloud"
-            # The region should be used in ECR and other AWS operations
-
-    def test_launch_with_missing_region_error(self, mock_container_runtime, tmp_path):
-        """Test error when region is missing from config."""
         config_path = tmp_path / ".bedrock_agentcore.yaml"
         agent_config = BedrockAgentCoreAgentSchema(
             name="test-agent",
@@ -2164,10 +2186,6 @@ class TestLaunchBedrockAgentCore:
                 observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
-                region=None,  # Missing region
-                account="123456789012",
-                network_configuration=NetworkConfiguration(),
-            ),
         )
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
@@ -2184,13 +2202,44 @@ class TestLaunchBedrockAgentCore:
         mock_session = MagicMock()
         mock_session.client.return_value = mock_ec2
 
-        with (
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
-            ),
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.boto3.Session", return_value=mock_session
         ):
             with pytest.raises(ValueError, match="One or more subnet IDs not found"):
                 launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_with_missing_region_error(self, mock_container_runtime, tmp_path):
+        """Test error when region is missing from config."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test_agent.py",
+            container_runtime="docker",
+            aws=AWSConfig(
+                region=None,  # Missing region
+                account="123456789012",
+                execution_role="arn:aws:iam::123456789012:role/TestRole",
+                ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+        mock_container_runtime.has_local_runtime = True
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            with pytest.raises(ValueError, match="Missing 'aws.region' for cloud deployment"):
+                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
     def test_launch_vpc_validation_cross_vpc_error(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test launch fails when subnets are in different VPCs."""
@@ -2497,7 +2546,10 @@ class TestLaunchBedrockAgentCore:
 
             # Verify diagnostic logging
             assert mock_log.info.called
-            assert any("No ENIs found yet" in str(call) for call in mock_log.info.call_args_list)
+            assert any(
+                "VPC network interfaces will be created on first invocation" in str(call)
+                for call in mock_log.info.call_args_list
+            )
 
     def test_validate_vpc_resources_public_mode_early_return(self, tmp_path):
         """Test that VPC validation is skipped for PUBLIC network mode."""
@@ -2535,14 +2587,6 @@ class TestLaunchBedrockAgentCore:
 
         with pytest.raises(ValueError, match="VPC mode requires network configuration"):
             _validate_vpc_resources(mock_session, agent_config, "us-west-2")
-        mock_container_runtime.build.return_value = (True, ["Successfully built"])
-
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
-        ):
-            with pytest.raises(ValueError, match="Missing 'aws.region' for cloud deployment"):
-                launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
 
 
 class TestEnsureExecutionRole:

@@ -3163,6 +3163,88 @@ agents:
 
     def test_configure_with_vpc_flags(self, tmp_path):
         """Test configure command with VPC flags."""
+        # Add test implementation
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req_display,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
+        ):
+            mock_infer_name.return_value = "test_agent"
+            mock_rel_path.return_value = "test_agent.py"
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config for final display
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "NO_MEMORY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.network_mode = "VPC"
+            mock_result.network_subnets = ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            mock_result.network_security_groups = ["sg-abc123xyz789"]
+            mock_result.auto_create_ecr = True
+            mock_configure.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            import os
+
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "subnet-abc123def456,subnet-xyz789ghi012",
+                        "--security-groups",
+                        "sg-abc123xyz789",
+                        "--non-interactive",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "VPC mode enabled" in result.stdout
+                assert "2 subnets" in result.stdout
+                assert "1 security groups" in result.stdout
+
+                # Verify VPC params were passed
+                call_args = mock_configure.call_args
+                assert call_args.kwargs["vpc_enabled"] is True
+                assert call_args.kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+                assert call_args.kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
+
+            finally:
+                os.chdir(original_cwd)
+
 
 class TestCommandsAdditionalCoverage:
     """Additional tests to improve command coverage."""
@@ -3221,12 +3303,6 @@ class TestCommandsAdditionalCoverage:
                 "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
             ) as mock_req_display,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-        ):
-            mock_infer_name.return_value = "test_agent"
-            mock_rel_path.return_value = "test_agent.py"
-            mock_req_display.return_value = tmp_path / "requirements.txt"
-            mock_prompt.return_value = "no"
-            ) as mock_req,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
@@ -3234,7 +3310,8 @@ class TestCommandsAdditionalCoverage:
         ):
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
-            mock_req.return_value = None
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
             mock_load_if_exists.return_value = None
 
             # Mock load_config for final display
@@ -3251,9 +3328,6 @@ class TestCommandsAdditionalCoverage:
             mock_result.account_id = "123456789012"
             mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
             mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
-            mock_result.network_mode = "VPC"
-            mock_result.network_subnets = ["subnet-abc123def456", "subnet-xyz789ghi012"]
-            mock_result.network_security_groups = ["sg-abc123xyz789"]
             mock_result.auto_create_ecr = True
             mock_configure.return_value = mock_result
 
@@ -3269,11 +3343,6 @@ class TestCommandsAdditionalCoverage:
                         str(agent_file),
                         "--execution-role",
                         "TestRole",
-                        "--vpc",
-                        "--subnets",
-                        "subnet-abc123def456,subnet-xyz789ghi012",
-                        "--security-groups",
-                        "sg-abc123xyz789",
                         "--request-header-allowlist",
                         "Authorization,X-Custom-Header",
                         "--non-interactive",
@@ -3281,16 +3350,12 @@ class TestCommandsAdditionalCoverage:
                 )
 
                 assert result.exit_code == 0
-                assert "VPC mode enabled" in result.stdout
-                assert "2 subnets" in result.stdout
-                assert "1 security groups" in result.stdout
+                assert "Configured request header allowlist" in result.stdout
 
-                # Verify VPC params were passed
+                # Verify headers were parsed correctly
                 call_args = mock_configure.call_args
-                assert call_args.kwargs["vpc_enabled"] is True
-                assert call_args.kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
-                assert call_args.kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
-
+                expected_config = {"requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]}
+                assert call_args.kwargs["request_header_configuration"] == expected_config
             finally:
                 os.chdir(original_cwd)
 
@@ -3386,12 +3451,61 @@ class TestCommandsAdditionalCoverage:
 
     def test_status_displays_vpc_info(self, tmp_path):
         """Test status command displays VPC information."""
-                assert "Configured request header allowlist" in result.stdout
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
 
-                # Verify headers were parsed correctly
-                call_args = mock_configure.call_args
-                expected_config = {"requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]}
-                assert call_args.kwargs["request_header_configuration"] == expected_config
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "VPC",
+                    "network_vpc_id": "vpc-test123456",
+                    "network_subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                    "network_security_groups": ["sg-abc123xyz789"],
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                    "idle_timeout": 600,  # 10 minutes
+                    "max_lifetime": 3600,  # 1 hour
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "VPC",
+                        "networkModeConfig": {
+                            "subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                            "securityGroups": ["sg-abc123xyz789"],
+                        },
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: VPC" in result.stdout
+                assert "vpc-test123456" in result.stdout
+                assert "2 subnets, 1 security groups" in result.stdout
+                assert "Lifecycle Settings:" in result.stdout
+                assert "Idle Timeout: 600s (10 minutes)" in result.stdout
+                assert "Max Lifetime: 3600s (1 hours)" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -3489,9 +3603,6 @@ agents:
     bedrock_agentcore:
       agent_id: test-agent-id
       agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id
-"""
-        config_file.write_text(config_content.strip())
-
 """
         config_file.write_text(config_content.strip())
 
@@ -3685,13 +3796,8 @@ agents:
                 },
                 "endpoint": {
                     "status": "READY",
-                    "name": "DEFAULT",
-                },
-                "endpoint": {
-                    "status": "READY",
                     "id": "test-endpoint-id",
                     "name": "DEFAULT",
-                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
                 },
             }
             mock_status.return_value = mock_result
@@ -3716,20 +3822,60 @@ agents:
         config_content = """
 default_agent: test-agent
 agents:
-  test-agent:
+test-agent:
     name: test-agent
     entrypoint: test.py
     aws:
-      region: us-west-2
-      network_configuration:
+    region: us-west-2
+    network_configuration:
         network_mode: PUBLIC
     bedrock_agentcore:
-      agent_id: test-agent-id
+    agent_id: test-agent-id
 """
         config_file.write_text(config_content.strip())
-                assert "Lifecycle Settings:" in result.stdout
-                assert "Idle Timeout: 600s (10 minutes)" in result.stdout
-                assert "Max Lifetime: 3600s (1 hours)" in result.stdout
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "PUBLIC",
+                    "network_subnets": None,
+                    "network_security_groups": None,
+                    "network_vpc_id": None,
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "PUBLIC",
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: Public" in result.stdout
+                assert "test-agent" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -3743,25 +3889,6 @@ agents:
             mock_result.model_dump.return_value = {
                 "config": {
                     "name": "test-agent",
-                    "agent_id": "test-agent-id",
-                    "network_mode": "PUBLIC",
-                    "network_subnets": None,
-                    "network_security_groups": None,
-                    "network_vpc_id": None,
-                    "region": "us-west-2",
-                    "account": "123456789012",
-                    "entrypoint": "test.py",
-                    "execution_role": None,
-                    "ecr_repository": None,
-                    "agent_arn": None,
-                },
-                "agent": {
-                    "agentRuntimeId": "test-agent-id",
-                    "status": "READY",
-                    "createdAt": "2024-01-01",
-                    "networkConfiguration": {"networkMode": "PUBLIC"},
-                },
-                "endpoint": {"status": "READY", "name": "DEFAULT"},
                     "region": "us-west-2",
                     "account": "123456789012",
                     "execution_role": "test-role",
@@ -3778,20 +3905,6 @@ agents:
             try:
                 result = self.runner.invoke(app, ["status"])
 
-                # Debug output if test fails
-                if result.exit_code != 0:
-                    print(f"\n=== Command Output ===\n{result.output}")
-                    if result.exception:
-                        import traceback
-
-                        print("\n=== Exception ===")
-                        traceback.print_exception(
-                            type(result.exception), result.exception, result.exception.__traceback__
-                        )
-
-                assert result.exit_code == 0, f"Command failed with output:\n{result.output}"
-            finally:
-                os.chdir(original_cwd)
                 assert result.exit_code == 0
                 assert "Configured but not deployed" in result.stdout
                 assert "agentcore launch" in result.stdout

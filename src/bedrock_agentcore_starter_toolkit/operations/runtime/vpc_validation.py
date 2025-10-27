@@ -191,6 +191,6 @@ def verify_subnet_azs(ec2_client, subnets: List[str], region: str) -> List[str]:
                 f"Supported AZ IDs: {supported}"
             )
         else:
-            log.info(f"✓ Subnet {subnet_id} is in supported AZ: {az_name} ({az_id})")
+            log.info("✓ Subnet %s is in supported AZ: %s (%s)", subnet_id, az_name, az_id)
 
     return issues

@@ -118,7 +118,7 @@ When enabled, agents run within your VPC for secure access to private resources:
 - **Network Immutability:**
   - VPC configuration cannot be changed after initial deployment
   - To modify network settings, create a new agent configuration
-  
+
 **Lifecycle Configuration:**
 
 Session lifecycle management controls when runtime sessions automatically terminate:
@@ -416,7 +416,7 @@ agentcore configure \
   --vpc \
   --subnets subnet-0abc123,subnet-0def456,subnet-0ghi789 \
   --security-groups sg-0xyz789,sg-0uvw012
-  
+
 # Non-interactive with defaults
 agentcore configure --entrypoint agent_example.py --non-interactive
 

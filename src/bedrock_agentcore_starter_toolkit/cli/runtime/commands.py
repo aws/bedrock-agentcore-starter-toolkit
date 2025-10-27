@@ -269,6 +269,7 @@ def configure(
         None,
         "--security-groups",
         help="Comma-separated list of security group IDs (e.g., sg-xyz789). Required with --vpc.",
+    ),
     idle_timeout: Optional[int] = typer.Option(
         None,
         "--idle-timeout",
