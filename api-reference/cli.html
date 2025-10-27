@@ -2353,6 +2353,15 @@
 <li>
 <p><code>--non-interactive, -ni</code>: Skip prompts; use defaults unless overridden</p>
 </li>
+<li>
+<p><code>--vpc</code>: Enable VPC networking mode for secure access to private resources</p>
+</li>
+<li>
+<p><code>--subnets TEXT</code>: Comma-separated list of subnet IDs (required when --vpc is enabled)</p>
+</li>
+<li>
+<p><code>--security-groups TEXT</code>: Comma-separated list of security group IDs (required when --vpc is enabled)</p>
+</li>
 </ul>
 <p>Subcommands:</p>
 <ul>
@@ -2393,6 +2402,30 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class=
 <span class="c1"># 2. AWS_DEFAULT_REGION environment variable</span>
 <span class="c1"># 3. AWS CLI configured region</span>
 </code></pre></div>
+<p><strong>VPC Networking:</strong></p>
+<p>When enabled, agents run within your VPC for secure access to private resources:</p>
+<ul>
+<li><strong>Requirements:</strong></li>
+<li>All subnets must be in the same VPC</li>
+<li>Subnets must be in supported Availability Zones</li>
+<li>Security groups must allow required egress traffic</li>
+<li>
+<p>Automatically creates <code>AWSServiceRoleForBedrockAgentCoreNetwork</code> service-linked role if needed</p>
+</li>
+<li>
+<p><strong>Validation:</strong></p>
+</li>
+<li>Validates subnets belong to the same VPC</li>
+<li>Checks subnet availability zones are supported</li>
+<li>
+<p>Verifies security groups exist and are properly configured</p>
+</li>
+<li>
+<p><strong>Network Immutability:</strong></p>
+</li>
+<li>VPC configuration cannot be changed after initial deployment</li>
+<li>To modify network settings, create a new agent configuration</li>
+</ul>
 <p><strong>Lifecycle Configuration:</strong></p>
 <p>Session lifecycle management controls when runtime sessions automatically terminate:</p>
 <ul>
@@ -2502,7 +2535,7 @@ Response:
 Your formatted response here
 </code></pre></div>
 <h3 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h3>
-<p>Get Bedrock AgentCore status including config and runtime details.</p>
+<p>Get Bedrock AgentCore status including config and runtime details, and VPC configuration.</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>status<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
 </code></pre></div>
 <p>Options:</p>
@@ -2520,6 +2553,11 @@ Your formatted response here
 <li>Agent deployment status</li>
 <li>Memory configuration and status (Disabled/CREATING/ACTIVE)</li>
 <li>Endpoint readiness</li>
+<li>VPC networking configuration (when enabled):</li>
+<li>VPC ID</li>
+<li>Subnet IDs and Availability Zones</li>
+<li>Security Group IDs</li>
+<li>Network mode indicator</li>
 <li>CloudWatch log paths</li>
 <li>GenAI Observability Dashboard link (when OTEL enabled)</li>
 </ul>
@@ -2654,6 +2692,21 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 
 <span class="c1"># Configure with execution role</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--execution-role<span class="w"> </span>arn:aws:iam::123456789012:role/MyRole
+
+<span class="c1"># Configure with VPC networking</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--vpc<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--subnets<span class="w"> </span>subnet-0abc123,subnet-0def456<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--security-groups<span class="w"> </span>sg-0xyz789
+
+<span class="c1"># Configure with VPC and custom execution role</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--execution-role<span class="w"> </span>arn:aws:iam::123456789012:role/MyAgentRole<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--vpc<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--subnets<span class="w"> </span>subnet-0abc123,subnet-0def456,subnet-0ghi789<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--security-groups<span class="w"> </span>sg-0xyz789,sg-0uvw012
 
 <span class="c1"># Non-interactive with defaults</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent_example.py<span class="w"> </span>--non-interactive

@@ -33,6 +33,9 @@ Options:
 - `--region, -r TEXT`: AWS region
 - `--protocol, -p TEXT`: Agent server protocol (HTTP or MCP or A2A)
 - `--non-interactive, -ni`: Skip prompts; use defaults unless overridden
+- `--vpc`: Enable VPC networking mode for secure access to private resources
+- `--subnets TEXT`: Comma-separated list of subnet IDs (required when --vpc is enabled)
+- `--security-groups TEXT`: Comma-separated list of security group IDs (required when --vpc is enabled)
 
 Subcommands:
 
@@ -75,6 +78,23 @@ agentcore configure -e agent.py --region us-east-1
 # 2. AWS_DEFAULT_REGION environment variable
 # 3. AWS CLI configured region
 ```
+
+**VPC Networking:**
+
+When enabled, agents run within your VPC for secure access to private resources:
+
+- **Requirements:**
+- All subnets must be in the same VPC
+- Subnets must be in supported Availability Zones
+- Security groups must allow required egress traffic
+- Automatically creates `AWSServiceRoleForBedrockAgentCoreNetwork` service-linked role if needed
+- **Validation:**
+- Validates subnets belong to the same VPC
+- Checks subnet availability zones are supported
+- Verifies security groups exist and are properly configured
+- **Network Immutability:**
+- VPC configuration cannot be changed after initial deployment
+- To modify network settings, create a new agent configuration
 
 **Lifecycle Configuration:**
 
@@ -186,7 +206,7 @@ Your formatted response here
 
 ### Status
 
-Get Bedrock AgentCore status including config and runtime details.
+Get Bedrock AgentCore status including config and runtime details, and VPC configuration.
 
 ```
 agentcore status [OPTIONS]
@@ -204,6 +224,11 @@ Shows comprehensive agent information including:
 - Agent deployment status
 - Memory configuration and status (Disabled/CREATING/ACTIVE)
 - Endpoint readiness
+- VPC networking configuration (when enabled):
+- VPC ID
+- Subnet IDs and Availability Zones
+- Security Group IDs
+- Network mode indicator
 - CloudWatch log paths
 - GenAI Observability Dashboard link (when OTEL enabled)
 
@@ -328,6 +353,21 @@ agentcore configure --entrypoint agent_example.py --disable-memory
 
 # Configure with execution role
 agentcore configure --entrypoint agent_example.py --execution-role arn:aws:iam::123456789012:role/MyRole
+
+# Configure with VPC networking
+agentcore configure \
+  --entrypoint agent_example.py \
+  --vpc \
+  --subnets subnet-0abc123,subnet-0def456 \
+  --security-groups sg-0xyz789
+
+# Configure with VPC and custom execution role
+agentcore configure \
+  --entrypoint agent_example.py \
+  --execution-role arn:aws:iam::123456789012:role/MyAgentRole \
+  --vpc \
+  --subnets subnet-0abc123,subnet-0def456,subnet-0ghi789 \
+  --security-groups sg-0xyz789,sg-0uvw012
 
 # Non-interactive with defaults
 agentcore configure --entrypoint agent_example.py --non-interactive
