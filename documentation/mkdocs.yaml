@@ -1,7 +1,7 @@
 site_name: Amazon Bedrock AgentCore
 site_description: Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents
 site_dir: site
-site_url: ""
+site_url: "https://aws.github.io/bedrock-agentcore-starter-toolkit"
 use_directory_urls: false
 
 repo_url: https://github.com/aws/bedrock-agentcore-starter-toolkit
@@ -77,6 +77,7 @@ nav:
       - Runtime Permissions: user-guide/runtime/permissions.md
       - Runtime Async Processing: user-guide/runtime/async.md
       - Runtime Notebook: user-guide/runtime/notebook.md
+      - Runtime A2A Server Deployment: user-guide/runtime/a2a.md
     - Gateway:
       - Gateway Quickstart: user-guide/gateway/quickstart.md
     - Memory:
@@ -86,6 +87,10 @@ nav:
     - Built-in Tools:
       - Quickstart Browser Tool: user-guide/builtin-tools/quickstart-browser.md
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
+    - Security:
+      - VPC Interface Endpoints: user-guide/security/vpc-interface-endpoints.md
+      - AgentCore VPC Configuration: user-guide/security/agentcore-vpc.md
+      - VPC Condition Keys: user-guide/security/security-vpc-condition.md
     - Observability:
       - Observability Quickstart: user-guide/observability/quickstart.md
     - Import Agent:
@@ -94,7 +99,7 @@ nav:
       - Import Agent Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
-    - AgentCore Quickstart: examples/agentcore-quickstart-example.md
+    - Runtime Transform and Deploy Quickstart: examples/agentcore-quickstart-example.md
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
@@ -120,6 +125,7 @@ plugins:
   - search
   - privacy
   - macros
+  - include-markdown
   - mike:
       alias_type: symlink
       canonical_version: latest
@@ -141,11 +147,15 @@ plugins:
           - "user-guide/runtime/permissions.md": "Runtime permissions guide"
           - "user-guide/runtime/async.md": "Runtime async processing"
           - "user-guide/runtime/notebook.md": "Runtime notebook integration"
+          - "user-guide/runtime/a2a.md": "A2A server deployment guide"
           - "user-guide/gateway/quickstart.md": "Gateway quickstart guide"
           - "user-guide/memory/quickstart.md": "Memory quickstart guide"
           - "user-guide/identity/quickstart.md": "Identity quickstart guide"
           - "user-guide/builtin-tools/quickstart-browser.md": "Browser tool quickstart"
           - "user-guide/builtin-tools/quickstart-code-interpreter.md": "Code interpreter quickstart"
+          - "user-guide/security/vpc-interface-endpoints.md": "VPC interface endpoints configuration"
+          - "user-guide/security/agentcore-vpc.md": "AgentCore VPC configuration guide"
+          - "user-guide/security/security-vpc-condition.md": "VPC condition keys for IAM policies"
           - "user-guide/observability/quickstart.md": "Observability quickstart guide"
           - "user-guide/import-agent/quickstart.md": "Import agent quickstart"
           - "user-guide/import-agent/overview.md": "Import agent overview"

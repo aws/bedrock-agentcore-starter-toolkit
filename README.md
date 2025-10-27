@@ -35,38 +35,38 @@ Amazon Bedrock AgentCore includes the following modular Services that you can us
 ## 🚀 Amazon Bedrock AgentCore Runtime
 AgentCore Runtime is a secure, serverless runtime purpose-built for deploying and scaling dynamic AI agents and tools using any open-source framework including LangGraph, CrewAI, and Strands Agents, any protocol, and any model. Runtime was built to work for agentic workloads with industry-leading extended runtime support, fast cold starts, true session isolation, built-in identity, and support for multi-modal payloads. Developers can focus on innovation while Amazon Bedrock AgentCore Runtime handles infrastructure and security -- accelerating time-to-market
 
-**[Runtime Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html)**
+**[Runtime Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-toolkit.html)**
 
 ## 🧠 Amazon Bedrock AgentCore Memory
 AgentCore Memory makes it easy for developers to build context aware agents by eliminating complex memory infrastructure management while providing full control over what the AI agent remembers. Memory provides industry-leading accuracy along with support for both short-term memory for multi-turn conversations and long-term memory that can be shared across agents and sessions.
 
 
-**[Memory Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/memory/quickstart.html)**
+**[Memory Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-get-started.html)**
 
 ## 🔗 Amazon Bedrock AgentCore Gateway
 Amazon Bedrock AgentCore Gateway acts as a managed Model Context Protocol (MCP) server that converts APIs and Lambda functions into MCP tools that agents can use. Gateway manages the complexity of OAuth ingress authorization and secure egress credential exchange, making standing up remote MCP servers easier and more secure. Gateway also offers composition and built-in semantic search over tools, enabling developers to scale their agents to use hundreds or thousands of tools.
 
-**[Gateway Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/gateway/quickstart.html)**
+**[Gateway Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-quick-start.html)**
 
 ## 💻 Amazon Bedrock AgentCore Code Interpreter
 AgentCore Code Interpreter tool enables agents to securely execute code in isolated sandbox environments. It offers advanced configuration support and seamless integration with popular frameworks. Developers can build powerful agents for complex workflows and data analysis while meeting enterprise security requirements.
 
-**[Code Interpreter Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/builtin-tools/quickstart-code-interpreter.html)**
+**[Code Interpreter Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-getting-started.html)**
 
 ## 🌐 Amazon Bedrock AgentCore Browser
 AgentCore Browser tool provides a fast, secure, cloud-based browser runtime to enable AI agents to interact with websites at scale. It provides enterprise-grade security, comprehensive observability features, and automatically scales— all without infrastructure management overhead.
 
-**[Browser Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/builtin-tools/quickstart-browser.html)**
+**[Browser Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/browser-onboarding.html)**
 
 ## 📊 Amazon Bedrock AgentCore Observability
 AgentCore Observability helps developers trace, debug, and monitor agent performance in production through unified operational dashboards. With support for OpenTelemetry compatible telemetry and detailed visualizations of each step of the agent workflow, AgentCore enables developers to easily gain visibility into agent behavior and maintain quality standards at scale.
 
-**[Observability Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/observability/quickstart.html)**
+**[Observability Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html)**
 
 ## 🔐 Amazon Bedrock AgentCore Identity
 AgentCore Identity provides a secure, scalable agent identity and access management capability accelerating AI agent development. It is compatible with existing identity providers, eliminating needs for user migration or rebuilding authentication flows. AgentCore Identity's helps to minimize consent fatigue with a secure token vault and allows you to build streamlined AI agent experiences. Just-enough access and secure permission delegation allow agents to securely access AWS resources and third-party tools and services.
 
-**[Identity Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/identity/quickstart.html)**
+**[Identity Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started-cognito.html)**
 
 ## 🔐 Import Amazon Bedrock Agents to Bedrock AgentCore
 AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Agents to LangChain/LangGraph or Strands frameworks while automatically integrating AgentCore primitives like Memory, Code Interpreter, and Gateway. Developers can migrate agents in minutes with full feature parity and deploy directly to AgentCore Runtime for serverless operation.

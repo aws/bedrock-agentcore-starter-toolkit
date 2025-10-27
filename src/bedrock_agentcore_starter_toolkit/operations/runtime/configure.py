@@ -18,6 +18,7 @@ from ...utils.runtime.schema import (
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreDeploymentInfo,
     CodeBuildConfig,
+    LifecycleConfiguration,
     MemoryConfig,
     NetworkConfiguration,
     NetworkModeConfig,
@@ -136,7 +137,7 @@ def configure_bedrock_agentcore(
     auto_create_ecr: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
-    memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "STM_ONLY",
+    memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
     requirements_file: Optional[str] = None,
     authorizer_configuration: Optional[Dict[str, Any]] = None,
     request_header_configuration: Optional[Dict[str, Any]] = None,
@@ -148,6 +149,8 @@ def configure_bedrock_agentcore(
     vpc_enabled: bool = False,
     vpc_subnets: Optional[List[str]] = None,
     vpc_security_groups: Optional[List[str]] = None,
+    idle_timeout: Optional[int] = None,
+    max_lifetime: Optional[int] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -173,6 +176,10 @@ def configure_bedrock_agentcore(
         vpc_enabled: Whether to enable VPC networking mode
         vpc_subnets: List of subnet IDs for VPC mode
         vpc_security_groups: List of security group IDs for VPC mode
+        idle_timeout: Idle runtime session timeout in seconds (60-28800).
+            If not specified, AWS API default (900s / 15 minutes) is used.
+        max_lifetime: Maximum instance lifetime in seconds (60-28800).
+            If not specified, AWS API default (28800s / 8 hours) is used.
 
     Returns:
         ConfigureResult model with configuration details
@@ -253,7 +260,7 @@ def configure_bedrock_agentcore(
         else:  # STM_ONLY
             log.info("Memory configuration: Short-term memory only")
     else:
-        # Interactive mode: prompt user (only if memory not explicitly disabled)
+        # Interactive mode - let user choose
         action, value = config_manager.prompt_memory_selection()
 
         if action == "USE_EXISTING":
@@ -282,6 +289,21 @@ def configure_bedrock_agentcore(
     config_path = build_dir / ".bedrock_agentcore.yaml"
     memory_id = None
     memory_name = None
+
+    # Handle lifecycle configuration
+    lifecycle_config = LifecycleConfiguration()
+    if idle_timeout is not None or max_lifetime is not None:
+        lifecycle_config = LifecycleConfiguration(
+            idle_runtime_session_timeout=idle_timeout,
+            max_lifetime=max_lifetime,
+        )
+
+        if verbose:
+            log.debug("Lifecycle configuration:")
+            if idle_timeout:
+                log.debug("  Idle timeout: %ds (%d minutes)", idle_timeout, idle_timeout / 60)
+            if max_lifetime:
+                log.debug("  Max lifetime: %ds (%d hours)", max_lifetime, max_lifetime / 3600)
 
     if config_path.exists():
         try:
@@ -376,6 +398,11 @@ def configure_bedrock_agentcore(
         dockerfile_output_dir = get_agentcore_directory(Path.cwd(), agent_name, source_path)
     else:
         dockerfile_output_dir = build_dir
+
+    if memory_config.mode == "NO_MEMORY":
+        memory_id = None
+        memory_name = None
+        log.debug("Cleared memory_id/name for Dockerfile generation (memory disabled)")
 
     # Generate Dockerfile in the correct location (no moving needed)
     dockerfile_path = runtime.generate_dockerfile(
@@ -492,6 +519,7 @@ def configure_bedrock_agentcore(
             network_configuration=network_config,
             protocol_configuration=ProtocolConfiguration(server_protocol=protocol or "HTTP"),
             observability=ObservabilityConfig(enabled=enable_observability),
+            lifecycle_configuration=lifecycle_config,
         ),
         bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
         codebuild=CodeBuildConfig(

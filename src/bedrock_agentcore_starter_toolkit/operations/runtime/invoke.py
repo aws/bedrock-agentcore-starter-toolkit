@@ -31,59 +31,6 @@ def invoke_bedrock_agentcore(
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
-    # Check memory status on first invoke if memory is enabled (STM or LTM)
-    if (
-        agent_config.memory
-        and agent_config.memory.mode != "NO_MEMORY"
-        and agent_config.memory.memory_id
-        and not agent_config.memory.first_invoke_memory_check_done
-    ):
-        try:
-            from ...operations.memory.constants import MemoryStatus
-            from ...operations.memory.manager import MemoryManager
-
-            memory_manager = MemoryManager(region_name=agent_config.aws.region)
-            memory_status = memory_manager.get_memory_status(agent_config.memory.memory_id)
-
-            if memory_status != MemoryStatus.ACTIVE.value:
-                # Determine memory type for better messaging
-                memory_type = "Memory"
-                if agent_config.memory.has_ltm:
-                    memory_type = "Long-term memory"
-                    time_estimate = "60-180 seconds"
-                else:
-                    memory_type = "Short-term memory"
-                    time_estimate = "30-90 seconds"
-
-                # Provide graceful error message
-                error_message = (
-                    f"Memory is still provisioning (current status: {memory_status}). "
-                    f"{memory_type} takes {time_estimate} to activate.\n\n"
-                    f"Please wait and check status with:\n"
-                    f"  agentcore status{f' --agent {agent_name}' if agent_name else ''}"
-                )
-
-                # Log the message for visibility
-                log.warning("Memory not yet active for agent '%s': %s", agent_config.name, memory_status)
-
-                raise ValueError(error_message)
-
-            # Memory is active, mark check as done
-            agent_config.memory.first_invoke_memory_check_done = True
-            project_config.agents[agent_config.name] = agent_config
-            save_config(project_config, config_path)
-            log.info("Memory is active, proceeding with invoke")
-
-        except ImportError as e:
-            log.error("Failed to import MemoryManager: %s", e)
-            # Continue without check if import fails
-        except Exception as e:
-            # If it's our ValueError, re-raise it
-            if "Memory is still provisioning" in str(e):
-                raise
-            # For other errors, log but continue
-            log.warning("Could not check memory status: %s", e)
-
     # Log which agent is being invoked
     mode = "locally" if local_mode else "via cloud endpoint"
     log.debug("Invoking BedrockAgentCore agent '%s' %s", agent_config.name, mode)

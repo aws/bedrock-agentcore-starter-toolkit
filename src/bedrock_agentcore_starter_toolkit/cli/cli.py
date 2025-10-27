@@ -5,7 +5,14 @@ import typer
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from ..utils.logging_config import setup_toolkit_logging
 from .import_agent.commands import import_agent
-from .runtime.commands import configure_app, destroy, invoke, launch, status
+from .runtime.commands import (
+    configure_app,
+    destroy,
+    invoke,
+    launch,
+    status,
+    stop_session,
+)
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
 
@@ -18,6 +25,7 @@ app.command("status")(status)
 app.command("launch")(launch)
 app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
+app.command("stop-session")(stop_session)
 app.add_typer(configure_app)
 
 # gateway

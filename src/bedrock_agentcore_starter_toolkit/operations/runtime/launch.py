@@ -9,6 +9,7 @@ from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from rich.console import Console
 
 from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
@@ -21,6 +22,8 @@ from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCor
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
+
+# console = Console()
 
 log = logging.getLogger(__name__)
 
@@ -258,6 +261,7 @@ def _ensure_memory_for_agent(
     project_config: BedrockAgentCoreConfigSchema,
     config_path: Path,
     agent_name: str,
+    console: Optional[Console] = None,
 ) -> Optional[str]:
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
@@ -283,7 +287,10 @@ def _ensure_memory_for_agent(
         from ...operations.memory.constants import StrategyType
         from ...operations.memory.manager import MemoryManager
 
-        memory_manager = MemoryManager(region_name=agent_config.aws.region)
+        memory_manager = MemoryManager(
+            region_name=agent_config.aws.region,
+            console=console,  # ADD THIS
+        )
         memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
 
         # Check if memory already exists in cloud
@@ -312,6 +319,7 @@ def _ensure_memory_for_agent(
             # If LTM is enabled but no strategies exist, add them
             if agent_config.memory.has_ltm and len(existing_strategies) == 0:
                 log.info("Adding LTM strategies to existing memory...")
+                console.print("⏳ Adding long-term memory strategies (this may take 30-180 seconds)...")
                 memory_manager.update_memory_strategies_and_wait(
                     memory_id=existing_memory.id,
                     add_strategies=[
@@ -334,13 +342,21 @@ def _ensure_memory_for_agent(
                             }
                         },
                     ],
-                    max_wait=30,
+                    max_wait=300,  # CHANGE: Increased from 30 to 300
                     poll_interval=5,
                 )
                 memory = existing_memory
                 log.info("✅ LTM strategies added to existing memory")
             else:
-                memory = existing_memory
+                # CHANGE: ADD THIS BLOCK - Wait for existing memory to become ACTIVE
+                console.print("⏳ Waiting for existing memory to become ACTIVE...")
+                memory = memory_manager._wait_for_memory_active(
+                    existing_memory.id,
+                    max_wait=300,
+                    poll_interval=5,
+                )
+                # END CHANGE
+
                 if agent_config.memory.has_ltm and len(existing_strategies) > 0:
                     log.info("✅ Using existing memory with %d strategies", len(existing_strategies))
                 else:
@@ -373,28 +389,29 @@ def _ensure_memory_for_agent(
             else:
                 log.info("Creating new STM-only memory...")
 
-            # Use private method to avoid waiting
-            memory = memory_manager._create_memory(
+            # CHANGE: Use create_memory_and_wait instead of _create_memory
+            console.print("⏳ Creating memory resource (this may take 30-180 seconds)...")
+            memory = memory_manager.create_memory_and_wait(
                 name=memory_name,
                 description=f"Memory for agent {agent_name} with {'STM+LTM' if strategies else 'STM only'}",
                 strategies=strategies,
                 event_expiry_days=agent_config.memory.event_expiry_days or 30,
-                memory_execution_role_arn=None,
+                max_wait=300,  # 5 minutes
+                poll_interval=5,
             )
+            log.info("✅ Memory created and active: %s", memory.id)
+            # END CHANGE
 
-            # Ensure was_created_by_toolkit is True since we just created it
-            # (Should already be True from configure if user chose CREATE_NEW)
+            # CHANGE: ADD THIS - Mark as created by toolkit since we just created it
             if not agent_config.memory.was_created_by_toolkit:
-                log.warning("Memory created but flag was False - correcting to True")
                 agent_config.memory.was_created_by_toolkit = True
-
-            log.info("✅ New memory created: %s (provisioning in background)", memory.id)
+            # END CHANGE
 
         # Save memory configuration (preserving was_created_by_toolkit flag)
         agent_config.memory.memory_id = memory.id
         agent_config.memory.memory_arn = memory.arn
         agent_config.memory.memory_name = memory_name
-        agent_config.memory.first_invoke_memory_check_done = False
+        agent_config.memory.first_invoke_memory_check_done = True  # CHANGE: Set to True since memory is now ACTIVE
 
         project_config.agents[agent_config.name] = agent_config
         save_config(project_config, config_path)
@@ -425,8 +442,8 @@ def _deploy_to_bedrock_agentcore(
     if env_vars is None:
         env_vars = {}
 
-    # Add memory configuration to env_vars if it exists
-    if agent_config.memory and agent_config.memory.memory_id:
+    # Add memory configuration to env_vars only if memory is enabled
+    if agent_config.memory and agent_config.memory.mode != "NO_MEMORY" and agent_config.memory.memory_id:
         env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
         env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
         log.info("Passing memory configuration to agent: %s", agent_config.memory.memory_id)
@@ -436,6 +453,15 @@ def _deploy_to_bedrock_agentcore(
     # Transform network configuration to AWS API format
     network_config = agent_config.aws.network_configuration.to_aws_dict()
     protocol_config = agent_config.aws.protocol_configuration.to_aws_dict()
+
+    lifecycle_config = None
+    if agent_config.aws.lifecycle_configuration.has_custom_settings:
+        lifecycle_config = agent_config.aws.lifecycle_configuration.to_aws_dict()
+        log.info(
+            "Applying custom lifecycle settings: idle=%s, max=%s",
+            agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout,
+            agent_config.aws.lifecycle_configuration.max_lifetime,
+        )
 
     # Execution role should be available by now (either provided or auto-created)
     if not agent_config.aws.execution_role:
@@ -462,6 +488,7 @@ def _deploy_to_bedrock_agentcore(
                 protocol_config=protocol_config,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                lifecycle_config=lifecycle_config,
             )
             break  # Success! Exit retry loop
 
@@ -591,6 +618,7 @@ def launch_bedrock_agentcore(
     use_codebuild: bool = True,
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -601,10 +629,14 @@ def launch_bedrock_agentcore(
         use_codebuild: Whether to use CodeBuild for ARM64 builds
         env_vars: Environment variables to pass to local container (dict of key-value pairs)
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
+        console: Optional Rich Console instance for progress output. Used to maintain
+                output hierarchy with CLI status contexts.
 
     Returns:
         LaunchResult model with launch details
     """
+    if console is None:
+        console = Console()
     # Load project configuration
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
@@ -629,7 +661,7 @@ def launch_bedrock_agentcore(
 
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:
-        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name, console=console)
 
     # Add memory configuration to environment variables if available
     if agent_config.memory and agent_config.memory.memory_id:
@@ -887,10 +919,13 @@ def _launch_with_codebuild(
     project_config,
     auto_update_on_conflict: bool = False,
     env_vars: Optional[dict] = None,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
+    if console is None:
+        console = Console()
     # Create memory if configured
-    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name)
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name, console=console)
 
     # Execute shared CodeBuild workflow with full deployment mode
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(

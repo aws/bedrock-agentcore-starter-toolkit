@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.26] - 2025-10-17
+
+### Changes
+
+- Add direct dependency on Starlette as it is used in the OAuth2 callback local server (#290) (288e443)
+- Implement 3LO Server on localhost:8081 to handle generating OAuth2 tokens (#282) (f2d33a5)
+- fix(deps): restrict pydantic to versions below 2.41.3 (#280) (ec7880e)
+- docs: enhance quickstart guides with improved structure and troubleshooting (#279) (19203e9)
+- chore: bump version to 0.1.25 (#278) (57f1d40)
+
 ## [0.1.25] - 2025-10-13
 
 ### Changes
