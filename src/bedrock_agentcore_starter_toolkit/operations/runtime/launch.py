@@ -5,10 +5,11 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from rich.console import Console
 
 from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
@@ -22,7 +23,120 @@ from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
 
+# console = Console()
+
 log = logging.getLogger(__name__)
+
+
+def _validate_vpc_resources(session: boto3.Session, agent_config, region: str) -> None:
+    """Validate VPC resources exist and are in the same VPC.
+
+    Args:
+        session: Boto3 session
+        agent_config: Agent configuration
+        region: AWS region
+
+    Raises:
+        ValueError: If validation fails
+    """
+    network_config = agent_config.aws.network_configuration
+
+    if network_config.network_mode != "VPC":
+        return  # Nothing to validate for PUBLIC mode
+
+    if not network_config.network_mode_config:
+        raise ValueError("VPC mode requires network configuration")
+
+    subnets = network_config.network_mode_config.subnets
+    security_groups = network_config.network_mode_config.security_groups
+
+    if not subnets or not security_groups:
+        raise ValueError("VPC mode requires both subnets and security groups")
+
+    ec2_client = session.client("ec2", region_name=region)
+
+    # Validate subnets exist and get their VPC IDs
+    try:
+        subnet_response = ec2_client.describe_subnets(SubnetIds=subnets)
+        subnet_vpcs = {subnet["VpcId"] for subnet in subnet_response["Subnets"]}
+
+        if len(subnet_vpcs) > 1:
+            raise ValueError(
+                f"All subnets must be in the same VPC. "
+                f"Found subnets in {len(subnet_vpcs)} different VPCs: {subnet_vpcs}"
+            )
+
+        vpc_id = subnet_vpcs.pop()
+        log.info("✓ All %d subnets are in VPC: %s", len(subnets), vpc_id)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "InvalidSubnetID.NotFound":
+            raise ValueError(f"One or more subnet IDs not found: {subnets}") from e
+        raise ValueError(f"Failed to validate subnets: {e}") from e
+
+    # Validate security groups exist and are in the same VPC
+    try:
+        sg_response = ec2_client.describe_security_groups(GroupIds=security_groups)
+        sg_vpcs = {sg["VpcId"] for sg in sg_response["SecurityGroups"]}
+
+        if len(sg_vpcs) > 1:
+            raise ValueError(
+                f"All security groups must be in the same VPC. Found {len(sg_vpcs)} different VPCs: {sg_vpcs}"
+            )
+
+        sg_vpc_id = sg_vpcs.pop()
+
+        if sg_vpc_id != vpc_id:
+            raise ValueError(
+                f"Security groups must be in the same VPC as subnets. "
+                f"Subnets are in VPC {vpc_id}, but security groups are in VPC {sg_vpc_id}"
+            )
+
+        log.info("✓ All %d security groups are in VPC: %s", len(security_groups), vpc_id)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "InvalidGroup.NotFound":
+            raise ValueError(f"One or more security group IDs not found: {security_groups}") from e
+        raise ValueError(f"Failed to validate security groups: {e}") from e
+
+    log.info("✓ VPC configuration validated successfully")
+
+
+def _ensure_network_service_linked_role(session: boto3.Session, logger) -> None:
+    """Ensure the AgentCore Network service-linked role exists."""
+    iam_client = session.client("iam")
+    role_name = "AWSServiceRoleForBedrockAgentCoreNetwork"
+
+    try:
+        # Check if role exists
+        iam_client.get_role(RoleName=role_name)
+        logger.info("✓ VPC service-linked role verified: %s", role_name)
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise
+
+        logger.info("Creating VPC service-linked role...")
+
+        try:
+            iam_client.create_service_linked_role(
+                AWSServiceName="network.bedrock-agentcore.amazonaws.com",
+                Description="Service-linked role for Amazon Bedrock AgentCore VPC networking",
+            )
+            logger.info("✓ VPC service-linked role created: %s", role_name)
+
+            # Wait for propagation
+            import time
+
+            logger.info("  Waiting 10 seconds for IAM propagation...")
+            time.sleep(10)
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidInput":
+                logger.info("✓ VPC service-linked role verified (created by another process)")
+            else:
+                logger.error("✗ Failed to create service-linked role: %s", e)
+                raise
 
 
 def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region):
@@ -136,6 +250,7 @@ def _ensure_memory_for_agent(
     project_config: BedrockAgentCoreConfigSchema,
     config_path: Path,
     agent_name: str,
+    console: Optional[Console] = None,
 ) -> Optional[str]:
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
@@ -161,7 +276,10 @@ def _ensure_memory_for_agent(
         from ...operations.memory.constants import StrategyType
         from ...operations.memory.manager import MemoryManager
 
-        memory_manager = MemoryManager(region_name=agent_config.aws.region)
+        memory_manager = MemoryManager(
+            region_name=agent_config.aws.region,
+            console=console,  # ADD THIS
+        )
         memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
 
         # Check if memory already exists in cloud
@@ -190,6 +308,7 @@ def _ensure_memory_for_agent(
             # If LTM is enabled but no strategies exist, add them
             if agent_config.memory.has_ltm and len(existing_strategies) == 0:
                 log.info("Adding LTM strategies to existing memory...")
+                console.print("⏳ Adding long-term memory strategies (this may take 30-180 seconds)...")
                 memory_manager.update_memory_strategies_and_wait(
                     memory_id=existing_memory.id,
                     add_strategies=[
@@ -212,13 +331,21 @@ def _ensure_memory_for_agent(
                             }
                         },
                     ],
-                    max_wait=30,
+                    max_wait=300,  # CHANGE: Increased from 30 to 300
                     poll_interval=5,
                 )
                 memory = existing_memory
                 log.info("✅ LTM strategies added to existing memory")
             else:
-                memory = existing_memory
+                # CHANGE: ADD THIS BLOCK - Wait for existing memory to become ACTIVE
+                console.print("⏳ Waiting for existing memory to become ACTIVE...")
+                memory = memory_manager._wait_for_memory_active(
+                    existing_memory.id,
+                    max_wait=300,
+                    poll_interval=5,
+                )
+                # END CHANGE
+
                 if agent_config.memory.has_ltm and len(existing_strategies) > 0:
                     log.info("✅ Using existing memory with %d strategies", len(existing_strategies))
                 else:
@@ -251,28 +378,29 @@ def _ensure_memory_for_agent(
             else:
                 log.info("Creating new STM-only memory...")
 
-            # Use private method to avoid waiting
-            memory = memory_manager._create_memory(
+            # CHANGE: Use create_memory_and_wait instead of _create_memory
+            console.print("⏳ Creating memory resource (this may take 30-180 seconds)...")
+            memory = memory_manager.create_memory_and_wait(
                 name=memory_name,
                 description=f"Memory for agent {agent_name} with {'STM+LTM' if strategies else 'STM only'}",
                 strategies=strategies,
                 event_expiry_days=agent_config.memory.event_expiry_days or 30,
-                memory_execution_role_arn=None,
+                max_wait=300,  # 5 minutes
+                poll_interval=5,
             )
+            log.info("✅ Memory created and active: %s", memory.id)
+            # END CHANGE
 
-            # Ensure was_created_by_toolkit is True since we just created it
-            # (Should already be True from configure if user chose CREATE_NEW)
+            # CHANGE: ADD THIS - Mark as created by toolkit since we just created it
             if not agent_config.memory.was_created_by_toolkit:
-                log.warning("Memory created but flag was False - correcting to True")
                 agent_config.memory.was_created_by_toolkit = True
-
-            log.info("✅ New memory created: %s (provisioning in background)", memory.id)
+            # END CHANGE
 
         # Save memory configuration (preserving was_created_by_toolkit flag)
         agent_config.memory.memory_id = memory.id
         agent_config.memory.memory_arn = memory.arn
         agent_config.memory.memory_name = memory_name
-        agent_config.memory.first_invoke_memory_check_done = False
+        agent_config.memory.first_invoke_memory_check_done = True  # CHANGE: Set to True since memory is now ACTIVE
 
         project_config.agents[agent_config.name] = agent_config
         save_config(project_config, config_path)
@@ -303,8 +431,8 @@ def _deploy_to_bedrock_agentcore(
     if env_vars is None:
         env_vars = {}
 
-    # Add memory configuration to env_vars if it exists
-    if agent_config.memory and agent_config.memory.memory_id:
+    # Add memory configuration to env_vars only if memory is enabled
+    if agent_config.memory and agent_config.memory.mode != "NO_MEMORY" and agent_config.memory.memory_id:
         env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
         env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
         log.info("Passing memory configuration to agent: %s", agent_config.memory.memory_id)
@@ -314,6 +442,15 @@ def _deploy_to_bedrock_agentcore(
     # Transform network configuration to AWS API format
     network_config = agent_config.aws.network_configuration.to_aws_dict()
     protocol_config = agent_config.aws.protocol_configuration.to_aws_dict()
+
+    lifecycle_config = None
+    if agent_config.aws.lifecycle_configuration.has_custom_settings:
+        lifecycle_config = agent_config.aws.lifecycle_configuration.to_aws_dict()
+        log.info(
+            "Applying custom lifecycle settings: idle=%s, max=%s",
+            agent_config.aws.lifecycle_configuration.idle_runtime_session_timeout,
+            agent_config.aws.lifecycle_configuration.max_lifetime,
+        )
 
     # Execution role should be available by now (either provided or auto-created)
     if not agent_config.aws.execution_role:
@@ -340,6 +477,7 @@ def _deploy_to_bedrock_agentcore(
                 protocol_config=protocol_config,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                lifecycle_config=lifecycle_config,
             )
             break  # Success! Exit retry loop
 
@@ -414,7 +552,43 @@ def _deploy_to_bedrock_agentcore(
     result = bedrock_agentcore_client.wait_for_agent_endpoint_ready(agent_id)
     log.info("Agent endpoint: %s", result)
 
+    if agent_config.aws.network_configuration.network_mode == "VPC":
+        vpc_subnets = agent_config.aws.network_configuration.network_mode_config.subnets
+        session = boto3.Session(region_name=region)
+        _check_vpc_deployment(session, agent_id, vpc_subnets, region)
+
     return agent_id, agent_arn
+
+
+def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: List[str], region: str) -> None:
+    """Verify VPC deployment created ENIs in the specified subnets."""
+    ec2_client = session.client("ec2", region_name=region)
+
+    try:
+        # Look for ENIs in our subnets with AgentCore description
+        response = ec2_client.describe_network_interfaces(
+            Filters=[
+                {"Name": "subnet-id", "Values": vpc_subnets},
+                {"Name": "description", "Values": ["*AgentCore*", "*bedrock-agentcore*"]},
+            ]
+        )
+
+        all_enis = response.get("NetworkInterfaces", [])
+        our_enis = [eni for eni in all_enis if eni.get("SubnetId") in vpc_subnets]
+
+        if our_enis:
+            log.info("✓ Found %d ENI(s) in configured subnets:", len(our_enis))
+            for eni in our_enis:
+                log.info("  - ENI ID: %s", eni["NetworkInterfaceId"])
+                log.info("    Subnet: %s", eni["SubnetId"])
+                log.info("    Private IP: %s", eni.get("PrivateIpAddress", "N/A"))
+                log.info("    Status: %s", eni["Status"])
+                log.info("    Security Groups: %s", [sg["GroupId"] for sg in eni.get("Groups", [])])
+        else:
+            log.info(":information_source:  VPC network interfaces will be created on first invocation")
+
+    except Exception as e:
+        log.error("Error checking ENIs: %s", e)
 
 
 def launch_bedrock_agentcore(
@@ -424,6 +598,7 @@ def launch_bedrock_agentcore(
     use_codebuild: bool = True,
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -434,10 +609,14 @@ def launch_bedrock_agentcore(
         use_codebuild: Whether to use CodeBuild for ARM64 builds
         env_vars: Environment variables to pass to local container (dict of key-value pairs)
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
+        console: Optional Rich Console instance for progress output. Used to maintain
+                output hierarchy with CLI status contexts.
 
     Returns:
         LaunchResult model with launch details
     """
+    if console is None:
+        console = Console()
     # Load project configuration
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
@@ -445,9 +624,24 @@ def launch_bedrock_agentcore(
     if env_vars is None:
         env_vars = {}
 
+    if agent_config.aws.network_configuration.network_mode == "VPC":
+        if local:
+            log.warning("⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored.")
+        else:
+            log.info("Validating VPC resources...")
+            session = boto3.Session(region_name=agent_config.aws.region)
+            _validate_vpc_resources(session, agent_config, agent_config.aws.region)
+
+            # Ensure service-linked role exists for VPC networking
+            _ensure_network_service_linked_role(session, log)
+
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:
         _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+
+    # Ensure memory exists for non-CodeBuild paths
+    if not use_codebuild:
+        _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name, console=console)
 
     # Add memory configuration to environment variables if available
     if agent_config.memory and agent_config.memory.memory_id:
@@ -705,10 +899,13 @@ def _launch_with_codebuild(
     project_config,
     auto_update_on_conflict: bool = False,
     env_vars: Optional[dict] = None,
+    console: Optional[Console] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
+    if console is None:
+        console = Console()
     # Create memory if configured
-    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name)
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name, console=console)
 
     # Execute shared CodeBuild workflow with full deployment mode
     build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(

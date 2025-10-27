@@ -267,8 +267,8 @@ class ConfigurationManager:
 
         Returns:
             Tuple of (action, value) where:
-            - action is "USE_EXISTING", "CREATE_NEW"
-            - value is memory_id for USE_EXISTING, mode for CREATE_NEW
+            - action is "USE_EXISTING", "CREATE_NEW", "SKIP"
+            - value is memory_id for USE_EXISTING, mode for CREATE_NEW, None for SKIP
         """
         if self.non_interactive:
             # In non-interactive mode, default to creating new STM
@@ -285,8 +285,19 @@ class ConfigurationManager:
             region = self.region or (self.existing_config.aws.region if self.existing_config else None)
 
             if not region:
-                # No region available - skip to new memory creation
-                console.print("[dim]No region configured yet, proceeding with new memory creation[/dim]")
+                # No region available - offer skip option
+                console.print("[dim]No region configured yet[/dim]")
+                console.print("\n[dim]Options:[/dim]")
+                console.print("[dim]  • Press Enter to create new memory[/dim]")
+                console.print("[dim]  • Type 's' to skip memory setup[/dim]")  # <-- ADD
+                console.print()
+
+                response = _prompt_with_default("Your choice", "").strip().lower()
+
+                if response == "s" or response == "skip":  # <-- ADD
+                    _print_success("Skipping memory configuration")
+                    return ("SKIP", None)
+
                 return self._prompt_new_memory_config()
 
             memory_manager = MemoryManager(region_name=region)
@@ -311,10 +322,14 @@ class ConfigurationManager:
                 console.print("\n[dim]Options:[/dim]")
                 console.print("[dim]  • Enter a number to use existing memory[/dim]")
                 console.print("[dim]  • Press Enter to create new memory[/dim]")
+                console.print("[dim]  • Type 's' to skip memory setup[/dim]")
 
                 response = _prompt_with_default("Your choice", "").strip().lower()
 
-                if response.isdigit():
+                if response == "s" or response == "skip":
+                    _print_success("Skipping memory configuration")
+                    return ("SKIP", None)
+                elif response.isdigit():
                     idx = int(response) - 1
                     if 0 <= idx < len(existing_memories):
                         selected = existing_memories[idx]
@@ -323,7 +338,16 @@ class ConfigurationManager:
             else:
                 # No existing memories found
                 console.print("[yellow]No existing memory resources found in your account[/yellow]")
-                console.print("[dim]Proceeding with new memory creation...[/dim]\n")
+                console.print("\n[dim]Options:[/dim]")
+                console.print("[dim]  • Press Enter to create new memory[/dim]")
+                console.print("[dim]  • Type 's' to skip memory setup[/dim]")
+                console.print()
+
+                response = _prompt_with_default("Your choice", "").strip().lower()
+
+                if response == "s" or response == "skip":
+                    _print_success("Skipping memory configuration")
+                    return ("SKIP", None)
 
         except Exception as e:
             console.print(f"[dim]Could not list existing memories: {e}[/dim]")
@@ -332,7 +356,7 @@ class ConfigurationManager:
         return self._prompt_new_memory_config()
 
     def _prompt_new_memory_config(self) -> Tuple[str, str]:
-        """Prompt for new memory configuration (no skip option)."""
+        """Prompt for new memory configuration - LTM yes/no only."""
         console.print("[green]✓ Short-term memory will be enabled (default)[/green]")
         console.print("  • Stores conversations within sessions")
         console.print("  • Provides immediate context recall")

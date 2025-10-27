@@ -22,6 +22,10 @@ class ConfigureResult(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
+    network_mode: Optional[str] = Field(None, description="Network mode (PUBLIC or VPC)")
+    network_subnets: Optional[List[str]] = Field(None, description="VPC subnet IDs")
+    network_security_groups: Optional[List[str]] = Field(None, description="VPC security group IDs")
+    network_vpc_id: Optional[str] = Field(None, description="VPC ID")
 
 
 # Launch operation models
@@ -70,12 +74,18 @@ class StatusConfigInfo(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
+    network_mode: Optional[str] = None
+    network_subnets: Optional[List[str]] = None
+    network_security_groups: Optional[List[str]] = None
+    network_vpc_id: Optional[str] = None
     memory_id: Optional[str] = Field(None, description="Memory resource ID")
     memory_status: Optional[str] = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
     memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
     memory_enabled: Optional[bool] = Field(None, description="Whether memory is enabled")
     memory_strategies: Optional[List[str]] = Field(None, description="Active memory strategies")
     memory_details: Optional[Dict[str, Any]] = Field(None, description="Detailed memory resource information")
+    idle_timeout: Optional[int] = Field(None, description="Idle runtime session timeout in seconds")
+    max_lifetime: Optional[int] = Field(None, description="Maximum instance lifetime in seconds")
 
 
 class StatusResult(BaseModel):
@@ -94,3 +104,12 @@ class DestroyResult(BaseModel):
     warnings: List[str] = Field(default_factory=list, description="List of warnings during destruction")
     errors: List[str] = Field(default_factory=list, description="List of errors during destruction")
     dry_run: bool = Field(default=False, description="Whether this was a dry run")
+
+
+class StopSessionResult(BaseModel):
+    """Result of stop session operation."""
+
+    session_id: str = Field(..., description="Session ID that was stopped")
+    agent_name: str = Field(..., description="Name of the agent")
+    status_code: int = Field(..., description="HTTP status code of the operation")
+    message: str = Field(default="Session stopped successfully", description="Result message")

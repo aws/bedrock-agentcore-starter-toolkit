@@ -67,7 +67,9 @@ See our [Security Policy](SECURITY.md) for more details.
 - For AWS Bedrock service questions, visit [AWS re:Post](https://repost.aws/)
 - For urgent AWS support, use your [AWS Support](https://aws.amazon.com/support/) plan
 
-## About Package Management
+## Development Setup (For AWS Team Members)
+
+### About Package Management
 
 This project uses [`uv`](https://docs.astral.sh/uv/) for dependency management, providing:
 
@@ -81,20 +83,85 @@ The repository includes:
 - `pyproject.toml` - Project metadata and dependencies
 - `uv.lock` - Locked dependency versions for reproducibility
 
-### Development Setup
+### Initial Setup
 
 ```bash
-# Create and activate virtual environment with dependencies
+# Clone and create virtual environment with dependencies
+git clone https://github.com/aws/bedrock-agentcore-starter-toolkit.git
+cd bedrock-agentcore-starter-toolkit
+
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv sync
 
-# Run commands using uv
+# Install pre-commit hooks (one-time)
+pre-commit install
+```
+
+That's it! You're ready to develop.
+
+### Daily Development Workflow
+
+Pre-commit hooks will now run automatically:
+
+```bash
+# Make your changes
+vim src/bedrock_agentcore_starter_toolkit/cli/commands.py
+
+# Commit (hooks run automatically)
+git commit -m "feat: add new command"
+# ↑ Formatting and linting run here (~10-20 seconds)
+
+# Push (tests run automatically)
+git push origin my-branch
+# ↑ Security scanning and tests run here (~2-5 minutes)
+```
+
+### What the Hooks Check
+
+**On every commit** (~10-20 seconds):
+- ✅ Code formatting (auto-fixes with ruff)
+- ✅ Import sorting (auto-fixes)
+- ✅ Linting (with ruff)
+- ✅ File hygiene (trailing whitespace, etc.)
+
+**Before every push** (~2-5 minutes):
+- ✅ Security scanning (bandit)
+- ✅ Full test suite with coverage
+
+### Skipping Hooks (WIP Commits)
+
+For work-in-progress commits, you can skip checks:
+
+```bash
+git commit --no-verify -m "wip: incomplete work"
+```
+
+**Please run all checks before opening a PR!**
+
+### Running Checks Manually
+
+```bash
+# Run all pre-commit checks
+pre-commit run --all-files
+
+# Run only pre-commit stage (fast)
+pre-commit run --hook-stage pre-commit --all-files
+
+# Run only pre-push stage (includes tests)
+pre-commit run --hook-stage pre-push --all-files
+
+# Run tests manually
+uv run pytest tests/ --cov=src
+
+# Run the CLI
 uv run agentcore --help
 
 # Add new dependencies
 uv add requests
 
 # Add development dependencies
-uv add --dev pytest
+uv add --dev pytest-mock
 ```
 
 ## Code of Conduct
