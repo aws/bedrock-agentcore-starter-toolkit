@@ -257,6 +257,19 @@ def configure(
         help="Comma-separated list of allowed request headers "
         "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
     ),
+    vpc: bool = typer.Option(
+        False, "--vpc", help="Enable VPC networking mode (requires --subnets and --security-groups)"
+    ),
+    subnets: Optional[str] = typer.Option(
+        None,
+        "--subnets",
+        help="Comma-separated list of subnet IDs (e.g., subnet-abc123,subnet-def456). Required with --vpc.",
+    ),
+    security_groups: Optional[str] = typer.Option(
+        None,
+        "--security-groups",
+        help="Comma-separated list of security group IDs (e.g., sg-xyz789). Required with --vpc.",
+    ),
     idle_timeout: Optional[int] = typer.Option(
         None,
         "--idle-timeout",
@@ -291,6 +304,59 @@ def configure(
     if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
         _handle_error("Error: --protocol must be either HTTP or MCP or A2A")
 
+    # Validate VPC configuration
+    vpc_subnets = None
+    vpc_security_groups = None
+
+    if vpc:
+        # VPC mode requires both subnets and security groups
+        if not subnets or not security_groups:
+            _handle_error(
+                "VPC mode requires both --subnets and --security-groups.\n"
+                "Example: agentcore configure --entrypoint my_agent.py --vpc "
+                "--subnets subnet-abc123,subnet-def456 --security-groups sg-xyz789"
+            )
+
+        # Parse and validate subnet IDs - UPDATED VALIDATION
+        vpc_subnets = [s.strip() for s in subnets.split(",") if s.strip()]
+        for subnet_id in vpc_subnets:
+            # Format: subnet-{8-17 hex characters}
+            if not subnet_id.startswith("subnet-"):
+                _handle_error(
+                    f"Invalid subnet ID format: {subnet_id}\nSubnet IDs must start with 'subnet-' (e.g., subnet-abc123)"
+                )
+            # Check minimum length (subnet- + at least 8 chars)
+            if len(subnet_id) < 15:  # "subnet-" (7) + 8 chars = 15
+                _handle_error(
+                    f"Invalid subnet ID format: {subnet_id}\nSubnet ID is too short. Expected format: subnet-xxxxxxxx"
+                )
+
+        # Parse and validate security group IDs - UPDATED VALIDATION
+        vpc_security_groups = [sg.strip() for sg in security_groups.split(",") if sg.strip()]
+        for sg_id in vpc_security_groups:
+            # Format: sg-{8-17 hex characters}
+            if not sg_id.startswith("sg-"):
+                _handle_error(
+                    f"Invalid security group ID format: {sg_id}\n"
+                    f"Security group IDs must start with 'sg-' (e.g., sg-abc123)"
+                )
+            # Check minimum length (sg- + at least 8 chars)
+            if len(sg_id) < 11:  # "sg-" (3) + 8 chars = 11
+                _handle_error(
+                    f"Invalid security group ID format: {sg_id}\n"
+                    f"Security group ID is too short. Expected format: sg-xxxxxxxx"
+                )
+
+        _print_success(
+            f"VPC mode enabled with {len(vpc_subnets)} subnets and {len(vpc_security_groups)} security groups"
+        )
+
+    elif subnets or security_groups:
+        # Error: VPC resources provided without --vpc flag
+        _handle_error(
+            "The --subnets and --security-groups flags require --vpc flag.\n"
+            "Use: agentcore configure --entrypoint my_agent.py --vpc --subnets ... --security-groups ..."
+        )
     # Validate lifecycle configuration
     if idle_timeout is not None and max_lifetime is not None:
         if idle_timeout > max_lifetime:
@@ -418,6 +484,9 @@ def configure(
             protocol=protocol.upper() if protocol else None,
             non_interactive=non_interactive,
             source_path=source_path,
+            vpc_enabled=vpc,
+            vpc_subnets=vpc_subnets,
+            vpc_security_groups=vpc_security_groups,
             idle_timeout=idle_timeout,
             max_lifetime=max_lifetime,
         )
@@ -433,10 +502,21 @@ def configure(
             headers = request_header_config.get("requestHeaderAllowlist", [])
             headers_info = f"Request Headers Allowlist: [dim]{len(headers)} headers configured[/dim]\n"
 
+        network_info = "Public"
+        if vpc:
+            network_info = f"VPC ({len(vpc_subnets)} subnets, {len(vpc_security_groups)} security groups)"
+
         execution_role_display = "Auto-create" if not result.execution_role else result.execution_role
-        memory_info = "Short-term memory (30-day retention)"
-        if disable_memory:
+        saved_config = load_config(result.config_path)
+        saved_agent = saved_config.get_agent_config(agent_name)
+
+        # Display memory status based on actual configuration
+        if saved_agent.memory.mode == "NO_MEMORY":
             memory_info = "Disabled"
+        elif saved_agent.memory.mode == "STM_AND_LTM":
+            memory_info = "Short-term + Long-term memory (30-day retention)"
+        else:  # STM_ONLY
+            memory_info = "Short-term memory (30-day retention)"
 
         lifecycle_info = ""
         if idle_timeout or max_lifetime:
@@ -458,6 +538,7 @@ def configure(
                 f"ECR Repository: [cyan]"
                 f"{'Auto-create' if result.auto_create_ecr else result.ecr_repository or 'N/A'}"
                 f"[/cyan]\n"
+                f"Network Mode: [cyan]{network_info}[/cyan]\n"
                 f"Authorization: [cyan]{auth_info}[/cyan]\n\n"
                 f"{headers_info}\n"
                 f"Memory: [cyan]{memory_info}[/cyan]\n\n"
@@ -598,6 +679,7 @@ def launch(
                 use_codebuild=not local_build,
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                console=console,
             )
 
         project_config = load_config(config_path)
@@ -1013,11 +1095,6 @@ def status(
 
                     # Determine overall status
                     endpoint_status = endpoint_data.get("status", "Unknown") if endpoint_data else "Not Ready"
-                    # memory_info = ""
-                    # if hasattr(status_json["config"], "memory_id") and status_json["config"].get("memory_id"):
-                    #    memory_type = status_json["config"].get("memory_type", "Short-term")
-                    #    memory_id = status_json["config"].get("memory_id")
-                    #    memory_info = f"Memory: [cyan]{memory_type}[/cyan] ([dim]{memory_id}[/dim])\n"
                     if endpoint_status == "READY":
                         status_text = "Ready - Agent deployed and endpoint available"
                     else:
@@ -1034,6 +1111,26 @@ def status(
                         f"Region: [cyan]{status_json['config']['region']}[/cyan] | "
                         f"Account: [dim]{status_json['config'].get('account', 'Not available')}[/dim]\n\n"
                     )
+
+                    # Add network information
+                    network_mode = status_json.get("agent", {}).get("networkConfiguration", {}).get("networkMode")
+                    if network_mode == "VPC":
+                        # Get VPC info from agent response (not config)
+                        network_config = (
+                            status_json.get("agent", {}).get("networkConfiguration", {}).get("networkModeConfig", {})
+                        )
+                        vpc_subnets = network_config.get("subnets", [])
+                        vpc_security_groups = network_config.get("securityGroups", [])
+                        subnet_count = len(vpc_subnets)
+                        sg_count = len(vpc_security_groups)
+                        vpc_id = status_json.get("config", {}).get("network_vpc_id", "unknown")
+                        if vpc_id:
+                            panel_content += f"Network: [cyan]VPC[/cyan] ([dim]{vpc_id}[/dim])\n"
+                            panel_content += f"         {subnet_count} subnets, {sg_count} security groups\n\n"
+                        else:
+                            panel_content += "Network: [cyan]VPC[/cyan]\n\n"
+                    else:
+                        panel_content += "Network: [cyan]Public[/cyan]\n\n"
 
                     # Add memory status with proper provisioning indication
                     if "memory_id" in status_json.get("config", {}) and status_json["config"]["memory_id"]:

@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
+from rich.console import Console
 
 from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
 from .models import convert_strategies_to_dicts
@@ -32,6 +33,7 @@ class MemoryManager:
         region_name: Optional[str] = None,
         boto3_session: Optional[boto3.Session] = None,
         boto_client_config: Optional[BotocoreConfig] = None,
+        console: Optional[Console] = None,
     ):
         """Initialize MemoryManager with AWS region.
 
@@ -42,12 +44,14 @@ class MemoryManager:
                           parameter is also specified, validation will ensure they match.
             boto_client_config: Optional boto3 client configuration. If provided, will be
                               merged with default configuration including user agent.
+            console: Optional Rich console instance for output (creates new if not provided)
 
         Raises:
             ValueError: If region_name parameter conflicts with boto3_session region.
         """
         session = boto3_session or boto3.Session()
         session_region = session.region_name
+        self.console = console or Console()
 
         # Validate region consistency if both are provided
         if region_name and boto3_session and session_region and region_name != session_region:
@@ -280,32 +284,7 @@ class MemoryManager:
         if memory_id is None:
             memory_id = ""
         logger.info("Created memory %s, waiting for ACTIVE status...", memory_id)
-
-        start_time = time.time()
-        while time.time() - start_time < max_wait:
-            elapsed = int(time.time() - start_time)
-
-            try:
-                status = self.get_memory_status(memory_id)
-
-                if status == MemoryStatus.ACTIVE.value:
-                    logger.info("Memory %s is now ACTIVE (took %d seconds)", memory_id, elapsed)
-                    return memory
-                elif status == MemoryStatus.FAILED.value:
-                    # Get failure reason if available
-                    response = self._control_plane_client.get_memory(memoryId=memory_id)
-                    failure_reason = response["memory"].get("failureReason", "Unknown")
-                    raise RuntimeError("Memory creation failed: %s" % failure_reason)
-                else:
-                    logger.debug("Memory status: %s (%d seconds elapsed)", status, elapsed)
-
-            except ClientError as e:
-                logger.error("Error checking memory status: %s", e)
-                raise
-
-            time.sleep(poll_interval)
-
-        raise TimeoutError(f"Memory {memory_id} did not become ACTIVE within {max_wait} seconds")
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
     def create_memory_and_wait(
         self,
@@ -1008,6 +987,8 @@ class MemoryManager:
         )
 
         start_time = time.time()
+        last_status_print = 0
+        status_print_interval = 10  # Print status every 10 seconds
 
         while time.time() - start_time < max_wait:
             elapsed = int(time.time() - start_time)
@@ -1029,13 +1010,18 @@ class MemoryManager:
                     self._check_strategies_terminal_state(strategies)
                 )
 
-                # Log current status
-                logger.debug(
-                    "Memory status: %s, Strategy statuses: %s (%d seconds elapsed)",
-                    memory_status,
-                    strategy_statuses,
-                    elapsed,
-                )
+                # Print status update every 10 seconds
+                if elapsed - last_status_print >= status_print_interval:
+                    if strategies:
+                        active_count = len([s for s in strategy_statuses if s == "ACTIVE"])
+                        self.console.log(
+                            f"   ⏳ Memory: {memory_status}, "
+                            f"Strategies: {active_count}/{len(strategies)} active "
+                            f"({elapsed}s elapsed)"
+                        )
+                    else:
+                        self.console.log(f"   ⏳ Memory: {memory_status} ({elapsed}s elapsed)")
+                    last_status_print = elapsed
 
                 # Check if memory is ACTIVE and all strategies are in terminal states
                 if memory_status == MemoryStatus.ACTIVE.value and all_strategies_terminal:
@@ -1048,6 +1034,7 @@ class MemoryManager:
                         memory_id,
                         elapsed,
                     )
+                    self.console.log(f"   ✅ Memory is ACTIVE (took {elapsed}s)")
                     return Memory(memory)
 
                 # Wait before next check

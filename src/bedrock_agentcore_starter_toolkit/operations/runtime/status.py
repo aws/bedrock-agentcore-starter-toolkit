@@ -26,6 +26,24 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
+    # ADD NETWORK CONFIGURATION EXTRACTION
+    network_mode = agent_config.aws.network_configuration.network_mode
+    vpc_id = None
+
+    if network_mode == "VPC" and agent_config.aws.network_configuration.network_mode_config:
+        network_config = agent_config.aws.network_configuration.network_mode_config
+
+        # Try to get VPC ID from subnets (best effort - don't fail if can't retrieve)
+        try:
+            import boto3
+
+            ec2_client = boto3.client("ec2", region_name=agent_config.aws.region)
+            subnet_response = ec2_client.describe_subnets(SubnetIds=network_config.subnets[:1])
+            if subnet_response["Subnets"]:
+                vpc_id = subnet_response["Subnets"][0]["VpcId"]
+        except Exception:
+            pass  # nosec B110 # Ignore errors - VPC ID is nice-to-have
+
     # Build config info
     config_info = StatusConfigInfo(
         name=agent_config.name,
@@ -36,6 +54,14 @@ def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusRes
         ecr_repository=agent_config.aws.ecr_repository,
         agent_id=agent_config.bedrock_agentcore.agent_id,
         agent_arn=agent_config.bedrock_agentcore.agent_arn,
+        network_mode=agent_config.aws.network_configuration.network_mode,
+        network_subnets=agent_config.aws.network_configuration.network_mode_config.subnets
+        if agent_config.aws.network_configuration.network_mode_config
+        else None,
+        network_security_groups=agent_config.aws.network_configuration.network_mode_config.security_groups
+        if agent_config.aws.network_configuration.network_mode_config
+        else None,
+        network_vpc_id=vpc_id,
     )
 
     if agent_config.aws.lifecycle_configuration.has_custom_settings:

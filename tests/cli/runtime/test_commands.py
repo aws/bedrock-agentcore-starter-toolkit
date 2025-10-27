@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 import typer
@@ -42,6 +42,10 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
@@ -54,6 +58,17 @@ def handler(payload):
 
             # Mock the OAuth prompt to return "no" (default behavior)
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists (used by ConfigurationManager initialization)
+            mock_load_if_exists.return_value = None  # No existing config
+
+            # Mock load_config (used at the end to display config)
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"  # Default memory mode
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -97,6 +112,10 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
@@ -109,6 +128,17 @@ def handler(payload):
 
             # Mock the OAuth prompt to return "no" (default behavior)
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -151,12 +181,27 @@ def handler(payload):
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -381,11 +426,26 @@ agents:
                 "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
             ) as mock_req_display,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
         ):
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
             mock_prompt.return_value = "no"
+
+            # Mock load_config_if_exists
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "STM_ONLY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
 
             mock_result = Mock()
             mock_result.runtime = "docker"
@@ -1449,6 +1509,7 @@ agents:
                     use_codebuild=False,  # Should be False due to --local-build
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -1495,6 +1556,7 @@ agents:
                     use_codebuild=True,  # Default CodeBuild mode
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -2126,6 +2188,7 @@ agents:
                     use_codebuild=True,
                     env_vars=None,
                     auto_update_on_conflict=False,
+                    console=ANY,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -3097,3 +3160,948 @@ agents:
                 assert call_args.kwargs["custom_headers"] == expected_headers
             finally:
                 os.chdir(original_cwd)
+
+    def test_configure_with_vpc_flags(self, tmp_path):
+        """Test configure command with VPC flags."""
+        # Add test implementation
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req_display,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
+        ):
+            mock_infer_name.return_value = "test_agent"
+            mock_rel_path.return_value = "test_agent.py"
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config for final display
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "NO_MEMORY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.network_mode = "VPC"
+            mock_result.network_subnets = ["subnet-abc123def456", "subnet-xyz789ghi012"]
+            mock_result.network_security_groups = ["sg-abc123xyz789"]
+            mock_result.auto_create_ecr = True
+            mock_configure.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            import os
+
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "subnet-abc123def456,subnet-xyz789ghi012",
+                        "--security-groups",
+                        "sg-abc123xyz789",
+                        "--non-interactive",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "VPC mode enabled" in result.stdout
+                assert "2 subnets" in result.stdout
+                assert "1 security groups" in result.stdout
+
+                # Verify VPC params were passed
+                call_args = mock_configure.call_args
+                assert call_args.kwargs["vpc_enabled"] is True
+                assert call_args.kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
+                assert call_args.kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
+
+            finally:
+                os.chdir(original_cwd)
+
+
+class TestCommandsAdditionalCoverage:
+    """Additional tests to improve command coverage."""
+
+    def setup_method(self):
+        """Setup test runner."""
+        self.runner = CliRunner()
+
+    # ========== Lifecycle Configuration Validation ==========
+
+    def test_configure_idle_timeout_greater_than_max_lifetime_error(self, tmp_path):
+        """Test configure command with idle_timeout > max_lifetime (validation error)."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--idle-timeout",
+                    "1000",
+                    "--max-lifetime",
+                    "500",  # Less than idle_timeout
+                    "--non-interactive",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "idle-timeout" in result.stdout.lower()
+            assert "max-lifetime" in result.stdout.lower()
+        finally:
+            os.chdir(original_cwd)
+
+    # ========== Request Header Configuration ==========
+
+    def test_configure_with_request_header_allowlist_flag(self, tmp_path):
+        """Test configure command with request header allowlist flag."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req_display,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
+        ):
+            mock_infer_name.return_value = "test_agent"
+            mock_rel_path.return_value = "test_agent.py"
+            mock_req_display.return_value = tmp_path / "requirements.txt"
+            mock_prompt.return_value = "no"
+            mock_load_if_exists.return_value = None
+
+            # Mock load_config for final display
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "NO_MEMORY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.auto_create_ecr = True
+            mock_configure.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--request-header-allowlist",
+                        "Authorization,X-Custom-Header",
+                        "--non-interactive",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "Configured request header allowlist" in result.stdout
+
+                # Verify headers were parsed correctly
+                call_args = mock_configure.call_args
+                expected_config = {"requestHeaderAllowlist": ["Authorization", "X-Custom-Header"]}
+                assert call_args.kwargs["request_header_configuration"] == expected_config
+            finally:
+                os.chdir(original_cwd)
+
+    def test_configure_vpc_without_flag_but_with_resources_error(self, tmp_path):
+        """Test error when VPC resources provided without --vpc flag."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--subnets",
+                    "subnet-abc123def456",  # No --vpc flag
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "require --vpc flag" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_vpc_invalid_subnet_format(self, tmp_path):
+        """Test configure with invalid subnet ID format."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--vpc",
+                    "--subnets",
+                    "invalid-subnet",
+                    "--security-groups",
+                    "sg-abc123xyz789",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "Invalid subnet ID format" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_configure_vpc_invalid_security_group_format(self, tmp_path):
+        """Test configure with invalid security group ID format."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(agent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--vpc",
+                    "--subnets",
+                    "subnet-abc123def456",
+                    "--security-groups",
+                    "invalid-sg",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "Invalid security group ID format" in result.stdout
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_status_displays_vpc_info(self, tmp_path):
+        """Test status command displays VPC information."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "VPC",
+                    "network_vpc_id": "vpc-test123456",
+                    "network_subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                    "network_security_groups": ["sg-abc123xyz789"],
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                    "idle_timeout": 600,  # 10 minutes
+                    "max_lifetime": 3600,  # 1 hour
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "VPC",
+                        "networkModeConfig": {
+                            "subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                            "securityGroups": ["sg-abc123xyz789"],
+                        },
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: VPC" in result.stdout
+                assert "vpc-test123456" in result.stdout
+                assert "2 subnets, 1 security groups" in result.stdout
+                assert "Lifecycle Settings:" in result.stdout
+                assert "Idle Timeout: 600s (10 minutes)" in result.stdout
+                assert "Max Lifetime: 3600s (1 hours)" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    # ========== Memory Configuration Branches ==========
+
+    def test_configure_with_disable_memory_flag(self, tmp_path):
+        """Test configure command with --disable-memory flag."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("from bedrock_agentcore.runtime import BedrockAgentCoreApp\napp = BedrockAgentCoreApp()")
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+            ) as mock_configure,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+            ) as mock_req,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
+            ) as mock_load_if_exists,
+        ):
+            mock_infer_name.return_value = "test_agent"
+            mock_rel_path.return_value = "test_agent.py"
+            mock_req.return_value = None
+            mock_load_if_exists.return_value = None
+
+            mock_agent_config = Mock()
+            mock_agent_config.memory = Mock()
+            mock_agent_config.memory.mode = "NO_MEMORY"
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.runtime = "docker"
+            mock_result.region = "us-west-2"
+            mock_result.account_id = "123456789012"
+            mock_result.execution_role = "arn:aws:iam::123456789012:role/TestRole"
+            mock_result.config_path = tmp_path / ".bedrock_agentcore.yaml"
+            mock_result.auto_create_ecr = True
+            mock_configure.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--disable-memory",  # Explicit disable
+                        "--non-interactive",
+                    ],
+                )
+
+                assert result.exit_code == 0
+                assert "Memory: Disabled" in result.stdout
+
+                # Verify NO_MEMORY was passed
+                call_args = mock_configure.call_args
+                assert call_args.kwargs["memory_mode"] == "NO_MEMORY"
+            finally:
+                os.chdir(original_cwd)
+
+    # ========== Stop Session Command ==========
+
+    def test_stop_session_command_success(self, tmp_path):
+        """Test stop-session command success."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: us-west-2
+      account: "123456789012"
+      execution_role: arn:aws:iam::123456789012:role/TestRole
+      network_configuration:
+        network_mode: VPC
+        network_mode_config:
+          subnets:
+            - subnet-abc123def456
+            - subnet-xyz789ghi012
+          security_groups:
+            - sg-abc123xyz789
+    bedrock_agentcore:
+      agent_id: test-agent-id
+      agent_arn: arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.stop_runtime_session") as mock_stop:
+            mock_result = Mock()
+            mock_result.status_code = 200
+            mock_result.message = "Session stopped successfully"
+            mock_result.session_id = "session-123"
+            mock_result.agent_name = "test-agent"
+            mock_stop.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["stop-session", "--session-id", "session-123"])
+
+                assert result.exit_code == 0
+                assert "Session Stopped" in result.stdout
+                assert "session-123" in result.stdout
+                assert "test-agent" in result.stdout
+                mock_stop.assert_called_once_with(config_path=config_file, session_id="session-123", agent_name=None)
+            finally:
+                os.chdir(original_cwd)
+
+    def test_stop_session_command_no_session_id_error(self, tmp_path):
+        """Test stop-session command without session ID (uses last session)."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    bedrock_agentcore:
+      agent_session_id: last-session-456
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.stop_runtime_session") as mock_stop:
+            mock_result = Mock()
+            mock_result.status_code = 200
+            mock_result.message = "Session stopped successfully"
+            mock_result.session_id = "last-session-456"
+            mock_result.agent_name = "test-agent"
+            mock_stop.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["stop-session"])  # No session ID
+
+                assert result.exit_code == 0
+                assert "last-session-456" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_stop_session_command_value_error(self, tmp_path):
+        """Test stop-session command with ValueError (no session found)."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.runtime.stop_runtime_session") as mock_stop:
+            mock_stop.side_effect = ValueError("No active session found")
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["stop-session"])
+
+                assert result.exit_code == 1
+                assert "Failed to Stop Session" in result.stdout
+                assert "No active session found" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_stop_session_command_no_config(self, tmp_path):
+        """Test stop-session command without config file."""
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(app, ["stop-session"])
+
+            assert result.exit_code == 1
+            assert "Configuration Not Found" in result.stdout
+        finally:
+            os.chdir(original_cwd)
+
+    # ========== Status Command Display Branches ==========
+
+    def test_status_command_with_memory_creating_state(self, tmp_path):
+        """Test status command shows warning when memory is in CREATING state."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status,
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+        ):
+            # Mock agent config with observability enabled
+            mock_agent_config = Mock()
+            mock_agent_config.aws.observability.enabled = True
+            mock_project_config = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                    "memory_id": "mem_123456",
+                    "memory_type": "Short-term + Long-term",
+                    "memory_status": "CREATING",  # Memory is provisioning
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Memory is provisioning" in result.stdout
+                assert "STM will be available once ACTIVE" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_status_command_with_lifecycle_settings(self, tmp_path):
+        """Test status command displays lifecycle settings."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "VPC",
+                    "network_vpc_id": "vpc-test123456",
+                    "network_subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                    "network_security_groups": ["sg-abc123xyz789"],
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                    "idle_timeout": 600,  # 10 minutes
+                    "max_lifetime": 3600,  # 1 hour
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "VPC",
+                        "networkModeConfig": {
+                            "subnets": ["subnet-abc123def456", "subnet-xyz789ghi012"],
+                            "securityGroups": ["sg-abc123xyz789"],
+                        },
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: VPC" in result.stdout
+                assert "vpc-test123456" in result.stdout
+                assert "2 subnets, 1 security groups" in result.stdout
+
+            finally:
+                os.chdir(original_cwd)
+
+    def test_status_displays_public_network_info(self, tmp_path):
+        """Test status command displays PUBLIC network mode."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+    region: us-west-2
+    network_configuration:
+        network_mode: PUBLIC
+    bedrock_agentcore:
+    agent_id: test-agent-id
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "agent_id": "test-agent-id",
+                    "agent_arn": "test-arn",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "network_mode": "PUBLIC",
+                    "network_subnets": None,
+                    "network_security_groups": None,
+                    "network_vpc_id": None,
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                },
+                "agent": {
+                    "status": "deployed",
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                    "networkConfiguration": {
+                        "networkMode": "PUBLIC",
+                    },
+                },
+                "endpoint": {
+                    "status": "READY",
+                    "id": "test-endpoint-id",
+                    "name": "DEFAULT",
+                    "lastUpdatedAt": "2024-01-01T00:00:00Z",
+                },
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Network: Public" in result.stdout
+                assert "test-agent" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_status_command_not_deployed(self, tmp_path):
+        """Test status command when agent is configured but not deployed."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
+            mock_result = Mock()
+            mock_result.model_dump.return_value = {
+                "config": {
+                    "name": "test-agent",
+                    "region": "us-west-2",
+                    "account": "123456789012",
+                    "execution_role": "test-role",
+                    "ecr_repository": "test-repo",
+                },
+                "agent": None,  # Not deployed
+                "endpoint": None,
+            }
+            mock_status.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["status"])
+
+                assert result.exit_code == 0
+                assert "Configured but not deployed" in result.stdout
+                assert "agentcore launch" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    # ========== Destroy Command Branches ==========
+
+    def test_destroy_command_with_errors(self, tmp_path):
+        """Test destroy command with errors."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Mock destroy result with errors
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.dry_run = False
+            mock_result.resources_removed = ["AgentCore agent removed"]
+            mock_result.warnings = ["ECR repository still has images"]
+            mock_result.errors = ["Failed to delete CodeBuild project: AccessDenied"]
+            mock_destroy.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--force"])
+
+                assert result.exit_code == 0
+                assert "completed with errors" in result.stdout
+                assert "Warnings" in result.stdout
+                assert "Errors" in result.stdout
+                assert "ECR repository still has images" in result.stdout
+                assert "AccessDenied" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_runtime_error(self, tmp_path):
+        """Test destroy command with RuntimeError."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Simulate RuntimeError during destroy
+            mock_destroy.side_effect = RuntimeError("AWS service unavailable")
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--force"])
+
+                assert result.exit_code == 1
+                assert "AWS service unavailable" in result.stdout
+            finally:
+                os.chdir(original_cwd)
+
+    def test_destroy_command_with_delete_ecr_repo_flag(self, tmp_path):
+        """Test destroy command with --delete-ecr-repo flag."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.destroy_bedrock_agentcore") as mock_destroy,
+        ):
+            # Mock project config
+            mock_project_config = Mock()
+            mock_agent_config = Mock()
+            mock_agent_config.name = "test-agent"
+            mock_agent_config.bedrock_agentcore = Mock()
+            mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test"
+            mock_agent_config.aws.ecr_repository = "test-repo"
+            mock_project_config.get_agent_config.return_value = mock_agent_config
+            mock_load_config.return_value = mock_project_config
+
+            # Mock destroy result
+            mock_result = Mock()
+            mock_result.agent_name = "test-agent"
+            mock_result.dry_run = False
+            mock_result.resources_removed = ["AgentCore agent removed", "ECR repository deleted: test-repo"]
+            mock_result.warnings = []
+            mock_result.errors = []
+            mock_destroy.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["destroy", "--force", "--delete-ecr-repo"])
+
+                assert result.exit_code == 0
+                assert "Successfully destroyed resources" in result.stdout
+                assert "ECR repository deleted" in result.stdout
+
+                # Verify delete_ecr_repo flag was passed
+                call_args = mock_destroy.call_args
+                assert call_args.kwargs["delete_ecr_repo"] is True
+            finally:
+                os.chdir(original_cwd)
+
+    # ========== Launch Command Additional Branches ==========
+
+    def test_launch_command_auto_update_on_conflict_flag(self, tmp_path):
+        """Test launch command with --auto-update-on-conflict flag."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+"""
+        config_file.write_text(config_content.strip())
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+            mock_result = Mock()
+            mock_result.mode = "codebuild"
+            mock_result.tag = "bedrock_agentcore-test-agent"
+            mock_result.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123"
+            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent"
+            mock_result.codebuild_id = "codebuild-project:12345"
+            mock_result.agent_id = "AGENT123"
+            mock_launch.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["launch", "--auto-update-on-conflict"])
+
+                assert result.exit_code == 0
+
+                # Verify auto_update_on_conflict flag was passed
+                call_args = mock_launch.call_args
+                assert call_args.kwargs["auto_update_on_conflict"] is True
+            finally:
+                os.chdir(original_cwd)
+
+    def test_launch_command_invalid_env_var_format(self, tmp_path):
+        """Test launch command with invalid environment variable format."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = self.runner.invoke(app, ["launch", "--local", "--env", "INVALID_FORMAT"])
+
+            assert result.exit_code == 1
+            assert "Invalid environment variable format" in result.stdout
+            assert "Use KEY=VALUE format" in result.stdout
+        finally:
+            os.chdir(original_cwd)

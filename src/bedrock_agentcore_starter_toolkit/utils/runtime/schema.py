@@ -16,7 +16,7 @@ class MemoryConfig(BaseModel):
     """Memory configuration for BedrockAgentCore."""
 
     mode: Literal["STM_ONLY", "STM_AND_LTM", "NO_MEMORY"] = Field(
-        default="STM_ONLY", description="Memory mode - always has STM, optionally adds LTM"
+        default="NO_MEMORY", description="Memory mode - opt-in feature"
     )
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
     memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")

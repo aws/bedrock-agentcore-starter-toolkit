@@ -163,12 +163,12 @@ class BedrockAgentCoreClient:
             agent_arn = resp["agentRuntimeArn"]
             self.logger.info("Successfully created agent '%s' with ID: %s, ARN: %s", agent_name, agent_id, agent_arn)
             return {"id": agent_id, "arn": agent_arn}
+
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code == "ConflictException":
                 if not auto_update_on_conflict:
                     self.logger.error("Agent '%s' already exists and auto_update_on_conflict is disabled", agent_name)
-                    # Create a more helpful error message
                     raise ClientError(
                         {
                             "Error": {

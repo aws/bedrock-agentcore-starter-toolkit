@@ -22,6 +22,10 @@ class ConfigureResult(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
+    network_mode: Optional[str] = Field(None, description="Network mode (PUBLIC or VPC)")
+    network_subnets: Optional[List[str]] = Field(None, description="VPC subnet IDs")
+    network_security_groups: Optional[List[str]] = Field(None, description="VPC security group IDs")
+    network_vpc_id: Optional[str] = Field(None, description="VPC ID")
 
 
 # Launch operation models
@@ -70,6 +74,10 @@ class StatusConfigInfo(BaseModel):
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     agent_id: Optional[str] = Field(None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(None, description="BedrockAgentCore agent ARN")
+    network_mode: Optional[str] = None
+    network_subnets: Optional[List[str]] = None
+    network_security_groups: Optional[List[str]] = None
+    network_vpc_id: Optional[str] = None
     memory_id: Optional[str] = Field(None, description="Memory resource ID")
     memory_status: Optional[str] = Field(None, description="Memory provisioning status (CREATING/ACTIVE/FAILED)")
     memory_type: Optional[str] = Field(None, description="Memory type (STM or STM+LTM)")
