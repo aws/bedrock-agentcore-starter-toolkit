@@ -1,9 +1,15 @@
-from bedrock_agentcore import BedrockAgentCoreApp
 from strands import Agent
+from bedrock_agentcore import BedrockAgentCoreApp
+from mcp.client import get_streamable_http_mcp_client
 
 app = BedrockAgentCoreApp()
 
-agent = Agent()
+mcp_client = get_streamable_http_mcp_client()
+
+# Create an Agent with MCP tools
+with mcp_client:
+    tools = mcp_client.list_tools_sync()
+    agent = Agent(tools=tools)
 
 @app.entrypoint
 def invoke():
