@@ -27,3 +27,4 @@ specs/
 .specify/
 coverage.json
 CLAUDE.md
+mise.toml

@@ -36,6 +36,8 @@ app.add_typer(gateway_app, name="gateway")
 # import-agent
 app.command("import-agent")(import_agent)
 
+# bootstrap
+app.add_typer(bootstrap_app, name="bootstrap")
 
 def main():
     """Entry point for the CLI application."""

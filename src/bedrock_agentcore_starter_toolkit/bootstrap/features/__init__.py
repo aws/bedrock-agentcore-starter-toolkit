@@ -1,0 +1,12 @@
+from .strands.feature import StrandsFeature
+from .cdk.feature import CDKFeature
+from .terraform.feature import TerraformFeature
+from .types import BootstrapSDKProvider, BootstrapIACProvider, BootstrapFeature
+from typing import Type
+from .base_feature import Feature
+
+feature_registry: dict[BootstrapFeature, Type[Feature]] = {
+    BootstrapIACProvider.CDK: CDKFeature,
+    BootstrapIACProvider.Terraform: TerraformFeature,
+    BootstrapSDKProvider.Strands: StrandsFeature
+}

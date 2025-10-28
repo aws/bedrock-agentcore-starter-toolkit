@@ -1,0 +1,10 @@
+from bedrock_agentcore import BedrockAgentCoreApp
+from strands import Agent
+
+app = BedrockAgentCoreApp()
+
+agent = Agent()
+
+@app.entrypoint
+def invoke():
+    agent("Tell me about agentic AI")
