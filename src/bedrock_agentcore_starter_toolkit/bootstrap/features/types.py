@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import TypeAlias
+from typing import Union
 
 class BootstrapIACProvider(str, Enum):
-    CDK = "CDK",
+    CDK = "CDK"
     Terraform = "Terraform"
 
 class BootstrapSDKProvider(str, Enum):
@@ -10,4 +10,4 @@ class BootstrapSDKProvider(str, Enum):
     ClaudeAgentsSDK = "ClaudeAgentsSDK"
     OpenAi = "OpenAI"
 
-BootstrapFeature: TypeAlias = BootstrapIACProvider | BootstrapSDKProvider
+BootstrapFeature = Union[BootstrapIACProvider, BootstrapSDKProvider]

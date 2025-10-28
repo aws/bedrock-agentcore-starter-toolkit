@@ -1,6 +1,5 @@
 from pathlib import Path
 import shutil
-import subprocess
 import typer
 import re
 from ...bootstrap.generate import generate_project
@@ -12,9 +11,9 @@ VALID_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9-_]{0,35}$") # crea
 @bootstrap_app.command()
 def generate(
     project_name: str,
-    use_cdk: bool = typer.Option(True, "--iac-cdk", help="Use AWS CDK as the IAC provider for the generated project"),
+    use_cdk: bool = typer.Option(False, "--iac-cdk", help="Use AWS CDK as the IAC provider for the generated project"),
     use_terraform: bool = typer.Option(False, "--iac-terraform", help="Use Terraform as the IAC provider for the generated project"),
-    use_strands: bool = typer.Option(True, "--use-strands", help="Use Strands as the agent SDK for the generated project"),
+    use_strands: bool = typer.Option(False, "--use-strands", help="Use Strands as the agent SDK for the generated project"),
     use_claude_agents: bool = typer.Option(False, "--use-claude-agents", help="Use claude-agents-sdk as the agent SDK for the generated project"),
     use_open_ai_agents: bool = typer.Option(False, "--use-open-ai-agents", help="Use open-ai-agents-sdk as the agent SDK for the generated project")
 ):
