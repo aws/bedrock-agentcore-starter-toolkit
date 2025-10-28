@@ -13,6 +13,7 @@ from .runtime.commands import (
     status,
     stop_session,
 )
+from .bootstrap.commands import bootstrap_app
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
 
