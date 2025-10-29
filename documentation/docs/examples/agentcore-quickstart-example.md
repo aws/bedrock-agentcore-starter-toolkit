@@ -159,9 +159,18 @@ agentcore launch
 ```
 
 **Expected output:**
+During launch, you'll see memory creation progress with elapsed time indicators. Memory provisioning may take around 2-5 minutes to activate:
 
 ```text
-✅ Memory created: agentcore_starter_strands_mem-abc123
+Creating memory resource for agent: agentcore_starter_strands
+⏳ Creating memory resource (this may take 30-180 seconds)...
+Created memory: agentcore_starter_strands_mem-abc123
+Waiting for memory agentcore_starter_strands_mem-abc123 to return to ACTIVE state...
+⏳ Memory: CREATING (61s elapsed)
+⏳ Memory: CREATING (92s elapsed)
+⏳ Memory: CREATING (123s elapsed)
+✅ Memory is ACTIVE (took 159s)
+✅ Memory created and active: agentcore_starter_strands_mem-abc123
 Observability is enabled, configuring Transaction Search...
 ✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
 🔍 GenAI Observability Dashboard:
@@ -209,13 +218,6 @@ Test short-term memory within a single session:
 ```bash
 # Store information (session IDs must be 33+ characters)
 agentcore invoke '{"prompt": "Remember that my favorite agent platform is AgentCore"}'
-
-# If invoked too early (memory still provisioning), you'll see:
-# "Memory is still provisioning (current status: CREATING).
-#  Long-term memory extraction takes 60-180 seconds to activate.
-#
-#  Please wait and check status with:
-#    agentcore status"
 
 # Retrieve within same session
 agentcore invoke '{"prompt": "What is my favorite agent platform?"}'
@@ -406,12 +408,6 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 <details>
 <summary><strong>Memory Issues</strong></summary>
-
-**"Memory status is not active" error:**
-
-- Run `agentcore status` to check memory status
-- If showing "provisioning", wait 2-3 minutes
-- Retry after status shows "STM+LTM (3 strategies)"
 
 **Cross-session memory not working:**
 
