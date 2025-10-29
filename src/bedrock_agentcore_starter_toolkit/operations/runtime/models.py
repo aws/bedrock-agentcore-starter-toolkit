@@ -13,7 +13,7 @@ class ConfigureResult(BaseModel):
     """Result of configure operation."""
 
     config_path: Path = Field(..., description="Path to configuration file")
-    dockerfile_path: Path = Field(..., description="Path to generated Dockerfile")
+    dockerfile_path: Optional[Path] = Field(..., description="Path to generated Dockerfile")
     dockerignore_path: Optional[Path] = Field(None, description="Path to generated .dockerignore")
     runtime: str = Field(..., description="Container runtime name")
     region: str = Field(..., description="AWS region")

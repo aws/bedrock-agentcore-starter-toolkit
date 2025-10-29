@@ -128,6 +128,7 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
 
 
 def configure_bedrock_agentcore(
+    bootstrap_mode_enabled: bool,
     agent_name: str,
     entrypoint_path: Path,
     execution_role: Optional[str] = None,
@@ -405,39 +406,46 @@ def configure_bedrock_agentcore(
         log.debug("Cleared memory_id/name for Dockerfile generation (memory disabled)")
 
     # Generate Dockerfile in the correct location (no moving needed)
-    dockerfile_path = runtime.generate_dockerfile(
-        entrypoint_path,
-        dockerfile_output_dir,
-        bedrock_agentcore_name or "bedrock_agentcore",
-        region,
-        enable_observability,
-        requirements_file,
-        memory_id,
-        memory_name,
-        source_path,
-        protocol,
-    )
-    # Log with relative path for better readability
-    rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
-    log.info("Generated Dockerfile: %s", rel_dockerfile_path)
-
-    # Ensure .dockerignore exists at Docker build context location
-    if source_path:
-        # For source_path: .dockerignore at source directory (Docker build context)
-        source_dockerignore = Path(source_path) / ".dockerignore"
-        if not source_dockerignore.exists():
-            template_path = (
-                Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
-            )
-            if template_path.exists():
-                source_dockerignore.write_text(template_path.read_text())
-                log.info("Generated .dockerignore: %s", source_dockerignore)
-        dockerignore_path = source_dockerignore
+    if not bootstrap_mode_enabled:
+        dockerfile_path = runtime.generate_dockerfile(
+            entrypoint_path,
+            dockerfile_output_dir,
+            bedrock_agentcore_name or "bedrock_agentcore",
+            region,
+            enable_observability,
+            requirements_file,
+            memory_id,
+            memory_name,
+            source_path,
+            protocol,
+        )
+        # Log with relative path for better readability
+        rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
+        log.info("Generated Dockerfile: %s", rel_dockerfile_path)
     else:
-        # Legacy: .dockerignore at project root
-        dockerignore_path = build_dir / ".dockerignore"
-        if dockerignore_path.exists():
-            log.info("Generated .dockerignore: %s", dockerignore_path)
+        dockerfile_path = None
+
+    # .dockerignore
+    if not bootstrap_mode_enabled:
+        # Ensure .dockerignore exists at Docker build context location
+        if source_path:
+            # For source_path: .dockerignore at source directory (Docker build context)
+            source_dockerignore = Path(source_path) / ".dockerignore"
+            if not source_dockerignore.exists():
+                template_path = (
+                    Path(__file__).parent.parent.parent / "utils" / "runtime" / "templates" / "dockerignore.template"
+                )
+                if template_path.exists():
+                    source_dockerignore.write_text(template_path.read_text())
+                    log.info("Generated .dockerignore: %s", source_dockerignore)
+            dockerignore_path = source_dockerignore
+        else:
+            # Legacy: .dockerignore at project root
+            dockerignore_path = build_dir / ".dockerignore"
+            if dockerignore_path.exists():
+                log.info("Generated .dockerignore: %s", dockerignore_path)
+    else:
+        dockerignore_path = None
 
     # Handle project configuration (named agents)
     config_path = build_dir / ".bedrock_agentcore.yaml"
@@ -552,7 +560,7 @@ def configure_bedrock_agentcore(
     return ConfigureResult(
         config_path=config_path,
         dockerfile_path=dockerfile_path,
-        dockerignore_path=dockerignore_path if dockerignore_path.exists() else None,
+        dockerignore_path=dockerignore_path if dockerignore_path is not None and dockerignore_path.exists() else None,
         runtime=runtime.get_name(),
         region=region,
         account_id=account_id,

@@ -231,6 +231,7 @@ def set_default(name: str = typer.Argument(...)):
 @configure_app.callback(invoke_without_command=True)
 def configure(
     ctx: typer.Context,
+    bootstrap: bool = typer.Option(False, "--bootstrap", "-b"),
     entrypoint: Optional[str] = typer.Option(
         None,
         "--entrypoint",
@@ -368,9 +369,22 @@ def configure(
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     config_manager = ConfigurationManager(config_path, non_interactive)
 
+    # bootstrap mode configuration
+    bootstrap_mode_enabled = bootstrap
+    if not non_interactive:
+        response = prompt(
+            "Use bootstrap mode for a minimal default setup? [y/N] "
+            "`agentcore bootstrap` is also compatible with other configure outputs: "
+        ).strip().lower()
+        bootstrap_mode_enabled = response in ("y", "yes")
+        if bootstrap_mode_enabled:
+            console.print("[cyan]Bootstrap mode enabled[/cyan]")
+        else:
+            console.print("[dim]Bootstrap mode not enabled[/dim]")
+
     # Interactive entrypoint selection
     if not entrypoint:
-        if non_interactive:
+        if non_interactive or bootstrap_mode_enabled:
             entrypoint_input = "."
         else:
             console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
@@ -386,28 +400,32 @@ def configure(
         entrypoint_input = entrypoint
 
     # Resolve the entrypoint_input (handles both file and directory)
-    entrypoint_path = Path(entrypoint_input).resolve()
-
-    if entrypoint_path.is_file():
-        # It's a file - use directly as entrypoint
-        entrypoint = str(entrypoint_path)
-        source_path = str(entrypoint_path.parent)
-        if not non_interactive:
-            rel_path = get_relative_path(entrypoint_path)
-            _print_success(f"Using file: {rel_path}")
-    elif entrypoint_path.is_dir():
-        # It's a directory - detect entrypoint within it
-        source_path = str(entrypoint_path)
-        entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+    if bootstrap_mode_enabled:
+        entrypoint = entrypoint_input
+        source_path = "."
     else:
-        _handle_error(f"Path not found: {entrypoint_input}")
-
-    # Process agent name
-    entrypoint_path = Path(entrypoint)
+        entrypoint_path = Path(entrypoint_input).resolve()
+        if entrypoint_path.is_file():
+            # It's a file - use directly as entrypoint
+            entrypoint = str(entrypoint_path)
+            source_path = str(entrypoint_path.parent)
+            if not non_interactive:
+                rel_path = get_relative_path(entrypoint_path)
+                _print_success(f"Using file: {rel_path}")
+        elif entrypoint_path.is_dir():
+            # It's a directory - detect entrypoint within it
+            source_path = str(entrypoint_path)
+            entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+        else:
+            _handle_error(f"Path not found: {entrypoint_input}")
 
     # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
     if not agent_name:
-        suggested_name = infer_agent_name(entrypoint_path)
+        if bootstrap_mode_enabled:
+            suggested_name = "bootstrap_agent"
+        else:
+            entrypoint_path = Path(entrypoint)
+            suggested_name = infer_agent_name(entrypoint_path)
         agent_name = config_manager.prompt_agent_name(suggested_name)
 
     valid, error = validate_agent_name(agent_name)
@@ -415,11 +433,17 @@ def configure(
         _handle_error(error)
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
+    if bootstrap_mode_enabled:
+        final_requirements_file = None
+    else:
+        final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     # Interactive prompts for missing values - clean and elegant
     if not execution_role:
-        execution_role = config_manager.prompt_execution_role()
+        if bootstrap_mode_enabled:
+            execution_role = None
+        else:
+            execution_role = config_manager.prompt_execution_role()
 
     # Handle ECR repository
     auto_create_ecr = True
@@ -429,7 +453,10 @@ def configure(
         auto_create_ecr = True
         _print_success("Will auto-create ECR repository")
     elif not ecr_repository:
-        ecr_repository, auto_create_ecr = config_manager.prompt_ecr_repository()
+        if bootstrap_mode_enabled:
+            auto_create_ecr = False
+        else:
+            ecr_repository, auto_create_ecr = config_manager.prompt_ecr_repository()
     else:
         # User provided a specific ECR repository
         auto_create_ecr = False
@@ -467,6 +494,7 @@ def configure(
 
     try:
         result = configure_bedrock_agentcore(
+            bootstrap_mode_enabled=bootstrap_mode_enabled,
             agent_name=agent_name,
             entrypoint_path=Path(entrypoint),
             execution_role=execution_role,
@@ -526,6 +554,9 @@ def configure(
             if max_lifetime:
                 lifecycle_info += f"Max Lifetime: [cyan]{max_lifetime}s ({max_lifetime // 3600} hours)[/cyan]\n"
 
+        bootstrap_next_steps_string = (
+            "   [cyan]agentcore bootstrap[/cyan]" if bootstrap_mode_enabled else ""
+        )
         console.print(
             Panel(
                 f"[bold]Agent Details[/bold]\n"
@@ -545,7 +576,7 @@ def configure(
                 f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"   [cyan]agentcore launch[/cyan]",
+                f"   [cyan]agentcore launch[/cyan]{bootstrap_next_steps_string}",
                 title="Configuration Success",
                 border_style="bright_blue",
             )
