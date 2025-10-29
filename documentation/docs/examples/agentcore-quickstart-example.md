@@ -53,7 +53,7 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 app = BedrockAgentCoreApp()
 
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
-REGION = os.getenv("AWS_REGION", "us-west-2")
+REGION = os.getenv("AWS_REGION")
 MODEL_ID = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
 
 @app.entrypoint
@@ -161,13 +161,13 @@ agentcore launch
 **Expected output:**
 
 ```text
-✅ Memory created: bedrock_agentcore_memory_ci_agent_memory-abc123
+✅ Memory created: agentcore_starter_strands_mem-abc123
 Observability is enabled, configuring Transaction Search...
 ✅ Transaction Search configured: resource_policy, trace_destination, indexing_rule
 🔍 GenAI Observability Dashboard:
    https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#gen-ai-observability/agent-core
 ✅ Container deployed to Bedrock AgentCore
-Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/starter_agent-xyz
+Agent ARN: arn:aws:bedrock-agentcore:us-west-2:123456789:runtime/agentcore_starter_strands-xyz
 ```
 
 If the deployment encounters errors or behaves unexpectedly, check your configuration:
@@ -178,7 +178,7 @@ agentcore status              # Verify resource provisioning status
 
 Refer to the [Troubleshooting](#troubleshooting) section if you see any issues.
 
-## Step 3: Monitor the deployment
+## Step 3: Monitor Deployment
 
 Check the agent's deployment status:
 
@@ -186,7 +186,7 @@ Check the agent's deployment status:
 agentcore status
 
 # Shows:
-#   Memory ID: bedrock_agentcore_memory_ci_agent_memory-abc123
+#   Memory ID: agentcore_starter_strands_mem-abc123
 #   Memory Status: CREATING (if still provisioning)
 #   Memory Type: STM+LTM (provisioning...) (if creating with LTM)
 #   Memory Type: STM+LTM (3 strategies) (when active with strategies)
@@ -202,7 +202,7 @@ agentcore status
 
 In this section, you'll test your agent's memory capabilities and code execution features.
 
-### Test short-term memory
+### Test Short-Term Memory (STM)
 
 Test short-term memory within a single session:
 
@@ -264,7 +264,7 @@ agentcore invoke '{"prompt": "Create a text-based bar chart visualization showin
 # Expected: Agent generates matplotlib code to create a bar chart
 ```
 
-## Step 5: View traces and logs
+## Step 5: View Traces and Logs
 
 In this section, you'll use observability features to monitor your agent's performance.
 
