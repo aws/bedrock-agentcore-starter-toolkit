@@ -2290,7 +2290,7 @@ class TestHelperFunctions:
         empty_dir.mkdir()
 
         result = detect_entrypoint(empty_dir)
-        assert result is None
+        assert result == []
 
     def test_detect_entrypoint_finds_agent_py(self, tmp_path):
         """Test detect_entrypoint finds agent.py."""
@@ -2300,7 +2300,9 @@ class TestHelperFunctions:
         agent_file.write_text("# agent")
 
         result = detect_entrypoint(test_dir)
-        assert result == agent_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == agent_file
 
     def test_detect_entrypoint_finds_app_py(self, tmp_path):
         """Test detect_entrypoint finds app.py when agent.py doesn't exist."""
@@ -2310,7 +2312,9 @@ class TestHelperFunctions:
         app_file.write_text("# app")
 
         result = detect_entrypoint(test_dir)
-        assert result == app_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == app_file
 
     def test_detect_entrypoint_finds_main_py(self, tmp_path):
         """Test detect_entrypoint finds main.py when agent.py and app.py don't exist."""
@@ -2320,10 +2324,12 @@ class TestHelperFunctions:
         main_file.write_text("# main")
 
         result = detect_entrypoint(test_dir)
-        assert result == main_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == main_file
 
     def test_detect_entrypoint_priority_order(self, tmp_path):
-        """Test detect_entrypoint follows priority order: agent.py > app.py > main.py."""
+        """Test detect_entrypoint returns all matching files in priority order."""
         test_dir = tmp_path / "test"
         test_dir.mkdir()
 
@@ -2336,8 +2342,12 @@ class TestHelperFunctions:
         main_file.write_text("# main")
 
         result = detect_entrypoint(test_dir)
-        # Should find agent.py first (highest priority)
-        assert result == agent_file
+        # Should return all three files in priority order
+        assert isinstance(result, list)
+        assert len(result) == 3
+        assert result[0] == agent_file  # First in priority
+        assert result[1] == app_file  # Second in priority
+        assert result[2] == main_file  # Third in priority
 
     def test_infer_agent_name_with_py_extension(self, tmp_path):
         """Test infer_agent_name removes .py extension."""

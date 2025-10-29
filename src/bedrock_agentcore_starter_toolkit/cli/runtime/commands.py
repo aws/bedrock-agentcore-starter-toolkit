@@ -162,20 +162,28 @@ def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False
     # Use operations layer for detection
     detected = detect_entrypoint(source_dir)
 
-    if not detected:
-        # No fallback prompt - fail with clear error message
+    if len(detected) == 0:
+        # No files found - error
         rel_source = get_relative_path(source_dir)
         _handle_error(
             f"No entrypoint file found in {rel_source}\n"
             f"Expected one of: main.py, agent.py, app.py, __main__.py\n"
             f"Please specify full file path (e.g., {rel_source}/your_agent.py)"
         )
+    elif len(detected) > 1:
+        # Multiple files found - error with list
+        rel_source = get_relative_path(source_dir)
+        files_list = ", ".join(f.name for f in detected)
+        _handle_error(
+            f"Multiple entrypoint files found in {rel_source}: {files_list}\n"
+            f"Please specify full file path (e.g., {rel_source}/main.py)"
+        )
 
-    # Show detection and confirm
-    rel_entrypoint = get_relative_path(detected)
+    # Exactly one file - show detection and confirm
+    rel_entrypoint = get_relative_path(detected[0])
 
     _print_success(f"Using entrypoint file: [cyan]{rel_entrypoint}[/cyan]")
-    return str(detected)
+    return str(detected[0])
 
 
 # Define options at module level to avoid B008

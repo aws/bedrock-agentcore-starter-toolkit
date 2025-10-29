@@ -60,26 +60,30 @@ def get_relative_path(path: Path, base: Optional[Path] = None) -> str:
         return str(path_obj)
 
 
-def detect_entrypoint(source_path: Path) -> Optional[Path]:
-    """Detect entrypoint file in source directory.
+def detect_entrypoint(source_path: Path) -> List[Path]:
+    """Detect entrypoint files in source directory.
 
     Args:
         source_path: Directory to search for entrypoint
 
     Returns:
-        Path to detected entrypoint file, or None if not found
+        List of detected entrypoint files (empty list if none found)
     """
     ENTRYPOINT_CANDIDATES = ["agent.py", "app.py", "main.py", "__main__.py"]
 
     source_dir = Path(source_path)
+    found_files = []
+
     for candidate in ENTRYPOINT_CANDIDATES:
         candidate_path = source_dir / candidate
         if candidate_path.exists():
+            found_files.append(candidate_path)
             log.debug("Detected entrypoint: %s", candidate_path)
-            return candidate_path
 
-    log.debug("No entrypoint found in %s", source_path)
-    return None
+    if not found_files:
+        log.debug("No entrypoint found in %s", source_path)
+
+    return found_files
 
 
 def detect_requirements(source_path: Path):

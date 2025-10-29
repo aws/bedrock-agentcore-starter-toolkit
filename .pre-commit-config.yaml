@@ -3,7 +3,7 @@ repos:
   # PRE-COMMIT STAGE (Fast, Auto-fixing)
   # Runs on every commit
   # ========================================
-  
+
   # uv lock file management
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.7.13
