@@ -556,3 +556,280 @@ class TestListCommand:
 
         assert exc_info.value.exit_code == 1
         assert any("Error:" in str(call) for call in mock_console.print.call_args_list)
+
+
+class TestInternalViewFunctions:
+    """Test internal view functions that are called by show and list commands."""
+
+    @pytest.fixture
+    def sample_spans(self):
+        """Create sample spans for testing."""
+        return [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="RootSpan",
+                start_time_unix_nano=1000000000,
+                end_time_unix_nano=2000000000,
+                duration_ms=1000.0,
+                status_code="OK",
+            ),
+            Span(
+                trace_id="trace-1",
+                span_id="span-2",
+                span_name="ChildSpan",
+                parent_span_id="span-1",
+                start_time_unix_nano=1500000000,
+                end_time_unix_nano=1800000000,
+                duration_ms=300.0,
+                status_code="ERROR",
+            ),
+        ]
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_trace_view_basic(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_trace_view with basic trace."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_trace.return_value = sample_spans
+
+        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output=None)
+
+        mock_client.query_spans_by_trace.assert_called_once_with("trace-1", 1000, 2000)
+        mock_visualizer_class.assert_called_once()
+        assert mock_console.print.called
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_trace_view_no_spans(self, mock_console, mock_visualizer_class):
+        """Test _show_trace_view when no spans found."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_trace.return_value = []
+
+        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output=None)
+
+        # Should print "No spans found" and not call visualizer
+        assert any("No spans found" in str(call) for call in mock_console.print.call_args_list)
+        mock_visualizer_class.assert_not_called()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._export_trace_data_to_json")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_trace_view_with_output(self, mock_console, mock_visualizer_class, mock_export, sample_spans):
+        """Test _show_trace_view with JSON export."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_trace.return_value = sample_spans
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output="trace.json")
+
+        mock_client.query_runtime_logs_by_traces.assert_called_once()
+        mock_export.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.logger")
+    def test_show_trace_view_runtime_logs_error(self, mock_logger, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_trace_view when runtime log query fails."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_trace.return_value = sample_spans
+        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Log query failed")
+
+        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=True, output=None)
+
+        # Should log warning but continue
+        mock_logger.warning.assert_called_once()
+        mock_visualizer_class.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_session_view_summary(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_session_view with summary mode."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = sample_spans
+
+        _show_session_view(
+            mock_client,
+            "session-1",
+            1000,
+            2000,
+            verbose=False,
+            summary_only=True,
+            all_traces=False,
+            errors_only=False,
+            output=None,
+        )
+
+        mock_client.query_spans_by_session.assert_called_once_with("session-1", 1000, 2000)
+        # Should call print_trace_summary
+        mock_visualizer_class.return_value.print_trace_summary.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_session_view_all_traces(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_session_view with all traces mode."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        _show_session_view(
+            mock_client,
+            "session-1",
+            1000,
+            2000,
+            verbose=True,
+            summary_only=False,
+            all_traces=True,
+            errors_only=False,
+            output=None,
+        )
+
+        # Should query runtime logs and visualize all traces
+        mock_client.query_runtime_logs_by_traces.assert_called_once()
+        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_session_view_errors_only(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_session_view with errors_only filter."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = sample_spans
+
+        _show_session_view(
+            mock_client,
+            "session-1",
+            1000,
+            2000,
+            verbose=False,
+            summary_only=True,
+            all_traces=False,
+            errors_only=True,
+            output=None,
+        )
+
+        # Should still call visualizer (filtering happens in TraceData)
+        mock_visualizer_class.return_value.print_trace_summary.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_session_view_no_error_traces(self, mock_console, mock_visualizer_class):
+        """Test _show_session_view when no error traces found."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+
+        # Create only successful spans
+        ok_spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="OKSpan",
+                duration_ms=100.0,
+                status_code="OK",
+            )
+        ]
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = ok_spans
+
+        _show_session_view(
+            mock_client,
+            "session-1",
+            1000,
+            2000,
+            verbose=False,
+            summary_only=True,
+            all_traces=False,
+            errors_only=True,
+            output=None,
+        )
+
+        # Should print "No failed traces found"
+        assert any("No failed traces found" in str(call) for call in mock_console.print.call_args_list)
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_last_trace_from_session(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_last_trace_from_session."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = sample_spans
+
+        _show_last_trace_from_session(
+            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=1, errors_only=False, output=None
+        )
+
+        mock_client.query_spans_by_session.assert_called_once()
+        mock_visualizer_class.return_value.visualize_trace.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_last_trace_nth(self, mock_console, mock_visualizer_class):
+        """Test _show_last_trace_from_session with nth trace."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
+
+        # Create spans for multiple traces
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="Trace1",
+                end_time_unix_nano=1000000000,
+                duration_ms=100.0,
+            ),
+            Span(
+                trace_id="trace-2",
+                span_id="span-2",
+                span_name="Trace2",
+                end_time_unix_nano=2000000000,
+                duration_ms=100.0,
+            ),
+        ]
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = spans
+
+        _show_last_trace_from_session(
+            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=2, errors_only=False, output=None
+        )
+
+        # Should show "2nd most recent trace" or "2th most recent trace"
+        assert any("2th most recent" in str(call) or "2nd" in str(call) for call in mock_console.print.call_args_list)
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
+    def test_show_last_trace_exceeds_count(self, mock_console):
+        """Test _show_last_trace_from_session when requested nth exceeds trace count."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
+
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="Trace1",
+                end_time_unix_nano=1000000000,
+                duration_ms=100.0,
+            )
+        ]
+
+        mock_client = MagicMock()
+        mock_client.query_spans_by_session.return_value = spans
+
+        _show_last_trace_from_session(
+            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=5, errors_only=False, output=None
+        )
+
+        # Should print warning about only 1 trace found
+        assert any("Only 1 trace" in str(call) for call in mock_console.print.call_args_list)

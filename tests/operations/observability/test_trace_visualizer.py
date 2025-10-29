@@ -621,3 +621,280 @@ class TestTraceVisualizer:
         assert "ERROR" in output
         # Check that trace shows error count
         assert "1 errors" in output
+
+
+class TestVerboseFormatting:
+    """Test verbose formatting of messages, events, and exceptions."""
+
+    def test_format_span_with_verbose_exception_short_stacktrace(self):
+        """Test formatting span with exception (short stacktrace < 10 lines)."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="ErrorSpan",
+            duration_ms=100.0,
+            status_code="ERROR",
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "exception",
+                    "exception_type": "ValueError",
+                    "message": "Invalid input",
+                    "stacktrace": "Line 1\nLine 2\nLine 3",
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "ValueError" in text_str
+        assert "Invalid input" in text_str
+        assert "Line 1" in text_str
+
+    def test_format_span_with_verbose_exception_long_stacktrace(self):
+        """Test formatting span with exception (long stacktrace > 10 lines)."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="ErrorSpan",
+            duration_ms=100.0,
+            status_code="ERROR",
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        # Create stacktrace with 15 lines
+        stacktrace_lines = [f"Line {i}" for i in range(1, 16)]
+        stacktrace = "\n".join(stacktrace_lines)
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "exception",
+                    "exception_type": "RuntimeError",
+                    "message": "Something went wrong",
+                    "stacktrace": stacktrace,
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "RuntimeError" in text_str
+        assert "..." in text_str  # Should have truncation marker
+        assert "Line 1" in text_str  # First line
+        assert "Line 15" in text_str  # Last line
+
+    def test_format_span_with_verbose_messages_multiple_roles(self):
+        """Test formatting span with messages from different roles."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="ChatSpan",
+            duration_ms=100.0,
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "message",
+                    "role": "system",
+                    "content": "You are a helpful assistant",
+                    "timestamp": "2025-10-28T10:00:00Z",
+                },
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": "Hello, how are you?",
+                    "timestamp": "2025-10-28T10:00:01Z",
+                },
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": "I'm doing well, thank you!",
+                    "timestamp": "2025-10-28T10:00:02Z",
+                },
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "System" in text_str
+        assert "User" in text_str
+        assert "Assistant" in text_str
+        assert "helpful assistant" in text_str
+        assert "Hello, how are you?" in text_str
+
+    def test_format_span_with_verbose_message_truncation(self):
+        """Test formatting span with long message (should truncate)."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="ChatSpan",
+            duration_ms=100.0,
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        # Create message longer than 200 chars
+        long_content = "A" * 250
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": long_content,
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "..." in text_str  # Should have truncation
+        assert len([c for c in text_str if c == "A"]) < 250  # Not all 250 A's should be there
+
+    def test_format_span_with_verbose_events(self):
+        """Test formatting span with events."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="EventSpan",
+            duration_ms=100.0,
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "event",
+                    "event_name": "model.start",
+                    "payload": {"model": "claude-3", "temperature": 0.7},
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "Event: model.start" in text_str
+        assert "model=claude-3" in text_str
+
+    def test_format_span_with_mixed_data_types(self):
+        """Test formatting span with exceptions, messages, and events mixed."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="MixedSpan",
+            duration_ms=100.0,
+            status_code="ERROR",
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "exception",
+                    "exception_type": "ValueError",
+                    "message": "Error occurred",
+                    "stacktrace": "Stack trace here",
+                    "timestamp": "2025-10-28T10:00:00Z",
+                },
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": "Test message",
+                    "timestamp": "2025-10-28T10:00:01Z",
+                },
+                {
+                    "type": "event",
+                    "event_name": "test.event",
+                    "payload": {"key": "value"},
+                    "timestamp": "2025-10-28T10:00:02Z",
+                },
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        # Should show all three types
+        assert "ValueError" in text_str  # Exception
+        assert "Test message" in text_str  # Message
+        assert "Event: test.event" in text_str  # Event
+        # Should have label showing counts
+        assert "1 exception" in text_str
+        assert "1 msg" in text_str
+        assert "1 event" in text_str
+
+    def test_format_span_with_no_exception_message(self):
+        """Test formatting exception with missing message field."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="ErrorSpan",
+            duration_ms=100.0,
+            status_code="ERROR",
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "exception",
+                    "exception_type": "Exception",
+                    # No message field
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "Exception" in text_str
+
+    def test_format_span_with_event_empty_payload(self):
+        """Test formatting event with empty payload."""
+        visualizer = TraceVisualizer()
+        span = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="EventSpan",
+            duration_ms=100.0,
+            attributes={"gen_ai.request.model": "test-model"},
+        )
+
+        messages_by_span = {
+            "span-1": [
+                {
+                    "type": "event",
+                    "event_name": "empty.event",
+                    "payload": {},
+                    "timestamp": "2025-10-28T10:00:00Z",
+                }
+            ]
+        }
+
+        text = visualizer._format_span(span, verbose=True, messages_by_span=messages_by_span, seen_messages=set())
+
+        text_str = text.plain
+        assert "Event: empty.event" in text_str
+        # Should show (empty) for empty payload or not show payload details

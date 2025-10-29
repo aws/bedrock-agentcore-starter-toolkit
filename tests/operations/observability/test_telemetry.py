@@ -422,3 +422,246 @@ class TestTraceData:
         assert "children" in root_span
         assert len(root_span["children"]) == 1
         assert root_span["children"][0]["span_id"] == "span-2"
+
+
+class TestRuntimeLogEdgeCases:
+    """Test edge cases in RuntimeLog parsing."""
+
+    def test_runtime_log_get_gen_ai_message_with_text_field(self):
+        """Test extracting GenAI message with direct text field."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.user.message"}, "body": {"text": "Direct text"}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["content"] == "Direct text"
+
+    def test_runtime_log_get_gen_ai_message_with_string_body(self):
+        """Test extracting GenAI message when body is a string."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.user.message"}, "body": "String body"}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["content"] == "String body"
+
+    def test_runtime_log_get_gen_ai_message_no_content(self):
+        """Test extracting GenAI message when no content available."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.user.message"}, "body": {}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        # Should return None if no content
+        assert message is None
+
+    def test_runtime_log_get_gen_ai_message_unknown_role(self):
+        """Test extracting GenAI message with unknown event name."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.unknown"}, "body": {"text": "Test"}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        # Should return None for unknown role
+        assert message is None
+
+    def test_runtime_log_get_event_payload_with_string_body(self):
+        """Test extracting event payload when body is a string."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "custom.event"}, "body": "String body content"}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        event = log.get_event_payload()
+
+        assert event is not None
+        assert event["type"] == "event"
+        assert event["payload"]["message"] == "String body content"
+
+    def test_runtime_log_get_event_payload_invalid_json_string(self):
+        """Test extracting event payload when body is invalid JSON string."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "custom.event"}, "body": "not valid json {"}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        event = log.get_event_payload()
+
+        assert event is not None
+        # Should wrap in message field
+        assert "message" in event["payload"]
+
+
+class TestSpanEdgeCases:
+    """Test edge cases in Span parsing."""
+
+    def test_span_from_cloudwatch_with_invalid_json_in_message(self):
+        """Test Span creation when @message contains invalid JSON."""
+        cloudwatch_result = [
+            {"field": "traceId", "value": "trace-123"},
+            {"field": "spanId", "value": "span-456"},
+            {"field": "spanName", "value": "TestSpan"},
+            {
+                "field": "@message",
+                "value": "not valid json {",
+            },
+        ]
+
+        span = Span.from_cloudwatch_result(cloudwatch_result)
+
+        assert span.trace_id == "trace-123"
+        # Should not crash, attributes should be empty or string
+        assert isinstance(span.attributes, dict)
+
+    def test_span_from_cloudwatch_with_invalid_duration(self):
+        """Test Span creation with invalid duration value."""
+        cloudwatch_result = [
+            {"field": "traceId", "value": "trace-123"},
+            {"field": "spanId", "value": "span-456"},
+            {"field": "spanName", "value": "TestSpan"},
+            {"field": "durationMs", "value": "not-a-number"},
+        ]
+
+        span = Span.from_cloudwatch_result(cloudwatch_result)
+
+        assert span.duration_ms is None  # Should handle gracefully
+
+    def test_span_from_cloudwatch_with_invalid_timestamps(self):
+        """Test Span creation with invalid timestamp values."""
+        cloudwatch_result = [
+            {"field": "traceId", "value": "trace-123"},
+            {"field": "spanId", "value": "span-456"},
+            {"field": "spanName", "value": "TestSpan"},
+            {"field": "startTimeUnixNano", "value": "invalid"},
+            {"field": "endTimeUnixNano", "value": "also-invalid"},
+        ]
+
+        span = Span.from_cloudwatch_result(cloudwatch_result)
+
+        assert span.start_time_unix_nano is None
+        assert span.end_time_unix_nano is None
+
+    def test_span_from_cloudwatch_with_non_dict_attributes(self):
+        """Test Span creation when attributes in @message is not a dict."""
+        cloudwatch_result = [
+            {"field": "traceId", "value": "trace-123"},
+            {"field": "spanId", "value": "span-456"},
+            {"field": "spanName", "value": "TestSpan"},
+            {
+                "field": "@message",
+                "value": '{"attributes": "not a dict", "resource": {"attributes": "also not a dict"}}',
+            },
+        ]
+
+        span = Span.from_cloudwatch_result(cloudwatch_result)
+
+        # Should default to empty dicts
+        assert span.attributes == {}
+        assert span.resource_attributes == {}
+
+
+class TestTraceDataEdgeCases:
+    """Test edge cases in TraceData."""
+
+    def test_trace_data_build_hierarchy_orphan_children(self):
+        """Test building hierarchy when child references non-existent parent."""
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-child",
+                span_name="OrphanChild",
+                parent_span_id="non-existent-parent",
+                duration_ms=100.0,
+            )
+        ]
+
+        trace_data = TraceData(spans=spans)
+        trace_data.group_spans_by_trace()
+        root_spans = trace_data.build_span_hierarchy("trace-1")
+
+        # Orphan should be treated as root
+        assert len(root_spans) == 1
+        assert root_spans[0].span_id == "span-child"
+
+    def test_trace_data_to_dict_with_no_timestamps(self):
+        """Test to_dict when spans have no timestamps."""
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="NoTimeSpan",
+                # No start/end times
+                duration_ms=100.0,
+            )
+        ]
+
+        trace_data = TraceData(spans=spans)
+        trace_data.group_spans_by_trace()
+        result = trace_data.to_dict()
+
+        assert "traces" in result
+        assert "trace-1" in result["traces"]
+        # Should use fallback duration calculation
+        assert result["traces"]["trace-1"]["total_duration_ms"] >= 0
+
+    def test_trace_data_get_messages_by_span_no_span_id(self):
+        """Test get_messages_by_span when logs have no span_id."""
+        runtime_log = RuntimeLog(
+            timestamp="2025-10-28T10:00:00Z",
+            message="Test log",
+            span_id=None,  # No span ID
+            trace_id="trace-1",
+            raw_message={"attributes": {"event.name": "test.event"}, "body": {"data": "test"}},
+        )
+
+        trace_data = TraceData(runtime_logs=[runtime_log])
+        messages = trace_data.get_messages_by_span()
+
+        # Should not include logs without span_id
+        assert len(messages) == 0
