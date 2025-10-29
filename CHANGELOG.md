@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.27] - 2025-10-29
+
+### Changes
+
+- feat: Add destroy() method to Runtime notebook interface with comprehensive tests (#305) (c158d9c)
+- Chore/workflow improvements (#301) (196500a)
+- feat: Add VPC networking support for AgentCore Runtime (#294) (787f2c6)
+- docs: update quickstart links to AWS documentation. test: fix memory test and improve commands coverage (#303) (d07fa8d)
+- feat: add skip memory option in interactive configure flow (#298) (f9455bf)
+- feat: Add runtime session lifecycle management with stop-session command (#287) (fb82e37)
+- feat: adding strongly typed Self Managed strategy model (#300) (4806fe2)
+- added ref to install jq (#296) (9855cb7)
+- docs: update latest docs/samples from sampes repo (#297) (f61191a)
+- docs: Add a2a and vpc documentation on agentcore (#288) (d76fcc1)
+- chore: bump version to 0.1.26 (#291) (9dcf58e)
+
 ## [0.1.26] - 2025-10-17
 
 ### Changes
