@@ -4,6 +4,9 @@ from time import sleep
 import typer
 import re
 from ...bootstrap.generate import generate_project
+from ...utils.runtime.schema import BedrockAgentCoreConfigSchema, BedrockAgentCoreAgentSchema
+from ...utils.runtime.config import load_config
+from ...cli.common import console, _handle_error
 from ...bootstrap.features.types import BootstrapFeature, BootstrapIACProvider, BootstrapSDKProvider
 from ..common import _handle_warn
 
@@ -29,12 +32,22 @@ def generate(
     
     active_features: list[BootstrapFeature] = [iac, sdk]
 
-    configure_path: Path = Path.cwd() / ".bedrock_agentcore"
-    if not configure_path.exists():
-        _handle_warn("No .bedrock_agentcore directory detected, using bootstrap configuration defaults. To specifiy project configuration, first run agentcore configure.")
+    # consume config from configure command and perform validations
+    configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
+    agent_config: BedrockAgentCoreAgentSchema | None = None
+
+    if not configure_yaml.exists():
+        _handle_warn("No .bedrock_agentcore.yaml directory detected, using bootstrap configuration defaults. To specifiy project configuration, first run agentcore configure.")
         sleep(2) # so above message can be seen clearly
-        configure_path = None
+  
+    if configure_yaml.exists():
+        configure_schema: BedrockAgentCoreConfigSchema = load_config(configure_yaml)
+        if len(configure_schema.agents.keys()) > 1:
+            _handle_error(message="agentcore bootstrap generate does not currently support multi agent configurations. Try again with a single agent configured. Exiting.")
+        # now assume we have just one agent configured and build the project context
+        agent_config = next(iter(configure_schema.agents.values()))
+
     
     # Create template project
-    generate_project(project_name, active_features, configure_path)
+    generate_project(project_name, active_features, agent_config)
 

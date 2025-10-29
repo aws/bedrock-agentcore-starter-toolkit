@@ -6,22 +6,13 @@ from .types import ProjectContext
 from .features import feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
-from ..utils.runtime.schema import BedrockAgentCoreConfigSchema, MemoryConfig
+from ..utils.runtime.schema import BedrockAgentCoreAgentSchema, MemoryConfig
 from .features.base_feature import Feature
 from ..utils.runtime.config import load_config
-from ..utils.runtime.schema import BedrockAgentCoreConfigSchema, BedrockAgentCoreAgentSchema
+from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from ..cli.common import console, _handle_error
 
-def generate_project(name: str, features: List[BootstrapFeature], configure_path: Path | None, ):
-
-    # consume config from configure command and perform validations
-    agent_config: BedrockAgentCoreAgentSchema | None = None
-    if configure_path:
-        configure_schema: BedrockAgentCoreConfigSchema = load_config(configure_path / ".bedrock_agentcore.yaml")
-        if len(configure_schema.agents.keys()) > 1:
-            _handle_error(message="agentcore bootstrap generate does not currently support multi agent configurations. Try again with a single agent configured. Exiting.")
-        # now assume we have just one agent configured and build the project context
-        agent_config = next(iter(configure_schema.agents.values()))
+def generate_project(name: str, features: List[BootstrapFeature], agent_config: BedrockAgentCoreAgentSchema | None):
 
     # create directory structure
     output_path = (Path.cwd() / name)
