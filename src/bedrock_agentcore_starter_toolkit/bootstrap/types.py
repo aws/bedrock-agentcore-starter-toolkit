@@ -10,7 +10,14 @@ class ProjectContext:
     src_dir: Path
     features: List[BootstrapFeature]
     python_dependencies: List[str]
-    iac_dir: Optional[Path] = None
+    iac_dir: Optional[Path]
+    # below properties are related to consuming the yaml from configure
+    agent_name: Optional[str]
+    memory_enabled: Optional[bool]
+    memory_name: Optional[str]
+    memory_event_expiry_days: Optional[int]
+    memory_short_and_long_term: Optional[bool]
+    memory_short_term_only: Optional[bool]
     
     def dict(self):
         return asdict(self)

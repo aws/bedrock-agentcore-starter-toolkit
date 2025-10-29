@@ -67,7 +67,7 @@ export class AgentCoreStack extends cdk.Stack {
                     containerUri: props.imageUri
                 }
             },
-            agentRuntimeName: props.appName,
+            agentRuntimeName: "{{ agent_name }}",
             networkConfiguration: {
                 networkMode: "PUBLIC"
             },
@@ -104,9 +104,9 @@ export class AgentCoreStack extends cdk.Stack {
         //};
 
         this.agentCoreMemory = new bedrockagentcore.CfnMemory(this, `${props.appName}-AgentCoreMemory`, {
-            name: `${props.appName}-AgentCoreMemory`,
-            eventExpiryDuration: 60,
-            description: "Memory resource with 60 days event expiry",
+            name: "{{ memory_name }}",
+            eventExpiryDuration: {{ memory_event_expiry_days }},
+            description: "Memory resource with {{ memory_event_expiry_days}} days event expiry",
             memoryStrategies: [
                 // agentCoreMemoryStrategy
             ]
