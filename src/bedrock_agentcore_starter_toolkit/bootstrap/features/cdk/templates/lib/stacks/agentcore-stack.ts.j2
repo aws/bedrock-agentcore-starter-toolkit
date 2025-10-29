@@ -39,7 +39,14 @@ export class AgentCoreStack extends cdk.Stack {
         this.mcpLambda.grantInvoke(agentCoreGatewayRole);
 
         this.agentCoreGateway = new bedrockagentcore.CfnGateway(this, `${props.appName}-AgentCoreGateway`, {
-            authorizerType: "AWS_IAM",
+            authorizerType: {% if custom_authorizer_enabled %}"CUSTOM_JWT"{% else %}"AWS_IAM"{% endif %},{% if custom_authorizer_enabled %}
+            authorizerConfiguration: {
+                customJwtAuthorizer: {
+                    discoveryUrl: "{{ custom_authorizer_url }}",
+                    allowedClients: [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+                    allowedAudience: [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+                }
+            },{% endif %}
             name: `${props.appName}-AgentCoreGateway`,
             protocolType: "MCP",
             roleArn: agentCoreGatewayRole.roleArn,
@@ -67,14 +74,21 @@ export class AgentCoreStack extends cdk.Stack {
                     containerUri: props.imageUri
                 }
             },
-            agentRuntimeName: "{{ agent_name }}",
+            agentRuntimeName: "{{ app_name }}-Agent",
             networkConfiguration: {
                 networkMode: "PUBLIC"
             },
             roleArn: runtimeRole.roleArn,
             environmentVariables: {
                 "gatewayUrl": this.agentCoreGateway.attrGatewayUrl
-            }
+            }{% if custom_authorizer_enabled %},
+            authorizerConfiguration: {
+                customJwtAuthorizer: {
+                    discoveryUrl: "{{ custom_authorizer_url }}",
+                    allowedClients: [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+                    allowedAudience: [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+                }
+            }{% endif %}
         });
 
         // DEFAULT endpoint always points to newest published version. Optionally, can use these versioned endpoints below

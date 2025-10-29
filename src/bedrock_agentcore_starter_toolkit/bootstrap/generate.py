@@ -1,16 +1,14 @@
 from pathlib import Path
 
 from .features.types import BootstrapFeature
-from typing import List
+from typing import List, Optional
 from .types import ProjectContext
 from .features import feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema, MemoryConfig
 from .features.base_feature import Feature
-from ..utils.runtime.config import load_config
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
-from ..cli.common import console, _handle_error
 
 def generate_project(name: str, features: List[BootstrapFeature], agent_config: BedrockAgentCoreAgentSchema | None):
 
@@ -28,11 +26,17 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         features=features,
         python_dependencies=[],
         agent_name=name + "-Agent",
+        # memory
         memory_name=name + "-Memory",
         memory_enabled=True,
         memory_event_expiry_days=30,
-        memory_short_term_only=False, #configure convention
-        memory_short_and_long_term=False # configure convention
+        memory_short_term_only=False,
+        memory_short_and_long_term=False,
+        # custom authorizer
+        custom_authorizer_enabled=False,
+        custom_authorizer_url=None,
+        custom_authorizer_allowed_audience=None,
+        custom_authorizer_allowed_clients=None,
     )
 
     # resolve above defaults with the configure context if present
@@ -54,16 +58,29 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         instance = feature_registry[feature]()
         instance.apply(ctx)   
 
-    ContainerRuntime().generate_dockerfile(agent_path=Path(ctx.src_dir / "main.py"), output_dir=ctx.output_dir, agent_name=f"{ctx.name}-agent")
+    ContainerRuntime().generate_dockerfile(agent_path=Path(ctx.src_dir / "main.py"), output_dir=ctx.src_dir, agent_name=ctx.agent_name)
 
 
 def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config: BedrockAgentCoreAgentSchema):
+    """
+    Overwrite the default values for functionality that was configured in the configure YAML
+    We re-map these configurations from the original BedrockAgentCoreAgentSchema to generate a simple ProjectContext that is easily consumed by Jinja
+    """
     ctx.agent_name = agent_config.name
+    # memory
     memory_config: MemoryConfig = agent_config.memory
     ctx.memory_enabled = memory_config.is_enabled
     ctx.memory_event_expiry_days = memory_config.event_expiry_days
     ctx.memory_short_and_long_term = memory_config.has_ltm
     ctx.memory_short_term_only = memory_config.mode == "STM_ONLY"
+    # custom authorizer
+    authorizer_config: Optional[dict[str, any]] = agent_config.authorizer_configuration
+    if authorizer_config:
+        ctx.custom_authorizer_enabled = True
+        authorizer_config_values = authorizer_config["customJWTAuthorizer"]
+        ctx.custom_authorizer_url = authorizer_config_values["discoveryUrl"]
+        ctx.custom_authorizer_allowed_clients = authorizer_config_values["allowedClients"]
+        ctx.custom_authorizer_allowed_audience = authorizer_config_values["allowedAudience"]
 
 # small class to extract the common templates under the bootstrap/ dir and write them to the output dir
 class CommonFeatures(Feature):
