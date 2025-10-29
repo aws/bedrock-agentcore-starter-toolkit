@@ -1,0 +1,216 @@
+################################################################################
+# ECR Repository
+################################################################################
+resource "aws_ecr_repository" "agentcore_terraform_runtime" {
+  name                 = "bedrock-agentcore/${lower(var.app_name)}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+}
+
+data "aws_ecr_authorization_token" "token" {}
+
+resource "null_resource" "docker_image" {
+  depends_on = [aws_ecr_repository.agentcore_terraform_runtime]
+
+  triggers = {
+    dockerfile_hash = filesha256("../${path.root}/Dockerfile")
+    app_hash        = filesha256("../${path.root}/src/main.py")
+    pyproject_hash  = filesha256("../${path.root}/pyproject.toml")
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<EOF
+      source ~/.bash_profile || source ~/.profile || true
+      
+      if ! command -v docker &> /dev/null; then
+        echo "Docker is not installed or not in PATH. Please install Docker and try again."
+        exit 1
+      fi
+      
+      aws ecr get-login-password | docker login --username AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
+      
+      docker build -t ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest ../${path.root}
+      
+      docker push ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest
+    EOF
+  }
+}
+
+################################################################################
+# MCP Lambda Function
+################################################################################
+data "archive_file" "mcp_lambda_zip" {
+  type        = "zip"
+  source_dir  = "../${path.root}/mcp/lambda"
+  output_path = "../${path.root}/mcp_lambda.zip"
+}
+
+resource "aws_lambda_function" "mcp_lambda" {
+  function_name = "${var.app_name}-McpLambda"
+  role          = aws_iam_role.mcp_lambda_role.arn
+  handler       = "handler.lambda_handler"
+  runtime       = "python3.12"
+
+  filename         = data.archive_file.mcp_lambda_zip.output_path
+  source_code_hash = data.archive_file.mcp_lambda_zip.output_base64sha256
+}
+
+resource "aws_iam_role" "mcp_lambda_role" {
+  name = "${var.app_name}-McpLambdaRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "mcp_lambda_basic" {
+  role       = aws_iam_role.mcp_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+################################################################################
+# Agent Gateway
+################################################################################
+
+# TODO: Awaiting Terraform provider fix in v6.19
+
+################################################################################
+# AgentCore Runtime and Memory IAM Roles
+################################################################################
+
+data "aws_iam_policy_document" "bedrock_agentcore_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["bedrock-agentcore.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "agentcore_runtime_role" {
+  name        = "${var.app_name}-AgentCoreRuntimeRole"
+  description = "IAM role for Bedrock AgentCore Runtime"
+
+  assume_role_policy = data.aws_iam_policy_document.bedrock_agentcore_assume_role.json
+}
+
+resource "aws_iam_role" "agentcore_memory_execution_role" {
+  name        = "${var.app_name}-AgentCoreMemoryExecutionRole"
+  description = "IAM role for Bedrock AgentCore Memory Execution"
+
+  assume_role_policy = data.aws_iam_policy_document.bedrock_agentcore_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "runtime_bedrock_policy" {
+  role       = aws_iam_role.agentcore_runtime_role.name
+  policy_arn = "arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "memory_execution_policy" {
+  role       = aws_iam_role.agentcore_memory_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy"
+}
+
+resource "aws_iam_role_policy" "runtime_ecr_policy" {
+  role = aws_iam_role.agentcore_runtime_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = aws_ecr_repository.agentcore_terraform_runtime.arn
+      }
+    ]
+  })
+}
+
+################################################################################
+# AgentCore Memory
+################################################################################
+resource "aws_bedrockagentcore_memory" "agentcore_memory" {
+  name                  = "${var.app_name}_AgentCoreMemory"
+  description           = "Memory resource with 60 days event expiry"
+  event_expiry_duration = 60
+  memory_execution_role_arn = aws_iam_role.agentcore_memory_execution_role.arn
+}
+
+# Optional memory strategy configuration
+# resource "aws_bedrockagentcore_memory_strategy" "semantic" {
+#  name        = "semantic-strategy"
+#  memory_id   = aws_bedrockagentcore_memory.agentcore_memory.id
+#  type        = "SEMANTIC"
+#  description = "Semantic understanding strategy"
+#  namespaces  = ["default"]
+# }
+
+
+################################################################################
+# AgentCore Runtime
+################################################################################
+resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
+  agent_runtime_name = var.app_name
+  role_arn           = aws_iam_role.agentcore_runtime_role.arn
+
+  agent_runtime_artifact {
+    container_configuration {
+      container_uri = "${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest"
+    }
+  }
+
+  depends_on = [null_resource.docker_image, aws_bedrockagentcore_memory.agentcore_memory]
+
+  network_configuration {
+    network_mode = "PUBLIC"
+  }
+
+  environment_variables = {
+    MEMORY_ID = "${aws_bedrockagentcore_memory.agentcore_memory.id}"
+  }
+}
+
+
+################################################################################
+# AgentCore Runtime Endpoints
+################################################################################
+resource "aws_bedrockagentcore_agent_runtime_endpoint" "dev_endpoint" {
+  name             = "DEV"
+  agent_runtime_id = aws_bedrockagentcore_agent_runtime.agentcore_runtime.agent_runtime_id
+  agent_runtime_version = var.agent_runtime_version
+}
+
+
+resource "aws_bedrockagentcore_agent_runtime_endpoint" "prod_endpoint" {
+  name                  = "PROD"
+  agent_runtime_id      = aws_bedrockagentcore_agent_runtime.agentcore_runtime.agent_runtime_id
+  agent_runtime_version = var.agent_runtime_version
+  depends_on = [aws_bedrockagentcore_agent_runtime_endpoint.dev_endpoint] # Prevents ConflictException
+}
