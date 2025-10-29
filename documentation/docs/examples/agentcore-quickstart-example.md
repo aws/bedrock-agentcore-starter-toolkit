@@ -196,16 +196,10 @@ agentcore status
 
 # Shows:
 #   Memory ID: agentcore_starter_strands_mem-abc123
-#   Memory Status: CREATING (if still provisioning)
-#   Memory Type: STM+LTM (provisioning...) (if creating with LTM)
 #   Memory Type: STM+LTM (3 strategies) (when active with strategies)
 #   Memory Type: STM only (if configured without LTM)
 #   Observability: Enabled
 ```
-
-> **Note**
->
-> Memory may take around 2-5 minutes to activate.
 
 ## Step 4: Test Memory and Code Interpreter
 
