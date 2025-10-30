@@ -162,7 +162,7 @@ resource "aws_iam_role_policy" "runtime_ecr_policy" {
 # AgentCore Memory
 ################################################################################
 resource "aws_bedrockagentcore_memory" "agentcore_memory" {
-  name                  = "${var.app_name}_AgentCoreMemory"
+  name                  = "{{ memory_name }}"
   description           = "Memory resource with 60 days event expiry"
   event_expiry_duration = 60
   memory_execution_role_arn = aws_iam_role.agentcore_memory_execution_role.arn
@@ -182,7 +182,7 @@ resource "aws_bedrockagentcore_memory" "agentcore_memory" {
 # AgentCore Runtime
 ################################################################################
 resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
-  agent_runtime_name = "${var.app_name}-Agent"
+  agent_runtime_name = "{{ agent_name }}"
   role_arn           = aws_iam_role.agentcore_runtime_role.arn
 
   agent_runtime_artifact {
@@ -194,7 +194,11 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
   depends_on = [null_resource.docker_image, aws_bedrockagentcore_memory.agentcore_memory]
 
   network_configuration {
-    network_mode = "PUBLIC"
+    network_mode = {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %}
+    network_mode_config {
+      subnets = [{% for subnet in vpc_subnets %}"{{ subnet }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      security_groups = [{% for sg in vpc_security_groups %}"{{ sg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    }{% endif %}
   }
 
   environment_variables = {
