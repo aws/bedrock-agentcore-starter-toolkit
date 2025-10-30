@@ -6,7 +6,7 @@ from .types import ProjectContext
 from .features import feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
-from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig
+from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .common_features import CommonFeatures
 
@@ -42,6 +42,8 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         vpc_enabled=False,
         vpc_security_groups=None,
         vpc_subnets=None
+        # observability
+        observability_enabled=True
     )
 
     # resolve above defaults with the configure context if present
@@ -63,7 +65,13 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         instance = feature_registry[feature]()
         instance.apply(ctx)   
 
-    ContainerRuntime().generate_dockerfile(agent_path=Path(ctx.src_dir / "main.py"), output_dir=ctx.src_dir, agent_name=ctx.agent_name)
+    # create docker file with settings from ctx
+    ContainerRuntime().generate_dockerfile(
+        agent_path=Path(ctx.src_dir / "main.py"),
+        output_dir=ctx.src_dir,
+        agent_name=ctx.agent_name, 
+        enable_observability=ctx.observability_enabled
+    )
 
 
 def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config: BedrockAgentCoreAgentSchema):
@@ -98,3 +106,6 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         ctx.vpc_security_groups = network_mode_config.security_groups
         ctx.vpc_subnets = network_mode_config.subnets
     
+    # observability
+    observability_config: ObservabilityConfig = aws_config.observability
+    ctx.observability_enabled = observability_config.enabled

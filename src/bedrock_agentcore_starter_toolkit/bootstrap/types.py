@@ -33,6 +33,8 @@ class ProjectContext:
     vpc_enabled: bool
     vpc_subnets: Optional[list[str]]
     vpc_security_groups: Optional[list[str]]
+    # observability (use opentelemetry-instrument at Docker entry CMD)
+    observability_enabled: bool
     
     def dict(self):
         return asdict(self)
