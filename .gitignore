@@ -28,3 +28,4 @@ specs/
 coverage.json
 CLAUDE.md
 mise.toml
+.idea/

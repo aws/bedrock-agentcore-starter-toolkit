@@ -20,9 +20,9 @@ resource "null_resource" "docker_image" {
   depends_on = [aws_ecr_repository.agentcore_terraform_runtime]
 
   triggers = {
-    dockerfile_hash = filesha256("../${path.root}/Dockerfile")
+    dockerfile_hash = filesha256("../${path.root}/src/Dockerfile")
     app_hash        = filesha256("../${path.root}/src/main.py")
-    pyproject_hash  = filesha256("../${path.root}/pyproject.toml")
+    pyproject_hash  = filesha256("../${path.root}/src/pyproject.toml")
   }
 
   provisioner "local-exec" {
