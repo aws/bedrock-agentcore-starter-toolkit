@@ -182,7 +182,7 @@ resource "aws_bedrockagentcore_memory" "agentcore_memory" {
 # AgentCore Runtime
 ################################################################################
 resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
-  agent_runtime_name = var.app_name
+  agent_runtime_name = "${var.app_name}-Agent"
   role_arn           = aws_iam_role.agentcore_runtime_role.arn
 
   agent_runtime_artifact {
@@ -199,7 +199,14 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
 
   environment_variables = {
     MEMORY_ID = "${aws_bedrockagentcore_memory.agentcore_memory.id}"
-  }
+  }{% if custom_authorizer_enabled %}
+  authorizer_configuration {
+    custom_jwt_authorizer {
+      discovery_url    = "{{ custom_authorizer_url }}"
+      allowed_audience = [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      allowed_clients  = [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    }
+  }{% endif %}
 }
 
 
