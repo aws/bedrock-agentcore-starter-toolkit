@@ -2230,30 +2230,38 @@ aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks
 <h3 id="test-agent-1-orchestrator">Test Agent 1 (Orchestrator)<a class="headerlink" href="#test-agent-1-orchestrator" title="Permanent link">&para;</a></h3>
 <p>Agent 1 is your main entry point. It will handle simple queries directly or delegate to Agent 2 for complex tasks.</p>
 <h4 id="using-aws-cli">Using AWS CLI<a class="headerlink" href="#using-aws-cli" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="c1"># Get Agent1 Runtime ID</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get Agent1 Runtime ID and construct ARN</span>
 <span class="nv">AGENT1_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--stack-name<span class="w"> </span>multi-agent-demo<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`Agent1RuntimeId`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--output<span class="w"> </span>text<span class="k">)</span>
 
+<span class="c1"># Get account ID and construct the ARN</span>
+<span class="nv">ACCOUNT_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>sts<span class="w"> </span>get-caller-identity<span class="w"> </span>--query<span class="w"> </span>Account<span class="w"> </span>--output<span class="w"> </span>text<span class="k">)</span>
+<span class="nv">REGION</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span>
+<span class="nv">AGENT1_ARN</span><span class="o">=</span><span class="s2">&quot;arn:aws:bedrock-agentcore:</span><span class="si">${</span><span class="nv">REGION</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">ACCOUNT_ID</span><span class="si">}</span><span class="s2">:runtime/</span><span class="si">${</span><span class="nv">AGENT1_ID</span><span class="si">}</span><span class="s2">&quot;</span>
+
 <span class="c1"># Test with a simple query (Agent1 handles directly)</span>
+<span class="nv">PAYLOAD1</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Hello, how are you?&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="k">)</span>
 aws<span class="w"> </span>bedrock-agentcore<span class="w"> </span>invoke-agent-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-runtime-id<span class="w"> </span><span class="nv">$AGENT1_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-runtime-arn<span class="w"> </span><span class="nv">$AGENT1_ARN</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--qualifier<span class="w"> </span>DEFAULT<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--payload<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Hello, how are you?&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--payload<span class="w"> </span><span class="nv">$PAYLOAD1</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>response.json
+<span class="w">  </span>response1.json
 
 <span class="c1"># Test with a complex query (Agent1 delegates to Agent2)</span>
+<span class="nv">PAYLOAD2</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Provide a detailed analysis of cloud computing benefits&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="k">)</span>
 aws<span class="w"> </span>bedrock-agentcore<span class="w"> </span>invoke-agent-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-runtime-id<span class="w"> </span><span class="nv">$AGENT1_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-runtime-arn<span class="w"> </span><span class="nv">$AGENT1_ARN</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--qualifier<span class="w"> </span>DEFAULT<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--payload<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Provide a detailed analysis of cloud computing benefits&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--payload<span class="w"> </span><span class="nv">$PAYLOAD2</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>response.json
+<span class="w">  </span>response2.json
 
-cat<span class="w"> </span>response.json
+cat<span class="w"> </span>response1.json
+cat<span class="w"> </span>response2.json
 </code></pre></div>
 <h3 id="using-aws-console">Using AWS Console<a class="headerlink" href="#using-aws-console" title="Permanent link">&para;</a></h3>
 <ol>
@@ -2271,20 +2279,30 @@ cat<span class="w"> </span>response.json
 </ol>
 <h3 id="test-agent-2-specialist-directly">Test Agent 2 (Specialist) Directly<a class="headerlink" href="#test-agent-2-specialist-directly" title="Permanent link">&para;</a></h3>
 <p>You can also test Agent 2 directly to see its specialized capabilities.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Get Agent2 Runtime ID</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get Agent2 Runtime ID and construct ARN</span>
 <span class="nv">AGENT2_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--stack-name<span class="w"> </span>multi-agent-demo<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`Agent2RuntimeId`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--output<span class="w"> </span>text<span class="k">)</span>
 
+<span class="c1"># Get account ID and construct the ARN</span>
+<span class="nv">ACCOUNT_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>sts<span class="w"> </span>get-caller-identity<span class="w"> </span>--query<span class="w"> </span>Account<span class="w"> </span>--output<span class="w"> </span>text<span class="k">)</span>
+<span class="nv">REGION</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span>
+<span class="nv">AGENT2_ARN</span><span class="o">=</span><span class="s2">&quot;arn:aws:bedrock-agentcore:</span><span class="si">${</span><span class="nv">REGION</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">ACCOUNT_ID</span><span class="si">}</span><span class="s2">:runtime/</span><span class="si">${</span><span class="nv">AGENT2_ID</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># Prepare the payload (base64 encoded, note the -n flag)</span>
+<span class="nv">PAYLOAD3</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Explain quantum computing in detail&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="k">)</span>
+
 <span class="c1"># Invoke Agent2 directly</span>
 aws<span class="w"> </span>bedrock-agentcore<span class="w"> </span>invoke-agent-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-runtime-id<span class="w"> </span><span class="nv">$AGENT2_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-runtime-arn<span class="w"> </span><span class="nv">$AGENT2_ARN</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--qualifier<span class="w"> </span>DEFAULT<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--payload<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Explain quantum computing in detail&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--payload<span class="w"> </span><span class="nv">$PAYLOAD3</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>response.json
+<span class="w">  </span>response3.json
+
+cat<span class="w"> </span>response3.json
 </code></pre></div>
 <h2 id="sample-queries">Sample Queries<a class="headerlink" href="#sample-queries" title="Permanent link">&para;</a></h2>
 <h3 id="queries-that-agent-1-handles-directly">Queries that Agent 1 Handles Directly<a class="headerlink" href="#queries-that-agent-1-handles-directly" title="Permanent link">&para;</a></h3>

@@ -66,7 +66,7 @@ aws configure
 1. **Bedrock Model Access**: Enable access to Amazon Bedrock models in your AWS region
 1. Navigate to [Amazon Bedrock Console](https://console.aws.amazon.com/bedrock/)
 1. Go to "Model access" and request access to:
-   - Anthropic Claude models (recommended: Claude 3.5 Sonnet or Claude 3 Haiku)
+   - Anthropic Claude models
 1. [Bedrock Model Access Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html)
 1. **Required Permissions**: Your AWS user/role needs permissions for:
 1. CloudFormation stack operations
@@ -147,11 +147,19 @@ RUNTIME_ID=$(aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`AgentRuntimeId`].OutputValue' \
   --output text)
 
+# Get account ID and construct the ARN
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REGION="us-west-2"
+RUNTIME_ARN="arn:aws:bedrock-agentcore:${REGION}:${ACCOUNT_ID}:runtime/${RUNTIME_ID}"
+
+# Prepare the payload (base64 encoded, note the -n flag to avoid newlines)
+PAYLOAD=$(echo -n '{"prompt": "What is 2+2?"}' | base64)
+
 # Invoke the agent
 aws bedrock-agentcore invoke-agent-runtime \
-  --agent-runtime-id $RUNTIME_ID \
+  --agent-runtime-arn $RUNTIME_ARN \
   --qualifier DEFAULT \
-  --payload '{"prompt": "What is 2+2?"}' \
+  --payload $PAYLOAD \
   --region us-west-2 \
   response.json
 

@@ -2226,12 +2226,17 @@ aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks
 </ul>
 <h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
 <h3 id="using-aws-cli">Using AWS CLI<a class="headerlink" href="#using-aws-cli" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># Get the Runtime ID from stack outputs</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get the Runtime ID from stack outputs and construct ARN</span>
 <span class="nv">RUNTIME_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--stack-name<span class="w"> </span>weather-agent-demo<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`AgentRuntimeId`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--output<span class="w"> </span>text<span class="k">)</span>
+
+<span class="c1"># Get account ID and construct the ARN</span>
+<span class="nv">ACCOUNT_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>sts<span class="w"> </span>get-caller-identity<span class="w"> </span>--query<span class="w"> </span>Account<span class="w"> </span>--output<span class="w"> </span>text<span class="k">)</span>
+<span class="nv">REGION</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span>
+<span class="nv">RUNTIME_ARN</span><span class="o">=</span><span class="s2">&quot;arn:aws:bedrock-agentcore:</span><span class="si">${</span><span class="nv">REGION</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">ACCOUNT_ID</span><span class="si">}</span><span class="s2">:runtime/</span><span class="si">${</span><span class="nv">RUNTIME_ID</span><span class="si">}</span><span class="s2">&quot;</span>
 
 <span class="c1"># Get the S3 bucket name</span>
 <span class="nv">BUCKET_NAME</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
@@ -2240,11 +2245,14 @@ aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks
 <span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`ResultsBucket`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--output<span class="w"> </span>text<span class="k">)</span>
 
+<span class="c1"># Prepare the payload (base64 encoded, note the -n flag)</span>
+<span class="nv">PAYLOAD</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span>-n<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What should I do this weekend in Richmond VA?&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="k">)</span>
+
 <span class="c1"># Invoke the agent</span>
 aws<span class="w"> </span>bedrock-agentcore<span class="w"> </span>invoke-agent-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-runtime-id<span class="w"> </span><span class="nv">$RUNTIME_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-runtime-arn<span class="w"> </span><span class="nv">$RUNTIME_ARN</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--qualifier<span class="w"> </span>DEFAULT<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--payload<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What should I do this weekend in Richmond VA?&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--payload<span class="w"> </span><span class="nv">$PAYLOAD</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--region<span class="w"> </span>us-west-2<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>response.json
 
