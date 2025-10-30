@@ -9,5 +9,6 @@ class BootstrapSDKProvider(str, Enum):
     Strands = "Strands"
     ClaudeAgentsSDK = "ClaudeAgentsSDK"
     OpenAi = "OpenAI"
+    LangGraph = "LangGraph"
 
 BootstrapFeature = Union[BootstrapIACProvider, BootstrapSDKProvider]

@@ -1,0 +1,16 @@
+import os
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+# TODO: AUTH
+def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+    gateway_url = os.getenv("gatewayUrl")
+    if not gateway_url:
+        raise RuntimeError("Missing required environment variable: gatewayUrl")
+    return MultiServerMCPClient(
+        {
+            "agentcore_gateway": {
+                "transport": "streamable_http",
+                "url": f"{gateway_url}/mcp",
+            }
+        }
+    )

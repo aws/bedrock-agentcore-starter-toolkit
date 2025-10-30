@@ -1,3 +1,4 @@
+from .langgraph.feature import LangGraphFeature
 from .strands.feature import StrandsFeature
 from .cdk.feature import CDKFeature
 from .terraform.feature import TerraformFeature
@@ -8,5 +9,6 @@ from .base_feature import Feature
 feature_registry: dict[BootstrapFeature, Type[Feature]] = {
     BootstrapIACProvider.CDK: CDKFeature,
     BootstrapIACProvider.Terraform: TerraformFeature,
-    BootstrapSDKProvider.Strands: StrandsFeature
+    BootstrapSDKProvider.Strands: StrandsFeature,
+    BootstrapSDKProvider.LangGraph: LangGraphFeature
 }

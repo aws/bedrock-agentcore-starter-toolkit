@@ -32,7 +32,7 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         agent_name=name + "-Agent",
         # memory
         memory_enabled=True,
-        memory_name=name + "-Memory",
+        memory_name=name + "_Memory",
         memory_event_expiry_days=30,
         memory_short_term_only=False,
         memory_short_and_long_term=False,
