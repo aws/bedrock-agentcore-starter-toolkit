@@ -74,9 +74,13 @@ export class AgentCoreStack extends cdk.Stack {
                     containerUri: props.imageUri
                 }
             },
-            agentRuntimeName: "{{ app_name }}-Agent",
+            agentRuntimeName: "{{ agent_name }}",
             networkConfiguration: {
-                networkMode: "PUBLIC"
+                networkMode: {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %},
+                networkModeConfig: {
+                    subnets: [{% for subnet in vpc_subnets %}"{{ subnet }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+                    securityGroups: [{% for sg in vpc_security_groups %}"{{ sg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+                }{% endif %}
             },
             roleArn: runtimeRole.roleArn,
             environmentVariables: {

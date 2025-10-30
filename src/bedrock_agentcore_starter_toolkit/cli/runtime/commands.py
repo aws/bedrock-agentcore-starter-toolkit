@@ -373,7 +373,7 @@ def configure(
     bootstrap_mode_enabled = bootstrap
     if not non_interactive:
         response = prompt(
-            "Use bootstrap mode for a minimal default setup? [y/N] "
+            "Use bootstrap mode for a minimal default setup? (yes/no) "
             "`agentcore bootstrap` is also compatible with other configure outputs: "
         ).strip().lower()
         bootstrap_mode_enabled = response in ("y", "yes")

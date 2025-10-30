@@ -6,9 +6,10 @@ from .types import ProjectContext
 from .features import feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
-from ..utils.runtime.schema import BedrockAgentCoreAgentSchema, MemoryConfig
-from .features.base_feature import Feature
+from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
+from .common_features import CommonFeatures
+
 
 def generate_project(name: str, features: List[BootstrapFeature], agent_config: BedrockAgentCoreAgentSchema | None):
 
@@ -27,8 +28,8 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         python_dependencies=[],
         agent_name=name + "-Agent",
         # memory
-        memory_name=name + "-Memory",
         memory_enabled=True,
+        memory_name=name + "-Memory",
         memory_event_expiry_days=30,
         memory_short_term_only=False,
         memory_short_and_long_term=False,
@@ -37,6 +38,10 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         custom_authorizer_url=None,
         custom_authorizer_allowed_audience=None,
         custom_authorizer_allowed_clients=None,
+        # vpc
+        vpc_enabled=False,
+        vpc_security_groups=None,
+        vpc_subnets=None
     )
 
     # resolve above defaults with the configure context if present
@@ -67,12 +72,14 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     We re-map these configurations from the original BedrockAgentCoreAgentSchema to generate a simple ProjectContext that is easily consumed by Jinja
     """
     ctx.agent_name = agent_config.name
+
     # memory
     memory_config: MemoryConfig = agent_config.memory
     ctx.memory_enabled = memory_config.is_enabled
     ctx.memory_event_expiry_days = memory_config.event_expiry_days
     ctx.memory_short_and_long_term = memory_config.has_ltm
     ctx.memory_short_term_only = memory_config.mode == "STM_ONLY"
+
     # custom authorizer
     authorizer_config: Optional[dict[str, any]] = agent_config.authorizer_configuration
     if authorizer_config:
@@ -82,10 +89,12 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         ctx.custom_authorizer_allowed_clients = authorizer_config_values["allowedClients"]
         ctx.custom_authorizer_allowed_audience = authorizer_config_values["allowedAudience"]
 
-# small class to extract the common templates under the bootstrap/ dir and write them to the output dir
-class CommonFeatures(Feature):
-    name = "bootstrap"
-    template_override_dir = Path(__file__).parent / "templates"
-    def execute(self, context):
-        self.render_dir(context.output_dir, context)
+    # vpc
+    aws_config: AWSConfig = agent_config.aws
+    network_config: NetworkConfiguration = aws_config.network_configuration
+    if network_config.network_mode == "VPC":
+        ctx.vpc_enabled = True
+        network_mode_config: NetworkModeConfig = network_config.network_mode_config
+        ctx.vpc_security_groups = network_mode_config.security_groups
+        ctx.vpc_subnets = network_mode_config.subnets
     
