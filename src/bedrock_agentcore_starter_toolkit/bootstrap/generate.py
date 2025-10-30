@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 from .features.types import BootstrapFeature
 from typing import List, Optional
@@ -9,6 +10,8 @@ from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .common_features import CommonFeatures
+from ..cli.common import console
+from rich.pretty import Pretty
 
 
 def generate_project(name: str, features: List[BootstrapFeature], agent_config: BedrockAgentCoreAgentSchema | None):
@@ -41,7 +44,7 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         # vpc
         vpc_enabled=False,
         vpc_security_groups=None,
-        vpc_subnets=None
+        vpc_subnets=None,
         # observability
         observability_enabled=True
     )
@@ -49,6 +52,11 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
     # resolve above defaults with the configure context if present
     if agent_config:
         resolve_agent_config_with_project_context(ctx, agent_config)
+
+    # ctx is resolved, ready to start generating
+    console.print(f"[cyan] Bootstrap generating with the following configuration: [/cyan]")
+    console.print(Pretty(ctx))
+    time.sleep(5) # give the user a few seconds to read the output before continuing
 
     # Collect dependencies from features, starting with common deps
     deps = set(COMMON_PYTHON_DEPENDENCIES)
