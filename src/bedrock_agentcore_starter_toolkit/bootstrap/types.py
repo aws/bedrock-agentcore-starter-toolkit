@@ -1,7 +1,16 @@
 from dataclasses import dataclass, asdict
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 from .features.types import BootstrapFeature
+
+class TemplateDirSelection(str, Enum):
+    """
+    Used to keep track of which directories within templates/ to render
+    """
+    Default = "default"
+    Common = "common"
+    McpRuntime = "mcp_runtime"
 
 @dataclass
 class ProjectContext:
@@ -14,6 +23,7 @@ class ProjectContext:
     output_dir: Path
     src_dir: Path
     features: List[BootstrapFeature]
+    template_dir_selection: TemplateDirSelection
     python_dependencies: List[str]
     iac_dir: Optional[Path]
     # below properties are related to consuming the yaml from configure

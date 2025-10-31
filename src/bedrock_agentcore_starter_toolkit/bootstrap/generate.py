@@ -3,13 +3,13 @@ import time
 
 from .features.types import BootstrapFeature
 from typing import List, Optional
-from .types import ProjectContext
+from .types import ProjectContext, TemplateDirSelection
 from .features import feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
-from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig
+from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig, ProtocolConfiguration
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
-from .common_features import CommonFeatures
+from .baseline_feature import BaselineFeature
 from ..cli.common import console
 from rich.pretty import Pretty
 
@@ -27,6 +27,7 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         output_dir=output_path,
         src_dir=src_path,
         iac_dir=None, # updated when iac is generated
+        template_dir_selection=TemplateDirSelection.Default,
         features=features,
         python_dependencies=[],
         agent_name=name + "-Agent",
@@ -65,8 +66,8 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         deps.update(feature_cls().python_dependencies)
     ctx.python_dependencies = sorted(deps)
 
-    # Render common templates
-    CommonFeatures().apply(ctx)
+    # Render baseline templates
+    BaselineFeature(ctx.template_dir_selection).apply(ctx)
 
     # Render feature templates
     for feature in ctx.features:
@@ -88,6 +89,13 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     We re-map these configurations from the original BedrockAgentCoreAgentSchema to generate a simple ProjectContext that is easily consumed by Jinja
     """
     ctx.agent_name = agent_config.name
+    aws_config: AWSConfig = agent_config.aws
+
+    # protocol configuration will determine which templates we render
+    # mcp_runtime is different enough from default that it gets its own templates
+    protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
+    if protocol_configuration.server_protocol == "MCP":
+        ctx.template_dir_selection = TemplateDirSelection.McpRuntime
 
     # memory
     memory_config: MemoryConfig = agent_config.memory
@@ -106,7 +114,6 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         ctx.custom_authorizer_allowed_audience = authorizer_config_values["allowedAudience"]
 
     # vpc
-    aws_config: AWSConfig = agent_config.aws
     network_config: NetworkConfiguration = aws_config.network_configuration
     if network_config.network_mode == "VPC":
         ctx.vpc_enabled = True

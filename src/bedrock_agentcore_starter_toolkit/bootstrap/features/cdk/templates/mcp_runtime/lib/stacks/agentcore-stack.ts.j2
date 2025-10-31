@@ -12,66 +12,9 @@ export interface AgentCoreStackProps extends BaseStackProps {
 
 export class AgentCoreStack extends cdk.Stack {
     readonly agentCoreRuntime: bedrockagentcore.CfnRuntime;
-    readonly agentCoreGateway: bedrockagentcore.CfnGateway;
-    readonly agentCoreMemory: bedrockagentcore.CfnMemory;
-    readonly mcpLambda: lambda.Function;
 
     constructor(scope: Construct, id: string, props: AgentCoreStackProps) {
         super(scope, id, props);
-
-        /*****************************
-        * AgentCore Gateway
-        ******************************/
-
-        this.mcpLambda = new lambda.Function(this, `${props.appName}-McpLambda`, {
-            runtime: lambda.Runtime.PYTHON_3_12,
-            handler: "handler.lambda_handler",
-            code: lambda.AssetCode.fromAsset(path.join(__dirname, '../../../mcp/lambda'))
-        });
-
-        const agentCoreGatewayRole = new iam.Role(this, `${props.appName}-AgentCoreGatewayRole`, {
-            assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
-            description: 'IAM role for Bedrock AgentCore Runtime',
-        });
-
-        // TODO: might want to scope this policy down
-        agentCoreGatewayRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('BedrockAgentCoreFullAccess'));
-        this.mcpLambda.grantInvoke(agentCoreGatewayRole);
-
-        this.agentCoreGateway = new bedrockagentcore.CfnGateway(this, `${props.appName}-AgentCoreGateway`, {
-            authorizerType: {% if custom_authorizer_enabled %}"CUSTOM_JWT"{% else %}"AWS_IAM"{% endif %},{% if custom_authorizer_enabled %}
-            authorizerConfiguration: {
-                customJwtAuthorizer: {
-                    discoveryUrl: "{{ custom_authorizer_url }}",
-                    allowedClients: [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}],
-                    allowedAudience: [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
-                }
-            },{% endif %}
-            name: `${props.appName}-AgentCoreGateway`,
-            protocolType: "MCP",
-            roleArn: agentCoreGatewayRole.roleArn,
-        });
-
-        /*****************************
-        * AgentCore Memory
-        ******************************/
-
-        // can take a built in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html
-        // const agentCoreMemoryStrategy = {
-        //   semanticMemoryStrategy: {
-        //        name: 'semanticMemoryStrategy'
-        //    }
-        //};
-
-        this.agentCoreMemory = new bedrockagentcore.CfnMemory(this, `${props.appName}-AgentCoreMemory`, {
-            name: "{{ memory_name }}",
-            eventExpiryDuration: {{ memory_event_expiry_days }},
-            description: "Memory resource with {{ memory_event_expiry_days}} days event expiry",
-            memoryStrategies: [
-                // agentCoreMemoryStrategy
-            ]
-        });
-
 
         /*****************************
         * AgentCore Runtime
@@ -95,7 +38,6 @@ export class AgentCoreStack extends cdk.Stack {
                 }
             },
             agentRuntimeName: "{{ agent_name }}",
-            protocolConfiguration: "HTTP",
             networkConfiguration: {
                 networkMode: {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %},
                 networkModeConfig: {
@@ -103,11 +45,7 @@ export class AgentCoreStack extends cdk.Stack {
                     securityGroups: [{% for sg in vpc_security_groups %}"{{ sg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
                 }{% endif %}
             },
-            roleArn: runtimeRole.roleArn,
-            environmentVariables: {
-                "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
-                "MEMORY_ID":  this.agentCoreMemory.attrMemoryId
-            }{% if custom_authorizer_enabled %},
+            roleArn: runtimeRole.roleArn{% if custom_authorizer_enabled %},
             authorizerConfiguration: {
                 customJwtAuthorizer: {
                     discoveryUrl: "{{ custom_authorizer_url }}",

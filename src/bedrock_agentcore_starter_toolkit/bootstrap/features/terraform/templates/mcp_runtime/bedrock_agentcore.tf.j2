@@ -1,0 +1,155 @@
+################################################################################
+# ECR Repository
+################################################################################
+resource "aws_ecr_repository" "agentcore_terraform_runtime" {
+  name                 = "bedrock-agentcore/${lower(var.app_name)}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+}
+
+data "aws_ecr_authorization_token" "token" {}
+
+resource "null_resource" "docker_image" {
+  depends_on = [aws_ecr_repository.agentcore_terraform_runtime]
+
+  triggers = {
+    dockerfile_hash = filesha256("../${path.root}/src/Dockerfile")
+    app_hash        = filesha256("../${path.root}/src/main.py")
+    pyproject_hash  = filesha256("../${path.root}/src/pyproject.toml")
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<EOF
+      source ~/.bash_profile || source ~/.profile || true
+      
+      if ! command -v docker &> /dev/null; then
+        echo "Docker is not installed or not in PATH. Please install Docker and try again."
+        exit 1
+      fi
+      
+      aws ecr get-login-password | docker login --username AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
+      
+      docker build -t ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest ../${path.root}/src
+      
+      docker push ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest
+    EOF
+  }
+}
+
+################################################################################
+# AgentCore Runtime and Memory IAM Roles
+################################################################################
+
+data "aws_iam_policy_document" "bedrock_agentcore_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["bedrock-agentcore.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "agentcore_runtime_role" {
+  name        = "${var.app_name}-AgentCoreRuntimeRole"
+  description = "IAM role for Bedrock AgentCore Runtime"
+
+  assume_role_policy = data.aws_iam_policy_document.bedrock_agentcore_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "runtime_bedrock_policy" {
+  role       = aws_iam_role.agentcore_runtime_role.name
+  policy_arn = "arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "runtime_model_invoke_policy" {
+  role       = aws_iam_role.agentcore_runtime_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy"
+}
+
+resource "aws_iam_role_policy" "runtime_ecr_policy" {
+  role = aws_iam_role.agentcore_runtime_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = aws_ecr_repository.agentcore_terraform_runtime.arn
+      }
+    ]
+  })
+}
+
+################################################################################
+# AgentCore Runtime
+################################################################################
+resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
+  agent_runtime_name = "{{ agent_name }}"
+  role_arn           = aws_iam_role.agentcore_runtime_role.arn
+
+  agent_runtime_artifact {
+    container_configuration {
+      container_uri = "${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest"
+    }
+  }
+
+  depends_on = [null_resource.docker_image]
+
+  protocol_configuration = "MCP"
+
+  network_configuration {
+    network_mode = {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %}
+    network_mode_config {
+      subnets = [{% for subnet in vpc_subnets %}"{{ subnet }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      security_groups = [{% for sg in vpc_security_groups %}"{{ sg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    }{% endif %}
+  }
+
+ {% if custom_authorizer_enabled %}
+  authorizer_configuration {
+    custom_jwt_authorizer {
+      discovery_url    = "{{ custom_authorizer_url }}"
+      allowed_audience = [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      allowed_clients  = [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    }
+  }{% endif %}
+}
+
+
+################################################################################
+# AgentCore Runtime Endpoints
+################################################################################
+resource "aws_bedrockagentcore_agent_runtime_endpoint" "dev_endpoint" {
+  name             = "DEV"
+  agent_runtime_id = aws_bedrockagentcore_agent_runtime.agentcore_runtime.agent_runtime_id
+  agent_runtime_version = var.agent_runtime_version
+}
+
+
+resource "aws_bedrockagentcore_agent_runtime_endpoint" "prod_endpoint" {
+  name                  = "PROD"
+  agent_runtime_id      = aws_bedrockagentcore_agent_runtime.agentcore_runtime.agent_runtime_id
+  agent_runtime_version = var.agent_runtime_version
+  depends_on = [aws_bedrockagentcore_agent_runtime_endpoint.dev_endpoint] # Prevents ConflictException
+}

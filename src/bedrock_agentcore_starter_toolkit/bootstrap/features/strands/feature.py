@@ -3,7 +3,7 @@ from ..types import BootstrapSDKProvider
 from ..base_feature import Feature
 
 class StrandsFeature(Feature):
-    name = BootstrapSDKProvider.Strands.value
+    feature_dir_name = BootstrapSDKProvider.Strands
     python_dependencies = ["strands-agents >= 1.13.0", "mcp >= 1.19.0"]
 
     def execute(self, context: ProjectContext):

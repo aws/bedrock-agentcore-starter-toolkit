@@ -15,6 +15,7 @@ def lambda_handler(event, context):
     try:
         extended_name = context.client_context.custom["bedrockAgentCoreToolName"]
         tool_name = None
+        # handle agentcore gateway tool naming convention https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
         if extended_name and "___" in extended_name:
             tool_name = extended_name.split("___", 1)[1]
 

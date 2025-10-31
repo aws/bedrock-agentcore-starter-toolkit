@@ -13,6 +13,3 @@ class BootstrapSDKProvider(str, Enum):
     GoogleADK = "GoogleADK"
 
 BootstrapFeature = Union[BootstrapIACProvider, BootstrapSDKProvider]
-
-class TemplateMode(str, Enum):
-    Default = "default"
