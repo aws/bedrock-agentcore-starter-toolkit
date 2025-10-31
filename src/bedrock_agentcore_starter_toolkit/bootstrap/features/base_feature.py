@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from jinja2 import Environment, FileSystemLoader
 from ..types import ProjectContext
+from .types import TemplateMode
 
 
 class Feature(ABC):
@@ -11,13 +12,20 @@ class Feature(ABC):
 
     name: str  # subclasses must override
     python_dependencies: list[str] = []
-    template_override_dir: Optional[Path] = None
+    template_override_parent_dir: Optional[Path] = None
+    template_mode: Optional[TemplateMode] = TemplateMode.Default
 
     def __init__(self) -> None:
         if not getattr(self, "name", None):
             raise ValueError(f"{self.__class__.__name__} must define a 'name' attribute")
 
-        self.template_dir = self.template_override_dir or Path(__file__).parent / self.name.lower() / "templates"
+        # default to the features directory like features/cdk or features/strands  Path(__file__) is a ref to this file, not the class that implementss it
+        base_dir = (
+            self.template_override_parent_dir
+            if self.template_override_parent_dir
+            else Path(__file__).parent / self.name.lower() 
+        )
+        self.template_dir = base_dir / "templates" / self.template_mode
 
         if not self.template_dir.exists():
             raise FileNotFoundError(f"Template directory not found: {self.template_dir}")

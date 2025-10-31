@@ -12,3 +12,6 @@ class BootstrapSDKProvider(str, Enum):
     LangGraph = "LangGraph"
 
 BootstrapFeature = Union[BootstrapIACProvider, BootstrapSDKProvider]
+
+class TemplateMode(str, Enum):
+    Default = "default"
