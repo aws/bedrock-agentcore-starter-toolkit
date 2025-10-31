@@ -6,18 +6,24 @@ from mcp.client import get_streamable_http_mcp_client
 
 llm = ChatBedrock(model_id="amazon.nova-pro-v1:0")
 
+# Load tools using MCP through AgentCore Gateway
 mcp_client = get_streamable_http_mcp_client()
 tools = await mcp_client.get_tools()
+
+# Define the agent
 graph = create_agent(llm, tools=tools)
 
+# Define the Bedrock AgentCore App
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def invoke(payload):
     result = graph.invoke({"messages": [HumanMessage(content=payload["prompt"])]})
-    print(result["messages"][-1].content)
+
     return {
         "result": result["messages"][-1].content
     }
 
-app.run()
+if __name__ == "__main__":
+    app.logger.info("Starting AgentCore App")
+    app.run()
