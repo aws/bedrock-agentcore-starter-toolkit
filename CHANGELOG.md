@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.28] - 2025-10-31
+
+### Changes
+
+- fix: prevent incorrect entrypoint inference when multiple candidates exist (#313) (c011ebf)
+- docs: update quickstart example for agentcore-strands CI integration (#311) (ba056fb)
+- fix: correct workflow output reference for external PR tests (#307) (a6d0bc1)
+- chore: bump version to 0.1.27 (#309) (a501bcf)
+
 ## [0.1.27] - 2025-10-29
 
 ### Changes
