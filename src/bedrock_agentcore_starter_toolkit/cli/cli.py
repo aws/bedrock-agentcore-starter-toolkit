@@ -3,6 +3,7 @@
 import typer
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
+from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
 from .import_agent.commands import import_agent
 from .runtime.commands import (
@@ -32,6 +33,9 @@ app.add_typer(configure_app)
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.add_typer(gateway_app, name="gateway")
+
+# observability
+app.add_typer(observability_app, name="obs")
 
 # import-agent
 app.command("import-agent")(import_agent)
