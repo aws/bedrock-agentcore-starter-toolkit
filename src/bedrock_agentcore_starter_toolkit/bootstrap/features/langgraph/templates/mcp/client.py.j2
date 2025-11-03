@@ -3,7 +3,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 # Define the inbound authentication mechanism for AgentCore Gateway - AWS IAM or JWT
 # https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html
-def get_auth():
+def get_bearer_auth():
     """
     Defines Inbound Authentication for AgentCore Gateway
     """
@@ -19,7 +19,7 @@ def get_streamable_http_mcp_client() -> MultiServerMCPClient:
                 "transport": "streamable_http",
                 "url": f"{gateway_url}/mcp",
                 "headers": {
-                    "Authorization": f"Bearer {get_auth()}"
+                    "Authorization": f"Bearer {get_bearer_auth()}"
                 }
             }
         }

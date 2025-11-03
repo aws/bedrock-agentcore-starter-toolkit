@@ -8,8 +8,13 @@ class BootstrapIACProvider(str, Enum):
 class BootstrapSDKProvider(str, Enum):
     Strands = "Strands"
     ClaudeAgentsSDK = "ClaudeAgentsSDK"
-    OpenAi = "OpenAI"
     LangGraph = "LangGraph"
     GoogleADK = "GoogleADK"
+    OpenAIAgents = "OpenAIAgents"
+
+class BootstrapProtocol(str, Enum):
+    HTTP = "http"
+    MCP = "mcp"
+    A2A = "a2a"
 
 BootstrapFeature = Union[BootstrapIACProvider, BootstrapSDKProvider]

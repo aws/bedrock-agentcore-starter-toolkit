@@ -1,0 +1,43 @@
+from agents import Agent, Runner, WebSearchTool
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from mcp.client import get_streamable_http_mcp_client
+import logging
+import sys
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+mcp_server = get_streamable_http_mcp_client()
+
+async def main(query):
+    try:
+        async with mcp_server as server:
+            agent = Agent(
+                name="Assistant",
+                mcp_servers=[server]
+            )
+        result = await Runner.run(agent, query)
+        return result
+    except Exception as e:
+        logger.error(f"Error during agent execution: {e}", exc_info=True)
+        raise e
+
+
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+async def agent_invocation(payload, context):
+    query = payload.get("prompt", "How can I help you today?")
+    result = await main(query)
+    return {"result": result.final_output}
+
+
+if __name__== "__main__":
+    app.run()

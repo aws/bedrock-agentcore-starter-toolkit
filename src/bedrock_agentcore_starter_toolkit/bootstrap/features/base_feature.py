@@ -22,7 +22,7 @@ class Feature(ABC):
     def _prepare_render_env(self, context: ProjectContext) -> None:
         """Internal: resolve the template directory and initialize Jinja env."""
         self.template_dir = self.template_override_dir or (
-            Path(__file__).parent / self.feature_dir_name.lower() / "templates" / context.template_dir_selection
+            Path(__file__).parent / self.feature_dir_name.lower() / "templates" / context.template_dir_selection.value
         )
         if not self.template_dir.exists():
             raise FileNotFoundError(f"Template directory not found: {self.template_dir}")

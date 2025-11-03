@@ -6,7 +6,7 @@ from ...features.types import BootstrapIACProvider
 from ...types import ProjectContext
 
 class CDKFeature(Feature):
-    feature_dir_name = BootstrapIACProvider.CDK
+    feature_dir_name = BootstrapIACProvider.CDK.value
 
     def before_apply(self, context: ProjectContext):
 
