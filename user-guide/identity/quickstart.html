@@ -922,6 +922,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#step-15-add-the-callback-url-to-your-oauth-20-authorization-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1.5: Add the callback URL to your OAuth 2.0 authorization server
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" class="md-nav__link">
     <span class="md-ellipsis">
       Step 2: Create a sample agent that initiates an OAuth 2.0 flow
@@ -2046,6 +2055,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#step-15-add-the-callback-url-to-your-oauth-20-authorization-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1.5: Add the callback URL to your OAuth 2.0 authorization server
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" class="md-nav__link">
     <span class="md-ellipsis">
       Step 2: Create a sample agent that initiates an OAuth 2.0 flow
@@ -2163,7 +2181,7 @@
 <li>Python 3.10+ installed</li>
 <li>The latest AWS CLI installed</li>
 <li>AWS credentials and region configured (<code>aws configure</code>)</li>
-<li>jq installed </li>
+<li><code>jq</code> installed</li>
 </ul>
 <p>This quickstart requires that you have an OAuth 2.0 authorization server. If you do not have one, Step 0.5 will create one for you using Amazon Cognito user pools. If you have an OAuth 2.0 authorization server with a client id, client secret, and a user configured, you may proceed to step 1. This authorization server will act as a resource credential provider, representing the authority that grants the agent an outbound OAuth 2.0 access token.</p>
 <h2 id="install-the-sdk-and-dependencies">Install the SDK and dependencies<a class="headerlink" href="#install-the-sdk-and-dependencies" title="Permanent link">&para;</a></h2>
@@ -2189,7 +2207,7 @@ bedrock-agentcore-starter-toolkit
 <li>A test user and password in that Cognito user pool</li>
 </ul>
 <p>Deleting the Cognito user pool AgentCoreIdentityQuickStartPool will delete the associated client_id and user as well.</p>
-<p>You may choose to save this script as create_cognito.sh and execute it from your command line, or paste the script into your command line.</p>
+<p>You may choose to save this script as <code>create_cognito.sh</code> and execute it from your command line, or paste the script into your command line.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 
 <span class="nv">REGION</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>configure<span class="w"> </span>get<span class="w"> </span>region<span class="k">)</span>
@@ -2226,7 +2244,7 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>create-user-pool-d
 
 <span class="c1"># Generate random username and password</span>
 <span class="nv">USERNAME</span><span class="o">=</span><span class="s2">&quot;AgentCoreTestUser</span><span class="k">$(</span><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;%04d&quot;</span><span class="w"> </span><span class="k">$((</span><span class="nv">RANDOM</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="m">10000</span><span class="k">)))</span><span class="s2">&quot;</span>
-<span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nv">LC_ALL</span><span class="o">=</span>C<span class="w"> </span>tr<span class="w"> </span>-dc<span class="w"> </span><span class="s1">&#39;A-Za-z0-9!@#$%^&amp;*()_+-=[]{}|;:,.&lt;&gt;?&#39;</span><span class="w"> </span>&lt;<span class="w"> </span>/dev/urandom<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">16</span><span class="k">)</span><span class="s2">&quot;</span>
+<span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nv">LC_ALL</span><span class="o">=</span>C<span class="w"> </span>tr<span class="w"> </span>-dc<span class="w"> </span><span class="s1">&#39;A-Za-z0-9!@#$%^&amp;*()_+-=[]{}|;:,.&lt;&gt;?&#39;</span><span class="w"> </span>&lt;<span class="w"> </span>/dev/urandom<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">16</span><span class="k">)$(</span><span class="nv">LC_ALL</span><span class="o">=</span>C<span class="w"> </span>tr<span class="w"> </span>-dc<span class="w"> </span><span class="s1">&#39;0-9&#39;</span><span class="w"> </span>&lt;<span class="w"> </span>/dev/urandom<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="k">)</span><span class="s2">&quot;</span>
 
 <span class="c1"># Create user with permanent password</span>
 aws<span class="w"> </span>cognito-idp<span class="w"> </span>admin-create-user<span class="w"> </span><span class="se">\</span>
@@ -2271,10 +2289,9 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>admin-set-user-pas
 <p>This credential provider will be used by your agent's code to get access tokens to act on behalf of your user.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 <span class="c1"># please note the expected ISSUER_URL format for Bedrock AgentCore is the full url, including .well-known/openid-configuration</span>
-aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>create-oauth2-credential-provider<span class="w"> </span><span class="se">\</span>
+<span class="nv">OAUTH2_CREDENTIAL_PROVIDER_RESPONSE</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>create-oauth2-credential-provider<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;AgentCoreIdentityQuickStartProvider&quot;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--credential-provider-vendor<span class="w"> </span><span class="s2">&quot;CustomOauth2&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--no-cli-pager<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--oauth2-provider-config-input<span class="w"> </span><span class="s1">&#39;{</span>
 <span class="s1">    &quot;customOauth2ProviderConfig&quot;: {</span>
 <span class="s1">      &quot;oauthDiscovery&quot;: {</span>
@@ -2283,9 +2300,36 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
 <span class="s1">      &quot;clientId&quot;: &quot;&#39;</span><span class="nv">$CLIENT_ID</span><span class="s1">&#39;&quot;,</span>
 <span class="s1">      &quot;clientSecret&quot;: &quot;&#39;</span><span class="nv">$CLIENT_SECRET</span><span class="s1">&#39;&quot;</span>
 <span class="s1">    }</span>
-<span class="s1">  }&#39;</span>
+<span class="s1">  }&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>json<span class="k">)</span>
+
+<span class="nv">OAUTH2_CALLBACK_URL</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$OAUTH2_CREDENTIAL_PROVIDER_RESPONSE</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.callbackUrl&#39;</span><span class="k">)</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;OAuth2 Callback URL: </span><span class="nv">$OAUTH2_CALLBACK_URL</span><span class="s2">&quot;</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;# Copy and paste these exports to set environment variables for later use:&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;export OAUTH2_CALLBACK_URL=&#39;</span><span class="nv">$OAUTH2_CALLBACK_URL</span><span class="s2">&#39;&quot;</span>
+</code></pre></div>
+<h2 id="step-15-add-the-callback-url-to-your-oauth-20-authorization-server">Step 1.5: Add the callback URL to your OAuth 2.0 authorization server<a class="headerlink" href="#step-15-add-the-callback-url-to-your-oauth-20-authorization-server" title="Permanent link">&para;</a></h2>
+<p>To prevent unauthorized redirects, add the callback URL retrieved from <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html">CreateOauth2CredentialProvider</a> or <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html">GetOauth2CredentialProvider</a> to your OAuth 2.0 authorization server.</p>
+<p>If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your authorization server callback URL settings. </p>
+<p>If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.</p>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+
+aws<span class="w"> </span>cognito-idp<span class="w"> </span>update-user-pool-client<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--user-pool-id<span class="w"> </span><span class="nv">$USER_POOL_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--client-id<span class="w"> </span><span class="nv">$CLIENT_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--client-name<span class="w"> </span>AgentCoreQuickStart<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--allowed-o-auth-flows<span class="w"> </span><span class="s2">&quot;code&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--allowed-o-auth-scopes<span class="w"> </span><span class="s2">&quot;openid&quot;</span><span class="w"> </span><span class="s2">&quot;profile&quot;</span><span class="w"> </span><span class="s2">&quot;email&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--allowed-o-auth-flows-user-pool-client<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--supported-identity-providers<span class="w"> </span><span class="s2">&quot;COGNITO&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--callback-urls<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$OAUTH2_CALLBACK_URL</span><span class="s2">&quot;</span>
 </code></pre></div>
 <h2 id="step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow">Step 2: Create a sample agent that initiates an OAuth 2.0 flow<a class="headerlink" href="#step-2-create-a-sample-agent-that-initiates-an-oauth-20-flow" title="Permanent link">&para;</a></h2>
+<p><strong>Prerequisite</strong>: An OAuth2 callback URL must be configured on the workload identity during creation via <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateWorkloadIdentity.html">CreateWorkloadIdentity</a> or updated using <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_UpdateWorkloadIdentity.html">UpdateWorkloadIdentity</a> to handle the session binding flow. For more details, see <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html">OAuth2 Authorization URL Session Binding</a>.</p>
+<p>The <code>requires_access_token</code> usage must set the <code>callback_url</code> to the same value configured on the workload identity. This is not required when launching and invoking the agent <strong>locally</strong>, as the configuration is done automatically by the starter toolkit.</p>
 <p>In this step, we will create an agent that initiates an OAuth 2.0 authorization flow to get tokens to act on behalf of the user. For simplicity, the agent will not make actual calls to external services on behalf of a user, but will prove to us that it has obtained consent to act on behalf of our test user.</p>
 <h3 id="agent-code">Agent code<a class="headerlink" href="#agent-code" title="Permanent link">&para;</a></h3>
 <p>Create a file named <code>agentcoreidentityquickstart.py</code>, and save this code.</p>
@@ -2345,6 +2389,7 @@ aws<span class="w"> </span>bedrock-agentcore-control<span class="w"> </span>crea
     <span class="n">auth_flow</span><span class="o">=</span><span class="s2">&quot;USER_FEDERATION&quot;</span><span class="p">,</span>
     <span class="n">on_auth_url</span><span class="o">=</span><span class="n">handle_auth_url</span><span class="p">,</span> <span class="c1"># streams authorization URL to client</span>
     <span class="n">force_authentication</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">callback_url</span><span class="o">=</span><span class="s1">&#39;&lt;insert_oauth2_callback_url_for_session_binding; not required for *local* agent launch and invocations&gt;&#39;</span>
 <span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">introspect_with_decorator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">access_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Introspect token using decorator&quot;&quot;&quot;</span>
@@ -2439,7 +2484,7 @@ rm<span class="w"> </span>agentcore-identity-policy.json
 <p><code>agentcore invoke "TestPayload" --agent agentcoreidentityquickstart --user-id "SampleUserID" --session-id "ALongThirtyThreeCharacterMinimumSessionIdYouCanChangeThisAsYouNeed"</code></p>
 <p>The agent will then return a URL to your <code>agentcore invoke</code> command. Copy and paste that URL into your preferred browser, and you will then be redirected to your authorization server's login page. The <code>--user-id</code> parameter is the user ID you are presenting to AgentCore Identity. The <code>--session-id</code> parameter is the session ID, which must be at least 33 characters long.</p>
 <p>Enter the username and password for your user on your authorization server when prompted on your browser, or use your preferred authentication method you have configured. If you used the script from Step 0.5 to create a Cognito instance, you can retrieve this from your terminal history.</p>
-<p>Your browser should redirect you to the AgentCore Identity Success Page, and you should have a success message in your terminal</p>
+<p>Your browser should redirect to your configured OAuth2 callback URL, which handles the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html">session binding flow</a>. Ensure your OAuth2 callback server provides clear success and error responses to indicate the authorization status.</p>
 <p>Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (<code>--session-id</code> parameter).</p>
 <h3 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h3>
 <p>Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run <code>agentcore launch</code></p>
