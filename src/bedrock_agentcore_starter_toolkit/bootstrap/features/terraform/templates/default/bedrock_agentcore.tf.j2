@@ -49,7 +49,7 @@ resource "null_resource" "docker_image" {
 ################################################################################
 data "archive_file" "mcp_lambda_zip" {
   type        = "zip"
-  source_dir  = "../${path.root}/mcp/lambda"
+  source_dir  = "../${path.root}/lambda"
   output_path = "../${path.root}/mcp_lambda.zip"
 }
 

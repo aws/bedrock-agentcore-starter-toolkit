@@ -1,0 +1,47 @@
+from autogen_agentchat.agents import AssistantAgent
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from autogen_core.tools import FunctionTool
+from mcp.client import get_streamable_http_mcp_client
+
+MODEL_ID = "gpt-5"
+
+# Initialize the model client
+model_client = OpenAIChatCompletionClient(
+    model=MODEL_ID,
+)
+
+# Define a simple function tool that the agent can use
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
+
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+async def main(payload):
+    # Import AgentCore Gateway as Streamable HTTP MCP Adapter
+    adapter = await get_streamable_http_mcp_client()
+
+    # Define an AssistantAgent with the model and tool
+    agent = AssistantAgent(
+        name="{{ agent_name }}",
+        model_client=model_client,
+        tools=[adapter, add_numbers_function_tool],
+        system_message="You are a helpful assistant."
+    )
+    # Process the user prompt
+    prompt = payload.get("prompt", "What is Agentic AI?")
+
+    # Run the agent
+    result = await agent.run(task=prompt)
+
+    # Return result
+    return {"result": result.messages[-1].content}
+
+
+if __name__ == "__main__":
+    app.run()

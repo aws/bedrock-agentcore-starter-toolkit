@@ -11,6 +11,7 @@ class BootstrapSDKProvider(str, Enum):
     LangGraph = "LangGraph"
     GoogleADK = "GoogleADK"
     OpenAIAgents = "OpenAIAgents"
+    Autogen = "AutoGen"
 
 class BootstrapProtocol(str, Enum):
     HTTP = "http"
