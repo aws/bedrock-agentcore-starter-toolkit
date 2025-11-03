@@ -115,6 +115,7 @@ parallel = true
 concurrency = ["thread", "multiprocessing"]
 omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
+    "src/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py", # CLI commands require user interaction
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
     "src/bedrock_agentcore_starter_toolkit/operations/runtime/exceptions.py", # Simple exception classes
 ]
@@ -150,6 +151,11 @@ style = [
     ["instruction", ""],
     ["text", ""],
     ["disabled", "fg:#858585 italic"]
+]
+
+[tool.uv.workspace]
+members = [
+    "agent_test",
 ]
 
 [dependency-groups]

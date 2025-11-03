@@ -65,6 +65,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     memory_mode="STM_ONLY",
                     non_interactive=True,
                 )
@@ -201,6 +202,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                 )
 
                 # Should still work but skip the Python module inspection
@@ -372,6 +374,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     verbose=True,  # Enable verbose mode
                     enable_observability=True,
                     requirements_file="requirements.txt",
@@ -462,6 +465,7 @@ def handler(payload):
                     enable_observability=True,  # Default enabled
                     authorizer_configuration=None,  # Default IAM
                     verbose=False,  # Default non-verbose
+                    deployment_type="container",
                 )
 
                 # Verify result structure
@@ -602,6 +606,7 @@ def handler(payload):
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     request_header_configuration=request_header_config,
                 )
 
@@ -857,12 +862,17 @@ def handler(payload):
                     mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                     mock_config_manager_class.return_value = mock_config_manager
 
+                    # Mock container runtime
+                    mock_container_runtime.runtime = "Docker"
+                    mock_container_runtime.get_name.return_value = "Docker"
+
                     result = configure_bedrock_agentcore(
                         agent_name="test_agent",
                         entrypoint_path=agent_file,
                         execution_role="TestRole",
                         request_header_configuration=request_header_config,
                         verbose=True,  # Enable verbose mode
+                        deployment_type="container",  # Required for runtime to be initialized
                     )
 
                     # Verify result structure is correct
@@ -1102,6 +1112,11 @@ def handler(payload):
                     non_interactive=True,
                 )
 
+                print("VPC enabled: True")
+                print(f"Result network_mode: {result.network_mode}")
+                print(f"Result subnets: {result.network_subnets}")
+                print(f"Result security_groups: {result.network_security_groups}")
+
                 # Verify VPC configuration in result
                 assert result.network_mode == "VPC"
                 assert result.network_subnets == ["subnet-abc123def456", "subnet-xyz789ghi012"]
@@ -1169,6 +1184,7 @@ def handler(payload):
                     execution_role="TestRole",
                     source_path=str(source_dir),  # Add source_path parameter
                     non_interactive=True,
+                    deployment_type="container",  # Required for runtime to be initialized
                 )
 
                 assert result.runtime == "Docker"

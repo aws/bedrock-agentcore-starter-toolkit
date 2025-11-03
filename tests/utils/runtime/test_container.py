@@ -659,3 +659,29 @@ CMD ["python", "/app/{{ agent_file }}"]
                 # Verify .dockerignore was not created
                 dockerignore_path = tmp_path / ".dockerignore"
                 assert not dockerignore_path.exists()
+
+    def test_auto_runtime_detection_no_runtime_available(self):
+        """Test auto-detection when no container runtime is available."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=False):
+            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.console") as mock_console:
+                with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container._print_success") as mock_success:
+                    runtime = ContainerRuntime("auto")
+                    
+                    assert runtime.runtime == "none"
+                    assert runtime.has_local_runtime is False
+                    mock_console.print.assert_called()
+                    mock_success.assert_called()
+
+    def test_explicit_runtime_not_available_warning(self):
+        """Test warning when explicitly requested runtime is not available."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=False):
+            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container._handle_warn") as mock_warn:
+                runtime = ContainerRuntime("docker")
+                
+                assert runtime.runtime == "none"
+                assert runtime.has_local_runtime is False
+                mock_warn.assert_called()
+                
+                # Check warning message contains expected content
+                warning_call = mock_warn.call_args[0][0]
+                assert "Docker is not installed" in warning_call

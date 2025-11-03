@@ -17,3 +17,11 @@ class TestCLICommon:
         with patch("bedrock_agentcore_starter_toolkit.cli.common.prompt", return_value=""):
             result = _prompt_with_default("Enter value", "default_value")
             assert result == "default_value"
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.common.console")
+    def test_print_success(self, mock_console):
+        """Test _print_success function."""
+        from bedrock_agentcore_starter_toolkit.cli.common import _print_success
+        
+        _print_success("Test success message")
+        mock_console.print.assert_called_once_with("[green]✓[/green] Test success message")

@@ -17,6 +17,7 @@ from ...services.runtime import BedrockAgentCoreClient
 from ...services.xray import enable_transaction_search_if_needed
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.entrypoint import build_entrypoint_array
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from .create_role import get_or_create_runtime_execution_role
@@ -162,7 +163,7 @@ def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name
         project_config.agents[agent_config.name] = agent_config
         save_config(project_config, config_path)
 
-        log.info("✅ ECR repository available: %s", ecr_uri)
+        log.info("ECR repository available: %s", ecr_uri)
         return ecr_uri
 
     # Step 3: No repository and auto-create disabled
@@ -238,7 +239,7 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
         project_config.agents[agent_config.name] = agent_config
         save_config(project_config, config_path)
 
-        log.info("✅ Execution role available: %s", execution_role_arn)
+        log.info("Execution role available: %s", execution_role_arn)
         return execution_role_arn
 
     # Step 4: No role and auto-create disabled
@@ -335,7 +336,7 @@ def _ensure_memory_for_agent(
                     poll_interval=5,
                 )
                 memory = existing_memory
-                log.info("✅ LTM strategies added to existing memory")
+                log.info("LTM strategies added to existing memory")
             else:
                 # CHANGE: ADD THIS BLOCK - Wait for existing memory to become ACTIVE
                 console.print("⏳ Waiting for existing memory to become ACTIVE...")
@@ -347,9 +348,9 @@ def _ensure_memory_for_agent(
                 # END CHANGE
 
                 if agent_config.memory.has_ltm and len(existing_strategies) > 0:
-                    log.info("✅ Using existing memory with %d strategies", len(existing_strategies))
+                    log.info("Using existing memory with %d strategies", len(existing_strategies))
                 else:
-                    log.info("✅ Using existing STM-only memory")
+                    log.info("Using existing STM-only memory")
         else:
             # Create new memory with appropriate strategies
             strategies = []
@@ -388,7 +389,7 @@ def _ensure_memory_for_agent(
                 max_wait=300,  # 5 minutes
                 poll_interval=5,
             )
-            log.info("✅ Memory created and active: %s", memory.id)
+            log.info("Memory created and active: %s", memory.id)
             # END CHANGE
 
             # CHANGE: ADD THIS - Mark as created by toolkit since we just created it
@@ -469,8 +470,9 @@ def _deploy_to_bedrock_agentcore(
             agent_info = bedrock_agentcore_client.create_or_update_agent(
                 agent_id=agent_config.bedrock_agentcore.agent_id,
                 agent_name=agent_name,
-                image_uri=f"{ecr_uri}:latest",
                 execution_role_arn=agent_config.aws.execution_role,
+                deployment_type="container",
+                image_uri=f"{ecr_uri}:latest",
                 network_config=network_config,
                 authorizer_config=agent_config.get_authorizer_configuration(),
                 request_header_config=agent_config.request_header_configuration,
@@ -535,7 +537,7 @@ def _deploy_to_bedrock_agentcore(
     project_config.agents[agent_config.name] = agent_config
     save_config(project_config, config_path)
 
-    log.info("✅ Agent created/updated: %s", agent_arn)
+    log.info("Agent created/updated: %s", agent_arn)
 
     # Enable Transaction Search if observability is enabled
     if agent_config.aws.observability.enabled:
@@ -591,6 +593,62 @@ def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: Li
         log.error("Error checking ENIs: %s", e)
 
 
+def _launch_code_zip_local(
+    agent_config: BedrockAgentCoreAgentSchema,
+    env_vars: Optional[dict],
+) -> LaunchResult:
+    """Prepare for local code_zip execution using uv python."""
+    import shutil
+    from pathlib import Path
+
+    log.info("Preparing local code_zip execution for agent '%s'", agent_config.name)
+
+    # Validate prerequisites
+    if not shutil.which("uv"):
+        raise RuntimeError(
+            "uv is required for local code_zip execution but was not found.\n"
+            "Install uv: https://docs.astral.sh/uv/getting-started/installation/"
+        )
+
+    # Get source directory and entrypoint
+    source_dir = Path(agent_config.source_path) if agent_config.source_path else Path.cwd()
+    entrypoint_abs = Path(agent_config.entrypoint)
+
+    # Validate entrypoint exists
+    if not entrypoint_abs.exists():
+        raise RuntimeError(f"Entrypoint file not found: {entrypoint_abs}")
+
+    # Compute relative path from source_dir to entrypoint
+    try:
+        entrypoint_path = str(entrypoint_abs.relative_to(source_dir))
+    except ValueError:
+        # If entrypoint is not relative to source_dir, use just the filename
+        entrypoint_path = entrypoint_abs.name
+
+    log.info("Using source directory: %s", source_dir)
+    log.info("Using entrypoint: %s", entrypoint_path)
+
+    # Prepare environment variables
+    local_env = {}
+    if env_vars:
+        local_env.update(env_vars)
+
+    # Add memory configuration if available
+    if agent_config.memory and agent_config.memory.memory_id:
+        local_env["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        local_env["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
+
+    # Set default port
+    port = int(local_env.get("PORT", "8080"))
+
+    return LaunchResult(
+        mode="local_code_zip",
+        tag=f"code_zip-{agent_config.name}",
+        port=port,
+        env_vars=local_env,
+    )
+
+
 def launch_bedrock_agentcore(
     config_path: Path,
     agent_name: Optional[str] = None,
@@ -599,6 +657,7 @@ def launch_bedrock_agentcore(
     env_vars: Optional[dict] = None,
     auto_update_on_conflict: bool = False,
     console: Optional[Console] = None,
+    force_rebuild_deps: bool = False,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -606,11 +665,12 @@ def launch_bedrock_agentcore(
         config_path: Path to BedrockAgentCore configuration file
         agent_name: Name of agent to launch (for project configurations)
         local: Whether to run locally
-        use_codebuild: Whether to use CodeBuild for ARM64 builds
+        use_codebuild: Whether to use CodeBuild for ARM64 builds (container deployments only)
         env_vars: Environment variables to pass to local container (dict of key-value pairs)
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
         console: Optional Rich Console instance for progress output. Used to maintain
                 output hierarchy with CLI status contexts.
+        force_rebuild_deps: Force rebuild of dependencies (code_zip deployments only)
 
     Returns:
         LaunchResult model with launch details
@@ -638,6 +698,23 @@ def launch_bedrock_agentcore(
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:
         _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+    # Route based on deployment type for cloud deployments
+    if not local and agent_config.deployment_type == "code_zip":
+        return _launch_with_code_zip(
+            config_path=config_path,
+            agent_config=agent_config,
+            project_config=project_config,
+            auto_update_on_conflict=auto_update_on_conflict,
+            env_vars=env_vars,
+            force_rebuild_deps=force_rebuild_deps,
+        )
+
+    # Route for local code_zip deployment
+    if local and agent_config.deployment_type == "code_zip":
+        return _launch_code_zip_local(
+            agent_config=agent_config,
+            env_vars=env_vars,
+        )
 
     # Ensure memory exists for non-CodeBuild paths
     if not use_codebuild:
@@ -648,7 +725,7 @@ def launch_bedrock_agentcore(
         env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
         env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
 
-    # Handle CodeBuild deployment (but not for local mode)
+    # Handle CodeBuild deployment (container deployments, not for local mode)
     if use_codebuild and not local:
         return _launch_with_codebuild(
             config_path=config_path,
@@ -885,9 +962,9 @@ def _execute_codebuild_workflow(
         # Save config changes
         project_config.agents[agent_config.name] = agent_config
         save_config(project_config, config_path)
-        log.info("✅ CodeBuild project configuration saved")
+        log.info("CodeBuild project configuration saved")
     else:
-        log.info("✅ ECR-only build completed (project configuration not saved)")
+        log.info("ECR-only build completed (project configuration not saved)")
 
     return build_id, ecr_uri, region, account_id
 
@@ -941,3 +1018,265 @@ def _launch_with_codebuild(
         agent_arn=agent_arn,
         agent_id=agent_id,
     )
+
+
+def _launch_with_code_zip(
+    config_path: Path,
+    agent_config: BedrockAgentCoreAgentSchema,
+    project_config: BedrockAgentCoreConfigSchema,
+    auto_update_on_conflict: bool,
+    env_vars: Optional[dict],
+    force_rebuild_deps: bool = False,
+) -> LaunchResult:
+    """Deploy using code zip artifact (Lambda-style deployment).
+
+    Args:
+        config_path: Path to configuration file
+        agent_config: Agent configuration
+        project_config: Project configuration
+        auto_update_on_conflict: Whether to auto-update on conflict
+        env_vars: Environment variables
+        force_rebuild_deps: Force rebuild of dependencies
+
+    Returns:
+        LaunchResult with deployment details
+    """
+    import shutil
+    import time
+
+    log.info("Launching with code_zip deployment for agent '%s'", agent_config.name)
+
+    # Validate configuration
+    step_start = time.time()
+    errors = agent_config.validate(for_local=False)
+    if errors:
+        raise ValueError(f"Invalid configuration: {', '.join(errors)}")
+
+    # Validate prerequisites for code_zip deployment (fail fast before expensive operations)
+    if not shutil.which("uv"):
+        raise RuntimeError(
+            "uv is required for code_zip deployment but was not found.\n"
+            "Install uv: https://docs.astral.sh/uv/getting-started/installation/\n"
+            "Or use container deployment instead: agentcore configure --help"
+        )
+    if not shutil.which("zip"):
+        raise RuntimeError(
+            "zip utility is required for code_zip deployment but was not found.\n"
+            "Install zip: brew install zip (macOS) or apt-get install zip (Ubuntu)"
+        )
+
+    # runtime_type is optional, will default to PYTHON_3_11 in service layer
+
+    region = agent_config.aws.region
+    account_id = agent_config.aws.account
+    session = boto3.Session(region_name=region)
+    log.info("⏱️  Config validation: %.2fs", time.time() - step_start)
+
+    # Step 1: Ensure execution role
+    step_start = time.time()
+    log.info("Ensuring execution role...")
+    _ensure_execution_role(agent_config, project_config, config_path, agent_config.name, region, account_id)
+    log.info("⏱️  Execution role check: %.2fs", time.time() - step_start)
+
+    # Step 2: Ensure memory (if configured)
+    step_start = time.time()
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+    log.info("⏱️  Memory check: %.2fs", time.time() - step_start)
+
+    # Step 3: Prepare entrypoint (compute relative path from source directory)
+    step_start = time.time()
+    source_dir = Path(agent_config.source_path) if agent_config.source_path else config_path.parent
+    entrypoint_abs = Path(agent_config.entrypoint)
+
+    # Compute relative path from source_dir to entrypoint
+    try:
+        entrypoint_path = str(entrypoint_abs.relative_to(source_dir))
+    except ValueError:
+        # If entrypoint is not relative to source_dir, use just the filename
+        entrypoint_path = entrypoint_abs.name
+
+    log.info("Using entrypoint: %s (relative to %s)", entrypoint_path, source_dir)
+    log.info("⏱️  Entrypoint preparation: %.2fs", time.time() - step_start)
+
+    # Step 4: Create deployment package
+    step_start = time.time()
+    from ...utils.runtime.config import get_agentcore_directory
+    from ...utils.runtime.entrypoint import detect_dependencies
+    from ...utils.runtime.package import CodeZipPackager
+
+    cache_dir = get_agentcore_directory(config_path.parent, agent_config.name, agent_config.source_path)
+
+    packager = CodeZipPackager()
+
+    # Detect dependencies
+    dep_info = detect_dependencies(source_dir)
+
+    log.info("Creating deployment package...")
+    deployment_zip, has_otel_distro = packager.create_deployment_package(
+        source_dir=source_dir,
+        agent_name=agent_config.name,
+        cache_dir=cache_dir,
+        runtime_version=agent_config.runtime_type,
+        requirements_file=Path(dep_info.resolved_path) if dep_info.found else None,
+        force_rebuild_deps=force_rebuild_deps,
+    )
+
+    log.info("⏱️  Package creation: %.2fs", time.time() - step_start)
+
+    try:
+        # Initialize variables for code_zip deployment
+        bucket_name = None
+        s3_key = None
+
+        # Step 5a: Create S3 bucket if needed (idempotent)
+        if agent_config.aws.s3_auto_create:
+            from ...services.s3 import get_or_create_s3_bucket
+
+            log.info("Getting or creating S3 bucket for agent: %s", agent_config.name)
+
+            bucket_name = get_or_create_s3_bucket(agent_config.name, account_id, region)
+
+            # Update the config with S3 URI
+            agent_config.aws.s3_path = f"s3://{bucket_name}"
+            agent_config.aws.s3_auto_create = False
+
+            # Update the project config and save
+            project_config.agents[agent_config.name] = agent_config
+            save_config(project_config, config_path)
+
+            log.info("S3 bucket available: %s", agent_config.aws.s3_path)
+
+        # Step 5b: Upload to S3
+        log.info("Uploading deployment package to S3...")
+        step_start = time.time()
+        if agent_config.aws.s3_path:
+            # Parse S3 URI or path to get bucket and prefix
+            s3_input = agent_config.aws.s3_path
+
+            # Handle both s3://bucket/path and bucket/path formats
+            if s3_input.startswith("s3://"):
+                s3_path = s3_input[5:]  # Remove 's3://'
+            else:
+                s3_path = s3_input  # Use as-is
+
+            if "/" in s3_path:
+                bucket_name, prefix = s3_path.split("/", 1)
+                s3_key = f"{prefix}/{agent_config.name}/deployment.zip"
+            else:
+                bucket_name = s3_path
+                s3_key = f"{agent_config.name}/deployment.zip"
+
+            # Use configured bucket
+            s3 = session.client("s3")
+            log.info("Uploading to s3://%s/%s...", bucket_name, s3_key)
+            s3.upload_file(str(deployment_zip), bucket_name, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id})
+            s3_location = f"s3://{bucket_name}/{s3_key}"
+        else:
+            # Fallback to existing logic
+            s3_location = packager.upload_to_s3(
+                deployment_zip=deployment_zip,
+                agent_name=agent_config.name,
+                session=session,
+                account_id=account_id,
+            )
+            # Extract bucket_name and s3_key from s3_location for later use
+            if s3_location.startswith("s3://"):
+                s3_path = s3_location[5:]  # Remove 's3://'
+                if "/" in s3_path:
+                    bucket_name, s3_key = s3_path.split("/", 1)
+                else:
+                    bucket_name = s3_path
+                    s3_key = f"{agent_config.name}/deployment.zip"
+        log.info("✓ Deployment package uploaded: %s", s3_location)
+        log.info("⏱️  S3 upload: %.2fs", time.time() - step_start)
+
+        # Step 6: Deploy to Runtime
+        step_start = time.time()
+        log.info("Deploying to Bedrock AgentCore Runtime...")
+
+        bedrock_agentcore_client = BedrockAgentCoreClient(region)
+
+        # Prepare environment variables
+        if env_vars is None:
+            env_vars = {}
+        if agent_config.memory and agent_config.memory.memory_id:
+            env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+            env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
+
+        # Build entrypoint array with optional OpenTelemetry instrumentation
+        entrypoint_array = build_entrypoint_array(
+            entrypoint_path, has_otel_distro, agent_config.aws.observability.enabled
+        )
+        if len(entrypoint_array) > 1:
+            log.info("OpenTelemetry instrumentation enabled (aws-opentelemetry-distro detected)")
+
+        # Create/update agent with code configuration
+        agent_info = bedrock_agentcore_client.create_or_update_agent(
+            agent_id=agent_config.bedrock_agentcore.agent_id,
+            agent_name=agent_config.name,
+            execution_role_arn=agent_config.aws.execution_role,
+            deployment_type="code_zip",
+            code_s3_bucket=bucket_name,
+            code_s3_key=s3_key,
+            runtime_type=agent_config.runtime_type,  # Optional
+            entrypoint_array=entrypoint_array,  # Array format for Runtime API
+            entrypoint_handler=None,  # Not used
+            network_config=agent_config.aws.network_configuration.to_aws_dict(),
+            authorizer_config=agent_config.get_authorizer_configuration(),
+            request_header_config=agent_config.request_header_configuration,
+            protocol_config=agent_config.aws.protocol_configuration.to_aws_dict(),
+            env_vars=env_vars,
+            auto_update_on_conflict=auto_update_on_conflict,
+        )
+
+        # Save deployment info
+        agent_config.bedrock_agentcore.agent_id = agent_info["id"]
+        agent_config.bedrock_agentcore.agent_arn = agent_info["arn"]
+
+        # Reset session id if present
+        existing_session_id = agent_config.bedrock_agentcore.agent_session_id
+        if existing_session_id is not None:
+            log.warning(
+                "⚠️ Session ID will be reset to connect to the updated agent. "
+                "The previous agent remains accessible via the original session ID: %s",
+                existing_session_id,
+            )
+            agent_config.bedrock_agentcore.agent_session_id = None
+
+        project_config.agents[agent_config.name] = agent_config
+        save_config(project_config, config_path)
+
+        log.info("✅ Agent created/updated: %s", agent_info["arn"])
+        log.info("⏱️  API call (create/update): %.2fs", time.time() - step_start)
+
+        # Step 7: Wait for ready
+        step_start = time.time()
+        log.info("Waiting for agent endpoint to be ready...")
+        bedrock_agentcore_client.wait_for_agent_endpoint_ready(agent_info["id"])
+        log.info("⏱️  Wait for READY: %.2fs", time.time() - step_start)
+
+        # Step 8: Enable observability
+        step_start = time.time()
+        if agent_config.aws.observability.enabled:
+            log.info("Enabling observability...")
+            enable_transaction_search_if_needed(region, account_id)
+            console_url = get_genai_observability_url(region)
+            log.info("🔍 GenAI Observability Dashboard: %s", console_url)
+        log.info("⏱️  Observability setup: %.2fs", time.time() - step_start)
+
+        log.info("✅ Deployment completed successfully - Agent: %s", agent_info["arn"])
+        # log.info("⏱️  TOTAL TIME: %.2fs", time.time() - start_time)
+
+        return LaunchResult(
+            mode="code_zip",
+            agent_arn=agent_info["arn"],
+            agent_id=agent_info["id"],
+            s3_location=s3_location,
+        )
+
+    finally:
+        # Cleanup temp deployment.zip (only if it was created)
+        import shutil
+
+        if "deployment_zip" in locals():
+            shutil.rmtree(deployment_zip.parent, ignore_errors=True)

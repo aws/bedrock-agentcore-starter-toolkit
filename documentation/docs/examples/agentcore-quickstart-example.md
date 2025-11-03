@@ -111,19 +111,19 @@ bedrock-agentcore
 strands-agents-tools
 ```
 
-## Step 2: Configure and deploy the agent
+## Step 1B: Transform an Existing Agent to be Compatible with Runtime
 
-In this step, you'll use the AgentCore CLI to configure and deploy your agent.
+1. Import the Runtime App with from bedrock_agentcore.runtime import BedrockAgentCoreApp
+2. Initialize the App in your code with app = BedrockAgentCoreApp()
+3. Decorate the invocation function with the @app.entrypoint decorator
+4. Create a requirements.txt file with needed packages. Note: if strands-tools is detected, the correct library to add is strands-agents-tools
+5. Let AgentCore Runtime control the running of the agent with app.run()
 
-### Configure the agent
+## Step 2: Configure and Deploy
 
-Configure the agent with memory and execution settings:
+The AgentCore CLI automates deployment with provisioning.
 
-**For this tutorial**: When prompted for the execution role, press Enter to auto-create a new role with all required permissions for the Runtime, Memory, Code Interpreter, and Observability features. When prompted for long-term memory, type **yes**.
-
-> **Note**
->
-> If the memory configuration prompts do not appear during `agentcore configure`, refer to the [Troubleshooting](#troubleshooting) section (Memory configuration not appearing) for instructions on how to check whether the correct toolkit version is installed.
+### Configure the Agent
 
 ```bash
 agentcore configure -e agentcore_starter_strands.py
@@ -131,7 +131,7 @@ agentcore configure -e agentcore_starter_strands.py
 #Interactive prompts you'll see:
 
 # 1. Execution Role: Press Enter to auto-create or provide existing role ARN/name
-# 2. ECR Repository: Press Enter to auto-create or provide existing ECR URI
+# 2. S3 Bucket: Press Enter to auto-create or provide existing S3 bucket for code deployment
 # 3. Requirements File: Confirm the detected requirements.txt file or specify a different path
 # 4. OAuth Configuration: Configure OAuth authorizer? (yes/no) - Type `no` for this tutorial
 # 5. Request Header Allowlist: Configure request header allowlist? (yes/no) - Type `no` for this tutorial
@@ -151,8 +151,8 @@ agentcore launch
 
 # This performs:
 #   1. Memory resource provisioning (STM + LTM strategies)
-#   2. Docker container build with dependencies
-#   3. ECR repository push
+#   2. Python code packaging with dependencies
+#   3. S3 deployment package upload
 #   4. AgentCore Runtime deployment with X-Ray tracing enabled
 #   5. CloudWatch Transaction Search configuration (automatic)
 #   6. Endpoint activation with trace collection

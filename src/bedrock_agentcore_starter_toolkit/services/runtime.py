@@ -24,6 +24,34 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 
+def _validate_runtime_type(runtime_type: Optional[str]) -> str:
+    """Validate runtime type format.
+
+    Args:
+        runtime_type: Runtime type (e.g., 'PYTHON_3_10', 'PYTHON_3_11')
+
+    Returns:
+        Runtime type or default 'PYTHON_3_11'
+
+    Raises:
+        ValueError: If runtime_type format is invalid
+    """
+    if not runtime_type:
+        return "PYTHON_3_11"  # Default to Python 3.11
+
+    # Valid formats: PYTHON_3_10, PYTHON_3_11, PYTHON_3_12, PYTHON_3_13
+    valid_runtimes = ["PYTHON_3_10", "PYTHON_3_11", "PYTHON_3_12", "PYTHON_3_13"]
+
+    if runtime_type not in valid_runtimes:
+        raise ValueError(
+            f"Invalid runtime_type: '{runtime_type}'. "
+            f"Must be one of: {', '.join(valid_runtimes)}. "
+            f"Update your .bedrock_agentcore.yaml file."
+        )
+
+    return runtime_type
+
+
 def _handle_http_response(response) -> dict:
     response.raise_for_status()
     if "text/event-stream" in response.headers.get("content-type", ""):
@@ -120,8 +148,17 @@ class BedrockAgentCoreClient:
     def create_agent(
         self,
         agent_name: str,
-        image_uri: str,
         execution_role_arn: str,
+        # Code zip parameters (for code_zip deployment)
+        deployment_type: str = "code_zip",
+        code_s3_bucket: Optional[str] = None,
+        code_s3_key: Optional[str] = None,
+        runtime_type: Optional[str] = None,
+        entrypoint_array: Optional[list] = None,
+        entrypoint_handler: Optional[str] = None,
+        # Container parameters (for container deployment)
+        image_uri: Optional[str] = None,
+        # Common parameters
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
         request_header_config: Optional[Dict] = None,
@@ -130,13 +167,52 @@ class BedrockAgentCoreClient:
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Create new agent."""
-        self.logger.info("Creating agent '%s' with image URI: %s", agent_name, image_uri)
+        """Create new agent with either code_zip or container deployment.
+
+        Args:
+            agent_name: Name of the agent
+            execution_role_arn: IAM role ARN for execution
+            deployment_type: "code_zip" or "container"
+            code_s3_bucket: S3 bucket for code zip (code_zip only)
+            code_s3_key: S3 key for code zip (code_zip only)
+            runtime_type: Python runtime version (code_zip only, e.g., "PYTHON_3_10")
+            entrypoint_array: Entrypoint as array (code_zip only)
+                Examples: ["agent.py"] or ["opentelemetry-instrument", "agent.py"]
+            entrypoint_handler: Handler function name (code_zip only, e.g., "app")
+            image_uri: Container image URI (container only)
+            network_config: Network configuration
+            authorizer_config: Authorizer configuration
+            request_header_config: Request header configuration
+            protocol_config: Protocol configuration
+            env_vars: Environment variables
+            auto_update_on_conflict: Whether to auto-update on conflict
+            lifecycle_config: Lifecycle configuration for session timeouts
+
+        Returns:
+            Dict with agent id and arn
+        """
+        if deployment_type == "code_zip":
+            self.logger.info("Creating agent '%s' with code_zip deployment (runtime: %s)", agent_name, runtime_type)
+        else:
+            self.logger.info("Creating agent '%s' with container deployment (image: %s)", agent_name, image_uri)
+
         try:
+            # Build artifact configuration based on deployment type
+            if deployment_type == "code_zip":
+                artifact_config = {
+                    "codeConfiguration": {
+                        "code": {"s3": {"bucket": code_s3_bucket, "prefix": code_s3_key}},
+                        "runtime": _validate_runtime_type(runtime_type),  # Validate and default to PYTHON_3_11
+                        "entryPoint": entrypoint_array or [],  # Array already formatted
+                    }
+                }
+            else:  # container
+                artifact_config = {"containerConfiguration": {"containerUri": image_uri}}
+
             # Build parameters dict, only including optional configs when present
             params = {
                 "agentRuntimeName": agent_name,
-                "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+                "agentRuntimeArtifact": artifact_config,
                 "roleArn": execution_role_arn,
             }
 
@@ -202,13 +278,19 @@ class BedrockAgentCoreClient:
                 # Update the existing agent
                 self.update_agent(
                     existing_agent_id,
-                    image_uri,
                     execution_role_arn,
-                    network_config,
-                    authorizer_config,
-                    request_header_config,
-                    protocol_config,
-                    env_vars,
+                    deployment_type=deployment_type,
+                    code_s3_bucket=code_s3_bucket,
+                    code_s3_key=code_s3_key,
+                    runtime_type=runtime_type,
+                    entrypoint_array=entrypoint_array,
+                    entrypoint_handler=entrypoint_handler,
+                    image_uri=image_uri,
+                    network_config=network_config,
+                    authorizer_config=authorizer_config,
+                    request_header_config=request_header_config,
+                    protocol_config=protocol_config,
+                    env_vars=env_vars,
                 )
 
                 # Return the existing agent info (keeping the original ID and ARN)
@@ -223,8 +305,17 @@ class BedrockAgentCoreClient:
     def update_agent(
         self,
         agent_id: str,
-        image_uri: str,
         execution_role_arn: str,
+        # Code zip parameters (for code_zip deployment)
+        deployment_type: str = "code_zip",
+        code_s3_bucket: Optional[str] = None,
+        code_s3_key: Optional[str] = None,
+        runtime_type: Optional[str] = None,
+        entrypoint_array: Optional[list] = None,
+        entrypoint_handler: Optional[str] = None,
+        # Container parameters (for container deployment)
+        image_uri: Optional[str] = None,
+        # Common parameters
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
         request_header_config: Optional[Dict] = None,
@@ -232,13 +323,51 @@ class BedrockAgentCoreClient:
         env_vars: Optional[Dict] = None,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Update existing agent."""
-        self.logger.info("Updating agent ID '%s' with image URI: %s", agent_id, image_uri)
+        """Update existing agent with either code_zip or container deployment.
+
+        Args:
+            agent_id: Agent ID to update
+            execution_role_arn: IAM role ARN for execution
+            deployment_type: "code_zip" or "container"
+            code_s3_bucket: S3 bucket for code zip (code_zip only)
+            code_s3_key: S3 key for code zip (code_zip only)
+            runtime_type: Python runtime version (code_zip only)
+            entrypoint_array: Entrypoint as array (code_zip only)
+                Examples: ["agent.py"] or ["opentelemetry-instrument", "agent.py"]
+            entrypoint_handler: Handler function name (code_zip only)
+            image_uri: Container image URI (container only)
+            network_config: Network configuration
+            authorizer_config: Authorizer configuration
+            request_header_config: Request header configuration
+            protocol_config: Protocol configuration
+            env_vars: Environment variables
+            lifecycle_config: Lifecycle configuration for session timeouts
+
+        Returns:
+            Dict with agent id and arn
+        """
+        if deployment_type == "code_zip":
+            self.logger.info("Updating agent ID '%s' with code_zip deployment (runtime: %s)", agent_id, runtime_type)
+        else:
+            self.logger.info("Updating agent ID '%s' with container deployment (image: %s)", agent_id, image_uri)
+
         try:
+            # Build artifact configuration based on deployment type
+            if deployment_type == "code_zip":
+                artifact_config = {
+                    "codeConfiguration": {
+                        "code": {"s3": {"bucket": code_s3_bucket, "prefix": code_s3_key}},
+                        "runtime": _validate_runtime_type(runtime_type),  # Validate and default to PYTHON_3_11
+                        "entryPoint": entrypoint_array or [],  # Array already formatted
+                    }
+                }
+            else:  # container
+                artifact_config = {"containerConfiguration": {"containerUri": image_uri}}
+
             # Build parameters dict, only including optional configs when present
             params = {
                 "agentRuntimeId": agent_id,
-                "agentRuntimeArtifact": {"containerConfiguration": {"containerUri": image_uri}},
+                "agentRuntimeArtifact": artifact_config,
                 "roleArn": execution_role_arn,
             }
 
@@ -312,8 +441,17 @@ class BedrockAgentCoreClient:
         self,
         agent_id: Optional[str],
         agent_name: str,
-        image_uri: str,
         execution_role_arn: str,
+        # Code zip parameters
+        deployment_type: str = "code_zip",
+        code_s3_bucket: Optional[str] = None,
+        code_s3_key: Optional[str] = None,
+        runtime_type: Optional[str] = None,
+        entrypoint_array: Optional[list] = None,
+        entrypoint_handler: Optional[str] = None,
+        # Container parameters
+        image_uri: Optional[str] = None,
+        # Common parameters
         network_config: Optional[Dict] = None,
         authorizer_config: Optional[Dict] = None,
         request_header_config: Optional[Dict] = None,
@@ -322,30 +460,42 @@ class BedrockAgentCoreClient:
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Create or update agent."""
+        """Create or update agent with either code_zip or container deployment."""
         if agent_id:
             return self.update_agent(
                 agent_id,
-                image_uri,
                 execution_role_arn,
-                network_config,
-                authorizer_config,
-                request_header_config,
-                protocol_config,
-                env_vars,
-                lifecycle_config,
+                deployment_type=deployment_type,
+                code_s3_bucket=code_s3_bucket,
+                code_s3_key=code_s3_key,
+                runtime_type=runtime_type,
+                entrypoint_array=entrypoint_array,
+                entrypoint_handler=entrypoint_handler,
+                image_uri=image_uri,
+                network_config=network_config,
+                authorizer_config=authorizer_config,
+                request_header_config=request_header_config,
+                protocol_config=protocol_config,
+                env_vars=env_vars,
+                lifecycle_config=lifecycle_config,
             )
         return self.create_agent(
             agent_name,
-            image_uri,
             execution_role_arn,
-            network_config,
-            authorizer_config,
-            request_header_config,
-            protocol_config,
-            env_vars,
-            auto_update_on_conflict,
-            lifecycle_config,
+            deployment_type=deployment_type,
+            code_s3_bucket=code_s3_bucket,
+            code_s3_key=code_s3_key,
+            runtime_type=runtime_type,
+            entrypoint_array=entrypoint_array,
+            entrypoint_handler=entrypoint_handler,
+            image_uri=image_uri,
+            network_config=network_config,
+            authorizer_config=authorizer_config,
+            request_header_config=request_header_config,
+            protocol_config=protocol_config,
+            env_vars=env_vars,
+            auto_update_on_conflict=auto_update_on_conflict,
+            lifecycle_config=lifecycle_config,
         )
 
     def wait_for_agent_endpoint_ready(self, agent_id: str, endpoint_name: str = "DEFAULT", max_wait: int = 120) -> str:

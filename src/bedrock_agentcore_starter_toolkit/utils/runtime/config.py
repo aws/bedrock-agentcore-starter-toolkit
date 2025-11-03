@@ -45,8 +45,31 @@ def _transform_legacy_to_multi_agent(data: dict) -> BedrockAgentCoreConfigSchema
     return BedrockAgentCoreConfigSchema(default_agent=agent_config.name, agents={agent_config.name: agent_config})
 
 
+def _migrate_deployment_type(config: BedrockAgentCoreConfigSchema) -> None:
+    """Migrate deployment_type for existing configurations.
+
+    Auto-detects deployment type based on existing configuration:
+    - If ECR repository or CodeBuild project exists → container
+    - Otherwise → code_zip (new default)
+
+    Also sets default runtime_type if missing for code_zip deployments.
+    """
+    for agent in config.agents.values():
+        # Skip if deployment_type is already explicitly set to something other than default
+        # The field default is "code_zip", so we need to check if it was explicitly set
+        # Since Pydantic sets defaults, we infer based on other fields
+
+        # If ECR or CodeBuild is configured, this is a container deployment
+        if agent.aws.ecr_repository or agent.codebuild.project_name:
+            if agent.deployment_type == "code_zip":  # Was using default
+                log.info("Migrating agent '%s' to container deployment (detected ECR/CodeBuild)", agent.name)
+                agent.deployment_type = "container"
+
+        # runtime_type is optional for code_zip deployments (will default to PYTHON_3_11 in service layer)
+
+
 def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
-    """Load config with automatic legacy format transformation."""
+    """Load config with automatic legacy format transformation and migration."""
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
 
@@ -59,7 +82,12 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
 
     # New format
     try:
-        return BedrockAgentCoreConfigSchema.model_validate(data)
+        config = BedrockAgentCoreConfigSchema.model_validate(data)
+
+        # Migrate deployment_type for existing configurations
+        _migrate_deployment_type(config)
+
+        return config
     except ValidationError as e:
         # Convert Pydantic errors to user-friendly messages
         friendly_errors = []

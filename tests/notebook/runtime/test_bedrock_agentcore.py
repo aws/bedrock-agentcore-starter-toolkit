@@ -43,6 +43,7 @@ def handler(payload):
             bedrock_agentcore.configure(
                 entrypoint=str(agent_file),
                 execution_role="arn:aws:iam::123456789012:role/TestRole",
+                deployment_type="container",
                 auto_create_ecr=True,
                 container_runtime="docker",
             )
@@ -73,7 +74,10 @@ def handler(payload):
             mock_configure.return_value = mock_result
 
             bedrock_agentcore.configure(
-                entrypoint=str(agent_file), execution_role="test-role", requirements=["requests", "boto3", "pandas"]
+                entrypoint=str(agent_file),
+                execution_role="test-role",
+                requirements=["requests", "boto3", "pandas"],
+                deployment_type="container",
             )
 
             # Check that requirements.txt was created
@@ -104,6 +108,7 @@ def handler(payload):
                 entrypoint=str(agent_file),
                 execution_role="ExecutionRole",
                 code_build_execution_role="CodeBuildRole",
+                deployment_type="container",
             )
 
             # Verify configure was called with CodeBuild execution role
@@ -173,6 +178,7 @@ aws:
 name: test-agent
 platform: linux/amd64
 entrypoint: test_agent.py
+deployment_type: container
 container_runtime: docker
 aws:
   execution_role: arn:aws:iam::123456789012:role/TestRole
@@ -325,6 +331,7 @@ aws:
                 entrypoint=str(agent_file),
                 execution_role="test-role",
                 disable_otel=True,
+                deployment_type="container",
             )
 
             # Verify configure was called with enable_observability=False
@@ -351,6 +358,7 @@ aws:
             bedrock_agentcore.configure(
                 entrypoint=str(agent_file),
                 execution_role="test-role",
+                deployment_type="container",
                 # disable_otel not specified, should default to False
             )
 
@@ -1152,6 +1160,7 @@ bedrock_agentcore:
             # Check for expected log messages
             log_messages = [record.message for record in caplog.records]
             assert any("Including ECR repository deletion" in msg for msg in log_messages)
+
     def test_configure_with_vpc_parameters(self, tmp_path):
         """Test configure with VPC networking parameters."""
         agent_file = tmp_path / "test_agent.py"
@@ -1177,6 +1186,7 @@ bedrock_agentcore:
                 vpc_enabled=True,
                 vpc_subnets=["subnet-abc123def456", "subnet-xyz789ghi012"],
                 vpc_security_groups=["sg-abc123xyz789"],
+                deployment_type="container",
             )
 
             # Verify configure was called with VPC parameters

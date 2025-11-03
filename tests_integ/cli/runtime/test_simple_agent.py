@@ -121,6 +121,8 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
                 TEST_ECR,
                 "--requirements-file",
                 self.requirements_file,
+                "--deployment-type",
+                "container",
                 "--non-interactive",
             ],
             user_input=[],

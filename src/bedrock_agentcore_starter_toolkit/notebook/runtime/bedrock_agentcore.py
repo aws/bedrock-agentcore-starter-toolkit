@@ -17,6 +17,7 @@ from ...operations.runtime.models import ConfigureResult, DestroyResult, LaunchR
 
 # Setup centralized logging for SDK usage (notebooks, scripts, imports)
 from ...utils.logging_config import setup_toolkit_logging
+from ...utils.runtime.config import load_config
 from ...utils.runtime.entrypoint import parse_entrypoint
 
 setup_toolkit_logging(mode="sdk")
@@ -45,6 +46,8 @@ class Runtime:
         container_runtime: Optional[str] = None,
         auto_create_ecr: bool = True,
         auto_create_execution_role: bool = False,
+        s3_path: Optional[str] = None,
+        auto_create_s3: bool = False,
         authorizer_configuration: Optional[Dict[str, Any]] = None,
         request_header_configuration: Optional[Dict[str, Any]] = None,
         region: Optional[str] = None,
@@ -57,6 +60,8 @@ class Runtime:
         vpc_security_groups: Optional[List[str]] = None,
         idle_timeout: Optional[int] = None,
         max_lifetime: Optional[int] = None,
+        deployment_type: Literal["code_zip", "container"] = "code_zip",
+        runtime_type: Optional[str] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
 
@@ -72,6 +77,8 @@ class Runtime:
             container_runtime: Optional container runtime (docker/podman)
             auto_create_ecr: Whether to auto-create ECR repository
             auto_create_execution_role: Whether to auto-create execution role (makes execution_role optional)
+            s3_path: Optional S3 URI for code deployment (e.g., s3://my-bucket/path/)
+            auto_create_s3: Whether to auto-create S3 bucket for code deployment
             authorizer_configuration: JWT authorizer configuration dictionary
             request_header_configuration: Request header configuration dictionary
             region: AWS region for deployment
@@ -87,6 +94,9 @@ class Runtime:
             vpc_security_groups: List of VPC security group IDs (required if vpc_enabled=True)
             idle_timeout: Idle runtime session timeout in seconds (60-28800)
             max_lifetime: Maximum instance lifetime in seconds (60-28800)
+            deployment_type: Deployment type - "code_zip" (default) or "container"
+            runtime_type: Python runtime version for code_zip (e.g., "PYTHON_3_10", "PYTHON_3_11")
+                If not specified, will use current Python version or default to PYTHON_3_11
 
         Returns:
             ConfigureResult with configuration details
@@ -165,6 +175,13 @@ class Runtime:
                 "vpc_subnets=[...], vpc_security_groups=[...])"
             )
 
+        # Validate code_zip deployment requirements
+        if deployment_type == "code_zip" and runtime_type is None:
+            raise ValueError(
+                "runtime_type is required when deployment_type is 'code_zip'. "
+                "Please specify one of: 'PYTHON_3_10', 'PYTHON_3_11', 'PYTHON_3_12', 'PYTHON_3_13'"
+            )
+
         # Parse entrypoint to get agent name
         file_path, file_name = parse_entrypoint(entrypoint)
         agent_name = agent_name or file_name
@@ -212,8 +229,10 @@ class Runtime:
             execution_role=execution_role,
             code_build_execution_role=code_build_execution_role,
             ecr_repository=ecr_repository,
+            s3_path=s3_path,
             container_runtime=container_runtime,
             auto_create_ecr=auto_create_ecr,
+            auto_create_s3=auto_create_s3,
             enable_observability=not disable_otel,
             memory_mode=memory_mode,
             requirements_file=final_requirements_file,
@@ -227,6 +246,8 @@ class Runtime:
             vpc_security_groups=vpc_security_groups,
             idle_timeout=idle_timeout,
             max_lifetime=max_lifetime,
+            deployment_type=deployment_type,
+            runtime_type=runtime_type,
         )
 
         self._config_path = result.config_path
@@ -263,32 +284,47 @@ class Runtime:
                 "Cannot use both 'local' and 'local_build' flags together.\n"
                 "Choose one deployment mode:\n"
                 "• runtime.launch(local=True) - for local development\n"
-                "• runtime.launch(local_build=True) - for local build + cloud deployment\n"
-                "• runtime.launch() - for CodeBuild deployment (recommended)"
+                "• runtime.launch(local_build=True) - for local build + cloud deployment (container only)\n"
+                "• runtime.launch() - for cloud deployment (recommended)"
             )
+
+        # Validate local_build is only for container deployments (only if local_build is True)
+        if local_build:
+            # Load config to get deployment_type
+            project_config = load_config(self._config_path)
+            agent_config = project_config.get_agent_config()
+            deployment_type = agent_config.deployment_type
+
+            if deployment_type == "code_zip":
+                raise ValueError(
+                    "local_build mode is only supported for container deployments.\n"
+                    "For code_zip deployments, use:\n"
+                    "• runtime.launch() - cloud deployment\n"
+                    "• runtime.launch(local=True) - local development"
+                )
 
         # Inform user about deployment mode with enhanced migration guidance
         if local:
-            log.info("🏠 Local mode: building and running locally")
+            log.info("🏠 Launching Bedrock AgentCore (local mode)...")
             log.info("   • Build and run container locally")
             log.info("   • Requires Docker/Finch/Podman to be installed")
             log.info("   • Perfect for development and testing")
         elif local_build:
-            log.info("🔧 Local build mode: building locally, deploying to cloud (NEW OPTION!)")
+            log.info("🔧 Launching Bedrock AgentCore (local-build mode - NEW!)...")
             log.info("   • Build container locally with Docker")
             log.info("   • Deploy to Bedrock AgentCore cloud runtime")
             log.info("   • Requires Docker/Finch/Podman to be installed")
             log.info("   • Use when you need custom build control")
         else:
-            log.info("🚀 CodeBuild mode: building in cloud (RECOMMENDED - DEFAULT)")
-            log.info("   • Build ARM64 containers in the cloud with CodeBuild")
-            log.info("   • No local Docker required")
-
-            # Show deployment options hint for first-time notebook users
-            log.info("💡 Available deployment modes:")
-            log.info("   • runtime.launch()                           → CodeBuild (current)")
-            log.info("   • runtime.launch(local=True)                 → Local development")
-            log.info("   • runtime.launch(local_build=True)           → Local build + cloud deploy (NEW)")
+            mode = "cloud"  # code_zip deployment
+            log.info("🚀 Launching Bedrock AgentCore (%s mode - RECOMMENDED)...", mode)
+            log.info("   • Deploy Python code directly to runtime")
+            log.info("   • No Docker required (DEFAULT behavior)")
+            log.info("   • Production-ready deployment")
+            log.info("")
+            log.info("💡 Deployment options:")
+            log.info("   • runtime.launch()                → Cloud (current)")
+            log.info("   • runtime.launch(local=True)      → Local development")
 
         # Map to the underlying operation's use_codebuild parameter
         # use_codebuild=False when local=True OR local_build=True
@@ -312,7 +348,7 @@ class Runtime:
                     )
                     enhanced_msg += "Options to fix this:\n"
                     enhanced_msg += "1. Install Docker/Finch/Podman and try again\n"
-                    enhanced_msg += "2. Use CodeBuild mode instead: runtime.launch() - no Docker required\n\n"
+                    enhanced_msg += "2. Use CodeBuild mode instead: runtime.launch()\n\n"
                     enhanced_msg += f"Original error: {error_msg}"
                     raise RuntimeError(enhanced_msg) from e
             raise

@@ -59,10 +59,6 @@ class ConfigurationManager:
             "[dim]Press Enter to auto-create execution role, or provide execution role ARN/name to use existing[/dim]"
         )
 
-        # Show existing config info but don't use as default
-        if self.existing_config and self.existing_config.aws.execution_role:
-            console.print(f"[dim]Previously configured: {self.existing_config.aws.execution_role}[/dim]")
-
         role = _prompt_with_default("Execution role ARN/name (or press Enter to auto-create)", "")
 
         if role:
@@ -83,10 +79,6 @@ class ConfigurationManager:
             "[dim]Press Enter to auto-create ECR repository, or provide ECR Repository URI to use existing[/dim]"
         )
 
-        # Show existing config info but don't use as default
-        if self.existing_config and self.existing_config.aws.ecr_repository:
-            console.print(f"[dim]Previously configured: {self.existing_config.aws.ecr_repository}[/dim]")
-
         response = _prompt_with_default("ECR Repository URI (or press Enter to auto-create)", "")
 
         if response:
@@ -95,6 +87,61 @@ class ConfigurationManager:
         else:
             _print_success("Will auto-create ECR repository")
             return None, True
+
+    def prompt_s3_bucket(self) -> tuple[Optional[str], bool]:
+        """Prompt for S3 bucket. Returns (bucket_uri, auto_create_flag)."""
+        if self.non_interactive:
+            _print_success("Will auto-create S3 bucket")
+            return None, True
+
+        console.print("\n🏗️  [cyan]S3 Bucket[/cyan]")
+        console.print("[dim]Press Enter to auto-create S3 bucket, or provide S3 URI/path to use existing[/dim]")
+
+        response = _prompt_with_default("S3 URI/path (or press Enter to auto-create)", "")
+
+        if response:
+            # Validate the bucket exists
+            if self._validate_s3_bucket(response):
+                _print_success(f"Using existing S3 bucket: [dim]{response}[/dim]")
+                return response, False
+            else:
+                console.print(f"[red]Error: S3 bucket/path '{response}' does not exist or is not accessible[/red]")
+                return self.prompt_s3_bucket()  # Retry
+        else:
+            _print_success("Will auto-create S3 bucket")
+            return None, True
+
+    def _validate_s3_bucket(self, s3_input: str) -> bool:
+        """Validate that S3 bucket exists and is accessible."""
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+
+            # Parse bucket name from input
+            if s3_input.startswith("s3://"):
+                s3_path = s3_input[5:]
+            else:
+                s3_path = s3_input
+
+            bucket_name = s3_path.split("/")[0]
+
+            # Check if bucket exists and is accessible
+            s3 = boto3.client("s3")
+
+            # Get account_id from existing config or STS
+            if self.existing_config and self.existing_config.aws.account:
+                account_id = self.existing_config.aws.account
+            else:
+                sts = boto3.client("sts")
+                account_id = sts.get_caller_identity()["Account"]
+
+            s3.head_bucket(Bucket=bucket_name, ExpectedBucketOwner=account_id)
+            return True
+
+        except ClientError:
+            return False
+        except Exception:
+            return False
 
     def prompt_oauth_config(self) -> Optional[dict]:
         """Prompt for OAuth configuration. Returns OAuth config dict or None."""
@@ -120,33 +167,18 @@ class ConfigurationManager:
         """Configure OAuth settings and return config dict."""
         console.print("\n📋 [cyan]OAuth Configuration[/cyan]")
 
-        # Get existing OAuth values
-        existing_discovery_url = ""
-        existing_client_ids = ""
-        existing_audience = ""
-
-        if (
-            self.existing_config
-            and self.existing_config.authorizer_configuration
-            and "customJWTAuthorizer" in self.existing_config.authorizer_configuration
-        ):
-            jwt_config = self.existing_config.authorizer_configuration["customJWTAuthorizer"]
-            existing_discovery_url = jwt_config.get("discoveryUrl", "")
-            existing_client_ids = ",".join(jwt_config.get("allowedClients", []))
-            existing_audience = ",".join(jwt_config.get("allowedAudience", []))
-
         # Prompt for discovery URL
-        default_discovery_url = existing_discovery_url or os.getenv("BEDROCK_AGENTCORE_DISCOVERY_URL", "")
+        default_discovery_url = os.getenv("BEDROCK_AGENTCORE_DISCOVERY_URL", "")
         discovery_url = _prompt_with_default("Enter OAuth discovery URL", default_discovery_url)
 
         if not discovery_url:
             _handle_error("OAuth discovery URL is required")
 
         # Prompt for client IDs
-        default_client_id = existing_client_ids or os.getenv("BEDROCK_AGENTCORE_CLIENT_ID", "")
+        default_client_id = os.getenv("BEDROCK_AGENTCORE_CLIENT_ID", "")
         client_ids_input = _prompt_with_default("Enter allowed OAuth client IDs (comma-separated)", default_client_id)
         # Prompt for audience
-        default_audience = existing_audience or os.getenv("BEDROCK_AGENTCORE_AUDIENCE", "")
+        default_audience = os.getenv("BEDROCK_AGENTCORE_AUDIENCE", "")
         audience_input = _prompt_with_default("Enter allowed OAuth audience (comma-separated)", default_audience)
 
         if not client_ids_input and not audience_input:
@@ -194,21 +226,17 @@ class ConfigurationManager:
         response = _prompt_with_default("Configure request header allowlist? (yes/no)", allowlist_default)
 
         if response.lower() in ["yes", "y"]:
-            return self._configure_request_header_allowlist(existing_headers)
+            return self._configure_request_header_allowlist()
         else:
             _print_success("Using default request header configuration")
             return None
 
-    def _configure_request_header_allowlist(self, existing_headers: str = "") -> dict:
+    def _configure_request_header_allowlist(self) -> dict:
         """Configure request header allowlist and return config dict."""
         console.print("\n📋 [cyan]Request Header Allowlist Configuration[/cyan]")
 
-        # Show existing config if available
-        if existing_headers:
-            console.print(f"[dim]Previously configured: {existing_headers}[/dim]")
-
         # Prompt for headers
-        default_headers = existing_headers or "Authorization,X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
+        default_headers = "Authorization,X-Amzn-Bedrock-AgentCore-Runtime-Custom-*"
         headers_input = _prompt_with_default("Enter allowed request headers (comma-separated)", default_headers)
 
         if not headers_input:

@@ -71,11 +71,11 @@ if __name__ == "__main__":
 ### Deploy
 
 ```bash
-# Create requirements.txt for container
+# Create requirements.txt
 echo "langchain-aws
 langgraph" > requirements.txt
 
-# Configure and deploy
+# Configure and deploy (uses code_zip by default)
 agentcore configure --entrypoint langgraph_agent.py
 agentcore launch
 
@@ -146,11 +146,11 @@ if __name__ == "__main__":
 ### Deploy
 
 ```bash
-# Create requirements.txt for container
+# Create requirements.txt
 echo "crewai
 crewai-tools" > requirements.txt
 
-# Configure and deploy
+# Configure and deploy (uses code_zip by default)
 agentcore configure --entrypoint crewai_agent.py
 agentcore launch
 

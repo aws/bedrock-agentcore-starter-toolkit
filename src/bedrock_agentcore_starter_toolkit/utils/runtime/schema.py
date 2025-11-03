@@ -156,6 +156,8 @@ class AWSConfig(BaseModel):
     region: Optional[str] = Field(default=None, description="AWS region")
     ecr_repository: Optional[str] = Field(default=None, description="ECR repository URI")
     ecr_auto_create: bool = Field(default=False, description="Whether to auto-create ECR repository")
+    s3_path: Optional[str] = Field(default=None, description="S3 URI for code deployment")
+    s3_auto_create: bool = Field(default=False, description="Whether to auto-create S3 bucket")
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
@@ -191,9 +193,17 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     """Type-safe schema for BedrockAgentCore configuration."""
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
-    entrypoint: str = Field(..., description="Entrypoint file path")
-    platform: str = Field(default="linux/amd64", description="Target platform")
-    container_runtime: str = Field(default="docker", description="Container runtime to use")
+    entrypoint: str = Field(..., description="Entrypoint file path (e.g., 'agent.py' or 'agent.py:handler')")
+    deployment_type: Literal["container", "code_zip"] = Field(
+        default="code_zip", description="Deployment artifact type: container (Docker) or code_zip (Lambda-style)"
+    )
+    runtime_type: Optional[str] = Field(
+        default=None, description="Managed runtime version for code_zip (e.g., 'PYTHON_3_10', 'PYTHON_3_11')"
+    )
+    platform: str = Field(default="linux/amd64", description="Target platform (for container deployments)")
+    container_runtime: Optional[str] = Field(
+        default=None, description="Container runtime to use (for container deployments)"
+    )
     source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
@@ -232,6 +242,8 @@ class BedrockAgentCoreAgentSchema(BaseModel):
                 errors.append("Missing 'aws.region' for cloud deployment")
             if not self.aws.account:
                 errors.append("Missing 'aws.account' for cloud deployment")
+
+            # Code zip specific validation (runtime_type is optional, will default to PYTHON_3_11)
 
         return errors
 

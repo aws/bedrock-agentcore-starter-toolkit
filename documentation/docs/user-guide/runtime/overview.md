@@ -42,27 +42,30 @@ The Runtime SDK is a comprehensive Python framework that bridges the gap between
 
 ## Deployment Modes
 
-### 🚀 Cloud Build (RECOMMENDED)
+### 🚀 Code Zip Deployment (DEFAULT & RECOMMENDED)
 ```bash
 agentcore configure --entrypoint my_agent.py
-agentcore launch                    # Uses CodeBuild - no Docker needed
+agentcore launch                    # Deploy Python code directly
 ```
-- **No Docker required** - builds in the cloud
-- **Production-ready** - standardized ARM64 containers
+- **No Docker required** - deploys Python code directly
+- **Faster deployments** - skip container build process
 - **Works everywhere** - SageMaker Notebooks, Cloud9, laptops
+- **Production-ready** - managed Python runtime environment
 
 ### 💻 Local Development
 ```bash
-agentcore launch --local           # Build and run locally
+agentcore launch --local           # Run locally with uv
 ```
 - **Fast iteration** - immediate feedback and debugging
-- **Requires:** Docker, Finch, or Podman
+- **No Docker required** - uses uv run for code_zip mode
 
-### 🔧 Hybrid Build
+### 🐳 Container Deployment (LEGACY)
 ```bash
-agentcore launch --local-build     # Build locally, deploy to cloud
+agentcore configure --entrypoint my_agent.py --deployment-type container
+agentcore launch                    # Uses CodeBuild for containers
 ```
-- **Custom builds** with cloud deployment
+- **For complex scenarios** - large apps, system dependencies
+- **Requires:** Docker for local development
 - **Requires:** Docker, Finch, or Podman
 
 ## Agent Development Patterns

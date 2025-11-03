@@ -16,20 +16,40 @@ def get_genai_observability_url(region: str) -> str:
     return f"https://console.aws.amazon.com/cloudwatch/home?region={region}#gen-ai-observability/agent-core"
 
 
-def get_agent_log_paths(agent_id: str, endpoint_name: Optional[str] = None) -> Tuple[str, str]:
+def get_agent_log_paths(
+    agent_id: str,
+    endpoint_name: Optional[str] = None,
+    deployment_type: Optional[str] = None,
+    session_id: Optional[str] = None,
+) -> Tuple[str, str]:
     """Get CloudWatch log group paths for an agent.
 
     Args:
         agent_id: The agent ID
         endpoint_name: The endpoint name (defaults to "DEFAULT")
+        deployment_type: The deployment type ("code_zip" or "container")
+        session_id: The session ID (for code_zip deployments)
 
     Returns:
         Tuple of (runtime_log_group, otel_log_group)
     """
     endpoint_name = endpoint_name or "DEFAULT"
+
+    # For code_zip deployments, adjust log stream prefix
+    if deployment_type == "code_zip":
+        if session_id:
+            # Specific session logs
+            log_stream_prefix = f"runtime-logs-{session_id}]"
+        else:
+            # All session logs (incomplete prefix to match all)
+            log_stream_prefix = "runtime-logs"
+    else:
+        # Container deployments use standard prefix
+        log_stream_prefix = "runtime-logs]"
+
     runtime_log_group = (
         f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name} "
-        f'--log-stream-name-prefix "{datetime.now(timezone.utc).strftime("%Y/%m/%d")}/\\[runtime-logs]"'
+        f'--log-stream-name-prefix "{datetime.now(timezone.utc).strftime("%Y/%m/%d")}/\\[{log_stream_prefix}"'
     )
     otel_log_group = f'/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name} --log-stream-names "otel-rt-logs"'
     return runtime_log_group, otel_log_group
