@@ -5,7 +5,6 @@ from .features.types import BootstrapSDKProvider, BootstrapIACProvider
 from typing import Optional
 from .types import ProjectContext, TemplateDirSelection
 from .features import sdk_feature_registry, iac_feature_registry
-from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig, ProtocolConfiguration
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
@@ -63,13 +62,13 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     time.sleep(5) # give the user a few seconds to read the output before continuing
 
     if ctx.src_implementation_provided:
-        iac_feature_registry[iac_provider].apply(ctx)
+        iac_feature_registry[iac_provider]().apply(ctx)
     else:
         baseline_feature = BaselineFeature(ctx.template_dir_selection)
         # source code python dependencies
         deps = set(baseline_feature.python_dependencies)
         if ctx.sdk_provider:
-            deps.update(sdk_feature_registry[sdk_provider].python_dependencies)
+            deps.update(sdk_feature_registry[sdk_provider]().python_dependencies)
         ctx.python_dependencies = sorted(deps)
         
         # render baseline feature
@@ -77,8 +76,8 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
 
         # Render sdk/iac templates
         if ctx.sdk_provider:
-            sdk_feature_registry[sdk_provider].apply(ctx)
-        iac_feature_registry[iac_provider].apply(ctx)
+            sdk_feature_registry[sdk_provider]().apply(ctx)
+        iac_feature_registry[iac_provider]().apply(ctx)
         # create dockerfile
         ContainerRuntime().generate_dockerfile(
             agent_path=Path(ctx.src_dir / "main.py"),

@@ -7,7 +7,7 @@ from ...bootstrap.generate import generate_project
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema, BedrockAgentCoreAgentSchema
 from ...utils.runtime.config import load_config
 from ...cli.common import console, _handle_error
-from ...bootstrap.features.types import BootstrapFeature, BootstrapIACProvider, BootstrapSDKProvider
+from ...bootstrap.features.types import BootstrapIACProvider, BootstrapSDKProvider
 from ..common import _handle_warn
 
 bootstrap_app = typer.Typer(help="bootstrap an agent core project")
@@ -29,15 +29,13 @@ def generate(
         raise typer.BadParameter(f"A directory already exists with name {project_name}! Either delete that directory or choose a new project name.")
     if iac == BootstrapIACProvider.CDK and not shutil.which("npx"):
         raise typer.BadParameter("Need to install npx to bootstrap with cdk. Npx comes installed with any npm >= 5.2.0. Npm is bundled with node install.")
-    
-    active_features: list[BootstrapFeature] = [iac, sdk]
 
     # consume config from configure command and perform validations
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
     agent_config: BedrockAgentCoreAgentSchema | None = None
 
     if not configure_yaml.exists():
-        _handle_warn("No .bedrock_agentcore.yaml directory detected, using bootstrap configuration defaults. To specifiy project configuration, first run agentcore configure.")
+        _handle_warn("No .bedrock_agentcore.yaml file detected, using bootstrap configuration defaults. To specifiy project configuration, first run agentcore configure.")
         sleep(2) # so above message can be seen clearly
   
     if configure_yaml.exists():
@@ -47,7 +45,6 @@ def generate(
         # now assume we have just one agent configured and build the project context
         agent_config = next(iter(configure_schema.agents.values()))
 
-    
     # Create template project
-    generate_project(project_name, active_features, agent_config)
+    generate_project(project_name, sdk, iac, agent_config)
 
