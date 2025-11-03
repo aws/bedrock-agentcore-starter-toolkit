@@ -5,16 +5,19 @@ from .openaiagents.feature import OpenAIAgentsFeature
 from .strands.feature import StrandsFeature
 from .cdk.feature import CDKFeature
 from .terraform.feature import TerraformFeature
-from .types import BootstrapSDKProvider, BootstrapIACProvider, BootstrapFeature
+from .types import BootstrapSDKProvider, BootstrapIACProvider
 from typing import Type
 from .base_feature import Feature
 
-feature_registry: dict[BootstrapFeature, Type[Feature]] = {
-    BootstrapIACProvider.CDK: CDKFeature,
-    BootstrapIACProvider.Terraform: TerraformFeature,
+sdk_feature_registry: dict[BootstrapSDKProvider, Type[Feature]] = {
     BootstrapSDKProvider.Strands: StrandsFeature,
     BootstrapSDKProvider.LangGraph: LangGraphFeature,
     BootstrapSDKProvider.GoogleADK: GoogleADKFeature,
-    BootstrapSDKProvider.OpenAIAgents: OpenAIAgentsFeature,
-    BootstrapSDKProvider.Autogen: AutogenFeature
+    BootstrapSDKProvider.Autogen: AutogenFeature,
+    BootstrapSDKProvider.OpenAIAgents: OpenAIAgentsFeature
+}
+
+iac_feature_registry: dict[BootstrapIACProvider, Type[Feature]] = {
+    BootstrapIACProvider.CDK: CDKFeature,
+    BootstrapIACProvider.Terraform: TerraformFeature
 }

@@ -1,10 +1,10 @@
 from pathlib import Path
 import time
 
-from .features.types import BootstrapFeature
-from typing import List, Optional
+from .features.types import BootstrapSDKProvider, BootstrapIACProvider
+from typing import Optional
 from .types import ProjectContext, TemplateDirSelection
-from .features import feature_registry
+from .features import sdk_feature_registry, iac_feature_registry
 from .constants import COMMON_PYTHON_DEPENDENCIES
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig, ProtocolConfiguration
@@ -12,9 +12,10 @@ from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .baseline_feature import BaselineFeature
 from ..cli.common import console
 from rich.pretty import Pretty
+from ..cli.common import _handle_warn
 
 
-def generate_project(name: str, features: List[BootstrapFeature], agent_config: BedrockAgentCoreAgentSchema | None):
+def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider: BootstrapIACProvider, agent_config: BedrockAgentCoreAgentSchema | None):
 
     # create directory structure
     output_path = (Path.cwd() / name)
@@ -27,9 +28,11 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
         output_dir=output_path,
         src_dir=src_path,
         iac_dir=None, # updated when iac is generated
+        sdk_provider=sdk_provider,
+        iac_provider=iac_provider,
         template_dir_selection=TemplateDirSelection.Default,
-        features=features,
         python_dependencies=[],
+        src_implementation_provided=False,
         agent_name=name + "-Agent",
         # memory
         memory_enabled=True,
@@ -59,29 +62,30 @@ def generate_project(name: str, features: List[BootstrapFeature], agent_config: 
     console.print(Pretty(ctx))
     time.sleep(5) # give the user a few seconds to read the output before continuing
 
-    # Collect dependencies from features, starting with common deps
-    deps = set(COMMON_PYTHON_DEPENDENCIES)
-    for feature in ctx.features:
-        feature_cls = feature_registry[feature]
-        deps.update(feature_cls().python_dependencies)
-    ctx.python_dependencies = sorted(deps)
+    if ctx.src_implementation_provided:
+        iac_feature_registry[iac_provider].apply(ctx)
+    else:
+        baseline_feature = BaselineFeature(ctx.template_dir_selection)
+        # source code python dependencies
+        deps = set(baseline_feature.python_dependencies)
+        if ctx.sdk_provider:
+            deps.update(sdk_feature_registry[sdk_provider].python_dependencies)
+        ctx.python_dependencies = sorted(deps)
+        
+        # render baseline feature
+        baseline_feature.apply(ctx)
 
-    # Render baseline templates
-    BaselineFeature(ctx.template_dir_selection).apply(ctx)
-
-    # Render feature templates
-    for feature in ctx.features:
-        instance = feature_registry[feature]()
-        instance.apply(ctx)   
-
-    # create docker file with settings from ctx
-    ContainerRuntime().generate_dockerfile(
-        agent_path=Path(ctx.src_dir / "main.py"),
-        output_dir=ctx.src_dir,
-        agent_name=ctx.agent_name, 
-        enable_observability=ctx.observability_enabled
-    )
-
+        # Render sdk/iac templates
+        if ctx.sdk_provider:
+            sdk_feature_registry[sdk_provider].apply(ctx)
+        iac_feature_registry[iac_provider].apply(ctx)
+        # create dockerfile
+        ContainerRuntime().generate_dockerfile(
+            agent_path=Path(ctx.src_dir / "main.py"),
+            output_dir=ctx.src_dir,
+            agent_name=ctx.agent_name, 
+            enable_observability=ctx.observability_enabled
+        )
 
 def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config: BedrockAgentCoreAgentSchema):
     """
@@ -89,6 +93,10 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     We re-map these configurations from the original BedrockAgentCoreAgentSchema to generate a simple ProjectContext that is easily consumed by Jinja
     """
     ctx.agent_name = agent_config.name
+    if agent_config.entrypoint != ".": # bootstrap sets entrypoint to . to indicate that source code should be provided by bootstrap
+        ctx.src_implementation_provided = True
+        ctx.sdk_provider = None
+
     aws_config: AWSConfig = agent_config.aws
 
     # protocol configuration will determine which templates we render
@@ -96,6 +104,9 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
     if protocol_configuration.server_protocol == "MCP":
         ctx.template_dir_selection = TemplateDirSelection.McpRuntime
+        if ctx.sdk_provider is not None:
+            _handle_warn("In MCP mode, SDK code is not generated")
+        ctx.sdk_provider = None
 
     # memory
     memory_config: MemoryConfig = agent_config.memory
