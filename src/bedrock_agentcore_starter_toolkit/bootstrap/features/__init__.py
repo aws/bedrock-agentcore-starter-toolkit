@@ -1,4 +1,5 @@
 from .autogen.feature import AutogenFeature
+from .crewai.feature import CrewAIFeature
 from .googleadk.feature import GoogleADKFeature
 from .langgraph.feature import LangGraphFeature
 from .openaiagents.feature import OpenAIAgentsFeature
@@ -13,8 +14,9 @@ sdk_feature_registry: dict[BootstrapSDKProvider, Type[Feature]] = {
     BootstrapSDKProvider.Strands: StrandsFeature,
     BootstrapSDKProvider.LangGraph: LangGraphFeature,
     BootstrapSDKProvider.GoogleADK: GoogleADKFeature,
+    BootstrapSDKProvider.OpenAIAgents: OpenAIAgentsFeature,
+    BootstrapSDKProvider.CrewAI: CrewAIFeature,
     BootstrapSDKProvider.Autogen: AutogenFeature,
-    BootstrapSDKProvider.OpenAIAgents: OpenAIAgentsFeature
 }
 
 iac_feature_registry: dict[BootstrapIACProvider, Type[Feature]] = {

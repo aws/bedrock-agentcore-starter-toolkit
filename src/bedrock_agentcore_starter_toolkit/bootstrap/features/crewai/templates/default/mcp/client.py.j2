@@ -1,0 +1,22 @@
+import os
+from crewai_tools import MCPServerAdapter
+
+# Define the inbound authentication mechanism for AgentCore Gateway - AWS IAM or JWT
+# https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html
+def get_bearer_token():
+    raise NotImplementedError()
+
+async def get_streamable_http_mcp_client() -> MCPServerAdapter:
+    gateway_url = os.getenv("GATEWAY_URL")
+    if not gateway_url:
+        raise RuntimeError("Missing required environment variable: GATEWAY_URL")
+
+    server_params = {
+        "url": f"{gateway_url}/mcp",
+        "transport": "streamable-http",
+        "headers": {
+            "Authorization": f"Bearer {get_bearer_token()}"
+        }
+    }
+
+    return MCPServerAdapter(serverparams=server_params)
