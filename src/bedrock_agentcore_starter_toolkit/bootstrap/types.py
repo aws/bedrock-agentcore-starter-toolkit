@@ -10,6 +10,7 @@ class TemplateDirSelection(str, Enum):
     """
     Default = "default"
     McpRuntime = "mcp_runtime"
+    Common = "common"
 
 @dataclass
 class ProjectContext:

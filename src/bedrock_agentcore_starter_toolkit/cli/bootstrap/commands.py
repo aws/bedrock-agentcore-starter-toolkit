@@ -27,8 +27,6 @@ def generate(
         )
     if Path(project_name).exists():
         raise typer.BadParameter(f"A directory already exists with name {project_name}! Either delete that directory or choose a new project name.")
-    if iac == BootstrapIACProvider.CDK and not shutil.which("npx"):
-        raise typer.BadParameter("Need to install npx to bootstrap with cdk. Npx comes installed with any npm >= 5.2.0. Npm is bundled with node install.")
 
     # consume config from configure command and perform validations
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
