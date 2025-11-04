@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.30] - 2025-11-04
+
+### Changes
+
+- feat: Add user-agent header 'agentcore-st/{version}' to runtime invocations (#325) (cdd5189)
+- chore: bump version to 0.1.29 (#324) (faf2108)
+- Update Direct Code Deploy message to clarify Python-only support (#323) (44b9b7a)
+- fix: Multiple UI/UX improvements (#321) (47e25b2)
+- docs: Remove duplicate --non-interactive option in CLI reference (#319) (f0a33a9)
+- feat: Add code_zip deployment to the starter toolkit (#317) (3de907a)
+- Update the Identity user guide with the latest OAuth2 3LO callback guidance (#292) (b989aab)
+- chore: bump version to 0.1.28 (#315) (d4b6b37)
+
 ## [0.1.29] - 2025-11-04
 
 ### Changes
