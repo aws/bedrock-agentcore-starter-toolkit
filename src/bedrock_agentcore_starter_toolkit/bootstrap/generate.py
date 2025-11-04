@@ -106,13 +106,13 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     # mcp_runtime is different enough from default that it gets its own templates
     protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
     ctx.runtime_protocol = protocol_configuration.server_protocol
-    if protocol_configuration.server_protocol == RuntimeProtocol.MCP:
+    if protocol_configuration.server_protocol == RuntimeProtocol.MCP.value:
         ctx.template_dir_selection = TemplateDirSelection.McpRuntime
         if ctx.sdk_provider is not None:
             _handle_warn("In MCP mode, SDK code is not generated")
         ctx.sdk_provider = None
     # no src code support for A2A for now
-    if protocol_configuration.server_protocol == RuntimeProtocol.A2A:
+    if protocol_configuration.server_protocol == RuntimeProtocol.A2A.value:
         ctx.template_dir_selection = TemplateDirSelection.Default
         if ctx.sdk_provider is not None:
             _handle_warn("In A2A mode, source code is not generated")
@@ -144,7 +144,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
 
     # request header
     if agent_config.request_header_configuration:
-        if ctx.iac_provider == BootstrapIACProvider.CDK:
+        if ctx.iac_provider == BootstrapIACProvider.CDK.value:
             _handle_warn("Request header allowlist is not supported by CDK so it won't be included in the generated code")
         else:
             ctx.request_header_allowlist = agent_config.request_header_configuration["requestHeaderAllowlist"]

@@ -9,7 +9,7 @@ class BaselineFeature(Feature):
     """
     def __init__(self, template_dir_name: TemplateDirSelection):
         self.template_override_dir = Path(__file__).parent / "templates" / template_dir_name.value
-        self.python_dependencies = ["bedrock-agentcore >= 1.0.3"] if TemplateDirSelection == TemplateDirSelection.Default else ["mcp >= 1.19.0"]
+        self.python_dependencies = ["bedrock-agentcore >= 1.0.3"] if TemplateDirSelection == TemplateDirSelection.Default.value else ["mcp >= 1.19.0"]
         super().__init__()
 
     def execute(self, context: ProjectContext) -> None:
