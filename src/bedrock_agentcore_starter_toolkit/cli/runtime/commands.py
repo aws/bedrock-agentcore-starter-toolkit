@@ -458,7 +458,9 @@ def configure(
     # Handle dependency file selection with simplified logic
     final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
-    def _validate_cli_args(deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error):
+    def _validate_cli_args(
+        deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error
+    ):
         """Validate CLI arguments."""
         if deployment_type and deployment_type not in ["container", "direct_code_deploy"]:
             _handle_error("Error: --deployment-type must be either 'container' or 'direct_code_deploy'")
@@ -511,8 +513,6 @@ def configure(
 
     def _prompt_for_runtime():
         """Interactive runtime selection."""
-        import sys
-
         runtime_options = ["PYTHON_3_10", "PYTHON_3_11", "PYTHON_3_12", "PYTHON_3_13"]
 
         console.print("\n[dim]Select Python runtime version:[/dim]")
@@ -564,7 +564,9 @@ def configure(
             if direct_code_deploy_available:
                 return "direct_code_deploy", _get_default_runtime()
             else:
-                console.print(f"[yellow]Direct Code Deploy unavailable ({prereq_error}), using Container deployment[/yellow]")
+                console.print(
+                    f"[yellow]Direct Code Deploy unavailable ({prereq_error}), using Container deployment[/yellow]"
+                )
                 return "container", None
 
         # Interactive mode with no CLI args - use existing logic
@@ -1599,7 +1601,9 @@ def status(
                             project_config = load_config(config_path)
                             agent_config = project_config.get_agent_config(agent)
                             deployment_type = agent_config.deployment_type if agent_config else "container"
-                            runtime_logs, otel_logs = get_agent_log_paths(agent_id, endpoint_name, deployment_type=deployment_type)
+                            runtime_logs, otel_logs = get_agent_log_paths(
+                                agent_id, endpoint_name, deployment_type=deployment_type
+                            )
                             follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
 
                             panel_content += f"📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"

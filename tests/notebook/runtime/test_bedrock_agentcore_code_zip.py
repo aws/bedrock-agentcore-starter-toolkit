@@ -45,7 +45,9 @@ def handler(payload):
             assert call_args["deployment_type"] == "direct_code_deploy"
             assert call_args["runtime_type"] == "PYTHON_3_10"
 
-    def test_configure_direct_code_deploy_with_requirements(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+    def test_configure_direct_code_deploy_with_requirements(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path
+    ):
         """Test configuration with direct_code_deploy and requirements."""
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
@@ -75,7 +77,9 @@ def handler(payload):
             # Check that requirements_file was set (the notebook converts requirements list to file)
             assert "requirements_file" in call_args
 
-    def test_configure_direct_code_deploy_missing_runtime_type(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+    def test_configure_direct_code_deploy_missing_runtime_type(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path
+    ):
         """Test that direct_code_deploy deployment requires runtime_type."""
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")

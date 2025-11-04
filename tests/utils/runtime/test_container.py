@@ -666,7 +666,7 @@ CMD ["python", "/app/{{ agent_file }}"]
             with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.console") as mock_console:
                 with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container._print_success") as mock_success:
                     runtime = ContainerRuntime("auto")
-                    
+
                     assert runtime.runtime == "none"
                     assert runtime.has_local_runtime is False
                     mock_console.print.assert_called()
@@ -677,11 +677,11 @@ CMD ["python", "/app/{{ agent_file }}"]
         with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=False):
             with patch("bedrock_agentcore_starter_toolkit.utils.runtime.container._handle_warn") as mock_warn:
                 runtime = ContainerRuntime("docker")
-                
+
                 assert runtime.runtime == "none"
                 assert runtime.has_local_runtime is False
                 mock_warn.assert_called()
-                
+
                 # Check warning message contains expected content
                 warning_call = mock_warn.call_args[0][0]
                 assert "Docker is not installed" in warning_call

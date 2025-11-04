@@ -70,9 +70,9 @@ def create_s3_bucket(bucket_name: str, region: str, account_id: str) -> str:
             s3.create_bucket(Bucket=bucket_name, ExpectedBucketOwner=account_id)
         else:
             s3.create_bucket(
-                Bucket=bucket_name, 
+                Bucket=bucket_name,
                 CreateBucketConfiguration={"LocationConstraint": region},
-                ExpectedBucketOwner=account_id
+                ExpectedBucketOwner=account_id,
             )
 
         s3.put_bucket_lifecycle_configuration(

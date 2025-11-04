@@ -22,6 +22,6 @@ class TestCLICommon:
     def test_print_success(self, mock_console):
         """Test _print_success function."""
         from bedrock_agentcore_starter_toolkit.cli.common import _print_success
-        
+
         _print_success("Test success message")
         mock_console.print.assert_called_once_with("[green]✓[/green] Test success message")

@@ -1117,7 +1117,6 @@ def _launch_with_direct_code_deploy(
         force_rebuild_deps=force_rebuild_deps,
     )
 
-
     try:
         # Initialize variables for direct_code_deploy deployment
         bucket_name = None
