@@ -80,6 +80,14 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     if _is_legacy_format(data):
         return _transform_legacy_to_multi_agent(data)
 
+    # Add backwards compatibility for missing deployment_type field
+    if "agents" in data:
+        for agent_name, agent_data in data["agents"].items():
+            if "deployment_type" not in agent_data:
+                # Default to container for backwards compatibility with existing agents
+                agent_data["deployment_type"] = "container"
+                log.info("Using default deployment_type='container' for existing agent '%s'", agent_name)
+
     # New format
     try:
         config = BedrockAgentCoreConfigSchema.model_validate(data)
