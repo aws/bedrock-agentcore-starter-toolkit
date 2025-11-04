@@ -21,17 +21,23 @@ Options:
 - `--execution-role, -er TEXT`: IAM execution role ARN
 - `--code-build-execution-role, -cber TEXT`: CodeBuild execution role ARN (uses execution-role if not provided)
 - `--ecr, -ecr TEXT`: ECR repository name (use “auto” for automatic creation)
-- `--container-runtime, -ctr TEXT`: Container runtime
+- `--container-runtime, -ctr TEXT`: Container runtime (for container deployment only)
+- `--deployment-type, -dt TEXT`: Deployment type (direct_code_deploy or container, default: direct_code_deploy)
+- `--runtime, -rt TEXT`: Python runtime version for direct_code_deploy (PYTHON_3_10, PYTHON_3_11, PYTHON_3_12, PYTHON_3_13)
 - `--requirements-file, -rf TEXT`: Path to requirements file of agent
 - `--disable-otel, -do`: Disable OpenTelemetry
 - `--disable-memory, -dm`: Disable memory (skip memory setup entirely)
 - `--authorizer-config, -ac TEXT`: OAuth authorizer configuration as JSON string
 - `--request-header-allowlist, -rha TEXT`: Comma-separated list of allowed request headers
+- `--vpc`: Enable VPC networking mode (requires --subnets and --security-groups)
+- `--subnets TEXT`: Comma-separated list of subnet IDs (required with --vpc)
+- `--security-groups TEXT`: Comma-separated list of security group IDs (required with --vpc)
 - `--idle-timeout, -it INTEGER`: Seconds before idle session terminates (60-28800, default: 900)
 - `--max-lifetime, -ml INTEGER`: Maximum instance lifetime in seconds (60-28800, default: 28800)
 - `--verbose, -v`: Enable verbose output
 - `--region, -r TEXT`: AWS region
 - `--protocol, -p TEXT`: Agent server protocol (HTTP or MCP or A2A)
+- `--non-interactive, -ni`: Skip prompts; use defaults unless overridden
 - `--non-interactive, -ni`: Skip prompts; use defaults unless overridden
 - `--vpc`: Enable VPC networking mode for secure access to private resources
 - `--subnets TEXT`: Comma-separated list of subnet IDs (required when --vpc is enabled)
@@ -167,7 +173,7 @@ Options:
 - `--agent, -a TEXT`: Agent name
 - `--session-id, -s TEXT`: Session ID
 - `--bearer-token, -bt TEXT`: Bearer token for OAuth authentication
-- `--local, -l`: Send request to a running local container
+- `--local, -l`: Send request to a running local agent (works with both direct_code_deploy and container deployments)
 - `--user-id, -u TEXT`: User ID for authorization flows
 - `--headers TEXT`: Custom headers (format: ‘Header1:value,Header2:value2’)
 

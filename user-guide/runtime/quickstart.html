@@ -2305,7 +2305,7 @@ strands-agents
 <p>Important: Make sure port 8080 is free before starting.</p>
 </blockquote>
 <h2 id="step-4-configure-your-agent">Step 4: Configure Your Agent<a class="headerlink" href="#step-4-configure-your-agent" title="Permanent link">&para;</a></h2>
-<p>Configure and deploy your agent to AWS using the starter toolkit. The toolkit automatically creates the IAM execution role, container image, and Amazon Elastic Container Registry repository needed to host the agent in AgentCore Runtime. By default the toolkit hosts the agent in an AgentCore Runtime that is in the <code>us-west-2</code> AWS Region.</p>
+<p>Configure and deploy your agent to AWS using the starter toolkit. The toolkit automatically creates the IAM execution role, container image (for container deployment), or S3 bucket (for direct_code_deploy deployment), and other resources needed to host the agent in AgentCore Runtime. By default the toolkit uses direct_code_deploy deployment and hosts the agent in an AgentCore Runtime that is in the <code>us-west-2</code> AWS Region.</p>
 <p>Configure the agent. Use the default values:</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>my_agent.py
 </code></pre></div>
@@ -2331,8 +2331,8 @@ strands-agents
 </code></pre></div>
 <p>This command:</p>
 <ul>
-<li>Builds your container using AWS CodeBuild (no Docker required locally)</li>
-<li>Creates necessary AWS resources (ECR repository, IAM roles, etc.)</li>
+<li>Builds your container using AWS CodeBuild (no Docker required locally) for container deployment, or packages Python code for direct_code_deploy deployment (default)</li>
+<li>Creates necessary AWS resources (ECR repository for containers, S3 bucket for direct_code_deploy, IAM roles, etc.)</li>
 <li>Deploys your agent to AgentCore Runtime</li>
 <li>Creates memory resources if you configured memory during the setup</li>
 <li>Configures CloudWatch logging</li>
@@ -2413,11 +2413,11 @@ strands-agents
 </tr>
 <tr>
 <td><strong>Container Images</strong></td>
-<td>ECR → Repositories → <code>bedrock-agentcore-{agent-name}</code></td>
+<td>ECR → Repositories → <code>bedrock-agentcore-{agent-name}</code> (container deployment only)</td>
 </tr>
 <tr>
-<td><strong>Build Logs</strong></td>
-<td>CodeBuild → Build history</td>
+<td><strong>S3 Deployment</strong></td>
+<td>S3 → Buckets → Your deployment bucket → <code>{agent-name}/deployment.zip</code></td>
 </tr>
 <tr>
 <td><strong>IAM Role</strong></td>
@@ -2443,7 +2443,7 @@ Verify your AWS credentials and permissions:
 
 You can ignore this warning:
 
-- **Ignore this!** Default deployment uses CodeBuild (no Docker needed)
+- **Ignore this!** Default deployment uses direct_code_deploy (no Docker needed), or CodeBuild for container deployment
 - Only install Docker/Finch/Podman if you want to use `--local` or `--local-build` flags
 
 </details>
@@ -2511,9 +2511,9 @@ Check build logs and permissions:
 <p>The starter toolkit has advanced configuration options for different deployment modes and custom IAM roles. For more information, see <a href="https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/cli.html">Runtime commands for the starter toolkit</a>.</p>
 <h3 id="deployment-modes">Deployment Modes<a class="headerlink" href="#deployment-modes" title="Permanent link">&para;</a></h3>
 <p>Choose the right deployment approach for your needs:</p>
-<p><strong>Default: CodeBuild + Cloud Runtime (RECOMMENDED)</strong></p>
-<p>Suitable for production, managed environments, teams without Docker:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w">  </span><span class="c1"># Uses CodeBuild (no Docker needed)</span>
+<p><strong>Default: Direct Code Deploy Deployment (RECOMMENDED)</strong></p>
+<p>Suitable for most use cases, no Docker required:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w">  </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
 </code></pre></div>
 <p><strong>Local Development</strong></p>
 <p>Suitable for development, rapid iteration, debugging:</p>

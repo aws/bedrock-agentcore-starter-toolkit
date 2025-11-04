@@ -600,9 +600,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cloud-build-recommended" class="md-nav__link">
+  <a href="#direct-code-deploy-deployment-default-recommended" class="md-nav__link">
     <span class="md-ellipsis">
-      🚀 Cloud Build (RECOMMENDED)
+      🚀 Direct Code Deploy Deployment (DEFAULT &amp; RECOMMENDED)
     </span>
   </a>
   
@@ -2107,9 +2107,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cloud-build-recommended" class="md-nav__link">
+  <a href="#direct-code-deploy-deployment-default-recommended" class="md-nav__link">
     <span class="md-ellipsis">
-      🚀 Cloud Build (RECOMMENDED)
+      🚀 Direct Code Deploy Deployment (DEFAULT &amp; RECOMMENDED)
     </span>
   </a>
   
@@ -2305,22 +2305,21 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 - <code>@app.ping</code> - Custom health checks
 - <code>@app.async_task</code> - Background processing</p>
 <h2 id="deployment-modes">Deployment Modes<a class="headerlink" href="#deployment-modes" title="Permanent link">&para;</a></h2>
-<h3 id="cloud-build-recommended">🚀 Cloud Build (RECOMMENDED)<a class="headerlink" href="#cloud-build-recommended" title="Permanent link">&para;</a></h3>
+<h3 id="direct-code-deploy-deployment-default-recommended">🚀 Direct Code Deploy Deployment (DEFAULT &amp; RECOMMENDED)<a class="headerlink" href="#direct-code-deploy-deployment-default-recommended" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>my_agent.py
-agentcore<span class="w"> </span>launch<span class="w">                    </span><span class="c1"># Uses CodeBuild - no Docker needed</span>
+agentcore<span class="w"> </span>launch<span class="w">                    </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
 </code></pre></div>
-- <strong>No Docker required</strong> - builds in the cloud
-- <strong>Production-ready</strong> - standardized ARM64 containers
-- <strong>Works everywhere</strong> - SageMaker Notebooks, Cloud9, laptops</p>
+- <strong>Works everywhere</strong> - SageMaker Notebooks, Cloud9, laptops
+- <strong>Production-ready</strong> - managed Python runtime environment</p>
 <h3 id="local-development">💻 Local Development<a class="headerlink" href="#local-development" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local<span class="w">           </span><span class="c1"># Build and run locally</span>
 </code></pre></div>
-- <strong>Fast iteration</strong> - immediate feedback and debugging
-- <strong>Requires:</strong> Docker, Finch, or Podman</p>
+- <strong>Fast iteration</strong> - immediate feedback and debugging</p>
 <h3 id="hybrid-build">🔧 Hybrid Build<a class="headerlink" href="#hybrid-build" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build<span class="w">     </span><span class="c1"># Build locally, deploy to cloud</span>
 </code></pre></div>
-- <strong>Custom builds</strong> with cloud deployment
+- <strong>For complex scenarios</strong> - large apps, system dependencies
+- <strong>Requires:</strong> Docker for local development
 - <strong>Requires:</strong> Docker, Finch, or Podman</p>
 <h2 id="agent-development-patterns">Agent Development Patterns<a class="headerlink" href="#agent-development-patterns" title="Permanent link">&para;</a></h2>
 <h3 id="synchronous-agents">Synchronous Agents<a class="headerlink" href="#synchronous-agents" title="Permanent link">&para;</a></h3>

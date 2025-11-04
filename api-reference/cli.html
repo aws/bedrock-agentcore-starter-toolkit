@@ -2318,7 +2318,13 @@
 <p><code>--ecr, -ecr TEXT</code>: ECR repository name (use “auto” for automatic creation)</p>
 </li>
 <li>
-<p><code>--container-runtime, -ctr TEXT</code>: Container runtime</p>
+<p><code>--container-runtime, -ctr TEXT</code>: Container runtime (for container deployment only)</p>
+</li>
+<li>
+<p><code>--deployment-type, -dt TEXT</code>: Deployment type (direct_code_deploy or container, default: direct_code_deploy)</p>
+</li>
+<li>
+<p><code>--runtime, -rt TEXT</code>: Python runtime version for direct_code_deploy (PYTHON_3_10, PYTHON_3_11, PYTHON_3_12, PYTHON_3_13)</p>
 </li>
 <li>
 <p><code>--requirements-file, -rf TEXT</code>: Path to requirements file of agent</p>
@@ -2336,6 +2342,15 @@
 <p><code>--request-header-allowlist, -rha TEXT</code>: Comma-separated list of allowed request headers</p>
 </li>
 <li>
+<p><code>--vpc</code>: Enable VPC networking mode (requires --subnets and --security-groups)</p>
+</li>
+<li>
+<p><code>--subnets TEXT</code>: Comma-separated list of subnet IDs (required with --vpc)</p>
+</li>
+<li>
+<p><code>--security-groups TEXT</code>: Comma-separated list of security group IDs (required with --vpc)</p>
+</li>
+<li>
 <p><code>--idle-timeout, -it INTEGER</code>: Seconds before idle session terminates (60-28800, default: 900)</p>
 </li>
 <li>
@@ -2349,6 +2364,9 @@
 </li>
 <li>
 <p><code>--protocol, -p TEXT</code>: Agent server protocol (HTTP or MCP or A2A)</p>
+</li>
+<li>
+<p><code>--non-interactive, -ni</code>: Skip prompts; use defaults unless overridden</p>
 </li>
 <li>
 <p><code>--non-interactive, -ni</code>: Skip prompts; use defaults unless overridden</p>
@@ -2499,7 +2517,7 @@ agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build
 <p><code>--bearer-token, -bt TEXT</code>: Bearer token for OAuth authentication</p>
 </li>
 <li>
-<p><code>--local, -l</code>: Send request to a running local container</p>
+<p><code>--local, -l</code>: Send request to a running local agent (works with both direct_code_deploy and container deployments)</p>
 </li>
 <li>
 <p><code>--user-id, -u TEXT</code>: User ID for authorization flows</p>

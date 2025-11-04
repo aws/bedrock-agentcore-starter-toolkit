@@ -7050,6 +7050,51 @@ class MemorySessionManager:
             logger.error("  ❌ Error listing sessions: %s", e)
             raise
 
+    def delete_all_long_term_memories_in_namespace(self, namespace: str) -> Dict[str, Any]:
+        """Delete all long-term memory records within a specific namespace.
+
+        This method retrieves all memory records in the specified namespace and performs
+        batch deletion operations using the AWS Bedrock AgentCore API, processing in chunks of 100.
+
+        Args:
+            namespace: The namespace prefix to delete memories from
+
+        Returns:
+            Dictionary containing batch deletion results with successfulRecords and failedRecords
+        """
+        logger.info("🗑️ Deleting all long-term memories in namespace '%s'...", namespace)
+
+        # Retrieve all memory records in the specified namespace
+        memory_records = self.list_long_term_memory_records(namespace_prefix=namespace)
+        logger.info("  -> Found %d memory records to delete", len(memory_records))
+
+        if not memory_records:
+            logger.info("  ✅ No records found to delete")
+            return {"successfulRecords": [], "failedRecords": []}
+
+        # Format record IDs for batch deletion API
+        memory_record_ids = [{"memoryRecordId": record["memoryRecordId"]} for record in memory_records]
+
+        all_successful = []
+        all_failed = []
+
+        # Process in chunks of 100
+        for i in range(0, len(memory_record_ids), 100):
+            chunk = memory_record_ids[i : i + 100]
+            try:
+                result = self._data_plane_client.batch_delete_memory_records(memoryId=self._memory_id, records=chunk)
+                all_successful.extend(result.get("successfulRecords", []))
+                all_failed.extend(result.get("failedRecords", []))
+            except ClientError as e:
+                logger.error("  ❌ Error deleting chunk: %s", e)
+                raise
+
+        logger.info("  ✅ Successfully deleted %d records", len(all_successful))
+        if all_failed:
+            logger.warning("  ⚠️ Failed to delete %d records", len(all_failed))
+
+        return {"successfulRecords": all_successful, "failedRecords": all_failed}
+
     def create_memory_session(self, actor_id: str, session_id: str = None) -> "MemorySession":
         """Creates a new MemorySession instance."""
         session_id = session_id or str(uuid.uuid4())
@@ -7356,6 +7401,73 @@ def create_memory_session(self, actor_id: str, session_id: str = None) -> "Memor
     session_id = session_id or str(uuid.uuid4())
     logger.info("💬 Creating new conversation for actor '%s' in session '%s'...", actor_id, session_id)
     return MemorySession(memory_id=self._memory_id, actor_id=actor_id, session_id=session_id, manager=self)
+```
+
+#### `delete_all_long_term_memories_in_namespace(namespace)`
+
+Delete all long-term memory records within a specific namespace.
+
+This method retrieves all memory records in the specified namespace and performs batch deletion operations using the AWS Bedrock AgentCore API, processing in chunks of 100.
+
+Parameters:
+
+| Name        | Type  | Description                                  | Default    |
+| ----------- | ----- | -------------------------------------------- | ---------- |
+| `namespace` | `str` | The namespace prefix to delete memories from | *required* |
+
+Returns:
+
+| Type             | Description                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `Dict[str, Any]` | Dictionary containing batch deletion results with successfulRecords and failedRecords |
+
+Source code in `bedrock_agentcore/memory/session.py`
+
+```
+def delete_all_long_term_memories_in_namespace(self, namespace: str) -> Dict[str, Any]:
+    """Delete all long-term memory records within a specific namespace.
+
+    This method retrieves all memory records in the specified namespace and performs
+    batch deletion operations using the AWS Bedrock AgentCore API, processing in chunks of 100.
+
+    Args:
+        namespace: The namespace prefix to delete memories from
+
+    Returns:
+        Dictionary containing batch deletion results with successfulRecords and failedRecords
+    """
+    logger.info("🗑️ Deleting all long-term memories in namespace '%s'...", namespace)
+
+    # Retrieve all memory records in the specified namespace
+    memory_records = self.list_long_term_memory_records(namespace_prefix=namespace)
+    logger.info("  -> Found %d memory records to delete", len(memory_records))
+
+    if not memory_records:
+        logger.info("  ✅ No records found to delete")
+        return {"successfulRecords": [], "failedRecords": []}
+
+    # Format record IDs for batch deletion API
+    memory_record_ids = [{"memoryRecordId": record["memoryRecordId"]} for record in memory_records]
+
+    all_successful = []
+    all_failed = []
+
+    # Process in chunks of 100
+    for i in range(0, len(memory_record_ids), 100):
+        chunk = memory_record_ids[i : i + 100]
+        try:
+            result = self._data_plane_client.batch_delete_memory_records(memoryId=self._memory_id, records=chunk)
+            all_successful.extend(result.get("successfulRecords", []))
+            all_failed.extend(result.get("failedRecords", []))
+        except ClientError as e:
+            logger.error("  ❌ Error deleting chunk: %s", e)
+            raise
+
+    logger.info("  ✅ Successfully deleted %d records", len(all_successful))
+    if all_failed:
+        logger.warning("  ⚠️ Failed to delete %d records", len(all_failed))
+
+    return {"successfulRecords": all_successful, "failedRecords": all_failed}
 ```
 
 #### `delete_event(actor_id, session_id, event_id)`
