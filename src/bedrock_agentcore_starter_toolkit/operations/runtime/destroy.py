@@ -80,7 +80,7 @@ def destroy_bedrock_agentcore(
         if agent_config.deployment_type == "container":
             _destroy_codebuild_project(session, agent_config, result, dry_run)
         else:
-            log.info("Skipping CodeBuild cleanup for code_zip deployment")
+            log.info("Skipping CodeBuild cleanup for direct_code_deploy deployment")
 
         # 4.5. Remove S3 deployment artifacts
         _destroy_s3_artifacts(session, agent_config, result, dry_run)
@@ -101,7 +101,7 @@ def destroy_bedrock_agentcore(
         if agent_config.deployment_type == "container":
             _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
         else:
-            log.info("Skipping CodeBuild IAM role cleanup for code_zip deployment")
+            log.info("Skipping CodeBuild IAM role cleanup for direct_code_deploy deployment")
 
         # 7. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
@@ -422,11 +422,11 @@ def _destroy_s3_artifacts(
     result: DestroyResult,
     dry_run: bool,
 ) -> None:
-    """Remove S3 deployment artifacts (both code_zip and container artifacts)."""
+    """Remove S3 deployment artifacts (both direct_code_deploy and container artifacts)."""
     try:
         s3_client = session.client("s3", region_name=agent_config.aws.region)
 
-        # Get bucket name from either CodeBuild config or AWS config (for code_zip)
+        # Get bucket name from either CodeBuild config or AWS config (for direct_code_deploy)
         bucket = None
         if agent_config.codebuild and agent_config.codebuild.source_bucket:
             bucket = agent_config.codebuild.source_bucket
@@ -443,7 +443,7 @@ def _destroy_s3_artifacts(
         # Always try to delete both artifact types (idempotent - no error if not found)
         # User might have switched between deployment types
         artifacts_to_delete = [
-            f"{agent_name}/deployment.zip",  # code_zip artifact
+            f"{agent_name}/deployment.zip",  # direct_code_deploy artifact
             f"{agent_name}/source.zip",  # container artifact
         ]
 

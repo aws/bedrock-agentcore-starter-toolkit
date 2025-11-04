@@ -203,14 +203,14 @@ class CodeZipPackager:
         temp_dir = Path(tempfile.mkdtemp(prefix=f"agentcore_{agent_name}_"))
 
         try:
-            code_zip = temp_dir / "code.zip"
+            direct_code_deploy = temp_dir / "code.zip"
             deployment_zip = temp_dir / "deployment.zip"
 
             log.info("Packaging source code...")
-            self._build_code_zip(source_dir, code_zip)
+            self._build_direct_code_deploy(source_dir, direct_code_deploy)
 
             log.info("Creating deployment package...")
-            self._merge_zips(cache.dependencies_zip if has_dependencies else None, code_zip, deployment_zip)
+            self._merge_zips(cache.dependencies_zip if has_dependencies else None, direct_code_deploy, deployment_zip)
 
             # Validate size
             size_mb = deployment_zip.stat().st_size / (1024 * 1024)
@@ -408,7 +408,7 @@ class CodeZipPackager:
         log.info("Building dependencies for Linux ARM64 Runtime (manylinux2014_aarch64)")
         return True
 
-    def _build_code_zip(self, source_dir: Path, output_zip: Path) -> None:
+    def _build_direct_code_deploy(self, source_dir: Path, output_zip: Path) -> None:
         """Build code.zip with source files (respects ignore patterns).
 
         Args:
@@ -439,12 +439,12 @@ class CodeZipPackager:
 
                     zipf.write(Path(root) / file, file_rel)
 
-    def _merge_zips(self, dependencies_zip: Optional[Path], code_zip: Path, output_zip: Path) -> None:
+    def _merge_zips(self, dependencies_zip: Optional[Path], direct_code_deploy: Path, output_zip: Path) -> None:
         """Merge dependencies and code layers into deployment.zip.
 
         Args:
             dependencies_zip: Path to dependencies.zip (optional)
-            code_zip: Path to code.zip
+            direct_code_deploy: Path to code.zip
             output_zip: Path to output deployment.zip
         """
         with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as out:
@@ -455,7 +455,7 @@ class CodeZipPackager:
                         out.writestr(item, dep.read(item))
 
             # Layer 2: Code (overwrites conflicts - user code takes precedence)
-            with zipfile.ZipFile(code_zip, "r") as code:
+            with zipfile.ZipFile(direct_code_deploy, "r") as code:
                 for item in code.namelist():
                     out.writestr(item, code.read(item))
 

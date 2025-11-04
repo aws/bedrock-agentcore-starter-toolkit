@@ -1,4 +1,4 @@
-"""Unit tests for Bedrock AgentCore notebook interface with code_zip deployment."""
+"""Unit tests for Bedrock AgentCore notebook interface with direct_code_deploy deployment."""
 
 from unittest.mock import Mock, patch
 
@@ -8,10 +8,10 @@ from bedrock_agentcore_starter_toolkit.notebook.runtime.bedrock_agentcore import
 
 
 class TestBedrockAgentCoreCodeZip:
-    """Test class for Bedrock AgentCore notebook interface with code_zip deployment."""
+    """Test class for Bedrock AgentCore notebook interface with direct_code_deploy deployment."""
 
-    def test_configure_code_zip_success(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
-        """Test successful configuration with code_zip deployment."""
+    def test_configure_direct_code_deploy_success(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+        """Test successful configuration with direct_code_deploy deployment."""
         # Create agent file
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("""
@@ -35,18 +35,18 @@ def handler(payload):
             bedrock_agentcore.configure(
                 entrypoint=str(agent_file),
                 execution_role="arn:aws:iam::123456789012:role/TestRole",
-                deployment_type="code_zip",
+                deployment_type="direct_code_deploy",
                 runtime_type="PYTHON_3_10",
             )
 
             # Verify configure was called with correct parameters
             mock_configure.assert_called_once()
             call_args = mock_configure.call_args[1]
-            assert call_args["deployment_type"] == "code_zip"
+            assert call_args["deployment_type"] == "direct_code_deploy"
             assert call_args["runtime_type"] == "PYTHON_3_10"
 
-    def test_configure_code_zip_with_requirements(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
-        """Test configuration with code_zip and requirements."""
+    def test_configure_direct_code_deploy_with_requirements(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+        """Test configuration with direct_code_deploy and requirements."""
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
 
@@ -63,35 +63,35 @@ def handler(payload):
                 entrypoint=str(agent_file),
                 execution_role="test-role",
                 requirements=["requests", "boto3", "pandas"],
-                deployment_type="code_zip",
+                deployment_type="direct_code_deploy",
                 runtime_type="PYTHON_3_11",
             )
 
             # Verify configure was called with correct parameters
             mock_configure.assert_called_once()
             call_args = mock_configure.call_args[1]
-            assert call_args["deployment_type"] == "code_zip"
+            assert call_args["deployment_type"] == "direct_code_deploy"
             assert call_args["runtime_type"] == "PYTHON_3_11"
             # Check that requirements_file was set (the notebook converts requirements list to file)
             assert "requirements_file" in call_args
 
-    def test_configure_code_zip_missing_runtime_type(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
-        """Test that code_zip deployment requires runtime_type."""
+    def test_configure_direct_code_deploy_missing_runtime_type(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+        """Test that direct_code_deploy deployment requires runtime_type."""
         agent_file = tmp_path / "test_agent.py"
         agent_file.write_text("# test agent")
 
         bedrock_agentcore = Runtime()
 
-        with pytest.raises(ValueError, match="runtime_type is required when deployment_type is 'code_zip'"):
+        with pytest.raises(ValueError, match="runtime_type is required when deployment_type is 'direct_code_deploy'"):
             bedrock_agentcore.configure(
                 entrypoint=str(agent_file),
                 execution_role="test-role",
-                deployment_type="code_zip",
+                deployment_type="direct_code_deploy",
                 # Missing runtime_type
             )
 
-    def test_launch_code_zip_local_mode(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
-        """Test local launch with code_zip deployment."""
+    def test_launch_direct_code_deploy_local_mode(self, mock_bedrock_agentcore_app, mock_boto3_clients, tmp_path):
+        """Test local launch with direct_code_deploy deployment."""
         bedrock_agentcore = Runtime()
         bedrock_agentcore._config_path = tmp_path / ".bedrock_agentcore.yaml"
 

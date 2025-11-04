@@ -194,11 +194,11 @@ class BedrockAgentCoreAgentSchema(BaseModel):
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
     entrypoint: str = Field(..., description="Entrypoint file path (e.g., 'agent.py' or 'agent.py:handler')")
-    deployment_type: Literal["container", "code_zip"] = Field(
-        default="code_zip", description="Deployment artifact type: container (Docker) or code_zip (Lambda-style)"
+    deployment_type: Literal["container", "direct_code_deploy"] = Field(
+        default="direct_code_deploy", description="Deployment artifact type: container (Docker) or direct_code_deploy (Lambda-style)"
     )
     runtime_type: Optional[str] = Field(
-        default=None, description="Managed runtime version for code_zip (e.g., 'PYTHON_3_10', 'PYTHON_3_11')"
+        default=None, description="Managed runtime version for direct_code_deploy (e.g., 'PYTHON_3_10', 'PYTHON_3_11')"
     )
     platform: str = Field(default="linux/amd64", description="Target platform (for container deployments)")
     container_runtime: Optional[str] = Field(

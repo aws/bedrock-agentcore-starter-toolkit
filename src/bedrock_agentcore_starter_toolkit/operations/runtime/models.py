@@ -16,7 +16,7 @@ class ConfigureResult(BaseModel):
     dockerfile_path: Optional[Path] = Field(None, description="Path to generated Dockerfile")
     dockerignore_path: Optional[Path] = Field(None, description="Path to generated .dockerignore")
     runtime: Optional[str] = Field(None, description="Container runtime name")
-    runtime_type: Optional[str] = Field(None, description="Python runtime version for code_zip")
+    runtime_type: Optional[str] = Field(None, description="Python runtime version for direct_code_deploy")
     region: str = Field(..., description="AWS region")
     account_id: str = Field(..., description="AWS account ID")
     execution_role: Optional[str] = Field(None, description="AWS execution role ARN")

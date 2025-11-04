@@ -153,11 +153,6 @@ style = [
     ["disabled", "fg:#858585 italic"]
 ]
 
-[tool.uv.workspace]
-members = [
-    "agent_test",
-]
-
 [dependency-groups]
 dev = [
     "moto>=5.1.6",

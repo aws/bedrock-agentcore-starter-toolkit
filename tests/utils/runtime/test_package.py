@@ -318,7 +318,7 @@ class TestCodeZipPackager:
         # Always returns True for AgentCore Runtime
         assert packager._should_cross_compile() is True
 
-    def test_build_code_zip(self, tmp_path):
+    def test_build_direct_code_deploy(self, tmp_path):
         """Test code zip creation."""
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -336,7 +336,7 @@ class TestCodeZipPackager:
         output_zip = tmp_path / "code.zip"
 
         packager = CodeZipPackager()
-        packager._build_code_zip(source_dir, output_zip)
+        packager._build_direct_code_deploy(source_dir, output_zip)
 
         with zipfile.ZipFile(output_zip, "r") as zf:
             names = zf.namelist()
@@ -347,7 +347,7 @@ class TestCodeZipPackager:
             assert "test.pyc" not in names
             assert "__pycache__/agent.cpython-310.pyc" not in names
 
-    def test_build_code_zip_with_subdirs(self, tmp_path):
+    def test_build_direct_code_deploy_with_subdirs(self, tmp_path):
         """Test code zip with subdirectories."""
         source_dir = tmp_path / "source"
         source_dir.mkdir()
@@ -361,7 +361,7 @@ class TestCodeZipPackager:
         output_zip = tmp_path / "code.zip"
 
         packager = CodeZipPackager()
-        packager._build_code_zip(source_dir, output_zip)
+        packager._build_direct_code_deploy(source_dir, output_zip)
 
         with zipfile.ZipFile(output_zip, "r") as zf:
             names = zf.namelist()
@@ -377,14 +377,14 @@ class TestCodeZipPackager:
             zf.writestr("requests/__init__.py", "# requests")
 
         # Create code.zip
-        code_zip = tmp_path / "code.zip"
-        with zipfile.ZipFile(code_zip, "w") as zf:
+        direct_code_deploy = tmp_path / "code.zip"
+        with zipfile.ZipFile(direct_code_deploy, "w") as zf:
             zf.writestr("agent.py", "print('hello')")
 
         output_zip = tmp_path / "deployment.zip"
 
         packager = CodeZipPackager()
-        packager._merge_zips(deps_zip, code_zip, output_zip)
+        packager._merge_zips(deps_zip, direct_code_deploy, output_zip)
 
         with zipfile.ZipFile(output_zip, "r") as zf:
             names = zf.namelist()
@@ -401,14 +401,14 @@ class TestCodeZipPackager:
             zf.writestr("config.py", "SETTING = 'dependency'")
 
         # Create code.zip with same file
-        code_zip = tmp_path / "code.zip"
-        with zipfile.ZipFile(code_zip, "w") as zf:
+        direct_code_deploy = tmp_path / "code.zip"
+        with zipfile.ZipFile(direct_code_deploy, "w") as zf:
             zf.writestr("config.py", "SETTING = 'user'")
 
         output_zip = tmp_path / "deployment.zip"
 
         packager = CodeZipPackager()
-        packager._merge_zips(deps_zip, code_zip, output_zip)
+        packager._merge_zips(deps_zip, direct_code_deploy, output_zip)
 
         with zipfile.ZipFile(output_zip, "r") as zf:
             content = zf.read("config.py").decode()
@@ -417,14 +417,14 @@ class TestCodeZipPackager:
 
     def test_merge_zips_without_dependencies(self, tmp_path):
         """Test merging with no dependencies."""
-        code_zip = tmp_path / "code.zip"
-        with zipfile.ZipFile(code_zip, "w") as zf:
+        direct_code_deploy = tmp_path / "code.zip"
+        with zipfile.ZipFile(direct_code_deploy, "w") as zf:
             zf.writestr("agent.py", "print('hello')")
 
         output_zip = tmp_path / "deployment.zip"
 
         packager = CodeZipPackager()
-        packager._merge_zips(None, code_zip, output_zip)
+        packager._merge_zips(None, direct_code_deploy, output_zip)
 
         with zipfile.ZipFile(output_zip, "r") as zf:
             names = zf.namelist()

@@ -27,16 +27,16 @@ def get_agent_log_paths(
     Args:
         agent_id: The agent ID
         endpoint_name: The endpoint name (defaults to "DEFAULT")
-        deployment_type: The deployment type ("code_zip" or "container")
-        session_id: The session ID (for code_zip deployments)
+        deployment_type: The deployment type ("direct_code_deploy" or "container")
+        session_id: The session ID (for direct_code_deploy deployments)
 
     Returns:
         Tuple of (runtime_log_group, otel_log_group)
     """
     endpoint_name = endpoint_name or "DEFAULT"
 
-    # For code_zip deployments, adjust log stream prefix
-    if deployment_type == "code_zip":
+    # For direct_code_deploy deployments, adjust log stream prefix
+    if deployment_type == "direct_code_deploy":
         if session_id:
             # Specific session logs
             log_stream_prefix = f"runtime-logs-{session_id}]"

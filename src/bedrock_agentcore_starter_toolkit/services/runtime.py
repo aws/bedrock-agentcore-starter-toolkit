@@ -149,8 +149,8 @@ class BedrockAgentCoreClient:
         self,
         agent_name: str,
         execution_role_arn: str,
-        # Code zip parameters (for code_zip deployment)
-        deployment_type: str = "code_zip",
+        # Code zip parameters (for direct_code_deploy deployment)
+        deployment_type: str = "direct_code_deploy",
         code_s3_bucket: Optional[str] = None,
         code_s3_key: Optional[str] = None,
         runtime_type: Optional[str] = None,
@@ -167,18 +167,18 @@ class BedrockAgentCoreClient:
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Create new agent with either code_zip or container deployment.
+        """Create new agent with either direct_code_deploy or container deployment.
 
         Args:
             agent_name: Name of the agent
             execution_role_arn: IAM role ARN for execution
-            deployment_type: "code_zip" or "container"
-            code_s3_bucket: S3 bucket for code zip (code_zip only)
-            code_s3_key: S3 key for code zip (code_zip only)
-            runtime_type: Python runtime version (code_zip only, e.g., "PYTHON_3_10")
-            entrypoint_array: Entrypoint as array (code_zip only)
+            deployment_type: "direct_code_deploy" or "container"
+            code_s3_bucket: S3 bucket for code zip (direct_code_deploy only)
+            code_s3_key: S3 key for code zip (direct_code_deploy only)
+            runtime_type: Python runtime version (direct_code_deploy only, e.g., "PYTHON_3_10")
+            entrypoint_array: Entrypoint as array (direct_code_deploy only)
                 Examples: ["agent.py"] or ["opentelemetry-instrument", "agent.py"]
-            entrypoint_handler: Handler function name (code_zip only, e.g., "app")
+            entrypoint_handler: Handler function name (direct_code_deploy only, e.g., "app")
             image_uri: Container image URI (container only)
             network_config: Network configuration
             authorizer_config: Authorizer configuration
@@ -191,14 +191,14 @@ class BedrockAgentCoreClient:
         Returns:
             Dict with agent id and arn
         """
-        if deployment_type == "code_zip":
-            self.logger.info("Creating agent '%s' with code_zip deployment (runtime: %s)", agent_name, runtime_type)
+        if deployment_type == "direct_code_deploy":
+            self.logger.info("Creating agent '%s' with direct_code_deploy deployment (runtime: %s)", agent_name, runtime_type)
         else:
             self.logger.info("Creating agent '%s' with container deployment (image: %s)", agent_name, image_uri)
 
         try:
             # Build artifact configuration based on deployment type
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 artifact_config = {
                     "codeConfiguration": {
                         "code": {"s3": {"bucket": code_s3_bucket, "prefix": code_s3_key}},
@@ -306,8 +306,8 @@ class BedrockAgentCoreClient:
         self,
         agent_id: str,
         execution_role_arn: str,
-        # Code zip parameters (for code_zip deployment)
-        deployment_type: str = "code_zip",
+        # Code zip parameters (for direct_code_deploy deployment)
+        deployment_type: str = "direct_code_deploy",
         code_s3_bucket: Optional[str] = None,
         code_s3_key: Optional[str] = None,
         runtime_type: Optional[str] = None,
@@ -323,18 +323,18 @@ class BedrockAgentCoreClient:
         env_vars: Optional[Dict] = None,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Update existing agent with either code_zip or container deployment.
+        """Update existing agent with either direct_code_deploy or container deployment.
 
         Args:
             agent_id: Agent ID to update
             execution_role_arn: IAM role ARN for execution
-            deployment_type: "code_zip" or "container"
-            code_s3_bucket: S3 bucket for code zip (code_zip only)
-            code_s3_key: S3 key for code zip (code_zip only)
-            runtime_type: Python runtime version (code_zip only)
-            entrypoint_array: Entrypoint as array (code_zip only)
+            deployment_type: "direct_code_deploy" or "container"
+            code_s3_bucket: S3 bucket for code zip (direct_code_deploy only)
+            code_s3_key: S3 key for code zip (direct_code_deploy only)
+            runtime_type: Python runtime version (direct_code_deploy only)
+            entrypoint_array: Entrypoint as array (direct_code_deploy only)
                 Examples: ["agent.py"] or ["opentelemetry-instrument", "agent.py"]
-            entrypoint_handler: Handler function name (code_zip only)
+            entrypoint_handler: Handler function name (direct_code_deploy only)
             image_uri: Container image URI (container only)
             network_config: Network configuration
             authorizer_config: Authorizer configuration
@@ -346,14 +346,14 @@ class BedrockAgentCoreClient:
         Returns:
             Dict with agent id and arn
         """
-        if deployment_type == "code_zip":
-            self.logger.info("Updating agent ID '%s' with code_zip deployment (runtime: %s)", agent_id, runtime_type)
+        if deployment_type == "direct_code_deploy":
+            self.logger.info("Updating agent ID '%s' with direct_code_deploy deployment (runtime: %s)", agent_id, runtime_type)
         else:
             self.logger.info("Updating agent ID '%s' with container deployment (image: %s)", agent_id, image_uri)
 
         try:
             # Build artifact configuration based on deployment type
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 artifact_config = {
                     "codeConfiguration": {
                         "code": {"s3": {"bucket": code_s3_bucket, "prefix": code_s3_key}},
@@ -443,7 +443,7 @@ class BedrockAgentCoreClient:
         agent_name: str,
         execution_role_arn: str,
         # Code zip parameters
-        deployment_type: str = "code_zip",
+        deployment_type: str = "direct_code_deploy",
         code_s3_bucket: Optional[str] = None,
         code_s3_key: Optional[str] = None,
         runtime_type: Optional[str] = None,
@@ -460,7 +460,7 @@ class BedrockAgentCoreClient:
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
     ) -> Dict[str, str]:
-        """Create or update agent with either code_zip or container deployment."""
+        """Create or update agent with either direct_code_deploy or container deployment."""
         if agent_id:
             return self.update_agent(
                 agent_id,

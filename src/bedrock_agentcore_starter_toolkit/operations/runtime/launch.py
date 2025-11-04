@@ -593,20 +593,20 @@ def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: Li
         log.error("Error checking ENIs: %s", e)
 
 
-def _launch_code_zip_local(
+def _launch_direct_code_deploy_local(
     agent_config: BedrockAgentCoreAgentSchema,
     env_vars: Optional[dict],
 ) -> LaunchResult:
-    """Prepare for local code_zip execution using uv python."""
+    """Prepare for local direct_code_deploy execution using uv python."""
     import shutil
     from pathlib import Path
 
-    log.info("Preparing local code_zip execution for agent '%s'", agent_config.name)
+    log.info("Preparing local direct_code_deploy execution for agent '%s'", agent_config.name)
 
     # Validate prerequisites
     if not shutil.which("uv"):
         raise RuntimeError(
-            "uv is required for local code_zip execution but was not found.\n"
+            "uv is required for local direct_code_deploy execution but was not found.\n"
             "Install uv: https://docs.astral.sh/uv/getting-started/installation/"
         )
 
@@ -642,8 +642,8 @@ def _launch_code_zip_local(
     port = int(local_env.get("PORT", "8080"))
 
     return LaunchResult(
-        mode="local_code_zip",
-        tag=f"code_zip-{agent_config.name}",
+        mode="local_direct_code_deploy",
+        tag=f"direct_code_deploy-{agent_config.name}",
         port=port,
         env_vars=local_env,
     )
@@ -670,7 +670,7 @@ def launch_bedrock_agentcore(
         auto_update_on_conflict: Whether to automatically update when agent already exists (default: False)
         console: Optional Rich Console instance for progress output. Used to maintain
                 output hierarchy with CLI status contexts.
-        force_rebuild_deps: Force rebuild of dependencies (code_zip deployments only)
+        force_rebuild_deps: Force rebuild of dependencies (direct_code_deploy deployments only)
 
     Returns:
         LaunchResult model with launch details
@@ -699,8 +699,8 @@ def launch_bedrock_agentcore(
     if not use_codebuild:
         _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
     # Route based on deployment type for cloud deployments
-    if not local and agent_config.deployment_type == "code_zip":
-        return _launch_with_code_zip(
+    if not local and agent_config.deployment_type == "direct_code_deploy":
+        return _launch_with_direct_code_deploy(
             config_path=config_path,
             agent_config=agent_config,
             project_config=project_config,
@@ -709,9 +709,9 @@ def launch_bedrock_agentcore(
             force_rebuild_deps=force_rebuild_deps,
         )
 
-    # Route for local code_zip deployment
-    if local and agent_config.deployment_type == "code_zip":
-        return _launch_code_zip_local(
+    # Route for local direct_code_deploy deployment
+    if local and agent_config.deployment_type == "direct_code_deploy":
+        return _launch_direct_code_deploy_local(
             agent_config=agent_config,
             env_vars=env_vars,
         )
@@ -1020,7 +1020,7 @@ def _launch_with_codebuild(
     )
 
 
-def _launch_with_code_zip(
+def _launch_with_direct_code_deploy(
     config_path: Path,
     agent_config: BedrockAgentCoreAgentSchema,
     project_config: BedrockAgentCoreConfigSchema,
@@ -1044,7 +1044,7 @@ def _launch_with_code_zip(
     import shutil
     import time
 
-    log.info("Launching with code_zip deployment for agent '%s'", agent_config.name)
+    log.info("Launching with direct_code_deploy deployment for agent '%s'", agent_config.name)
 
     # Validate configuration
     step_start = time.time()
@@ -1052,16 +1052,16 @@ def _launch_with_code_zip(
     if errors:
         raise ValueError(f"Invalid configuration: {', '.join(errors)}")
 
-    # Validate prerequisites for code_zip deployment (fail fast before expensive operations)
+    # Validate prerequisites for direct_code_deploy deployment (fail fast before expensive operations)
     if not shutil.which("uv"):
         raise RuntimeError(
-            "uv is required for code_zip deployment but was not found.\n"
+            "uv is required for direct_code_deploy deployment but was not found.\n"
             "Install uv: https://docs.astral.sh/uv/getting-started/installation/\n"
             "Or use container deployment instead: agentcore configure --help"
         )
     if not shutil.which("zip"):
         raise RuntimeError(
-            "zip utility is required for code_zip deployment but was not found.\n"
+            "zip utility is required for direct_code_deploy deployment but was not found.\n"
             "Install zip: brew install zip (macOS) or apt-get install zip (Ubuntu)"
         )
 
@@ -1124,7 +1124,7 @@ def _launch_with_code_zip(
     log.info("⏱️  Package creation: %.2fs", time.time() - step_start)
 
     try:
-        # Initialize variables for code_zip deployment
+        # Initialize variables for direct_code_deploy deployment
         bucket_name = None
         s3_key = None
 
@@ -1215,7 +1215,7 @@ def _launch_with_code_zip(
             agent_id=agent_config.bedrock_agentcore.agent_id,
             agent_name=agent_config.name,
             execution_role_arn=agent_config.aws.execution_role,
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
             code_s3_bucket=bucket_name,
             code_s3_key=s3_key,
             runtime_type=agent_config.runtime_type,  # Optional
@@ -1268,7 +1268,7 @@ def _launch_with_code_zip(
         # log.info("⏱️  TOTAL TIME: %.2fs", time.time() - start_time)
 
         return LaunchResult(
-            mode="code_zip",
+            mode="direct_code_deploy",
             agent_arn=agent_info["arn"],
             agent_id=agent_info["id"],
             s3_location=s3_location,

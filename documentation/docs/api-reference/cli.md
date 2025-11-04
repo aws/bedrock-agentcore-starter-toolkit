@@ -29,9 +29,9 @@ Options:
 
 - `--container-runtime, -ctr TEXT`: Container runtime (for container deployment only)
 
-- `--deployment-type, -dt TEXT`: Deployment type (code_zip or container, default: code_zip)
+- `--deployment-type, -dt TEXT`: Deployment type (direct_code_deploy or container, default: direct_code_deploy)
 
-- `--runtime, -rt TEXT`: Python runtime version for code_zip (PYTHON_3_10, PYTHON_3_11, PYTHON_3_12, PYTHON_3_13)
+- `--runtime, -rt TEXT`: Python runtime version for direct_code_deploy (PYTHON_3_10, PYTHON_3_11, PYTHON_3_12, PYTHON_3_13)
 
 - `--requirements-file, -rf TEXT`: Path to requirements file of agent
 
@@ -209,7 +209,7 @@ Options:
 
 - `--bearer-token, -bt TEXT`: Bearer token for OAuth authentication
 
-- `--local, -l`: Send request to a running local agent (works with both code_zip and container deployments)
+- `--local, -l`: Send request to a running local agent (works with both direct_code_deploy and container deployments)
 
 - `--user-id, -u TEXT`: User ID for authorization flows
 

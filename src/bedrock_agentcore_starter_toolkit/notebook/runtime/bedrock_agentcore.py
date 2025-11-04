@@ -60,7 +60,7 @@ class Runtime:
         vpc_security_groups: Optional[List[str]] = None,
         idle_timeout: Optional[int] = None,
         max_lifetime: Optional[int] = None,
-        deployment_type: Literal["code_zip", "container"] = "code_zip",
+        deployment_type: Literal["direct_code_deploy", "container"] = "direct_code_deploy",
         runtime_type: Optional[str] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
@@ -94,8 +94,8 @@ class Runtime:
             vpc_security_groups: List of VPC security group IDs (required if vpc_enabled=True)
             idle_timeout: Idle runtime session timeout in seconds (60-28800)
             max_lifetime: Maximum instance lifetime in seconds (60-28800)
-            deployment_type: Deployment type - "code_zip" (default) or "container"
-            runtime_type: Python runtime version for code_zip (e.g., "PYTHON_3_10", "PYTHON_3_11")
+            deployment_type: Deployment type - "direct_code_deploy" (default) or "container"
+            runtime_type: Python runtime version for direct_code_deploy (e.g., "PYTHON_3_10", "PYTHON_3_11")
                 If not specified, will use current Python version or default to PYTHON_3_11
 
         Returns:
@@ -175,10 +175,10 @@ class Runtime:
                 "vpc_subnets=[...], vpc_security_groups=[...])"
             )
 
-        # Validate code_zip deployment requirements
-        if deployment_type == "code_zip" and runtime_type is None:
+        # Validate direct_code_deploy deployment requirements
+        if deployment_type == "direct_code_deploy" and runtime_type is None:
             raise ValueError(
-                "runtime_type is required when deployment_type is 'code_zip'. "
+                "runtime_type is required when deployment_type is 'direct_code_deploy'. "
                 "Please specify one of: 'PYTHON_3_10', 'PYTHON_3_11', 'PYTHON_3_12', 'PYTHON_3_13'"
             )
 
@@ -295,10 +295,10 @@ class Runtime:
             agent_config = project_config.get_agent_config()
             deployment_type = agent_config.deployment_type
 
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 raise ValueError(
                     "local_build mode is only supported for container deployments.\n"
-                    "For code_zip deployments, use:\n"
+                    "For direct_code_deploy deployments, use:\n"
                     "• runtime.launch() - cloud deployment\n"
                     "• runtime.launch(local=True) - local development"
                 )
@@ -316,7 +316,7 @@ class Runtime:
             log.info("   • Requires Docker/Finch/Podman to be installed")
             log.info("   • Use when you need custom build control")
         else:
-            mode = "cloud"  # code_zip deployment
+            mode = "cloud"  # direct_code_deploy deployment
             log.info("🚀 Launching Bedrock AgentCore (%s mode - RECOMMENDED)...", mode)
             log.info("   • Deploy Python code directly to runtime")
             log.info("   • No Docker required (DEFAULT behavior)")

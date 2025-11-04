@@ -2056,7 +2056,7 @@ class TestLaunchBedrockAgentCore:
                 mock_log.warning.assert_called_with(
                     "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
                 )
-                assert result.mode == "local_code_zip"
+                assert result.mode == "local_direct_code_deploy"
         finally:
             os.chdir(original_cwd)
 
@@ -2142,7 +2142,7 @@ class TestLaunchBedrockAgentCore:
                 # Should not have memory env vars
                 assert "BEDROCK_AGENTCORE_MEMORY_ID" not in result.env_vars
                 assert "BEDROCK_AGENTCORE_MEMORY_NAME" not in result.env_vars
-                assert result.mode == "local_code_zip"
+                assert result.mode == "local_direct_code_deploy"
         finally:
             os.chdir(original_cwd)
 
@@ -3225,15 +3225,15 @@ class TestTransactionSearchIntegration:
 
 
 class TestCodeZipDeployment:
-    """Tests for code_zip deployment workflow."""
+    """Tests for direct_code_deploy deployment workflow."""
 
-    def test_launch_with_code_zip_success(self, mock_boto3_clients, tmp_path):
-        """Test successful code_zip deployment with all steps."""
-        # Create config with code_zip deployment
+    def test_launch_with_direct_code_deploy_success(self, mock_boto3_clients, tmp_path):
+        """Test successful direct_code_deploy deployment with all steps."""
+        # Create config with direct_code_deploy deployment
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
 
         # Create agent file
@@ -3243,7 +3243,7 @@ class TestCodeZipDeployment:
         mock_factory = MockAWSClientFactory()
         mock_factory.setup_full_session_mock(mock_boto3_clients)
 
-        # Override bedrock_agentcore mock for code_zip workflow
+        # Override bedrock_agentcore mock for direct_code_deploy workflow
         mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.return_value = {
             "agentRuntimeId": "test-agent-123",
             "agentRuntimeArn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123",
@@ -3283,7 +3283,7 @@ class TestCodeZipDeployment:
             result = launch_bedrock_agentcore(config_path, local=False)
 
             # Verify result
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
             assert result.agent_arn == "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123"
             assert result.agent_id == "test-agent-123"
             # Note: s3_location is not part of LaunchResult model, so it won't be in the result
@@ -3297,13 +3297,13 @@ class TestCodeZipDeployment:
             assert mock_upload_s3.return_value == "s3://test-bucket/test-agent/deployment.zip"
             mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_called_once()
 
-    def test_launch_with_code_zip_package_creation_failure(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment handles create_deployment_package failure gracefully."""
-        # Create config with code_zip deployment
+    def test_launch_with_direct_code_deploy_package_creation_failure(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment handles create_deployment_package failure gracefully."""
+        # Create config with direct_code_deploy deployment
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
 
         # Create agent file
@@ -3345,12 +3345,12 @@ class TestCodeZipDeployment:
             # Verify agent was not created (since package creation failed)
             mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_not_called()
 
-    def test_launch_with_code_zip_missing_uv(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment fails if uv not installed."""
+    def test_launch_with_direct_code_deploy_missing_uv(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment fails if uv not installed."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
         create_test_agent_file(tmp_path)
 
@@ -3360,15 +3360,15 @@ class TestCodeZipDeployment:
             # uv not found
             mock_which.return_value = None
 
-            with pytest.raises(RuntimeError, match="uv is required for code_zip deployment"):
+            with pytest.raises(RuntimeError, match="uv is required for direct_code_deploy deployment"):
                 launch_bedrock_agentcore(config_path, local=False)
 
-    def test_launch_with_code_zip_missing_zip(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment fails if zip utility not installed."""
+    def test_launch_with_direct_code_deploy_missing_zip(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment fails if zip utility not installed."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
         create_test_agent_file(tmp_path)
 
@@ -3381,12 +3381,12 @@ class TestCodeZipDeployment:
             with pytest.raises(RuntimeError, match="zip utility is required"):
                 launch_bedrock_agentcore(config_path, local=False)
 
-    def test_launch_with_code_zip_with_memory(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment with memory enabled."""
+    def test_launch_with_direct_code_deploy_with_memory(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with memory enabled."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
         create_test_agent_file(tmp_path)
 
@@ -3422,18 +3422,18 @@ class TestCodeZipDeployment:
 
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
             assert result.agent_id == "test-agent-id"  # From conftest mock
 
             # Verify memory was ensured
             mock_ensure_memory.assert_called_once()
 
-    def test_launch_with_code_zip_force_rebuild(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment with force_rebuild_deps flag."""
+    def test_launch_with_direct_code_deploy_force_rebuild(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with force_rebuild_deps flag."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
         create_test_agent_file(tmp_path)
 
@@ -3479,19 +3479,19 @@ class TestCodeZipDeployment:
             # Launch with force_rebuild_deps=True
             result = launch_bedrock_agentcore(config_path, local=False, force_rebuild_deps=True)
 
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
 
             # Verify create_deployment_package was called with force_rebuild_deps=True
             mock_create_package.assert_called_once()
             call_kwargs = mock_create_package.call_args[1]
             assert call_kwargs["force_rebuild_deps"] is True
 
-    def test_launch_with_code_zip_with_env_vars(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment passes environment variables correctly."""
+    def test_launch_with_direct_code_deploy_with_env_vars(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment passes environment variables correctly."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
         )
         create_test_agent_file(tmp_path)
 
@@ -3529,7 +3529,7 @@ class TestCodeZipDeployment:
             custom_env = {"MY_VAR": "test_value", "DEBUG": "true"}
             result = launch_bedrock_agentcore(config_path, local=False, env_vars=custom_env)
 
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
             assert result.agent_id == "test-agent-id"  # From conftest mock
 
             # Verify that create_agent_runtime was called with env vars
@@ -3541,12 +3541,12 @@ class TestCodeZipDeployment:
             assert "MY_VAR" in env_vars_dict
             assert env_vars_dict["MY_VAR"] == "test_value"
 
-    def test_launch_with_code_zip_with_observability(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment with observability enabled."""
+    def test_launch_with_direct_code_deploy_with_observability(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with observability enabled."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
             observability_enabled=True,
         )
         create_test_agent_file(tmp_path)
@@ -3595,17 +3595,17 @@ class TestCodeZipDeployment:
 
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
 
             # Verify observability was enabled
             mock_enable_xray.assert_called_once_with("us-west-2", "123456789012")
 
-    def test_launch_with_code_zip_session_id_reset(self, mock_boto3_clients, tmp_path):
-        """Test code_zip deployment resets existing session_id with warning."""
+    def test_launch_with_direct_code_deploy_session_id_reset(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment resets existing session_id with warning."""
         config_path = create_test_config(
             tmp_path,
             execution_role="arn:aws:iam::123456789012:role/TestRole",
-            deployment_type="code_zip",
+            deployment_type="direct_code_deploy",
             agent_session_id="old-session-123",  # Existing session ID
         )
         create_test_agent_file(tmp_path)
@@ -3643,7 +3643,7 @@ class TestCodeZipDeployment:
             # Launch (should reset session_id)
             result = launch_bedrock_agentcore(config_path, local=False)
 
-            assert result.mode == "code_zip"
+            assert result.mode == "direct_code_deploy"
             assert result.agent_id == "test-agent-id"  # From conftest mock
 
             # Verify config was updated with session_id reset

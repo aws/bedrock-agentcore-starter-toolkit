@@ -157,7 +157,7 @@ def configure_bedrock_agentcore(
     vpc_security_groups: Optional[List[str]] = None,
     idle_timeout: Optional[int] = None,
     max_lifetime: Optional[int] = None,
-    deployment_type: str = "code_zip",
+    deployment_type: str = "direct_code_deploy",
     runtime_type: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
@@ -188,10 +188,10 @@ def configure_bedrock_agentcore(
             If not specified, AWS API default (900s / 15 minutes) is used.
         max_lifetime: Maximum instance lifetime in seconds (60-28800).
             If not specified, AWS API default (28800s / 8 hours) is used.
-        deployment_type: Deployment type - "code_zip" (default) or "container"
-        runtime_type: Python runtime version for code_zip (e.g., "PYTHON_3_10", "PYTHON_3_11")
-        auto_create_s3: Whether to auto-create S3 bucket for code_zip deployment
-        s3_path: S3 path for code_zip deployment
+        deployment_type: Deployment type - "direct_code_deploy" (default) or "container"
+        runtime_type: Python runtime version for direct_code_deploy (e.g., "PYTHON_3_10", "PYTHON_3_11")
+        auto_create_s3: Whether to auto-create S3 bucket for direct_code_deploy deployment
+        s3_path: S3 path for direct_code_deploy deployment
 
     Returns:
         ConfigureResult model with configuration details
@@ -504,7 +504,7 @@ def configure_bedrock_agentcore(
 
     # Create new configuration
     ecr_auto_create_value = bool(auto_create_ecr and not ecr_repository)
-    s3_auto_create_value = bool(auto_create_s3 and not s3_path and deployment_type == "code_zip")
+    s3_auto_create_value = bool(auto_create_s3 and not s3_path and deployment_type == "direct_code_deploy")
 
     if verbose:
         log.debug("ECR auto-create: %s", ecr_auto_create_value)

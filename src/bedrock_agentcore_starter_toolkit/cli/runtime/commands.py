@@ -248,7 +248,7 @@ def configure(
     execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
     code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
     ecr_repository: Optional[str] = typer.Option(None, "--ecr", "-ecr"),
-    s3_bucket: Optional[str] = typer.Option(None, "--s3", "-s3", help="S3 bucket for code_zip deployment"),
+    s3_bucket: Optional[str] = typer.Option(None, "--s3", "-s3", help="S3 bucket for direct_code_deploy deployment"),
     container_runtime: Optional[str] = typer.Option(None, "--container-runtime", "-ctr"),
     requirements_file: Optional[str] = typer.Option(
         None, "--requirements-file", "-rf", help="Path to requirements file"
@@ -299,10 +299,10 @@ def configure(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
     deployment_type: Optional[str] = typer.Option(
-        None, "--deployment-type", "-dt", help="Deployment type (container or code_zip)"
+        None, "--deployment-type", "-dt", help="Deployment type (container or direct_code_deploy)"
     ),
     runtime: Optional[str] = typer.Option(
-        None, "--runtime", "-rt", help="Python runtime version for code_zip (e.g., PYTHON_3_10, PYTHON_3_11)"
+        None, "--runtime", "-rt", help="Python runtime version for direct_code_deploy (e.g., PYTHON_3_10, PYTHON_3_11)"
     ),
 ):
     """Configure a Bedrock AgentCore agent interactively or with parameters.
@@ -458,71 +458,44 @@ def configure(
     # Handle dependency file selection with simplified logic
     final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
-    def _normalize_runtime(runtime):
-        """Convert user-friendly runtime format to API format."""
-        if not runtime:
-            return runtime
-
-        runtime_options = [
-            ("python3.10", "PYTHON_3_10"),
-            ("python3.11", "PYTHON_3_11"),
-            ("python3.12", "PYTHON_3_12"),
-            ("python3.13", "PYTHON_3_13"),
-        ]
-
-        # Check if it's already in API format
-        api_formats = [opt[1] for opt in runtime_options]
-        if runtime in api_formats:
-            return runtime
-
-        # Check if it's in user-friendly format
-        user_formats = [opt[0] for opt in runtime_options]
-        if runtime in user_formats:
-            # Convert to API format
-            for user_format, api_format in runtime_options:
-                if runtime == user_format:
-                    return api_format
-
-        # Invalid format
-        valid_formats = user_formats + api_formats
-        _handle_error(f"Error: --runtime must be one of: {', '.join(valid_formats)}")
-
-    def _validate_cli_args(deployment_type, runtime, ecr_repository, s3_bucket, code_zip_available, prereq_error):
+    def _validate_cli_args(deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error):
         """Validate CLI arguments."""
-        if deployment_type and deployment_type not in ["container", "code_zip"]:
-            _handle_error("Error: --deployment-type must be either 'container' or 'code_zip'")
+        if deployment_type and deployment_type not in ["container", "direct_code_deploy"]:
+            _handle_error("Error: --deployment-type must be either 'container' or 'direct_code_deploy'")
 
-        # Normalize runtime format
-        normalized_runtime = _normalize_runtime(runtime)
+        if runtime:
+            valid_runtimes = ["PYTHON_3_10", "PYTHON_3_11", "PYTHON_3_12", "PYTHON_3_13"]
+            if runtime not in valid_runtimes:
+                _handle_error(f"Error: --runtime must be one of: {', '.join(valid_runtimes)}")
 
-        if normalized_runtime and deployment_type and deployment_type != "code_zip":
-            _handle_error("Error: --runtime can only be used with --deployment-type code_zip")
+        if runtime and deployment_type and deployment_type != "direct_code_deploy":
+            _handle_error("Error: --runtime can only be used with --deployment-type direct_code_deploy")
 
         # Check for incompatible ECR and runtime flags
-        if ecr_repository and normalized_runtime:
+        if ecr_repository and runtime:
             _handle_error(
                 "Error: --ecr and --runtime are incompatible. "
-                "Use --ecr for container deployment or --runtime for code_zip deployment."
+                "Use --ecr for container deployment or --runtime for direct_code_deploy deployment."
             )
 
-        if ecr_repository and deployment_type == "code_zip":
-            _handle_error("Error: --ecr can only be used with container deployment, not code_zip")
+        if ecr_repository and deployment_type == "direct_code_deploy":
+            _handle_error("Error: --ecr can only be used with container deployment, not direct_code_deploy")
 
         # Check for incompatible S3 and ECR flags
         if s3_bucket and ecr_repository:
             _handle_error(
                 "Error: --s3 and --ecr are incompatible. "
-                "Use --s3 for code_zip deployment or --ecr for container deployment."
+                "Use --s3 for direct_code_deploy deployment or --ecr for container deployment."
             )
 
         if s3_bucket and deployment_type == "container":
-            _handle_error("Error: --s3 can only be used with code_zip deployment, not container")
+            _handle_error("Error: --s3 can only be used with direct_code_deploy deployment, not container")
 
-        # Only fail if user explicitly requested code_zip deployment
-        if (deployment_type == "code_zip" or normalized_runtime or s3_bucket) and not code_zip_available:
-            _handle_error(f"Error: Code Zip deployment unavailable ({prereq_error})")
+        # Only fail if user explicitly requested direct_code_deploy deployment
+        if (deployment_type == "direct_code_deploy" or runtime or s3_bucket) and not direct_code_deploy_available:
+            _handle_error(f"Error: Direct Code Deploy deployment unavailable ({prereq_error})")
 
-        return normalized_runtime
+        return runtime
 
     def _get_default_runtime():
         """Get default runtime based on current Python version."""
@@ -540,61 +513,47 @@ def configure(
         """Interactive runtime selection."""
         import sys
 
-        current_py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-
-        runtime_options = [
-            ("python3.10", "PYTHON_3_10"),
-            ("python3.11", "PYTHON_3_11"),
-            ("python3.12", "PYTHON_3_12"),
-            ("python3.13", "PYTHON_3_13"),
-        ]
+        runtime_options = ["PYTHON_3_10", "PYTHON_3_11", "PYTHON_3_12", "PYTHON_3_13"]
 
         console.print("\n[dim]Select Python runtime version:[/dim]")
-        for idx, (display, _) in enumerate(runtime_options, 1):
-            marker = (
-                " (current)"
-                if display == f"python{current_py_version}" and current_py_version in ["3.10", "3.11", "3.12", "3.13"]
-                else ""
-            )
-            console.print(f"  {idx}. {display}{marker}")
+        for idx, runtime in enumerate(runtime_options, 1):
+            console.print(f"  {idx}. {runtime}")
 
         default_runtime = _get_default_runtime()
-        # Convert PYTHON_3_10 -> python3.10
-        default_display = default_runtime.lower().replace("python_", "python").replace("_", ".")
-        default_idx = str([opt[0] for opt in runtime_options].index(default_display) + 1)
+        default_idx = str(runtime_options.index(default_runtime) + 1)
 
         while True:
             choice = prompt(f"Choice [{default_idx}]: ", default=default_idx).strip()
             if choice in ["1", "2", "3", "4"]:
-                return runtime_options[int(choice) - 1][1]
+                return runtime_options[int(choice) - 1]
             console.print("[red]Invalid choice. Please enter 1-4.[/red]")
 
     def _determine_deployment_config(
-        deployment_type, runtime, ecr_repository, s3_bucket, non_interactive, code_zip_available, prereq_error
+        deployment_type, runtime, ecr_repository, s3_bucket, non_interactive, direct_code_deploy_available, prereq_error
     ):
         """Determine final deployment_type and runtime_type."""
-        # Case 3: Only runtime provided -> default to code_zip
+        # Case 3: Only runtime provided -> default to direct_code_deploy
         if runtime and not deployment_type:
-            deployment_type = "code_zip"
+            deployment_type = "direct_code_deploy"
 
         # Case 4: Only ECR repository provided -> default to container
         if ecr_repository and not deployment_type:
             deployment_type = "container"
 
-        # Case 5: Only S3 bucket provided -> default to code_zip
+        # Case 5: Only S3 bucket provided -> default to direct_code_deploy
         if s3_bucket and not deployment_type:
-            deployment_type = "code_zip"
+            deployment_type = "direct_code_deploy"
 
         # Case 1 & 3: Both provided or runtime-only
-        if deployment_type == "code_zip" and runtime:
-            return "code_zip", runtime
+        if deployment_type == "direct_code_deploy" and runtime:
+            return "direct_code_deploy", runtime
 
-        # Case 2: Only deployment_type=code_zip provided
-        if deployment_type == "code_zip":
+        # Case 2: Only deployment_type=direct_code_deploy provided
+        if deployment_type == "direct_code_deploy":
             if non_interactive:
-                return "code_zip", _get_default_runtime()
+                return "direct_code_deploy", _get_default_runtime()
             else:
-                return "code_zip", _prompt_for_runtime()
+                return "direct_code_deploy", _prompt_for_runtime()
 
         # Container deployment
         if deployment_type == "container":
@@ -602,18 +561,18 @@ def configure(
 
         # Non-interactive mode with no CLI args - use defaults
         if non_interactive:
-            if code_zip_available:
-                return "code_zip", _get_default_runtime()
+            if direct_code_deploy_available:
+                return "direct_code_deploy", _get_default_runtime()
             else:
-                console.print(f"[yellow]Code Zip unavailable ({prereq_error}), using Container deployment[/yellow]")
+                console.print(f"[yellow]Direct Code Deploy unavailable ({prereq_error}), using Container deployment[/yellow]")
                 return "container", None
 
         # Interactive mode with no CLI args - use existing logic
         return None, None
 
-    # Check code_zip prerequisites (uv and zip availability)
-    def _check_code_zip_available():
-        """Check if code_zip prerequisites are met."""
+    # Check direct_code_deploy prerequisites (uv and zip availability)
+    def _check_direct_code_deploy_available():
+        """Check if direct_code_deploy prerequisites are met."""
         import shutil
 
         if not shutil.which("uv"):
@@ -622,44 +581,44 @@ def configure(
             return False, "zip utility not found"
         return True, None
 
-    code_zip_available, prereq_error = _check_code_zip_available()
+    direct_code_deploy_available, prereq_error = _check_direct_code_deploy_available()
 
-    # Validate CLI arguments and normalize runtime format
-    normalized_runtime = _validate_cli_args(
-        deployment_type, runtime, ecr_repository, s3_bucket, code_zip_available, prereq_error
+    # Validate CLI arguments
+    runtime = _validate_cli_args(
+        deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error
     )
 
     # Determine deployment configuration
     console.print("\n🚀 [cyan]Deployment Configuration[/cyan]")
     final_deployment_type, runtime_type = _determine_deployment_config(
         deployment_type,
-        normalized_runtime,
+        runtime,
         ecr_repository,
         s3_bucket,
         non_interactive,
-        code_zip_available,
+        direct_code_deploy_available,
         prereq_error,
     )
 
     if final_deployment_type:
         # CLI args provided or non-interactive with defaults
         deployment_type = final_deployment_type
-        if deployment_type == "code_zip":
+        if deployment_type == "direct_code_deploy":
             # Convert PYTHON_3_11 -> python3.11 for display
             display_version = runtime_type.lower().replace("python_", "python").replace("_", ".")
-            _print_success(f"Using: Code Zip ({display_version})")
+            _print_success(f"Using: Direct Code Deploy ({display_version})")
         else:
             _print_success("Using: Container")
     else:
         # Interactive mode
-        if code_zip_available:
+        if direct_code_deploy_available:
             deployment_options = [
-                ("Code Zip (recommended) - Simple, serverless, no Docker required", "code_zip"),
+                ("Direct Code Deploy (recommended) - Simple, serverless, no Docker required", "direct_code_deploy"),
                 ("Container - For custom runtimes or complex dependencies", "container"),
             ]
         else:
             console.print(
-                f"[yellow]Warning: Code Zip deployment unavailable ({prereq_error}). "
+                f"[yellow]Warning: Direct Code Deploy deployment unavailable ({prereq_error}). "
                 f"Falling back to Container deployment.[/yellow]"
             )
             deployment_options = [
@@ -682,10 +641,10 @@ def configure(
                     break
                 console.print("[red]Invalid choice. Please enter 1 or 2.[/red]")
 
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 runtime_type = _prompt_for_runtime()
                 display_version = runtime_type.lower().replace("_", ".")
-                _print_success(f"Deployment type: Code Zip ({display_version})")
+                _print_success(f"Deployment type: Direct Code Deploy ({display_version})")
             else:
                 runtime_type = None
                 _print_success("Deployment type: Container")
@@ -716,10 +675,10 @@ def configure(
         ecr_repository = None
         auto_create_ecr = False
 
-    # Handle S3 bucket (only for code_zip deployments)
+    # Handle S3 bucket (only for direct_code_deploy deployments)
     final_s3_bucket = None
     auto_create_s3 = True
-    if deployment_type == "code_zip":
+    if deployment_type == "direct_code_deploy":
         if s3_bucket and s3_bucket.lower() == "auto":
             # User explicitly requested auto-creation
             final_s3_bucket = None
@@ -838,7 +797,7 @@ def configure(
         if deployment_type == "container":
             ecr_display = "Auto-create" if result.auto_create_ecr else result.ecr_repository or "N/A"
             config_info = f"ECR Repository: [cyan]{ecr_display}[/cyan]\n"
-        else:  # code_zip
+        else:  # direct_code_deploy
             runtime_display = (
                 result.runtime_type.lower().replace("python_", "python").replace("_", ".")
                 if result.runtime_type
@@ -903,7 +862,7 @@ def launch(
         False,
         "--force-rebuild-deps",
         "-frd",
-        help="Force rebuild of dependencies even if cached (code_zip deployments only)",
+        help="Force rebuild of dependencies even if cached (direct_code_deploy deployments only)",
     ),
     envs: List[str] = typer.Option(  # noqa: B008
         None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
@@ -918,14 +877,14 @@ def launch(
     """Launch Bedrock AgentCore with three deployment modes.
 
     🚀 DEFAULT (no flags): Cloud runtime (RECOMMENDED)
-       - Code_zip deployment: Direct deploy Python code to runtime
+       - direct_code_deploy deployment: Direct deploy Python code to runtime
        - Container deployment: Build ARM64 containers in the cloud with CodeBuild
        - Deploy to Bedrock AgentCore runtime
        - No local Docker required
 
     💻 --local: Local runtime
        - Container deployment: Build and run container locally (requires Docker/Finch/Podman)
-       - Code_zip deployment: Run Python script locally with uv
+       - direct_code_deploy deployment: Run Python script locally with uv
        - For local development and testing
 
     🔧 --local-build: Local build + cloud runtime
@@ -960,17 +919,17 @@ def launch(
 
     # Validate deployment type compatibility early
     if local_build or force_rebuild_deps:
-        if local_build and deployment_type == "code_zip":
+        if local_build and deployment_type == "direct_code_deploy":
             _handle_error(
                 "Error: --local-build is only supported for container deployment type.\n"
-                "For code_zip deployment, use:\n"
+                "For direct_code_deploy deployment, use:\n"
                 "  • 'agentcore launch' (default)\n"
                 "  • 'agentcore launch --local' (local execution)"
             )
 
-        if force_rebuild_deps and deployment_type != "code_zip":
+        if force_rebuild_deps and deployment_type != "direct_code_deploy":
             _handle_error(
-                "Error: --force-rebuild-deps is only supported for code_zip deployment type.\n"
+                "Error: --force-rebuild-deps is only supported for direct_code_deploy deployment type.\n"
                 "Container deployments always rebuild dependencies."
             )
 
@@ -993,7 +952,7 @@ def launch(
             # Handle deprecated flag - treat as default
             mode = "codebuild" if deployment_type == "container" else "cloud"
             console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 console.print("[dim]   • Deploy Python code directly to runtime[/dim]")
                 console.print("[dim]   • No Docker required[/dim]")
             else:
@@ -1003,7 +962,7 @@ def launch(
         else:
             mode = "codebuild" if deployment_type == "container" else "cloud"
             console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
-            if deployment_type == "code_zip":
+            if deployment_type == "direct_code_deploy":
                 console.print("[dim]   • Deploy Python code directly to runtime[/dim]")
                 console.print("[dim]   • No Docker required (DEFAULT behavior)[/dim]")
             else:
@@ -1070,7 +1029,7 @@ def launch(
             except KeyboardInterrupt:
                 console.print("\n[yellow]Stopped[/yellow]")
 
-        elif result.mode == "local_code_zip":
+        elif result.mode == "local_direct_code_deploy":
             _print_success("Ready to run locally with uv run")
             console.print(f"Starting server at http://localhost:{result.port}")
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
@@ -1094,7 +1053,7 @@ def launch(
                     local_env.update(result.env_vars)
                 local_env.setdefault("PORT", str(result.port))
 
-                # Use the same dependency detection as code_zip deployment
+                # Use the same dependency detection as direct_code_deploy deployment
                 from ...utils.runtime.entrypoint import detect_dependencies
 
                 dep_info = detect_dependencies(source_dir)
@@ -1102,7 +1061,7 @@ def launch(
                 if not dep_info.found:
                     _handle_error(
                         f"No dependencies file found in {source_dir}.\n"
-                        "Code_zip deployment requires either requirements.txt or pyproject.toml"
+                        "direct_code_deploy deployment requires either requirements.txt or pyproject.toml"
                     )
 
                 # Use the configured Python version (e.g., PYTHON_3_11 -> 3.11)
@@ -1118,12 +1077,12 @@ def launch(
                     entrypoint_path,
                 ]
 
-                # Run from source directory (same as code_zip)
+                # Run from source directory (same as direct_code_deploy)
                 subprocess.run(cmd, cwd=source_dir, env=local_env, check=False)  # nosec B603
             except KeyboardInterrupt:
                 console.print("\n[yellow]Stopped[/yellow]")
 
-        elif result.mode == "code_zip":
+        elif result.mode == "direct_code_deploy":
             # Code zip deployment success
             agent_name = agent_config.name if agent_config else "unknown"
             region = agent_config.aws.region if agent_config else "us-east-1"
@@ -1132,7 +1091,7 @@ def launch(
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
-                f"Deployment Type: [cyan]Code Zip (Lambda-style)[/cyan]\n\n"
+                f"Deployment Type: [cyan]Direct Code Deploy (Lambda-style)[/cyan]\n\n"
                 f"📦 Code package deployed to Bedrock AgentCore\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore status[/cyan]\n"
@@ -1141,7 +1100,7 @@ def launch(
 
             # Add log information if we have agent_id
             if result.agent_id:
-                runtime_logs, otel_logs = get_agent_log_paths(result.agent_id, deployment_type="code_zip")
+                runtime_logs, otel_logs = get_agent_log_paths(result.agent_id, deployment_type="direct_code_deploy")
                 follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
                 deploy_panel += f"\n\n📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"
                 # Only show GenAI Observability Dashboard if OTEL is enabled
@@ -1274,7 +1233,7 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
     # CloudWatch logs and GenAI Observability Dashboard (if we have config with agent_id)
     if config and hasattr(config, "bedrock_agentcore") and config.bedrock_agentcore.agent_id:
         try:
-            # Get deployment type and session ID for code_zip specific logging
+            # Get deployment type and session ID for direct_code_deploy specific logging
             deployment_type = getattr(config, "deployment_type", None)
             session_id = invoke_result.session_id if invoke_result else None
 

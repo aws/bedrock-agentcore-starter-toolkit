@@ -58,7 +58,7 @@ def handler(payload):
             mock_req_display.return_value = tmp_path / "requirements.txt"
 
             # Mock deployment type and runtime version prompts (from prompt_toolkit)
-            # First call: deployment type selection (default "1" for code_zip)
+            # First call: deployment type selection (default "1" for direct_code_deploy)
             # Second call: runtime version selection (default for python3.11)
             mock_deployment_prompt.side_effect = ["1", "2"]
 
@@ -715,7 +715,7 @@ agents:
                         "--execution-role",
                         "TestRole",
                         "--deployment-type",
-                        "code_zip",
+                        "direct_code_deploy",
                         "--runtime",
                         "python3.10",
                         "--non-interactive",
