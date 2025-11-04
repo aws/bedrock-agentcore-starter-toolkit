@@ -31,7 +31,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
         template_dir_selection=TemplateDirSelection.Default,
-        runtime_protocol=RuntimeProtocol.HTTP,
+        runtime_protocol=RuntimeProtocol.HTTP.value,
         python_dependencies=[],
         src_implementation_provided=False,
         agent_name=name + "-Agent",

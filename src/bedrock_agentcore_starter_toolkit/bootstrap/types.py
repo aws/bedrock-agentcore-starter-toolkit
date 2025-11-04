@@ -33,7 +33,7 @@ class ProjectContext:
     sdk_provider: Optional[BootstrapSDKProvider]
     iac_provider: BootstrapIACProvider
     template_dir_selection: TemplateDirSelection
-    runtime_protocol: RuntimeProtocol
+    runtime_protocol: str
     python_dependencies: List[str]
     iac_dir: Optional[Path]
     src_implementation_provided: bool
