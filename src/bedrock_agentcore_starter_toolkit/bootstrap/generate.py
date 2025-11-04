@@ -3,7 +3,7 @@ import time
 
 from .features.types import BootstrapSDKProvider, BootstrapIACProvider
 from typing import Optional
-from .types import ProjectContext, TemplateDirSelection
+from .types import ProjectContext, RuntimeProtocol, TemplateDirSelection
 from .features import sdk_feature_registry, iac_feature_registry
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig, ProtocolConfiguration
@@ -30,6 +30,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
         template_dir_selection=TemplateDirSelection.Default,
+        runtime_protocol=RuntimeProtocol.HTTP,
         python_dependencies=[],
         src_implementation_provided=False,
         agent_name=name + "-Agent",
@@ -100,11 +101,19 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     # protocol configuration will determine which templates we render
     # mcp_runtime is different enough from default that it gets its own templates
     protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
-    if protocol_configuration.server_protocol == "MCP":
+    ctx.runtime_protocol = protocol_configuration.server_protocol
+    if protocol_configuration.server_protocol == RuntimeProtocol.MCP:
         ctx.template_dir_selection = TemplateDirSelection.McpRuntime
         if ctx.sdk_provider is not None:
             _handle_warn("In MCP mode, SDK code is not generated")
         ctx.sdk_provider = None
+    # no src code support for A2A for now
+    if protocol_configuration.server_protocol == RuntimeProtocol.A2A:
+        ctx.template_dir_selection = TemplateDirSelection.Default
+        if ctx.sdk_provider is not None:
+            _handle_warn("In A2A mode, source code is not generated")
+        ctx.sdk_provider = None
+        ctx.src_implementation_provided = True
 
     # memory
     memory_config: MemoryConfig = agent_config.memory

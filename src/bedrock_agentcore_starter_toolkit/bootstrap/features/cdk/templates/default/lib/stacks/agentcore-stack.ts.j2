@@ -167,7 +167,7 @@ export class AgentCoreStack extends cdk.Stack {
                 }
             },
             agentRuntimeName: "{{ agent_name }}",
-            protocolConfiguration: "HTTP",
+            protocolConfiguration: {{ runtime_protocol }},
             networkConfiguration: {
                 networkMode: {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %},
                 networkModeConfig: {

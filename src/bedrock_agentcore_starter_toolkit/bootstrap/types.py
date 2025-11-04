@@ -12,6 +12,14 @@ class TemplateDirSelection(str, Enum):
     McpRuntime = "mcp_runtime"
     Common = "common"
 
+class RuntimeProtocol(str, Enum):
+    """
+    The protocols that runtime supports: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-service-contract.html#protocol-comparison
+    """
+    HTTP = "HTTP"
+    MCP = "MCP"
+    A2A = "A2A"
+
 @dataclass
 class ProjectContext:
     """
@@ -25,6 +33,7 @@ class ProjectContext:
     sdk_provider: Optional[BootstrapSDKProvider]
     iac_provider: BootstrapIACProvider
     template_dir_selection: TemplateDirSelection
+    runtime_protocol: RuntimeProtocol
     python_dependencies: List[str]
     iac_dir: Optional[Path]
     src_implementation_provided: bool
