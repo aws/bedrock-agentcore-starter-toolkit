@@ -23,6 +23,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     src_path.mkdir(exist_ok=False)
 
     ctx = ProjectContext(
+        # high level project config
         name=name,
         output_dir=output_path,
         src_dir=src_path,
@@ -48,6 +49,8 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         vpc_enabled=False,
         vpc_security_groups=None,
         vpc_subnets=None,
+        # request header
+        request_header_allowlist=None,
         # observability
         observability_enabled=True
     )
@@ -62,6 +65,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     time.sleep(5) # give the user a few seconds to read the output before continuing
 
     if ctx.src_implementation_provided:
+        # only generate IAC if src code is provided by configure
         iac_feature_registry[iac_provider]().apply(ctx)
     else:
         baseline_feature = BaselineFeature(ctx.template_dir_selection)
@@ -137,6 +141,13 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         network_mode_config: NetworkModeConfig = network_config.network_mode_config
         ctx.vpc_security_groups = network_mode_config.security_groups
         ctx.vpc_subnets = network_mode_config.subnets
+
+    # request header
+    if agent_config.request_header_configuration:
+        if ctx.iac_provider == BootstrapIACProvider.CDK:
+            _handle_warn("Request header allowlist is not supported by CDK so it won't be included in the generated code")
+        else:
+            ctx.request_header_allowlist = agent_config.request_header_configuration["requestHeaderAllowlist"]
     
     # observability
     observability_config: ObservabilityConfig = aws_config.observability
