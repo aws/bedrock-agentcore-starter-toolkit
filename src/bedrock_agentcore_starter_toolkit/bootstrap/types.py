@@ -33,8 +33,7 @@ class ProjectContext:
     memory_enabled: bool
     memory_name: Optional[str]
     memory_event_expiry_days: Optional[int]
-    memory_short_and_long_term: Optional[bool]
-    memory_short_term_only: Optional[bool]
+    memory_is_long_term: Optional[bool]
     # custom jwt
     custom_authorizer_enabled: bool
     custom_authorizer_url: Optional[str]

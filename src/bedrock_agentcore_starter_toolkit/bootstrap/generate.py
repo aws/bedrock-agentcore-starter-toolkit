@@ -37,8 +37,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         memory_enabled=True,
         memory_name=name + "_Memory",
         memory_event_expiry_days=30,
-        memory_short_term_only=False,
-        memory_short_and_long_term=False,
+        memory_is_long_term=False,
         # custom authorizer
         custom_authorizer_enabled=False,
         custom_authorizer_url=None,
@@ -111,8 +110,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     memory_config: MemoryConfig = agent_config.memory
     ctx.memory_enabled = memory_config.is_enabled
     ctx.memory_event_expiry_days = memory_config.event_expiry_days
-    ctx.memory_short_and_long_term = memory_config.has_ltm
-    ctx.memory_short_term_only = memory_config.mode == "STM_ONLY"
+    ctx.memory_is_long_term = memory_config.has_ltm
 
     # custom authorizer
     authorizer_config: Optional[dict[str, any]] = agent_config.authorizer_configuration
