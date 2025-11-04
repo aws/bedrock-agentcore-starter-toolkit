@@ -5,6 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
+from importlib.metadata import version
 from typing import Any, Dict, Optional
 
 import boto3
@@ -17,6 +18,19 @@ from ..utils.endpoints import get_control_plane_endpoint, get_data_plane_endpoin
 
 logger = logging.getLogger(__name__)
 console = Console()
+
+
+def _get_user_agent() -> str:
+    """Get user-agent string for agentcore-st.
+
+    Returns:
+        User-agent string in format: agentcore-st/{version}
+    """
+    try:
+        pkg_version = version("bedrock-agentcore-starter-toolkit")
+    except Exception:
+        pkg_version = "unknown"
+    return f"agentcore-st/{pkg_version}"
 
 
 def generate_session_id() -> str:
@@ -136,6 +150,7 @@ class BedrockAgentCoreClient:
             read_timeout=900,
             connect_timeout=60,
             retries={"max_attempts": 3},
+            user_agent_extra=_get_user_agent(),
         )
 
         self.client = boto3.client(
@@ -192,7 +207,9 @@ class BedrockAgentCoreClient:
             Dict with agent id and arn
         """
         if deployment_type == "direct_code_deploy":
-            self.logger.info("Creating agent '%s' with direct_code_deploy deployment (runtime: %s)", agent_name, runtime_type)
+            self.logger.info(
+                "Creating agent '%s' with direct_code_deploy deployment (runtime: %s)", agent_name, runtime_type
+            )
         else:
             self.logger.info("Creating agent '%s' with container deployment (image: %s)", agent_name, image_uri)
 
@@ -347,7 +364,9 @@ class BedrockAgentCoreClient:
             Dict with agent id and arn
         """
         if deployment_type == "direct_code_deploy":
-            self.logger.info("Updating agent ID '%s' with direct_code_deploy deployment (runtime: %s)", agent_id, runtime_type)
+            self.logger.info(
+                "Updating agent ID '%s' with direct_code_deploy deployment (runtime: %s)", agent_id, runtime_type
+            )
         else:
             self.logger.info("Updating agent ID '%s' with container deployment (image: %s)", agent_id, image_uri)
 
@@ -724,6 +743,7 @@ class HttpBedrockAgentCoreClient:
             "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json",
             "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
+            "User-Agent": _get_user_agent(),
         }
 
         # Merge custom headers if provided
@@ -781,6 +801,7 @@ class LocalBedrockAgentCoreClient:
             ACCESS_TOKEN_HEADER: workload_access_token,
             SESSION_HEADER: session_id,
             OAUTH2_CALLBACK_URL_HEADER: oauth2_callback_url,
+            "User-Agent": _get_user_agent(),
         }
 
         # Merge custom headers if provided

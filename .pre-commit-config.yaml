@@ -34,6 +34,7 @@ repos:
       - id: check-json
         stages: [pre-commit]
       - id: check-yaml
+        exclude: ^documentation/mkdocs\.yaml$
         stages: [pre-commit]
       - id: check-merge-conflict
         stages: [pre-commit]

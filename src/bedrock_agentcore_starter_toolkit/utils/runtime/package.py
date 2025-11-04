@@ -569,20 +569,16 @@ class CodeZipPackager:
         Returns:
             S3 location (s3://bucket/key)
         """
-        import time
-
         from ...services.codebuild import CodeBuildService
 
         codebuild = CodeBuildService(session)
 
-        step_start = time.time()
         bucket = codebuild.ensure_source_bucket(account_id)
 
         s3_key = f"{agent_name}/deployment.zip"
         s3 = session.client("s3")
 
         log.info("Uploading to s3://%s/%s...", bucket, s3_key)
-        step_start = time.time()
         s3.upload_file(str(deployment_zip), bucket, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id})
 
         return f"s3://{bucket}/{s3_key}"
