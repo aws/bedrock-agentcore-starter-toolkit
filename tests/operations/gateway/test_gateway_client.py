@@ -6,6 +6,9 @@ from bedrock_agentcore_starter_toolkit.operations.gateway import (
     GatewayClient,
 )
 
+# Add timeout marker for all tests in this module
+pytestmark = pytest.mark.timeout(10)  # 10 second timeout per test
+
 
 @pytest.fixture
 def mock_boto_client():
@@ -28,8 +31,11 @@ def gateway_client(mock_boto_client, mock_session):
 
 
 class TestGatewayClient:
+    @patch("time.sleep")
     @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
-    def test_setup_gateway_lambda(self, mock_create_oauth_authorizer_with_cognito, gateway_client, mock_boto_client):
+    def test_setup_gateway_lambda(
+        self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client, mock_boto_client
+    ):
         """Test creating gateway with Lambda target"""
         # Mock responses
         mock_bedrock = Mock()
@@ -75,6 +81,7 @@ class TestGatewayClient:
             "targetId": "TARGET123",
             "status": "READY",
         }
+
         with patch.object(gateway_client.session, "client") as mock_session_client:
             session_client = Mock()
             mock_session_client.return_value = session_client
@@ -97,9 +104,11 @@ class TestGatewayClient:
         target_call = mock_bedrock.create_gateway_target.call_args[1]
         assert "lambdaArn" in target_call["targetConfiguration"]["mcp"]["lambda"]
         assert target_call["credentialProviderConfigurations"] == [{"credentialProviderType": "GATEWAY_IAM_ROLE"}]
+        # REMOVED: mock_sleep.assert_not_called() - sleep IS called but mocked so test is fast
 
+    @patch("time.sleep")
     @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
-    def test_setup_gateway_openapi(self, mock_create_oauth_authorizer_with_cognito, gateway_client):
+    def test_setup_gateway_openapi(self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client):
         """Test creating gateway with OpenAPI target"""
         # Mock responses
         mock_bedrock = Mock()
@@ -162,32 +171,9 @@ class TestGatewayClient:
         assert "s3" in target_call["targetConfiguration"]["mcp"]["openApiSchema"]
         assert target_call["targetConfiguration"]["mcp"]["openApiSchema"]["s3"]["uri"] == "s3://my-bucket/openapi.json"
 
-    # def test_create_oauth_authorizer_with_cognito(self, gateway_client, mock_boto_client):
-    #     """Test Cognito OAuth setup"""
-    #     with patch.object(gateway_client.session, "client") as mock_cognito:
-    #         cognito_client = Mock()
-    #         mock_cognito.return_value = cognito_client
-
-    #         # Mock Cognito responses
-    #         cognito_client.create_user_pool.return_value = {"UserPool": {"Id": "us-west-2_TEST123"}}
-    #         cognito_client.create_user_pool_domain.return_value = {}
-    #         cognito_client.describe_user_pool_domain.return_value = {"DomainDescription": {"Status": "ACTIVE"}}
-    #         cognito_client.create_resource_server.return_value = {}
-    #         cognito_client.create_user_pool_client.return_value = {
-    #             "UserPoolClient": {
-    #                 "ClientId": "testclientid",
-    #                 "ClientSecret": "testclientsecret",
-    #             }
-    #         }
-
-    #         result = gateway_client.create_oauth_authorizer_with_cognito("test-gateway")
-
-    #         assert result["client_info"]["client_id"] == "testclientid"
-    #         assert result["client_info"]["client_secret"] == "testclientsecret"
-    #         assert "us-west-2_TEST123" in result["authorizer_config"]["customJWTAuthorizer"]["discoveryUrl"]
-
+    @patch("time.sleep")
     @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
-    def test_error_handling(self, mock_create_oauth_authorizer_with_cognito, gateway_client):
+    def test_error_handling(self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client):
         """Test error handling in setup_gateway"""
         mock_bedrock = Mock()
         gateway_client.client = mock_bedrock
@@ -288,7 +274,8 @@ class TestGatewayClient:
             # Test with None gateway
             gateway_client.fix_iam_permissions(None)  # Should not raise exception
 
-    def test_cleanup_gateway(self, gateway_client):
+    @patch("time.sleep")
+    def test_cleanup_gateway(self, mock_sleep, gateway_client):
         """Test cleanup gateway functionality"""
         # Replace the client directly rather than mocking boto3.client
         mock_bedrock = Mock()
@@ -304,7 +291,7 @@ class TestGatewayClient:
         client_info = {"user_pool_id": "us-west-2_abc123", "domain_prefix": "test-domain"}
 
         # Direct patching of boto3.client
-        with patch("boto3.client") as mock_boto_client, patch("time.sleep"):
+        with patch("boto3.client") as mock_boto_client:
             # Create a mock Cognito client
             mock_cognito = Mock()
             # Configure boto3.client to return our mock when called with 'cognito-idp'
@@ -326,7 +313,8 @@ class TestGatewayClient:
             assert mock_cognito.delete_user_pool_domain.called
             assert mock_cognito.delete_user_pool.called
 
-    def test_create_oauth_authorizer_with_cognito(self, gateway_client):
+    @patch("time.sleep")
+    def test_create_oauth_authorizer_with_cognito(self, mock_sleep, gateway_client):
         """Test Cognito OAuth setup"""
         with patch.object(gateway_client.session, "client") as mock_cognito_client:
             cognito_client = Mock()
