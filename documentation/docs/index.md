@@ -60,7 +60,7 @@ The SDK provides Python primitives for agent development with built-in support f
 
 The Toolkit provides CLI tools and higher-level abstractions for:
 
-- **Deployment**: Containerize and deploy agents to AWS infrastructure
+- **Deployment**: Deploy Python agents directly to AWS infrastructure (direct_code_deploy) or containerize for complex scenarios
 - **Import Agent**: Migrate existing Bedrock Agents to AgentCore with framework conversion
 - **Gateway Integration**: Transform existing APIs into agent tools
 - **Configuration Management**: Manage environment and deployment settings

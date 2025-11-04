@@ -34,6 +34,7 @@ def create_test_config(
     agent_id=None,
     agent_session_id=None,
     observability_enabled=False,
+    deployment_type="container",
 ):
     """Create a test configuration with customizable parameters."""
     config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -41,6 +42,7 @@ def create_test_config(
         name=agent_name,
         entrypoint=entrypoint,
         container_runtime="docker",
+        deployment_type=deployment_type,
         aws=AWSConfig(
             region=region,
             account=account,
@@ -794,24 +796,33 @@ class TestLaunchBedrockAgentCore:
         )
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
-        create_test_agent_file(tmp_path)
+        create_test_agent_file(tmp_path, filename="app.py")
         create_test_dockerfile(tmp_path)
 
         mock_container_runtime.has_local_runtime = True
         mock_container_runtime.build.return_value = (True, ["Successfully built"])
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
-        ):
-            # Run locally
-            result = launch_bedrock_agentcore(config_path, local=True)
+        # Change to temp directory where app.py is located
+        import os
 
-            # Check that memory env vars were passed
-            assert "BEDROCK_AGENTCORE_MEMORY_ID" in result.env_vars
-            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "mem-12345"
-            assert "BEDROCK_AGENTCORE_MEMORY_NAME" in result.env_vars
-            assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test_memory"
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+
+        try:
+            with patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ):
+                # Run locally
+                result = launch_bedrock_agentcore(config_path, local=True)
+
+                # Check that memory env vars were passed
+                assert "BEDROCK_AGENTCORE_MEMORY_ID" in result.env_vars
+                assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] == "mem-12345"
+                assert "BEDROCK_AGENTCORE_MEMORY_NAME" in result.env_vars
+                assert result.env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] == "test_memory"
+        finally:
+            os.chdir(original_cwd)
 
     def test_container_runtime_error_handling(self, mock_container_runtime, tmp_path):
         """Test error handling for container runtime issues."""
@@ -1808,7 +1819,7 @@ class TestLaunchBedrockAgentCore:
         config_path = tmp_path / ".bedrock_agentcore.yaml"
         agent_config = BedrockAgentCoreAgentSchema(
             name="test-agent",
-            entrypoint="",  # Invalid empty entrypoint
+            entrypoint="nonexistent.py",  # Invalid non-existent entrypoint
             container_runtime="docker",
             aws=AWSConfig(
                 region="us-west-2",
@@ -1821,9 +1832,13 @@ class TestLaunchBedrockAgentCore:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        # Should raise ValueError for invalid configuration
-        with pytest.raises(ValueError, match="Invalid configuration"):
-            launch_bedrock_agentcore(config_path, local=True)
+        # Should raise RuntimeError for missing Dockerfile (checked before entrypoint)
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            with pytest.raises(RuntimeError, match="Dockerfile not found"):
+                launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_local_with_custom_port(self, mock_container_runtime, tmp_path):
         """Test local deployment with custom port configuration."""
@@ -2025,20 +2040,29 @@ class TestLaunchBedrockAgentCore:
         mock_container_runtime.build.return_value = (True, ["Successfully built"])
         mock_container_runtime.has_local_runtime = True
 
-        with (
-            patch(
-                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-                return_value=mock_container_runtime,
-            ),
-            patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
-        ):
-            result = launch_bedrock_agentcore(config_path, local=True)
+        # Change to temp directory where test_agent.py is located
+        import os
 
-            # Verify warning was logged
-            mock_log.warning.assert_called_with(
-                "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
-            )
-            assert result.mode == "local"
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+
+        try:
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                    return_value=mock_container_runtime,
+                ),
+                patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.log") as mock_log,
+            ):
+                result = launch_bedrock_agentcore(config_path, local=True)
+
+                # Verify warning was logged
+                mock_log.warning.assert_called_with(
+                    "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
+                )
+                assert result.mode == "local"
+        finally:
+            os.chdir(original_cwd)
 
     def test_launch_with_build_context_source_path(self, mock_container_runtime, tmp_path):
         """Test launch with custom source_path for build context."""
@@ -2106,16 +2130,25 @@ class TestLaunchBedrockAgentCore:
         mock_container_runtime.build.return_value = (True, ["Successfully built"])
         mock_container_runtime.has_local_runtime = True
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
-            return_value=mock_container_runtime,
-        ):
-            result = launch_bedrock_agentcore(config_path, local=True)
+        # Change to temp directory where test_agent.py is located
+        import os
 
-            # Should not have memory env vars
-            assert "BEDROCK_AGENTCORE_MEMORY_ID" not in result.env_vars
-            assert "BEDROCK_AGENTCORE_MEMORY_NAME" not in result.env_vars
-            assert result.mode == "local"
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+
+        try:
+            with patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ):
+                result = launch_bedrock_agentcore(config_path, local=True)
+
+                # Should not have memory env vars
+                assert "BEDROCK_AGENTCORE_MEMORY_ID" not in result.env_vars
+                assert "BEDROCK_AGENTCORE_MEMORY_NAME" not in result.env_vars
+                assert result.mode == "local"
+        finally:
+            os.chdir(original_cwd)
 
     def test_launch_cloud_with_region_from_config(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test cloud deployment uses region from agent config."""
@@ -3193,3 +3226,433 @@ class TestTransactionSearchIntegration:
 
             # Verify transaction search was NOT called (local mode doesn't deploy to cloud)
             mock_enable_transaction_search.assert_not_called()
+
+
+class TestCodeZipDeployment:
+    """Tests for direct_code_deploy deployment workflow."""
+
+    def test_launch_with_direct_code_deploy_success(self, mock_boto3_clients, tmp_path):
+        """Test successful direct_code_deploy deployment with all steps."""
+        # Create config with direct_code_deploy deployment
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+
+        # Create agent file
+        create_test_agent_file(tmp_path, "test_agent.py", "def handler(event, context): return {}")
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        # Override bedrock_agentcore mock for direct_code_deploy workflow
+        mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.return_value = {
+            "agentRuntimeId": "test-agent-123",
+            "agentRuntimeArn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123",
+        }
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("shutil.which") as mock_which,
+        ):
+            # Setup mocks
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Mock deployment package creation (in subdirectory to avoid cleanup conflicts)
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip content")
+            mock_create_package.return_value = (mock_deployment_zip, False)  # (Path, has_otel_distro)
+
+            # Mock S3 upload
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            # Execute launch
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify result
+            assert result.mode == "direct_code_deploy"
+            assert result.agent_arn == "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123"
+            assert result.agent_id == "test-agent-123"
+            # Note: s3_location is not part of LaunchResult model, so it won't be in the result
+
+            # Verify workflow steps called
+            mock_ensure_role.assert_called_once()
+            mock_ensure_memory.assert_called_once()
+            mock_create_package.assert_called_once()
+            mock_upload_s3.assert_called_once()
+            # Verify S3 upload was called with correct location
+            assert mock_upload_s3.return_value == "s3://test-bucket/test-agent/deployment.zip"
+            mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_called_once()
+
+    def test_launch_with_direct_code_deploy_package_creation_failure(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment handles create_deployment_package failure gracefully."""
+        # Create config with direct_code_deploy deployment
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+
+        # Create agent file
+        create_test_agent_file(tmp_path, "test_agent.py", "def handler(event, context): return {}")
+
+        # Setup mock AWS clients
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch("shutil.which") as mock_which,
+        ):
+            # Setup mocks
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Simulate create_deployment_package failure
+            mock_create_package.side_effect = RuntimeError("Failed to install dependencies")
+
+            # Execute launch and verify it raises the correct error
+            with pytest.raises(RuntimeError, match="Failed to install dependencies"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+            # Verify that execution stopped at package creation
+            mock_ensure_role.assert_called_once()
+            mock_ensure_memory.assert_called_once()
+            mock_create_package.assert_called_once()
+
+            # Verify agent was not created (since package creation failed)
+            mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.assert_not_called()
+
+    def test_launch_with_direct_code_deploy_missing_uv(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment fails if uv not installed."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+        create_test_agent_file(tmp_path)
+
+        with (
+            patch("shutil.which") as mock_which,
+        ):
+            # uv not found
+            mock_which.return_value = None
+
+            with pytest.raises(RuntimeError, match="uv is required for direct_code_deploy deployment"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_with_direct_code_deploy_missing_zip(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment fails if zip utility not installed."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+        create_test_agent_file(tmp_path)
+
+        with (
+            patch("shutil.which") as mock_which,
+        ):
+            # uv found, zip not found
+            mock_which.side_effect = lambda cmd: "/usr/bin/uv" if cmd == "uv" else None
+
+            with pytest.raises(RuntimeError, match="zip utility is required"):
+                launch_bedrock_agentcore(config_path, local=False)
+
+    def test_launch_with_direct_code_deploy_with_memory(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with memory enabled."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+        create_test_agent_file(tmp_path)
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("shutil.which") as mock_which,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = "memory-123"  # Memory created
+
+            # Create deployment.zip in a subdirectory to avoid cleanup removing config
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip")
+            mock_create_package.return_value = (mock_deployment_zip, False)
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            assert result.mode == "direct_code_deploy"
+            assert result.agent_id == "test-agent-id"  # From conftest mock
+
+            # Verify memory was ensured
+            mock_ensure_memory.assert_called_once()
+
+    def test_launch_with_direct_code_deploy_force_rebuild(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with force_rebuild_deps flag."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+        create_test_agent_file(tmp_path)
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("bedrock_agentcore_starter_toolkit.services.runtime.BedrockAgentCoreClient") as mock_runtime_client,
+            patch("shutil.which") as mock_which,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Create deployment.zip in a subdirectory to avoid cleanup removing config
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip")
+            mock_create_package.return_value = (mock_deployment_zip, False)
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            mock_client = Mock()
+            mock_client.create_or_update_agent.return_value = {
+                "id": "test-agent-123",
+                "arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123",
+            }
+            mock_client.wait_for_agent_endpoint_ready.return_value = None
+            mock_runtime_client.return_value = mock_client
+
+            # Launch with force_rebuild_deps=True
+            result = launch_bedrock_agentcore(config_path, local=False, force_rebuild_deps=True)
+
+            assert result.mode == "direct_code_deploy"
+
+            # Verify create_deployment_package was called with force_rebuild_deps=True
+            mock_create_package.assert_called_once()
+            call_kwargs = mock_create_package.call_args[1]
+            assert call_kwargs["force_rebuild_deps"] is True
+
+    def test_launch_with_direct_code_deploy_with_env_vars(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment passes environment variables correctly."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+        )
+        create_test_agent_file(tmp_path)
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("shutil.which") as mock_which,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Create deployment.zip in a subdirectory to avoid cleanup removing config
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip")
+            mock_create_package.return_value = (mock_deployment_zip, False)
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            # Launch with custom env vars
+            custom_env = {"MY_VAR": "test_value", "DEBUG": "true"}
+            result = launch_bedrock_agentcore(config_path, local=False, env_vars=custom_env)
+
+            assert result.mode == "direct_code_deploy"
+            assert result.agent_id == "test-agent-id"  # From conftest mock
+
+            # Verify that create_agent_runtime was called with env vars
+            call_kwargs = mock_boto3_clients["bedrock_agentcore"].create_agent_runtime.call_args[1]
+            assert "environmentVariables" in call_kwargs
+            env_vars_dict = call_kwargs["environmentVariables"]
+            # Service layer passes env_vars as dict, not AWS format list
+            assert isinstance(env_vars_dict, dict)
+            assert "MY_VAR" in env_vars_dict
+            assert env_vars_dict["MY_VAR"] == "test_value"
+
+    def test_launch_with_direct_code_deploy_with_observability(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment with observability enabled."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+            observability_enabled=True,
+        )
+        create_test_agent_file(tmp_path)
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("bedrock_agentcore_starter_toolkit.services.runtime.BedrockAgentCoreClient") as mock_runtime_client,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed"
+            ) as mock_enable_xray,
+            patch("shutil.which") as mock_which,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Create deployment.zip in a subdirectory to avoid cleanup removing config
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip")
+            mock_create_package.return_value = (mock_deployment_zip, False)
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            mock_client = Mock()
+            mock_client.create_or_update_agent.return_value = {
+                "id": "test-agent-123",
+                "arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/test-agent-123",
+            }
+            mock_client.wait_for_agent_endpoint_ready.return_value = None
+            mock_runtime_client.return_value = mock_client
+
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            assert result.mode == "direct_code_deploy"
+
+            # Verify observability was enabled
+            mock_enable_xray.assert_called_once_with("us-west-2", "123456789012")
+
+    def test_launch_with_direct_code_deploy_session_id_reset(self, mock_boto3_clients, tmp_path):
+        """Test direct_code_deploy deployment resets existing session_id with warning."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            deployment_type="direct_code_deploy",
+            agent_session_id="old-session-123",  # Existing session ID
+        )
+        create_test_agent_file(tmp_path)
+
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_execution_role"
+            ) as mock_ensure_role,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent"
+            ) as mock_ensure_memory,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.create_deployment_package"
+            ) as mock_create_package,
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.package.CodeZipPackager.upload_to_s3"
+            ) as mock_upload_s3,
+            patch("shutil.which") as mock_which,
+        ):
+            mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
+            mock_ensure_role.return_value = "arn:aws:iam::123456789012:role/TestRole"
+            mock_ensure_memory.return_value = None
+
+            # Create deployment.zip in a subdirectory to avoid cleanup removing config
+            mock_deployment_dir = tmp_path / "mock_package"
+            mock_deployment_dir.mkdir()
+            mock_deployment_zip = mock_deployment_dir / "deployment.zip"
+            mock_deployment_zip.write_bytes(b"fake zip")
+            mock_create_package.return_value = (mock_deployment_zip, False)
+            mock_upload_s3.return_value = "s3://test-bucket/test-agent/deployment.zip"
+
+            # Launch (should reset session_id)
+            result = launch_bedrock_agentcore(config_path, local=False)
+
+            assert result.mode == "direct_code_deploy"
+            assert result.agent_id == "test-agent-id"  # From conftest mock
+
+            # Verify config was updated with session_id reset
+            from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+            updated_config = load_config(config_path)
+            agent = updated_config.agents["test-agent"]
+            assert agent.bedrock_agentcore.agent_session_id is None

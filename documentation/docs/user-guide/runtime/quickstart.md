@@ -102,7 +102,7 @@ In the terminal window that's running the agent, enter `Ctrl+C` to stop the agen
 
 ## Step 4: Configure Your Agent
 
-Configure and deploy your agent to AWS using the starter toolkit. The toolkit automatically creates the IAM execution role, container image, and Amazon Elastic Container Registry repository needed to host the agent in AgentCore Runtime. By default the toolkit hosts the agent in an AgentCore Runtime that is in the `us-west-2` AWS Region.
+Configure and deploy your agent to AWS using the starter toolkit. The toolkit automatically creates the IAM execution role, container image (for container deployment), or S3 bucket (for direct_code_deploy deployment), and other resources needed to host the agent in AgentCore Runtime. By default the toolkit uses direct_code_deploy deployment and hosts the agent in an AgentCore Runtime that is in the `us-west-2` AWS Region.
 
 Configure the agent. Use the default values:
 
@@ -140,8 +140,8 @@ agentcore launch
 
 This command:
 
-- Builds your container using AWS CodeBuild (no Docker required locally)
-- Creates necessary AWS resources (ECR repository, IAM roles, etc.)
+- Builds your container using AWS CodeBuild (no Docker required locally) for container deployment, or packages Python code for direct_code_deploy deployment (default)
+- Creates necessary AWS resources (ECR repository for containers, S3 bucket for direct_code_deploy, IAM roles, etc.)
 - Deploys your agent to AgentCore Runtime
 - Creates memory resources if you configured memory during the setup
 - Configures CloudWatch logging
@@ -229,8 +229,8 @@ After deployment, view your resources in AWS Console:
 |--------------------|------------------------------------------------------------------------------|
 |**Agent Logs**      |CloudWatch → Log groups → `/aws/bedrock-agentcore/runtimes/{agent-id}-DEFAULT`|
 |**Memory Resources**|Bedrock AgentCore → Memory (if memory was configured during setup)            |
-|**Container Images**|ECR → Repositories → `bedrock-agentcore-{agent-name}`                         |
-|**Build Logs**      |CodeBuild → Build history                                                     |
+|**Container Images**|ECR → Repositories → `bedrock-agentcore-{agent-name}` (container deployment only)|
+|**S3 Deployment**   |S3 → Buckets → Your deployment bucket → `{agent-name}/deployment.zip`           |
 |**IAM Role**        |IAM → Roles → Search for "BedrockAgentCore"                                   |
 
 ## Common Issues & Solutions
@@ -253,7 +253,7 @@ Verify your AWS credentials and permissions:
 
 You can ignore this warning:
 
-- **Ignore this!** Default deployment uses CodeBuild (no Docker needed)
+- **Ignore this!** Default deployment uses direct_code_deploy (no Docker needed), or CodeBuild for container deployment
 - Only install Docker/Finch/Podman if you want to use `--local` or `--local-build` flags
 
 </details>
@@ -325,12 +325,12 @@ The starter toolkit has advanced configuration options for different deployment 
 
 Choose the right deployment approach for your needs:
 
-**Default: CodeBuild + Cloud Runtime (RECOMMENDED)**
+**Default: Direct Code Deploy Deployment (RECOMMENDED)**
 
-Suitable for production, managed environments, teams without Docker:
+Suitable for most use cases, no Docker required:
 
 ```bash
-agentcore launch  # Uses CodeBuild (no Docker needed)
+agentcore launch  # Uses CodeBuild for containers, .zip archive for direct deploy
 ```
 
 **Local Development**

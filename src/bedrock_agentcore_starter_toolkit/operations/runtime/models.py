@@ -13,14 +13,17 @@ class ConfigureResult(BaseModel):
     """Result of configure operation."""
 
     config_path: Path = Field(..., description="Path to configuration file")
-    dockerfile_path: Optional[Path] = Field(..., description="Path to generated Dockerfile")
+    dockerfile_path: Optional[Path] = Field(None, description="Path to generated Dockerfile")
     dockerignore_path: Optional[Path] = Field(None, description="Path to generated .dockerignore")
-    runtime: str = Field(..., description="Container runtime name")
+    runtime: Optional[str] = Field(None, description="Container runtime name")
+    runtime_type: Optional[str] = Field(None, description="Python runtime version for direct_code_deploy")
     region: str = Field(..., description="AWS region")
     account_id: str = Field(..., description="AWS account ID")
     execution_role: Optional[str] = Field(None, description="AWS execution role ARN")
     ecr_repository: Optional[str] = Field(None, description="ECR repository URI")
     auto_create_ecr: bool = Field(False, description="Whether ECR will be auto-created")
+    s3_path: Optional[str] = Field(None, description="S3 URI")
+    auto_create_s3: bool = Field(False, description="Whether S3 bucket will be auto-created")
     memory_id: Optional[str] = Field(default=None, description="Memory resource ID if created")
     network_mode: Optional[str] = Field(None, description="Network mode (PUBLIC or VPC)")
     network_subnets: Optional[List[str]] = Field(None, description="VPC subnet IDs")
@@ -33,7 +36,7 @@ class LaunchResult(BaseModel):
     """Result of launch operation."""
 
     mode: str = Field(..., description="Launch mode: local, cloud, or codebuild")
-    tag: str = Field(..., description="Docker image tag")
+    tag: Optional[str] = Field(default=None, description="Docker image tag (container deployments only)")
     env_vars: Optional[Dict[str, str]] = Field(default=None, description="Environment variables for local deployment")
 
     # Local mode fields

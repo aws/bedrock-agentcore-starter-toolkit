@@ -73,11 +73,18 @@ def destroy_bedrock_agentcore(
         # 2. Destroy Bedrock AgentCore agent
         _destroy_agentcore_agent(session, agent_config, result, dry_run)
 
-        # 3. Remove ECR images and optionally the repository
-        _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
+        # 3. Remove ECR images and optionally the repository (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
 
-        # 4. Remove CodeBuild project
-        _destroy_codebuild_project(session, agent_config, result, dry_run)
+        # 4. Remove CodeBuild project (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_codebuild_project(session, agent_config, result, dry_run)
+        else:
+            log.info("Skipping CodeBuild cleanup for direct_code_deploy deployment")
+
+        # 4.5. Remove S3 deployment artifacts
+        _destroy_s3_artifacts(session, agent_config, result, dry_run)
 
         # 5. Remove memory resource
         if agent_config.memory and agent_config.memory.memory_id and agent_config.memory.mode != "NO_MEMORY":
@@ -91,8 +98,11 @@ def destroy_bedrock_agentcore(
                 result.warnings.append(f"Memory {agent_config.memory.memory_id} preserved (was pre-existing)")
                 log.info("Preserving pre-existing memory: %s", agent_config.memory.memory_id)
 
-        # 6. Remove CodeBuild IAM Role
-        _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
+        # 6. Remove CodeBuild IAM Role (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
+        else:
+            log.info("Skipping CodeBuild IAM role cleanup for direct_code_deploy deployment")
 
         # 7. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
@@ -405,6 +415,56 @@ def _destroy_codebuild_project(
     except Exception as e:
         result.warnings.append(f"Error during CodeBuild cleanup: {e}")
         log.warning("Error during CodeBuild cleanup: %s", e)
+
+
+def _destroy_s3_artifacts(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Remove S3 deployment artifacts (both direct_code_deploy and container artifacts)."""
+    try:
+        s3_client = session.client("s3", region_name=agent_config.aws.region)
+
+        # Get bucket name from either CodeBuild config or AWS config (for direct_code_deploy)
+        bucket = None
+        if agent_config.codebuild and agent_config.codebuild.source_bucket:
+            bucket = agent_config.codebuild.source_bucket
+        elif agent_config.aws.s3_path:
+            # Extract bucket from s3://bucket-name format
+            bucket = agent_config.aws.s3_path.replace("s3://", "").split("/")[0]
+
+        if not bucket:
+            # No bucket configured, nothing to clean up
+            return
+        agent_name = agent_config.name
+        account_id = agent_config.aws.account
+
+        # Always try to delete both artifact types (idempotent - no error if not found)
+        # User might have switched between deployment types
+        artifacts_to_delete = [
+            f"{agent_name}/deployment.zip",  # direct_code_deploy artifact
+            f"{agent_name}/source.zip",  # container artifact
+        ]
+
+        for s3_key in artifacts_to_delete:
+            if dry_run:
+                result.resources_removed.append(f"S3 artifact: s3://{bucket}/{s3_key} (DRY RUN)")
+            else:
+                try:
+                    s3_client.delete_object(Bucket=bucket, Key=s3_key, ExpectedBucketOwner=account_id)
+                    result.resources_removed.append(f"S3 artifact: s3://{bucket}/{s3_key}")
+                    log.info("Deleted S3 artifact: %s", s3_key)
+                except ClientError as e:
+                    # NoSuchKey is expected if artifact doesn't exist - silently skip
+                    if e.response["Error"]["Code"] not in ["NoSuchKey", "NoSuchBucket"]:
+                        result.warnings.append(f"Failed to delete S3 artifact {s3_key}: {e}")
+                        log.warning("Failed to delete S3 artifact %s: %s", s3_key, e)
+
+    except Exception as e:
+        result.warnings.append(f"Error during S3 artifact cleanup: {e}")
+        log.warning("Error during S3 artifact cleanup: %s", e)
 
 
 def _destroy_memory(

@@ -65,6 +65,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     memory_mode="STM_ONLY",
                     non_interactive=True,
                 )
@@ -201,6 +202,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                 )
 
                 # Should still work but skip the Python module inspection
@@ -372,6 +374,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     verbose=True,  # Enable verbose mode
                     enable_observability=True,
                     requirements_file="requirements.txt",
@@ -462,6 +465,7 @@ def handler(payload):
                     enable_observability=True,  # Default enabled
                     authorizer_configuration=None,  # Default IAM
                     verbose=False,  # Default non-verbose
+                    deployment_type="container",
                 )
 
                 # Verify result structure
@@ -602,6 +606,7 @@ def handler(payload):
                     entrypoint_path=agent_file,
                     execution_role="TestRole",
                     container_runtime="docker",
+                    deployment_type="container",
                     request_header_configuration=request_header_config,
                 )
 
@@ -857,12 +862,17 @@ def handler(payload):
                     mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
                     mock_config_manager_class.return_value = mock_config_manager
 
+                    # Mock container runtime
+                    mock_container_runtime.runtime = "Docker"
+                    mock_container_runtime.get_name.return_value = "Docker"
+
                     result = configure_bedrock_agentcore(
                         agent_name="test_agent",
                         entrypoint_path=agent_file,
                         execution_role="TestRole",
                         request_header_configuration=request_header_config,
                         verbose=True,  # Enable verbose mode
+                        deployment_type="container",  # Required for runtime to be initialized
                     )
 
                     # Verify result structure is correct
@@ -1102,6 +1112,11 @@ def handler(payload):
                     non_interactive=True,
                 )
 
+                print("VPC enabled: True")
+                print(f"Result network_mode: {result.network_mode}")
+                print(f"Result subnets: {result.network_subnets}")
+                print(f"Result security_groups: {result.network_security_groups}")
+
                 # Verify VPC configuration in result
                 assert result.network_mode == "VPC"
                 assert result.network_subnets == ["subnet-abc123def456", "subnet-xyz789ghi012"]
@@ -1169,6 +1184,7 @@ def handler(payload):
                     execution_role="TestRole",
                     source_path=str(source_dir),  # Add source_path parameter
                     non_interactive=True,
+                    deployment_type="container",  # Required for runtime to be initialized
                 )
 
                 assert result.runtime == "Docker"
@@ -2290,7 +2306,7 @@ class TestHelperFunctions:
         empty_dir.mkdir()
 
         result = detect_entrypoint(empty_dir)
-        assert result is None
+        assert result == []
 
     def test_detect_entrypoint_finds_agent_py(self, tmp_path):
         """Test detect_entrypoint finds agent.py."""
@@ -2300,7 +2316,9 @@ class TestHelperFunctions:
         agent_file.write_text("# agent")
 
         result = detect_entrypoint(test_dir)
-        assert result == agent_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == agent_file
 
     def test_detect_entrypoint_finds_app_py(self, tmp_path):
         """Test detect_entrypoint finds app.py when agent.py doesn't exist."""
@@ -2310,7 +2328,9 @@ class TestHelperFunctions:
         app_file.write_text("# app")
 
         result = detect_entrypoint(test_dir)
-        assert result == app_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == app_file
 
     def test_detect_entrypoint_finds_main_py(self, tmp_path):
         """Test detect_entrypoint finds main.py when agent.py and app.py don't exist."""
@@ -2320,10 +2340,12 @@ class TestHelperFunctions:
         main_file.write_text("# main")
 
         result = detect_entrypoint(test_dir)
-        assert result == main_file
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0] == main_file
 
     def test_detect_entrypoint_priority_order(self, tmp_path):
-        """Test detect_entrypoint follows priority order: agent.py > app.py > main.py."""
+        """Test detect_entrypoint returns all matching files in priority order."""
         test_dir = tmp_path / "test"
         test_dir.mkdir()
 
@@ -2336,8 +2358,12 @@ class TestHelperFunctions:
         main_file.write_text("# main")
 
         result = detect_entrypoint(test_dir)
-        # Should find agent.py first (highest priority)
-        assert result == agent_file
+        # Should return all three files in priority order
+        assert isinstance(result, list)
+        assert len(result) == 3
+        assert result[0] == agent_file  # First in priority
+        assert result[1] == app_file  # Second in priority
+        assert result[2] == main_file  # Third in priority
 
     def test_infer_agent_name_with_py_extension(self, tmp_path):
         """Test infer_agent_name removes .py extension."""

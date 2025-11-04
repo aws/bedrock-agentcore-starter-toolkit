@@ -84,9 +84,9 @@ def enable_transaction_search_if_needed(region: str, account_id: str) -> bool:
             logger.info("X-Ray indexing rule already configured")
 
         if steps_run:
-            logger.info("✅ Transaction Search configured: %s", ", ".join(steps_run))
+            logger.info("Transaction Search configured: %s", ", ".join(steps_run))
         else:
-            logger.info("✅ Transaction Search already fully configured")
+            logger.info("Transaction Search already fully configured")
 
         return True
 

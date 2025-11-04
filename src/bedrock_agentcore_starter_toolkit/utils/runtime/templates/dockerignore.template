@@ -49,8 +49,6 @@ htmlcov/
 
 # Documentation
 docs/
-*.md
-!README.md
 
 # CI/CD
 .github/

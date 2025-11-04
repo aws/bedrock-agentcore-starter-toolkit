@@ -1591,10 +1591,11 @@ def test_wait_for_memory_active_timeout_with_strategies():
             }
         }
 
-        # Mock time to simulate timeout - provide enough values for all time.time() calls
-        # The method calls: start_time, while condition check, elapsed calc,
-        # while condition check (timeout), elapsed calc
-        with patch("time.time", side_effect=[0, 0, 0, 61, 61]):
+        # Mock time to simulate timeout
+        # Use itertools.cycle to provide unlimited values for Python 3.12 compatibility
+        from itertools import cycle
+
+        with patch("time.time", side_effect=cycle([0, 0, 0, 61, 61, 61, 61, 61])):
             with patch("time.sleep"):
                 try:
                     manager._wait_for_memory_active("mem-123", max_wait=60, poll_interval=5)

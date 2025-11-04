@@ -33,7 +33,7 @@ jobs:
 
             // Include ALL required checks
             const requiredChecks = [
-              'Lint',
+              'Lint and Format',
               'Test Python 3.10',
               'Test Python 3.11',
               'Test Python 3.12',

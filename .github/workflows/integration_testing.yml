@@ -10,7 +10,7 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read 
+  contents: read
 
 jobs:
   authorization-check:
@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       approval-env: ${{ steps.collab-check.outputs.result }}
-      should-run: ${{ steps.safety-check.outputs.safe }}
+      should-run: ${{ steps.safety-check.outputs.result }}
     steps:
       - name: Checkout base branch for safety check
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-          
+
       - name: Safety Check - Prevent Workflow Modification Attacks
         id: safety-check
         uses: actions/github-script@v7
@@ -35,14 +35,14 @@ jobs:
               console.log('Not a pull request, proceeding');
               return 'true';
             }
-            
+
             // Get list of changed files
             const { data: files } = await github.rest.pulls.listFiles({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
             });
-            
+
             // Check if any workflow files or sensitive files are modified
             const dangerousPatterns = [
               /^\.github\/workflows\//,
@@ -51,18 +51,18 @@ jobs:
               /pytest\.ini$/,
               /^tests\/conftest_mock\.py$/,
             ];
-            
-            const dangerousFiles = files.filter(file => 
+
+            const dangerousFiles = files.filter(file =>
               dangerousPatterns.some(pattern => pattern.test(file.filename))
             );
-            
+
             if (dangerousFiles.length > 0) {
               console.log('⚠️ SECURITY: PR modifies sensitive files:');
               dangerousFiles.forEach(f => console.log(`  - ${f.filename}`));
               console.log('Manual review required before running integration tests');
               return 'false';
             }
-            
+
             console.log('✓ Safety check passed - no sensitive files modified');
             return 'true';
 
@@ -116,24 +116,24 @@ jobs:
          role-to-assume: ${{ secrets.AGENTCORE_INTEG_TEST_ROLE }}
          aws-region: us-west-2
          mask-aws-account-id: true
-         
+
       - name: Checkout PR head commit
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           persist-credentials: false
-          
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          
+
       - name: Install dependencies
         run: |
           pip install -e .
           pip install --no-cache-dir pytest click
-          
+
       - name: Run integration tests
         env:
           AWS_REGION: us-west-2
