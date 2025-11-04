@@ -2313,7 +2313,7 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>admin-set-user-pas
 </code></pre></div>
 <h2 id="step-15-add-the-callback-url-to-your-oauth-20-authorization-server">Step 1.5: Add the callback URL to your OAuth 2.0 authorization server<a class="headerlink" href="#step-15-add-the-callback-url-to-your-oauth-20-authorization-server" title="Permanent link">&para;</a></h2>
 <p>To prevent unauthorized redirects, add the callback URL retrieved from <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html">CreateOauth2CredentialProvider</a> or <a href="https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GetOauth2CredentialProvider.html">GetOauth2CredentialProvider</a> to your OAuth 2.0 authorization server.</p>
-<p>If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your authorization server callback URL settings. </p>
+<p>If you are using your own authorization server, configure the OAuth2 credential provider callback URL in your authorization server callback URL settings.</p>
 <p>If you are using the previous script to create an authorization server with Cognito, copy the EXPORT statements from the output into your terminal to set the environment variables and update the Cognito user pool client with the OAuth2 credential provider callback URL.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
 
