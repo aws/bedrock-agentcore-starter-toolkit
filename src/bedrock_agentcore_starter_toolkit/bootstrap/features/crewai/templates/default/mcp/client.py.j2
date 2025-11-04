@@ -1,10 +1,35 @@
 import os
 from crewai_tools import MCPServerAdapter
+{%- if not custom_authorizer_enabled %}
+import requests
 
-# Define the inbound authentication mechanism for AgentCore Gateway - AWS IAM or JWT
-# https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html
-def get_bearer_token():
-    raise NotImplementedError()
+COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
+COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
+COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
+
+def _get_access_token():
+    """
+    Make a POST request to the Cognito OAuth token URL using client credentials.
+    """
+    response = requests.post(
+        COGNITO_TOKEN_URL,
+        data={
+            "grant_type": "client_credentials",
+            "client_id": COGNITO_CLIENT_ID,
+            "client_secret": COGNITO_CLIENT_SECRET,
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    return response.json()["access_token"]
+{%- else %}
+
+def _get_access_token():
+    """
+    Stub implementation if using a custom authorizer.
+    """
+    raise NotImplementedError("Custom authorizer flow is not implemented.")
+{%- endif %}
+
 
 async def get_streamable_http_mcp_client() -> MCPServerAdapter:
     gateway_url = os.getenv("GATEWAY_URL")
@@ -15,8 +40,7 @@ async def get_streamable_http_mcp_client() -> MCPServerAdapter:
         "url": f"{gateway_url}/mcp",
         "transport": "streamable-http",
         "headers": {
-            "Authorization": f"Bearer {get_bearer_token()}"
+            "Authorization": f"Bearer {_get_access_token()}"
         }
     }
-
     return MCPServerAdapter(serverparams=server_params)

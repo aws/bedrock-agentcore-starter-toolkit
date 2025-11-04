@@ -1,25 +1,48 @@
 import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
+{%- if not custom_authorizer_enabled %}
+import requests
 
-# Define the inbound authentication mechanism for AgentCore Gateway - AWS IAM or JWT
-# https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html
-def get_bearer_auth():
+COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
+COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
+COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
+
+def _get_access_token():
     """
-    Defines Inbound Authentication for AgentCore Gateway
+    Make a POST request to the Cognito OAuth token URL using client credentials.
     """
-    raise NotImplementedError()
+    response = requests.post(
+        COGNITO_TOKEN_URL,
+        data={
+            "grant_type": "client_credentials",
+            "client_id": COGNITO_CLIENT_ID,
+            "client_secret": COGNITO_CLIENT_SECRET,
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    return response.json()["access_token"]
+{%- else %}
+
+def _get_access_token():
+    """
+    Stub for environments using a custom authorizer.
+    """
+    raise NotImplementedError("Custom authorizer flow is not implemented.")
+{%- endif %}
+
 
 def get_streamable_http_mcp_client() -> MultiServerMCPClient:
-    gateway_url = os.getenv("gatewayUrl")
+    gateway_url = os.getenv("GATEWAY_URL")
     if not gateway_url:
-        raise RuntimeError("Missing required environment variable: gatewayUrl")
+        raise RuntimeError("Missing required environment variable: GATEWAY_URL")
+    access_token = _get_access_token()
     return MultiServerMCPClient(
         {
             "agentcore_gateway": {
                 "transport": "streamable_http",
                 "url": f"{gateway_url}/mcp",
                 "headers": {
-                    "Authorization": f"Bearer {get_bearer_auth()}"
+                    "Authorization": f"Bearer {access_token}"
                 }
             }
         }
