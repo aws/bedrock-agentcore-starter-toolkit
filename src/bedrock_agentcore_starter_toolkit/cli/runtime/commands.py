@@ -613,7 +613,7 @@ def configure(
         # Interactive mode
         if direct_code_deploy_available:
             deployment_options = [
-                ("Direct Code Deploy (recommended) - Simple, serverless, no Docker required", "direct_code_deploy"),
+                ("Direct Code Deploy (recommended) - Python only, no Docker required", "direct_code_deploy"),
                 ("Container - For custom runtimes or complex dependencies", "container"),
             ]
         else:
