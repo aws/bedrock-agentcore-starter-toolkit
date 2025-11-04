@@ -9,10 +9,30 @@ from bedrock_agentcore_starter_toolkit.services.runtime import (
     BedrockAgentCoreClient,
     HttpBedrockAgentCoreClient,
     LocalBedrockAgentCoreClient,
+    _get_user_agent,
     _handle_aws_response,
     _handle_streaming_response,
     generate_session_id,
 )
+
+
+def test_get_user_agent_success():
+    """Test _get_user_agent returns correct format."""
+    user_agent = _get_user_agent()
+    assert user_agent.startswith("agentcore-st/")
+    # Should either be a version number or "unknown"
+    version_part = user_agent.split("/")[1]
+    assert len(version_part) > 0
+
+
+def test_get_user_agent_exception_handling():
+    """Test _get_user_agent handles version() exception gracefully."""
+    with patch("bedrock_agentcore_starter_toolkit.services.runtime.version") as mock_version:
+        # Mock version() to raise an exception
+        mock_version.side_effect = Exception("Package not found")
+
+        user_agent = _get_user_agent()
+        assert user_agent == "agentcore-st/unknown"
 
 
 def test_handle_http_response_empty_content():

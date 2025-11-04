@@ -1832,9 +1832,13 @@ class TestLaunchBedrockAgentCore:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        # Should raise RuntimeError for missing entrypoint file
-        with pytest.raises(RuntimeError, match="Entrypoint file not found"):
-            launch_bedrock_agentcore(config_path, local=True)
+        # Should raise RuntimeError for missing Dockerfile (checked before entrypoint)
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+            return_value=mock_container_runtime,
+        ):
+            with pytest.raises(RuntimeError, match="Dockerfile not found"):
+                launch_bedrock_agentcore(config_path, local=True)
 
     def test_launch_local_with_custom_port(self, mock_container_runtime, tmp_path):
         """Test local deployment with custom port configuration."""
@@ -2056,7 +2060,7 @@ class TestLaunchBedrockAgentCore:
                 mock_log.warning.assert_called_with(
                     "⚠️  VPC configuration detected but running in local mode. VPC settings will be ignored."
                 )
-                assert result.mode == "local_direct_code_deploy"
+                assert result.mode == "local"
         finally:
             os.chdir(original_cwd)
 
@@ -2142,7 +2146,7 @@ class TestLaunchBedrockAgentCore:
                 # Should not have memory env vars
                 assert "BEDROCK_AGENTCORE_MEMORY_ID" not in result.env_vars
                 assert "BEDROCK_AGENTCORE_MEMORY_NAME" not in result.env_vars
-                assert result.mode == "local_direct_code_deploy"
+                assert result.mode == "local"
         finally:
             os.chdir(original_cwd)
 

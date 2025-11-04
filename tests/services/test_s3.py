@@ -1,13 +1,14 @@
 """Tests for S3 service integration."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.services.s3 import (
-    sanitize_s3_bucket_name,
-    get_or_create_s3_bucket,
     create_s3_bucket,
+    get_or_create_s3_bucket,
+    sanitize_s3_bucket_name,
 )
 
 
@@ -64,24 +65,18 @@ class TestGetOrCreateS3Bucket:
         mock_s3.head_bucket.return_value = None
 
         result = get_or_create_s3_bucket("test-agent", "123456789012", "us-east-1")
-        
+
         expected_bucket = "bedrock-agentcore-codebuild-sources-123456789012-us-east-1"
         assert result == expected_bucket
-        mock_s3.head_bucket.assert_called_once_with(
-            Bucket=expected_bucket, 
-            ExpectedBucketOwner="123456789012"
-        )
+        mock_s3.head_bucket.assert_called_once_with(Bucket=expected_bucket, ExpectedBucketOwner="123456789012")
 
     @patch("bedrock_agentcore_starter_toolkit.services.s3.boto3.client")
     def test_permission_error(self, mock_boto3_client):
         """Test handling of permission errors."""
         mock_s3 = Mock()
         mock_boto3_client.return_value = mock_s3
-        
-        error = ClientError(
-            {"Error": {"Code": "403", "Message": "Forbidden"}},
-            "HeadBucket"
-        )
+
+        error = ClientError({"Error": {"Code": "403", "Message": "Forbidden"}}, "HeadBucket")
         mock_s3.head_bucket.side_effect = error
 
         with pytest.raises(RuntimeError, match="Access Error"):
@@ -93,16 +88,13 @@ class TestGetOrCreateS3Bucket:
         """Test creating new bucket when not found."""
         mock_s3 = Mock()
         mock_boto3_client.return_value = mock_s3
-        
-        error = ClientError(
-            {"Error": {"Code": "404", "Message": "Not Found"}},
-            "HeadBucket"
-        )
+
+        error = ClientError({"Error": {"Code": "404", "Message": "Not Found"}}, "HeadBucket")
         mock_s3.head_bucket.side_effect = error
         mock_create_bucket.return_value = "test-bucket"
 
         result = get_or_create_s3_bucket("test-agent", "123456789012", "us-east-1")
-        
+
         assert result == "test-bucket"
         expected_bucket = "bedrock-agentcore-codebuild-sources-123456789012-us-east-1"
         mock_create_bucket.assert_called_once_with(expected_bucket, "us-east-1", "123456789012")
@@ -112,11 +104,8 @@ class TestGetOrCreateS3Bucket:
         """Test handling of unexpected errors."""
         mock_s3 = Mock()
         mock_boto3_client.return_value = mock_s3
-        
-        error = ClientError(
-            {"Error": {"Code": "500", "Message": "Internal Error"}},
-            "HeadBucket"
-        )
+
+        error = ClientError({"Error": {"Code": "500", "Message": "Internal Error"}}, "HeadBucket")
         mock_s3.head_bucket.side_effect = error
 
         with pytest.raises(RuntimeError, match="Unexpected error checking S3 bucket"):
@@ -133,9 +122,9 @@ class TestCreateS3Bucket:
         mock_boto3_client.return_value = mock_s3
 
         result = create_s3_bucket("test-bucket", "us-east-1", "123456789012")
-        
+
         assert result == "test-bucket"
-        mock_s3.create_bucket.assert_called_once_with(Bucket="test-bucket")
+        mock_s3.create_bucket.assert_called_once_with(Bucket="test-bucket", ExpectedBucketOwner="123456789012")
         mock_s3.put_bucket_lifecycle_configuration.assert_called_once()
 
     @patch("bedrock_agentcore_starter_toolkit.services.s3.boto3.client")
@@ -145,11 +134,12 @@ class TestCreateS3Bucket:
         mock_boto3_client.return_value = mock_s3
 
         result = create_s3_bucket("test-bucket", "us-west-2", "123456789012")
-        
+
         assert result == "test-bucket"
         mock_s3.create_bucket.assert_called_once_with(
             Bucket="test-bucket",
-            CreateBucketConfiguration={"LocationConstraint": "us-west-2"}
+            CreateBucketConfiguration={"LocationConstraint": "us-west-2"},
+            ExpectedBucketOwner="123456789012",
         )
         mock_s3.put_bucket_lifecycle_configuration.assert_called_once()
 
@@ -158,15 +148,12 @@ class TestCreateS3Bucket:
         """Test handling when bucket already exists."""
         mock_s3 = Mock()
         mock_boto3_client.return_value = mock_s3
-        
-        error = ClientError(
-            {"Error": {"Code": "BucketAlreadyOwnedByYou", "Message": "Already exists"}},
-            "CreateBucket"
-        )
+
+        error = ClientError({"Error": {"Code": "BucketAlreadyOwnedByYou", "Message": "Already exists"}}, "CreateBucket")
         mock_s3.create_bucket.side_effect = error
 
         result = create_s3_bucket("test-bucket", "us-east-1", "123456789012")
-        
+
         assert result == "test-bucket"
 
     @patch("bedrock_agentcore_starter_toolkit.services.s3.boto3.client")
@@ -174,11 +161,8 @@ class TestCreateS3Bucket:
         """Test handling of bucket creation errors."""
         mock_s3 = Mock()
         mock_boto3_client.return_value = mock_s3
-        
-        error = ClientError(
-            {"Error": {"Code": "InvalidBucketName", "Message": "Invalid name"}},
-            "CreateBucket"
-        )
+
+        error = ClientError({"Error": {"Code": "InvalidBucketName", "Message": "Invalid name"}}, "CreateBucket")
         mock_s3.create_bucket.side_effect = error
 
         with pytest.raises(RuntimeError, match="Failed to create S3 bucket"):
