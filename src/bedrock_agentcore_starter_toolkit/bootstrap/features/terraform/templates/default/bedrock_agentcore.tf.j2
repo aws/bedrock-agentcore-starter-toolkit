@@ -200,11 +200,11 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
       security_groups = [{% for sg in vpc_security_groups %}"{{ sg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
     }{% endif %}
   }
-  {%- if request_header_allowlist }
+  {%- if request_header_allowlist %}
   request_header_configuration {
     request_header_allowlist = {{ request_header_allowlist | tojson }}
   }
-  {%- endif}
+  {%- endif %}
   environment_variables = {
     MEMORY_ID = "${aws_bedrockagentcore_memory.agentcore_memory.id}"
   }{% if custom_authorizer_enabled %}

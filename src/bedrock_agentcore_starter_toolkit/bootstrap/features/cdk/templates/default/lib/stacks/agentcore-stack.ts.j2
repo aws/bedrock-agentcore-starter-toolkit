@@ -180,9 +180,9 @@ export class AgentCoreStack extends cdk.Stack {
                 "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                 "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
                 {%- if not custom_authorizer_enabled %}
-                COGNITO_CLIENT_ID: cognitoAppClient.userPoolClientId,
-                COGNITO_CLIENT_SECRET: cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
-                COGNITO_TOKEN_URL: cognitoTokenUrl,
+                "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
+                "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
+                "COGNITO_TOKEN_URL": cognitoTokenUrl,
                 {%- endif %}
             }{% if custom_authorizer_enabled %},
             authorizerConfiguration: {
