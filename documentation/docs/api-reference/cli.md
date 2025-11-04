@@ -61,8 +61,6 @@ Options:
 
 - `--non-interactive, -ni`: Skip prompts; use defaults unless overridden
 
-- `--non-interactive, -ni`: Skip prompts; use defaults unless overridden
-
 - `--vpc`: Enable VPC networking mode for secure access to private resources
 
 - `--subnets TEXT`: Comma-separated list of subnet IDs (required when --vpc is enabled)
