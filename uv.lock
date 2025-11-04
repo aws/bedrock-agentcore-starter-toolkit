@@ -165,8 +165,8 @@ dev = [
 requires-dist = [
     { name = "autopep8", specifier = ">=2.3.2" },
     { name = "bedrock-agentcore", specifier = ">=1.0.3" },
-    { name = "boto3", specifier = ">=1.40.51" },
-    { name = "botocore", specifier = ">=1.40.51" },
+    { name = "boto3", specifier = ">=1.40.65" },
+    { name = "botocore", specifier = ">=1.40.65" },
     { name = "docstring-parser", specifier = ">=0.15,<1.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
