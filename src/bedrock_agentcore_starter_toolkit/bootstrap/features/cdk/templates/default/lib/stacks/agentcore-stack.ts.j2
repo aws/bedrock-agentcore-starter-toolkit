@@ -183,6 +183,7 @@ export class AgentCoreStack extends cdk.Stack {
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                 "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                 "COGNITO_TOKEN_URL": cognitoTokenUrl,
+                "COGNITO_SCOPE": `${cognitoResourceServer.id}/${cognitoResourceServerScope.scopeName}`
                 {%- endif %}
             }{% if custom_authorizer_enabled %},
             authorizerConfiguration: {

@@ -1,16 +1,21 @@
 from strands import Agent
 from bedrock_agentcore import BedrockAgentCoreApp
-from mcp.client import get_streamable_http_mcp_client
+from mcp_client.client import get_streamable_http_mcp_client
 
 app = BedrockAgentCoreApp()
 
 mcp_client = get_streamable_http_mcp_client()
 
-# Create an Agent with MCP tools
-with mcp_client:
-    tools = mcp_client.list_tools_sync()
-    agent = Agent(tools=tools)
-
 @app.entrypoint
-def invoke():
-    agent("Tell me about agentic AI")
+def invoke(payload):
+    # Create an Agent with MCP tools
+    with mcp_client:
+        tools = mcp_client.list_tools_sync()
+        agent = Agent(tools=tools)
+        response = agent(payload.get("prompt", "What is Agentic AI?"))
+        return {
+            "response": response
+        }
+
+if __name__ == "__main__":
+    app.run()

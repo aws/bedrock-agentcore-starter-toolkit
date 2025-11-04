@@ -869,7 +869,7 @@ def configure(
                 f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"   [cyan]agentcore launch[/cyan]{"   [cyan]agentcore bootstrap[/cyan]" if bootstrap_mode_enabled else ""}",
+                f"[cyan]agentcore launch[/cyan]{'   [cyan]agentcore bootstrap[/cyan]' if bootstrap_mode_enabled else ''}",
                 title="Configuration Success",
                 border_style="bright_blue",
             )

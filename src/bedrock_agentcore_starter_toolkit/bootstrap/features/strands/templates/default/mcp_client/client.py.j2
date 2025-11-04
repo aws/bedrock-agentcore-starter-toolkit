@@ -7,6 +7,7 @@ import requests
 COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
 COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
 COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
+COGNITO_SCOPE = os.getenv("COGNITO_SCOPE")
 
 def _get_access_token():
     """
@@ -14,10 +15,10 @@ def _get_access_token():
     """
     response = requests.post(
         COGNITO_TOKEN_URL,
+        auth=(COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET),
         data={
             "grant_type": "client_credentials",
-            "client_id": COGNITO_CLIENT_ID,
-            "client_secret": COGNITO_CLIENT_SECRET,
+            "scope": COGNITO_SCOPE,
         },
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )

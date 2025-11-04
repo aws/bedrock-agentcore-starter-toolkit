@@ -23,6 +23,7 @@ resource "null_resource" "docker_image" {
     dockerfile_hash = filesha256("../${path.root}/src/Dockerfile")
     app_hash        = filesha256("../${path.root}/src/main.py")
     pyproject_hash  = filesha256("../${path.root}/src/pyproject.toml")
+    mcp_client_hash = filebase64sha256("../${path.root}/src/mcp_client/client.py")
   }
 
   provisioner "local-exec" {
@@ -49,7 +50,7 @@ resource "null_resource" "docker_image" {
 ################################################################################
 data "archive_file" "mcp_lambda_zip" {
   type        = "zip"
-  source_dir  = "../${path.root}/lambda"
+  source_dir  = "../${path.root}/mcp/lambda"
   output_path = "../${path.root}/mcp_lambda.zip"
 }
 
@@ -84,10 +85,133 @@ resource "aws_iam_role_policy_attachment" "mcp_lambda_basic" {
 }
 
 ################################################################################
+# AgentCore Gateway Roles
+################################################################################
+
+resource "aws_iam_role" "agentcore_gateway_role" {
+  name               = "${var.app_name}-AgentCoreGatewayRole"
+  assume_role_policy = data.aws_iam_policy_document.bedrock_agentcore_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "agentcore_gateway_permissions" {
+  role       = aws_iam_role.agentcore_gateway_role.name
+  policy_arn = "arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess"
+}
+
+resource "aws_iam_role_policy" "agentcore_gateway_lambda_invoke" {
+  role = aws_iam_role.agentcore_gateway_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action   = ["lambda:InvokeFunction"]
+      Effect   = "Allow"
+      Resource = [aws_lambda_function.mcp_lambda.arn]
+    }]
+  })
+}
+
+{%- if not custom_authorizer_enabled %}
+
+################################################################################
+# AgentCore Gateway Inbound Auth - Cognito
+################################################################################
+
+resource "aws_cognito_user_pool" "cognito_user_pool" {
+  name = "${var.app_name}-CognitoUserPool"
+}
+
+resource "aws_cognito_resource_server" "cognito_resource_server" {
+  identifier   = "${var.app_name}-CognitoResourceServer"
+  name         = "${var.app_name}-CognitoResourceServer"
+  user_pool_id = aws_cognito_user_pool.cognito_user_pool.id
+  scope {
+    scope_description = "Basic access to ${var.app_name}"
+    scope_name        = "basic"
+  }
+}
+
+resource "aws_cognito_user_pool_client" "cognito_app_client" {
+  name                                 = "${var.app_name}-CognitoUserPoolClient"
+  user_pool_id                         = aws_cognito_user_pool.cognito_user_pool.id
+  generate_secret                      = true
+  allowed_oauth_flows                  = ["client_credentials"]
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_scopes                 = ["${aws_cognito_resource_server.cognito_resource_server.identifier}/basic"]
+  supported_identity_providers         = ["COGNITO"]
+}
+
+locals {
+  cognito_discovery_url = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.cognito_user_pool.id}/.well-known/openid-configuration"
+}
+
+resource "aws_cognito_user_pool_domain" "cognito_domain" {
+  domain       = "${var.app_name}-${data.aws_region.current.region}"
+  user_pool_id = aws_cognito_user_pool.cognito_user_pool.id
+}
+{%- endif %}
+
+################################################################################
 # Agent Gateway
 ################################################################################
 
-# TODO: Awaiting Terraform provider fix in v6.19
+resource "aws_bedrockagentcore_gateway" "agentcore_gateway" {
+  name            = "${var.app_name}-AgentCoreGateway"
+  protocol_type   = "MCP"
+  role_arn        = aws_iam_role.agentcore_gateway_role.arn
+  authorizer_type = "CUSTOM_JWT"
+  authorizer_configuration {
+    custom_jwt_authorizer {
+      {%- if custom_authorizer_enabled %}
+      discovery_url   = "{{ custom_authorizer_url }}"
+      allowed_clients = [
+        {% for client in custom_authorizer_allowed_clients %}
+        "{{ client }}"{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      ]
+      allowed_audience = [
+        {% for audience in custom_authorizer_allowed_audience %}
+        "{{ audience }}"{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      ]
+      {%- else %}
+      discovery_url   = local.cognito_discovery_url
+      allowed_clients = [aws_cognito_user_pool_client.cognito_app_client.id]
+      {%- endif %}
+    }
+  }
+}
+
+resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target" {
+  name               = "${var.app_name}-AgentCoreGatewayTarget"
+  gateway_identifier = aws_bedrockagentcore_gateway.agentcore_gateway.gateway_id
+
+  credential_provider_configuration {
+    gateway_iam_role {}
+  }
+
+  target_configuration {
+    mcp {
+      lambda {
+        lambda_arn = aws_lambda_function.mcp_lambda.arn
+
+        tool_schema {
+          inline_payload {
+            description = "Placeholder tool"
+            name        = "tool_0"
+            input_schema {
+              type        = "object"
+              description = "Simple string input for placeholder tool"
+              property {
+                type = "string"
+                name = "value"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 ################################################################################
 # AgentCore Runtime and Memory IAM Roles
@@ -163,12 +287,35 @@ resource "aws_iam_role_policy" "runtime_ecr_policy" {
 ################################################################################
 resource "aws_bedrockagentcore_memory" "agentcore_memory" {
   name                  = "{{ memory_name }}"
-  description           = "Memory resource with 60 days event expiry"
-  event_expiry_duration = 60
+  description           = "Memory resource with {{ memory_event_expiry_days }} days event expiry"
+  event_expiry_duration = {{ memory_event_expiry_days }}
   memory_execution_role_arn = aws_iam_role.agentcore_memory_execution_role.arn
 }
+{%- if memory_is_long_term %}
+# Long Term Memory Configuration
+resource "aws_bedrockagentcore_memory_strategy" "user_preference_memory_strategy" {
+  memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
+  name       = "UserPreferences"
+  namespaces = ["/users/{actorId}/preferences"]
+  type       = "USER_PREFERENCE"
+}
 
-# Optional memory strategy configuration
+resource "aws_bedrockagentcore_memory_strategy" "semantic_memory_strategy" {
+  memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
+  name       = "SemanticFacts"
+  namespaces = ["/users/{actorId}/facts"]
+  type       = "SEMANTIC"
+}
+
+resource "aws_bedrockagentcore_memory_strategy" "summary_memory_strategy" {
+  memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
+  name       = "SessionSummaries"
+  namespaces = ["/summaries/{actorId}/{sessionId}"]
+  type       = "SUMMARIZATION"
+}
+{%- else %}
+# Add a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+# Example of adding semantic memory
 # resource "aws_bedrockagentcore_memory_strategy" "semantic" {
 #  name        = "semantic-strategy"
 #  memory_id   = aws_bedrockagentcore_memory.agentcore_memory.id
@@ -176,7 +323,7 @@ resource "aws_bedrockagentcore_memory" "agentcore_memory" {
 #  description = "Semantic understanding strategy"
 #  namespaces  = ["default"]
 # }
-
+{%- endif %}
 
 ################################################################################
 # AgentCore Runtime
@@ -206,7 +353,12 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
   }
   {%- endif %}
   environment_variables = {
-    MEMORY_ID = "${aws_bedrockagentcore_memory.agentcore_memory.id}"
+    MEMORY_ID             = aws_bedrockagentcore_memory.agentcore_memory.id
+    GATEWAY_URL           = aws_bedrockagentcore_gateway.agentcore_gateway.gateway_url{% if not custom_authorizer_enabled %}
+    COGNITO_CLIENT_ID     = aws_cognito_user_pool_client.cognito_app_client.id
+    COGNITO_CLIENT_SECRET = aws_cognito_user_pool_client.cognito_app_client.client_secret
+    COGNITO_TOKEN_URL     = "https://${aws_cognito_user_pool_domain.cognito_domain.domain}.auth.${data.aws_region.current.region}.amazoncognito.com/oauth2/token"
+    COGNITO_SCOPE         = "${aws_cognito_resource_server.cognito_resource_server.identifier}/basic"{% endif %}
   }{% if custom_authorizer_enabled %}
   authorizer_configuration {
     custom_jwt_authorizer {
