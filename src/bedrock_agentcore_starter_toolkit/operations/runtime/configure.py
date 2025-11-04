@@ -440,7 +440,7 @@ def configure_bedrock_agentcore(
 
     # Ensure .dockerignore exists at Docker build context location (only for container deployments)
     dockerignore_path = None
-    if deployment_type == "container":
+    if deployment_type == "container" and not bootstrap_mode_enabled:
         if source_path:
             # For source_path: .dockerignore at source directory (Docker build context)
             source_dockerignore = Path(source_path) / ".dockerignore"
