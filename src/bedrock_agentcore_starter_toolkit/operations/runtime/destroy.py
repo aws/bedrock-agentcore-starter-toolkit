@@ -73,8 +73,9 @@ def destroy_bedrock_agentcore(
         # 2. Destroy Bedrock AgentCore agent
         _destroy_agentcore_agent(session, agent_config, result, dry_run)
 
-        # 3. Remove ECR images and optionally the repository
-        _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
+        # 3. Remove ECR images and optionally the repository (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
 
         # 4. Remove CodeBuild project (only for container deployments)
         if agent_config.deployment_type == "container":
