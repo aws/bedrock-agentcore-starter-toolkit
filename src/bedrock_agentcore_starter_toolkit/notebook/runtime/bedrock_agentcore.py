@@ -60,7 +60,7 @@ class Runtime:
         vpc_security_groups: Optional[List[str]] = None,
         idle_timeout: Optional[int] = None,
         max_lifetime: Optional[int] = None,
-        deployment_type: Literal["direct_code_deploy", "container"] = "direct_code_deploy",
+        deployment_type: Literal["direct_code_deploy", "container"] = "container",
         runtime_type: Optional[str] = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.

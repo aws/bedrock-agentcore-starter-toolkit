@@ -1091,7 +1091,7 @@ def launch(
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
-                f"Deployment Type: [cyan]Direct Code Deploy (Lambda-style)[/cyan]\n\n"
+                f"Deployment Type: [cyan]Direct Code Deploy[/cyan]\n\n"
                 f"📦 Code package deployed to Bedrock AgentCore\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore status[/cyan]\n"
@@ -1596,14 +1596,15 @@ def status(
                     if agent_id:
                         try:
                             endpoint_name = endpoint_data.get("name")
-                            runtime_logs, otel_logs = get_agent_log_paths(agent_id, endpoint_name)
+                            project_config = load_config(config_path)
+                            agent_config = project_config.get_agent_config(agent)
+                            deployment_type = agent_config.deployment_type if agent_config else "container"
+                            runtime_logs, otel_logs = get_agent_log_paths(agent_id, endpoint_name, deployment_type=deployment_type)
                             follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
 
                             panel_content += f"📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"
 
                             # Only show GenAI Observability Dashboard if OTEL is enabled
-                            project_config = load_config(config_path)
-                            agent_config = project_config.get_agent_config(agent)
                             if agent_config and agent_config.aws.observability.enabled:
                                 panel_content += (
                                     f"🔍 [cyan]GenAI Observability Dashboard:[/cyan]\n"

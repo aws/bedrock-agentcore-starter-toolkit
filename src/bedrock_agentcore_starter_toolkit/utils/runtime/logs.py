@@ -39,7 +39,7 @@ def get_agent_log_paths(
     if deployment_type == "direct_code_deploy":
         if session_id:
             # Specific session logs
-            log_stream_prefix = f"runtime-logs-{session_id}]"
+            log_stream_prefix = "runtime-logs"
         else:
             # All session logs (incomplete prefix to match all)
             log_stream_prefix = "runtime-logs"

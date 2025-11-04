@@ -577,7 +577,6 @@ class CodeZipPackager:
 
         step_start = time.time()
         bucket = codebuild.ensure_source_bucket(account_id)
-        log.info("  ⏱️  S3 ensure bucket: %.2fs", time.time() - step_start)
 
         s3_key = f"{agent_name}/deployment.zip"
         s3 = session.client("s3")
@@ -585,6 +584,5 @@ class CodeZipPackager:
         log.info("Uploading to s3://%s/%s...", bucket, s3_key)
         step_start = time.time()
         s3.upload_file(str(deployment_zip), bucket, s3_key, ExtraArgs={"ExpectedBucketOwner": account_id})
-        log.info("  ⏱️  S3 upload_file: %.2fs", time.time() - step_start)
 
         return f"s3://{bucket}/{s3_key}"

@@ -309,7 +309,7 @@ def _ensure_memory_for_agent(
             # If LTM is enabled but no strategies exist, add them
             if agent_config.memory.has_ltm and len(existing_strategies) == 0:
                 log.info("Adding LTM strategies to existing memory...")
-                console.print("⏳ Adding long-term memory strategies (this may take 30-180 seconds)...")
+                log.info("⏳ Adding long-term memory strategies (this may take 30-180 seconds)...")
                 memory_manager.update_memory_strategies_and_wait(
                     memory_id=existing_memory.id,
                     add_strategies=[
@@ -339,7 +339,7 @@ def _ensure_memory_for_agent(
                 log.info("LTM strategies added to existing memory")
             else:
                 # CHANGE: ADD THIS BLOCK - Wait for existing memory to become ACTIVE
-                console.print("⏳ Waiting for existing memory to become ACTIVE...")
+                log.info("⏳ Waiting for existing memory to become ACTIVE...")
                 memory = memory_manager._wait_for_memory_active(
                     existing_memory.id,
                     max_wait=300,
@@ -380,7 +380,7 @@ def _ensure_memory_for_agent(
                 log.info("Creating new STM-only memory...")
 
             # CHANGE: Use create_memory_and_wait instead of _create_memory
-            console.print("⏳ Creating memory resource (this may take 30-180 seconds)...")
+            log.info("⏳ Creating memory resource (this may take 30-180 seconds)...")
             memory = memory_manager.create_memory_and_wait(
                 name=memory_name,
                 description=f"Memory for agent {agent_name} with {'STM+LTM' if strategies else 'STM only'}",
@@ -1070,18 +1070,15 @@ def _launch_with_direct_code_deploy(
     region = agent_config.aws.region
     account_id = agent_config.aws.account
     session = boto3.Session(region_name=region)
-    log.info("⏱️  Config validation: %.2fs", time.time() - step_start)
 
     # Step 1: Ensure execution role
     step_start = time.time()
     log.info("Ensuring execution role...")
     _ensure_execution_role(agent_config, project_config, config_path, agent_config.name, region, account_id)
-    log.info("⏱️  Execution role check: %.2fs", time.time() - step_start)
 
     # Step 2: Ensure memory (if configured)
     step_start = time.time()
     _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
-    log.info("⏱️  Memory check: %.2fs", time.time() - step_start)
 
     # Step 3: Prepare entrypoint (compute relative path from source directory)
     step_start = time.time()
@@ -1096,7 +1093,6 @@ def _launch_with_direct_code_deploy(
         entrypoint_path = entrypoint_abs.name
 
     log.info("Using entrypoint: %s (relative to %s)", entrypoint_path, source_dir)
-    log.info("⏱️  Entrypoint preparation: %.2fs", time.time() - step_start)
 
     # Step 4: Create deployment package
     step_start = time.time()
@@ -1121,7 +1117,6 @@ def _launch_with_direct_code_deploy(
         force_rebuild_deps=force_rebuild_deps,
     )
 
-    log.info("⏱️  Package creation: %.2fs", time.time() - step_start)
 
     try:
         # Initialize variables for direct_code_deploy deployment
@@ -1188,7 +1183,6 @@ def _launch_with_direct_code_deploy(
                     bucket_name = s3_path
                     s3_key = f"{agent_config.name}/deployment.zip"
         log.info("✓ Deployment package uploaded: %s", s3_location)
-        log.info("⏱️  S3 upload: %.2fs", time.time() - step_start)
 
         # Step 6: Deploy to Runtime
         step_start = time.time()
@@ -1247,13 +1241,11 @@ def _launch_with_direct_code_deploy(
         save_config(project_config, config_path)
 
         log.info("✅ Agent created/updated: %s", agent_info["arn"])
-        log.info("⏱️  API call (create/update): %.2fs", time.time() - step_start)
 
         # Step 7: Wait for ready
         step_start = time.time()
         log.info("Waiting for agent endpoint to be ready...")
         bedrock_agentcore_client.wait_for_agent_endpoint_ready(agent_info["id"])
-        log.info("⏱️  Wait for READY: %.2fs", time.time() - step_start)
 
         # Step 8: Enable observability
         step_start = time.time()
@@ -1262,10 +1254,8 @@ def _launch_with_direct_code_deploy(
             enable_transaction_search_if_needed(region, account_id)
             console_url = get_genai_observability_url(region)
             log.info("🔍 GenAI Observability Dashboard: %s", console_url)
-        log.info("⏱️  Observability setup: %.2fs", time.time() - step_start)
 
         log.info("✅ Deployment completed successfully - Agent: %s", agent_info["arn"])
-        # log.info("⏱️  TOTAL TIME: %.2fs", time.time() - start_time)
 
         return LaunchResult(
             mode="direct_code_deploy",
