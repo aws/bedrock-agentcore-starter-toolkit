@@ -133,6 +133,9 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
       allowed_audience = [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
       allowed_clients  = [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}]
     }
+  }{% endif %}{% if request_header_allowlist %}
+  request_header_configuration {
+    request_header_allowlist = [{% for header in request_header_allowlist %}"{{ header }}"{% if not loop.last %}, {% endif %}{% endfor %}]
   }{% endif %}
 }
 
