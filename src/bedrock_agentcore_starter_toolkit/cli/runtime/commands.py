@@ -380,7 +380,7 @@ def configure(
 
     # Create configuration manager early for consistent prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-    config_manager = ConfigurationManager(config_path, non_interactive)
+    config_manager = ConfigurationManager(config_path, non_interactive, region=region)
 
     # Interactive entrypoint selection
     if not entrypoint:
