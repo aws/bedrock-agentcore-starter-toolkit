@@ -1,3 +1,5 @@
+# Adapted from https://google.github.io/adk-docs/tools/built-in-tools/#google-search
+
 from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -6,10 +8,15 @@ from google.genai import types
 from mcp_client.client import get_streamable_http_mcp_client
 import asyncio
 
-# Adapted from https://google.github.io/adk-docs/tools/built-in-tools/#google-search
+MODEL_ID = "gemini-2.0-flash"
 
-APP_NAME="google_adk_agent"
+APP_NAME="{{ agent_name }}"
 USER_ID="user1234"
+
+# Define a custom tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
 
 # Define MCP Tools
 mcp_toolset = get_streamable_http_mcp_client()
@@ -17,11 +24,11 @@ mcp_toolset = get_streamable_http_mcp_client()
 # Agent Definition
 # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
 agent = Agent(
-    model="gemini-2.0-flash",
+    model=MODEL_ID,
     name="openai_agent",
     description="Agent to answer questions",
     instruction="I can answer your questions using the knowledge I have!",
-    tools=[mcp_toolset]
+    tools=[mcp_toolset, add_numbers]
 )
 
 # Session and Runner
@@ -48,7 +55,7 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def agent_invocation(payload, context):
-    return asyncio.run(call_agent_async(payload.get("prompt", "what is Bedrock Agentcore Runtime?"), payload.get("user_id",USER_ID), context.session_id))
+    return asyncio.run(call_agent_async(payload.get("prompt", "What is Agentic AI?"), payload.get("user_id",USER_ID), context.session_id))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from strands import Agent
+from strands import Agent, tool
 from bedrock_agentcore import BedrockAgentCoreApp
 from mcp_client.client import get_streamable_http_mcp_client
 
@@ -6,12 +6,18 @@ app = BedrockAgentCoreApp()
 
 mcp_client = get_streamable_http_mcp_client()
 
+# Define a simple addition tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
 @app.entrypoint
 def invoke(payload):
     # Create an Agent with MCP tools
     with mcp_client:
         tools = mcp_client.list_tools_sync()
-        agent = Agent(tools=tools)
+        agent = Agent(tools=tools + [add_numbers])
         response = agent(payload.get("prompt", "What is Agentic AI?"))
         return {
             "response": response
