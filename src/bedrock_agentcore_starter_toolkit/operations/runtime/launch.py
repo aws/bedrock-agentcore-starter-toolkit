@@ -19,6 +19,7 @@ from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
+from ..identity.helpers import ensure_identity_permissions
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
@@ -169,6 +170,52 @@ def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name
     raise ValueError("ECR repository not configured and auto-create not enabled")
 
 
+def _ensure_identity_permissions(
+    agent_config: BedrockAgentCoreAgentSchema,
+    region: str,
+    account_id: str,
+    console: Optional[Console] = None,
+) -> None:
+    """Add Identity service permissions to execution role if credential providers configured."""
+    if not agent_config.identity or not agent_config.identity.is_enabled:
+        log.info("No Identity credential providers configured, skipping Identity permissions")
+        return
+
+    if not agent_config.aws.execution_role:
+        log.warning("No execution role configured, cannot add Identity permissions")
+        return
+
+    log.info(
+        "Adding Identity service permissions for %d credential providers...",
+        len(agent_config.identity.credential_providers),
+    )
+
+    try:
+        # Use the centralized identity helper
+        provider_arns = [p.arn for p in agent_config.identity.credential_providers]
+
+        ensure_identity_permissions(
+            role_arn=agent_config.aws.execution_role,
+            provider_arns=provider_arns,
+            region=region,
+            account_id=account_id,
+            logger=log,
+        )
+
+        log.info("✅ Identity permissions configured for role")
+        log.info("   - Workload token exchange")
+        log.info("   - Resource OAuth2 tokens")
+        log.info("   - Configured providers: %s", ", ".join(agent_config.identity.provider_names))
+
+        if console:
+            console.print("✅ Identity permissions added automatically")
+            console.print(f"   Providers: {', '.join(agent_config.identity.provider_names)}")
+
+    except Exception as e:
+        log.error("Failed to add Identity permissions: %s", str(e))
+        log.warning("You may need to manually add Identity permissions to your execution role")
+
+
 def _validate_execution_role(role_arn: str, session: boto3.Session) -> bool:
     """Validate that execution role exists and has correct trust policy for Bedrock AgentCore."""
     iam = session.client("iam")
@@ -278,7 +325,7 @@ def _ensure_memory_for_agent(
 
         memory_manager = MemoryManager(
             region_name=agent_config.aws.region,
-            console=console,  # ADD THIS
+            console=console,
         )
         memory_name = f"{agent_name}_mem"  # Short name under 48 char limit
 
@@ -537,6 +584,9 @@ def _deploy_to_bedrock_agentcore(
 
     log.info("✅ Agent created/updated: %s", agent_arn)
 
+    if agent_config.identity and agent_config.identity.workload:
+        log.info("✓ Using workload identity: %s", agent_config.identity.workload.name)
+
     # Enable Transaction Search if observability is enabled
     if agent_config.aws.observability.enabled:
         log.info("Observability is enabled, configuring Transaction Search...")
@@ -742,6 +792,30 @@ def launch_bedrock_agentcore(
     # Step 2: Ensure execution role exists (moved before ECR push)
     _ensure_execution_role(agent_config, project_config, config_path, bedrock_agentcore_name, region, account_id)
 
+    # Step 2.5: Check Service-Linked Role and ensure Identity permissions
+    if agent_config.identity and agent_config.identity.is_enabled:
+        # Check if Service-Linked Role exists
+        try:
+            iam = boto3.client("iam", region_name=region)
+            slr_name = "AWSServiceRoleForBedrockAgentCoreRuntimeIdentity"
+            iam.get_role(RoleName=slr_name)
+            log.info("✅ Identity Service-Linked Role exists: %s", slr_name)
+            if console:
+                console.print("✅ Identity Service-Linked Role verified")
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchEntity":
+                log.warning("⚠️  Service-Linked Role does not exist yet")
+                log.warning("    AgentCore Control Plane will create it during agent deployment")
+                log.warning("    Ensure you have 'iam:CreateServiceLinkedRole' permission")
+                if console:
+                    console.print("[yellow]⚠️  Service-Linked Role will be created automatically[/yellow]")
+                    console.print("[yellow]   Ensure you have iam:CreateServiceLinkedRole permission[/yellow]")
+            else:
+                log.debug("Could not check Service-Linked Role: %s", e)
+
+        # Still add Identity permissions to execution role (for backward compatibility)
+        _ensure_identity_permissions(agent_config, region, account_id, console)
+
     # Step 3: Push to ECR
     log.info("Uploading to ECR...")
 
@@ -822,6 +896,10 @@ def _execute_codebuild_workflow(
             _ensure_execution_role(agent_config, project_config, config_path, agent_name, region, account_id)
             if agent_config.aws.execution_role:
                 created_resources.append(f"Runtime Execution Role: {agent_config.aws.execution_role}")
+
+            if agent_config.identity and agent_config.identity.is_enabled:
+                log.info("🔍 DEBUG: Adding Identity permissions in CodeBuild flow...")
+                _ensure_identity_permissions(agent_config, region, account_id, None)
 
         # Prepare CodeBuild
         log.info("Preparing CodeBuild project and uploading source...")
