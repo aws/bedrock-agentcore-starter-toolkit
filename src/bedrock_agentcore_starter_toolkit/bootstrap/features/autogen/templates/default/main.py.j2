@@ -11,12 +11,11 @@ model_client = OpenAIChatCompletionClient(
     model=MODEL_ID,
 )
 
-# Define a simple function tool that the agent can use
+# Define a simple function tool
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
-
 
 # Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
@@ -33,6 +32,7 @@ async def main(payload):
         tools=[adapter, add_numbers_function_tool],
         system_message="You are a helpful assistant."
     )
+
     # Process the user prompt
     prompt = payload.get("prompt", "What is Agentic AI?")
 

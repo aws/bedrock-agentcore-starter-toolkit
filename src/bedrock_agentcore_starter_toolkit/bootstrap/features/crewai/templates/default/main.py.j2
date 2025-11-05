@@ -5,21 +5,26 @@ from mcp_client.client import get_streamable_http_mcp_client
 
 MODEL_ID="openai/gpt-5"
 
+# Initialize the model client
+llm = LLM(model=MODEL_ID)
+
+# Define a simple function tool
 @tool
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 
-llm = LLM(model=MODEL_ID)
-
+# Import AgentCore Gateway as Streamable HTTP MCP Adapter
 mcp_adapter = get_streamable_http_mcp_client()
 
+# Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def invoke(payload):
 
     with mcp_adapter as tools:
+        # Define the Agent, Task and Crew with Tools
         agent = Agent(
             role="Question Answering Assistant",
             goal="Answer the users questions",
@@ -40,11 +45,13 @@ def invoke(payload):
             process=Process.sequential
         )
 
-
+        # Process the user prompt
         prompt = payload.get("prompt", "What is Agentic AI?")
 
+        # Run the agent
         result = crew.kickoff(inputs={"prompt": prompt})
 
+        # Return result
         return result.raw
 
 if __name__ == "__main__":

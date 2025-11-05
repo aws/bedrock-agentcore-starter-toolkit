@@ -7,18 +7,19 @@ from mcp_client.client import get_streamable_http_mcp_client
 
 MODEL_ID="anthropic.claude-3-5-sonnet-20241022-v2:0"
 
+# Initialize the model client
 llm = ChatBedrock(model_id=MODEL_ID)
 
-# Create a function tool
+# Define a simple function tool
 @tool
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 
-# Load AgentCore Gateway MCP Client
+# Import AgentCore Gateway as Streamable HTTP MCP Client
 mcp_client = get_streamable_http_mcp_client()
 
-# Define the Bedrock AgentCore App
+# Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
@@ -28,12 +29,17 @@ async def invoke(payload):
 
     # Define the agent
     graph = create_agent(llm, tools=tools)
-    result = graph.invoke({"messages": [HumanMessage(content=payload["prompt"])]})
 
+    # Process the user prompt
+    prompt = payload.get("prompt", "What is Agentic AI?")
+
+    # Run the agent
+    result = graph.invoke({"messages": [HumanMessage(content=prompt)]})
+
+    # Return result
     return {
         "result": result["messages"][-1].content
     }
 
 if __name__ == "__main__":
-    app.logger.info("Starting AgentCore App")
     app.run()

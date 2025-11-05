@@ -34,6 +34,9 @@ def _get_access_token():
 
 
 def get_streamable_http_mcp_client() -> MCPToolset:
+    """
+    Returns an MCP Toolset compatible with Google ADK
+    """
     gateway_url = os.getenv("GATEWAY_URL")
     if not gateway_url:
         raise RuntimeError("Missing required environment variable: GATEWAY_URL")
