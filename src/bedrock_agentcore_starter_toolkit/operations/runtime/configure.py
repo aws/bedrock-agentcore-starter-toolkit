@@ -253,7 +253,7 @@ def configure_bedrock_agentcore(
                 log.debug("No execution role provided and auto-create disabled")
 
     # Pass region to ConfigurationManager so it can check for existing memories
-    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive)
+    config_manager = ConfigurationManager(build_dir / ".bedrock_agentcore.yaml", non_interactive, region=region)
 
     # Handle memory configuration
     memory_config = MemoryConfig()
