@@ -8,7 +8,10 @@ def lambda_handler(event, context):
 
     Expected input:
         event: {
-            "arguments": {...}  # optional tool arguments
+            # optional tool arguments
+            "param_0": val0,
+            "param_1": val1,
+            ... 
         }
 
     Context should contain:
@@ -30,8 +33,7 @@ def lambda_handler(event, context):
         if tool_name != "placeholder_tool":
             return _response(400, {"error": f"Unknown tool '{tool_name}'"})
 
-        args = event.get("arguments", {})
-        result = placeholder_tool(args)
+        result = placeholder_tool(event)
         return _response(200, {"result": result})
 
     except Exception as e:
@@ -43,7 +45,7 @@ def _response(status_code: int, body: Dict[str, Any]):
     return {"statusCode": status_code, "body": json.dumps(body)}
 
 
-def placeholder_tool(args: Dict[str, Any]):
+def placeholder_tool(event: Dict[str, Any]):
     """
     no-op placeholder tool.
 
@@ -51,8 +53,8 @@ def placeholder_tool(args: Dict[str, Any]):
     """
     return {
         "message": "Placeholder tool executed.",
-        "string_param": args.get("string_param"),
-        "int_param": args.get("int_param"),
-        "float_array_param": args.get("float_array_param"),
-        "args_received": args,
+        "string_param": event.get("string_param"),
+        "int_param": event.get("int_param"),
+        "float_array_param": event.get("float_array_param"),
+        "event_args_received": event,
     }
