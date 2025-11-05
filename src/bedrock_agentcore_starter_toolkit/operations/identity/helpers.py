@@ -1,7 +1,7 @@
 """Helper functions for Identity service operations."""
 
 import json
-import random
+import secrets
 import string
 import time
 import uuid
@@ -94,7 +94,8 @@ def create_cognito_oauth_pool(
 
     # Create test user if requested
     if create_test_user:
-        username = f"testuser{random.randint(1000, 9999)}"
+        # FIX 1: Use secrets.randbelow() instead of random.randint()
+        username = f"testuser{secrets.randbelow(9000) + 1000}"
         password = _generate_password()
 
         cognito.admin_create_user(UserPoolId=pool_id, Username=username, MessageAction="SUPPRESS")
@@ -186,14 +187,17 @@ def get_cognito_access_token(
 
 
 def _random_suffix(length: int = 4) -> str:
-    """Generate random alphanumeric suffix."""
-    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
+    """Generate random alphanumeric suffix using cryptographically secure random."""
+    # FIX 2: Use secrets.choice() instead of random.choices()
+    chars = string.ascii_lowercase + string.digits
+    return "".join(secrets.choice(chars) for _ in range(length))
 
 
 def _generate_password(length: int = 16) -> str:
-    """Generate a secure random password."""
+    """Generate a secure random password using cryptographically secure random."""
+    # FIX 3: Use secrets.choice() instead of random.choices()
     chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
-    return "".join(random.choices(chars, k=length))
+    return "".join(secrets.choice(chars) for _ in range(length))
 
 
 def ensure_identity_permissions(role_arn: str, provider_arns: list, region: str, account_id: str, logger=None) -> None:
@@ -316,7 +320,7 @@ class IdentityCognitoManager:
 
     @staticmethod
     def generate_random_id() -> str:
-        """Generate a random ID for Cognito resources."""
+        """Generate a random ID for Cognito resources using cryptographically secure random."""
         return str(uuid.uuid4())[:8]
 
     def create_dual_pool_setup(self) -> Dict[str, Any]:
@@ -482,17 +486,14 @@ class IdentityCognitoManager:
 
     @staticmethod
     def _generate_password() -> str:
-        """Generate a secure random password.
+        """Generate a secure random password using cryptographically secure random.
 
         Returns:
             Random password string
         """
-        import random
-        import string
-
-        # Generate 16-char password with mixed case, numbers, and symbols
+        # FIX 4: Use secrets.choice() instead of random.choice()
         chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-="
-        return "".join(random.choice(chars) for _ in range(16))
+        return "".join(secrets.choice(chars) for _ in range(16))
 
     def cleanup_cognito_pools(self, runtime_pool_id: str = None, identity_pool_id: str = None) -> None:
         """Delete Cognito user pools and associated resources.

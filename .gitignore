@@ -27,3 +27,12 @@ specs/
 .specify/
 coverage.json
 CLAUDE.md
+
+# Local testing files
+.agentcore_identity_env.sh
+agentcore_quickstartbuddy.py
+demo_config.json
+extract.py
+newagentbud.py
+repository_code.md
+setup_environment.py
