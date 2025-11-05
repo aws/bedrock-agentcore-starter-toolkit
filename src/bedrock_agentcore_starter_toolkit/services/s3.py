@@ -69,10 +69,7 @@ def create_s3_bucket(bucket_name: str, region: str, account_id: str) -> str:
         if region == "us-east-1":
             s3.create_bucket(Bucket=bucket_name)
         else:
-            s3.create_bucket(
-                Bucket=bucket_name,
-                CreateBucketConfiguration={"LocationConstraint": region}
-            )
+            s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": region})
 
         s3.put_bucket_lifecycle_configuration(
             Bucket=bucket_name,
