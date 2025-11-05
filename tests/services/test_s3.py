@@ -124,7 +124,7 @@ class TestCreateS3Bucket:
         result = create_s3_bucket("test-bucket", "us-east-1", "123456789012")
 
         assert result == "test-bucket"
-        mock_s3.create_bucket.assert_called_once_with(Bucket="test-bucket", ExpectedBucketOwner="123456789012")
+        mock_s3.create_bucket.assert_called_once_with(Bucket="test-bucket")
         mock_s3.put_bucket_lifecycle_configuration.assert_called_once()
 
     @patch("bedrock_agentcore_starter_toolkit.services.s3.boto3.client")
@@ -137,9 +137,7 @@ class TestCreateS3Bucket:
 
         assert result == "test-bucket"
         mock_s3.create_bucket.assert_called_once_with(
-            Bucket="test-bucket",
-            CreateBucketConfiguration={"LocationConstraint": "us-west-2"},
-            ExpectedBucketOwner="123456789012",
+            Bucket="test-bucket", CreateBucketConfiguration={"LocationConstraint": "us-west-2"}
         )
         mock_s3.put_bucket_lifecycle_configuration.assert_called_once()
 
