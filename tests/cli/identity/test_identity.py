@@ -47,7 +47,7 @@ def test_config(tmp_path):
 
 
 class TestCreateProvider:
-    """Test create-provider command."""
+    """Test create-credential-provider command."""
 
     def test_create_cognito_provider_success(self, runner, tmp_path, monkeypatch):
         """Test successful Cognito provider creation."""
@@ -81,7 +81,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyCognito",
                         "--type",
@@ -144,7 +144,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyGitHub",
                         "--type",
@@ -192,7 +192,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyGoogle",
                         "--type",
@@ -238,7 +238,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MySalesforce",
                         "--type",
@@ -289,7 +289,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyCognito",
                         "--type",
@@ -349,7 +349,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyCognito",
                         "--type",
@@ -391,7 +391,7 @@ class TestCreateProvider:
             result = runner.invoke(
                 identity_app,
                 [
-                    "create-provider",
+                    "create-credential-provider",
                     "--name",
                     "MyCognito",
                     "--type",
@@ -427,7 +427,7 @@ class TestCreateProvider:
             result = runner.invoke(
                 identity_app,
                 [
-                    "create-provider",
+                    "create-credential-provider",
                     "--name",
                     "MyProvider",
                     "--type",
@@ -471,7 +471,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyGitHub",
                         "--type",
@@ -512,7 +512,7 @@ class TestCreateProvider:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-provider",
+                        "create-credential-provider",
                         "--name",
                         "MyProvider",
                         "--type",
@@ -528,7 +528,7 @@ class TestCreateProvider:
 
 
 class TestCreateWorkload:
-    """Test create-workload command."""
+    """Test create-workload-identity command."""
 
     def test_create_workload_with_name_and_urls(self, runner, tmp_path, monkeypatch):
         """Test workload creation with explicit name and callback URLs."""
@@ -559,7 +559,7 @@ class TestCreateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-workload",
+                        "create-workload-identity",
                         "--name",
                         "MyAgent",
                         "--callback-urls",
@@ -609,7 +609,7 @@ class TestCreateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-workload",
+                        "create-workload-identity",
                         "--callback-urls",
                         "http://localhost:8081/oauth2/callback",
                     ],
@@ -636,7 +636,7 @@ class TestCreateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-workload",
+                        "create-workload-identity",
                         "--callback-urls",
                         "http://localhost:8081/oauth2/callback",
                     ],
@@ -673,7 +673,7 @@ class TestCreateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "create-workload",
+                        "create-workload-identity",
                         "--name",
                         "MyAgent",
                         "--callback-urls",
@@ -685,7 +685,7 @@ class TestCreateWorkload:
 
 
 class TestUpdateWorkload:
-    """Test update-workload command."""
+    """Test update-workload-identity command."""
 
     def test_update_workload_add_urls(self, runner, tmp_path, monkeypatch):
         """Test adding callback URLs to existing workload."""
@@ -718,7 +718,7 @@ class TestUpdateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "update-workload",
+                        "update-workload-identity",
                         "--name",
                         "MyAgent",
                         "--add-callback-urls",
@@ -767,7 +767,7 @@ class TestUpdateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "update-workload",
+                        "update-workload-identity",
                         "--name",
                         "MyAgent",
                         "--set-callback-urls",
@@ -803,7 +803,7 @@ class TestUpdateWorkload:
         save_config(project_config, config_path)
 
         with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
-            result = runner.invoke(identity_app, ["update-workload", "--name", "MyAgent"])
+            result = runner.invoke(identity_app, ["update-workload-identity", "--name", "MyAgent"])
 
         assert result.exit_code != 0
 
@@ -834,7 +834,7 @@ class TestUpdateWorkload:
                 result = runner.invoke(
                     identity_app,
                     [
-                        "update-workload",
+                        "update-workload-identity",
                         "--name",
                         "MyAgent",
                         "--add-callback-urls",
@@ -846,7 +846,7 @@ class TestUpdateWorkload:
 
 
 class TestGetToken:
-    """Test get-token command."""
+    """Test get-inbound-token command."""
 
     def test_get_token_without_secret(self, runner):
         """Test getting token from Cognito without client secret."""
@@ -859,7 +859,7 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-token",
+                    "get-inbound-token",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -894,7 +894,7 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-token",
+                    "get-inbound-token",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -926,7 +926,7 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-token",
+                    "get-inbound-token",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -1071,7 +1071,7 @@ class TestListProviders:
         # This is acceptable as it indicates "no results" rather than success with results
         assert result.exit_code == 1
         assert "No credential providers configured" in result.stdout
-        assert "agentcore identity create-provider" in result.stdout
+        assert "agentcore identity create-credential-provider" in result.stdout
 
     def test_list_providers_no_identity_attribute(self, runner, tmp_path, monkeypatch):
         """Test list-providers when identity attribute is not set at all."""
@@ -1111,8 +1111,8 @@ class TestListProviders:
 class TestSetupCognito:
     """Test setup-cognito command."""
 
-    def test_setup_cognito_success(self, runner, tmp_path, monkeypatch):
-        """Test successful Cognito pool setup."""
+    def test_setup_cognito_user_flow_success(self, runner, tmp_path, monkeypatch):
+        """Test successful Cognito pool setup with user flow."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -1155,26 +1155,80 @@ class TestSetupCognito:
             "bedrock_agentcore_starter_toolkit.cli.identity.commands.IdentityCognitoManager"
         ) as mock_manager_class:
             mock_manager = Mock()
-            mock_manager.create_dual_pool_setup.return_value = mock_result
+            mock_manager.create_user_federation_pools.return_value = mock_result
             mock_manager_class.return_value = mock_manager
 
-            result = runner.invoke(identity_app, ["setup-cognito", "--region", "us-west-2"])
+            result = runner.invoke(identity_app, ["setup-cognito", "--region", "us-west-2", "--auth-flow", "user"])
 
         assert result.exit_code == 0
         assert "Cognito pools created successfully" in result.stdout
         assert "Runtime Pool (Inbound Auth)" in result.stdout
-        assert "Identity Pool (Outbound Auth)" in result.stdout
+        assert "Identity Pool" in result.stdout
         assert "us-west-2_runtime123" in result.stdout
         assert "us-west-2_identity456" in result.stdout
 
-        # Verify files were created
-        assert (tmp_path / ".agentcore_identity_cognito.json").exists()
-        assert (tmp_path / ".agentcore_identity_env.sh").exists()
+        # Verify files were created with correct naming
+        assert (tmp_path / ".agentcore_identity_cognito_user.json").exists()
+        assert (tmp_path / ".agentcore_identity_user.env").exists()
 
         # Verify JSON file content
-        with open(tmp_path / ".agentcore_identity_cognito.json") as f:
+        with open(tmp_path / ".agentcore_identity_cognito_user.json") as f:
             saved_config = json.load(f)
             assert saved_config == mock_result
+
+    def test_setup_cognito_m2m_flow_success(self, runner, tmp_path, monkeypatch):
+        """Test successful Cognito pool setup with m2m flow."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        mock_result = {
+            "runtime": {
+                "pool_id": "us-west-2_runtime123",
+                "client_id": "runtime_client_123",
+                "discovery_url": (
+                    "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_runtime123/.well-known/openid-configuration"
+                ),
+                "username": "testuser1234",
+                "password": "TestPass123!@#",
+            },
+            "identity": {
+                "pool_id": "us-west-2_identity456",
+                "client_id": "identity_client_456",
+                "client_secret": "identity_secret_789",
+                "token_endpoint": "https://agentcore-identity-abc123.auth.us-west-2.amazoncognito.com/oauth2/token",
+                "resource_server_identifier": "https://api.example.com",
+            },
+        }
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.cli.identity.commands.IdentityCognitoManager"
+        ) as mock_manager_class:
+            mock_manager = Mock()
+            mock_manager.create_m2m_pools.return_value = mock_result
+            mock_manager_class.return_value = mock_manager
+
+            result = runner.invoke(identity_app, ["setup-cognito", "--region", "us-west-2", "--auth-flow", "m2m"])
+
+        assert result.exit_code == 0
+        assert "Cognito pools created successfully" in result.stdout
+        assert "M2M" in result.stdout or "m2m" in result.stdout.lower()
+
+        # Verify files were created with correct naming
+        assert (tmp_path / ".agentcore_identity_cognito_m2m.json").exists()
+        assert (tmp_path / ".agentcore_identity_m2m.env").exists()
 
     def test_setup_cognito_uses_config_region(self, runner, tmp_path, monkeypatch):
         """Test setup-cognito uses region from config when not specified."""
@@ -1216,7 +1270,7 @@ class TestSetupCognito:
             "bedrock_agentcore_starter_toolkit.cli.identity.commands.IdentityCognitoManager"
         ) as mock_manager_class:
             mock_manager = Mock()
-            mock_manager.create_dual_pool_setup.return_value = mock_result
+            mock_manager.create_user_federation_pools.return_value = mock_result
             mock_manager_class.return_value = mock_manager
 
             result = runner.invoke(identity_app, ["setup-cognito"])
@@ -1254,7 +1308,7 @@ class TestSetupCognito:
             patch("boto3.Session") as mock_session_class,
         ):
             mock_manager = Mock()
-            mock_manager.create_dual_pool_setup.return_value = mock_result
+            mock_manager.create_user_federation_pools.return_value = mock_result
             mock_manager_class.return_value = mock_manager
 
             mock_session = Mock()
@@ -1266,6 +1320,15 @@ class TestSetupCognito:
         assert result.exit_code == 0
         mock_manager_class.assert_called_once_with("us-east-1")
 
+    def test_setup_cognito_invalid_auth_flow(self, runner, tmp_path, monkeypatch):
+        """Test setup-cognito with invalid auth flow."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(identity_app, ["setup-cognito", "--auth-flow", "invalid"])
+
+        assert result.exit_code == 1
+        assert "--auth-flow must be 'user' or 'm2m'" in result.stdout
+
     def test_setup_cognito_error(self, runner, tmp_path, monkeypatch):
         """Test error handling when setup fails."""
         monkeypatch.chdir(tmp_path)
@@ -1274,7 +1337,7 @@ class TestSetupCognito:
             "bedrock_agentcore_starter_toolkit.cli.identity.commands.IdentityCognitoManager"
         ) as mock_manager_class:
             mock_manager = Mock()
-            mock_manager.create_dual_pool_setup.side_effect = Exception("Setup failed")
+            mock_manager.create_user_federation_pools.side_effect = Exception("Setup failed")
             mock_manager_class.return_value = mock_manager
 
             result = runner.invoke(identity_app, ["setup-cognito", "--region", "us-west-2"])
@@ -1319,14 +1382,18 @@ class TestCleanup:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        # Create Cognito config file
-        cognito_config = {
-            "runtime": {"pool_id": "us-west-2_runtime123"},
-            "identity": {"pool_id": "us-west-2_identity456"},
-        }
-        cognito_config_path = tmp_path / ".agentcore_identity_cognito.json"
-        with open(cognito_config_path, "w") as f:
-            json.dump(cognito_config, f)
+        # Create Cognito config files for both flows
+        for flow in ["user", "m2m"]:
+            cognito_config = {
+                "runtime": {"pool_id": f"us-west-2_runtime_{flow}"},
+                "identity": {"pool_id": f"us-west-2_identity_{flow}"},
+            }
+            cognito_config_path = tmp_path / f".agentcore_identity_cognito_{flow}.json"
+            with open(cognito_config_path, "w") as f:
+                json.dump(cognito_config, f)
+
+            env_file_path = tmp_path / f".agentcore_identity_{flow}.env"
+            env_file_path.write_text(f"export TEST_{flow.upper()}=1")
 
         with patch("bedrock_agentcore.services.identity.IdentityClient") as mock_identity_class:
             mock_identity = Mock()
@@ -1348,10 +1415,15 @@ class TestCleanup:
         # Verify deletions were called
         mock_identity.cp_client.delete_oauth2_credential_provider.assert_called_once_with(name="TestProvider")
         mock_identity.identity_client.delete_workload_identity.assert_called_once_with(name="test-workload")
-        mock_manager.cleanup_cognito_pools.assert_called_once()
 
-        # Verify Cognito config file was deleted
-        assert not cognito_config_path.exists()
+        # Verify Cognito cleanup was called for each flow
+        assert mock_manager.cleanup_cognito_pools.call_count == 2
+
+        # Verify Cognito config files were deleted
+        assert not (tmp_path / ".agentcore_identity_cognito_user.json").exists()
+        assert not (tmp_path / ".agentcore_identity_cognito_m2m.json").exists()
+        assert not (tmp_path / ".agentcore_identity_user.env").exists()
+        assert not (tmp_path / ".agentcore_identity_m2m.env").exists()
 
     def test_cleanup_without_force_cancelled(self, runner, tmp_path, monkeypatch):
         """Test cleanup cancelled when user declines confirmation."""
@@ -1464,20 +1536,6 @@ class TestBuildProviderConfig:
             config["oauth2ProviderConfigInput"]["customOauth2ProviderConfig"]["oauthDiscovery"]["discoveryUrl"]
             == "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xxx/.well-known/openid-configuration"
         )
-
-    def test_build_custom_oauth2_config(self):
-        """Test building custom OAuth2 provider config."""
-        from bedrock_agentcore_starter_toolkit.cli.identity.commands import _build_provider_config
-
-        config = _build_provider_config(
-            provider_type="custom-oauth2",
-            name="MyCustom",
-            client_id="custom123",
-            client_secret="customsecret",
-            discovery_url="https://custom-idp.example.com/.well-known/openid-configuration",
-        )
-
-        assert config["credentialProviderVendor"] == "CustomOauth2"
 
     def test_build_github_config(self):
         """Test building GitHub provider config."""

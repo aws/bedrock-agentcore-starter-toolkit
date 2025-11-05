@@ -491,9 +491,21 @@ class IdentityCognitoManager:
         Returns:
             Random password string
         """
-        # FIX 4: Use secrets.choice() instead of random.choice()
-        chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-="
-        return "".join(secrets.choice(chars) for _ in range(16))
+        password_chars = [
+            secrets.choice(string.ascii_uppercase),  # At least 1 uppercase
+            secrets.choice(string.ascii_lowercase),  # At least 1 lowercase
+            secrets.choice(string.digits),  # At least 1 digit
+            secrets.choice("!@#$%^&*()_+-="),  # At least 1 special char
+        ]
+
+        # Fill remaining length with random mix
+        all_chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-="
+        password_chars.extend(secrets.choice(all_chars) for _ in range(12))  # 4 + 12 = 16 total
+
+        # Shuffle to avoid predictable pattern
+        secrets.SystemRandom().shuffle(password_chars)
+
+        return "".join(password_chars)
 
     def cleanup_cognito_pools(self, runtime_pool_id: str = None, identity_pool_id: str = None) -> None:
         """Delete Cognito user pools and associated resources.
@@ -546,3 +558,88 @@ class IdentityCognitoManager:
                 self.logger.info("    ✓ %s pool already deleted", pool_type)
             else:
                 self.logger.warning("    ⚠️  Error deleting %s pool: %s", pool_type, str(e))
+
+    def _create_identity_pool_m2m(self) -> Dict[str, Any]:
+        """Create Identity User Pool for M2M (client credentials) flows.
+
+        Returns:
+            Identity pool configuration for M2M
+        """
+        pool_name = f"AgentCoreIdentityPool-M2M-{self.generate_random_id()}"
+
+        # Create User Pool (no domain needed for M2M)
+        user_pool_response = self.cognito_client.create_user_pool(
+            PoolName=pool_name,
+            AdminCreateUserConfig={"AllowAdminCreateUserOnly": True},
+        )
+        pool_id = user_pool_response["UserPool"]["Id"]
+
+        # Create Resource Server with custom scopes
+        resource_server_identifier = f"agentcore-m2m-{self.generate_random_id()}"
+        self.cognito_client.create_resource_server(
+            UserPoolId=pool_id,
+            Identifier=resource_server_identifier,
+            Name="AgentCore M2M Resource Server",
+            Scopes=[
+                {"ScopeName": "read", "ScopeDescription": "Read access"},
+                {"ScopeName": "write", "ScopeDescription": "Write access"},
+            ],
+        )
+
+        # Create Client with client_credentials grant
+        client_response = self.cognito_client.create_user_pool_client(
+            UserPoolId=pool_id,
+            ClientName=f"M2MClient-{self.generate_random_id()}",
+            GenerateSecret=True,
+            AllowedOAuthFlows=["client_credentials"],
+            AllowedOAuthScopes=[f"{resource_server_identifier}/read", f"{resource_server_identifier}/write"],
+            AllowedOAuthFlowsUserPoolClient=True,
+        )
+
+        client_id = client_response["UserPoolClient"]["ClientId"]
+        client_secret = client_response["UserPoolClient"]["ClientSecret"]
+
+        # Token endpoint for M2M
+        token_endpoint = f"https://cognito-idp.{self.region}.amazonaws.com/{pool_id}/oauth2/token"
+
+        return {
+            "pool_id": pool_id,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "token_endpoint": token_endpoint,
+            "resource_server_identifier": resource_server_identifier,
+            "scopes": ["read", "write"],
+            "flow_type": "client_credentials",
+        }
+
+    def create_user_federation_pools(self) -> Dict[str, Any]:
+        """Create pools for USER_FEDERATION flow (user consent required).
+
+        Returns:
+            Dict with 'runtime' and 'identity' pool configs
+        """
+        self.logger.info("Creating Cognito pools for USER_FEDERATION flow...")
+
+        runtime_config = self._create_runtime_pool()
+        self.logger.info("✓ Created Runtime User Pool: %s", runtime_config["pool_id"])
+
+        identity_config = self._create_identity_pool()
+        self.logger.info("✓ Created Identity User Pool: %s", identity_config["pool_id"])
+
+        return {"runtime": runtime_config, "identity": identity_config, "flow_type": "user"}
+
+    def create_m2m_pools(self) -> Dict[str, Any]:
+        """Create pools for M2M CLIENT_CREDENTIALS flow (no user required).
+
+        Returns:
+            Dict with 'runtime' and 'identity' pool configs
+        """
+        self.logger.info("Creating Cognito pools for M2M flow...")
+
+        runtime_config = self._create_runtime_pool()
+        self.logger.info("✓ Created Runtime User Pool: %s", runtime_config["pool_id"])
+
+        identity_config = self._create_identity_pool_m2m()
+        self.logger.info("✓ Created Identity M2M Pool: %s", identity_config["pool_id"])
+
+        return {"runtime": runtime_config, "identity": identity_config, "flow_type": "m2m"}

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -25,16 +26,14 @@ identity_app = typer.Typer(help="Manage Identity service resources")
 logger = logging.getLogger(__name__)
 
 
-@identity_app.command("create-provider")
+@identity_app.command("create-credential-provider")
 def create_provider(
     name: str = typer.Option(..., "--name", "-n", help="Credential provider name"),
-    provider_type: str = typer.Option(
-        ..., "--type", "-t", help="Provider type: cognito, github, google, salesforce, custom-oauth2"
-    ),
+    provider_type: str = typer.Option(..., "--type", "-t", help="Provider type: cognito, github, google, salesforce"),
     client_id: str = typer.Option(..., "--client-id", help="OAuth client ID"),
     client_secret: str = typer.Option(..., "--client-secret", help="OAuth client secret"),
     discovery_url: Optional[str] = typer.Option(
-        None, "--discovery-url", help="OAuth discovery URL (required for cognito/custom-oauth2)"
+        None, "--discovery-url", help="OAuth discovery URL (required for cognito)"
     ),
     cognito_pool_id: Optional[str] = typer.Option(
         None, "--cognito-pool-id", help="Cognito pool ID (for auto-updating callback URLs)"
@@ -51,14 +50,14 @@ def create_provider(
 
     Examples:
         # Create Cognito provider (auto-updates callback URLs)
-        agentcore identity create-provider --name MyCognito --type cognito \
+        agentcore identity create-credential-provider --name MyCognito --type cognito \
             --client-id abc123 --client-secret xyz789 \
             --discovery-url https://cognito-idp.us-west-2.amazonaws.com/\
 us-west-2_xxx/.well-known/openid-configuration \
             --cognito-pool-id us-west-2_xxx
 
         # Create GitHub provider
-        agentcore identity create-provider --name MyGitHub --type github \
+        agentcore identity create-credential-provider --name MyGitHub --type github \
             --client-id abc123 --client-secret xyz789
     """
     try:
@@ -83,7 +82,7 @@ us-west-2_xxx/.well-known/openid-configuration \
             console.print(f"[dim]{agentcore_callback_url}[/dim]\n")
 
             # If Cognito pool provided, auto-update callback URLs
-            if cognito_pool_id and provider_type in ["cognito", "custom-oauth2"]:
+            if cognito_pool_id and provider_type == "cognito":
                 console.print(
                     f"[cyan]Auto-updating Cognito pool {cognito_pool_id} with AgentCore callback URL...[/cyan]"
                 )
@@ -142,7 +141,7 @@ us-west-2_xxx/.well-known/openid-configuration \
         _handle_error(f"Failed to create credential provider: {str(e)}", e)
 
 
-@identity_app.command("create-workload")
+@identity_app.command("create-workload-identity")
 def create_workload(
     name: Optional[str] = typer.Option(None, "--name", "-n", help="Workload identity name (auto-generated if empty)"),
     callback_urls: Optional[str] = typer.Option(
@@ -218,7 +217,7 @@ def create_workload(
         _handle_error(f"Failed to create workload identity: {str(e)}", e)
 
 
-@identity_app.command("update-workload")
+@identity_app.command("update-workload-identity")
 def update_workload(
     name: str = typer.Option(..., "--name", "-n", help="Workload identity name"),
     add_callback_urls: Optional[str] = typer.Option(
@@ -285,7 +284,7 @@ def update_workload(
         _handle_error(f"Failed to update workload identity: {str(e)}", e)
 
 
-@identity_app.command("get-token")
+@identity_app.command("get-inbound-token")
 def get_token(
     pool_id: str = typer.Option(..., "--pool-id", help="Cognito user pool ID"),
     client_id: str = typer.Option(..., "--client-id", help="Cognito client ID"),
@@ -348,7 +347,7 @@ def list_providers():
             or not agent_config.identity.credential_providers
         ):
             console.print("[yellow]No credential providers configured.[/yellow]")
-            console.print("Run [cyan]agentcore identity create-provider[/cyan] to add one.")
+            console.print("Run [cyan]agentcore identity create-credential-provider[/cyan] to add one.")
             raise typer.Exit(0)
 
         table = Table(title="Configured Credential Providers")
@@ -394,7 +393,7 @@ def _build_provider_config(
     provider_type: str, name: str, client_id: str, client_secret: str, discovery_url: Optional[str]
 ) -> dict:
     """Build provider configuration based on type."""
-    if provider_type == "cognito" or provider_type == "custom-oauth2":
+    if provider_type == "cognito":
         if not discovery_url:
             _handle_error(f"--discovery-url required for {provider_type} provider type")
 
@@ -438,9 +437,7 @@ def _build_provider_config(
         }
 
     else:
-        _handle_error(
-            f"Unsupported provider type: {provider_type}. Use: cognito, github, google, salesforce, custom-oauth2"
-        )
+        _handle_error(f"Unsupported provider type: {provider_type}. Use: cognito, github, google, salesforce")
 
 
 def _save_provider_config(name: str, arn: str, provider_type: str, callback_url: str):
@@ -496,12 +493,19 @@ def _save_workload_config(name: str, arn: str, callback_urls: List[str]):
 @identity_app.command("setup-cognito")
 def setup_cognito(
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (defaults to configured region)"),
+    auth_flow: str = typer.Option(
+        "user", "--auth-flow", help="Identity pool OAuth flow type: user (USER_FEDERATION) or m2m (client_credentials)"
+    ),
 ):
     """Create Cognito user pools for Identity authentication.
 
     Creates two user pools:
     - Runtime Pool: For agent inbound JWT authentication
     - Identity Pool: For agent outbound OAuth to external services
+
+    Auth Flow Types:
+    - user: USER_FEDERATION flow with user consent (default)
+    - m2m: Machine-to-machine with client credentials
 
     Configuration is saved and automatically used by subsequent commands.
     """
@@ -525,42 +529,59 @@ def setup_cognito(
             session = boto3.Session()
             region = session.region_name or "us-west-2"
 
+    # Validate flow type
+    if auth_flow not in ["user", "m2m"]:
+        console.print("[red]Error: --auth-flow must be 'user' or 'm2m'[/red]")
+        raise typer.Exit(1)
+
     console.print(f"\n[bold]Creating Cognito pools in region:[/bold] {region}\n")
+    console.print(f"[bold]Identity auth flow type:[/bold] {auth_flow}\n")
 
     # Create the pools
     manager = IdentityCognitoManager(region)
-    result = manager.create_dual_pool_setup()
+
+    # Call appropriate method based on flow type
+    if auth_flow == "user":
+        result = manager.create_user_federation_pools()
+    else:  # m2m
+        result = manager.create_m2m_pools()
 
     # Save to a temporary config file for later use
     # Save to config file
-    cognito_config_path = Path.cwd() / ".agentcore_identity_cognito.json"
+    cognito_config_path = Path.cwd() / f".agentcore_identity_cognito_{auth_flow}.json"
     with open(cognito_config_path, "w") as f:
         json.dump(result, f, indent=2)
 
     # Also save as shell script for easy sourcing
-    env_script_path = Path.cwd() / ".agentcore_identity_env.sh"
-    with open(env_script_path, "w") as f:
-        f.write("#!/bin/bash\n")
+    env_file_path = Path.cwd() / f".agentcore_identity_{auth_flow}.env"
+    with open(env_file_path, "w") as f:
         f.write("# AgentCore Identity Environment Variables\n")
-        f.write("# Source this file: source .agentcore_identity_env.sh\n\n")
+        f.write(f"# Load with: export $(cat .agentcore_identity_{auth_flow}.env | xargs)\n")
+        f.write(f"# Or use python-dotenv: load_dotenv('.agentcore_identity_{auth_flow}.env')\n\n")
         f.write("# Runtime Pool (Inbound Auth)\n")
-        f.write(f"export RUNTIME_POOL_ID='{result['runtime']['pool_id']}'\n")
-        f.write(f"export RUNTIME_CLIENT_ID='{result['runtime']['client_id']}'\n")
-        f.write(f"export RUNTIME_DISCOVERY_URL='{result['runtime']['discovery_url']}'\n")
-        f.write(f"export RUNTIME_USERNAME='{result['runtime']['username']}'\n")
-        f.write(f"export RUNTIME_PASSWORD='{result['runtime']['password']}'\n")
+        f.write(f"RUNTIME_POOL_ID={result['runtime']['pool_id']}\n")
+        f.write(f"RUNTIME_CLIENT_ID={result['runtime']['client_id']}\n")
+        f.write(f"RUNTIME_DISCOVERY_URL={result['runtime']['discovery_url']}\n")
+        f.write(f"RUNTIME_USERNAME={result['runtime']['username']}\n")
+        f.write(f"RUNTIME_PASSWORD={result['runtime']['password']}\n")
         f.write("\n# Identity Pool (Outbound Auth)\n")
-        f.write(f"export IDENTITY_POOL_ID='{result['identity']['pool_id']}'\n")
-        f.write(f"export IDENTITY_CLIENT_ID='{result['identity']['client_id']}'\n")
-        f.write(f"export IDENTITY_CLIENT_SECRET='{result['identity']['client_secret']}'\n")
-        f.write(f"export IDENTITY_DISCOVERY_URL='{result['identity']['discovery_url']}'\n")
-        f.write(f"export IDENTITY_USERNAME='{result['identity']['username']}'\n")
-        f.write(f"export IDENTITY_PASSWORD='{result['identity']['password']}'\n")
+        if auth_flow == "user":
+            f.write(f"IDENTITY_POOL_ID={result['identity']['pool_id']}\n")
+            f.write(f"IDENTITY_CLIENT_ID={result['identity']['client_id']}\n")
+            f.write(f"IDENTITY_CLIENT_SECRET={result['identity']['client_secret']}\n")
+            f.write(f"IDENTITY_DISCOVERY_URL={result['identity']['discovery_url']}\n")
+            f.write(f"IDENTITY_USERNAME={result['identity']['username']}\n")
+            f.write(f"IDENTITY_PASSWORD={result['identity']['password']}\n")
+
+        elif auth_flow == "m2m":
+            f.write(f"IDENTITY_POOL_ID={result['identity']['pool_id']}\n")
+            f.write(f"IDENTITY_CLIENT_ID={result['identity']['client_id']}\n")
+            f.write(f"IDENTITY_CLIENT_SECRET={result['identity']['client_secret']}\n")
+            f.write(f"IDENTITY_TOKEN_ENDPOINT={result['identity']['token_endpoint']}\n")
+            f.write(f"IDENTITY_RESOURCE_SERVER={result['identity']['resource_server_identifier']}\n")
 
     # Make script executable
-    import os
-
-    os.chmod(env_script_path, 0o600)  # Read/write for owner only (secure)
+    os.chmod(env_file_path, 0o600)  # Read/write for owner only (secure)
 
     console.print()
     console.print("[bold green]✅ Cognito pools created successfully![/bold green]\n")
@@ -577,12 +598,19 @@ def setup_cognito(
     console.print(runtime_panel)
     console.print()
 
+    # Display Identity User Pool if created
     identity_panel = Panel(
         f"[bold]Pool ID:[/bold] {result['identity']['pool_id']}\n"
         f"[bold]Client ID:[/bold] {result['identity']['client_id']}\n"
-        f"[bold]Discovery URL:[/bold] {result['identity']['discovery_url']}\n"
-        f"[bold]Test User:[/bold] {result['identity']['username']}",
-        title="[bold green]Identity Pool (Outbound Auth)[/bold green]",
+        f"[bold]Flow Type:[/bold] {auth_flow.upper()}\n"
+        + (
+            f"[bold]Discovery URL:[/bold] {result['identity']['discovery_url']}\n"
+            f"[bold]Test User:[/bold] {result['identity']['username']}"
+            if auth_flow == "user"
+            else f"[bold]Token Endpoint:[/bold] {result['identity']['token_endpoint']}\n"
+            f"[bold]Resource Server:[/bold] {result['identity']['resource_server_identifier']}"
+        ),
+        title=f"[bold green]Identity Pool - {('User Consent' if auth_flow == 'user' else 'M2M')}[/bold green]",
         border_style="green",
     )
     console.print(identity_panel)
@@ -591,13 +619,20 @@ def setup_cognito(
     # Show where secrets are stored
     console.print("[bold yellow]🔐 Credentials saved securely to:[/bold yellow]")
     console.print(f"   • {cognito_config_path} (JSON format)")
-    console.print(f"   • {env_script_path} (environment variables)")
+    console.print(f"   • {env_file_path} (standard .env format)")
     console.print()
 
     # Show how to load variables
     console.print("[bold]To load environment variables:[/bold]")
-    load_cmd = "source .agentcore_identity_env.sh"
+    console.print()
+    console.print("Bash/Zsh:")
+    load_cmd = f"export $(cat .agentcore_identity_{auth_flow}.env | xargs)"
     syntax = Syntax(load_cmd, "bash", theme="monokai", line_numbers=False)
+    console.print(syntax)
+    console.print()
+    console.print("Python:")
+    python_cmd = f"from dotenv import load_dotenv\nload_dotenv('.agentcore_identity_{auth_flow}.env')"
+    syntax = Syntax(python_cmd, "python", theme="monokai", line_numbers=False)
     console.print(syntax)
     console.print()
 
@@ -626,6 +661,14 @@ def cleanup_identity(
 
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config(agent)
+    region = agent_config.aws.region
+
+    # Check what exists for confirmation display
+    cognito_files_found = []
+    for flow in ["user", "m2m"]:
+        config_file = Path.cwd() / f".agentcore_identity_cognito_{flow}.json"
+        if config_file.exists():
+            cognito_files_found.append(flow)
 
     # Confirm deletion
     if not force:
@@ -638,9 +681,8 @@ def cleanup_identity(
         if agent_config.identity and agent_config.identity.workload:
             console.print(f"  • Workload identity: {agent_config.identity.workload.name}")
 
-        cognito_config_path = Path.cwd() / ".agentcore_identity_cognito.json"
-        if cognito_config_path.exists():
-            console.print("  • Cognito user pools (Runtime + Identity)")
+        if cognito_files_found:
+            console.print(f"  • Cognito user pools ({', '.join(cognito_files_found)} flow)")
 
         if not typer.confirm("\nProceed with deletion?", default=False):
             console.print("Cancelled")
@@ -648,7 +690,6 @@ def cleanup_identity(
 
     console.print("\n[bold]Cleaning up Identity resources...[/bold]\n")
 
-    region = agent_config.aws.region
     identity_client = IdentityClient(region)
 
     # Delete credential providers
@@ -656,7 +697,6 @@ def cleanup_identity(
         for provider in agent_config.identity.credential_providers:
             try:
                 console.print(f"  • Deleting credential provider: {provider.name}")
-                # Use SDK to delete provider
                 identity_client.cp_client.delete_oauth2_credential_provider(name=provider.name)
                 console.print("    ✓ Deleted")
             except Exception as e:
@@ -666,28 +706,39 @@ def cleanup_identity(
     if agent_config.identity and agent_config.identity.workload:
         try:
             console.print(f"  • Deleting workload identity: {agent_config.identity.workload.name}")
-            # Use SDK to delete workload
             identity_client.identity_client.delete_workload_identity(name=agent_config.identity.workload.name)
             console.print("    ✓ Deleted")
         except Exception as e:
             console.print(f"    ⚠️  Error: {str(e)}")
 
-    # Delete Cognito pools if they exist
-    cognito_config_path = Path.cwd() / ".agentcore_identity_cognito.json"
-    if cognito_config_path.exists():
-        import json
+    # Delete Cognito pools for each flow type found
+    for flow in ["user", "m2m"]:
+        cognito_config_path = Path.cwd() / f".agentcore_identity_cognito_{flow}.json"
+        env_file_path = Path.cwd() / f".agentcore_identity_{flow}.env"
 
-        with open(cognito_config_path) as f:
-            cognito_config = json.load(f)
+        if cognito_config_path.exists():
+            try:
+                with open(cognito_config_path) as f:
+                    cognito_config = json.load(f)
 
-        manager = IdentityCognitoManager(region)
-        manager.cleanup_cognito_pools(
-            runtime_pool_id=cognito_config["runtime"]["pool_id"], identity_pool_id=cognito_config["identity"]["pool_id"]
-        )
+                console.print(f"  • Deleting Cognito pools ({flow} flow)...")
+                manager = IdentityCognitoManager(region)
+                manager.cleanup_cognito_pools(
+                    runtime_pool_id=cognito_config["runtime"]["pool_id"],
+                    identity_pool_id=cognito_config["identity"]["pool_id"],
+                )
+                console.print("    ✓ Deleted Cognito pools")
 
-        # Delete the config file
-        cognito_config_path.unlink()
-        console.print("    ✓ Deleted Cognito config file")
+                # Delete config files
+                cognito_config_path.unlink()
+                console.print(f"    ✓ Deleted {flow} config file")
+
+                if env_file_path.exists():
+                    env_file_path.unlink()
+                    console.print(f"    ✓ Deleted {flow} environment file")
+
+            except Exception as e:
+                console.print(f"    ⚠️  Error cleaning up {flow} flow: {str(e)}")
 
     # Clear Identity config from agent
     if agent_config.identity:
