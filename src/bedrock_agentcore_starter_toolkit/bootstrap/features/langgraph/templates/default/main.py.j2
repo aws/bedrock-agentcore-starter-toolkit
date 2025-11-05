@@ -2,7 +2,7 @@ from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
 from langchain_aws import ChatBedrock
 from bedrock_agentcore import BedrockAgentCoreApp
-from mcp.client import get_streamable_http_mcp_client
+from mcp_client.client import get_streamable_http_mcp_client
 
 llm = ChatBedrock(model_id="amazon.nova-pro-v1:0")
 
