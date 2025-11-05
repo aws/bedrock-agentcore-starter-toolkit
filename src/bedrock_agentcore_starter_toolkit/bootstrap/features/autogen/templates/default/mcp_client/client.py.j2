@@ -1,5 +1,6 @@
 import os
-from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams
+from typing import List
+from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
 {%- if not custom_authorizer_enabled %}
 import requests
 
@@ -31,7 +32,7 @@ def _get_access_token():
     raise NotImplementedError("Custom authorizer flow is not implemented.")
 {%- endif %}
 
-async def get_streamable_http_mcp_client() -> StreamableHttpMcpToolAdapter:
+async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
     """
     Returns an MCP Client for AgentCore Gateway compatible with AutoGen
     """
@@ -45,4 +46,4 @@ async def get_streamable_http_mcp_client() -> StreamableHttpMcpToolAdapter:
             "Authorization": f"Bearer {_get_access_token()}"
         }
     )
-    return await StreamableHttpMcpToolAdapter.from_server_params(server_params, "AgentCore_Gateway")
+    return await mcp_server_tools(server_params)

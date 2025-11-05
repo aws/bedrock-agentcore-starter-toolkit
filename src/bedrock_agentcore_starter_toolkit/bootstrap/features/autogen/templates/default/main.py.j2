@@ -2,7 +2,7 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from autogen_core.tools import FunctionTool
-from mcp_client.client import get_streamable_http_mcp_client
+from mcp_client.client import get_streamable_http_mcp_tools
 
 MODEL_ID = "gpt-5"
 
@@ -22,14 +22,14 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 async def main(payload):
-    # Import AgentCore Gateway as Streamable HTTP MCP Adapter
-    adapter = await get_streamable_http_mcp_client()
+    # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
+    tools = await get_streamable_http_mcp_tools()
 
     # Define an AssistantAgent with the model and tool
     agent = AssistantAgent(
         name="{{ agent_name }}",
         model_client=model_client,
-        tools=[adapter, add_numbers_function_tool],
+        tools=[add_numbers_function_tool] + tools,
         system_message="You are a helpful assistant."
     )
 
