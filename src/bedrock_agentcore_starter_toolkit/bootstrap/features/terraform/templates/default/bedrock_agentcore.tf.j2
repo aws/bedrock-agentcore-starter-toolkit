@@ -212,9 +212,9 @@ resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target"
                 description = "Example integer parameter."
               }
               property {
-                name        = "float_list_param"
+                name        = "float_array_param"
                 type        = "array"
-                description = "Example list of floats."
+                description = "Example float array parameter."
                 items {
                   type = "number"
                 }
