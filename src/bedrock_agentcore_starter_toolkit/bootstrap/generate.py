@@ -125,6 +125,8 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     ctx.memory_enabled = memory_config.is_enabled
     ctx.memory_event_expiry_days = memory_config.event_expiry_days
     ctx.memory_is_long_term = memory_config.has_ltm
+    if memory_config.memory_name:
+        ctx.memory_name = memory_config.memory_name
 
     # custom authorizer
     authorizer_config: Optional[dict[str, any]] = agent_config.authorizer_configuration

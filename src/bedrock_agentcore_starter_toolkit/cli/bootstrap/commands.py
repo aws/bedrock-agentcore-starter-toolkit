@@ -64,9 +64,12 @@ def bootstrap(
     if configure_yaml.exists():
         configure_schema: BedrockAgentCoreConfigSchema = load_config(configure_yaml)
         if len(configure_schema.agents.keys()) > 1:
-            _handle_error(message="agentcore bootstrap generate does not currently support multi agent configurations. Try again with a single agent configured. Exiting.")
+            _handle_error(message="agentcore bootstrap does not currently support multi agent configurations. Try again with a single agent configured. Exiting.")
         # now assume we have just one agent configured and build the project context
         agent_config = next(iter(configure_schema.agents.values()))
+        # until there are IAC constructs for direct code deployment, fail configs that aren't configured for container
+        if agent_config.deployment_type != "container":
+            _handle_error(message="agentcore bootstrap does not currently support direct code deployment. Try again with deployment_type: container")
 
     # Create template project
     generate_project(project_name, sdk, iac, agent_config)

@@ -22,6 +22,7 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" } 
 
     with mcp_adapter as tools:
         # Define the Agent, Task and Crew with Tools

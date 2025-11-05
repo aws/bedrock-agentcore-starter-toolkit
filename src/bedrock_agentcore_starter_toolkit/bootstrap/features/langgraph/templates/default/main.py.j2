@@ -24,6 +24,8 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 async def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" } 
+
     # Load MCP Tools
     tools = await mcp_client.get_tools()
 

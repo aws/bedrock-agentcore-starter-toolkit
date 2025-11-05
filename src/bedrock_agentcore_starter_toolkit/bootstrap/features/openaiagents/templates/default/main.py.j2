@@ -44,6 +44,8 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 async def agent_invocation(payload, context):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
     # Process the user prompt
     prompt = payload.get("prompt", "What is Agentic AI?")
 
