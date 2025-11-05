@@ -1,5 +1,4 @@
 from pathlib import Path
-import shutil
 from time import sleep
 import typer
 import re
@@ -9,6 +8,7 @@ from ...utils.runtime.config import load_config
 from ...cli.common import console, _handle_error
 from ...bootstrap.types import BootstrapIACProvider, BootstrapSDKProvider
 from ..common import _handle_warn
+from .prompt_util import prompt_choice_until_valid_input
 
 bootstrap_app = typer.Typer(
     name="bootstrap", 
@@ -23,8 +23,16 @@ VALID_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9]{0,35}$")
 def bootstrap(
     ctx: typer.Context,
     project_name: str = typer.Option(None, "--project-name", "-p", prompt="Project name (alphanumeric)", help="Project name to bootstrap"),
-    iac: BootstrapIACProvider = typer.Option(..., help="Infrastructure as code provider"),
-    sdk: BootstrapSDKProvider = typer.Option(..., help="SDK provider"),
+    iac: BootstrapIACProvider = typer.Option(
+        None,
+        "--iac",
+        help="Infrastructure as code provider (CDK or Terraform)",
+    ),
+    sdk: BootstrapSDKProvider = typer.Option(
+        None,
+        "--sdk",
+        help="SDK provider (Strands, ClaudeAgents, OpenAI, etc.)",
+    ),
 ):
     if ctx.invoked_subcommand:
         return
@@ -36,6 +44,14 @@ def bootstrap(
         )
     if Path(project_name).exists():
         raise typer.BadParameter(f"A directory already exists with name {project_name}! Either delete that directory or choose a new project name.")
+    
+    # Interactively accept IAC/SDK if not provided
+    valid_iac = list(BootstrapIACProvider.__args__)
+    valid_sdk = list(BootstrapSDKProvider.__args__)
+    if not iac:
+        iac = prompt_choice_until_valid_input(label="IAC provider", choices=valid_iac)
+    if not sdk:
+        sdk = prompt_choice_until_valid_input(label="SDK provider", choices=valid_sdk)
 
     # consume config from configure command and perform validations
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
