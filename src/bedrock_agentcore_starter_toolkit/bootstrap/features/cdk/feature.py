@@ -1,11 +1,11 @@
 from pathlib import Path
 
 from ...features.base_feature import Feature
-from ...features.types import BootstrapIACProvider
 from ...types import ProjectContext
+from ...constants import IACProvider
 
 class CDKFeature(Feature):
-    feature_dir_name = BootstrapIACProvider.CDK.value
+    feature_dir_name = IACProvider.CDK
     render_common_dir = True
 
     def before_apply(self, context: ProjectContext):
@@ -16,6 +16,3 @@ class CDKFeature(Feature):
 
     def execute(self, context: ProjectContext) -> None:
         self.render_dir(context.iac_dir, context)
-
-    def after_apply(self, context: ProjectContext):
-        pass

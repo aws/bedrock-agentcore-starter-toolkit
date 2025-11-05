@@ -1,15 +1,16 @@
 from pathlib import Path
 from .features import Feature
-from .types import ProjectContext, TemplateDirSelection
+from .types import ProjectContext, BootstrapTemplateDirSelection
+from .constants import TemplateDirSelection
 
 class BaselineFeature(Feature):
     """
     Generic feature for rendering any of the bootstrap/* templates.
     Pass in the direcotry you want to read in. i.e. default/common/mcp
     """
-    def __init__(self, template_dir_name: TemplateDirSelection):
-        self.template_override_dir = Path(__file__).parent / "templates" / template_dir_name.value
-        self.python_dependencies = ["bedrock-agentcore >= 1.0.3"] if template_dir_name == TemplateDirSelection.Default else ["mcp >= 1.19.0"]
+    def __init__(self, template_dir_name: BootstrapTemplateDirSelection):
+        self.template_override_dir = Path(__file__).parent / "templates" / template_dir_name
+        self.python_dependencies = ["bedrock-agentcore >= 1.0.3", "requests >= 2.32.5"] if template_dir_name == TemplateDirSelection.DEFAULT else ["mcp >= 1.19.0"]
         super().__init__()
 
     def execute(self, context: ProjectContext) -> None:

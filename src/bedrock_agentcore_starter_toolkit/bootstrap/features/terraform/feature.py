@@ -1,10 +1,10 @@
 from pathlib import Path
 from ...features.base_feature import Feature
-from ...features.types import BootstrapIACProvider
+from ...constants import IACProvider
 from ...types import ProjectContext
 
 class TerraformFeature(Feature):
-    feature_dir_name = BootstrapIACProvider.Terraform.value
+    feature_dir_name = IACProvider.TERRAFORM
 
     def before_apply(self, context: ProjectContext):
         iac_dir = Path(context.output_dir / "terraform")

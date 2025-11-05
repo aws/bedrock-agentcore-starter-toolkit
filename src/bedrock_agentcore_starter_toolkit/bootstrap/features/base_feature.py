@@ -3,7 +3,8 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional
 from jinja2 import Environment, FileSystemLoader
-from ..types import ProjectContext, TemplateDirSelection
+from ..types import ProjectContext
+from ..constants import TemplateDirSelection
 
 
 class Feature(ABC):
@@ -25,7 +26,7 @@ class Feature(ABC):
             Path(__file__).parent
             / self.feature_dir_name.lower()
             / "templates"
-            / context.template_dir_selection.value
+            / context.template_dir_selection
         )
         if not self.template_dir.exists():
             raise FileNotFoundError(f"Template directory not found: {self.template_dir}")
@@ -61,7 +62,7 @@ class Feature(ABC):
 
     def render_dir(self, dest_dir: Path, context: ProjectContext) -> None:
         """Render templates for the variant only (common handled automatically in apply)."""
-        common_dir = self.template_dir.parent / TemplateDirSelection.Common
+        common_dir = self.template_dir.parent / TemplateDirSelection.COMMON
         if self.render_common_dir and common_dir.exists():
             self._render_from_template_src_dir(common_dir, dest_dir, context)
         self._render_from_template_src_dir(self.template_dir, dest_dir, context)

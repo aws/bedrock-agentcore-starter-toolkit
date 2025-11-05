@@ -1,9 +1,9 @@
 from ...types import ProjectContext
-from ..types import BootstrapSDKProvider
+from ...constants import SDKProvider
 from ..base_feature import Feature
 
 class LangGraphFeature(Feature):
-    feature_dir_name = BootstrapSDKProvider.LangGraph.value
+    feature_dir_name = SDKProvider.LANG_GRAPH
     python_dependencies = ["langgraph >= 1.0.2", "langchain_aws >= 1.0.0", "mcp >= 1.19.0",
                            "langchain-mcp-adapters >= 0.1.11"]
 

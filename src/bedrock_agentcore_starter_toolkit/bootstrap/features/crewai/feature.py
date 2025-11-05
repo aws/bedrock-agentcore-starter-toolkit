@@ -1,9 +1,9 @@
 from ...types import ProjectContext
-from ..types import BootstrapSDKProvider
+from ...constants import SDKProvider
 from ..base_feature import Feature
 
 class CrewAIFeature(Feature):
-    feature_dir_name = BootstrapSDKProvider.CrewAI.value
+    feature_dir_name = SDKProvider.CREWAI
     python_dependencies = ["crewai[tools]>=1.3.0"]
 
     def execute(self, context: ProjectContext):

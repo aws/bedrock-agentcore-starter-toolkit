@@ -1,9 +1,9 @@
 from pathlib import Path
 import time
 
-from .features.types import BootstrapSDKProvider, BootstrapIACProvider
 from typing import Optional
-from .types import ProjectContext, RuntimeProtocol, TemplateDirSelection
+from .types import ProjectContext, BootstrapSDKProvider, BootstrapIACProvider
+from .constants import RuntimeProtocol, TemplateDirSelection, SDKProvider, IACProvider
 from .features import sdk_feature_registry, iac_feature_registry
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, MemoryConfig, NetworkConfiguration, NetworkModeConfig, ObservabilityConfig, ProtocolConfiguration
@@ -30,8 +30,8 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         iac_dir=None, # updated when iac is generated
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
-        template_dir_selection=TemplateDirSelection.Default,
-        runtime_protocol=RuntimeProtocol.HTTP.value,
+        template_dir_selection=TemplateDirSelection.DEFAULT,
+        runtime_protocol=RuntimeProtocol.HTTP,
         python_dependencies=[],
         src_implementation_provided=False,
         agent_name=name + "-Agent",
@@ -106,14 +106,14 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     # mcp_runtime is different enough from default that it gets its own templates
     protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
     ctx.runtime_protocol = protocol_configuration.server_protocol
-    if protocol_configuration.server_protocol == RuntimeProtocol.MCP.value:
-        ctx.template_dir_selection = TemplateDirSelection.McpRuntime
+    if protocol_configuration.server_protocol == RuntimeProtocol.MCP:
+        ctx.template_dir_selection = TemplateDirSelection.MCP_RUNTIME
         if ctx.sdk_provider is not None:
             _handle_warn("In MCP mode, SDK code is not generated")
         ctx.sdk_provider = None
     # no src code support for A2A for now
-    if protocol_configuration.server_protocol == RuntimeProtocol.A2A.value:
-        ctx.template_dir_selection = TemplateDirSelection.Default
+    if protocol_configuration.server_protocol == RuntimeProtocol.A2A:
+        ctx.template_dir_selection = TemplateDirSelection.DEFAULT
         if ctx.sdk_provider is not None:
             _handle_warn("In A2A mode, source code is not generated")
         ctx.sdk_provider = None
@@ -144,7 +144,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
 
     # request header
     if agent_config.request_header_configuration:
-        if ctx.iac_provider == BootstrapIACProvider.CDK.value:
+        if ctx.iac_provider == IACProvider.CDK:
             _handle_warn("Request header allowlist is not supported by CDK so it won't be included in the generated code")
         else:
             ctx.request_header_allowlist = agent_config.request_header_configuration["requestHeaderAllowlist"]

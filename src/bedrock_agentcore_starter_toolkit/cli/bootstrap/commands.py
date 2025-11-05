@@ -7,7 +7,7 @@ from ...bootstrap.generate import generate_project
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema, BedrockAgentCoreAgentSchema
 from ...utils.runtime.config import load_config
 from ...cli.common import console, _handle_error
-from ...bootstrap.features.types import BootstrapIACProvider, BootstrapSDKProvider
+from ...bootstrap.types import BootstrapIACProvider, BootstrapSDKProvider
 from ..common import _handle_warn
 
 bootstrap_app = typer.Typer(

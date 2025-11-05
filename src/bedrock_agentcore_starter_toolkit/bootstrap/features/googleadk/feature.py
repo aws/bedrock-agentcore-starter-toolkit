@@ -1,9 +1,9 @@
 from ...types import ProjectContext
-from ..types import BootstrapSDKProvider
+from ...constants import SDKProvider
 from ..base_feature import Feature
 
 class GoogleADKFeature(Feature):
-    feature_dir_name = BootstrapSDKProvider.GoogleADK.value
+    feature_dir_name = SDKProvider.GOOGLE_ADK
     python_dependencies = ["google-adk>=1.17.0"]
 
     def execute(self, context: ProjectContext):

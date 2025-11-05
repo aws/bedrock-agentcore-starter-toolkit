@@ -43,14 +43,14 @@ export class AgentCoreStack extends cdk.Stack {
         this.mcpLambda.grantInvoke(agentCoreGatewayRole);
 
         // Create gateway resource
-
+        {%- if not custom_authorizer_enabled %}
         // Cognito resources
         const cognitoUserPool = new cognito.UserPool(this, `${props.appName}-CognitoUserPool`);
 
         // create resource server to work with client credentials auth flow
         const cognitoResourceServerScope = {
             scopeName: 'basic',
-            scopeDescription: 'Basic access to {{ app_name }}',
+            scopeDescription: 'Basic access to {{ name }}',
         };
 
         const cognitoResourceServer = cognitoUserPool.addResourceServer(`${props.appName}-CognitoResourceServer`, {
@@ -75,6 +75,7 @@ export class AgentCoreStack extends cdk.Stack {
             },
         });
         const cognitoTokenUrl = cognitoDomain.baseUrl() + '/oauth2/token';
+        {%- endif %}
 
         this.agentCoreGateway = new bedrockagentcore.CfnGateway(this, `${props.appName}-AgentCoreGateway`, {
             name: `${props.appName}-AgentCoreGateway`,
@@ -167,7 +168,7 @@ export class AgentCoreStack extends cdk.Stack {
                 }
             },
             agentRuntimeName: "{{ agent_name }}",
-            protocolConfiguration: {{ runtime_protocol }},
+            protocolConfiguration: "{{ runtime_protocol }}",
             networkConfiguration: {
                 networkMode: {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %},
                 networkModeConfig: {
@@ -183,7 +184,7 @@ export class AgentCoreStack extends cdk.Stack {
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                 "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                 "COGNITO_TOKEN_URL": cognitoTokenUrl,
-                "COGNITO_SCOPE": `${cognitoResourceServer.id}/${cognitoResourceServerScope.scopeName}`
+                "COGNITO_SCOPE": `${cognitoResourceServer.userPoolResourceServerId}/${cognitoResourceServerScope.scopeName}`
                 {%- endif %}
             }{% if custom_authorizer_enabled %},
             authorizerConfiguration: {

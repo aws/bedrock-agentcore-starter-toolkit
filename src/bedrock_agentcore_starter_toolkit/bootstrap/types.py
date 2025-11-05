@@ -1,24 +1,32 @@
 from dataclasses import dataclass, asdict
-from enum import Enum
 from pathlib import Path
-from typing import List, Optional
-from .features.types import BootstrapIACProvider, BootstrapSDKProvider
+from typing import List, Optional, Literal
 
-class TemplateDirSelection(str, Enum):
-    """
-    Used to keep track of which directories within templates/ to render
-    """
-    Default = "default"
-    McpRuntime = "mcp_runtime"
-    Common = "common"
+BootstrapSDKProvider = Literal[
+    "Strands",
+    "LangGraph",
+    "GoogleADK",
+    "OpenAIAgents",
+    "AutoGen",
+    "CrewAI"
+]
 
-class RuntimeProtocol(str, Enum):
-    """
-    The protocols that runtime supports: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-service-contract.html#protocol-comparison
-    """
-    HTTP = "HTTP"
-    MCP = "MCP"
-    A2A = "A2A"
+BootstrapIACProvider = Literal[
+    "CDK",
+    "Terraform"
+]
+
+BootstrapTemplateDirSelection = Literal[
+    "default",
+    "common",
+    "mcp_runtime"
+]
+
+BootstrapRuntimeProtocol = Literal[
+    "HTTP",
+    "MCP",
+    "A2A"
+]
 
 @dataclass
 class ProjectContext:
@@ -32,8 +40,8 @@ class ProjectContext:
     src_dir: Path
     sdk_provider: Optional[BootstrapSDKProvider]
     iac_provider: BootstrapIACProvider
-    template_dir_selection: TemplateDirSelection
-    runtime_protocol: str
+    template_dir_selection: BootstrapTemplateDirSelection
+    runtime_protocol: BootstrapRuntimeProtocol
     python_dependencies: List[str]
     iac_dir: Optional[Path]
     src_implementation_provided: bool
