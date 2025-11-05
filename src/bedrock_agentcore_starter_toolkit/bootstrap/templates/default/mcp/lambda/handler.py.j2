@@ -1,65 +1,58 @@
 import json
+from typing import Any, Dict
+
 
 def lambda_handler(event, context):
     """
-    Generic Lambda handler.
+    Generic Lambda handler for Bedrock AgentCore Gateway placeholder tool.
 
     Expected input:
         event: {
             "arguments": {...}  # optional tool arguments
         }
+
     Context should contain:
         context.client_context.custom["bedrockAgentCoreToolName"]
-        → e.g. "LambdaTarget___tool_0"
+        → e.g. "LambdaTarget___placeholder_tool"
     """
     try:
-        extended_name = context.client_context.custom["bedrockAgentCoreToolName"]
+        extended_name = context.client_context.custom.get("bedrockAgentCoreToolName")
         tool_name = None
-        # handle agentcore gateway tool naming convention https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
+
+        # handle agentcore gateway tool naming convention
+        # https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
         if extended_name and "___" in extended_name:
             tool_name = extended_name.split("___", 1)[1]
 
         if not tool_name:
             return _response(400, {"error": "Missing tool name"})
 
-        # --- Basic placeholder tools -------------------------------------
-        if tool_name in TOOLS:
-            result = TOOLS[tool_name](event)
-            return _response(200, {"result": result})
+        if tool_name != "placeholder_tool":
+            return _response(400, {"error": f"Unknown tool '{tool_name}'"})
 
-        return _response(400, {"error": f"Unknown tool '{tool_name}'"})
+        args = event.get("arguments", {})
+        result = placeholder_tool(args)
+        return _response(200, {"result": result})
 
     except Exception as e:
         return _response(500, {"system_error": str(e)})
 
 
-def _response(status_code: int, body: dict):
+def _response(status_code: int, body: Dict[str, Any]):
     """Consistent JSON response wrapper."""
     return {"statusCode": status_code, "body": json.dumps(body)}
 
 
-# --- Placeholder tool implementations -------------------------------------
-def tool_0(event: dict):
-    # arg = get_named_parameter(event, "my_param")
-    return {"message": "tool_0 executed", "event": event}
+def placeholder_tool(args: Dict[str, Any]):
+    """
+    no-op placeholder tool.
 
-
-def tool_1(event: dict):
-    # arg = get_named_parameter(event, "my_param")
-    return {"message": "tool_1 executed", "event": event}
-
-
-def tool_2(event: dict):
-    # arg = get_named_parameter(event, "my_param")
-    return {"message": "tool_2 executed", "event": event}
-
-
-TOOLS = {
-    "tool_0": tool_0,
-    "tool_1": tool_1,
-    "tool_2": tool_2,
-}
-
-def get_named_parameter(event: dict, name: str):
-    """Safely fetch a parameter from the event payload."""
-    return event.get(name)
+    Demonstrates argument passing from AgentCore Gateway.
+    """
+    return {
+        "message": "Placeholder tool executed.",
+        "string_param": args.get("string_param"),
+        "int_param": args.get("int_param"),
+        "float_array_param": args.get("float_array_param"),
+        "args_received": args,
+    }

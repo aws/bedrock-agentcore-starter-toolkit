@@ -196,14 +196,28 @@ resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target"
 
         tool_schema {
           inline_payload {
-            description = "Placeholder tool"
-            name        = "tool_0"
+            name        = "placeholder_tool"
+            description = "Placeholder tool (no-op)."
             input_schema {
               type        = "object"
-              description = "Simple string input for placeholder tool"
+              description = "Example input schema for placeholder tool"
               property {
-                type = "string"
-                name = "value"
+                name        = "string_param"
+                type        = "string"
+                description = "Example string parameter."
+              }
+              property {
+                name        = "int_param"
+                type        = "integer"
+                description = "Example integer parameter."
+              }
+              property {
+                name        = "float_list_param"
+                type        = "array"
+                description = "Example list of floats."
+                items {
+                  type = "number"
+                }
               }
             }
           }
@@ -212,6 +226,7 @@ resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target"
     }
   }
 }
+
 
 ################################################################################
 # AgentCore Runtime and Memory IAM Roles
