@@ -113,6 +113,7 @@ class ContainerRuntime:
         memory_name: Optional[str] = None,
         source_path: Optional[str] = None,
         protocol: Optional[str] = None,
+        explicit_requirements_file: Optional[Path] = None
     ) -> Path:
         """Generate Dockerfile from template.
 
@@ -127,6 +128,7 @@ class ContainerRuntime:
             memory_name: Optional memory name
             source_path: Optional source code directory (for dependency detection)
             protocol: Optional protocol configuration (HTTP or HTTPS)
+            explicit_requirements_file: Optional Path to the requirements_file to override detection logic
         """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
@@ -176,6 +178,12 @@ class ContainerRuntime:
             deps = detect_dependencies(source_dir, explicit_file=requirements_file)
         else:
             deps = detect_dependencies(output_dir, explicit_file=requirements_file)
+        if explicit_requirements_file:
+            p = Path(explicit_requirements_file)
+            if not p.exists():
+                raise FileNotFoundError(f"Explicit dependency file not found: {p}")
+            deps.file = p.name
+            deps.install_path = None
 
         # Add logic to avoid duplicate installation
         # Check for pyproject.toml in the appropriate directory

@@ -11,7 +11,9 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "cdk:deploy": "cdk deploy --all",
+    "cdk:deploy:ci": "cdk deploy --all --require-approval never"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

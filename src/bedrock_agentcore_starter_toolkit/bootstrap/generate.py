@@ -34,7 +34,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         runtime_protocol=RuntimeProtocol.HTTP,
         python_dependencies=[],
         src_implementation_provided=False,
-        agent_name=name + "-Agent",
+        agent_name=name + "_Agent",
         # memory
         memory_enabled=True,
         memory_name=name + "_Memory",
@@ -86,7 +86,8 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         ContainerRuntime().generate_dockerfile(
             agent_path=Path(ctx.src_dir / "main.py"),
             output_dir=ctx.src_dir,
-            agent_name=ctx.agent_name, 
+            explicit_requirements_file=ctx.src_dir / "pyproject.toml",
+            agent_name=ctx.agent_name,
             enable_observability=ctx.observability_enabled
         )
 

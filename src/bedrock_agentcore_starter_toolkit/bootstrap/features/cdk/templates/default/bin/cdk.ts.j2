@@ -28,3 +28,4 @@ const agentCoreStack = new AgentCoreStack(app, `{{ name }}-AgentCoreStack`, {
   ...deploymentProps,
   imageUri: dockerImageStack.imageUri
 });
+agentCoreStack.addDependency(dockerImageStack);
