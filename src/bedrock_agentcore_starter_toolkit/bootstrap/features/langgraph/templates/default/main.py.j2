@@ -5,7 +5,7 @@ from langchain.tools import tool
 from bedrock_agentcore import BedrockAgentCoreApp
 from mcp_client.client import get_streamable_http_mcp_client
 
-MODEL_ID="anthropic.claude-3-5-sonnet-20241022-v2:0"
+MODEL_ID="anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 # Initialize the model client
 llm = ChatBedrock(model_id=MODEL_ID)
@@ -30,13 +30,13 @@ async def invoke(payload):
     tools = await mcp_client.get_tools()
 
     # Define the agent
-    graph = create_agent(llm, tools=tools)
+    graph = create_agent(llm, tools=[add_numbers] + tools)
 
     # Process the user prompt
     prompt = payload.get("prompt", "What is Agentic AI?")
 
     # Run the agent
-    result = graph.invoke({"messages": [HumanMessage(content=prompt)]})
+    result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
 
     # Return result
     return {
