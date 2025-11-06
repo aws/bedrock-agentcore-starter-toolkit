@@ -11,3 +11,7 @@ def prompt_choice_until_valid_input(label: str, choices: list[str]) -> str:
             if choice.lower() == entered.lower():
                 return choice
         console.print(f"[yellow]Invalid choice. Please enter one of: {', '.join(choices)}[/yellow]")
+
+def prompt_confirm_continue(warn_str: str) -> bool:
+    response = prompt(f"{warn_str}: Do you want to continue [y/N]").strip()
+    return response.lower() in {"y", "yes"}

@@ -1,6 +1,8 @@
 from pathlib import Path
 import time
 
+from ..cli.bootstrap.prompt_util import prompt_confirm_continue
+from ..cli.common import _handle_error
 from .types import ProjectContext, BootstrapSDKProvider, BootstrapIACProvider
 from .constants import RuntimeProtocol, TemplateDirSelection
 from .features import sdk_feature_registry, iac_feature_registry
@@ -66,7 +68,10 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
 
     if ctx.src_implementation_provided:
         # copy over runtime code and just apply the IAC feature
-        copy_src_implementation_and_docker_config_into_monorepo(agent_config, ctx)
+        if prompt_confirm_continue(f"Copying source files and directories in cwd into {str(ctx.src_dir)} directory, ignoring reserved namespaces"):
+            copy_src_implementation_and_docker_config_into_monorepo(agent_config, ctx)
+        else:
+            _handle_error(message="User stopped bootstrap generation.")
         iac_feature_registry[iac_provider]().apply(ctx)
     else:
         baseline_feature = BaselineFeature(ctx.template_dir_selection)

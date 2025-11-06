@@ -84,25 +84,37 @@ def copy_src_implementation_and_docker_config_into_monorepo(agent_config: Bedroc
     2. copying the dockerfile and dockerignore into the root of the monorepo (root because configure assumes this structure when dockerfile is generated)
     """
 
-    # copy over files into new proj directory
-    src_path = Path(agent_config.source_path)
-    for item in src_path.iterdir():
+    # copy over everything in the current working directory except reserved directories
+    skip_dir = {".bedrock_agentcore", ctx.name}
+    skip_file = {".bedrock_agentcore.yaml", ".bedrock_agentcore.YAML"}
+    cwd = Path.cwd()
+
+    # take snapshot first — avoids seeing newly copied files
+    entries = list(cwd.iterdir())
+    for item in entries:
+        if item.is_file() and item.name in skip_file:
+            continue
+        if item.is_dir() and item.name in skip_dir:
+            continue
         target = ctx.src_dir / item.name
         if item.is_dir():
-            shutil.copytree(item, target, dirs_exist_ok=True)
+            shutil.copytree(
+                item,
+                target,
+                dirs_exist_ok=True,
+                ignore=lambda src, names: [n for n in names if n.lower() == ".dockerignore"],
+                )
         else:
             shutil.copy2(item, target)
 
     # Move Dockerfile and .dockerignore from configure’s output
-    src_base = Path(agent_config.source_path).parent  # one level above src/
-    agentcore_dir = src_base / ".bedrock_agentcore" / agent_config.name
+    agentcore_dir = cwd / ".bedrock_agentcore" / agent_config.name
 
     dockerfile_src = agentcore_dir / "Dockerfile"
-    dockerignore_src = ctx.src_dir / ".dockerignore" # the copied one
+    dockerignore_src = Path(agent_config.source_path) / ".dockerignore" # original path
 
-    dockerfile_dst = Path(ctx.output_dir) / "Dockerfile"
-    dockerignore_dst = Path(ctx.output_dir) / ".dockerignore"
+    dockerfile_dst = Path(ctx.src_dir) / "Dockerfile"
+    dockerignore_dst = Path(ctx.src_dir) / ".dockerignore"
 
     shutil.copy2(dockerfile_src, dockerfile_dst)
-    if dockerignore_src.exists():
-        shutil.move(dockerignore_src, dockerignore_dst)
+    shutil.copy2(dockerignore_src, dockerignore_dst)
