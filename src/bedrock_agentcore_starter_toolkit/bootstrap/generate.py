@@ -10,7 +10,7 @@ from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .baseline_feature import BaselineFeature
 from ..cli.common import console
 from rich.pretty import Pretty
-from .configure.configure_utils import copy_src_implementation_and_docker_config_into_monorepo, resolve_agent_config_with_project_context
+from .configure.util import copy_src_implementation_and_docker_config_into_monorepo, resolve_agent_config_with_project_context
 
 def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider: BootstrapIACProvider, agent_config: BedrockAgentCoreAgentSchema | None):
 
@@ -20,6 +20,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     src_path = Path(output_path / "src")
     src_path.mkdir(exist_ok=False)
 
+    # the ProjectContext defines what is generated. It is passed into the jinja templates that are rendered.
     ctx = ProjectContext(
         # high level project config
         name=name,

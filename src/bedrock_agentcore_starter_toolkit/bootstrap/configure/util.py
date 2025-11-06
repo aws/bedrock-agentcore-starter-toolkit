@@ -8,7 +8,7 @@ from ...cli.common import _handle_warn
 from pathlib import Path
 
 """
-This file contains code to make 
+This file contains code to allow the bootstrap command to be compatible with the outputs from agentcore configure command
 """
 
 def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config: BedrockAgentCoreAgentSchema):
@@ -92,7 +92,7 @@ def copy_src_implementation_and_docker_config_into_monorepo(agent_config: Bedroc
             shutil.copytree(item, target, dirs_exist_ok=True)
         else:
             shutil.copy2(item, target)
-            
+
     # Move Dockerfile and .dockerignore from configure’s output
     src_base = Path(agent_config.source_path).parent  # one level above src/
     agentcore_dir = src_base / ".bedrock_agentcore" / agent_config.name
