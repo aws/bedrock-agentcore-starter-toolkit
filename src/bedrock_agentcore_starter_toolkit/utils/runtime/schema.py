@@ -255,6 +255,7 @@ class BedrockAgentCoreConfigSchema(BaseModel):
     """
 
     default_agent: Optional[str] = Field(default=None, description="Default agent name for operations")
+    is_agentcore_bootstrap_project: Optional[bool] = Field(default=None) # will only be provided by projects created from agentcore bootstrap
     agents: Dict[str, BedrockAgentCoreAgentSchema] = Field(
         default_factory=dict, description="Named agent configurations"
     )

@@ -13,6 +13,7 @@ from .baseline_feature import BaselineFeature
 from ..cli.common import console
 from rich.pretty import Pretty
 from .configure.util import copy_src_implementation_and_docker_config_into_monorepo, resolve_agent_config_with_project_context
+from .bootstrap_yaml import write_minimal_bootstrap_project_yaml
 
 def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider: BootstrapIACProvider, agent_config: BedrockAgentCoreAgentSchema | None):
 
@@ -32,6 +33,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         iac_dir=None, # updated when iac is generated
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
+        deployment_type="container",
         template_dir_selection=TemplateDirSelection.DEFAULT,
         runtime_protocol=RuntimeProtocol.HTTP,
         python_dependencies=[],
@@ -96,3 +98,5 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
             agent_name=ctx.agent_name,
             enable_observability=ctx.observability_enabled
         )
+    # write a minimal bootstrap YAML so commands like agentocore invoke can work later
+    write_minimal_bootstrap_project_yaml(ctx)

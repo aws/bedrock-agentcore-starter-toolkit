@@ -28,6 +28,11 @@ BootstrapRuntimeProtocol = Literal[
     "A2A"
 ]
 
+# until we have direct code deployment constructs, only support container deploy
+BootstrapDeploymentType = Literal[
+    "container"
+]
+
 @dataclass
 class ProjectContext:
     """
@@ -43,6 +48,7 @@ class ProjectContext:
     iac_provider: BootstrapIACProvider
     template_dir_selection: BootstrapTemplateDirSelection
     runtime_protocol: BootstrapRuntimeProtocol
+    deployment_type: BootstrapDeploymentType
     python_dependencies: List[str]
     iac_dir: Optional[Path]
     src_implementation_provided: bool
