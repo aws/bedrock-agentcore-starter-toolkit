@@ -38,6 +38,7 @@ class ProjectContext:
     name: str
     output_dir: Path
     src_dir: Path
+    entrypoint_path: Path
     sdk_provider: Optional[BootstrapSDKProvider]
     iac_provider: BootstrapIACProvider
     template_dir_selection: BootstrapTemplateDirSelection

@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import time
 
 from typing import Optional
@@ -27,6 +28,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         name=name,
         output_dir=output_path,
         src_dir=src_path,
+        entrypoint_path=Path(src_path / "main.py"),
         iac_dir=None, # updated when iac is generated
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
@@ -67,6 +69,28 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     if ctx.src_implementation_provided:
         # only generate IAC if src code is provided by configure
         iac_feature_registry[iac_provider]().apply(ctx)
+        # copy over files into new proj directory
+        src_path = Path(agent_config.source_path)
+        for item in src_path.iterdir():
+            target = ctx.src_dir / item.name
+            if item.is_dir():
+                shutil.copytree(item, target, dirs_exist_ok=True)
+            else:
+                shutil.copy2(item, target)
+         # Move Dockerfile and .dockerignore from configure’s output
+        src_base = Path(agent_config.source_path).parent  # one level above src/
+        agentcore_dir = src_base / ".bedrock_agentcore" / agent_config.name
+
+        dockerfile_src = agentcore_dir / "Dockerfile"
+        dockerignore_src = ctx.src_dir / ".dockerignore" # the copied one
+
+        dockerfile_dst = Path(ctx.output_dir) / "Dockerfile"
+        dockerignore_dst = Path(ctx.output_dir) / ".dockerignore"
+
+        shutil.copy2(dockerfile_src, dockerfile_dst)
+        if dockerignore_src.exists():
+            shutil.move(dockerignore_src, dockerignore_dst)
+        
     else:
         baseline_feature = BaselineFeature(ctx.template_dir_selection)
         # source code python dependencies
@@ -84,7 +108,7 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         iac_feature_registry[iac_provider]().apply(ctx)
         # create dockerfile
         ContainerRuntime().generate_dockerfile(
-            agent_path=Path(ctx.src_dir / "main.py"),
+            agent_path=ctx.entrypoint_path,
             output_dir=ctx.src_dir,
             explicit_requirements_file=ctx.src_dir / "pyproject.toml",
             agent_name=ctx.agent_name,
@@ -100,6 +124,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     if agent_config.entrypoint != ".": # bootstrap sets entrypoint to . to indicate that source code should be provided by bootstrap
         ctx.src_implementation_provided = True
         ctx.sdk_provider = None
+        ctx.entrypoint_path = agent_config.entrypoint
 
     aws_config: AWSConfig = agent_config.aws
 

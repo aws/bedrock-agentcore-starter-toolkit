@@ -65,3 +65,7 @@ tests/
 
 # Keep wheelhouse for offline installations
 # wheelhouse/
+
+# Monorepo directories
+cdk/
+terraform/

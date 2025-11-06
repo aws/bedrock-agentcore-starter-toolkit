@@ -295,7 +295,9 @@ export class AgentCoreStack extends cdk.Stack {
             },
             roleArn: runtimeRole.roleArn,
             environmentVariables: {
+                {% if not src_implementation_provided %}
                 "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
+                {% endif %}
                 "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
                 {%- if not custom_authorizer_enabled and not src_implementation_provided %}
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,

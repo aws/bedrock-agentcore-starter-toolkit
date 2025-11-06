@@ -13,7 +13,7 @@ export class DockerImageStack extends cdk.Stack {
         super(scope, id, props);
 
         const asset = new ecr_assets.DockerImageAsset(this, `${props.appName}-AppImage`, {
-            directory: path.join(__dirname, "../../../src/"), // path to root of the project
+            directory: path.join(__dirname, "../../../"{% if not src_implementation_provided %}, "src"{% endif %}), // path to root of the project
         });
 
         this.imageUri = asset.imageUri;
