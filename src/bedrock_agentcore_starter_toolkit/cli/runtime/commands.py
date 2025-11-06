@@ -955,6 +955,8 @@ def launch(
 
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
+    if project_config.is_agentcore_bootstrap_project:
+        _handle_error("Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the chosen iac provider (cdk/terraform)")
     agent_config = project_config.get_agent_config(agent)
     deployment_type = agent_config.deployment_type
 

@@ -126,7 +126,16 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
     """
     bootstrap_project = config.is_agentcore_bootstrap_project
     with open(config_path, "w") as f:
-        yaml.dump(config.model_dump(exclude_none=bootstrap_project, exclude_unset=bootstrap_project), f, default_flow_style=False, sort_keys=False)
+        yaml.dump(
+            config.model_dump(
+                exclude_none=bootstrap_project,
+                exclude_unset=bootstrap_project,
+                exclude={"is_agentcore_bootstrap_project"}
+            ),
+            f,
+            default_flow_style=False, 
+            sort_keys=False
+        )
 
 
 def load_config_if_exists(config_path: Path) -> Optional[BedrockAgentCoreConfigSchema]:
