@@ -1,5 +1,6 @@
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.formatted_text import HTML
 from ...cli.common import console
 
 def prompt_choice_until_valid_input(label: str, choices: list[str]) -> str:
@@ -13,5 +14,5 @@ def prompt_choice_until_valid_input(label: str, choices: list[str]) -> str:
         console.print(f"[yellow]Invalid choice. Please enter one of: {', '.join(choices)}[/yellow]")
 
 def prompt_confirm_continue(warn_str: str) -> bool:
-    response = prompt(f"{warn_str}: Do you want to continue [y/N]").strip()
+    response = prompt(HTML(f"<ansiyellow><b>⚠ {warn_str}: Do you want to continue [y/N]: </b></ansiyellow>")).strip()
     return response.lower() in {"y", "yes"}
