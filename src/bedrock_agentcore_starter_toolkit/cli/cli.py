@@ -2,6 +2,7 @@
 
 import typer
 
+from ..cli.evaluation.commands import evaluation_app
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
@@ -36,6 +37,9 @@ app.add_typer(gateway_app, name="gateway")
 
 # observability
 app.add_typer(observability_app, name="obs")
+
+# evaluation
+app.add_typer(evaluation_app, name="eval")
 
 # import-agent
 app.command("import-agent")(import_agent)

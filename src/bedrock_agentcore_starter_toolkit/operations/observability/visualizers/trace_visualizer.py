@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.text import Text
 from rich.tree import Tree
 
+from ...constants import GenAIAttributes, LLMAttributes, TruncationConfig
 from ..models.telemetry import Span, TraceData
 
 
@@ -20,13 +21,22 @@ class TraceVisualizer:
         """
         self.console = console or Console()
 
-    def visualize_trace(self, trace_data: TraceData, trace_id: str, verbose: bool = False) -> None:
+    def visualize_trace(
+        self,
+        trace_data: TraceData,
+        trace_id: str,
+        show_details: bool = True,
+        show_messages: bool = False,
+        verbose: bool = False,
+    ) -> None:
         """Visualize a single trace as a hierarchical tree.
 
         Args:
             trace_data: TraceData containing the spans
             trace_id: The trace ID to visualize
-            verbose: Whether to show detailed span info, chat messages, event payloads, and metadata
+            show_details: Whether to show detailed span information
+            show_messages: Whether to show chat messages and invocation payloads
+            verbose: Whether to show full details without truncation
         """
         # Ensure spans are grouped and hierarchy is built
         if trace_id not in trace_data.traces:
@@ -43,17 +53,8 @@ class TraceVisualizer:
             self.console.print(f"[yellow]No spans found for trace {trace_id}[/yellow]")
             return
 
-        # Get messages grouped by span if verbose is enabled
-        messages_by_span = trace_data.get_messages_by_span() if verbose else {}
-
-        # Extract common fields to avoid repeating them
-        spans = trace_data.traces[trace_id]
-        session_ids = {s.attributes.get("session.id") for s in spans if s.attributes.get("session.id")}
-        service_names = {s.service_name for s in spans if s.service_name}
-
-        # Use common values if all spans share them, otherwise None
-        common_session_id = next(iter(session_ids)) if len(session_ids) == 1 else None
-        common_service_name = next(iter(service_names)) if len(service_names) == 1 else None
+        # Get messages grouped by span if show_messages is enabled
+        messages_by_span = trace_data.get_messages_by_span() if show_messages else {}
 
         # Create the tree
         trace_tree = Tree(
@@ -61,25 +62,31 @@ class TraceVisualizer:
             guide_style="cyan",
         )
 
+        # Track seen messages to avoid duplication across hierarchy
+        seen_messages: set = set()
+
         # Add each root span and its children
         for root_span in root_spans:
             self._add_span_to_tree(
-                trace_tree,
-                root_span,
-                verbose,
-                messages_by_span,
-                common_session_id=common_session_id,
-                common_service_name=common_service_name,
+                trace_tree, root_span, show_details, show_messages, messages_by_span, seen_messages, verbose
             )
 
         self.console.print(trace_tree)
 
-    def visualize_all_traces(self, trace_data: TraceData, verbose: bool = False) -> None:
+    def visualize_all_traces(
+        self,
+        trace_data: TraceData,
+        show_details: bool = False,
+        show_messages: bool = False,
+        verbose: bool = False,
+    ) -> None:
         """Visualize all traces in the trace data.
 
         Args:
             trace_data: TraceData containing the spans
-            verbose: Whether to show detailed span info, chat messages, event payloads, and metadata
+            show_details: Whether to show detailed span information
+            show_messages: Whether to show chat messages and invocation payloads
+            verbose: Whether to show full details without truncation
         """
         trace_data.group_spans_by_trace()
 
@@ -89,43 +96,8 @@ class TraceVisualizer:
 
         self.console.print(f"\n[bold cyan]Found {len(trace_data.traces)} traces:[/bold cyan]\n")
 
-        # Get messages once for all traces
-        messages_by_span = trace_data.get_messages_by_span() if verbose else {}
-
         for trace_id in trace_data.traces:
-            # Build hierarchy
-            root_spans = trace_data.build_span_hierarchy(trace_id)
-
-            if not root_spans:
-                continue
-
-            # Extract common fields to avoid repeating them
-            spans = trace_data.traces[trace_id]
-            session_ids = {s.attributes.get("session.id") for s in spans if s.attributes.get("session.id")}
-            service_names = {s.service_name for s in spans if s.service_name}
-
-            # Use common values if all spans share them, otherwise None
-            common_session_id = next(iter(session_ids)) if len(session_ids) == 1 else None
-            common_service_name = next(iter(service_names)) if len(service_names) == 1 else None
-
-            # Create the tree
-            trace_tree = Tree(
-                self._format_trace_header(trace_id, trace_data.traces[trace_id]),
-                guide_style="cyan",
-            )
-
-            # Add each root span and its children
-            for root_span in root_spans:
-                self._add_span_to_tree(
-                    trace_tree,
-                    root_span,
-                    verbose,
-                    messages_by_span,
-                    common_session_id=common_session_id,
-                    common_service_name=common_service_name,
-                )
-
-            self.console.print(trace_tree)
+            self.visualize_trace(trace_data, trace_id, show_details, show_messages, verbose)
             self.console.print()  # Empty line between traces
 
     def _format_trace_header(self, trace_id: str, spans: List[Span]) -> Text:
@@ -138,26 +110,14 @@ class TraceVisualizer:
         Returns:
             Formatted Rich Text object
         """
-        # Calculate actual trace duration from earliest start to latest end
-        # Don't sum spans as that double-counts nested spans
-        start_times = [s.start_time_unix_nano for s in spans if s.start_time_unix_nano]
-        end_times = [s.end_time_unix_nano for s in spans if s.end_time_unix_nano]
+        from ..models.telemetry import TraceData
 
-        if start_times and end_times:
-            # Convert nanoseconds to milliseconds
-            total_duration = (max(end_times) - min(start_times)) / 1_000_000
-        else:
-            # Fallback: use root span duration if available
-            root_spans = [
-                s for s in spans if not s.parent_span_id or s.parent_span_id not in [sp.span_id for sp in spans]
-            ]
-            total_duration = sum(s.duration_ms or 0 for s in root_spans)
-
+        total_duration = TraceData.calculate_trace_duration(spans)
         error_count = sum(1 for span in spans if span.status_code == "ERROR")
 
         header = Text()
         header.append("🔍 Trace: ", style="bold cyan")
-        header.append(trace_id, style="blue")
+        header.append(trace_id[:16] + "...", style="bright_blue")
         header.append(f" ({len(spans)} spans", style="dim")
         header.append(f", {total_duration:.2f}ms", style="green")
 
@@ -168,94 +128,123 @@ class TraceVisualizer:
 
         return header
 
+    def _has_meaningful_data(
+        self,
+        span: Span,
+        show_messages: bool,
+        messages_by_span: Dict[str, List[Dict[str, Any]]],
+    ) -> bool:
+        """Check if a span has meaningful data worth showing in non-verbose mode.
+
+        Only show spans with:
+        - ERROR status (for debugging)
+        - Conversation messages (actual user/assistant interaction)
+        - LLM interactions (gen_ai attributes with prompts/completions)
+
+        Hide infrastructure spans (ListEvents, CreateEvent, etc.) unless they error.
+
+        Args:
+            span: Span to check
+            show_messages: Whether messages are being shown
+            messages_by_span: Dictionary mapping span IDs to messages
+
+        Returns:
+            True if span has meaningful data
+        """
+        # Always show root spans (no parent) to maintain hierarchy visibility
+        if not span.parent_span_id:
+            return True
+
+        # Always show error spans for debugging
+        if span.status_code == "ERROR":
+            return True
+
+        # Show if has conversation messages (user/assistant interaction)
+        if show_messages and span.span_id in messages_by_span:
+            items = messages_by_span[span.span_id]
+            if items:
+                # Check if any items are actual messages (not just events)
+                for item in items:
+                    if item.get("type") == "message":
+                        return True
+
+        # Show if has LLM interaction (gen_ai attributes with prompts/completions)
+        if span.attributes:
+            llm_attrs = [
+                GenAIAttributes.PROMPT,
+                GenAIAttributes.COMPLETION,
+                LLMAttributes.PROMPTS,
+                LLMAttributes.RESPONSES,
+            ]
+            if any(attr in span.attributes for attr in llm_attrs):
+                return True
+
+        # Show parent if any children have meaningful data (maintain hierarchy)
+        for child in span.children:
+            if self._has_meaningful_data(child, show_messages, messages_by_span):
+                return True
+
+        return False
+
     def _add_span_to_tree(
         self,
         parent: Tree,
         span: Span,
-        verbose: bool = False,
-        messages_by_span: Optional[Dict[str, List[Dict[str, Any]]]] = None,
-        seen_messages: Optional[set] = None,
-        common_session_id: Optional[str] = None,
-        common_service_name: Optional[str] = None,
+        show_details: bool,
+        show_messages: bool,
+        messages_by_span: Dict[str, List[Dict[str, Any]]],
+        seen_messages: set,
+        verbose: bool,
     ) -> None:
         """Recursively add a span and its children to the tree.
 
         Args:
             parent: Parent Tree node
             span: Span to add
-            verbose: Whether to show detailed information, chat messages, events, and payloads
-            messages_by_span: Dictionary mapping span IDs to messages
-            seen_messages: Set of message identifiers already shown in parent spans
-            common_session_id: Session ID common to all spans (to avoid repetition)
-            common_service_name: Service name common to all spans (to avoid repetition)
+            show_details: Whether to show detailed information
+            show_messages: Whether to show chat messages and payloads
+            messages_by_span: Dictionary mapping span IDs to messages/events/exceptions
+            seen_messages: Set of message IDs already shown (to prevent duplication)
+            verbose: Whether to show full details without truncation
         """
-        if messages_by_span is None:
-            messages_by_span = {}
-        if seen_messages is None:
-            seen_messages = set()
+        # In non-verbose mode WITHOUT show_details, skip spans without meaningful data
+        # If show_details is True, always show spans (for debugging)
+        if not verbose and not show_details and not self._has_meaningful_data(span, show_messages, messages_by_span):
+            # Still process children in case they have meaningful data
+            for child in span.children:
+                self._add_span_to_tree(
+                    parent, child, show_details, show_messages, messages_by_span, seen_messages, verbose
+                )
+            return
 
         span_node = parent.add(
-            self._format_span(span, verbose, messages_by_span, seen_messages, common_session_id, common_service_name)
+            self._format_span(span, show_details, show_messages, messages_by_span, seen_messages, verbose)
         )
-
-        # Update seen_messages with messages from this span for child spans
-        if verbose and span.span_id in messages_by_span:
-            for item in messages_by_span[span.span_id]:
-                # Create unique identifier for each message/event
-                item_id = self._get_item_id(item)
-                seen_messages.add(item_id)
 
         # Add children recursively
         for child in span.children:
             self._add_span_to_tree(
-                span_node, child, verbose, messages_by_span, seen_messages, common_session_id, common_service_name
+                span_node, child, show_details, show_messages, messages_by_span, seen_messages, verbose
             )
-
-    def _get_item_id(self, item: Dict[str, Any]) -> str:
-        """Create unique identifier for a message, event, or exception.
-
-        Args:
-            item: Message, event, or exception dictionary
-
-        Returns:
-            Unique string identifier
-        """
-        item_type = item.get("type", "unknown")
-        timestamp = item.get("timestamp", "")
-
-        if item_type == "message":
-            role = item.get("role", "")
-            content = item.get("content", "")[:50]  # First 50 chars for uniqueness
-            return f"msg_{timestamp}_{role}_{hash(content)}"
-        elif item_type == "event":
-            event_name = item.get("event_name", "")
-            payload_str = str(item.get("payload", {}))[:50]
-            return f"evt_{timestamp}_{event_name}_{hash(payload_str)}"
-        elif item_type == "exception":
-            exception_type = item.get("exception_type", "")
-            message = item.get("message", "")[:50]
-            return f"exc_{timestamp}_{exception_type}_{hash(message)}"
-
-        return f"{item_type}_{timestamp}_{hash(str(item))}"
 
     def _format_span(
         self,
         span: Span,
-        verbose: bool,
+        show_details: bool,
+        show_messages: bool,
         messages_by_span: Dict[str, List[Dict[str, Any]]],
         seen_messages: set,
-        common_session_id: Optional[str] = None,
-        common_service_name: Optional[str] = None,
+        verbose: bool = False,
     ) -> Text:
         """Format a span for display.
 
         Args:
             span: Span to format
-            verbose: Whether to show detailed information, chat messages, event payloads, and metadata
-            messages_by_span: Dictionary mapping span IDs to messages (already initialized)
-            seen_messages: Set of message identifiers already shown (already initialized)
-            common_session_id: Session ID common to all spans (to avoid repetition)
-            common_service_name: Service name common to all spans (to avoid repetition)
+            show_details: Whether to show detailed information
+            show_messages: Whether to show chat messages and invocation payloads
+            messages_by_span: Dictionary mapping span IDs to messages/events/exceptions
+            seen_messages: Set of message IDs already shown (to prevent duplication)
+            verbose: Whether to show full details without truncation
 
         Returns:
             Formatted Rich Text object
@@ -279,221 +268,245 @@ class TraceVisualizer:
             duration_style = self._get_duration_style(span.duration_ms)
             text.append(f" [{span.duration_ms:.2f}ms]", style=duration_style)
 
-        # Status - only show if it's explicitly OK or ERROR (skip UNSET as it's not useful)
-        if span.status_code == "ERROR":
-            text.append(" (ERROR)", style="red")
-        elif span.status_code == "OK":
-            text.append(" (OK)", style="green")
+        # Status
+        if span.status_code:
+            status_style = "red" if span.status_code == "ERROR" else "green" if span.status_code == "OK" else "dim"
+            text.append(f" ({span.status_code})", style=status_style)
 
-        # Show verbose details if requested
-        if verbose:
-            # Span ID
+        # Show details if requested
+        if show_details:
+            # Span ID - show full ID for debugging
             text.append(f"\n  └─ ID: {span.span_id}", style="dim")
-
-            # Service name (skip if it's common to all spans)
-            if span.service_name and span.service_name != common_service_name:
-                text.append(f"\n  └─ Service: {span.service_name}", style="dim cyan")
 
             # Events
             if span.events:
                 text.append(f"\n  └─ Events: {len(span.events)}", style="dim yellow")
 
-        # Show LLM/API metadata if verbose is requested
-        if verbose and span.attributes:
-            # Show GenAI model information
-            model = span.attributes.get("gen_ai.request.model")
-            if model:
-                text.append(f"\n  └─ 🤖 Model: {model}", style="cyan")
+        # Show messages if requested
+        if show_messages and span.attributes:
+            # Extract chat messages from span attributes (using configured truncation)
+            prompt = span.attributes.get(GenAIAttributes.PROMPT) or span.attributes.get(LLMAttributes.PROMPTS)
+            if prompt:
+                prompt_str = str(prompt)
+                if not verbose:
+                    prompt_str = TruncationConfig.truncate(prompt_str)
+                text.append(f"\n  └─ 💬 User: {prompt_str}", style="cyan")
 
-            # Show token usage
-            input_tokens = span.attributes.get("gen_ai.usage.input_tokens") or span.attributes.get(
-                "gen_ai.usage.prompt_tokens"
-            )
-            output_tokens = span.attributes.get("gen_ai.usage.output_tokens") or span.attributes.get(
-                "gen_ai.usage.completion_tokens"
-            )
-            if input_tokens or output_tokens:
-                tokens_info = []
-                if input_tokens:
-                    tokens_info.append(f"in: {input_tokens}")
-                if output_tokens:
-                    tokens_info.append(f"out: {output_tokens}")
-                text.append(f"\n  └─ 🎯 Tokens: {', '.join(tokens_info)}", style="yellow")
+            completion = span.attributes.get(GenAIAttributes.COMPLETION) or span.attributes.get(LLMAttributes.RESPONSES)
+            if completion:
+                completion_str = str(completion)
+                if not verbose:
+                    completion_str = TruncationConfig.truncate(completion_str)
+                text.append(f"\n  └─ 🤖 Assistant: {completion_str}", style="green")
 
-            # Show finish reasons if available
-            finish_reasons = span.attributes.get("gen_ai.response.finish_reasons")
-            if finish_reasons:
-                text.append(f"\n  └─ ✓ Finish: {finish_reasons}", style="green")
+            # Extract invocation payloads
+            invocation = span.attributes.get("aws.bedrock.invocation") or span.attributes.get("request.body")
+            if invocation:
+                invocation_str = str(invocation)
+                if not verbose:
+                    invocation_str = TruncationConfig.truncate(invocation_str)
+                text.append(f"\n  └─ 📦 Payload: {invocation_str}", style="yellow")
 
-            # Show RPC service and operation details
-            rpc_service = span.attributes.get("rpc.service")
-            remote_operation = span.attributes.get("aws.remote.operation")
-            if rpc_service or remote_operation:
-                if rpc_service and remote_operation:
-                    text.append(f"\n  └─ ⚙️  API: {rpc_service}.{remote_operation}", style="blue")
-                elif remote_operation:
-                    text.append(f"\n  └─ ⚙️  Operation: {remote_operation}", style="blue")
+            # Show input/output if available
+            input_data = span.attributes.get("input") or span.attributes.get("gen_ai.request.model.input")
+            if input_data:
+                input_str = str(input_data)
+                if not verbose:
+                    input_str = TruncationConfig.truncate(input_str)
+                text.append(f"\n  └─ 📥 Input: {input_str}", style="bright_blue")
 
-            # Show AWS request ID for correlation
-            request_id = span.attributes.get("aws.request_id")
-            if request_id:
-                text.append(f"\n  └─ 🔑 Request: {request_id}", style="dim cyan")
+            output_data = span.attributes.get("output") or span.attributes.get("gen_ai.response.model.output")
+            if output_data:
+                output_str = str(output_data)
+                if not verbose:
+                    output_str = TruncationConfig.truncate(output_str)
+                text.append(f"\n  └─ 📤 Output: {output_str}", style="magenta")
 
-            # Show server/target address
-            server_addr = span.attributes.get("server.address")
-            if server_addr:
-                text.append(f"\n  └─ 🌐 Server: {server_addr}", style="dim blue")
-
-            # Show HTTP details
-            http_method = span.attributes.get("http.method")
-            http_target = span.attributes.get("http.target") or span.attributes.get("http.route")
-            status_code = span.attributes.get("http.status_code") or span.attributes.get("http.response.status_code")
-
-            if http_method or http_target or status_code:
-                http_parts = []
-                if http_method:
-                    http_parts.append(http_method)
-                if http_target:
-                    http_parts.append(http_target)
-                if status_code:
-                    status_style = "green" if status_code in [200, 201] else "red" if status_code >= 400 else "yellow"
-                    http_parts.append(f"[{status_code}]")
-                    text.append(f"\n  └─ 📡 HTTP: {' '.join(http_parts)}", style=status_style)
-                elif http_method or http_target:
-                    text.append(f"\n  └─ 📡 HTTP: {' '.join(http_parts)}", style="blue")
-
-            # Show session ID if present (skip if it's common to all spans)
-            session_id = span.attributes.get("session.id")
-            if session_id and session_id != common_session_id:
-                text.append(f"\n  └─ 🔖 Session: {session_id}", style="dim")
-
-            # Show chat messages and event payloads from runtime logs
-            if span.span_id in messages_by_span:
-                all_items = messages_by_span[span.span_id]
-
-                # Filter to only show new items (delta - not seen in parent spans)
+        # Show messages from runtime logs if available
+        if show_messages and span.span_id in messages_by_span:
+            items = messages_by_span[span.span_id]
+            if items:
+                # Filter out items that have already been shown
                 new_items = []
-                for item in all_items:
-                    item_id = self._get_item_id(item)
+                for item in items:
+                    item_id = self._get_message_id(item)
                     if item_id not in seen_messages:
                         new_items.append(item)
+                        seen_messages.add(item_id)
 
                 if new_items:
-                    # Count messages, events, and exceptions
+                    # Count different types
                     messages = [i for i in new_items if i.get("type") == "message"]
                     events = [i for i in new_items if i.get("type") == "event"]
                     exceptions = [i for i in new_items if i.get("type") == "exception"]
 
-                    label_parts = []
-                    if exceptions:
-                        label_parts.append(f"{len(exceptions)} exception")
-                    if messages:
-                        label_parts.append(f"{len(messages)} msg")
-                    if events:
-                        label_parts.append(f"{len(events)} event")
+                    # Show exceptions first (most important)
+                    for exc in exceptions:
+                        exc_type = exc.get("exception_type", "Exception")
+                        exc_msg = exc.get("message", "")
+                        stacktrace = exc.get("stacktrace", "")
 
-                    text.append(f"\n  └─ 📋 Data ({', '.join(label_parts)}):", style="bold magenta")
+                        text.append(f"\n  └─ 💥 {exc_type}: {exc_msg}", style="bold red")
 
-                    for item in new_items:
-                        item_type = item.get("type")
+                        # Show stacktrace (no truncation in verbose mode)
+                        if stacktrace:
+                            stacktrace_lines = stacktrace.strip().split("\n")
+                            for line in stacktrace_lines[:10]:  # Show first 10 lines
+                                text.append(f"\n      {line}", style="dim red")
 
-                        if item_type == "exception":
-                            # Display exception prominently
-                            exception_type = item.get("exception_type", "Exception")
-                            exception_msg = item.get("message", "")
-                            stacktrace = item.get("stacktrace", "")
+                    # Show messages
+                    for msg in messages:
+                        role = msg.get("role", "unknown")
+                        content = msg.get("content", "")
 
-                            text.append(f"\n      💥 {exception_type}: {exception_msg}", style="bold red")
-
-                            # Show stacktrace (truncated if too long)
-                            if stacktrace:
-                                # Get last few lines of stacktrace (most relevant)
-                                stacktrace_lines = stacktrace.strip().split("\n")
-                                if len(stacktrace_lines) > 10:
-                                    # Show first 2 lines and last 8 lines
-                                    preview_lines = stacktrace_lines[:2] + ["         ..."] + stacktrace_lines[-8:]
-                                else:
-                                    preview_lines = stacktrace_lines
-
-                                for line in preview_lines:
-                                    text.append(f"\n         {line}", style="dim red")
-
-                        elif item_type == "message":
-                            # Display chat message
-                            role = item.get("role", "unknown")
-                            content = item.get("content", "")
-
-                            # Truncate long messages
-                            content_preview = content[:200]
-                            if len(content) > 200:
-                                content_preview += "..."
-
-                            # Style based on role
-                            if role == "system":
-                                role_icon = "⚙️"
-                                role_style = "dim blue"
-                            elif role == "user":
-                                role_icon = "👤"
-                                role_style = "cyan"
-                            elif role == "assistant":
-                                role_icon = "🤖"
-                                role_style = "green"
+                        # Apply truncation in non-verbose mode
+                        # For tool use content (contains 🔧), show summary line only
+                        if not verbose:
+                            if "🔧" in content:
+                                # Extract just the tool name and truncate heavily
+                                lines = content.split("\n")
+                                first_line = lines[0] if lines else content
+                                content = (
+                                    TruncationConfig.truncate(first_line, is_tool_use=True) + " [truncated tool use]"
+                                )
                             else:
-                                role_icon = "•"
-                                role_style = "white"
+                                content = TruncationConfig.truncate(content)
 
-                            text.append(f"\n      {role_icon} {role.title()}: {content_preview}", style=role_style)
+                        if role == "user":
+                            text.append(f"\n  └─ 👤 User: {content}", style="cyan")
+                        elif role == "assistant":
+                            text.append(f"\n  └─ 🤖 Assistant: {content}", style="green")
+                        elif role == "system":
+                            text.append(f"\n  └─ ⚙️ System: {content}", style="bright_white")
+                        elif role == "tool":
+                            text.append(f"\n  └─ {content}", style="yellow")
 
-                        elif item_type == "event":
-                            # Display event payload
-                            event_name = item.get("event_name", "unknown")
-                            payload = item.get("payload", {})
+                    # Show events with payload
+                    for evt in events:
+                        event_name = evt.get("event_name", "unknown")
+                        payload = evt.get("payload", {})
 
-                            # Format payload preview
-                            if isinstance(payload, dict):
-                                # Show key fields from payload
-                                if payload:
-                                    payload_preview = self._format_event_payload(payload)
-                                else:
-                                    payload_preview = "(empty)"
-                            else:
-                                payload_preview = str(payload)[:200]
+                        # Skip generic wrapper events that just contain input/output messages
+                        # Show them only if they have unique information
+                        if self._is_generic_wrapper_event(event_name, payload):
+                            continue
 
-                            text.append(f"\n      📦 Event: {event_name}", style="yellow")
-                            if payload_preview and payload_preview != "(empty)":
-                                text.append(f"\n         {payload_preview}", style="dim yellow")
+                        text.append(f"\n  └─ 📦 Event: {event_name}", style="yellow")
+
+                        # Show payload data if available
+                        if payload and isinstance(payload, dict):
+                            # Format payload more intelligently
+                            self._format_event_payload_display(text, payload, verbose)
 
         return text
 
-    def _format_event_payload(self, payload: Dict[str, Any]) -> str:
-        """Format event payload for display.
+    def _get_message_id(self, item: Dict[str, Any]) -> str:
+        """Create a unique identifier for a message/event/exception for deduplication.
 
         Args:
-            payload: Payload dictionary
+            item: Message, event, or exception dictionary
 
         Returns:
-            Formatted string preview
+            Unique string identifier
         """
-        # Extract key fields that are commonly useful
-        important_keys = ["type", "name", "id", "status", "message", "error", "result", "count", "data"]
+        item_type = item.get("type", "unknown")
+        timestamp = item.get("timestamp", "")
 
-        parts = []
-        for key in important_keys:
-            if key in payload:
-                value = payload[key]
-                value_str = str(value)[:100]  # Limit each field
-                parts.append(f"{key}={value_str}")
+        if item_type == "message":
+            role = item.get("role", "")
+            content = str(item.get("content", ""))
+            # Use hash of content for uniqueness
+            return f"msg_{role}_{hash(content)}"
+        elif item_type == "event":
+            event_name = item.get("event_name", "")
+            payload = item.get("payload", {})
+            # For events, use event name and payload hash
+            return f"evt_{event_name}_{hash(str(payload))}"
+        elif item_type == "exception":
+            exc_type = item.get("exception_type", "")
+            message = item.get("message", "")
+            return f"exc_{exc_type}_{hash(message)}"
 
-        if parts:
-            return ", ".join(parts[:3])  # Show up to 3 fields
+        return f"{item_type}_{timestamp}_{hash(str(item))}"
 
-        # If no important keys, show first few keys
-        keys = list(payload.keys())[:3]
-        for key in keys:
-            value_str = str(payload[key])[:50]
-            parts.append(f"{key}={value_str}")
+    def _is_generic_wrapper_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
+        """Check if an event is a generic wrapper that doesn't add new information.
 
-        return ", ".join(parts) if parts else str(payload)[:100]
+        Args:
+            event_name: Name of the event
+            payload: Event payload
+
+        Returns:
+            True if this is a generic wrapper event that should be skipped
+        """
+        # Skip strands.telemetry.tracer events - they're just wrappers
+        # The actual messages are already extracted and shown separately
+        if event_name == "strands.telemetry.tracer":
+            return True
+
+        # If payload only contains input/output with messages, it's likely redundant
+        if set(payload.keys()) == {"input", "output"}:
+            input_data = payload.get("input", {})
+            output_data = payload.get("output", {})
+            # If both only have "messages" key, this is redundant with chat messages
+            if (
+                isinstance(input_data, dict)
+                and set(input_data.keys()) == {"messages"}
+                and isinstance(output_data, dict)
+                and set(output_data.keys()) == {"messages"}
+            ):
+                return True
+
+        return False
+
+    def _format_event_payload_display(self, text: Text, payload: Dict[str, Any], verbose: bool = False) -> None:
+        """Format event payload for display in a more readable way.
+
+        Args:
+            text: Rich Text object to append to
+            payload: Event payload dictionary
+            verbose: Whether to show full details without truncation
+        """
+        # Special handling for common payload structures
+        if "input" in payload or "output" in payload:
+            # This looks like an input/output pair, format specially
+            if "input" in payload:
+                input_data = payload["input"]
+                if isinstance(input_data, dict):
+                    # Extract key information
+                    if "messages" in input_data:
+                        # Already handled by message extraction, skip
+                        pass
+                    else:
+                        # Show other input fields (using configured truncation)
+                        input_str = str(input_data)
+                        if not verbose:
+                            input_str = TruncationConfig.truncate(input_str)
+                        text.append(f"\n      Input: {input_str}", style="dim yellow")
+
+            if "output" in payload:
+                output_data = payload["output"]
+                if isinstance(output_data, dict):
+                    # Extract key information
+                    if "messages" in output_data:
+                        # Already handled by message extraction, skip
+                        pass
+                    else:
+                        # Show other output fields (using configured truncation)
+                        output_str = str(output_data)
+                        if not verbose:
+                            output_str = TruncationConfig.truncate(output_str)
+                        text.append(f"\n      Output: {output_str}", style="dim yellow")
+        else:
+            # Generic payload - show all fields (using configured truncation)
+            for key, value in payload.items():
+                if key in ("message", "messages"):
+                    # Already handled, skip
+                    continue
+                value_str = str(value)
+                if not verbose:
+                    value_str = TruncationConfig.truncate(value_str)
+                text.append(f"\n      {key}: {value_str}", style="dim yellow")
 
     def _get_duration_style(self, duration_ms: float) -> str:
         """Get the style for duration based on its value.
@@ -529,32 +542,19 @@ class TraceVisualizer:
 
         table = Table(title="Trace Summary")
         table.add_column("Trace ID", style="cyan", no_wrap=True)
-        table.add_column("Spans", justify="right", style="blue")
+        table.add_column("Spans", justify="right", style="bright_blue")
         table.add_column("Duration (ms)", justify="right", style="green")
         table.add_column("Errors", justify="right", style="red")
         table.add_column("Status", style="yellow")
 
         for trace_id, spans in trace_data.traces.items():
-            # Calculate actual trace duration from earliest start to latest end
-            start_times = [s.start_time_unix_nano for s in spans if s.start_time_unix_nano]
-            end_times = [s.end_time_unix_nano for s in spans if s.end_time_unix_nano]
-
-            if start_times and end_times:
-                # Convert nanoseconds to milliseconds
-                total_duration = (max(end_times) - min(start_times)) / 1_000_000
-            else:
-                # Fallback: use root span duration if available
-                root_spans = [
-                    s for s in spans if not s.parent_span_id or s.parent_span_id not in [sp.span_id for sp in spans]
-                ]
-                total_duration = sum(s.duration_ms or 0 for s in root_spans)
-
+            total_duration = sum(span.duration_ms or 0 for span in spans)
             error_count = sum(1 for span in spans if span.status_code == "ERROR")
             status = "❌ ERROR" if error_count > 0 else "✓ OK"
             status_style = "red" if error_count > 0 else "green"
 
             table.add_row(
-                trace_id,
+                trace_id,  # Show full trace ID for easy copy-paste
                 str(len(spans)),
                 f"{total_duration:.2f}",
                 str(error_count) if error_count > 0 else "-",

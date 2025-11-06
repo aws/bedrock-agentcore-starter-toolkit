@@ -257,3 +257,106 @@ class TestCloudWatchQueryBuilder:
 
         # Should not cause syntax errors (basic check)
         assert "'" in query  # Should be quoted
+
+    # Test agent_id filtering (cross-agent session collision prevention)
+    @pytest.mark.parametrize(
+        "session_id,agent_id",
+        [
+            ("session-123", "AGENT123"),
+            ("session-456", "agent-abc-def"),
+        ],
+    )
+    def test_build_spans_by_session_query_with_agent_id(self, query_builder, session_id, agent_id):
+        """Test that session queries filter by agent_id to prevent cross-agent collisions."""
+        query = query_builder.build_spans_by_session_query(session_id, agent_id=agent_id)
+
+        # Check that agent_id filter uses parse pattern (matches dashboard)
+        assert f"attributes.session.id = '{session_id}'" in query
+        assert 'parse resource.attributes.cloud.resource_id "runtime/*/"' in query
+        assert f"parsedAgentId = '{agent_id}'" in query
+
+    def test_build_spans_by_session_query_without_agent_id(self, query_builder):
+        """Test that session queries work without agent_id for backward compatibility."""
+        query = query_builder.build_spans_by_session_query("session-123")
+
+        # Should only have session filter, no agent filter or parse
+        assert "attributes.session.id = 'session-123'" in query
+        # Check that there's no parse or agent filter
+        assert "parsedAgentId" not in query
+        assert 'parse resource.attributes.cloud.resource_id "runtime/*/"' not in query
+
+    @pytest.mark.parametrize(
+        "session_id,agent_id",
+        [
+            ("session-123", "AGENT123"),
+            ("test-session", "agent-xyz"),
+        ],
+    )
+    def test_build_session_summary_query_with_agent_id(self, query_builder, session_id, agent_id):
+        """Test that session summary queries filter by agent_id."""
+        query = query_builder.build_session_summary_query(session_id, agent_id=agent_id)
+
+        # Check that agent_id filter uses parse pattern (matches dashboard)
+        assert 'parse resource.attributes.cloud.resource_id "runtime/*/"' in query
+        assert f"parsedAgentId = '{agent_id}'" in query
+
+        # Check that session filter is still present
+        assert f"attributes.session.id = '{session_id}'" in query
+
+    def test_build_session_summary_query_without_agent_id(self, query_builder):
+        """Test that session summary queries work without agent_id for backward compatibility."""
+        query = query_builder.build_session_summary_query("session-123")
+
+        # Should only have session filter, no agent filter or parse
+        assert "attributes.session.id = 'session-123'" in query
+        # Check that there's no parse or agent filter
+        assert "parsedAgentId" not in query
+        assert 'parse resource.attributes.cloud.resource_id "runtime/*/"' not in query
+
+    def test_build_session_summary_query_enhanced_error_tracking(self, query_builder):
+        """Test that session summary queries include enhanced error tracking (4xx, 5xx, throttles)."""
+        query = query_builder.build_session_summary_query("session-123", agent_id="AGENT123")
+
+        # Check for enhanced error tracking fields
+        assert "systemErrors" in query
+        assert "clientErrors" in query
+        assert "throttles" in query
+
+        # Check specific error conditions
+        assert "httpStatusCode >= 500" in query
+        assert "httpStatusCode >= 400 and httpStatusCode < 500" in query
+        assert "httpStatusCode = 429" in query
+
+    # Test latest session query
+    @pytest.mark.parametrize(
+        "agent_id,limit",
+        [
+            ("AGENT123", 1),
+            ("agent-abc-def", 1),
+            ("AGENT456", 5),
+        ],
+    )
+    def test_build_latest_session_query(self, query_builder, agent_id, limit):
+        """Test building query to find latest session for an agent."""
+        query = query_builder.build_latest_session_query(agent_id, limit=limit)
+
+        # Check vended spans filter is present
+        assert 'resource.attributes.aws.service.type = "gen_ai_agent"' in query
+
+        # Check agent filter uses parse pattern (matches dashboard)
+        assert 'parse resource.attributes.cloud.resource_id "runtime/*/"' in query
+        assert f"parsedAgentId = '{agent_id}'" in query
+
+        # Check stats aggregation
+        assert "stats max(endTimeUnixNano) as maxEnd by attributes.session.id" in query
+
+        # Check sorting and limit
+        assert "sort maxEnd desc" in query
+        assert f"limit {limit}" in query
+
+    def test_build_latest_session_query_default_limit(self, query_builder):
+        """Test that latest session query uses default limit of 1."""
+        query = query_builder.build_latest_session_query("AGENT123")
+
+        # Should have limit 1 by default
+        assert "limit 1" in query

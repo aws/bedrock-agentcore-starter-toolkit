@@ -63,9 +63,10 @@ class ObservabilityClient:
         Returns:
             List of Span objects
         """
-        self.logger.info("Querying spans for session: %s", session_id)
+        self.logger.info("Querying spans for session: %s (agent: %s)", session_id, self.agent_id)
 
-        query_string = self.query_builder.build_spans_by_session_query(session_id)
+        # Pass agent_id to prevent cross-agent session ID collisions
+        query_string = self.query_builder.build_spans_by_session_query(session_id, agent_id=self.agent_id)
 
         results = self._execute_cloudwatch_query(
             query_string=query_string,
@@ -193,6 +194,54 @@ class ObservabilityClient:
         self.logger.info("Found total %d runtime logs via fallback", len(all_logs))
         return all_logs
 
+    def get_latest_session_id(
+        self,
+        start_time_ms: int,
+        end_time_ms: int,
+    ) -> str | None:
+        """Find the most recent session ID for this agent.
+
+        Args:
+            start_time_ms: Start time in milliseconds since epoch
+            end_time_ms: End time in milliseconds since epoch
+
+        Returns:
+            Session ID or None if no sessions found
+        """
+        self.logger.info("Finding latest session for agent: %s", self.agent_id)
+
+        query_string = self.query_builder.build_latest_session_query(self.agent_id)
+
+        try:
+            results = self._execute_cloudwatch_query(
+                query_string=query_string,
+                log_group_name=self.SPANS_LOG_GROUP,
+                start_time=start_time_ms,
+                end_time=end_time_ms,
+            )
+
+            if not results:
+                self.logger.info("No sessions found for agent %s", self.agent_id)
+                return None
+
+            # Extract session ID from first result
+            # Results are list of field dicts: [{"field": "attributes.session.id", "value": "session-123"}, ...]
+            first_result = results[0]
+            for field in first_result:
+                field_name = field.get("field")
+                # CloudWatch returns the field name as used in the query
+                if field_name == "attributes.session.id":
+                    session_id = field.get("value")
+                    self.logger.info("Found latest session: %s", session_id)
+                    return session_id
+
+            self.logger.warning("No session ID field found in query results")
+            return None
+
+        except Exception as e:
+            self.logger.error("Failed to query latest session: %s", str(e))
+            return None
+
     def get_session_data(
         self,
         session_id: str,
@@ -264,9 +313,10 @@ class ObservabilityClient:
         Returns:
             Dictionary with session statistics
         """
-        self.logger.info("Fetching session summary for: %s", session_id)
+        self.logger.info("Fetching session summary for: %s (agent: %s)", session_id, self.agent_id)
 
-        query_string = self.query_builder.build_session_summary_query(session_id)
+        # Pass agent_id to prevent cross-agent session ID collisions
+        query_string = self.query_builder.build_session_summary_query(session_id, agent_id=self.agent_id)
 
         results = self._execute_cloudwatch_query(
             query_string=query_string,

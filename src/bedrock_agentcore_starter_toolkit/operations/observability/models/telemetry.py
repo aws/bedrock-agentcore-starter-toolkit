@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from ...constants import AttributePrefixes
+
 
 @dataclass
 class Span:
@@ -133,8 +135,26 @@ class RuntimeLog:
     log_stream: Optional[str] = None
     raw_message: Optional[Dict[str, Any]] = None
 
+    def _get_nested_value(self, obj: Dict[str, Any], *keys: str) -> Any:
+        """Get value from dict trying multiple key variations (camelCase, snake_case, etc).
+
+        Args:
+            obj: Dictionary to search
+            *keys: Possible key names to try
+
+        Returns:
+            First matching value or None
+        """
+        for key in keys:
+            if key in obj:
+                return obj[key]
+        return None
+
     def get_gen_ai_message(self) -> Optional[Dict[str, Any]]:
-        """Extract GenAI message from runtime log if present.
+        """Extract GenAI message from runtime log using generic discovery approach.
+
+        Works with any model by flexibly discovering role and content from multiple
+        possible locations rather than hardcoding specific formats.
 
         Returns:
             Dictionary with message details (role, content, timestamp) or None
@@ -143,51 +163,623 @@ class RuntimeLog:
             return None
 
         attributes = self.raw_message.get("attributes", {})
-        if not attributes:
-            return None
-
         event_name = attributes.get("event.name", "")
-        if not event_name.startswith("gen_ai."):
+
+        if not event_name.startswith(f"{AttributePrefixes.GEN_AI}."):
             return None
 
-        # Extract role from event name
-        role = None
-        if "system.message" in event_name:
-            role = "system"
-        elif "user.message" in event_name:
-            role = "user"
-        elif "assistant.message" in event_name or "choice" in event_name:
-            role = "assistant"
+        body = self.raw_message.get("body", {})
 
+        # Step 1: Discover the role from multiple possible sources
+        role = self._discover_role(event_name, body)
         if not role:
             return None
 
-        # Extract content from body
-        body = self.raw_message.get("body", {})
-        content = None
+        # Step 2: Discover content from multiple possible locations
+        content = self._discover_content(body, role)
+        if not content:
+            return None
 
-        if isinstance(body, dict):
-            # Check for content array (typical format)
-            if "content" in body and isinstance(body["content"], list):
-                content_items = []
-                for item in body["content"]:
+        return {
+            "type": "message",
+            "role": role,
+            "content": content,
+            "timestamp": self.timestamp,
+            "event_name": event_name,
+        }
+
+    def _discover_role(self, event_name: str, body: Dict[str, Any]) -> Optional[str]:
+        """Discover message role from event name or body structure.
+
+        Args:
+            event_name: The gen_ai event name
+            body: The event body
+
+        Returns:
+            Role string (user, assistant, system, tool) or None
+        """
+        # PRIORITY 1: Check for tool results first (highest priority)
+        # Tool results should be identified as "tool" regardless of other role fields
+        if self._has_tool_result_indicators(body):
+            return "tool"
+
+        # PRIORITY 2: Check for tool use (indicates assistant role)
+        if self._has_tool_use_indicators(body):
+            return "assistant"
+
+        # PRIORITY 3: Extract from event name pattern gen_ai.{role}.message
+        if "." in event_name:
+            parts = event_name.split(".")
+            if len(parts) >= 3 and parts[2] == "message":
+                # gen_ai.user.message -> user, gen_ai.assistant.message -> assistant
+                return parts[1]
+
+        # PRIORITY 4: Check body.message.role (nested message format)
+        if isinstance(body.get("message"), dict):
+            role = body["message"].get("role")
+            if role and role != "user":  # Don't trust "user" role if it has tool content
+                return role
+
+        # PRIORITY 5: Check body.role directly
+        role = body.get("role")
+        if role and role != "user":  # Don't trust "user" role if it has tool content
+            return role
+
+        # PRIORITY 6: Fallback - try legacy method for complex formats
+        if not isinstance(body.get("message"), dict):
+            parts = self._extract_content_parts(body)
+            if parts["text"] or parts["tool_use"] or parts["tool_result"]:
+                return self._determine_role(event_name, parts)
+
+        # PRIORITY 7: Last resort - trust the role field even if "user"
+        if isinstance(body.get("message"), dict):
+            role = body["message"].get("role")
+            if role:
+                return role
+        role = body.get("role")
+        if role:
+            return role
+
+        return None
+
+    def _has_tool_result_indicators(self, body: Dict[str, Any]) -> bool:
+        """Check if body contains tool result indicators.
+
+        Args:
+            body: Event body
+
+        Returns:
+            True if this appears to be a tool result
+        """
+        # Body must be a dictionary to have tool result indicators
+        if not isinstance(body, dict):
+            return False
+
+        # Direct tool result fields
+        if self._get_nested_value(body, "toolResult", "tool_result"):
+            return True
+
+        # Tool call ID (indicates response to a tool call)
+        if body.get("tool_call_id"):
+            return True
+
+        # Check nested message for tool result
+        if isinstance(body.get("message"), dict):
+            msg = body["message"]
+            if msg.get("tool_call_id"):
+                return True
+            if self._get_nested_value(msg, "toolResult", "tool_result"):
+                return True
+
+        # Check content array for tool results
+        content = body.get("content", [])
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict):
+                    if self._get_nested_value(item, "toolResult", "tool_result"):
+                        return True
+                    if item.get("type") == "tool_result":
+                        return True
+
+        # Check nested message.content for tool results
+        if isinstance(body.get("message"), dict):
+            content = body["message"].get("content", [])
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict):
+                        if self._get_nested_value(item, "toolResult", "tool_result"):
+                            return True
+                        if item.get("type") == "tool_result":
+                            return True
+
+        return False
+
+    def _has_tool_use_indicators(self, body: Dict[str, Any]) -> bool:
+        """Check if body contains tool use indicators.
+
+        Args:
+            body: Event body
+
+        Returns:
+            True if this appears to be tool use (assistant with tools)
+        """
+        # Body must be a dictionary to have tool use indicators
+        if not isinstance(body, dict):
+            return False
+
+        # Direct tool_calls field
+        if body.get("tool_calls"):
+            return True
+
+        # Check nested message for tool_calls
+        if isinstance(body.get("message"), dict):
+            if body["message"].get("tool_calls"):
+                return True
+
+        # Check content array for tool use
+        content = body.get("content", [])
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict):
+                    if self._get_nested_value(item, "toolUse", "tool_use"):
+                        return True
+                    if item.get("type") in ("tool_use", "tool_call"):
+                        return True
+                    # Has tool-like structure (name + input/arguments)
+                    if item.get("name") and (item.get("input") or item.get("arguments")):
+                        return True
+
+        # Check nested message.content for tool use
+        if isinstance(body.get("message"), dict):
+            content = body["message"].get("content", [])
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict):
+                        if self._get_nested_value(item, "toolUse", "tool_use"):
+                            return True
+                        if item.get("type") in ("tool_use", "tool_call"):
+                            return True
+
+        return False
+
+    def _discover_content(self, body: Dict[str, Any], role: str) -> Optional[str]:
+        """Discover message content from body structure.
+
+        Args:
+            body: The event body (can be dict or string)
+            role: The message role
+
+        Returns:
+            Content string or None
+        """
+        # Handle string body directly (simple message format)
+        if isinstance(body, str):
+            return body
+
+        if not isinstance(body, dict):
+            return None
+
+        content_parts = []
+
+        # Location 1: body.message.content (nested format like gen_ai.choice)
+        if isinstance(body.get("message"), dict):
+            message = body["message"]
+            content_items = message.get("content", [])
+            content_parts.extend(self._extract_text_and_tools_from_content_array(content_items))
+
+        # Location 2: body.content (direct format like gen_ai.user.message)
+        if not content_parts and "content" in body:
+            content_items = body.get("content")
+
+            # Handle string content directly
+            if isinstance(content_items, str):
+                content_parts.append(content_items)
+            # Handle array content
+            elif isinstance(content_items, list):
+                content_parts.extend(self._extract_text_and_tools_from_content_array(content_items))
+
+        # Location 3: Try legacy extraction for complex tool use formats
+        if not content_parts:
+            parts = self._extract_content_parts(body)
+            if parts["text"] or parts["tool_use"] or parts["tool_result"] or parts["tools"]:
+                legacy_content = self._build_content_string(parts)
+                if legacy_content:
+                    return legacy_content
+
+        # Special handling for tool messages - add formatting
+        if role == "tool" and content_parts:
+            # Extract tool_call_id from multiple locations
+            tool_id = body.get("tool_call_id", "") or body.get("id", "")
+            if "message" in body and isinstance(body["message"], dict):
+                tool_id = body["message"].get("tool_call_id", tool_id) or body["message"].get("id", tool_id)
+
+            return f"🔧 Tool Result [{tool_id}]:\n" + "\n".join(content_parts)
+
+        # Special handling for assistant with tool_calls - append tool use info
+        if role == "assistant":
+            tool_calls = body.get("tool_calls", [])
+            if not tool_calls and isinstance(body.get("message"), dict):
+                tool_calls = body["message"].get("tool_calls", [])
+
+            for tool_call in tool_calls:
+                if isinstance(tool_call, dict):
+                    func = tool_call.get("function", {})
+                    tool_name = func.get("name", "unknown")
+                    tool_id = tool_call.get("id", "")
+                    content_parts.append(f"🔧 Tool Use: {tool_name} [ID: {tool_id}]")
+
+        if not content_parts:
+            return None
+
+        return "\n".join(content_parts)
+
+    def _extract_text_and_tools_from_content_array(self, content_items: Any) -> List[str]:
+        """Extract text strings and tool use blocks from a content array.
+
+        Args:
+            content_items: Content array (list of items or single string)
+
+        Returns:
+            List of formatted strings (text + tool use descriptions)
+        """
+        parts = []
+
+        if not content_items:
+            return parts
+
+        # Handle single string
+        if isinstance(content_items, str):
+            return [content_items]
+
+        # Handle array of items
+        if isinstance(content_items, list):
+            import json
+
+            for item in content_items:
+                if isinstance(item, str):
+                    # Direct string in array
+                    parts.append(item)
+                elif isinstance(item, dict):
+                    # Extract text content
+                    if "text" in item:
+                        parts.append(item["text"])
+                    elif "content" in item and isinstance(item["content"], str):
+                        parts.append(item["content"])
+
+                    # Extract tool use (multiple formats)
+                    tool_info = self._try_parse_tool_use(item)
+                    if tool_info:
+                        tool_name = tool_info["name"]
+                        tool_input = tool_info["input"]
+                        parts.append(f"🔧 Tool Use: {tool_name}")
+                        if tool_input:
+                            parts.append(f"   Input: {json.dumps(tool_input, indent=2)}")
+
+                    # Extract tool result
+                    result_info = self._try_parse_tool_result(item)
+                    if result_info:
+                        result_id = result_info["id"] or "unknown"
+                        result_content = result_info["content"]
+                        parts.append(f"🔧 Tool Result [{result_id[:8]}...]:")
+                        if isinstance(result_content, str):
+                            parts.append(f"   {result_content}")
+                        else:
+                            parts.append(f"   {json.dumps(result_content, indent=2)}")
+
+        return parts
+
+    def _extract_text_from_content_array(self, content_items: Any) -> List[str]:
+        """Extract text strings from a content array (without tool formatting).
+
+        DEPRECATED: Use _extract_text_and_tools_from_content_array instead.
+
+        Args:
+            content_items: Content array (list of items or single string)
+
+        Returns:
+            List of text strings
+        """
+        text_parts = []
+
+        if not content_items:
+            return text_parts
+
+        # Handle single string
+        if isinstance(content_items, str):
+            return [content_items]
+
+        # Handle array of items
+        if isinstance(content_items, list):
+            for item in content_items:
+                if isinstance(item, str):
+                    text_parts.append(item)
+                elif isinstance(item, dict):
+                    # Extract from dict items
+                    if "text" in item:
+                        text_parts.append(item["text"])
+                    elif "content" in item and isinstance(item["content"], str):
+                        text_parts.append(item["content"])
+
+        return text_parts
+
+    def _extract_content_parts(self, body: Any) -> Dict[str, Any]:
+        """Extract all content parts from message body (model-agnostic).
+
+        Handles multiple formats defensively:
+        - Text: string body, text field, content string, nested content
+        - Tool use: various nesting and naming patterns
+        - Tool results: multiple ID field variations
+        - Tool definitions: direct or nested structures
+
+        Returns:
+            Dict with keys: text, tool_use, tool_result, tools
+        """
+        parts = {"text": [], "tool_use": [], "tool_result": [], "tools": []}
+
+        # Handle string body directly
+        if isinstance(body, str):
+            parts["text"].append(body)
+            return parts
+
+        if not isinstance(body, dict):
+            return parts
+
+        # Extract text content from multiple possible locations
+        self._extract_text_content(body, parts)
+
+        # Extract tool use from various structures
+        self._extract_tool_use(body, parts)
+
+        # Extract tool results
+        self._extract_tool_results(body, parts)
+
+        # Extract tool definitions
+        self._extract_tool_definitions(body, parts)
+
+        return parts
+
+    def _extract_text_content(self, body: Dict[str, Any], parts: Dict[str, Any]) -> None:
+        """Extract text content from multiple possible locations."""
+        # Direct text field
+        if "text" in body and isinstance(body["text"], str):
+            parts["text"].append(body["text"])
+
+        # Direct content string (e.g., OpenAI, Anthropic simple messages)
+        if "content" in body and isinstance(body["content"], str):
+            parts["text"].append(body["content"])
+
+        # Content array with text items
+        if "content" in body and isinstance(body["content"], list):
+            for item in body["content"]:
+                if isinstance(item, str):
+                    parts["text"].append(item)
+                elif isinstance(item, dict) and "text" in item:
+                    parts["text"].append(item["text"])
+
+        # Nested message.content format (Nova gen_ai.choice events)
+        if "message" in body and isinstance(body["message"], dict):
+            message = body["message"]
+            if "content" in message and isinstance(message["content"], list):
+                for item in message["content"]:
                     if isinstance(item, dict) and "text" in item:
-                        content_items.append(item["text"])
-                content = "\n".join(content_items) if content_items else None
-            # Check for direct text field
-            elif "text" in body:
-                content = body["text"]
-        elif isinstance(body, str):
-            content = body
+                        parts["text"].append(item["text"])
 
-        if content:
-            return {
-                "type": "message",
-                "role": role,
-                "content": content,
-                "timestamp": self.timestamp,
-                "event_name": event_name,
-            }
+    def _extract_tool_use(self, body: Dict[str, Any], parts: Dict[str, Any]) -> None:
+        """Extract tool use from multiple structures and naming patterns."""
+        # Pattern 1: Content array with tool items (Bedrock style)
+        if "content" in body and isinstance(body["content"], list):
+            for item in body["content"]:
+                if not isinstance(item, dict):
+                    continue
+
+                # Try to extract as tool use
+                tool_info = self._try_parse_tool_use(item)
+                if tool_info:
+                    parts["tool_use"].append(tool_info)
+
+        # Pattern 2: Message-level tool_calls array (OpenAI, others)
+        if "tool_calls" in body and isinstance(body["tool_calls"], list):
+            for tool_call in body["tool_calls"]:
+                if isinstance(tool_call, dict):
+                    tool_info = self._try_parse_tool_use(tool_call)
+                    if tool_info:
+                        parts["tool_use"].append(tool_info)
+
+        # Pattern 3: Direct tool usage fields at message level
+        tool_info = self._try_parse_tool_use(body)
+        if tool_info:
+            parts["tool_use"].append(tool_info)
+
+    def _try_parse_tool_use(self, item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Attempt to parse tool use from an item with flexible field matching.
+
+        Returns tool_use dict or None if not a tool use.
+        """
+        # Check if this looks like a tool use (various indicators)
+        is_tool_use = (
+            self._get_nested_value(item, "toolUse", "tool_use") is not None
+            or item.get("type") in ("tool_use", "function", "tool_call")
+            or ("function" in item and isinstance(item["function"], dict))
+            or ("name" in item and ("input" in item or "arguments" in item or "parameters" in item))
+        )
+
+        if not is_tool_use:
+            return None
+
+        # Extract tool info from various structures
+        tool_data = self._get_nested_value(item, "toolUse", "tool_use") or item
+
+        # Handle nested function structure (OpenAI style)
+        if "function" in item and isinstance(item["function"], dict):
+            tool_data = item["function"]
+
+        # Extract name (required for tool use)
+        tool_name = tool_data.get("name")
+        if not tool_name:
+            return None
+
+        # Extract input/arguments with defensive parsing
+        tool_input = self._extract_tool_arguments(tool_data)
+
+        # Extract ID from multiple possible fields
+        tool_id = (
+            item.get("id")
+            or tool_data.get("id")
+            or self._get_nested_value(tool_data, "toolUseId", "tool_use_id", "call_id")
+        )
+
+        return {"name": tool_name, "input": tool_input, "id": tool_id}
+
+    def _extract_tool_arguments(self, tool_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract tool arguments/input with defensive parsing for multiple formats."""
+        # Try multiple field names
+        args = tool_data.get("input") or tool_data.get("arguments") or tool_data.get("parameters") or {}
+
+        # Handle JSON string arguments (OpenAI style)
+        if isinstance(args, str):
+            try:
+                import json
+
+                return json.loads(args)
+            except (json.JSONDecodeError, ValueError):
+                # Return as raw string in dict if parse fails
+                return {"raw_arguments": args}
+
+        # Return dict as-is
+        if isinstance(args, dict):
+            return args
+
+        # Fallback for unexpected types
+        return {"value": str(args)} if args else {}
+
+    def _extract_tool_results(self, body: Dict[str, Any], parts: Dict[str, Any]) -> None:
+        """Extract tool results from multiple structures."""
+        # Pattern 1: Content array with tool result items (Bedrock style)
+        if "content" in body and isinstance(body["content"], list):
+            for item in body["content"]:
+                if not isinstance(item, dict):
+                    continue
+
+                result_info = self._try_parse_tool_result(item)
+                if result_info:
+                    parts["tool_result"].append(result_info)
+
+        # Pattern 2: Message-level tool result (OpenAI tool role)
+        if body.get("role") == "tool":
+            result_info = self._try_parse_tool_result(body)
+            if result_info:
+                parts["tool_result"].append(result_info)
+
+    def _try_parse_tool_result(self, item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Attempt to parse tool result from an item with flexible field matching."""
+        # Check if this looks like a tool result
+        is_tool_result = (
+            self._get_nested_value(item, "toolResult", "tool_result") is not None
+            or item.get("type") == "tool_result"
+            or item.get("role") == "tool"
+            or "tool_call_id" in item
+        )
+
+        if not is_tool_result:
+            return None
+
+        # Extract result data
+        result_data = self._get_nested_value(item, "toolResult", "tool_result") or item
+
+        # Extract ID from multiple possible fields
+        result_id = result_data.get("tool_call_id") or self._get_nested_value(
+            result_data, "toolUseId", "tool_use_id", "id"
+        )
+
+        # Extract content
+        result_content = result_data.get("content", "")
+
+        return {"id": result_id, "content": result_content}
+
+    def _extract_tool_definitions(self, body: Dict[str, Any], parts: Dict[str, Any]) -> None:
+        """Extract tool definitions from multiple structures."""
+        tools = body.get("tools", [])
+        if not isinstance(tools, list):
+            return
+
+        for tool in tools:
+            if not isinstance(tool, dict):
+                continue
+
+            # Pattern 1: Direct format (Bedrock style)
+            if "name" in tool:
+                parts["tools"].append({"name": tool.get("name", "unknown"), "description": tool.get("description", "")})
+            # Pattern 2: Nested function format (OpenAI style)
+            elif tool.get("type") == "function" and "function" in tool:
+                function_data = tool["function"]
+                if isinstance(function_data, dict):
+                    parts["tools"].append(
+                        {
+                            "name": function_data.get("name", "unknown"),
+                            "description": function_data.get("description", ""),
+                        }
+                    )
+            # Pattern 3: Try to extract name from any nested structure
+            else:
+                # Look for name in nested structures
+                for key in ["function", "tool", "definition"]:
+                    if key in tool and isinstance(tool[key], dict):
+                        nested = tool[key]
+                        if "name" in nested:
+                            parts["tools"].append(
+                                {"name": nested.get("name", "unknown"), "description": nested.get("description", "")}
+                            )
+                            break
+
+    def _build_content_string(self, parts: Dict[str, Any]) -> str:
+        """Build formatted content string from extracted parts."""
+        import json
+
+        sections = []
+
+        # Add text content
+        if parts["text"]:
+            sections.append("\n".join(parts["text"]))
+
+        # Add tool uses
+        for tool_use in parts["tool_use"]:
+            sections.append(f"🔧 Tool Use: {tool_use['name']}")
+            if tool_use["input"]:
+                sections.append(f"   Input: {json.dumps(tool_use['input'], indent=2)}")
+
+        # Add tool results
+        for tool_result in parts["tool_result"]:
+            result_id = tool_result["id"] or "unknown"
+            sections.append(f"🔧 Tool Result [{result_id[:8]}...]:")
+            content = tool_result["content"]
+            if isinstance(content, str):
+                sections.append(f"   {content}")
+            else:
+                sections.append(f"   {json.dumps(content, indent=2)}")
+
+        # Add tool definitions
+        if parts["tools"]:
+            sections.append("🛠️ Available Tools:")
+            for tool in parts["tools"]:
+                sections.append(f"  - {tool['name']}: {tool['description']}")
+
+        return "\n".join(sections) if sections else ""
+
+    def _determine_role(self, event_name: str, parts: Dict[str, Any]) -> Optional[str]:
+        """Determine message role from event name and content."""
+        # Tool results override event-based role
+        if parts["tool_result"]:
+            return "tool"
+
+        # Event name based role
+        if "system.message" in event_name:
+            return "system"
+        elif "user.message" in event_name:
+            return "user"
+        elif "assistant.message" in event_name or "choice" in event_name:
+            return "assistant"
+        elif "tool" in event_name:
+            return "tool"
 
         return None
 
@@ -239,11 +831,17 @@ class RuntimeLog:
         if attributes.get("exception.type") or attributes.get("exception.message"):
             return None
 
-        # Get event name
-        event_name = attributes.get("event.name", "")
+        # Get event name - try multiple possible attribute names
+        event_name = (
+            attributes.get("event.name")
+            or attributes.get("name")
+            or attributes.get("event_type")
+            or attributes.get("log.level")  # For log-level events
+            or ""
+        )
 
         # Skip gen_ai messages (handled separately)
-        if event_name.startswith("gen_ai."):
+        if event_name.startswith(f"{AttributePrefixes.GEN_AI}."):
             return None
 
         # Extract meaningful payload data
@@ -262,10 +860,22 @@ class RuntimeLog:
             except (json.JSONDecodeError, ValueError, TypeError):
                 payload_data = {"message": body}
 
+        # If no event name found but we have a message, use that as event description
+        if not event_name and payload_data:
+            # Try to derive event name from message or other fields
+            if "message" in payload_data:
+                # Use first 50 chars of message as event name
+                msg = str(payload_data["message"])[:50]
+                event_name = msg if len(msg) < 50 else msg + "..."
+            elif "severity" in attributes or "log.level" in attributes:
+                # This is a log event
+                severity = attributes.get("severity") or attributes.get("log.level", "")
+                event_name = f"log.{severity}" if severity else "log.message"
+
         if payload_data or event_name:
             return {
                 "type": "event",
-                "event_name": event_name or "unknown",
+                "event_name": event_name or "log.event",
                 "payload": payload_data,
                 "timestamp": self.timestamp,
                 "attributes": attributes,
@@ -341,6 +951,27 @@ class TraceData:
         """Get all unique trace IDs from spans."""
         return list(set(span.trace_id for span in self.spans if span.trace_id))
 
+    @staticmethod
+    def calculate_trace_duration(spans: List[Span]) -> float:
+        """Calculate actual trace duration from earliest start to latest end time.
+
+        Args:
+            spans: List of spans in the trace
+
+        Returns:
+            Duration in milliseconds
+        """
+        start_times = [s.start_time_unix_nano for s in spans if s.start_time_unix_nano]
+        end_times = [s.end_time_unix_nano for s in spans if s.end_time_unix_nano]
+
+        if start_times and end_times:
+            # Convert nanoseconds to milliseconds
+            return (max(end_times) - min(start_times)) / 1_000_000
+
+        # Fallback: use root span duration
+        root_spans = [s for s in spans if not s.parent_span_id]
+        return sum(s.duration_ms or 0 for s in root_spans)
+
     def get_messages_by_span(self) -> Dict[str, List[Dict[str, Any]]]:
         """Extract chat messages, exceptions, and event payloads from runtime logs grouped by span ID.
 
@@ -353,32 +984,15 @@ class TraceData:
             if not log.span_id:
                 continue
 
-            # Try to get exception first (highest priority for errors)
-            exception = log.get_exception()
-            if exception:
-                if log.span_id not in items_by_span:
-                    items_by_span[log.span_id] = []
-                items_by_span[log.span_id].append(exception)
-                continue
+            # Try extracting in priority order: exception > message > event
+            item = log.get_exception() or log.get_gen_ai_message() or log.get_event_payload()
 
-            # Try to get chat message
-            message = log.get_gen_ai_message()
-            if message:
-                if log.span_id not in items_by_span:
-                    items_by_span[log.span_id] = []
-                items_by_span[log.span_id].append(message)
-                continue
-
-            # Try to get event payload
-            event = log.get_event_payload()
-            if event:
-                if log.span_id not in items_by_span:
-                    items_by_span[log.span_id] = []
-                items_by_span[log.span_id].append(event)
+            if item:
+                items_by_span.setdefault(log.span_id, []).append(item)
 
         # Sort items by timestamp within each span
-        for span_id in items_by_span:
-            items_by_span[span_id].sort(key=lambda m: m.get("timestamp", ""))
+        for items in items_by_span.values():
+            items.sort(key=lambda m: m.get("timestamp", ""))
 
         return items_by_span
 
@@ -483,24 +1097,13 @@ class TraceData:
         # Build hierarchies for all traces
         traces_with_hierarchy = {}
         for trace_id in self.traces:
-            root_spans = self.build_span_hierarchy(trace_id)
-
-            # Calculate actual trace duration from earliest start to latest end
             spans = self.traces[trace_id]
-            start_times = [s.start_time_unix_nano for s in spans if s.start_time_unix_nano]
-            end_times = [s.end_time_unix_nano for s in spans if s.end_time_unix_nano]
-
-            if start_times and end_times:
-                # Convert nanoseconds to milliseconds
-                total_duration_ms = (max(end_times) - min(start_times)) / 1_000_000
-            else:
-                # Fallback: use root span duration
-                total_duration_ms = sum(s.duration_ms or 0 for s in root_spans)
+            root_spans = self.build_span_hierarchy(trace_id)
 
             traces_with_hierarchy[trace_id] = {
                 "trace_id": trace_id,
                 "span_count": len(spans),
-                "total_duration_ms": total_duration_ms,
+                "total_duration_ms": self.calculate_trace_duration(spans),
                 "error_count": sum(1 for span in spans if span.status_code == "ERROR"),
                 "root_spans": [span_to_dict(span) for span in root_spans],
             }

@@ -215,12 +215,12 @@ class TestShowCommand:
             days=7,
             all_traces=False,
             errors_only=False,
-            simple=False,
+            verbose=False,
             output=None,
             last=1,
         )
 
-        mock_show_trace.assert_called_once_with(mock_client, "trace-123", 1000, 2000, True, None)
+        mock_show_trace.assert_called_once_with(mock_client, "trace-123", 1000, 2000, False, None)
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
@@ -240,13 +240,13 @@ class TestShowCommand:
             days=7,
             all_traces=False,
             errors_only=False,
-            simple=False,
+            verbose=False,
             output=None,
             last=1,
         )
 
         mock_show_session.assert_called_once_with(
-            mock_client, "session-456", 1000, 2000, True, True, False, False, None
+            mock_client, "session-456", 1000, 2000, False, True, False, False, None
         )
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
@@ -266,7 +266,7 @@ class TestShowCommand:
                 days=7,
                 all_traces=False,
                 errors_only=False,
-                simple=False,
+                verbose=False,
                 output=None,
                 last=1,
             )
@@ -291,7 +291,7 @@ class TestShowCommand:
                 days=7,
                 all_traces=True,
                 errors_only=False,
-                simple=False,
+                verbose=False,
                 output=None,
                 last=1,
             )
@@ -316,7 +316,7 @@ class TestShowCommand:
                 days=7,
                 all_traces=False,
                 errors_only=False,
-                simple=False,
+                verbose=False,
                 output=None,
                 last=2,
             )
@@ -341,7 +341,7 @@ class TestShowCommand:
                 days=7,
                 all_traces=True,
                 errors_only=False,
-                simple=False,
+                verbose=False,
                 output=None,
                 last=2,
             )
@@ -372,12 +372,12 @@ class TestShowCommand:
             days=7,
             all_traces=False,
             errors_only=False,
-            simple=False,
+            verbose=False,
             output=None,
             last=1,
         )
 
-        mock_show_last.assert_called_once_with(mock_client, "session-from-config", 1000, 2000, True, 1, False, None)
+        mock_show_last.assert_called_once_with(mock_client, "session-from-config", 1000, 2000, False, 1, False, None)
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
@@ -397,7 +397,7 @@ class TestShowCommand:
                 days=7,
                 all_traces=False,
                 errors_only=False,
-                simple=False,
+                verbose=False,
                 output=None,
                 last=1,
             )
@@ -524,9 +524,13 @@ class TestListCommand:
     def test_list_traces_no_config_session(
         self, mock_console, mock_get_config, mock_create_client, mock_get_time_range
     ):
-        """Test list_traces error when no session ID and no config."""
+        """Test list_traces error when no session ID and no config and no latest session found."""
         mock_get_time_range.return_value = (1000, 2000)
         mock_get_config.return_value = None
+        # Mock client to return None for latest session
+        mock_client = MagicMock()
+        mock_client.get_latest_session_id.return_value = None
+        mock_create_client.return_value = mock_client
 
         with pytest.raises(typer.Exit) as exc_info:
             list_traces(
@@ -534,7 +538,7 @@ class TestListCommand:
             )
 
         assert exc_info.value.exit_code == 1
-        assert any("No session ID provided" in str(call) for call in mock_console.print.call_args_list)
+        assert any("No sessions found" in str(call) for call in mock_console.print.call_args_list)
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")

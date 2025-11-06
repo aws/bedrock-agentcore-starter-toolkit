@@ -258,6 +258,27 @@ class TestRuntimeLog:
         # Should return None because exception is present
         assert event is None
 
+    def test_runtime_log_event_payload_without_event_name(self):
+        """Test that events without event.name use message as fallback."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"body": {"message": "Attempting to instrument while already instrumented"}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        event = log.get_event_payload()
+
+        assert event is not None
+        assert event["type"] == "event"
+        # Should use message as event name
+        assert "Attempting to instrument" in event["event_name"]
+        assert event["payload"]["message"] == "Attempting to instrument while already instrumented"
+
 
 class TestTraceData:
     """Test cases for TraceData model."""
@@ -499,6 +520,79 @@ class TestRuntimeLogEdgeCases:
         # Should return None for unknown role
         assert message is None
 
+    def test_runtime_log_get_gen_ai_message_with_tool_use(self):
+        """Test extracting GenAI message with tool_use block (direct type)."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"text": "Let me help"}, '
+                    '{"type": "tool_use", "name": "calculate", "input": {"expression": "2+2"}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["role"] == "assistant"
+        assert "Let me help" in message["content"]
+        assert "🔧 Tool Use: calculate" in message["content"]
+        assert "expression" in message["content"]
+
+    def test_runtime_log_get_gen_ai_message_with_nested_tool_use(self):
+        """Test extracting GenAI message with nested tool_use block."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"text": "Using the tool"}, '
+                    '{"tool_use": {"name": "search", "input": {"query": "test"}}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["role"] == "assistant"
+        assert "Using the tool" in message["content"]
+        assert "🔧 Tool Use: search" in message["content"]
+        assert "query" in message["content"]
+
+    def test_runtime_log_get_gen_ai_message_tool_use_only(self):
+        """Test extracting GenAI message with ONLY tool use (no text)."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"type": "tool_use", "name": "calculate", "input": {"x": 5}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["role"] == "assistant"
+        assert "🔧 Tool Use: calculate" in message["content"]
+        assert "x" in message["content"]
+
     def test_runtime_log_get_event_payload_with_string_body(self):
         """Test extracting event payload when body is a string."""
         cloudwatch_result = [
@@ -604,6 +698,259 @@ class TestSpanEdgeCases:
         # Should default to empty dicts
         assert span.attributes == {}
         assert span.resource_attributes == {}
+
+
+class TestTraceDataHelperMethods:
+    """Test TraceData helper methods."""
+
+    def test_calculate_trace_duration_with_timestamps(self):
+        """Test calculating trace duration from span timestamps."""
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="Span1",
+                start_time_unix_nano=1_000_000_000,  # 1 second
+                end_time_unix_nano=3_000_000_000,  # 3 seconds
+            ),
+            Span(
+                trace_id="trace-1",
+                span_id="span-2",
+                span_name="Span2",
+                start_time_unix_nano=2_000_000_000,  # 2 seconds
+                end_time_unix_nano=5_000_000_000,  # 5 seconds
+            ),
+        ]
+
+        duration = TraceData.calculate_trace_duration(spans)
+
+        # Duration should be from earliest start (1s) to latest end (5s) = 4s = 4000ms
+        assert duration == 4000.0
+
+    def test_calculate_trace_duration_fallback_to_durations(self):
+        """Test calculating trace duration falls back to span durations when no timestamps."""
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="RootSpan",
+                duration_ms=100.0,
+                # No parent = root span
+            ),
+            Span(
+                trace_id="trace-1",
+                span_id="span-2",
+                span_name="ChildSpan",
+                parent_span_id="span-1",
+                duration_ms=50.0,
+            ),
+        ]
+
+        duration = TraceData.calculate_trace_duration(spans)
+
+        # Should use root span duration only (not sum of all)
+        assert duration == 100.0
+
+    def test_calculate_trace_duration_multiple_root_spans(self):
+        """Test calculating trace duration with multiple root spans."""
+        spans = [
+            Span(
+                trace_id="trace-1",
+                span_id="span-1",
+                span_name="RootSpan1",
+                duration_ms=100.0,
+            ),
+            Span(
+                trace_id="trace-1",
+                span_id="span-2",
+                span_name="RootSpan2",
+                duration_ms=150.0,
+            ),
+        ]
+
+        duration = TraceData.calculate_trace_duration(spans)
+
+        # Should sum all root spans
+        assert duration == 250.0
+
+
+class TestRuntimeLogRobustness:
+    """Test robustness across different model formats and malformed data."""
+
+    def test_extract_text_from_content_string(self):
+        """Test extracting text when content is a string (not array)."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.user.message"}, "body": {"content": "Hello world"}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["content"] == "Hello world"
+        assert message["role"] == "user"
+
+    def test_extract_tool_with_parameters_field(self):
+        """Test extracting tool when using 'parameters' instead of 'input' or 'arguments'."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"name": "search", "parameters": {"query": "test"}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert "🔧 Tool Use: search" in message["content"]
+        assert "query" in message["content"]
+        assert "test" in message["content"]
+
+    def test_extract_tool_result_with_tool_call_id(self):
+        """Test extracting tool result with tool_call_id field (OpenAI style)."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.tool.message"}, '
+                    '"body": {"role": "tool", "tool_call_id": "call_123", "content": "Result data"}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert message["role"] == "tool"
+        assert "call_123" in message["content"]
+        assert "Result data" in message["content"]
+
+    def test_extract_tool_with_malformed_arguments_json(self):
+        """Test graceful handling of malformed JSON in arguments."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"name": "calculate", "arguments": "not valid json {"}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        # Should not crash, should extract tool with raw_arguments
+        assert message is not None
+        assert "🔧 Tool Use: calculate" in message["content"]
+        assert "raw_arguments" in message["content"]
+
+    def test_extract_tool_with_type_function(self):
+        """Test extracting tool when type is 'function' (generic LLM framework style)."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": [{"type": "function", "name": "search", "input": {"q": "test"}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert "🔧 Tool Use: search" in message["content"]
+        assert "q" in message["content"]
+
+    def test_extract_mixed_content_array(self):
+        """Test extracting from content array with strings and dicts."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.assistant.message"}, '
+                    '"body": {"content": ["Text part", {"text": "Another text"}, '
+                    '{"name": "tool", "input": {"x": 1}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert "Text part" in message["content"]
+        assert "Another text" in message["content"]
+        assert "🔧 Tool Use: tool" in message["content"]
+
+    def test_handle_empty_content(self):
+        """Test graceful handling of empty content."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": '{"attributes": {"event.name": "gen_ai.user.message"}, "body": {}}',
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        # Should return None for empty content
+        assert message is None
+
+    def test_handle_nested_tool_definitions(self):
+        """Test extracting tool definitions from nested structures."""
+        cloudwatch_result = [
+            {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
+            {
+                "field": "@message",
+                "value": (
+                    '{"attributes": {"event.name": "gen_ai.system.message"}, '
+                    '"body": {"tools": [{"type": "function", "function": '
+                    '{"name": "search", "description": "Search tool"}}]}}'
+                ),
+            },
+            {"field": "spanId", "value": "span-123"},
+            {"field": "traceId", "value": "trace-456"},
+        ]
+
+        log = RuntimeLog.from_cloudwatch_result(cloudwatch_result)
+        message = log.get_gen_ai_message()
+
+        assert message is not None
+        assert "🛠️ Available Tools:" in message["content"]
+        assert "search: Search tool" in message["content"]
 
 
 class TestTraceDataEdgeCases:
