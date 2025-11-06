@@ -44,7 +44,7 @@ def get_streamable_http_mcp_client() -> MultiServerMCPClient:
         {
             "agentcore_gateway": {
                 "transport": "streamable_http",
-                "url": f"{gateway_url}/mcp",
+                "url": gateway_url,
                 "headers": {
                     "Authorization": f"Bearer {access_token}"
                 }

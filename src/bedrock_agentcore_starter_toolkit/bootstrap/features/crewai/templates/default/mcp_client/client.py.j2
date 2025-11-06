@@ -41,7 +41,7 @@ async def get_streamable_http_mcp_client() -> MCPServerAdapter:
         raise RuntimeError("Missing required environment variable: GATEWAY_URL")
 
     server_params = {
-        "url": f"{gateway_url}/mcp",
+        "url": gateway_url,
         "transport": "streamable-http",
         "headers": {
             "Authorization": f"Bearer {_get_access_token()}"

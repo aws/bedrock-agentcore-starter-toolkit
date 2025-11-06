@@ -43,7 +43,7 @@ def get_streamable_http_mcp_client() -> MCPServerStreamableHttp:
     return MCPServerStreamableHttp(
         name="AgentCore Gateway MCP",
         params={
-            "url": f"{gateway_url}/mcp",
+            "url": gateway_url,
             "headers": {
                 "Authorization": f"Bearer {access_token}"
             }

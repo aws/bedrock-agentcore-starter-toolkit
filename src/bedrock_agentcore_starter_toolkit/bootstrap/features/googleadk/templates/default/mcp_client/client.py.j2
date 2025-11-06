@@ -43,7 +43,7 @@ def get_streamable_http_mcp_client() -> MCPToolset:
     access_token = _get_access_token()
     return MCPToolset(
         connection_params=StreamableHTTPConnectionParams(
-            url=f"{gateway_url}/mcp",
+            url=gateway_url,
             headers={
                 "Authorization": f"Bearer {access_token}"
             }
