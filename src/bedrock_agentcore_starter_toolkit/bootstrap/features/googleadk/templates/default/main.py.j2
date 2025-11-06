@@ -5,7 +5,6 @@ from google.adk.sessions import InMemorySessionService
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from google.genai import types
 from mcp_client.client import get_streamable_http_mcp_client
-import asyncio
 
 MODEL_ID = "gemini-2.0-flash"
 
@@ -53,16 +52,16 @@ async def call_agent_async(query, user_id, session_id):
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
-def agent_invocation(payload, context):
-    # assume payload input is structured as { "prompt": "<user input>", "user_id": "<id>" } 
+async def agent_invocation(payload, context):
+    # assume payload input is structured as { "prompt": "<user input>", "user_id": "<id>", "context": { "session_id": "<id>" } }
 
     # Process the user prompt
     prompt = payload.get("prompt", "What is Agentic AI?")
+    session_id = context.session_id or "session_id_1"
 
     # Run the agent
-    result = asyncio.run(call_agent_async(prompt, payload.get("user_id",USER_ID), context.session_id))
+    result = await call_agent_async(prompt, payload.get("user_id",USER_ID), session_id)
 
-    mcp_toolset.close()
     # Return result
     return {
         "result": result
