@@ -31,8 +31,7 @@ def invoke_bedrock_agentcore(
     # Load project configuration
     project_config = load_config(config_path)
     if project_config.is_agentcore_bootstrap_project:
-        resolve_bootstrap_project_yaml()
-        project_config = load_config(config_path)
+        project_config =  resolve_bootstrap_project_yaml(config_path)
     agent_config = project_config.get_agent_config(agent_name)
 
     # Log which agent is being invoked
