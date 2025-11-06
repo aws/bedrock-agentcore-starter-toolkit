@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bedrock-agentcore-starter-toolkit"
-version = "0.1.31"
+version = "0.1.32"
 description = "A starter toolkit for using Bedrock AgentCore"
 readme = "README.md"
 requires-python = ">=3.10"

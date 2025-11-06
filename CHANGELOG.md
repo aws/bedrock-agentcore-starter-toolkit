@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.32] - 2025-11-06
+
+### Changes
+
+- Minor bug fix: Plumb --region command through into ConfigurationManager (#333) (8c2aee5)
+- fix: Remove ExpectedBucketOwner parameter from create_bucket method (0c57292)
+- ci: add Python version matrix testing to PRs (#329) (9714c81)
+- chore: bump version to 0.1.31 (#328) (120639b)
+
 ## [0.1.31] - 2025-11-04
 
 ### Changes
