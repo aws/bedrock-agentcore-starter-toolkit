@@ -164,6 +164,7 @@ def configure_bedrock_agentcore(
     """Configure Bedrock AgentCore application with deployment settings.
 
     Args:
+        bootstrap_mode_enabled: Enable IaC and Agent code bootstrapping
         agent_name: name of the agent,
         entrypoint_path: Path to the entrypoint file
         execution_role: AWS execution role ARN or name (auto-created if not provided)
