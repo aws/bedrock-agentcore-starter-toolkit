@@ -85,16 +85,8 @@ export class AgentCoreStack extends cdk.Stack {
                 customJwtAuthorizer: {
                 {%- if custom_authorizer_enabled %}
                 discoveryUrl: "{{ custom_authorizer_url }}",
-                allowedClients: [
-                    {% for client in custom_authorizer_allowed_clients %}
-                    "{{ client }}"{% if not loop.last %}, {% endif %}
-                    {% endfor %}
-                ],
-                allowedAudience: [
-                    {% for audience in custom_authorizer_allowed_audience %}
-                    "{{ audience }}"{% if not loop.last %}, {% endif %}
-                    {% endfor %}
-                ]
+                allowedClients: [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+                allowedAudience: [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
                 {%- else %}
                 discoveryUrl:
                     'https://cognito-idp.' +

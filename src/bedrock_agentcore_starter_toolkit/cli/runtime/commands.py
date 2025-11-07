@@ -28,7 +28,7 @@ from ...operations.runtime import (
 )
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
-from ..common import _handle_error, _print_success, console, _prompt_with_default
+from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
 # Create a module-specific logger
@@ -386,10 +386,9 @@ def configure(
     # bootstrap mode configuration
     bootstrap_mode_enabled = bootstrap
     if not non_interactive:
-        response = _prompt_with_default(
+        response = prompt(
             "Use bootstrap mode for a minimal default setup? (yes/no) "
-            "`agentcore bootstrap` is also compatible with other configure outputs",
-            "no"
+            "`agentcore bootstrap` is also compatible with other configure outputs: "
         ).strip().lower()
         bootstrap_mode_enabled = response in ("y", "yes")
         if bootstrap_mode_enabled:
@@ -567,6 +566,11 @@ def configure(
         deployment_type, runtime, ecr_repository, s3_bucket, non_interactive, direct_code_deploy_available, prereq_error
     ):
         """Determine final deployment_type and runtime_type."""
+        # bootstrap only supports container currently
+        if bootstrap_mode_enabled:
+            console.print("Bootstrap mode only uses the container deployment type.")
+            return "container", None
+
         # Case 3: Only runtime provided -> default to direct_code_deploy
         if runtime and not deployment_type:
             deployment_type = "direct_code_deploy"
@@ -616,8 +620,6 @@ def configure(
             return False, "uv not found (install from: https://docs.astral.sh/uv/)"
         if not shutil.which("zip"):
             return False, "zip utility not found"
-        if bootstrap_mode_enabled: # Boostrap mode will not support Direct code deploy until Cfn constructs are available
-            return False, "bootstrap mode not supported"
         return True, None
 
     direct_code_deploy_available, prereq_error = _check_direct_code_deploy_available()
@@ -959,7 +961,7 @@ def launch(
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
     if project_config.is_agentcore_bootstrap_project:
-        _handle_error("Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the chosen iac provider (cdk/terraform)")
+        _handle_error("Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the chosen iac provider ")
     agent_config = project_config.get_agent_config(agent)
     deployment_type = agent_config.deployment_type
 

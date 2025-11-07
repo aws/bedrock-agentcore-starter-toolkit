@@ -219,7 +219,7 @@ def configure_bedrock_agentcore(
     # Get AWS info
     if verbose:
         log.debug("Retrieving AWS account information...")
-    account_id = '529088255001' # todo fix
+    account_id = get_account_id()
     region = region or get_region()
 
     if verbose:
