@@ -45,6 +45,7 @@ resource "null_resource" "docker_image" {
   }
 }
 
+{% if not src_implementation_provided %}
 ################################################################################
 # MCP Lambda Function
 ################################################################################
@@ -140,13 +141,13 @@ resource "aws_cognito_user_pool_client" "cognito_app_client" {
   supported_identity_providers         = ["COGNITO"]
 }
 
-locals {
-  cognito_discovery_url = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.cognito_user_pool.id}/.well-known/openid-configuration"
-}
-
 resource "aws_cognito_user_pool_domain" "cognito_domain" {
   domain       = "${var.app_name}-${data.aws_region.current.region}"
   user_pool_id = aws_cognito_user_pool.cognito_user_pool.id
+}
+
+locals {
+  cognito_discovery_url = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.cognito_user_pool.id}/.well-known/openid-configuration"
 }
 {%- endif %}
 
@@ -230,10 +231,10 @@ resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target"
     }
   }
 }
-
+{% endif %}
 
 ################################################################################
-# AgentCore Runtime and Memory IAM Roles
+# AgentCore Runtime IAM Roles
 ################################################################################
 
 data "aws_iam_policy_document" "bedrock_agentcore_assume_role" {
@@ -360,6 +361,7 @@ resource "aws_iam_role_policy" "agentcore_runtime_execution_role_policy" {
   })
 }
 
+{% if memory_enabled %}
 ################################################################################
 # AgentCore Memory
 ################################################################################
@@ -401,7 +403,7 @@ resource "aws_bedrockagentcore_memory_strategy" "summary_memory_strategy" {
 #  namespaces  = ["default"]
 # }
 {%- endif %}
-
+{% endif %}
 ################################################################################
 # AgentCore Runtime
 ################################################################################
@@ -415,7 +417,7 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
     }
   }
 
-  depends_on = [null_resource.docker_image, aws_bedrockagentcore_memory.agentcore_memory]
+  depends_on = [null_resource.docker_image{%- if memory_enabled %}, aws_bedrockagentcore_memory.agentcore_memory{%- endif %}]
 
   network_configuration {
     network_mode = {% if vpc_enabled %}"VPC"{% else %}"PUBLIC"{% endif %}{% if vpc_enabled %}
@@ -429,14 +431,22 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
     request_header_allowlist = {{ request_header_allowlist | tojson }}
   }
   {%- endif %}
+  {%- if memory_enabled or not src_implementation_provided %}
   environment_variables = {
-    MEMORY_ID             = aws_bedrockagentcore_memory.agentcore_memory.id
-    GATEWAY_URL           = aws_bedrockagentcore_gateway.agentcore_gateway.gateway_url{% if not custom_authorizer_enabled %}
+    {%- if memory_enabled %}
+    MEMORY_ID = aws_bedrockagentcore_memory.agentcore_memory.id
+    {%- endif %}
+    {%- if not src_implementation_provided %}
+    GATEWAY_URL = aws_bedrockagentcore_gateway.agentcore_gateway.gateway_url
+    {%- if not custom_authorizer_enabled %}
     COGNITO_CLIENT_ID     = aws_cognito_user_pool_client.cognito_app_client.id
     COGNITO_CLIENT_SECRET = aws_cognito_user_pool_client.cognito_app_client.client_secret
     COGNITO_TOKEN_URL     = "https://${aws_cognito_user_pool_domain.cognito_domain.domain}.auth.${data.aws_region.current.region}.amazoncognito.com/oauth2/token"
-    COGNITO_SCOPE         = "${aws_cognito_resource_server.cognito_resource_server.identifier}/basic"{% endif %}
-  }{% if custom_authorizer_enabled %}
+    COGNITO_SCOPE         = "${aws_cognito_resource_server.cognito_resource_server.identifier}/basic"
+    {%- endif %}
+    {%- endif %}
+  }
+  {%- endif %}{% if custom_authorizer_enabled %}
   authorizer_configuration {
     custom_jwt_authorizer {
       discovery_url    = "{{ custom_authorizer_url }}"

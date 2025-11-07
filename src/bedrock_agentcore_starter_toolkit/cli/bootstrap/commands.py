@@ -69,7 +69,7 @@ def bootstrap(
         agent_config = next(iter(configure_schema.agents.values()))
         # until there are IAC constructs for direct code deployment, fail configs that aren't configured for container
         if agent_config.deployment_type != "container":
-            _handle_error(message="agentcore bootstrap does not currently support direct code deployment. Try again with deployment_type: container")
+            _handle_error(message="agentcore bootstrap does not currently support direct code deployment. Run configure again with deployment_type: container")
 
     # Create template project
     generate_project(project_name, sdk, iac, agent_config)
