@@ -28,7 +28,7 @@ from ...operations.runtime import (
 )
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
-from ..common import _handle_error, _print_success, console
+from ..common import _handle_error, _print_success, console, _prompt_with_default
 from .configuration_manager import ConfigurationManager
 
 # Create a module-specific logger
@@ -386,9 +386,10 @@ def configure(
     # bootstrap mode configuration
     bootstrap_mode_enabled = bootstrap
     if not non_interactive:
-        response = prompt(
+        response = _prompt_with_default(
             "Use bootstrap mode for a minimal default setup? (yes/no) "
-            "`agentcore bootstrap` is also compatible with other configure outputs: "
+            "`agentcore bootstrap` is also compatible with other configure outputs",
+            "no"
         ).strip().lower()
         bootstrap_mode_enabled = response in ("y", "yes")
         if bootstrap_mode_enabled:
@@ -615,6 +616,8 @@ def configure(
             return False, "uv not found (install from: https://docs.astral.sh/uv/)"
         if not shutil.which("zip"):
             return False, "zip utility not found"
+        if bootstrap_mode_enabled: # Boostrap mode will not support Direct code deploy until Cfn constructs are available
+            return False, "bootstrap mode not supported"
         return True, None
 
     direct_code_deploy_available, prereq_error = _check_direct_code_deploy_available()
