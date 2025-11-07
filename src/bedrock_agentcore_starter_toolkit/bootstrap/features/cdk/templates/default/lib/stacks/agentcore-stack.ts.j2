@@ -148,6 +148,7 @@ export class AgentCoreStack extends cdk.Stack {
             }
         })
         {%- endif %}
+        {% if memory_enabled %}
         /*****************************
         * AgentCore Memory
         ******************************/
@@ -184,7 +185,7 @@ export class AgentCoreStack extends cdk.Stack {
                 {%- endif %}
             ],
         });
-
+        {% endif %}
         /*****************************
         * AgentCore Runtime
         ******************************/
@@ -297,8 +298,8 @@ export class AgentCoreStack extends cdk.Stack {
             environmentVariables: {
                 {%- if not src_implementation_provided %}
                 "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
-                {%- endif %}
-                "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                {%- endif %}{% if memory_enabled %}
+                "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,{% endif %}
                 {%- if not custom_authorizer_enabled and not src_implementation_provided %}
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                 "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
