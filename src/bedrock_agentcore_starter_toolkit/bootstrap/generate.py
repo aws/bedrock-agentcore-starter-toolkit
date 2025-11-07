@@ -12,8 +12,9 @@ from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .baseline_feature import BaselineFeature
 from ..cli.common import console
 from rich.pretty import Pretty
-from .configure.util import copy_src_implementation_and_docker_config_into_monorepo, resolve_agent_config_with_project_context
-from .bootstrap_yaml import write_minimal_bootstrap_project_yaml
+from .configure.resolve import copy_src_implementation_and_docker_config_into_monorepo, resolve_agent_config_with_project_context
+from .util.bootstrap_yaml import write_minimal_bootstrap_project_yaml
+from .util.console_print import emit_bootstrap_completed_message
 
 def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider: BootstrapIACProvider, agent_config: BedrockAgentCoreAgentSchema | None):
 
@@ -66,7 +67,6 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
     # ctx is resolved, ready to start generating
     console.print(f"[cyan] Bootstrap generating with the following configuration: [/cyan]")
     console.print(Pretty(ctx))
-    time.sleep(5) # give the user a few seconds to read the output before continuing
 
     if ctx.src_implementation_provided:
         # copy over runtime code and just apply the IAC feature
@@ -100,3 +100,4 @@ def generate_project(name: str, sdk_provider: BootstrapSDKProvider, iac_provider
         )
     # write a minimal bootstrap YAML so commands like agentocore invoke can work later
     write_minimal_bootstrap_project_yaml(ctx)
+    emit_bootstrap_completed_message(ctx)

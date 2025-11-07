@@ -1,5 +1,5 @@
 from pathlib import Path
-from .types import ProjectContext
+from ..types import ProjectContext
 import yaml
 
 def write_minimal_bootstrap_project_yaml(ctx: ProjectContext) -> Path:

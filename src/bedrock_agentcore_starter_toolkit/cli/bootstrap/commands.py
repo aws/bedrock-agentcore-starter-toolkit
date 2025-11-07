@@ -40,7 +40,7 @@ def bootstrap(
     # Input Validation
     if not VALID_PROJECT_NAME_PATTERN.fullmatch(project_name):
         raise typer.BadParameter(
-            "To ensure friendly ARN creation, project must start with a letter and then only contain alphanumeric or - or _ characters up to 36 chars in total length"
+            "To ensure friendly ARN creation, project must only contain alphanumeric charcters (no '-' or '_') up to 36 chars in total length"
         )
     if Path(project_name).exists():
         raise typer.BadParameter(f"A directory already exists with name {project_name}! Either delete that directory or choose a new project name.")
