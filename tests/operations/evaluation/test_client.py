@@ -51,11 +51,13 @@ class TestEvaluationClient:
         """Test successful evaluation call."""
         mock_boto_client = MagicMock()
         mock_boto_client.evaluate.return_value = {
-            "results": [
+            "evaluationResults": [
                 {
-                    "evaluator": "Builtin.Helpfulness",
+                    "evaluatorId": "Builtin.Helpfulness",
+                    "evaluatorName": "Builtin.Helpfulness",
+                    "evaluatorArn": "arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
                     "explanation": "The response was helpful",
-                    "context": {"sessionId": "session-123"},
+                    "context": {"spanContext": {"sessionId": "session-123"}},
                     "value": 4.5,
                     "label": "Helpful",
                 }
@@ -64,7 +66,7 @@ class TestEvaluationClient:
 
         client = EvaluationClient(boto_client=mock_boto_client)
 
-        otel_spans = [
+        session_spans = [
             {
                 "traceId": "trace-123",
                 "spanId": "span-456",
@@ -72,10 +74,10 @@ class TestEvaluationClient:
             }
         ]
 
-        response = client.evaluate(otel_spans, ["Builtin.Helpfulness"])
+        response = client.evaluate("Builtin.Helpfulness", session_spans)
 
-        assert "results" in response
-        assert len(response["results"]) == 1
+        assert "evaluationResults" in response
+        assert len(response["evaluationResults"]) == 1
         mock_boto_client.evaluate.assert_called_once()
 
     def test_evaluate_api_error(self):
@@ -90,10 +92,10 @@ class TestEvaluationClient:
 
         client = EvaluationClient(boto_client=mock_boto_client)
 
-        otel_spans = [{"traceId": "trace-123", "spanId": "span-456", "name": "TestSpan"}]
+        session_spans = [{"traceId": "trace-123", "spanId": "span-456", "name": "TestSpan"}]
 
         with pytest.raises(RuntimeError, match="Evaluation API error"):
-            client.evaluate(otel_spans, ["Builtin.Helpfulness"])
+            client.evaluate("Builtin.Helpfulness", session_spans)
 
     @patch("bedrock_agentcore_starter_toolkit.operations.evaluation.client.ObservabilityClient")
     def test_evaluate_session_success(self, mock_obs_client_class):
@@ -117,11 +119,13 @@ class TestEvaluationClient:
         # Mock evaluation API response
         mock_boto_client = MagicMock()
         mock_boto_client.evaluate.return_value = {
-            "results": [
+            "evaluationResults": [
                 {
-                    "evaluator": "Builtin.Helpfulness",
+                    "evaluatorId": "Builtin.Helpfulness",
+                    "evaluatorName": "Builtin.Helpfulness",
+                    "evaluatorArn": "arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
                     "explanation": "Success",
-                    "context": {},
+                    "context": {"spanContext": {"sessionId": "session-123"}},
                     "value": 4.0,
                 }
             ]
@@ -135,7 +139,7 @@ class TestEvaluationClient:
 
         assert results.session_id == "session-123"
         assert len(results.results) == 1
-        assert results.results[0].evaluator == "Builtin.Helpfulness"
+        assert results.results[0].evaluator_id == "Builtin.Helpfulness"
 
         # Verify ObservabilityClient was created with correct params
         mock_obs_client_class.assert_called_once_with(
@@ -165,7 +169,9 @@ class TestEvaluationResults:
         """Test adding results."""
         results = EvaluationResults()
         result = EvaluationResult(
-            evaluator="Builtin.Helpfulness",
+            evaluator_id="Builtin.Helpfulness",
+            evaluator_name="Builtin.Helpfulness",
+            evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
             explanation="Helpful",
             context={},
             value=4.5,
@@ -174,7 +180,7 @@ class TestEvaluationResults:
         results.add_result(result)
 
         assert len(results.results) == 1
-        assert results.results[0].evaluator == "Builtin.Helpfulness"
+        assert results.results[0].evaluator_id == "Builtin.Helpfulness"
 
     def test_has_errors(self):
         """Test checking for errors."""
@@ -184,13 +190,24 @@ class TestEvaluationResults:
         assert results.has_errors() is False
 
         # Add successful result
-        results.add_result(EvaluationResult(evaluator="Builtin.Helpfulness", explanation="Good", context={}, value=4.0))
+        results.add_result(
+            EvaluationResult(
+                evaluator_id="Builtin.Helpfulness",
+                evaluator_name="Builtin.Helpfulness",
+                evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
+                explanation="Good",
+                context={},
+                value=4.0,
+            )
+        )
         assert results.has_errors() is False
 
         # Add failed result
         results.add_result(
             EvaluationResult(
-                evaluator="Builtin.Accuracy",
+                evaluator_id="Builtin.Accuracy",
+                evaluator_name="Builtin.Accuracy",
+                evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Accuracy",
                 explanation="Failed",
                 context={},
                 error="API error",
@@ -203,10 +220,21 @@ class TestEvaluationResults:
         results = EvaluationResults()
 
         # Add mixed results
-        results.add_result(EvaluationResult(evaluator="Builtin.Helpfulness", explanation="Good", context={}, value=4.0))
         results.add_result(
             EvaluationResult(
-                evaluator="Builtin.Accuracy",
+                evaluator_id="Builtin.Helpfulness",
+                evaluator_name="Builtin.Helpfulness",
+                evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
+                explanation="Good",
+                context={},
+                value=4.0,
+            )
+        )
+        results.add_result(
+            EvaluationResult(
+                evaluator_id="Builtin.Accuracy",
+                evaluator_name="Builtin.Accuracy",
+                evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Accuracy",
                 explanation="Failed",
                 context={},
                 error="API error",
@@ -218,15 +246,17 @@ class TestEvaluationResults:
 
         assert len(successful) == 1
         assert len(failed) == 1
-        assert successful[0].evaluator == "Builtin.Helpfulness"
-        assert failed[0].evaluator == "Builtin.Accuracy"
+        assert successful[0].evaluator_id == "Builtin.Helpfulness"
+        assert failed[0].evaluator_id == "Builtin.Accuracy"
 
     def test_to_dict(self):
         """Test converting results to dictionary."""
         results = EvaluationResults(session_id="session-123")
         results.add_result(
             EvaluationResult(
-                evaluator="Builtin.Helpfulness",
+                evaluator_id="Builtin.Helpfulness",
+                evaluator_name="Builtin.Helpfulness",
+                evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
                 explanation="Helpful",
                 context={"session.id": "session-123"},
                 value=4.5,
@@ -238,7 +268,7 @@ class TestEvaluationResults:
 
         assert result_dict["session_id"] == "session-123"
         assert len(result_dict["results"]) == 1
-        assert result_dict["results"][0]["evaluator"] == "Builtin.Helpfulness"
+        assert result_dict["results"][0]["evaluator_id"] == "Builtin.Helpfulness"
         assert result_dict["results"][0]["value"] == 4.5
 
 
@@ -248,7 +278,9 @@ class TestEvaluationResult:
     def test_from_api_response(self):
         """Test creating result from API response."""
         api_response = {
-            "evaluator": "Builtin.Helpfulness",
+            "evaluatorId": "Builtin.Helpfulness",
+            "evaluatorName": "Builtin.Helpfulness",
+            "evaluatorArn": "arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
             "explanation": "The response was very helpful",
             "context": {"spanContext": {"sessionId": "session-123"}},
             "value": 4.5,
@@ -258,7 +290,9 @@ class TestEvaluationResult:
 
         result = EvaluationResult.from_api_response(api_response)
 
-        assert result.evaluator == "Builtin.Helpfulness"
+        assert result.evaluator_id == "Builtin.Helpfulness"
+        assert result.evaluator_name == "Builtin.Helpfulness"
+        assert result.evaluator_arn == "arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness"
         assert result.explanation == "The response was very helpful"
         assert result.value == 4.5
         assert result.label == "Helpful"
@@ -267,12 +301,21 @@ class TestEvaluationResult:
     def test_has_error(self):
         """Test checking if result has error."""
         # Successful result
-        result = EvaluationResult(evaluator="Builtin.Helpfulness", explanation="Good", context={}, value=4.0)
+        result = EvaluationResult(
+            evaluator_id="Builtin.Helpfulness",
+            evaluator_name="Builtin.Helpfulness",
+            evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Helpfulness",
+            explanation="Good",
+            context={},
+            value=4.0,
+        )
         assert result.has_error() is False
 
         # Failed result
         result_with_error = EvaluationResult(
-            evaluator="Builtin.Accuracy",
+            evaluator_id="Builtin.Accuracy",
+            evaluator_name="Builtin.Accuracy",
+            evaluator_arn="arn:aws:bedrock-agentcore:::evaluator/Builtin.Accuracy",
             explanation="Failed",
             context={},
             error="API error",

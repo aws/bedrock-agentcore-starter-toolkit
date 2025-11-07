@@ -77,7 +77,7 @@ def _display_evaluation_results(results: EvaluationResults) -> None:
 
             # Evaluator name
             content.append("Evaluator: ", style="bold")
-            content.append(f"{result.evaluator}\n\n", style="cyan")
+            content.append(f"{result.evaluator_name}\n\n", style="cyan")
 
             # Score/Label
             if result.value is not None:
@@ -116,7 +116,7 @@ def _display_evaluation_results(results: EvaluationResults) -> None:
         for result in failed:
             content = Text()
             content.append("Evaluator: ", style="bold")
-            content.append(f"{result.evaluator}\n\n", style="cyan")
+            content.append(f"{result.evaluator_name}\n\n", style="cyan")
             content.append("Error: ", style="bold red")
             content.append(f"{result.error}\n", style="red")
 

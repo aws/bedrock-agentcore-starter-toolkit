@@ -12,7 +12,6 @@ from ..observability.client import ObservabilityClient
 from ..observability.models.telemetry import TraceData
 from .constants import (
     DEFAULT_MAX_EVALUATION_ITEMS,
-    MAX_SPAN_IDS_IN_CONTEXT,
     SESSION_SCOPED_EVALUATORS,
 )
 from .models.evaluation import EvaluationRequest, EvaluationResult, EvaluationResults
@@ -122,51 +121,6 @@ class EvaluationClient:
         # Return most recent max_items
         return relevant_items[:max_items]
 
-    def _extract_span_context(
-        self, spans: List[Dict[str, Any]], session_id: Optional[str] = None, trace_id: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Extract span context information for evaluation results.
-
-        Args:
-            spans: List of OpenTelemetry spans/logs
-            session_id: Optional session ID
-            trace_id: Optional trace ID
-
-        Returns:
-            Dictionary with span context metadata
-        """
-        context = {}
-
-        # Add session/trace IDs if provided
-        if session_id:
-            context["session.id"] = session_id
-        if trace_id:
-            context["trace.id"] = trace_id
-
-        # Extract unique span and trace IDs from the spans
-        span_ids = []
-        trace_ids = set()
-
-        for item in spans:
-            if OTelFields.SPAN_ID in item:
-                span_ids.append(item[OTelFields.SPAN_ID])
-            if OTelFields.TRACE_ID in item:
-                trace_ids.add(item[OTelFields.TRACE_ID])
-
-        # Add span context
-        if span_ids:
-            context["spanContext"] = {
-                "spanIds": span_ids[:MAX_SPAN_IDS_IN_CONTEXT],  # Limit to avoid huge contexts
-                "totalSpans": len(span_ids),
-            }
-
-        if trace_ids:
-            context["spanContext"] = context.get("spanContext", {})
-            context["spanContext"]["traceIds"] = list(trace_ids)
-            context["spanContext"]["totalTraces"] = len(trace_ids)
-
-        return context
-
     def _fetch_session_data(self, session_id: str, agent_id: str, region: str) -> TraceData:
         """Fetch session data from CloudWatch.
 
@@ -221,15 +175,16 @@ class EvaluationClient:
         return spans_count, logs_count, genai_spans
 
     def _execute_evaluators(
-        self, evaluators: List[str], otel_spans: List[Dict[str, Any]], session_id: str, trace_id: Optional[str] = None
+        self, evaluators: List[str], otel_spans: List[Dict[str, Any]], session_id: str
     ) -> List[EvaluationResult]:
         """Execute evaluators and return results.
+
+        Note: Calls API once per evaluator since API accepts single evaluator in URI path.
 
         Args:
             evaluators: List of evaluator identifiers
             otel_spans: OTel-formatted spans/logs to evaluate
             session_id: Session ID for context
-            trace_id: Optional trace ID for context
 
         Returns:
             List of EvaluationResult objects (including errors)
@@ -238,45 +193,59 @@ class EvaluationClient:
 
         for evaluator in evaluators:
             try:
-                response = self.evaluate(otel_spans, [evaluator])
-                api_results = response.get("results", [])
+                # Call API with single evaluator
+                response = self.evaluate(evaluator_id=evaluator, session_spans=otel_spans)
+
+                # API returns {evaluationResults: [...]}
+                api_results = response.get("evaluationResults", [])
 
                 if not api_results:
                     print(f"Warning: Evaluator {evaluator} returned no results")
 
                 for api_result in api_results:
-                    span_context = self._extract_span_context(otel_spans, session_id=session_id, trace_id=trace_id)
-                    result = EvaluationResult.from_api_response(api_result, span_context=span_context)
+                    result = EvaluationResult.from_api_response(api_result)
                     results.append(result)
 
             except Exception as e:
+                # Create error result with required fields
                 error_result = EvaluationResult(
-                    evaluator=evaluator,
+                    evaluator_id=evaluator,
+                    evaluator_name=evaluator,
+                    evaluator_arn="",  # Not available on error
                     explanation=f"Evaluation failed: {str(e)}",
-                    context={"session.id": session_id},
+                    context={"spanContext": {"sessionId": session_id}},
                     error=str(e),
                 )
                 results.append(error_result)
 
         return results
 
-    def evaluate(self, spans: List[Dict[str, Any]], evaluators: List[str]) -> Dict[str, Any]:
+    def evaluate(
+        self, evaluator_id: str, session_spans: List[Dict[str, Any]], evaluation_target: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Call evaluation API with transformed spans.
 
+        Note: API accepts ONE evaluator per call via URI path.
+
         Args:
-            spans: List of OpenTelemetry-formatted spans
-            evaluators: List of evaluator identifiers
+            evaluator_id: Single evaluator identifier (e.g., "Builtin.Helpfulness")
+            session_spans: List of OpenTelemetry-formatted span documents
+            evaluation_target: Optional dict with spanIds or traceIds to evaluate
 
         Returns:
-            Raw API response
+            Raw API response with evaluationResults
 
         Raises:
             ClientError: If API call fails
         """
-        request = EvaluationRequest(evaluators=evaluators, spans=spans)
+        request = EvaluationRequest(
+            evaluator_id=evaluator_id, session_spans=session_spans, evaluation_target=evaluation_target
+        )
+
+        evaluator_id_param, request_body = request.to_api_request()
 
         try:
-            response = self.client.evaluate(**request.to_dict())
+            response = self.client.evaluate(evaluatorId=evaluator_id_param, **request_body)
             return response
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")

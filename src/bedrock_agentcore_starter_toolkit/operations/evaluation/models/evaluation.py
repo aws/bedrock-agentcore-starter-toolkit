@@ -6,55 +6,76 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class EvaluationRequest:
-    """Request structure for evaluation API."""
+    """Request structure for evaluation API.
 
-    evaluators: List[str]
-    spans: List[Dict[str, Any]]
+    API expects single evaluator per call with evaluator ID in URI path.
+    """
+
+    evaluator_id: str
+    session_spans: List[Dict[str, Any]]
     evaluation_target: Optional[Dict[str, Any]] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to API request format."""
-        request = {"evaluators": self.evaluators, "evaluatorInput": {"spans": self.spans}}
+    def to_api_request(self) -> tuple[str, Dict[str, Any]]:
+        """Convert to API request format.
+
+        Returns:
+            Tuple of (evaluator_id, request_body)
+        """
+        request_body = {
+            "evaluationInput": {"sessionSpans": self.session_spans},
+        }
         if self.evaluation_target:
-            request["evaluationTarget"] = self.evaluation_target
-        return request
+            request_body["evaluationTarget"] = self.evaluation_target
+        return self.evaluator_id, request_body
 
 
 @dataclass
 class EvaluationResult:
     """Result from evaluation API."""
 
-    evaluator: str
+    evaluator_id: str
+    evaluator_name: str
+    evaluator_arn: str
     explanation: str
-    context: Dict[str, Any]
+    context: Dict[str, Any]  # Contains spanContext union from API
     value: Optional[float] = None
     label: Optional[str] = None
     token_usage: Optional[Dict[str, int]] = None
     error: Optional[str] = None
-    span_context: Optional[Dict[str, Any]] = None  # Separate span context (not evaluation-specific)
 
     @classmethod
-    def from_api_response(
-        cls, result: Dict[str, Any], span_context: Optional[Dict[str, Any]] = None
-    ) -> "EvaluationResult":
-        """Create from API response with optional span context.
+    def from_api_response(cls, result: Dict[str, Any]) -> "EvaluationResult":
+        """Create from API response.
 
         Args:
-            result: API response dictionary
-            span_context: Optional context with span/trace IDs and metadata (kept separate)
+            result: API response dictionary (EvaluationResultContent)
 
         Returns:
-            EvaluationResult with evaluation-specific context and separate span context
+            EvaluationResult instance
+
+        API response structure:
+        {
+            "evaluatorArn": "arn:...",
+            "evaluatorId": "Builtin.Helpfulness",
+            "evaluatorName": "Builtin.Helpfulness",
+            "explanation": "...",
+            "context": {"spanContext": {"sessionId": "...", "traceId": "...", "spanId": "..."}},
+            "value": 0.8,  # optional
+            "label": "helpful",  # optional
+            "tokenUsage": {"inputTokens": 100, "outputTokens": 50, "totalTokens": 150},  # optional
+            "error": "..."  # optional
+        }
         """
         return cls(
-            evaluator=result.get("evaluator", ""),
+            evaluator_id=result.get("evaluatorId", ""),
+            evaluator_name=result.get("evaluatorName", ""),
+            evaluator_arn=result.get("evaluatorArn", ""),
             explanation=result.get("explanation", ""),
-            context=result.get("context", {}),  # Evaluation-specific context from API
+            context=result.get("context", {}),
             value=result.get("value"),
             label=result.get("label"),
             token_usage=result.get("tokenUsage"),
             error=result.get("error"),
-            span_context=span_context,  # Keep span context separate
         )
 
     def has_error(self) -> bool:
@@ -94,10 +115,11 @@ class EvaluationResults:
             "trace_id": self.trace_id,
             "results": [
                 {
-                    "evaluator": r.evaluator,
+                    "evaluator_id": r.evaluator_id,
+                    "evaluator_name": r.evaluator_name,
+                    "evaluator_arn": r.evaluator_arn,
                     "explanation": r.explanation,
                     "context": r.context,
-                    "span_context": r.span_context,
                     "value": r.value,
                     "label": r.label,
                     "token_usage": r.token_usage,
