@@ -56,7 +56,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         authorizer_config_values = authorizer_config["customJWTAuthorizer"]
         ctx.custom_authorizer_url = authorizer_config_values["discoveryUrl"]
         ctx.custom_authorizer_allowed_clients = authorizer_config_values["allowedClients"]
-        ctx.custom_authorizer_allowed_audience = authorizer_config_values["allowedAudience"]
+        ctx.custom_authorizer_allowed_audience = authorizer_config_values.get("allowedAudience",[])
 
     # vpc
     network_config: NetworkConfiguration = aws_config.network_configuration

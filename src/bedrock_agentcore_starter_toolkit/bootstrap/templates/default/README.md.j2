@@ -33,7 +33,7 @@ gateway URL for the agentcore gateway that is modeled in the { insert iac name }
 { if custom_authorizer_enabled } The authorizer for the gateway is the custom authorizer that was passed in .bedrock_agentcore.yaml. The `_get_access_token()` needs to be implemented
 to successfully get JWT tokens from your custom authorizer. {else} The authorizer for the gateway is a cognito app client that is modeled in the { insert_iac name } directory. A call using
 the client_credentials flow is defined in `_get_access_token()`
-
+{% endif %}
 ## mcp/
 
 The mcp directory defines a simple python tool that meets the MCP specification called placeholder_tool. The specification for the tool's inputs are defined in the inline schema in the modeled

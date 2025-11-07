@@ -11,7 +11,7 @@ from ...operations.identity.oauth2_callback_server import WORKLOAD_USER_ID, Bedr
 from ...services.runtime import BedrockAgentCoreClient, generate_session_id
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
-from ...utils.runtime.bootstrap import resolve_bootstrap_project_yaml
+from ...utils.runtime.bootstrap import resolve_bootstrap_project_config
 from .models import InvokeResult
 
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def invoke_bedrock_agentcore(
     # Load project configuration
     project_config = load_config(config_path)
     if project_config.is_agentcore_bootstrap_project:
-        project_config =  resolve_bootstrap_project_yaml(config_path)
+        project_config =  resolve_bootstrap_project_config()
     agent_config = project_config.get_agent_config(agent_name)
 
     # Log which agent is being invoked
