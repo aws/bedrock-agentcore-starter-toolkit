@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import ClientError
 
-from ..constants import DEFAULT_RUNTIME_SUFFIX, AttributePrefixes, OTelFields
+from ..constants import DEFAULT_RUNTIME_SUFFIX
 from ..observability.client import ObservabilityClient
 from ..observability.models.telemetry import TraceData
 from .constants import (
@@ -15,7 +15,6 @@ from .constants import (
     SESSION_SCOPED_EVALUATORS,
 )
 from .models.evaluation import EvaluationRequest, EvaluationResult, EvaluationResults
-from .transformer import transform_trace_data_to_otel
 
 
 class EvaluationClient:
@@ -55,42 +54,61 @@ class EvaluationClient:
         """
         return evaluator in SESSION_SCOPED_EVALUATORS
 
-    def _filter_relevant_items(self, otel_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Filter to only high-signal items for evaluation.
+    def _extract_raw_spans(self, trace_data: TraceData) -> List[Dict[str, Any]]:
+        """Extract raw span documents from TraceData.
+
+        Args:
+            trace_data: TraceData containing spans and runtime logs
+
+        Returns:
+            List of raw span documents
+        """
+        raw_spans = []
+
+        # Extract raw_message from spans (contains full OTel span document)
+        for span in trace_data.spans:
+            if span.raw_message:
+                raw_spans.append(span.raw_message)
+
+        # Extract raw_message from runtime logs (contains OTel log events)
+        for log in trace_data.runtime_logs:
+            if log.raw_message:
+                raw_spans.append(log.raw_message)
+
+        return raw_spans
+
+    def _filter_relevant_spans(self, raw_spans: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Filter to only high-signal spans for evaluation.
 
         Keeps only:
         - Spans with gen_ai.* attributes (LLM calls, agent operations)
         - Log events with conversation data (input/output messages)
 
         Args:
-            otel_items: List of OTel-formatted spans and log events
+            raw_spans: List of raw span/log documents
 
         Returns:
-            Filtered list of relevant items
+            Filtered list of relevant spans
         """
-        relevant_items = []
-        for item in otel_items:
-            # Check if it's a span with gen_ai attributes
-            if OTelFields.SPAN_ID in item and OTelFields.START_TIME in item:
-                has_genai = any(
-                    k.startswith(AttributePrefixes.GEN_AI) for k in item.get(OTelFields.ATTRIBUTES, {}).keys()
-                )
-                if has_genai:
-                    relevant_items.append(item)
+        relevant_spans = []
+        for span_doc in raw_spans:
+            # Check attributes for gen_ai prefix
+            attributes = span_doc.get("attributes", {})
+            if any(k.startswith("gen_ai") for k in attributes.keys()):
+                relevant_spans.append(span_doc)
+                continue
 
-            # Check if it's a log event with message body
-            elif OTelFields.BODY in item and OTelFields.TIME_UNIX_NANO in item:
-                body = item.get(OTelFields.BODY, {})
-                # Only include if body has input or output (conversation data)
-                if isinstance(body, dict) and ("input" in body or "output" in body):
-                    relevant_items.append(item)
+            # Check if it's a log with conversation data
+            body = span_doc.get("body", {})
+            if isinstance(body, dict) and ("input" in body or "output" in body):
+                relevant_spans.append(span_doc)
 
-        return relevant_items
+        return relevant_spans
 
     def _get_most_recent_session_spans(
         self, trace_data: TraceData, max_items: int = DEFAULT_MAX_EVALUATION_ITEMS
     ) -> List[Dict[str, Any]]:
-        """Get most recent relevant items across all traces in session.
+        """Get most recent relevant spans across all traces in session.
 
         Collects spans with gen_ai attributes and log events with conversation data,
         sorted by timestamp to get the most recent items.
@@ -100,26 +118,26 @@ class EvaluationClient:
             max_items: Maximum number of items to return (default: 100)
 
         Returns:
-            List of OTel-formatted spans and log events, most recent first
+            List of raw span documents, most recent first
         """
-        # Transform all traces (no filtering)
-        all_otel_items = transform_trace_data_to_otel(trace_data, latest_trace_only=False, trace_id=None)
+        # Extract raw spans from all traces
+        raw_spans = self._extract_raw_spans(trace_data)
 
-        if not all_otel_items:
+        if not raw_spans:
             return []
 
-        # Filter to only relevant items using shared helper
-        relevant_items = self._filter_relevant_items(all_otel_items)
+        # Filter to only relevant spans
+        relevant_spans = self._filter_relevant_spans(raw_spans)
 
         # Sort by timestamp (most recent first)
-        def get_timestamp(item):
+        def get_timestamp(span_doc):
             # Spans have startTimeUnixNano, logs have timeUnixNano
-            return item.get(OTelFields.START_TIME) or item.get(OTelFields.TIME_UNIX_NANO) or 0
+            return span_doc.get("startTimeUnixNano") or span_doc.get("timeUnixNano") or 0
 
-        relevant_items.sort(key=get_timestamp, reverse=True)
+        relevant_spans.sort(key=get_timestamp, reverse=True)
 
         # Return most recent max_items
-        return relevant_items[:max_items]
+        return relevant_spans[:max_items]
 
     def _fetch_session_data(self, session_id: str, agent_id: str, region: str) -> TraceData:
         """Fetch session data from CloudWatch.
@@ -155,22 +173,21 @@ class EvaluationClient:
 
         return trace_data
 
-    def _count_otel_items(self, items: List[Dict[str, Any]]) -> tuple:
-        """Count spans, logs, and gen_ai spans in OTel items.
+    def _count_span_types(self, raw_spans: List[Dict[str, Any]]) -> tuple:
+        """Count spans, logs, and gen_ai spans.
 
         Args:
-            items: List of OTel-formatted spans and log events
+            raw_spans: List of raw span documents
 
         Returns:
             Tuple of (spans_count, logs_count, genai_spans_count)
         """
-        spans_count = sum(1 for item in items if OTelFields.SPAN_ID in item and OTelFields.START_TIME in item)
-        logs_count = sum(1 for item in items if OTelFields.BODY in item and OTelFields.TIME_UNIX_NANO in item)
+        spans_count = sum(1 for item in raw_spans if "spanId" in item and "startTimeUnixNano" in item)
+        logs_count = sum(1 for item in raw_spans if "body" in item and "timeUnixNano" in item)
         genai_spans = sum(
             1
-            for span in items
-            if OTelFields.SPAN_ID in span
-            and any(k.startswith(AttributePrefixes.GEN_AI) for k in span.get(OTelFields.ATTRIBUTES, {}).keys())
+            for span in raw_spans
+            if "spanId" in span and any(k.startswith("gen_ai") for k in span.get("attributes", {}).keys())
         )
         return spans_count, logs_count, genai_spans
 
@@ -316,7 +333,7 @@ class EvaluationClient:
             all_input_data["session_scoped"] = session_otel_spans
 
             if session_otel_spans:
-                spans_count, logs_count, genai_spans = self._count_otel_items(session_otel_spans)
+                spans_count, logs_count, genai_spans = self._count_span_types(session_otel_spans)
                 print(
                     f"Sending {len(session_otel_spans)} items ({spans_count} spans [{genai_spans} with gen_ai attrs], {logs_count} log events) for session-scoped evaluation"
                 )
@@ -343,20 +360,42 @@ class EvaluationClient:
             elif trace_id:
                 # Evaluate specific trace
                 print(f"Filtering to specific trace: {trace_id}")
-                otel_spans_unfiltered = transform_trace_data_to_otel(
-                    trace_data, latest_trace_only=False, trace_id=trace_id
+                # Filter trace_data to specific trace
+                filtered_trace_data = TraceData(
+                    session_id=trace_data.session_id,
+                    spans=[s for s in trace_data.spans if s.trace_id == trace_id],
+                    runtime_logs=[log for log in trace_data.runtime_logs if log.trace_id == trace_id],
                 )
-                if not otel_spans_unfiltered:
-                    raise RuntimeError("Failed to transform trace data to OpenTelemetry format")
-                otel_spans = self._filter_relevant_items(otel_spans_unfiltered)
+                # Extract and filter raw spans
+                raw_spans = self._extract_raw_spans(filtered_trace_data)
+                otel_spans = self._filter_relevant_spans(raw_spans)
             else:
                 # Evaluate latest trace only (default)
-                otel_spans_unfiltered = transform_trace_data_to_otel(trace_data, latest_trace_only=True)
                 if num_traces > 1:
                     print(f"Evaluating latest trace only (out of {num_traces} traces)")
-                if not otel_spans_unfiltered:
-                    raise RuntimeError("Failed to transform trace data to OpenTelemetry format")
-                otel_spans = self._filter_relevant_items(otel_spans_unfiltered)
+
+                # Find latest trace ID
+                latest_trace_id = None
+                latest_timestamp = None
+                for span in trace_data.spans:
+                    if span.end_time_unix_nano:
+                        if latest_timestamp is None or span.end_time_unix_nano > latest_timestamp:
+                            latest_timestamp = span.end_time_unix_nano
+                            latest_trace_id = span.trace_id
+
+                if latest_trace_id:
+                    # Filter to latest trace
+                    filtered_trace_data = TraceData(
+                        session_id=trace_data.session_id,
+                        spans=[s for s in trace_data.spans if s.trace_id == latest_trace_id],
+                        runtime_logs=[log for log in trace_data.runtime_logs if log.trace_id == latest_trace_id],
+                    )
+                    raw_spans = self._extract_raw_spans(filtered_trace_data)
+                    otel_spans = self._filter_relevant_spans(raw_spans)
+                else:
+                    # Fallback: use all spans
+                    raw_spans = self._extract_raw_spans(trace_data)
+                    otel_spans = self._filter_relevant_spans(raw_spans)
 
             if not otel_spans:
                 print("Warning: No relevant items found after filtering (no gen_ai spans or conversation logs)")
@@ -365,13 +404,13 @@ class EvaluationClient:
             all_input_data["trace_scoped"] = otel_spans
 
             # Log what we're sending
-            spans_count, logs_count, genai_spans = self._count_otel_items(otel_spans)
+            spans_count, logs_count, genai_spans = self._count_span_types(otel_spans)
             print(
                 f"Sending {len(otel_spans)} items ({spans_count} spans [{genai_spans} with gen_ai attrs], {logs_count} log events) to evaluation API"
             )
 
             # Evaluate with trace-scoped evaluators
-            eval_results = self._execute_evaluators(trace_scoped, otel_spans, session_id, trace_id)
+            eval_results = self._execute_evaluators(trace_scoped, otel_spans, session_id)
             for result in eval_results:
                 results.add_result(result)
 
