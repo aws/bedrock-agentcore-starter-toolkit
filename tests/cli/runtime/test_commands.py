@@ -190,8 +190,7 @@ def handler(payload):
                     ],
                 )
 
-                # Test expects failure due to CLI validation
-                assert result.exit_code == 1
+                assert result.exit_code == 0
         finally:
             os.chdir(original_cwd)
 
@@ -364,6 +363,7 @@ agents:
                         "test@agent#123",
                         "--execution-role",
                         "TestRole",
+                        "--non-interactive",
                     ],
                 )
                 assert result.exit_code == 1
@@ -649,9 +649,17 @@ agents:
 
         try:
             result = self.runner.invoke(
-                app, ["configure", "--entrypoint", str(nonexistent_file), "--execution-role", "TestRole"]
+                app,
+                [
+                    "configure",
+                    "--entrypoint",
+                    str(nonexistent_file),
+                    "--execution-role",
+                    "TestRole",
+                    "--non-interactive",
+                ],
             )
-
+            print(result.stdout)
             # Should fail with exit code 1 and contain path error info
             assert result.exit_code == 1
             assert "not found" in result.stdout.lower()
@@ -2151,6 +2159,7 @@ agents:
         ):
             # Mock project config and agent config
             mock_project_config = Mock()
+            mock_project_config.is_agentcore_bootstrap_project = False
             mock_agent_config = Mock()
             mock_agent_config.name = "test-agent"
             mock_agent_config.entrypoint = "test.py"

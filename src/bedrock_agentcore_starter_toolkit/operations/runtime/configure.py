@@ -132,9 +132,9 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
 
 
 def configure_bedrock_agentcore(
-    bootstrap_mode_enabled: bool,
     agent_name: str,
     entrypoint_path: Path,
+    bootstrap_mode_enabled: bool = False,
     execution_role: Optional[str] = None,
     code_build_execution_role: Optional[str] = None,
     ecr_repository: Optional[str] = None,
