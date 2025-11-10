@@ -386,10 +386,14 @@ def configure(
     # bootstrap mode configuration
     bootstrap_mode_enabled = bootstrap
     if not non_interactive:
-        response = prompt(
-            "Use bootstrap mode for a minimal default setup? (yes/no) "
-            "`agentcore bootstrap` is also compatible with other configure outputs: "
-        ).strip().lower()
+        response = (
+            prompt(
+                "Use bootstrap mode for a minimal default setup? (yes/no) "
+                "`agentcore bootstrap` is also compatible with other configure outputs: "
+            )
+            .strip()
+            .lower()
+        )
         bootstrap_mode_enabled = response in ("y", "yes")
         if bootstrap_mode_enabled:
             console.print("[cyan]Bootstrap mode enabled[/cyan]")
@@ -837,7 +841,6 @@ def configure(
             if max_lifetime:
                 lifecycle_info += f"Max Lifetime: [cyan]{max_lifetime}s ({max_lifetime // 3600} hours)[/cyan]\n"
 
-
         # Prepare deployment-specific info
         agent_details_info = ""
         config_info = ""
@@ -874,7 +877,7 @@ def configure(
                 f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"[cyan]agentcore launch[/cyan]{'   [cyan]agentcore bootstrap[/cyan]' if bootstrap_mode_enabled else ''}",
+                f"[cyan]agentcore launch[/cyan]{' [cyan]agentcore bootstrap[/cyan]' if bootstrap_mode_enabled else ''}",
                 title="Configuration Success",
                 border_style="bright_blue",
             )
@@ -961,7 +964,10 @@ def launch(
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
     if project_config.is_agentcore_bootstrap_project:
-        _handle_error("Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the chosen iac provider ")
+        _handle_error(
+            "Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the "
+            "chosen iac provider "
+        )
     agent_config = project_config.get_agent_config(agent)
     deployment_type = agent_config.deployment_type
 

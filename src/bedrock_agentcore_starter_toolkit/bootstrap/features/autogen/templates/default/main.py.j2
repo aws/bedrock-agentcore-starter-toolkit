@@ -22,7 +22,7 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 async def main(payload):
-    # assume payload input is structured as { "prompt": "<user input>" } 
+    # assume payload input is structured as { "prompt": "<user input>" }
 
     # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
     tools = await get_streamable_http_mcp_tools()

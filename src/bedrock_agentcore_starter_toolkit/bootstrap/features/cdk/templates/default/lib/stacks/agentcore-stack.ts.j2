@@ -27,7 +27,7 @@ export class AgentCoreStack extends cdk.Stack {
         /*****************************
         * AgentCore Gateway
         ******************************/
-        
+
         this.mcpLambda = new lambda.Function(this, `${props.appName}-McpLambda`, {
             runtime: lambda.Runtime.PYTHON_3_12,
             handler: "handler.lambda_handler",
@@ -125,7 +125,7 @@ export class AgentCoreStack extends cdk.Stack {
                                             float_array_param: {
                                                 type: 'array',
                                                 description: 'Example float array parameter',
-                                                items: { 
+                                                items: {
                                                     type: 'number',
                                                 }
                                             }

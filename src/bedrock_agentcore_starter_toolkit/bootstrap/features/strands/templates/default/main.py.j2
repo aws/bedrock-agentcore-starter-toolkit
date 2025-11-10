@@ -16,7 +16,7 @@ app = BedrockAgentCoreApp()
 
 @app.entrypoint
 def invoke(payload):
-    # assume payload input is structured as { "prompt": "<user input>" } 
+    # assume payload input is structured as { "prompt": "<user input>" }
 
     # Create an Agent with MCP tools
     with mcp_client:

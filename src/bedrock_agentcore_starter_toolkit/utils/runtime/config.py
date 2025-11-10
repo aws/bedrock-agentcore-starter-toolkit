@@ -130,11 +130,11 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
             config.model_dump(
                 exclude_none=bootstrap_project,
                 exclude_unset=bootstrap_project,
-                exclude={"is_agentcore_bootstrap_project"}
+                exclude={"is_agentcore_bootstrap_project"},
             ),
             f,
-            default_flow_style=False, 
-            sort_keys=False
+            default_flow_style=False,
+            sort_keys=False,
         )
 
 

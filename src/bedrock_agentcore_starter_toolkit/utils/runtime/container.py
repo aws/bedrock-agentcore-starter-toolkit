@@ -113,7 +113,7 @@ class ContainerRuntime:
         memory_name: Optional[str] = None,
         source_path: Optional[str] = None,
         protocol: Optional[str] = None,
-        explicit_requirements_file: Optional[Path] = None
+        explicit_requirements_file: Optional[Path] = None,
     ) -> Path:
         """Generate Dockerfile from template.
 

@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-# wrapper script for dev. delete
+"""Wrapper script for dev. Will delete."""
+
 import sys
 from pathlib import Path
 
@@ -9,7 +9,7 @@ src_dir = repo_root / "src"
 sys.path.insert(0, str(src_dir))
 
 # now safely import your CLI entrypoint
-from bedrock_agentcore_starter_toolkit.cli.cli import main
+from bedrock_agentcore_starter_toolkit.cli.cli import main  # noqa
 
 if __name__ == "__main__":
     main()

@@ -38,16 +38,16 @@ resource "null_resource" "docker_image" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<EOF
       source ~/.bash_profile || source ~/.profile || true
-      
+
       if ! command -v docker &> /dev/null; then
         echo "Docker is not installed or not in PATH. Please install Docker and try again."
         exit 1
       fi
-      
+
       aws ecr get-login-password | docker login --username AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
-      
+
       docker build -t ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest ../${path.root}/src
-      
+
       docker push ${aws_ecr_repository.agentcore_terraform_runtime.repository_url}:latest
     EOF
   }

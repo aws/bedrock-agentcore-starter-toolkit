@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Optional
 
 from ...services.runtime import BedrockAgentCoreClient
+from ...utils.runtime.bootstrap import resolve_bootstrap_project_config
 from ...utils.runtime.config import load_config
 from .models import StatusConfigInfo, StatusResult
-from ...utils.runtime.bootstrap import resolve_bootstrap_project_config
 
 
 def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusResult:

@@ -3,8 +3,8 @@
 import typer
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
-from ..cli.bootstrap.commands import bootstrap_app
 from ..utils.logging_config import setup_toolkit_logging
+from .bootstrap.commands import bootstrap_app
 from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
@@ -14,7 +14,6 @@ from .runtime.commands import (
     status,
     stop_session,
 )
-from .bootstrap.commands import bootstrap_app
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
 
@@ -40,6 +39,7 @@ app.command("import-agent")(import_agent)
 
 # bootstrap
 app.add_typer(bootstrap_app, name="bootstrap")
+
 
 def main():
     """Entry point for the CLI application."""

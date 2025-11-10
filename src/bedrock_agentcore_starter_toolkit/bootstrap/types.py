@@ -1,45 +1,29 @@
-from dataclasses import dataclass, asdict
+"""Type definitions and data classes for bootstrap project configuration."""
+
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List, Optional, Literal
+from typing import List, Literal, Optional
 
-BootstrapSDKProvider = Literal[
-    "Strands",
-    "LangGraph",
-    "GoogleADK",
-    "OpenAIAgents",
-    "AutoGen",
-    "CrewAI"
-]
+BootstrapSDKProvider = Literal["Strands", "LangGraph", "GoogleADK", "OpenAIAgents", "AutoGen", "CrewAI"]
 
-BootstrapIACProvider = Literal[
-    "CDK",
-    "Terraform"
-]
+BootstrapIACProvider = Literal["CDK", "Terraform"]
 
-BootstrapTemplateDirSelection = Literal[
-    "default",
-    "common",
-    "mcp_runtime"
-]
+BootstrapTemplateDirSelection = Literal["default", "common", "mcp_runtime"]
 
-BootstrapRuntimeProtocol = Literal[
-    "HTTP",
-    "MCP",
-    "A2A"
-]
+BootstrapRuntimeProtocol = Literal["HTTP", "MCP", "A2A"]
 
 # until we have direct code deployment constructs, only support container deploy
-BootstrapDeploymentType = Literal[
-    "container"
-]
+BootstrapDeploymentType = Literal["container"]
+
 
 @dataclass
 class ProjectContext:
-    """
-    This class is instantiated once in the ./generate.py file at project creation
+    """This class is instantiated once in the ./generate.py file at project creation.
+
     Then other components in the logic update its properties during execution.
     No defaults here so its clear what is the default behavior in generate.
     """
+
     name: str
     output_dir: Path
     src_dir: Path
@@ -72,6 +56,7 @@ class ProjectContext:
     request_header_allowlist: Optional[list[str]]
     # observability (use opentelemetry-instrument at Docker entry CMD)
     observability_enabled: bool
-    
+
     def dict(self):
+        """Return dataclass as dictionary."""
         return asdict(self)
