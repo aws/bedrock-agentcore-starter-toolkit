@@ -19,6 +19,9 @@ class CDKFeature(Feature):
         iac_dir.mkdir(exist_ok=False)
         context.iac_dir = iac_dir
 
+    def after_apply(self, context):
+        pass
+
     def execute(self, context: ProjectContext) -> None:
         """Call render_dir."""
         self.render_dir(context.iac_dir, context)

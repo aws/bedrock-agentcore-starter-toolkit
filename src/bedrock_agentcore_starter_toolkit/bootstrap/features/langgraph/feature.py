@@ -20,3 +20,9 @@ class LangGraphFeature(Feature):
     def execute(self, context: ProjectContext):
         """Call render_dir."""
         self.render_dir(context.src_dir, context)
+
+    def before_apply(self, context):
+        pass
+    
+    def after_apply(self, context):
+        pass

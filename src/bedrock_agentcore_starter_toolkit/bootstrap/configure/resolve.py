@@ -126,11 +126,15 @@ def copy_src_implementation_and_docker_config_into_monorepo(
     # Move Dockerfile and .dockerignore from configure’s output
     agentcore_dir = cwd / ".bedrock_agentcore" / agent_config.name
 
-    dockerfile_src = agentcore_dir / "Dockerfile"
-    dockerignore_src = Path(agent_config.source_path) / ".dockerignore"  # original path
+    src_root = Path(agent_config.source_path)
+    if not src_root.is_absolute():
+        src_root = (Path.cwd() / src_root).resolve()
 
-    dockerfile_dst = Path(ctx.src_dir) / "Dockerfile"
-    dockerignore_dst = Path(ctx.src_dir) / ".dockerignore"
+    dockerfile_src = agentcore_dir / "Dockerfile"
+    dockerignore_src = src_root / ".dockerignore"  # original path
+
+    dockerfile_dst = ctx.src_dir / "Dockerfile"
+    dockerignore_dst = ctx.src_dir / ".dockerignore"
 
     shutil.copy2(dockerfile_src, dockerfile_dst)
     shutil.copy2(dockerignore_src, dockerignore_dst)

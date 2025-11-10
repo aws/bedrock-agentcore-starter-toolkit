@@ -21,3 +21,6 @@ class TerraformFeature(Feature):
     def execute(self, context: ProjectContext) -> None:
         """Call render_dir."""
         self.render_dir(context.iac_dir, context)
+
+    def after_apply(self, context):
+        pass

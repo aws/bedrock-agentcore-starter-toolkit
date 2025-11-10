@@ -22,6 +22,12 @@ class BaselineFeature(Feature):
             else ["mcp >= 1.19.0"]
         )
         super().__init__()
+    
+    def before_apply(self, context):
+        pass
+    
+    def after_apply(self, context):
+        pass
 
     def execute(self, context: ProjectContext) -> None:
         """Renders the directory structure for a Bootstrap project."""

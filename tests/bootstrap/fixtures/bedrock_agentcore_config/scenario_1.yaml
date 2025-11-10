@@ -1,4 +1,4 @@
-default_agent: bootstrap_agent
+default_agent: default
 agents:
   bootstrap_agent:
     name: bootstrap_agent
@@ -14,7 +14,7 @@ agents:
       account: '111122223333'
       region: us-east-1
       ecr_repository: null
-      ecr_auto_create: false
+      ecr_auto_create: true
       s3_path: null
       s3_auto_create: false
       network_configuration:
@@ -36,21 +36,13 @@ agents:
       execution_role: null
       source_bucket: null
     memory:
-      mode: STM_AND_LTM
+      mode: STM_ONLY
       memory_id: null
       memory_arn: null
       memory_name: bootstrap_agent_memory
       event_expiry_days: 30
       first_invoke_memory_check_done: false
       was_created_by_toolkit: false
-    authorizer_configuration:
-      customJWTAuthorizer:
-        discoveryUrl: https://aws.dev
-        allowedClients:
-        - '12345'
-        - '6789'
-    request_header_configuration:
-      requestHeaderAllowlist:
-      - x-amzn-bedrock
-      - x-amzn-agentcore
+    authorizer_configuration: null
+    request_header_configuration: null
     oauth_configuration: null
