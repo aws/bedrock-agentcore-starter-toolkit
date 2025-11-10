@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -12,6 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from ...operations.evaluation.client import EvaluationClient
+from ...operations.evaluation.cp_client import EvaluationControlPlaneClient
 from ...operations.evaluation.models.evaluation import EvaluationResults
 from ...utils.runtime.config import load_config_if_exists
 from ..common import console
@@ -22,31 +22,37 @@ logger = logging.getLogger(__name__)
 # Create a Typer app for evaluation commands
 evaluation_app = typer.Typer(help="Evaluate agent performance using built-in and custom evaluators")
 
+# Create a sub-app for evaluator management
+evaluator_app = typer.Typer(help="Manage custom evaluators (create, list, update, delete)")
+evaluation_app.add_typer(evaluator_app, name="evaluator")
+
 
 def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[dict]:
-    """Load agent configuration from .bedrock_agentcore.yaml."""
-    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
-    config = load_config_if_exists(config_path)
+    """Get agent configuration from .bedrock_agentcore.yaml file.
 
-    if not config:
+    Args:
+        agent_name: Optional agent name to load (uses first agent if not specified)
+
+    Returns:
+        Dict with agent_id, region, session_id if config found, None otherwise
+    """
+    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+    if not config_path.exists():
         return None
 
     try:
-        agent_config = config.get_agent_config(agent_name)
-        agent_id = agent_config.bedrock_agentcore.agent_id
-        region = agent_config.aws.region
-        session_id = agent_config.bedrock_agentcore.agent_session_id
-
-        if not agent_id or not region:
+        config = load_config_if_exists(config_path)
+        if not config:
             return None
 
+        agent_config = config.get_agent_config(agent_name)
+
         return {
-            "agent_id": agent_id,
-            "session_id": session_id,
-            "region": region,
+            "agent_id": agent_config.bedrock_agentcore.agent_id,
+            "region": agent_config.aws.region,
+            "session_id": agent_config.bedrock_agentcore.agent_session_id,
         }
-    except Exception as e:
-        logger.debug("Failed to load agent config: %s", e)
+    except Exception:
         return None
 
 
@@ -100,11 +106,16 @@ def _display_evaluation_results(results: EvaluationResults) -> None:
                 content.append(f"  - Output: {result.token_usage.get('outputTokens', 0):,}\n", style="dim")
                 content.append(f"  - Total: {result.token_usage.get('totalTokens', 0):,}\n", style="dim")
 
-            # Evaluation-specific context (from API response)
-            if result.context:
-                content.append("\nEvaluation Context:\n", style="bold")
-                for key, value in result.context.items():
-                    content.append(f"  - {key}: {value}\n", style="dim")
+            # Extract and display context IDs (from spanContext)
+            if result.context and "spanContext" in result.context:
+                span_context = result.context["spanContext"]
+                content.append("\nEvaluated:\n", style="bold")
+                if "sessionId" in span_context:
+                    content.append(f"  - Session: {span_context['sessionId']}\n", style="dim")
+                if "traceId" in span_context:
+                    content.append(f"  - Trace: {span_context['traceId']}\n", style="dim")
+                if "spanId" in span_context:
+                    content.append(f"  - Span: {span_context['spanId']}\n", style="dim")
 
             console.print(Panel(content, border_style="green", padding=(1, 2)))
 
@@ -162,55 +173,53 @@ def _save_evaluation_results(results: EvaluationResults, output_file: str) -> No
 
 @evaluation_app.command("run")
 def run_evaluation(
-    session_id: Optional[str] = typer.Option(
-        None, "--session-id", help="Session ID to evaluate (uses config if not provided)"
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
+    session_id: Optional[str] = typer.Option(None, "--session-id", "-s", help="Override session ID from config"),
+    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
     trace_id: Optional[str] = typer.Option(
-        None, "--trace-id", help="Specific trace ID to evaluate (defaults to latest trace)"
+        None,
+        "--trace-id",
+        "-t",
+        help="Evaluate only this trace (includes spans from all previous traces for context)",
     ),
-    all_traces: bool = typer.Option(
-        False,
-        "--all-traces",
-        help="Evaluate all traces in the session (sends all traces in single API call, limited to 100 most recent items)",
-    ),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID (optional, for filtering session data)"),
-    evaluators: Optional[List[str]] = typer.Option(
-        ["Builtin.Helpfulness"], "--evaluator", "-e", help="Evaluator(s) to use (can specify multiple times)"
+    evaluators: Optional[List[str]] = typer.Option(  # noqa: B008
+        None, "--evaluator", "-e", help="Evaluator(s) to use (can specify multiple times)"
     ),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
-    region: Optional[str] = typer.Option(None, "--region", help="AWS region for evaluation API (overrides env var)"),
-    endpoint: Optional[str] = typer.Option(None, "--endpoint", help="Evaluation API endpoint URL (overrides env var)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name from config file"),
 ):
     """Run evaluation on a session.
 
+    Default behavior: Evaluates all traces (most recent 1000 spans).
+    With --trace-id: Evaluates only that trace (includes spans from all previous traces for context).
+
     Examples:
-        # Evaluate latest trace from config with default evaluator
+        # Evaluate all traces from default agent config
         agentcore eval run
 
-        # Evaluate specific session
-        agentcore eval run --session-id eb358f6f
+        # Evaluate specific agent
+        agentcore eval run -a my-agent
 
-        # Evaluate specific trace
-        agentcore eval run --session-id eb358f6f --trace-id abc123
+        # Evaluate specific trace only (with previous traces for context)
+        agentcore eval run -t abc123
 
-        # Evaluate all traces in session (one API call per trace)
-        agentcore eval run --session-id eb358f6f --all-traces
+        # Override session from config
+        agentcore eval run -s eb358f6f
 
         # Use multiple evaluators
-        agentcore eval run --session-id eb358f6f -e Builtin.Helpfulness -e Builtin.Accuracy
+        agentcore eval run -e Builtin.Helpfulness -e Builtin.Accuracy
 
         # Save results to file
-        agentcore eval run --session-id eb358f6f -o results.json
+        agentcore eval run -o results.json
     """
-    # Validate mutually exclusive options
-    if trace_id and all_traces:
-        console.print("[red]Error:[/red] Cannot specify both --trace-id and --all-traces")
-        raise typer.Exit(1)
+    # Get config from agent
+    config = _get_agent_config_from_file(agent)
 
-    # Get session ID, agent_id, and region from config if not provided
-    config = _get_agent_config_from_file(agent_name)
-
+    # Get session_id from CLI or config
     if not session_id:
         if config and config.get("session_id"):
             session_id = config["session_id"]
@@ -222,7 +231,7 @@ def run_evaluation(
             console.print("  2. Configuration file: .bedrock_agentcore.yaml")
             raise typer.Exit(1)
 
-    # Get agent_id from CLI arg or config
+    # Get agent_id from CLI or config
     if not agent_id:
         if config and config.get("agent_id"):
             agent_id = config["agent_id"]
@@ -233,16 +242,13 @@ def run_evaluation(
             console.print("  2. Configuration file: .bedrock_agentcore.yaml")
             raise typer.Exit(1)
 
-    # Get region from CLI arg or config
-    if not region:
-        if config and config.get("region"):
-            region = config["region"]
-        else:
-            console.print("[red]Error:[/red] No region provided")
-            console.print("\nProvide region via:")
-            console.print("  1. CLI argument: --region <REGION>")
-            console.print("  2. Configuration file: .bedrock_agentcore.yaml")
-            raise typer.Exit(1)
+    # Get region from config (always required from config)
+    if not config or not config.get("region"):
+        console.print("[red]Error:[/red] No region found in config")
+        console.print("\nProvide region via configuration file: .bedrock_agentcore.yaml")
+        raise typer.Exit(1)
+
+    region = config["region"]
 
     # Convert evaluators to list (Typer returns list or None)
     evaluator_list = evaluators if evaluators else ["Builtin.Helpfulness"]
@@ -250,26 +256,14 @@ def run_evaluation(
     # Display what we're doing
     console.print(f"\n[cyan]Evaluating session:[/cyan] {session_id}")
     if trace_id:
-        console.print(f"[cyan]Trace ID:[/cyan] {trace_id}")
-    elif all_traces:
-        console.print("[cyan]Mode:[/cyan] All traces (single API call with all traces)")
+        console.print(f"[cyan]Trace:[/cyan] {trace_id} (with previous traces for context)")
     else:
-        console.print("[cyan]Mode:[/cyan] Latest trace only")
+        console.print("[cyan]Mode:[/cyan] All traces (most recent 1000 spans)")
     console.print(f"[cyan]Evaluators:[/cyan] {', '.join(evaluator_list)}\n")
 
     try:
-        # Create evaluation client with optional config
-        client_kwargs = {}
-        if region:
-            client_kwargs["region"] = region
-        if endpoint:
-            client_kwargs["endpoint_url"] = endpoint
-
-        eval_client = EvaluationClient(**client_kwargs)
-
-        # Show endpoint being used
-        if os.getenv("AGENTCORE_EVAL_ENDPOINT") or endpoint:
-            console.print(f"[dim]Using endpoint: {eval_client.endpoint_url}[/dim]\n")
+        # Create evaluation client
+        eval_client = EvaluationClient()
 
         # Run evaluation
         with console.status("[cyan]Running evaluation...[/cyan]"):
@@ -279,7 +273,6 @@ def run_evaluation(
                 agent_id=agent_id,
                 region=region,
                 trace_id=trace_id,
-                all_traces=all_traces,
             )
 
         # Display results
@@ -303,23 +296,308 @@ def run_evaluation(
         raise typer.Exit(1) from e
 
 
-@evaluation_app.command("config")
-def show_config():
-    """Show evaluation configuration (endpoint, region)."""
-    config_table = Table(title="Evaluation Configuration", show_header=True)
-    config_table.add_column("Setting", style="cyan")
-    config_table.add_column("Value", style="green")
+# ===========================
+# Evaluator Management Commands
+# ===========================
 
-    # Get current config
-    region = os.getenv("AGENTCORE_EVAL_REGION", EvaluationClient.DEFAULT_REGION)
-    endpoint = os.getenv("AGENTCORE_EVAL_ENDPOINT", EvaluationClient.DEFAULT_ENDPOINT)
 
-    config_table.add_row("Region", region)
-    config_table.add_row("Endpoint", endpoint)
+@evaluator_app.command("list")
+def list_evaluators(
+    max_results: int = typer.Option(50, "--max-results", help="Maximum number of evaluators to return"),
+):
+    """List all evaluators (builtin and custom).
 
-    console.print(config_table)
+    Examples:
+        # List all evaluators
+        agentcore eval evaluator list
 
-    # Show environment variable hints
-    console.print("\n[dim]Configuration can be set via environment variables:[/dim]")
-    console.print("[dim]  - AGENTCORE_EVAL_REGION[/dim]")
-    console.print("[dim]  - AGENTCORE_EVAL_ENDPOINT[/dim]")
+        # List more evaluators
+        agentcore eval evaluator list --max-results 100
+    """
+    try:
+        client = EvaluationControlPlaneClient()
+
+        with console.status("[cyan]Fetching evaluators...[/cyan]"):
+            response = client.list_evaluators(max_results=max_results)
+
+        evaluators = response.get("evaluators", [])
+
+        if not evaluators:
+            console.print("[yellow]No evaluators found[/yellow]")
+            return
+
+        # Separate builtin and custom
+        builtin = [e for e in evaluators if e.get("evaluatorId", "").startswith("Builtin.")]
+        custom = [e for e in evaluators if not e.get("evaluatorId", "").startswith("Builtin.")]
+
+        # Display builtin evaluators
+        if builtin:
+            console.print(f"\n[bold cyan]Built-in Evaluators ({len(builtin)})[/bold cyan]\n")
+
+            builtin_table = Table(show_header=True)
+            builtin_table.add_column("ID", style="cyan", no_wrap=True, width=30)
+            builtin_table.add_column("Name", style="white", width=30)
+            builtin_table.add_column("Description", style="dim")
+
+            for ev in sorted(builtin, key=lambda x: x.get("evaluatorId", "")):
+                builtin_table.add_row(ev.get("evaluatorId", ""), ev.get("evaluatorName", ""), ev.get("description", ""))
+
+            console.print(builtin_table)
+
+        # Display custom evaluators
+        if custom:
+            console.print(f"\n[bold green]Custom Evaluators ({len(custom)})[/bold green]\n")
+
+            custom_table = Table(show_header=True)
+            custom_table.add_column("ID", style="green", no_wrap=True)
+            custom_table.add_column("Name", style="white")
+            custom_table.add_column("Created", style="dim")
+
+            for ev in sorted(custom, key=lambda x: x.get("createdAt", ""), reverse=True):
+                created = ev.get("createdAt", "")
+                if created:
+                    created = str(created).split("T")[0]  # Just the date
+
+                custom_table.add_row(ev.get("evaluatorId", ""), ev.get("evaluatorName", ""), created)
+
+            console.print(custom_table)
+
+        console.print(f"\n[dim]Total: {len(evaluators)} ({len(builtin)} builtin, {len(custom)} custom)[/dim]")
+
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        logger.exception("Failed to list evaluators")
+        raise typer.Exit(1) from e
+
+
+@evaluator_app.command("get")
+def get_evaluator(
+    evaluator_id: str = typer.Argument(..., help="Evaluator ID (e.g., Builtin.Helpfulness or custom-id)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save to JSON file"),
+):
+    """Get detailed information about an evaluator.
+
+    Examples:
+        # Get builtin evaluator
+        agentcore eval evaluator get Builtin.Helpfulness
+
+        # Get custom evaluator
+        agentcore eval evaluator get my-evaluator-abc123
+
+        # Export to JSON
+        agentcore eval evaluator get my-evaluator -o evaluator.json
+    """
+    try:
+        client = EvaluationControlPlaneClient()
+
+        with console.status(f"[cyan]Fetching evaluator {evaluator_id}...[/cyan]"):
+            response = client.get_evaluator(evaluator_id=evaluator_id)
+
+        # Save to file if requested
+        if output:
+            output_path = Path(output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w") as f:
+                json.dump(response, f, indent=2, default=str)
+            console.print(f"\n[green]✓[/green] Saved to: {output_path}")
+            return
+
+        # Display details
+        console.print("\n[bold cyan]Evaluator Details[/bold cyan]\n")
+
+        # Metadata
+        metadata = {
+            "ID": response.get("evaluatorId", ""),
+            "Name": response.get("evaluatorName", ""),
+            "ARN": response.get("evaluatorArn", ""),
+            "Level": response.get("level", ""),
+        }
+
+        if "description" in response:
+            metadata["Description"] = response["description"]
+        if "createdAt" in response:
+            metadata["Created"] = str(response["createdAt"])
+        if "updatedAt" in response:
+            metadata["Updated"] = str(response["updatedAt"])
+
+        for key, value in metadata.items():
+            console.print(f"[bold]{key}:[/bold] {value}")
+
+        # Config details
+        if "evaluatorConfig" in response:
+            config = response["evaluatorConfig"]
+            console.print("\n[bold]Configuration:[/bold]")
+
+            if "llmAsAJudge" in config:
+                llm_config = config["llmAsAJudge"]
+
+                # Model
+                if "modelConfig" in llm_config:
+                    model = llm_config["modelConfig"].get("bedrockEvaluatorModelConfig", {})
+                    console.print(f"  Model: {model.get('modelId', 'N/A')}")
+
+                # Rating scale
+                if "ratingScale" in llm_config:
+                    scale = llm_config["ratingScale"].get("numerical", [])
+                    min_val = scale[0].get("value", 0)
+                    max_val = scale[-1].get("value", 1)
+                    console.print(f"  Rating Scale: {len(scale)} levels ({min_val} - {max_val})")
+
+                # Instructions (truncated)
+                if "instructions" in llm_config:
+                    instructions = llm_config["instructions"]
+                    preview = instructions[:200] + "..." if len(instructions) > 200 else instructions
+                    console.print(f"  Instructions: {preview}")
+
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        logger.exception("Failed to get evaluator %s", evaluator_id)
+        raise typer.Exit(1) from e
+
+
+@evaluator_app.command("create")
+def create_evaluator(
+    name: str = typer.Argument(..., help="Evaluator name"),
+    config: str = typer.Option(..., "--config", help="Path to evaluator config JSON file or inline JSON"),
+    level: str = typer.Option("TRACE", "--level", help="Evaluation level (TRACE, SPAN, SESSION)"),
+    description: Optional[str] = typer.Option(None, "--description", help="Evaluator description"),
+):
+    r"""Create a custom evaluator.
+
+    Examples:
+        # Create from file
+        agentcore eval evaluator create my-helpfulness \
+          --config evaluator-config.json \
+          --level TRACE \
+          --description "Custom helpfulness evaluator"
+
+        # Create from inline JSON
+        agentcore eval evaluator create my-eval \
+          --config '{"llmAsAJudge": {...}}' \
+          --level TRACE
+    """
+    try:
+        # Load config (from file or inline JSON)
+        config_data = None
+        if config.strip().startswith("{"):
+            # Inline JSON
+            config_data = json.loads(config)
+        else:
+            # File path
+            config_path = Path(config)
+            if not config_path.exists():
+                console.print(f"[red]Error:[/red] Config file not found: {config}")
+                raise typer.Exit(1)
+            with open(config_path) as f:
+                config_data = json.load(f)
+
+        # Validate required structure
+        if "llmAsAJudge" not in config_data:
+            console.print("[red]Error:[/red] Config must contain 'llmAsAJudge' key")
+            raise typer.Exit(1)
+
+        client = EvaluationControlPlaneClient()
+
+        with console.status(f"[cyan]Creating evaluator '{name}'...[/cyan]"):
+            response = client.create_evaluator(name=name, config=config_data, level=level, description=description)
+
+        evaluator_id = response.get("evaluatorId", "")
+        evaluator_arn = response.get("evaluatorArn", "")
+
+        console.print("\n[green]✓[/green] Evaluator created successfully!")
+        console.print(f"\n[bold]ID:[/bold] {evaluator_id}")
+        console.print(f"[bold]ARN:[/bold] {evaluator_arn}")
+        console.print(f"\n[dim]Use this ID with: agentcore eval run -e {evaluator_id}[/dim]")
+
+    except json.JSONDecodeError as e:
+        console.print(f"[red]Error:[/red] Invalid JSON in config: {e}")
+        raise typer.Exit(1) from e
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        logger.exception("Failed to create evaluator")
+        raise typer.Exit(1) from e
+
+
+@evaluator_app.command("update")
+def update_evaluator(
+    evaluator_id: str = typer.Argument(..., help="Evaluator ID to update"),
+    description: Optional[str] = typer.Option(None, "--description", help="New description"),
+    config: Optional[str] = typer.Option(None, "--config", help="Path to new config JSON file"),
+):
+    r"""Update a custom evaluator.
+
+    Examples:
+        # Update description
+        agentcore eval evaluator update my-evaluator-abc123 \
+          --description "Updated description"
+
+        # Update config
+        agentcore eval evaluator update my-evaluator-abc123 \
+          --config new-config.json
+
+        # Update both
+        agentcore eval evaluator update my-evaluator-abc123 \
+          --description "Updated" \
+          --config new-config.json
+    """
+    try:
+        if not description and not config:
+            console.print("[yellow]No updates specified. Provide --description or --config[/yellow]")
+            return
+
+        client = EvaluationControlPlaneClient()
+
+        config_data = None
+        if config:
+            config_path = Path(config)
+            if not config_path.exists():
+                console.print(f"[red]Error:[/red] Config file not found: {config}")
+                raise typer.Exit(1)
+            with open(config_path) as f:
+                config_data = json.load(f)
+
+        with console.status(f"[cyan]Updating evaluator {evaluator_id}...[/cyan]"):
+            response = client.update_evaluator(evaluator_id=evaluator_id, description=description, config=config_data)
+
+        console.print("\n[green]✓[/green] Evaluator updated successfully!")
+        if "updatedAt" in response:
+            console.print(f"[dim]Updated at: {response['updatedAt']}[/dim]")
+
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        logger.exception("Failed to update evaluator %s", evaluator_id)
+        raise typer.Exit(1) from e
+
+
+@evaluator_app.command("delete")
+def delete_evaluator(
+    evaluator_id: str = typer.Argument(..., help="Evaluator ID to delete"),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt"),
+):
+    """Delete a custom evaluator.
+
+    Examples:
+        # Delete with confirmation
+        agentcore eval evaluator delete my-evaluator-abc123
+
+        # Force delete without confirmation
+        agentcore eval evaluator delete my-evaluator-abc123 --force
+    """
+    try:
+        if not force:
+            confirm = typer.confirm(f"Delete evaluator '{evaluator_id}'?")
+            if not confirm:
+                console.print("[yellow]Cancelled[/yellow]")
+                return
+
+        client = EvaluationControlPlaneClient()
+
+        with console.status(f"[cyan]Deleting evaluator {evaluator_id}...[/cyan]"):
+            client.delete_evaluator(evaluator_id=evaluator_id)
+
+        console.print("\n[green]✓[/green] Evaluator deleted successfully")
+
+    except Exception as e:
+        console.print(f"\n[red]Error:[/red] {e}")
+        logger.exception("Failed to delete evaluator %s", evaluator_id)
+        raise typer.Exit(1) from e

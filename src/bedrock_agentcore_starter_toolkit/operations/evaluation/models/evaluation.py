@@ -113,15 +113,20 @@ class EvaluationResults:
         result = {
             "session_id": self.session_id,
             "trace_id": self.trace_id,
+            "summary": {
+                "total_evaluations": len(self.results),
+                "successful": len(self.get_successful_results()),
+                "failed": len(self.get_failed_results()),
+            },
             "results": [
                 {
                     "evaluator_id": r.evaluator_id,
                     "evaluator_name": r.evaluator_name,
                     "evaluator_arn": r.evaluator_arn,
-                    "explanation": r.explanation,
-                    "context": r.context,
                     "value": r.value,
                     "label": r.label,
+                    "explanation": r.explanation,
+                    "context": r.context,
                     "token_usage": r.token_usage,
                     "error": r.error,
                 }

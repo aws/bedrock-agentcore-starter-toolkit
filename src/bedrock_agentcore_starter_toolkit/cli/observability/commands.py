@@ -62,27 +62,25 @@ def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[di
 
 def _create_observability_client(
     agent_id: Optional[str],
-    region: Optional[str],
-    agent_name: Optional[str] = None,
+    agent: Optional[str] = None,
 ) -> ObservabilityClient:
     """Create ObservabilityClient from CLI args or config file."""
-    # Try CLI args first
-    if agent_id and region:
-        return ObservabilityClient(region_name=region, agent_id=agent_id, runtime_suffix=DEFAULT_RUNTIME_SUFFIX)
+    # Get config
+    config = _get_agent_config_from_file(agent)
 
-    # Try config file
-    config = _get_agent_config_from_file(agent_name)
-    if config:
-        return ObservabilityClient(
-            region_name=config["region"], agent_id=config["agent_id"], runtime_suffix=config["runtime_suffix"]
-        )
+    if not config:
+        console.print("[red]Error:[/red] No agent configuration found")
+        console.print("\nProvide agent configuration via:")
+        console.print("  1. Configuration file: .bedrock_agentcore.yaml")
+        console.print("  2. Run: agentcore configure list")
+        raise typer.Exit(1)
 
-    # Neither worked
-    console.print("[red]Error:[/red] Missing required parameters")
-    console.print("\nProvide agent_id and region via:")
-    console.print("  1. CLI arguments: --agent-id <ID> --region <REGION>")
-    console.print("  2. Configuration file: .bedrock_agentcore.yaml")
-    raise typer.Exit(1)
+    # Use agent_id override if provided, otherwise use from config
+    final_agent_id = agent_id if agent_id else config["agent_id"]
+
+    return ObservabilityClient(
+        region_name=config["region"], agent_id=final_agent_id, runtime_suffix=config["runtime_suffix"]
+    )
 
 
 def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_type: str = "trace") -> None:
@@ -105,11 +103,15 @@ def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_typ
 
 @observability_app.command("show")
 def show(
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
+    ),
     trace_id: Optional[str] = typer.Option(None, "--trace-id", "-t", help="Trace ID to visualize"),
     session_id: Optional[str] = typer.Option(None, "--session-id", "-s", help="Session ID to visualize"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", "-a", help="Agent ID (or read from config)"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (or read from config)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name from config"),
+    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
     days: int = typer.Option(
         DEFAULT_LOOKBACK_DAYS, "--days", "-d", help=f"Number of days to look back (default: {DEFAULT_LOOKBACK_DAYS})"
     ),
@@ -162,7 +164,7 @@ def show(
         - Default view shows truncated payloads for cleaner output
     """
     try:
-        client = _create_observability_client(agent_id, region, agent_name)
+        client = _create_observability_client(agent_id, agent)
         start_time_ms, end_time_ms = _get_default_time_range(days)
 
         # Validate mutually exclusive options
@@ -206,7 +208,7 @@ def show(
 
         else:
             # No ID provided - try config first, then fallback to latest session
-            config = _get_agent_config_from_file(agent_name)
+            config = _get_agent_config_from_file(agent)
             session_id = config.get("session_id") if config else None
 
             if not session_id:
@@ -420,12 +422,16 @@ def _show_last_trace_from_session(
 
 @observability_app.command("list")
 def list_traces(
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
+    ),
     session_id: Optional[str] = typer.Option(
         None, "--session-id", "-s", help="Session ID to list traces from. Omit to use config."
     ),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", "-a", help="Agent ID (or read from config)"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (or read from config)"),
-    agent_name: Optional[str] = typer.Option(None, "--agent-name", help="Agent name from config"),
+    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
     days: int = typer.Option(
         DEFAULT_LOOKBACK_DAYS, "--days", "-d", help=f"Number of days to look back (default: {DEFAULT_LOOKBACK_DAYS})"
     ),
@@ -444,12 +450,12 @@ def list_traces(
         agentcore obs list --errors
     """
     try:
-        client = _create_observability_client(agent_id, region, agent_name)
+        client = _create_observability_client(agent_id, agent)
         start_time_ms, end_time_ms = _get_default_time_range(days)
 
         # Get session ID from config if not provided, or fallback to latest session
         if not session_id:
-            config = _get_agent_config_from_file(agent_name)
+            config = _get_agent_config_from_file(agent)
             session_id = config.get("session_id") if config else None
 
             if not session_id:
@@ -574,7 +580,7 @@ def list_traces(
                         if msg:
                             messages.append(msg)
                     except Exception as e:
-                        logger.debug(f"Failed to extract message from log: {e}")
+                        logger.debug("Failed to extract message from log: %s", e)
                         continue
 
                 # Sort by timestamp to get chronological order

@@ -18,10 +18,15 @@ from .models.evaluation import EvaluationRequest, EvaluationResult, EvaluationRe
 
 
 class EvaluationClient:
-    """Client for interacting with AgentCore Evaluation DataPlane API."""
+    """Client for AgentCore Evaluation Data Plane API.
 
-    DEFAULT_ENDPOINT = "https://gamma.us-west-2.elcapdp.genesis-primitives.aws.dev"
-    DEFAULT_REGION = "us-west-2"
+    Handles on-demand evaluation operations:
+    - evaluate: Evaluate traces/spans with a single evaluator
+    - evaluate_session: Evaluate a full session with multiple evaluators
+    """
+
+    DEFAULT_ENDPOINT = "https://gamma.us-east-1.elcapdp.genesis-primitives.aws.dev"
+    DEFAULT_REGION = "us-east-1"
 
     def __init__(
         self, region: Optional[str] = None, endpoint_url: Optional[str] = None, boto_client: Optional[Any] = None
@@ -40,7 +45,7 @@ class EvaluationClient:
             self.client = boto_client
         else:
             self.client = boto3.client(
-                "agentcore-evaluation-dataplane", region_name="us-west-2", endpoint_url=self.endpoint_url
+                "agentcore-evaluation-dataplane", region_name=region, endpoint_url=self.endpoint_url
             )
 
     def _is_session_scoped_evaluator(self, evaluator: str) -> bool:
@@ -105,6 +110,43 @@ class EvaluationClient:
 
         return relevant_spans
 
+    def _filter_traces_up_to(self, trace_data: TraceData, target_trace_id: str) -> TraceData:
+        """Filter trace data to include target trace and all previous traces chronologically.
+
+        Args:
+            trace_data: TraceData containing all session data
+            target_trace_id: Target trace ID to filter to
+
+        Returns:
+            Filtered TraceData with target trace and all earlier traces
+        """
+        # Get all trace IDs ordered by earliest start time
+        trace_times = {}
+        for span in trace_data.spans:
+            if span.trace_id not in trace_times:
+                trace_times[span.trace_id] = span.start_time_unix_nano or 0
+            else:
+                # Keep earliest time for this trace
+                if span.start_time_unix_nano:
+                    trace_times[span.trace_id] = min(trace_times[span.trace_id], span.start_time_unix_nano)
+
+        # Sort trace IDs by time
+        sorted_traces = sorted(trace_times.items(), key=lambda x: x[1])
+
+        # Find position of target trace
+        included_traces = set()
+        for trace_id, _ in sorted_traces:
+            included_traces.add(trace_id)
+            if trace_id == target_trace_id:
+                break
+
+        # Filter trace_data to included traces
+        return TraceData(
+            session_id=trace_data.session_id,
+            spans=[s for s in trace_data.spans if s.trace_id in included_traces],
+            runtime_logs=[log for log in trace_data.runtime_logs if log.trace_id in included_traces],
+        )
+
     def _get_most_recent_session_spans(
         self, trace_data: TraceData, max_items: int = DEFAULT_MAX_EVALUATION_ITEMS
     ) -> List[Dict[str, Any]]:
@@ -115,7 +157,7 @@ class EvaluationClient:
 
         Args:
             trace_data: TraceData containing all session data
-            max_items: Maximum number of items to return (default: 100)
+            max_items: Maximum number of items to return (default: 1000)
 
         Returns:
             List of raw span documents, most recent first
@@ -192,7 +234,11 @@ class EvaluationClient:
         return spans_count, logs_count, genai_spans
 
     def _execute_evaluators(
-        self, evaluators: List[str], otel_spans: List[Dict[str, Any]], session_id: str
+        self,
+        evaluators: List[str],
+        otel_spans: List[Dict[str, Any]],
+        session_id: str,
+        evaluation_target: Optional[Dict[str, Any]] = None,
     ) -> List[EvaluationResult]:
         """Execute evaluators and return results.
 
@@ -202,6 +248,7 @@ class EvaluationClient:
             evaluators: List of evaluator identifiers
             otel_spans: OTel-formatted spans/logs to evaluate
             session_id: Session ID for context
+            evaluation_target: Optional dict specifying which traces/spans to evaluate
 
         Returns:
             List of EvaluationResult objects (including errors)
@@ -211,7 +258,9 @@ class EvaluationClient:
         for evaluator in evaluators:
             try:
                 # Call API with single evaluator
-                response = self.evaluate(evaluator_id=evaluator, session_spans=otel_spans)
+                response = self.evaluate(
+                    evaluator_id=evaluator, session_spans=otel_spans, evaluation_target=evaluation_target
+                )
 
                 # API returns {evaluationResults: [...]}
                 api_results = response.get("evaluationResults", [])
@@ -276,32 +325,25 @@ class EvaluationClient:
         agent_id: str,
         region: str,
         trace_id: Optional[str] = None,
-        all_traces: bool = False,
     ) -> EvaluationResults:
         """Evaluate a session using multiple evaluators.
 
-        Session-scoped evaluators always get all traces.
-        Trace-scoped evaluators behavior depends on parameters.
+        Default behavior: Evaluates all traces in session (most recent 1000 spans).
+        With trace_id: Evaluates only that trace (includes spans from all previous traces for context).
 
         Args:
             session_id: Session ID to evaluate
             evaluators: List of evaluator identifiers
             agent_id: Agent ID for fetching session data
             region: AWS region for ObservabilityClient
-            trace_id: Optional specific trace ID to evaluate (trace-scoped only)
-            all_traces: If True, evaluate all traces together (trace-scoped only)
+            trace_id: Optional trace ID - evaluates only this trace, with previous traces for context
 
         Returns:
             EvaluationResults containing all evaluation results
 
         Raises:
             RuntimeError: If session data cannot be fetched or evaluation fails
-            ValueError: If both trace_id and all_traces are specified
         """
-        # Validate parameters
-        if trace_id and all_traces:
-            raise ValueError("Cannot specify both trace_id and all_traces")
-
         # 1. Fetch session data
         trace_data = self._fetch_session_data(session_id, agent_id, region)
 
@@ -314,10 +356,10 @@ class EvaluationClient:
         session_scoped = [e for e in evaluators if self._is_session_scoped_evaluator(e)]
         trace_scoped = [e for e in evaluators if not self._is_session_scoped_evaluator(e)]
 
-        results = EvaluationResults(session_id=session_id)
+        results = EvaluationResults(session_id=session_id, trace_id=trace_id)
 
-        # Track all input data sent to API for export
-        all_input_data = {"session_scoped": None, "trace_scoped": None}
+        # Track input spans sent to API for export
+        input_spans = []
 
         # Handle session-scoped evaluators (need data across all traces)
         if session_scoped:
@@ -329,13 +371,16 @@ class EvaluationClient:
             # Get most recent items across all traces with relevant data
             session_otel_spans = self._get_most_recent_session_spans(trace_data, max_items=DEFAULT_MAX_EVALUATION_ITEMS)
 
-            # Store for export
-            all_input_data["session_scoped"] = session_otel_spans
+            # Store for export (will be combined with trace_scoped spans if both present)
+            if not input_spans:
+                input_spans = session_otel_spans
 
             if session_otel_spans:
                 spans_count, logs_count, genai_spans = self._count_span_types(session_otel_spans)
                 print(
-                    f"Sending {len(session_otel_spans)} items ({spans_count} spans [{genai_spans} with gen_ai attrs], {logs_count} log events) for session-scoped evaluation"
+                    f"Sending {len(session_otel_spans)} items "
+                    f"({spans_count} spans [{genai_spans} with gen_ai attrs], "
+                    f"{logs_count} log events) for session-scoped evaluation"
                 )
 
                 # Evaluate with session-scoped evaluators
@@ -350,71 +395,51 @@ class EvaluationClient:
             if session_scoped:
                 print(f"\nTrace-scoped evaluators: {', '.join(trace_scoped)}")
 
-            # Determine which traces to evaluate based on parameters
-            if all_traces:
-                # Evaluate all traces together
-                print(
-                    f"Collecting most recent {DEFAULT_MAX_EVALUATION_ITEMS} relevant items across all {num_traces} traces for trace-scoped evaluation"
-                )
-                otel_spans = self._get_most_recent_session_spans(trace_data, max_items=DEFAULT_MAX_EVALUATION_ITEMS)
-            elif trace_id:
-                # Evaluate specific trace
-                print(f"Filtering to specific trace: {trace_id}")
-                # Filter trace_data to specific trace
-                filtered_trace_data = TraceData(
-                    session_id=trace_data.session_id,
-                    spans=[s for s in trace_data.spans if s.trace_id == trace_id],
-                    runtime_logs=[log for log in trace_data.runtime_logs if log.trace_id == trace_id],
-                )
-                # Extract and filter raw spans
-                raw_spans = self._extract_raw_spans(filtered_trace_data)
-                otel_spans = self._filter_relevant_spans(raw_spans)
-            else:
-                # Evaluate latest trace only (default)
-                if num_traces > 1:
-                    print(f"Evaluating latest trace only (out of {num_traces} traces)")
+            # Filter trace data if specific trace requested
+            filtered_data = trace_data
+            evaluation_target = None
 
-                # Find latest trace ID
-                latest_trace_id = None
-                latest_timestamp = None
-                for span in trace_data.spans:
-                    if span.end_time_unix_nano:
-                        if latest_timestamp is None or span.end_time_unix_nano > latest_timestamp:
-                            latest_timestamp = span.end_time_unix_nano
-                            latest_trace_id = span.trace_id
+            if trace_id:
+                print(f"Evaluating trace {trace_id} (including previous traces for context)")
+                filtered_data = self._filter_traces_up_to(trace_data, trace_id)
+                filtered_trace_count = len(filtered_data.get_trace_ids())
+                print(f"Including {filtered_trace_count} traces for context")
 
-                if latest_trace_id:
-                    # Filter to latest trace
-                    filtered_trace_data = TraceData(
-                        session_id=trace_data.session_id,
-                        spans=[s for s in trace_data.spans if s.trace_id == latest_trace_id],
-                        runtime_logs=[log for log in trace_data.runtime_logs if log.trace_id == latest_trace_id],
-                    )
-                    raw_spans = self._extract_raw_spans(filtered_trace_data)
-                    otel_spans = self._filter_relevant_spans(raw_spans)
-                else:
-                    # Fallback: use all spans
-                    raw_spans = self._extract_raw_spans(trace_data)
-                    otel_spans = self._filter_relevant_spans(raw_spans)
+                # Set evaluation target to only evaluate the specific trace
+                evaluation_target = {"traceIds": [trace_id]}
+
+            # Get most recent spans from filtered data (default: all traces, or filtered to trace_id)
+            print(f"Collecting most recent {DEFAULT_MAX_EVALUATION_ITEMS} relevant items")
+            otel_spans = self._get_most_recent_session_spans(filtered_data, max_items=DEFAULT_MAX_EVALUATION_ITEMS)
 
             if not otel_spans:
                 print("Warning: No relevant items found after filtering (no gen_ai spans or conversation logs)")
 
-            # Store filtered data for export
-            all_input_data["trace_scoped"] = otel_spans
+            # Store spans for export (use trace_scoped spans if available, otherwise keep session_scoped)
+            input_spans = otel_spans
 
             # Log what we're sending
             spans_count, logs_count, genai_spans = self._count_span_types(otel_spans)
-            print(
-                f"Sending {len(otel_spans)} items ({spans_count} spans [{genai_spans} with gen_ai attrs], {logs_count} log events) to evaluation API"
-            )
+            if trace_id:
+                print(
+                    f"Sending {len(otel_spans)} items "
+                    f"({spans_count} spans [{genai_spans} with gen_ai attrs], "
+                    f"{logs_count} log events) for context, evaluating trace {trace_id}"
+                )
+            else:
+                print(
+                    f"Sending {len(otel_spans)} items "
+                    f"({spans_count} spans [{genai_spans} with gen_ai attrs], "
+                    f"{logs_count} log events) to evaluation API"
+                )
 
             # Evaluate with trace-scoped evaluators
-            eval_results = self._execute_evaluators(trace_scoped, otel_spans, session_id)
+            eval_results = self._execute_evaluators(trace_scoped, otel_spans, session_id, evaluation_target)
             for result in eval_results:
                 results.add_result(result)
 
-        # Store input data for export
-        results.input_data = all_input_data
+        # Store input spans for export (if any evaluation was performed)
+        if input_spans:
+            results.input_data = {"spans": input_spans}
 
         return results

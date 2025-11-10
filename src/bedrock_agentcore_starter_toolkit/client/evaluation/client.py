@@ -92,21 +92,22 @@ class Evaluation:
         session_id: Optional[str] = None,
         evaluators: Optional[List[str]] = None,
         trace_id: Optional[str] = None,
-        all_traces: bool = False,
     ) -> EvaluationResults:
         """Evaluate a session with one or more evaluators.
+
+        Default: Evaluates all traces (most recent 1000 spans).
+        With trace_id: Evaluates only that trace (includes spans from all previous traces for context).
 
         Args:
             session_id: Session ID to evaluate (uses default if not provided)
             evaluators: List of evaluators to use (default: ["Builtin.Helpfulness"])
-            trace_id: Optional specific trace ID to evaluate
-            all_traces: Evaluate all traces in session (default: False, evaluates latest)
+            trace_id: Optional trace ID - evaluates only this trace, with previous traces for context
 
         Returns:
             EvaluationResults with scores and explanations
 
         Example:
-            # Evaluate with default evaluator
+            # Evaluate all traces with default evaluator
             results = eval_client.evaluate("session-123")
 
             # Evaluate with multiple evaluators
@@ -115,8 +116,8 @@ class Evaluation:
                 evaluators=["Builtin.Helpfulness", "Builtin.Accuracy"]
             )
 
-            # Evaluate all traces
-            results = eval_client.evaluate("session-123", all_traces=True)
+            # Evaluate specific trace only (with previous traces for context)
+            results = eval_client.evaluate("session-123", trace_id="trace-456")
         """
         session_id = session_id or self.session_id
         if not session_id:
@@ -133,7 +134,6 @@ class Evaluation:
             agent_id=self.agent_id,
             region=self.region,
             trace_id=trace_id,
-            all_traces=all_traces,
         )
 
     def display(self, results: EvaluationResults) -> None:
@@ -188,6 +188,17 @@ class Evaluation:
                     content.append(f"  - Input: {result.token_usage.get('inputTokens', 0):,}\n", style="dim")
                     content.append(f"  - Output: {result.token_usage.get('outputTokens', 0):,}\n", style="dim")
                     content.append(f"  - Total: {result.token_usage.get('totalTokens', 0):,}\n", style="dim")
+
+                # Extract and display context IDs (from spanContext)
+                if result.context and "spanContext" in result.context:
+                    span_context = result.context["spanContext"]
+                    content.append("\nEvaluated:\n", style="bold")
+                    if "sessionId" in span_context:
+                        content.append(f"  - Session: {span_context['sessionId']}\n", style="dim")
+                    if "traceId" in span_context:
+                        content.append(f"  - Trace: {span_context['traceId']}\n", style="dim")
+                    if "spanId" in span_context:
+                        content.append(f"  - Span: {span_context['spanId']}\n", style="dim")
 
                 console.print(Panel(content, border_style="green", padding=(1, 2)))
 
