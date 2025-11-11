@@ -1,71 +1,58 @@
-from __future__ import annotations
-import tempfile
 from pathlib import Path
 
-EXCLUDED_DIRS = {
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".venv",
-    "build",
-    "dist",
+ALLOWED_DIR_PREFIXES = {
+    "src",
+    "cdk",
+    "terraform",
+    "mcp",
 }
 
-EXCLUDED_FILES = {
-    ".DS_Store",
+ALLOWED_SUFFIXES = {
+    ".py",
+    ".ts",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".md",
+    ".toml",
 }
 
-EXCLUDED_SUFFIXES = {
-    ".pyc",
-    ".pyo",
-}
 
+def _is_allowed(p: Path, root: Path) -> bool:
+    """Only accept files/dirs the project generator is responsible for."""
+    rel_parts = p.relative_to(root).parts
+    top = rel_parts[0]
 
-TEMP_DIR = Path(tempfile.gettempdir()).resolve()
+    if top not in ALLOWED_DIR_PREFIXES:
+        return False
+
+    if p.is_dir():
+        return True
+
+    return p.suffix.lower() in ALLOWED_SUFFIXES
 
 
 def snapshot_dir_tree(path: Path) -> dict:
-    """
-    Produce a deterministic, sanitized snapshot representation of the directory.
-    """
     path = path.resolve()
     snapshot = {}
 
     for p in sorted(path.rglob("*")):
-        rel = p.relative_to(path)
-
-        # Skip junk dirs/files
-        if set(rel.parts) & EXCLUDED_DIRS:
-            continue
-        if p.name in EXCLUDED_FILES or p.suffix in EXCLUDED_SUFFIXES:
+        if not _is_allowed(p, path):
             continue
 
-        key = rel.as_posix()
+        rel = p.relative_to(path).as_posix()
 
         if p.is_dir():
-            snapshot[key] = None
-        else:
-            content = p.read_text(encoding="utf-8", errors="replace")
-            snapshot[key] = _sanitize(content, project_root=path)
+            snapshot[rel] = None
+            continue
+
+        content = p.read_text(encoding="utf-8", errors="replace")
+        snapshot[rel] = _sanitize(content, project_root=path)
 
     return snapshot
 
 
 def _sanitize(text: str, project_root: Path) -> str:
-    """
-    Sanitize absolute paths for repeatable snapshots.
-    """
-    if not isinstance(text, str):
-        return text
-
-    # Replace project root path
-    text = text.replace(str(project_root), "<PROJECT_ROOT>")
-
-    # Replace OS-specific temp directories
-    text = text.replace(str(TEMP_DIR), "<TEMP_DIR>")
-
-    # Also sanitize Windows-specific temp forms like "C:\\Users\\...\\AppData\\Local\\Temp"
-    text = text.replace(str(TEMP_DIR).replace("\\", "/"), "<TEMP_DIR>")
-
-    return text
+    return (
+        text.replace(str(project_root), "<PROJECT_ROOT>")
+    )
