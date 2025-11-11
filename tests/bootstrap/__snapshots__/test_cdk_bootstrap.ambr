@@ -649,6 +649,26 @@
         ]
       }
     ''',
+    'invoke_local_server.py': '''
+      import subprocess
+      import sys
+      
+      if len(sys.argv) < 2:
+          print("usage: python invoke_local_server.py 'your prompt'")
+          sys.exit(1)
+      
+      prompt = sys.argv[1]
+      
+      subprocess.run([
+          "curl",
+          "-X", "POST",
+          "http://127.0.0.1:8000/invocations",
+          "-H", "Content-Type: application/json",
+      
+          "-d", f'{{"payload": {{"prompt": "{prompt}"}}}}'
+      
+      ])
+    ''',
     'mcp': None,
     'mcp/lambda': None,
     'mcp/lambda/handler.py': '''
@@ -712,6 +732,22 @@
               "float_array_param": event.get("float_array_param"),
               "event_args_received": event,
           }
+    ''',
+    'run_local_server.py': '''
+      import uvicorn
+      
+      """
+      Runs the entrypoint as a local uvicorn app with hot-reloading. If the app is configured to hit a remote MCP behind a gateway,
+      first deploy the application.
+      """
+      
+      if __name__ == "__main__":
+          uvicorn.run(
+              "src.main:app",
+              host="127.0.0.1",
+              port=8000,
+              reload=True,
+          )
     ''',
     'src': None,
     'src/.dockerignore': '''
@@ -1576,6 +1612,26 @@
         ]
       }
     ''',
+    'invoke_local_server.py': '''
+      import subprocess
+      import sys
+      
+      if len(sys.argv) < 2:
+          print("usage: python invoke_local_server.py 'your prompt'")
+          sys.exit(1)
+      
+      prompt = sys.argv[1]
+      
+      subprocess.run([
+          "curl",
+          "-X", "POST",
+          "http://127.0.0.1:8000/invocations",
+          "-H", "Content-Type: application/json",
+      
+          "-d", f'{{"payload": {{"prompt": "{prompt}"}}}}'
+      
+      ])
+    ''',
     'mcp': None,
     'mcp/lambda': None,
     'mcp/lambda/handler.py': '''
@@ -1639,6 +1695,22 @@
               "float_array_param": event.get("float_array_param"),
               "event_args_received": event,
           }
+    ''',
+    'run_local_server.py': '''
+      import uvicorn
+      
+      """
+      Runs the entrypoint as a local uvicorn app with hot-reloading. If the app is configured to hit a remote MCP behind a gateway,
+      first deploy the application.
+      """
+      
+      if __name__ == "__main__":
+          uvicorn.run(
+              "src.main:app",
+              host="127.0.0.1",
+              port=8000,
+              reload=True,
+          )
     ''',
     'src': None,
     'src/.dockerignore': '''
@@ -3057,6 +3129,26 @@
         ]
       }
     ''',
+    'invoke_local_server.py': '''
+      import subprocess
+      import sys
+      
+      if len(sys.argv) < 2:
+          print("usage: python invoke_local_server.py 'your prompt'")
+          sys.exit(1)
+      
+      prompt = sys.argv[1]
+      
+      subprocess.run([
+          "curl",
+          "-X", "POST",
+          "http://127.0.0.1:8000/invocations",
+          "-H", "Content-Type: application/json",
+      
+          "-d", f'{{"payload": {{"prompt": "{prompt}"}}}}'
+      
+      ])
+    ''',
     'mcp': None,
     'mcp/lambda': None,
     'mcp/lambda/handler.py': '''
@@ -3120,6 +3212,22 @@
               "float_array_param": event.get("float_array_param"),
               "event_args_received": event,
           }
+    ''',
+    'run_local_server.py': '''
+      import uvicorn
+      
+      """
+      Runs the entrypoint as a local uvicorn app with hot-reloading. If the app is configured to hit a remote MCP behind a gateway,
+      first deploy the application.
+      """
+      
+      if __name__ == "__main__":
+          uvicorn.run(
+              "src.main:app",
+              host="127.0.0.1",
+              port=8000,
+              reload=True,
+          )
     ''',
     'src': None,
     'src/.dockerignore': '''
