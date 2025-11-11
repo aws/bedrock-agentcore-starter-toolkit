@@ -22,6 +22,9 @@ def invoke(payload):
     with mcp_client:
         # Create an Agent with MCP tools
         tools = mcp_client.list_tools_sync()
+
+        # The default model provider is Amazon Bedrock and the default model is Claude 4 Sonnet inference model
+        # from the region of your credentials. https://strandsagents.com/latest/documentation/docs/
         agent = Agent(tools=tools + [add_numbers])
 
         # Process the user prompt

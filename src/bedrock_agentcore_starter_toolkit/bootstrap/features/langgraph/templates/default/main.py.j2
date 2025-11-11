@@ -5,6 +5,8 @@ from langchain.tools import tool
 from bedrock_agentcore import BedrockAgentCoreApp
 from mcp_client.client import get_streamable_http_mcp_client
 
+# Uses global inference profile for Claude Sonnet 4.5
+# https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
 MODEL_ID="global.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # Initialize the model client

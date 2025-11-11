@@ -28,6 +28,8 @@ mcp_server = get_streamable_http_mcp_client()
 async def main(query):
     try:
         async with mcp_server as server:
+            # Currently defaults to GPT-4.1
+            # https://openai.github.io/openai-agents-python/models/
             agent = Agent(
                 name="{{ agent_name }}",
                 mcp_servers=[server],
