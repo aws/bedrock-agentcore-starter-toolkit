@@ -149,7 +149,7 @@ pre-commit run --all-files
 pre-commit run --hook-stage pre-commit --all-files
 
 # Run only pre-push stage (includes tests)
-pre-commit run --hook-stage pre-push --all-files
+pre-commit run --hook-stage pre-push --all-filesf
 
 # Run tests manually
 uv run pytest tests/ --cov=src
