@@ -6,12 +6,12 @@
     'mcp/lambda/handler.py': '''
       import json
       from typing import Any, Dict
-      
-      
+
+
       def lambda_handler(event, context):
           """
           Generic Lambda handler for Bedrock AgentCore Gateway placeholder tool.
-      
+
           Expected input:
               event: {
                   # optional tool arguments
@@ -19,7 +19,7 @@
                   "param_1": val1,
                   ...
               }
-      
+
           Context should contain:
               context.client_context.custom["bedrockAgentCoreToolName"]
               → e.g. "LambdaTarget___placeholder_tool"
@@ -27,34 +27,34 @@
           try:
               extended_name = context.client_context.custom.get("bedrockAgentCoreToolName")
               tool_name = None
-      
+
               # handle agentcore gateway tool naming convention
               # https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
               if extended_name and "___" in extended_name:
                   tool_name = extended_name.split("___", 1)[1]
-      
+
               if not tool_name:
                   return _response(400, {"error": "Missing tool name"})
-      
+
               if tool_name != "placeholder_tool":
                   return _response(400, {"error": f"Unknown tool '{tool_name}'"})
-      
+
               result = placeholder_tool(event)
               return _response(200, {"result": result})
-      
+
           except Exception as e:
               return _response(500, {"system_error": str(e)})
-      
-      
+
+
       def _response(status_code: int, body: Dict[str, Any]):
           """Consistent JSON response wrapper."""
           return {"statusCode": status_code, "body": json.dumps(body)}
-      
-      
+
+
       def placeholder_tool(event: Dict[str, Any]):
           """
           no-op placeholder tool.
-      
+
           Demonstrates argument passing from AgentCore Gateway.
           """
           return {
@@ -70,40 +70,40 @@
       from strands import Agent, tool
       from bedrock_agentcore import BedrockAgentCoreApp
       from mcp_client.client import get_streamable_http_mcp_client
-      
+
       # Import AgentCore Gateway as Streamable HTTP MCP Client
       mcp_client = get_streamable_http_mcp_client()
-      
+
       # Define a simple function tool
       @tool
       def add_numbers(a: int, b: int) -> int:
           """Return the sum of two numbers"""
           return a+b
-      
+
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
-      
+
       @app.entrypoint
       def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
-      
+
           # Create an Agent with MCP tools
           with mcp_client:
               # Create an Agent with MCP tools
               tools = mcp_client.list_tools_sync()
               agent = Agent(tools=tools + [add_numbers])
-      
+
               # Process the user prompt
               prompt = payload.get("prompt", "What is Agentic AI?")
-      
+
               # Run the agent
               response = agent(prompt)
-      
+
               # Return result
               return {
                   "response": response
               }
-      
+
       if __name__ == "__main__":
           app.run()
     ''',
@@ -112,14 +112,14 @@
       import os
       from mcp.client.streamable_http import streamablehttp_client
       from strands.tools.mcp.mcp_client import MCPClient
-      
+
       def _get_access_token():
           """
           Stub implementation if using a custom authorizer.
           """
           raise NotImplementedError("Custom authorizer flow is not implemented.")
-      
-      
+
+
       def get_streamable_http_mcp_client() -> MCPClient:
           """
           Returns an MCP Client for AgentCore Gateway compatible with Strands
@@ -134,12 +134,12 @@
       [build-system]
       requires = ["setuptools>=68", "wheel"]
       build-backend = "setuptools.build_meta"
-      
+
       [project]
       name = "testProj"
       version = "0.1.0"
       requires-python = ">=3.10"
-      
+
       dependencies = [
           "bedrock-agentcore >= 1.0.3",
           "mcp >= 1.19.0",
@@ -157,12 +157,12 @@
     'mcp/lambda/handler.py': '''
       import json
       from typing import Any, Dict
-      
-      
+
+
       def lambda_handler(event, context):
           """
           Generic Lambda handler for Bedrock AgentCore Gateway placeholder tool.
-      
+
           Expected input:
               event: {
                   # optional tool arguments
@@ -170,7 +170,7 @@
                   "param_1": val1,
                   ...
               }
-      
+
           Context should contain:
               context.client_context.custom["bedrockAgentCoreToolName"]
               → e.g. "LambdaTarget___placeholder_tool"
@@ -178,34 +178,34 @@
           try:
               extended_name = context.client_context.custom.get("bedrockAgentCoreToolName")
               tool_name = None
-      
+
               # handle agentcore gateway tool naming convention
               # https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
               if extended_name and "___" in extended_name:
                   tool_name = extended_name.split("___", 1)[1]
-      
+
               if not tool_name:
                   return _response(400, {"error": "Missing tool name"})
-      
+
               if tool_name != "placeholder_tool":
                   return _response(400, {"error": f"Unknown tool '{tool_name}'"})
-      
+
               result = placeholder_tool(event)
               return _response(200, {"result": result})
-      
+
           except Exception as e:
               return _response(500, {"system_error": str(e)})
-      
-      
+
+
       def _response(status_code: int, body: Dict[str, Any]):
           """Consistent JSON response wrapper."""
           return {"statusCode": status_code, "body": json.dumps(body)}
-      
-      
+
+
       def placeholder_tool(event: Dict[str, Any]):
           """
           no-op placeholder tool.
-      
+
           Demonstrates argument passing from AgentCore Gateway.
           """
           return {
@@ -223,7 +223,7 @@
       from mcp_client.client import get_streamable_http_mcp_client
       import logging
       import sys
-      
+
       # Set up logging
       logging.basicConfig(
           level=logging.DEBUG,
@@ -232,18 +232,18 @@
               logging.StreamHandler(sys.stdout)
           ]
       )
-      
+
       logger = logging.getLogger(__name__)
-      
+
       # Define a simple function tool
       @function_tool
       def add_numbers(a: int, b: int) -> int:
           """Return the sum of two numbers"""
           return a+b
-      
+
       # Import AgentCore Gateway as Streamable HTTP MCP Server
       mcp_server = get_streamable_http_mcp_client()
-      
+
       # Define an Agent with tools
       async def main(query):
           try:
@@ -258,24 +258,24 @@
           except Exception as e:
               logger.error(f"Error during agent execution: {e}", exc_info=True)
               raise e
-      
+
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
-      
+
       @app.entrypoint
       async def agent_invocation(payload, context):
           # assume payload input is structured as { "prompt": "<user input>" }
-      
+
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
-      
+
           # Run the agent
           result = await main(prompt)
-      
+
           # Return result
           return {"result": result.final_output}
-      
-      
+
+
       if __name__== "__main__":
           app.run()
     ''',
@@ -284,12 +284,12 @@
       import os
       from agents.mcp import MCPServerStreamableHttp
       import requests
-      
+
       COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
       COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
       COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
       COGNITO_SCOPE = os.getenv("COGNITO_SCOPE")
-      
+
       def _get_access_token():
           """
           Make a POST request to the Cognito OAuth token URL using client credentials.
@@ -304,8 +304,8 @@
               headers={"Content-Type": "application/x-www-form-urlencoded"},
           )
           return response.json()["access_token"]
-      
-      
+
+
       def get_streamable_http_mcp_client() -> MCPServerStreamableHttp:
           """
           Returns an MCP Client for AgentCore Gateway compatible with OpenAI Agents SDK
@@ -328,12 +328,12 @@
       [build-system]
       requires = ["setuptools>=68", "wheel"]
       build-backend = "setuptools.build_meta"
-      
+
       [project]
       name = "testProj"
       version = "0.1.0"
       requires-python = ">=3.10"
-      
+
       dependencies = [
           "bedrock-agentcore >= 1.0.3",
           "openai-agents>=0.4.2",
@@ -350,7 +350,7 @@
     'src/src/agent': None,
     'src/src/agent/main.py': '''
       from strands import Agent
-      
+
       Agent("run!")
     ''',
     'terraform': None,
@@ -363,12 +363,12 @@
     'mcp/lambda/handler.py': '''
       import json
       from typing import Any, Dict
-      
-      
+
+
       def lambda_handler(event, context):
           """
           Generic Lambda handler for Bedrock AgentCore Gateway placeholder tool.
-      
+
           Expected input:
               event: {
                   # optional tool arguments
@@ -376,7 +376,7 @@
                   "param_1": val1,
                   ...
               }
-      
+
           Context should contain:
               context.client_context.custom["bedrockAgentCoreToolName"]
               → e.g. "LambdaTarget___placeholder_tool"
@@ -384,34 +384,34 @@
           try:
               extended_name = context.client_context.custom.get("bedrockAgentCoreToolName")
               tool_name = None
-      
+
               # handle agentcore gateway tool naming convention
               # https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-tool-naming.html
               if extended_name and "___" in extended_name:
                   tool_name = extended_name.split("___", 1)[1]
-      
+
               if not tool_name:
                   return _response(400, {"error": "Missing tool name"})
-      
+
               if tool_name != "placeholder_tool":
                   return _response(400, {"error": f"Unknown tool '{tool_name}'"})
-      
+
               result = placeholder_tool(event)
               return _response(200, {"result": result})
-      
+
           except Exception as e:
               return _response(500, {"system_error": str(e)})
-      
-      
+
+
       def _response(status_code: int, body: Dict[str, Any]):
           """Consistent JSON response wrapper."""
           return {"statusCode": status_code, "body": json.dumps(body)}
-      
-      
+
+
       def placeholder_tool(event: Dict[str, Any]):
           """
           no-op placeholder tool.
-      
+
           Demonstrates argument passing from AgentCore Gateway.
           """
           return {
@@ -430,59 +430,102 @@
       from langchain.tools import tool
       from bedrock_agentcore import BedrockAgentCoreApp
       from mcp_client.client import get_streamable_http_mcp_client
-      
+
       MODEL_ID="anthropic.claude-3-5-sonnet-20240620-v1:0"
-      
+
       # Initialize the model client
       llm = ChatBedrock(model_id=MODEL_ID)
-      
+
       # Define a simple function tool
       @tool
       def add_numbers(a: int, b: int) -> int:
           """Return the sum of two numbers"""
           return a+b
-      
+
       # Import AgentCore Gateway as Streamable HTTP MCP Client
       mcp_client = get_streamable_http_mcp_client()
-      
+
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
-      
+
       @app.entrypoint
       async def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
-      
+
           # Load MCP Tools
           tools = await mcp_client.get_tools()
-      
+
           # Define the agent
           graph = create_agent(llm, tools=[add_numbers] + tools)
-      
+
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
-      
+
           # Run the agent
           result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
-      
+
           # Return result
           return {
               "result": result["messages"][-1].content
           }
-      
+
       if __name__ == "__main__":
           app.run()
+    ''',
+    'src/mcp': None,
+    'src/mcp/client.py': '''
+      import os
+      from langchain_mcp_adapters.client import MultiServerMCPClient
+      import requests
+
+      COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
+      COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
+      COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
+
+      def _get_access_token():
+          """
+          Make a POST request to the Cognito OAuth token URL using client credentials.
+          """
+          response = requests.post(
+              COGNITO_TOKEN_URL,
+              data={
+                  "grant_type": "client_credentials",
+                  "client_id": COGNITO_CLIENT_ID,
+                  "client_secret": COGNITO_CLIENT_SECRET,
+              },
+              headers={"Content-Type": "application/x-www-form-urlencoded"},
+          )
+          return response.json()["access_token"]
+
+
+      def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+          gateway_url = os.getenv("GATEWAY_URL")
+          if not gateway_url:
+              raise RuntimeError("Missing required environment variable: GATEWAY_URL")
+          access_token = _get_access_token()
+          return MultiServerMCPClient(
+              {
+                  "agentcore_gateway": {
+                      "transport": "streamable_http",
+                      "url": f"{gateway_url}/mcp",
+                      "headers": {
+                          "Authorization": f"Bearer {access_token}"
+                      }
+                  }
+              }
+          )
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
       import os
       from langchain_mcp_adapters.client import MultiServerMCPClient
       import requests
-      
+
       COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
       COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
       COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
       COGNITO_SCOPE = os.getenv("COGNITO_SCOPE")
-      
+
       def _get_access_token():
           """
           Make a POST request to the Cognito OAuth token URL using client credentials.
@@ -497,8 +540,8 @@
               headers={"Content-Type": "application/x-www-form-urlencoded"},
           )
           return response.json()["access_token"]
-      
-      
+
+
       def get_streamable_http_mcp_client() -> MultiServerMCPClient:
           """
           Returns an MCP Client for AgentCore Gateway compatible with LangGraph
@@ -523,12 +566,12 @@
       [build-system]
       requires = ["setuptools>=68", "wheel"]
       build-backend = "setuptools.build_meta"
-      
+
       [project]
       name = "testProj"
       version = "0.1.0"
       requires-python = ">=3.10"
-      
+
       dependencies = [
           "bedrock-agentcore >= 1.0.3",
           "langchain >= 1.0.3",
