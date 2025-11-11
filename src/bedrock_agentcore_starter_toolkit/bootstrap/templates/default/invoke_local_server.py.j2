@@ -1,0 +1,16 @@
+import subprocess
+import sys
+
+if len(sys.argv) < 2:
+    print("usage: python invoke_local_server.py 'your prompt'")
+    sys.exit(1)
+
+prompt = sys.argv[1]
+
+subprocess.run([
+    "curl",
+    "-X", "POST",
+    "http://127.0.0.1:8000/invocations",
+    "-H", "Content-Type: application/json",
+    "-d", f'{{"payload": {{"prompt": "{prompt}"}}}}'
+])
