@@ -23,7 +23,7 @@ mcp_toolset = get_streamable_http_mcp_client()
 # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
 agent = Agent(
     model=MODEL_ID,
-    name="openai_agent",
+    name="{{ agent_name }}",
     description="Agent to answer questions",
     instruction="I can answer your questions using the knowledge I have!",
     tools=[mcp_toolset, add_numbers]
