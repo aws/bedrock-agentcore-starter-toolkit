@@ -1,8 +1,18 @@
 from agents import Agent, Runner, function_tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from mcp_client.client import get_streamable_http_mcp_client
 import logging
 import sys
+import os
+
+if os.getenv("LOCAL_DEV") == "1":
+    @asynccontextmanager
+    async def async_nullcontext(result):
+        yield result
+    mcp_server = async_nullcontext([])
+else:
+    from mcp_client.client import get_streamable_http_mcp_client
+    # Import AgentCore Gateway as Streamable HTTP MCP Server
+    mcp_server = get_streamable_http_mcp_client()
 
 # Set up logging
 logging.basicConfig(
@@ -21,8 +31,6 @@ def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 
-# Import AgentCore Gateway as Streamable HTTP MCP Server
-mcp_server = get_streamable_http_mcp_client()
 
 # Define an Agent with tools
 async def main(query):

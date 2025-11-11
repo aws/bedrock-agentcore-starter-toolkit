@@ -3,7 +3,15 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from google.genai import types
-from mcp_client.client import get_streamable_http_mcp_client
+import os
+
+if os.getenv("LOCAL_DEV") == "1":
+    # In local dev, instantiate dummy MCP client so the code runs without deploying
+    mcp_toolset = []
+else:
+    # Import AgentCore Gateway as Streamable HTTP MCP Client
+    from mcp_client.client import get_streamable_http_mcp_client
+    mcp_toolset = get_streamable_http_mcp_client()
 
 # https://google.github.io/adk-docs/agents/models/
 MODEL_ID = "gemini-2.0-flash"
@@ -15,9 +23,6 @@ USER_ID="user1234"
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
-
-# Import AgentCore Gateway as Streamable HTTP MCP Adapter
-mcp_toolset = get_streamable_http_mcp_client()
 
 # Agent Definition
 # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables

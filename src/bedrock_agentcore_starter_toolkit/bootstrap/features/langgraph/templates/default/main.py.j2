@@ -3,7 +3,14 @@ from langchain.agents import create_agent
 from langchain_aws import ChatBedrock
 from langchain.tools import tool
 from bedrock_agentcore import BedrockAgentCoreApp
-from mcp_client.client import get_streamable_http_mcp_client
+import os
+
+if os.getenv("LOCAL_DEV") == "1":
+    # In local dev, instantiate dummy MCP client so the code runs without deploying
+    async def get_tools():
+        return []
+else:
+    from mcp_client.client import get_streamable_http_mcp_client
 
 # Uses global inference profile for Claude Sonnet 4.5
 # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html

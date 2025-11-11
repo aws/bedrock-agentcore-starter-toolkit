@@ -138,8 +138,13 @@ resource "aws_bedrockagentcore_agent_runtime" "agentcore_runtime" {
   authorizer_configuration {
     custom_jwt_authorizer {
       discovery_url    = "{{ custom_authorizer_url }}"
-      allowed_audience = [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      {%- if custom_authorizer_allowed_clients and custom_authorizer_allowed_clients | length > 0 %}
       allowed_clients  = [{% for client in custom_authorizer_allowed_clients %}"{{ client }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      {%- endif %}
+      {%- if custom_authorizer_allowed_audience and custom_authorizer_allowed_audience | length > 0 %}
+      allowed_audience = [{% for audience in custom_authorizer_allowed_audience %}"{{ audience }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+      {%- endif %}
+    }
     }
   }{% endif %}{% if request_header_allowlist %}
   request_header_configuration {

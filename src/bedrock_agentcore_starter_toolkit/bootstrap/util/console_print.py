@@ -23,9 +23,9 @@ def emit_bootstrap_completed_message(ctx: ProjectContext):
     )
 
     next_steps_cmd = (
-        "`cd cdk && npm install && npm run cdk synth && npm run cdk:deploy`"
+        f"`cd {ctx.name}/cdk && npm install && npm run cdk synth && npm run cdk:deploy`"
         if ctx.iac_provider == IACProvider.CDK
-        else "`cd terraform && terraform init && terraform apply`"
+        else f"`cd {ctx.name}/terraform && terraform init && terraform apply`"
     )
 
     console.print(
@@ -48,7 +48,7 @@ def emit_bootstrap_completed_message(ctx: ProjectContext):
 
             f"📄 Config saved to: [dim]{str(ctx.output_dir) + '/.bedrock_agentcore.yaml'}[/dim]\n\n"
             f"[bold]Next Steps:[/bold]\n"
-            f"[cyan]{'`cd cdk && npm install && npm run cdk synth && npm run cdk:deploy`' if ctx.iac_provider == IACProvider.CDK else '`cd terraform && terraform init && terraform apply`'}[/cyan]\n"
+            f"[cyan]{next_steps_cmd}[/cyan]\n"
             f"[cyan](after deploying) `agentcore invoke`[/cyan]",
             title="Bootstrap Success",
             border_style="bright_blue",
