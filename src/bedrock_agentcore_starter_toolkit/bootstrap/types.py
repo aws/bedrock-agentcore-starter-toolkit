@@ -8,7 +8,7 @@ BootstrapSDKProvider = Literal["Strands", "LangGraph", "GoogleADK", "OpenAIAgent
 
 BootstrapIACProvider = Literal["CDK", "Terraform"]
 
-BootstrapTemplateDirSelection = Literal["default", "common", "mcp_runtime"]
+BootstrapTemplateDirSelection = Literal["default", "common", "mcp_runtime", "runtime_only"]
 
 BootstrapRuntimeProtocol = Literal["HTTP", "MCP", "A2A"]
 

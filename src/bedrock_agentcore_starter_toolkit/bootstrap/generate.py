@@ -23,7 +23,7 @@ from .util.console_print import emit_bootstrap_completed_message
 def generate_project(
     name: str,
     sdk_provider: BootstrapSDKProvider,
-    iac_provider: BootstrapIACProvider,
+    iac_provider: BootstrapIACProvider | None,
     agent_config: BedrockAgentCoreAgentSchema | None,
 ):
     """Generate a new Bedrock Agent Core project with specified SDK and IaC providers."""
@@ -44,7 +44,7 @@ def generate_project(
         sdk_provider=sdk_provider,
         iac_provider=iac_provider,
         deployment_type="container",
-        template_dir_selection=TemplateDirSelection.DEFAULT,
+        template_dir_selection=TemplateDirSelection.DEFAULT if iac_provider else TemplateDirSelection.RUNTIME_ONLY,
         runtime_protocol=RuntimeProtocol.HTTP,
         python_dependencies=[],
         src_implementation_provided=False,
@@ -77,7 +77,9 @@ def generate_project(
     console.print("[cyan] Bootstrap generating with the following configuration: [/cyan]")
     console.print(Pretty(ctx))
 
-    if ctx.src_implementation_provided:
+    if not ctx.iac_dir:
+        sdk_feature_registry[sdk_provider]().apply(ctx)
+    elif ctx.src_implementation_provided:
         # copy over runtime code and just apply the IAC feature
         if prompt_confirm_continue(
             f"Copying source files and directories in cwd into {str(ctx.src_dir)} directory, "
@@ -111,5 +113,9 @@ def generate_project(
             enable_observability=ctx.observability_enabled,
         )
     # write a minimal bootstrap YAML so commands like agentocore invoke can work later
-    write_minimal_bootstrap_project_yaml(ctx)
-    emit_bootstrap_completed_message(ctx)
+    if ctx.iac_provider:
+        write_minimal_bootstrap_project_yaml(ctx)
+        emit_bootstrap_completed_message(ctx)
+    else:
+        # write nearly empty configure YAML
+        pass

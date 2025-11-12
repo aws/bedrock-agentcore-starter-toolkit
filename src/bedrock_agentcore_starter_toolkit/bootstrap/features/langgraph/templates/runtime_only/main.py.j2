@@ -1,0 +1,45 @@
+from langchain_core.messages import HumanMessage
+from langchain.agents import create_agent
+from langchain_aws import ChatBedrock
+from langchain.tools import tool
+from bedrock_agentcore import BedrockAgentCoreApp
+
+# Uses global inference profile for Claude Sonnet 4.5
+# https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+MODEL_ID="global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+# Initialize the model client
+llm = ChatBedrock(model_id=MODEL_ID)
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Import AgentCore Gateway as Streamable HTTP MCP Client
+mcp_client = get_streamable_http_mcp_client()
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+async def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    # Define the agent
+    graph = create_agent(llm, tools=[add_numbers])
+
+    # Process the user prompt
+    prompt = payload.get("prompt", "What is Agentic AI?")
+
+    # Run the agent
+    result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+
+    # Return result
+    return {
+        "result": result["messages"][-1].content
+    }
+
+if __name__ == "__main__":
+    app.run()

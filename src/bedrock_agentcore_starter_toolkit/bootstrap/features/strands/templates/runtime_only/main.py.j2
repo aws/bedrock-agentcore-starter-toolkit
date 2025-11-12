@@ -1,0 +1,36 @@
+from strands import Agent, tool
+from bedrock_agentcore import BedrockAgentCoreApp
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    # Create an Agent with MCP tools
+    with strands_mcp_client as mcp_client:
+  
+        # The default model provider is Amazon Bedrock and the default model is Claude 4 Sonnet inference model
+        # from the region of your credentials. https://strandsagents.com/latest/documentation/docs/
+        agent = Agent([add_numbers])
+
+        # Process the user prompt
+        prompt = payload.get("prompt", "What is Agentic AI?")
+
+        # Run the agent
+        response = agent(prompt)
+
+        # Return result
+        return {
+            "response": response
+        }
+
+if __name__ == "__main__":
+    app.run()

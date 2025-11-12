@@ -11,6 +11,7 @@ class TemplateDirSelection:
     DEFAULT = "default"
     COMMON = "common"
     MCP_RUNTIME = "mcp_runtime"
+    RUNTIME_ONLY = "runtime_only"
 
 
 class RuntimeProtocol:
