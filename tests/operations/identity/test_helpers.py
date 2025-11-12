@@ -691,6 +691,128 @@ class TestIdentityCognitoManager:
             # Pool deletion was still attempted
             mock_cognito.delete_user_pool.assert_called_once()
 
+    # Add these test methods to the TestIdentityCognitoManager class
+
+    def test_create_identity_pool_m2m(self):
+        """Test M2M identity pool creation."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.create_user_pool.return_value = {"UserPool": {"Id": "us-west-2_m2m_identity"}}
+            mock_cognito.create_resource_server.return_value = {}
+            mock_cognito.create_user_pool_client.return_value = {
+                "UserPoolClient": {"ClientId": "m2m_client", "ClientSecret": "m2m_secret"}
+            }
+
+            manager = IdentityCognitoManager("us-west-2")
+            result = manager._create_identity_pool_m2m()
+
+            # Verify M2M-specific configuration
+            assert result["client_secret"] == "m2m_secret"
+            assert result["client_id"] == "m2m_client"
+            assert result["flow_type"] == "client_credentials"
+            assert "token_endpoint" in result
+            assert "resource_server_identifier" in result
+            assert result["scopes"] == ["read", "write"]
+
+            # Verify resource server was created
+            mock_cognito.create_resource_server.assert_called_once()
+            resource_call = mock_cognito.create_resource_server.call_args[1]
+            assert "Scopes" in resource_call
+            assert len(resource_call["Scopes"]) == 2
+            assert resource_call["Scopes"][0]["ScopeName"] == "read"
+            assert resource_call["Scopes"][1]["ScopeName"] == "write"
+
+            # Verify OAuth client configuration for M2M
+            client_call = mock_cognito.create_user_pool_client.call_args[1]
+            assert client_call["GenerateSecret"] is True
+            assert "client_credentials" in client_call["AllowedOAuthFlows"]
+            assert client_call["AllowedOAuthFlowsUserPoolClient"] is True
+
+    def test_create_user_federation_pools(self):
+        """Test user federation pools creation."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            # Mock responses for both pools
+            mock_cognito.create_user_pool.side_effect = [
+                {"UserPool": {"Id": "us-west-2_runtime_user"}},
+                {"UserPool": {"Id": "us-west-2_identity_user"}},
+            ]
+            mock_cognito.create_user_pool_domain.return_value = {}
+            mock_cognito.describe_user_pool_domain.return_value = {"DomainDescription": {"Status": "ACTIVE"}}
+            mock_cognito.create_user_pool_client.side_effect = [
+                {"UserPoolClient": {"ClientId": "runtime_client_user"}},
+                {"UserPoolClient": {"ClientId": "identity_client_user", "ClientSecret": "identity_secret_user"}},
+            ]
+            mock_cognito.admin_create_user.return_value = {}
+            mock_cognito.admin_set_user_password.return_value = {}
+
+            manager = IdentityCognitoManager("us-west-2")
+            result = manager.create_user_federation_pools()
+
+            # Verify both pools were created
+            assert "runtime" in result
+            assert "identity" in result
+            assert result["flow_type"] == "user"
+
+            # Verify runtime pool
+            assert result["runtime"]["pool_id"] == "us-west-2_runtime_user"
+            assert result["runtime"]["client_id"] == "runtime_client_user"
+
+            # Verify identity pool (should have user consent flow)
+            assert result["identity"]["pool_id"] == "us-west-2_identity_user"
+            assert result["identity"]["client_secret"] == "identity_secret_user"
+            assert "discovery_url" in result["identity"]
+
+    def test_create_m2m_pools_with_custom_scopes(self):
+        """Test M2M pool creation includes custom scopes."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.create_user_pool.side_effect = [
+                {"UserPool": {"Id": "us-west-2_runtime"}},
+                {"UserPool": {"Id": "us-west-2_identity"}},
+            ]
+            mock_cognito.create_user_pool_domain.return_value = {}
+            mock_cognito.describe_user_pool_domain.return_value = {"DomainDescription": {"Status": "ACTIVE"}}
+            mock_cognito.create_resource_server.return_value = {}
+            mock_cognito.create_user_pool_client.side_effect = [
+                {"UserPoolClient": {"ClientId": "runtime_client"}},
+                {"UserPoolClient": {"ClientId": "m2m_client", "ClientSecret": "m2m_secret"}},
+            ]
+            mock_cognito.admin_create_user.return_value = {}
+            mock_cognito.admin_set_user_password.return_value = {}
+
+            manager = IdentityCognitoManager("us-west-2")
+            result = manager.create_m2m_pools()
+
+            # Verify result includes scopes
+            assert result["identity"]["scopes"] == ["read", "write"]
+            assert result["identity"]["flow_type"] == "client_credentials"
+
+            # Verify resource server call includes scopes
+            resource_call = mock_cognito.create_resource_server.call_args[1]
+            scopes = resource_call["Scopes"]
+            scope_names = [s["ScopeName"] for s in scopes]
+            assert "read" in scope_names
+            assert "write" in scope_names
+
+            # Verify client is configured with scoped OAuth flows
+            client_calls = [call for call in mock_cognito.create_user_pool_client.call_args_list]
+            m2m_client_call = client_calls[1][1]  # Second call is for M2M client
+
+            # Should have client_credentials flow
+            assert "client_credentials" in m2m_client_call["AllowedOAuthFlows"]
+
+            # Should have resource server scopes
+            allowed_scopes = m2m_client_call["AllowedOAuthScopes"]
+            assert any("read" in scope for scope in allowed_scopes)
+            assert any("write" in scope for scope in allowed_scopes)
+
 
 class TestHelperUtilities:
     """Test utility functions."""
