@@ -232,23 +232,35 @@ def run_evaluation(
             raise typer.Exit(1)
 
     # Get agent_id from CLI or config
-    if not agent_id:
-        if config and config.get("agent_id"):
-            agent_id = config["agent_id"]
-        else:
-            console.print("[red]Error:[/red] No agent ID provided")
-            console.print("\nProvide agent_id via:")
-            console.print("  1. CLI argument: --agent-id <ID>")
-            console.print("  2. Configuration file: .bedrock_agentcore.yaml")
-            raise typer.Exit(1)
-
-    # Get region from config (always required from config)
-    if not config or not config.get("region"):
-        console.print("[red]Error:[/red] No region found in config")
-        console.print("\nProvide region via configuration file: .bedrock_agentcore.yaml")
+    if agent_id:
+        # Explicit --agent-id provided
+        pass
+    elif config and config.get("agent_id"):
+        agent_id = config["agent_id"]
+    elif agent:
+        # User provided --agent but no config found - clear error
+        console.print(f"[red]Error:[/red] Agent '{agent}' not found in config")
+        console.print("\nOptions:")
+        console.print("  1. Check agent name: agentcore configure list")
+        console.print("  2. Use --agent-id instead if you have the agent ID")
+        raise typer.Exit(1)
+    else:
+        console.print("[red]Error:[/red] No agent specified")
+        console.print("\nProvide agent via:")
+        console.print("  1. --agent-id AGENT_ID")
+        console.print("  2. --agent AGENT_NAME (requires config)")
         raise typer.Exit(1)
 
-    region = config["region"]
+    # Get region from config or boto3 default
+    if config and config.get("region"):
+        region = config["region"]
+    else:
+        # Use boto3's default region resolution (env vars, AWS config, etc.)
+        import boto3
+
+        session = boto3.Session()
+        region = session.region_name or "us-east-1"
+        console.print(f"[dim]Using AWS region: {region}[/dim]")
 
     # Convert evaluators to list (Typer returns list or None)
     evaluator_list = evaluators if evaluators else ["Builtin.Helpfulness"]

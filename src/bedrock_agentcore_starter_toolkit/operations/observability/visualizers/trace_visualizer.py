@@ -7,6 +7,13 @@ from rich.text import Text
 from rich.tree import Tree
 
 from ...constants import GenAIAttributes, LLMAttributes, TruncationConfig
+from ..formatters import (
+    format_duration_ms,
+    format_status_display,
+    get_duration_style,
+    get_status_icon,
+    get_status_style,
+)
 from ..models.telemetry import Span, TraceData
 
 
@@ -110,16 +117,14 @@ class TraceVisualizer:
         Returns:
             Formatted Rich Text object
         """
-        from ..models.telemetry import TraceData
-
         total_duration = TraceData.calculate_trace_duration(spans)
-        error_count = sum(1 for span in spans if span.status_code == "ERROR")
+        error_count = TraceData.count_error_spans(spans)
 
         header = Text()
         header.append("🔍 Trace: ", style="bold cyan")
         header.append(trace_id[:16] + "...", style="bright_blue")
         header.append(f" ({len(spans)} spans", style="dim")
-        header.append(f", {total_duration:.2f}ms", style="green")
+        header.append(f", {format_duration_ms(total_duration)}", style="green")
 
         if error_count > 0:
             header.append(f", {error_count} errors", style="red bold")
@@ -171,10 +176,18 @@ class TraceVisualizer:
         # Show if has LLM interaction (gen_ai attributes with prompts/completions)
         if span.attributes:
             llm_attrs = [
+                # Modern OpenTelemetry GenAI attributes (OpenAI, Anthropic, etc.)
+                GenAIAttributes.REQUEST_MODEL_INPUT,
+                GenAIAttributes.RESPONSE_MODEL_OUTPUT,
+                # Legacy attributes
                 GenAIAttributes.PROMPT,
                 GenAIAttributes.COMPLETION,
                 LLMAttributes.PROMPTS,
                 LLMAttributes.RESPONSES,
+                # Provider-specific invocation attributes
+                GenAIAttributes.INVOCATION_BEDROCK,
+                GenAIAttributes.INVOCATION_INPUT,
+                GenAIAttributes.INVOCATION_OUTPUT,
             ]
             if any(attr in span.attributes for attr in llm_attrs):
                 return True
@@ -252,10 +265,10 @@ class TraceVisualizer:
         text = Text()
 
         # Span icon based on status
-        if span.status_code == "ERROR":
-            text.append("❌ ", style="red")
-        elif span.status_code == "OK":
-            text.append("✓ ", style="green")
+        if span.status_code:
+            icon = get_status_icon(span.status_code)
+            style = get_status_style(span.status_code)
+            text.append(icon, style=style)
         else:
             text.append("◦ ", style="dim")
 
@@ -265,12 +278,12 @@ class TraceVisualizer:
 
         # Duration
         if span.duration_ms is not None:
-            duration_style = self._get_duration_style(span.duration_ms)
-            text.append(f" [{span.duration_ms:.2f}ms]", style=duration_style)
+            duration_style = get_duration_style(span.duration_ms)
+            text.append(f" [{format_duration_ms(span.duration_ms)}]", style=duration_style)
 
         # Status
         if span.status_code:
-            status_style = "red" if span.status_code == "ERROR" else "green" if span.status_code == "OK" else "dim"
+            status_style = get_status_style(span.status_code)
             text.append(f" ({span.status_code})", style=status_style)
 
         # Show details if requested
@@ -299,23 +312,37 @@ class TraceVisualizer:
                     completion_str = TruncationConfig.truncate(completion_str)
                 text.append(f"\n  └─ 🤖 Assistant: {completion_str}", style="green")
 
-            # Extract invocation payloads
-            invocation = span.attributes.get("aws.bedrock.invocation") or span.attributes.get("request.body")
+            # Extract invocation payloads (provider-agnostic)
+            # Try multiple attribute names in priority order
+            invocation = (
+                span.attributes.get(GenAIAttributes.REQUEST_MODEL_INPUT)  # Standard GenAI
+                or span.attributes.get(GenAIAttributes.INVOCATION_BEDROCK)  # AWS Bedrock
+                or span.attributes.get(GenAIAttributes.INVOCATION_REQUEST_BODY)  # Generic HTTP
+                or span.attributes.get(GenAIAttributes.INVOCATION_INPUT)  # Generic input
+            )
             if invocation:
                 invocation_str = str(invocation)
                 if not verbose:
                     invocation_str = TruncationConfig.truncate(invocation_str)
                 text.append(f"\n  └─ 📦 Payload: {invocation_str}", style="yellow")
 
-            # Show input/output if available
-            input_data = span.attributes.get("input") or span.attributes.get("gen_ai.request.model.input")
+            # Show input/output if available (provider-agnostic)
+            input_data = (
+                span.attributes.get(GenAIAttributes.REQUEST_MODEL_INPUT)
+                or span.attributes.get(GenAIAttributes.INVOCATION_INPUT)
+                or span.attributes.get("input")  # Legacy fallback
+            )
             if input_data:
                 input_str = str(input_data)
                 if not verbose:
                     input_str = TruncationConfig.truncate(input_str)
                 text.append(f"\n  └─ 📥 Input: {input_str}", style="bright_blue")
 
-            output_data = span.attributes.get("output") or span.attributes.get("gen_ai.response.model.output")
+            output_data = (
+                span.attributes.get(GenAIAttributes.RESPONSE_MODEL_OUTPUT)
+                or span.attributes.get(GenAIAttributes.INVOCATION_OUTPUT)
+                or span.attributes.get("output")  # Legacy fallback
+            )
             if output_data:
                 output_str = str(output_data)
                 if not verbose:
@@ -508,24 +535,6 @@ class TraceVisualizer:
                     value_str = TruncationConfig.truncate(value_str)
                 text.append(f"\n      {key}: {value_str}", style="dim yellow")
 
-    def _get_duration_style(self, duration_ms: float) -> str:
-        """Get the style for duration based on its value.
-
-        Args:
-            duration_ms: Duration in milliseconds
-
-        Returns:
-            Rich style string
-        """
-        if duration_ms < 100:
-            return "green"
-        elif duration_ms < 1000:
-            return "yellow"
-        elif duration_ms < 5000:
-            return "orange1"
-        else:
-            return "red"
-
     def print_trace_summary(self, trace_data: TraceData) -> None:
         """Print a summary of all traces.
 
@@ -549,16 +558,15 @@ class TraceVisualizer:
 
         for trace_id, spans in trace_data.traces.items():
             total_duration = sum(span.duration_ms or 0 for span in spans)
-            error_count = sum(1 for span in spans if span.status_code == "ERROR")
-            status = "❌ ERROR" if error_count > 0 else "✓ OK"
-            status_style = "red" if error_count > 0 else "green"
+            error_count = TraceData.count_error_spans(spans)
+            status_text, status_style = format_status_display(error_count > 0)
 
             table.add_row(
                 trace_id,  # Show full trace ID for easy copy-paste
                 str(len(spans)),
-                f"{total_duration:.2f}",
+                format_duration_ms(total_duration, include_unit=False),
                 str(error_count) if error_count > 0 else "-",
-                Text(status, style=status_style),
+                Text(status_text, style=status_style),
             )
 
         self.console.print(table)

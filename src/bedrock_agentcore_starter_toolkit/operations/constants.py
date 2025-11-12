@@ -44,6 +44,16 @@ class GenAIAttributes:
     TOOL_MESSAGE = f"{AttributePrefixes.GEN_AI}.tool.message"
     CHOICE = f"{AttributePrefixes.GEN_AI}.choice"
 
+    # Request/Response attributes (provider-agnostic)
+    REQUEST_MODEL_INPUT = f"{AttributePrefixes.GEN_AI}.request.model.input"
+    RESPONSE_MODEL_OUTPUT = f"{AttributePrefixes.GEN_AI}.response.model.output"
+
+    # Provider-specific invocation attributes (priority order)
+    INVOCATION_BEDROCK = "aws.bedrock.invocation"  # AWS Bedrock
+    INVOCATION_REQUEST_BODY = "request.body"  # Generic HTTP
+    INVOCATION_INPUT = "input"  # Generic input
+    INVOCATION_OUTPUT = "output"  # Generic output
+
 
 # LLM Specific Attributes
 class LLMAttributes:

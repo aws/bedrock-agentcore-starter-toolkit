@@ -972,6 +972,23 @@ class TraceData:
         root_spans = [s for s in spans if not s.parent_span_id]
         return sum(s.duration_ms or 0 for s in root_spans)
 
+    @staticmethod
+    def count_error_spans(spans: List[Span]) -> int:
+        """Count number of spans with ERROR status.
+
+        Args:
+            spans: List of spans to check
+
+        Returns:
+            Number of spans with status_code == "ERROR"
+
+        Examples:
+            >>> spans = [Span(..., status_code="OK"), Span(..., status_code="ERROR")]
+            >>> TraceData.count_error_spans(spans)
+            1
+        """
+        return sum(1 for span in spans if span.status_code == "ERROR")
+
     def get_messages_by_span(self) -> Dict[str, List[Dict[str, Any]]]:
         """Extract chat messages, exceptions, and event payloads from runtime logs grouped by span ID.
 
@@ -1032,6 +1049,67 @@ class TraceData:
             span.children = children_map.get(span.span_id, [])
 
         return root_spans
+
+    def filter_error_traces(self) -> Dict[str, List[Span]]:
+        """Filter traces to only those containing errors.
+
+        Returns:
+            Dictionary mapping trace_id to list of spans for traces with errors
+        """
+        return {
+            trace_id: spans_list
+            for trace_id, spans_list in self.traces.items()
+            if any(span.status_code == "ERROR" for span in spans_list)
+        }
+
+    def get_trace_messages(self, trace_id: str) -> tuple[str, str]:
+        """Extract input and output messages for a trace.
+
+        Finds the last user message (input) and last assistant message (output)
+        from runtime logs associated with this trace.
+
+        Args:
+            trace_id: The trace ID to extract messages for
+
+        Returns:
+            Tuple of (input_text, output_text). Empty strings if not found.
+        """
+        from ...constants import TruncationConfig
+
+        input_text = ""
+        output_text = ""
+
+        # Get runtime logs for this trace
+        trace_logs = [log for log in self.runtime_logs if log.trace_id == trace_id]
+
+        if not trace_logs:
+            return input_text, output_text
+
+        # Extract and sort messages by timestamp
+        messages = []
+        for log in trace_logs:
+            try:
+                msg = log.get_gen_ai_message()
+                if msg:
+                    messages.append(msg)
+            except Exception:
+                continue
+
+        messages.sort(key=lambda m: m.get("timestamp", ""))
+
+        # Find last user message (trace input)
+        user_messages = [m for m in messages if m.get("role") == "user"]
+        if user_messages:
+            content = user_messages[-1].get("content", "")
+            input_text = TruncationConfig.truncate(content, length=TruncationConfig.LIST_PREVIEW_LENGTH)
+
+        # Find last assistant message (trace output)
+        assistant_messages = [m for m in messages if m.get("role") == "assistant"]
+        if assistant_messages:
+            content = assistant_messages[-1].get("content", "")
+            output_text = TruncationConfig.truncate(content, length=TruncationConfig.LIST_PREVIEW_LENGTH)
+
+        return input_text, output_text
 
     def to_dict(self) -> Dict[str, Any]:
         """Export complete trace data to dictionary for JSON serialization.

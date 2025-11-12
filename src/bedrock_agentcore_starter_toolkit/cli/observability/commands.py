@@ -9,9 +9,15 @@ from typing import Optional
 import typer
 from rich.text import Text
 
-from ...operations.constants import DEFAULT_RUNTIME_SUFFIX, TruncationConfig
-from ...operations.observability import ObservabilityClient, TraceVisualizer
+from ...operations.constants import DEFAULT_RUNTIME_SUFFIX
+from ...operations.observability import (
+    ObservabilityClient,
+    TraceVisualizer,
+    format_age,
+    format_duration_seconds,
+)
 from ...operations.observability.constants import DEFAULT_LOOKBACK_DAYS
+from ...operations.observability.formatters import calculate_age_seconds
 from ...operations.observability.models import TraceData
 from ...utils.runtime.config import load_config_if_exists
 from ..common import console
@@ -64,23 +70,45 @@ def _create_observability_client(
     agent_id: Optional[str],
     agent: Optional[str] = None,
 ) -> ObservabilityClient:
-    """Create ObservabilityClient from CLI args or config file."""
-    # Get config
+    """Create ObservabilityClient from CLI args or config file.
+
+    Falls back to AWS default region if not in config.
+    """
+    import boto3
+
+    # Get config (optional if agent_id provided directly)
     config = _get_agent_config_from_file(agent)
 
-    if not config:
-        console.print("[red]Error:[/red] No agent configuration found")
-        console.print("\nProvide agent configuration via:")
-        console.print("  1. Configuration file: .bedrock_agentcore.yaml")
-        console.print("  2. Run: agentcore configure list")
+    # Determine agent_id: explicit --agent-id > config lookup
+    if agent_id:
+        final_agent_id = agent_id
+    elif config and config.get("agent_id"):
+        final_agent_id = config["agent_id"]
+    elif agent:
+        # User provided --agent but no config found - clear error
+        console.print(f"[red]Error:[/red] Agent '{agent}' not found in config")
+        console.print("\nOptions:")
+        console.print("  1. Check agent name: agentcore configure list")
+        console.print("  2. Use --agent-id instead if you have the agent ID")
+        raise typer.Exit(1)
+    else:
+        console.print("[red]Error:[/red] No agent specified")
+        console.print("\nProvide agent via:")
+        console.print("  1. --agent-id AGENT_ID")
+        console.print("  2. --agent AGENT_NAME (requires config)")
         raise typer.Exit(1)
 
-    # Use agent_id override if provided, otherwise use from config
-    final_agent_id = agent_id if agent_id else config["agent_id"]
+    # Determine region: config > boto3 session default
+    final_region = config.get("region") if config else None
+    if not final_region:
+        # Use boto3's default region resolution (env vars, AWS config, etc.)
+        session = boto3.Session()
+        final_region = session.region_name or "us-east-1"
+        console.print(f"[dim]Using AWS region: {final_region}[/dim]")
 
-    return ObservabilityClient(
-        region_name=config["region"], agent_id=final_agent_id, runtime_suffix=config["runtime_suffix"]
-    )
+    final_runtime_suffix = config.get("runtime_suffix") if config else DEFAULT_RUNTIME_SUFFIX
+
+    return ObservabilityClient(region_name=final_region, agent_id=final_agent_id, runtime_suffix=final_runtime_suffix)
 
 
 def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_type: str = "trace") -> None:
@@ -307,11 +335,7 @@ def _show_session_view(
 
     # Filter to errors if requested
     if errors_only:
-        error_traces = {
-            tid: spans_list
-            for tid, spans_list in trace_data.traces.items()
-            if any(s.status_code == "ERROR" for s in spans_list)
-        }
+        error_traces = trace_data.filter_error_traces()
         if not error_traces:
             console.print("[yellow]No failed traces found in session[/yellow]")
             return
@@ -369,11 +393,7 @@ def _show_last_trace_from_session(
 
     # Filter to errors if requested
     if errors_only:
-        error_traces = {
-            tid: spans_list
-            for tid, spans_list in trace_data.traces.items()
-            if any(s.status_code == "ERROR" for s in spans_list)
-        }
+        error_traces = trace_data.filter_error_traces()
         if not error_traces:
             console.print("[yellow]No failed traces found in session[/yellow]")
             return
@@ -488,11 +508,7 @@ def list_traces(
 
         # Filter to errors if requested
         if errors_only:
-            error_traces = {
-                tid: spans_list
-                for tid, spans_list in trace_data.traces.items()
-                if any(s.status_code == "ERROR" for s in spans_list)
-            }
+            error_traces = trace_data.filter_error_traces()
             if not error_traces:
                 console.print("[yellow]No failed traces found in session[/yellow]")
                 return
@@ -520,12 +536,11 @@ def list_traces(
 
         from rich.table import Table
 
-        table = Table(title=f"Traces in Session {session_id[:16]}...")
+        table = Table(title=f"Traces in Session {session_id}")
         table.add_column("#", style="cyan", justify="right", width=3)
-        table.add_column("Trace ID", style="bright_blue", no_wrap=True)  # Full trace ID, no width limit
-        table.add_column("Spans", justify="right", style="dim", width=6)
+        table.add_column("Trace ID", style="bright_blue", no_wrap=True, width=36)  # Full UUID width
         table.add_column("Duration", justify="right", style="green", width=10)
-        table.add_column("Status", justify="center", width=10)
+        table.add_column("Status", justify="center", width=12)
         table.add_column("Input", style="cyan", width=30, no_wrap=False)
         table.add_column("Output", style="green", width=30, no_wrap=False)
         table.add_column("Age", style="dim", width=8)
@@ -542,68 +557,36 @@ def list_traces(
             else:
                 duration_ms = sum(s.duration_ms or 0 for s in spans_list)
 
-            # Status
+            # Status - show span count and errors
             error_count = sum(1 for s in spans_list if s.status_code == "ERROR")
+            total_spans = len(spans_list)
+
             if error_count > 0:
-                status = Text(f"❌ {error_count} err", style="red")
+                status = Text(f"{total_spans} spans\n", style="dim")
+                status.append(f"❌ {error_count} err", style="red")
             else:
-                status = Text("✓ OK", style="green")
+                status = Text(f"{total_spans} spans\n", style="dim")
+                status.append("✓ OK", style="green")
 
-            # Age
+            # Format age using utility
             latest_time = max(end_times) if end_times else 0
-            age_seconds = (now - latest_time) / 1_000_000_000
-            if age_seconds < 60:
-                age = f"{int(age_seconds)}s ago"
-            elif age_seconds < 3600:
-                age = f"{int(age_seconds / 60)}m ago"
-            elif age_seconds < 86400:
-                age = f"{int(age_seconds / 3600)}h ago"
+            age_seconds = calculate_age_seconds(latest_time, now)
+            age = format_age(age_seconds)
+
+            # Mark first trace as latest in Trace ID
+            if idx == 1:
+                trace_id_display = Text(trace_id)
+                trace_id_display.append("\n(latest)", style="dim")
             else:
-                age = f"{int(age_seconds / 86400)}d ago"
+                trace_id_display = trace_id
 
-            # Mark latest
-            marker = " ← Latest" if idx == 1 else ""
-
-            # Extract input/output from runtime logs
-            input_text = ""
-            output_text = ""
-
-            # Get messages for this trace
-            trace_logs = [log for log in trace_data.runtime_logs if log.trace_id == trace_id]
-
-            if trace_logs:
-                # Get all messages and sort by timestamp
-                messages = []
-                for log in trace_logs:
-                    try:
-                        msg = log.get_gen_ai_message()
-                        if msg:
-                            messages.append(msg)
-                    except Exception as e:
-                        logger.debug("Failed to extract message from log: %s", e)
-                        continue
-
-                # Sort by timestamp to get chronological order
-                messages.sort(key=lambda m: m.get("timestamp", ""))
-
-                # Find LAST user message chronologically (trace-level input)
-                # This is the actual input that triggered this specific trace, not conversation history
-                user_messages = [m for m in messages if m.get("role") == "user"]
-                if user_messages:
-                    content = user_messages[-1].get("content", "")
-                    input_text = TruncationConfig.truncate(content, length=TruncationConfig.LIST_PREVIEW_LENGTH)
-
-                # Find last assistant message chronologically (trace output)
-                assistant_messages = [m for m in messages if m.get("role") == "assistant"]
-                if assistant_messages:
-                    content = assistant_messages[-1].get("content", "")
-                    output_text = TruncationConfig.truncate(content, length=TruncationConfig.LIST_PREVIEW_LENGTH)
+            # Extract input/output using TraceData method
+            input_text, output_text = trace_data.get_trace_messages(trace_id)
 
             table.add_row(
                 str(idx),
-                trace_id + marker,
-                str(len(spans_list)),
-                f"{duration_ms:.1f}ms",
+                trace_id_display,
+                format_duration_seconds(duration_ms),
                 status,
                 input_text or "[dim]-[/dim]",
                 output_text or "[dim]-[/dim]",
