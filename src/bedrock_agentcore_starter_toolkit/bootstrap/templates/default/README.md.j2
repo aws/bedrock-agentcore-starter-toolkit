@@ -56,6 +56,8 @@ First check that Node version is >= 18:
 - `node -v` → example output: `v18.19.0`
 - [nvm](https://github.com/nvm-sh/nvm) is a helpful tool to manage Node versions
 
+Make sure you have AWS credentials with sufficient permissions in your environment.
+
 To deploy your project:
 
 - shorthand: `cd cdk && npm install && npm run cdk synth && npm run cdk:deploy`
@@ -73,6 +75,8 @@ This directory contains a Terraform project that models AgentCore and related AW
 First check that the `terraform` binary is installed with version >= 1.2:
 - `terraform version -json | jq -r '.terraform_version'`
 - Terraform install [webpage](https://developer.hashicorp.com/terraform/install)
+
+Make sure you have AWS credentials with sufficient permissions in your environment.
 
 - shorthand: `cd terraform && terraform init && terraform apply`
 - navigate to the `terraform` directory: `cd terraform`
