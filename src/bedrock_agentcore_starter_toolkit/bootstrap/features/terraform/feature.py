@@ -18,9 +18,10 @@ class TerraformFeature(Feature):
         iac_dir.mkdir(exist_ok=False)
         context.iac_dir = iac_dir
 
+    def after_apply(self, context: ProjectContext) -> None:
+        """Hook called after template rendering and code generation."""
+        pass
+
     def execute(self, context: ProjectContext) -> None:
         """Call render_dir."""
         self.render_dir(context.iac_dir, context)
-
-    def after_apply(self, context):
-        pass

@@ -59,7 +59,7 @@ class Feature(ABC):
     # --- core rendering helper ---
     def _render_from_template_src_dir(self, template_src_dir: Path, dest_dir: Path, context: ProjectContext) -> None:
         """Render all templates under a given source directory into dest_dir."""
-        env = Environment(loader=FileSystemLoader(template_src_dir))
+        env = Environment(loader=FileSystemLoader(template_src_dir), autoescape=True)
         for src in template_src_dir.rglob("*.j2"):
             rel = src.relative_to(template_src_dir)
             dest = dest_dir / rel.with_suffix("")  # remove .j2 suffix

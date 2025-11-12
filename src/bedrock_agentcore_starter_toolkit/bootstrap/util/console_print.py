@@ -42,10 +42,9 @@ def emit_bootstrap_completed_message(ctx: ProjectContext):
             f"\n"
             f"[bold]Configuration[/bold]\n"
             f"Network Mode: [cyan]{'VPC' if ctx.vpc_enabled else 'Public'}[/cyan]\n"
-            f"Gateway Name: [cyan]{ctx.name + '-AgentCoreGateway' if not ctx.src_implementation_provided else 'Source code provided so, gateway was not created'}[/cyan]\n"
-            f"Gateway Authorization: [cyan]{('Cognito' if not ctx.custom_authorizer_enabled else 'Custom Authorizer') if not ctx.src_implementation_provided else 'N/A'}[/cyan]\n"
+            f"Gateway Name: [cyan]{gateway_name}[/cyan]\n"
+            f"Gateway Authorization: [cyan]{gateway_auth}[/cyan]\n"
             f"Memory Name: [cyan]{ctx.memory_name if ctx.memory_enabled else 'Memory Disabled'}[/cyan]\n"
-
             f"📄 Config saved to: [dim]{str(ctx.output_dir) + '/.bedrock_agentcore.yaml'}[/dim]\n\n"
             f"[bold]Next Steps:[/bold]\n"
             f"[cyan]{next_steps_cmd}[/cyan]\n"

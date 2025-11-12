@@ -53,6 +53,4 @@ def snapshot_dir_tree(path: Path) -> dict:
 
 
 def _sanitize(text: str, project_root: Path) -> str:
-    return (
-        text.replace(str(project_root), "<PROJECT_ROOT>")
-    )
+    return text.replace(str(project_root), "<PROJECT_ROOT>")

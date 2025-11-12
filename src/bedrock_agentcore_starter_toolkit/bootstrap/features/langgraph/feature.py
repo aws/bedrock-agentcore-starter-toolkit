@@ -17,12 +17,14 @@ class LangGraphFeature(Feature):
         "langchain >= 1.0.3",
     ]
 
+    def before_apply(self, context: ProjectContext) -> None:
+        """Hook called before template rendering and code generation."""
+        pass
+
+    def after_apply(self, context: ProjectContext) -> None:
+        """Hook called after template rendering and code generation."""
+        pass
+
     def execute(self, context: ProjectContext):
         """Call render_dir."""
         self.render_dir(context.src_dir, context)
-
-    def before_apply(self, context):
-        pass
-    
-    def after_apply(self, context):
-        pass

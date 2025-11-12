@@ -22,11 +22,13 @@ class BaselineFeature(Feature):
             else ["mcp >= 1.19.0"]
         )
         super().__init__()
-    
+
     def before_apply(self, context):
+        """Implement anything that needs to happen before template rendering."""
         pass
-    
+
     def after_apply(self, context):
+        """Implement anything that needs to happen after template rendering."""
         pass
 
     def execute(self, context: ProjectContext) -> None:

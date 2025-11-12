@@ -1,7 +1,3 @@
-from bedrock_agentcore_starter_toolkit.bootstrap.constants import (
-    SDKProvider
-)
-
 # ---------------------------------------------------------------------------
 # Both cdk and terraform tests will iterate through all scenarios
 # Since only the IAC varies by scenario input, we only need to exercise each SDK at least once
@@ -9,11 +5,14 @@ from bedrock_agentcore_starter_toolkit.bootstrap.constants import (
 from dataclasses import dataclass
 from typing import Optional
 
+from bedrock_agentcore_starter_toolkit.bootstrap.constants import SDKProvider
+
 
 @dataclass(frozen=True)
 class ScenarioConfig:
     sdk: Optional[SDKProvider]
     description: str
+
 
 SCENARIOS: dict[str, ScenarioConfig] = {
     "scenario_0": ScenarioConfig(

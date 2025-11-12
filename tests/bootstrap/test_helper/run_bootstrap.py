@@ -1,18 +1,20 @@
-from dataclasses import dataclass
 import shutil
 from pathlib import Path
+from unittest.mock import patch
+
 from typer.testing import CliRunner
-from .bootstrap_scenarios import ScenarioConfig, SCENARIOS
 
 from bedrock_agentcore_starter_toolkit.cli.bootstrap.commands import (
     bootstrap_app,
 )
-from unittest.mock import patch
+
+from .bootstrap_scenarios import SCENARIOS, ScenarioConfig
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "scenarios"
 test_runner = CliRunner()
 
-def run_bootstrap(tmp_path, monkeypatch, scenario, iac)-> tuple[Path, ScenarioConfig]:
+
+def run_bootstrap(tmp_path, monkeypatch, scenario, iac) -> tuple[Path, ScenarioConfig]:
     """Runs the CLI generator and returns the project directory and the ScenarioConfig used"""
     scenario_config = SCENARIOS[scenario]
     sdk = scenario_config.sdk
@@ -20,7 +22,7 @@ def run_bootstrap(tmp_path, monkeypatch, scenario, iac)-> tuple[Path, ScenarioCo
     # Put the fixture into the working directory.
     scenario_fixtures: Path = FIXTURES / scenario
     provided_config_yaml = scenario_fixtures / ".bedrock_agentcore.yaml"
-    
+
     if (scenario_fixtures / "src").is_dir():
         # source provided scenario
         shutil.copytree(scenario_fixtures, tmp_path, dirs_exist_ok=True)
@@ -35,16 +37,16 @@ def run_bootstrap(tmp_path, monkeypatch, scenario, iac)-> tuple[Path, ScenarioCo
     project_name = "testProj"
 
     # patch confirm copy source prompt to yes
-    with patch(
-        "bedrock_agentcore_starter_toolkit.cli.bootstrap.prompt_util.prompt",
-        return_value="y"
-    ):
+    with patch("bedrock_agentcore_starter_toolkit.cli.bootstrap.prompt_util.prompt", return_value="y"):
         result = test_runner.invoke(
             bootstrap_app,
             [
-                "--project-name", project_name,
-                "--iac", iac,
-                "--sdk", sdk,
+                "--project-name",
+                project_name,
+                "--iac",
+                iac,
+                "--sdk",
+                sdk,
             ],
             catch_exceptions=False,
         )
@@ -55,4 +57,3 @@ def run_bootstrap(tmp_path, monkeypatch, scenario, iac)-> tuple[Path, ScenarioCo
     assert result.exit_code == 0
 
     return tmp_path / project_name, scenario_config
-

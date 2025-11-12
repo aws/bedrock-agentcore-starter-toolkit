@@ -9,9 +9,9 @@ from bedrock_agentcore.services.identity import IdentityClient
 
 from ...operations.identity.oauth2_callback_server import WORKLOAD_USER_ID, BedrockAgentCoreIdentity3loCallback
 from ...services.runtime import BedrockAgentCoreClient, generate_session_id
+from ...utils.runtime.bootstrap import resolve_bootstrap_project_config
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
-from ...utils.runtime.bootstrap import resolve_bootstrap_project_config
 from .models import InvokeResult
 
 log = logging.getLogger(__name__)
