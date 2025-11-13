@@ -103,7 +103,6 @@ def invoke_bedrock_agentcore(
                 session_id=session_id,
                 bearer_token=bearer_token,
                 user_id=None,  # Don't send user_id with JWT auth
-                workload_access_token=None,  # Runtime handles this via Service-Linked Role
                 custom_headers=custom_headers,
             )
         else:

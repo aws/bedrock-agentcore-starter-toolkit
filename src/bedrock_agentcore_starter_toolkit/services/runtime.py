@@ -549,7 +549,6 @@ class HttpBedrockAgentCoreClient:
         session_id: str,
         bearer_token: Optional[str],
         user_id: Optional[str] = None,
-        workload_access_token: Optional[str] = None,
         endpoint_name: str = "DEFAULT",
         custom_headers: Optional[dict] = None,
     ) -> Dict:
@@ -561,7 +560,6 @@ class HttpBedrockAgentCoreClient:
             session_id: Session ID for the request
             bearer_token: Bearer token for authentication
             user_id: User ID (required for Identity 3LO OAuth flows)
-            workload_access_token: Optional workload access token from Identity sERVICE.
             endpoint_name: Endpoint name, defaults to "DEFAULT"
             custom_headers: Optional custom headers to include in the request
 

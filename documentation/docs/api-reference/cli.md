@@ -353,7 +353,7 @@ agentcore identity setup-cognito [OPTIONS]
 Options:
 
 - `--region, -r TEXT`: AWS region (defaults to configured region)
-- `--auth-flow TEXT`: OAuth flow type - ‘user’ (USER_FEDERATION with user consent) or ‘m2m’ (CLIENT_CREDENTIALS for machine-to-machine). Default: ‘user’
+- `--auth-flow TEXT`: OAuth flow type - 'user' (USER_FEDERATION) or 'm2m' (M2M). Default: 'user'
 
 **Auth Flow Types:**
 
@@ -374,7 +374,7 @@ Options:
 - Test user credentials
 - No client secret (uses password auth flow)
 
-1. **Identity User Pool**: For agent outbound OAuth to external services
+2. **Identity User Pool**: For agent outbound OAuth to external services
 
 - Client ID and secret for credential providers
 - Test user for authorization flow
@@ -475,7 +475,11 @@ agentcore identity create-credential-provider \
   --client-id "github_client_id" \
   --client-secret "github_client_secret"
 
+# IMPORTANT: After creation, register the callback URL from the response
+# in your GitHub OAuth app settings under "Authorization callback URL"
 ```
+
+**Note:** After creating a provider, you must register the returned `callbackUrl` in your OAuth provider's settings (except for Cognito, which is auto-configured with `--cognito-pool-id`).
 
 ### Create Workload Identity
 
@@ -488,7 +492,7 @@ agentcore identity create-workload-identity [OPTIONS]
 Options:
 
 - `--name TEXT`: Workload identity name (required)
-- `--callback-urls TEXT`: Comma-separated OAuth callback URLs (required)
+- `--callback-urls TEXT`: Comma-separated OAuth callback URLs (optional, but required for OAuth flows)
 - `--region TEXT`: AWS region (defaults to configured region)
 
 **Automatic Configuration:**

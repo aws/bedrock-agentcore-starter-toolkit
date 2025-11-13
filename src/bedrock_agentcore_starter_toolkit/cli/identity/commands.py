@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @identity_app.command("create-credential-provider")
-def create_provider(
+def create_credential_provider(
     name: str = typer.Option(..., "--name", "-n", help="Credential provider name"),
     provider_type: str = typer.Option(..., "--type", "-t", help="Provider type: cognito, github, google, salesforce"),
     client_id: str = typer.Option(..., "--client-id", help="OAuth client ID"),
@@ -142,7 +142,7 @@ us-west-2_xxx/.well-known/openid-configuration \
 
 
 @identity_app.command("create-workload-identity")
-def create_workload(
+def create_workload_identity(
     name: Optional[str] = typer.Option(None, "--name", "-n", help="Workload identity name (auto-generated if empty)"),
     callback_urls: Optional[str] = typer.Option(
         None,
@@ -175,6 +175,11 @@ def create_workload(
         callback_url_list = []
         if callback_urls:
             callback_url_list = [url.strip() for url in callback_urls.split(",")]
+        else:
+            console.print(
+                "⚠️  Warning: No callback URLs provided. "
+                "OAuth flows will not work until you add them with update-workload-identity."
+            )
 
         # Auto-generate name if not provided
         if not name:
@@ -214,11 +219,11 @@ def create_workload(
         _print_success("Workload identity created and saved to .bedrock_agentcore.yaml")
 
     except Exception as e:
-        _handle_error(f"Failed to create workload identity: {str(e)}", e)
+        _handle_error(f"Failed to create workload identity: {repr(e)}", e)
 
 
 @identity_app.command("update-workload-identity")
-def update_workload(
+def update_workload_identity(
     name: str = typer.Option(..., "--name", "-n", help="Workload identity name"),
     add_callback_urls: Optional[str] = typer.Option(
         None, "--add-callback-urls", help="Comma-separated callback URLs to ADD"
@@ -285,7 +290,7 @@ def update_workload(
 
 
 @identity_app.command("get-inbound-token")
-def get_token(
+def get_inbound_token(
     pool_id: str = typer.Option(..., "--pool-id", help="Cognito user pool ID"),
     client_id: str = typer.Option(..., "--client-id", help="Cognito client ID"),
     username: str = typer.Option(..., "--username", "-u", help="Username"),
@@ -437,7 +442,12 @@ def _build_provider_config(
         }
 
     else:
-        _handle_error(f"Unsupported provider type: {provider_type}. Use: cognito, github, google, salesforce")
+        _handle_error(
+            f"Unsupported provider type: {provider_type}.\n"
+            f"Supported by this CLI: cognito, github, google, salesforce\n"
+            f"Note: Identity supports additional providers (Atlassian, Slack, etc.) via custom-oauth2. "
+            f"See AWS documentation for full list."
+        )
 
 
 def _save_provider_config(name: str, arn: str, provider_type: str, callback_url: str):
@@ -699,8 +709,10 @@ def cleanup_identity(
                 console.print(f"  • Deleting credential provider: {provider.name}")
                 identity_client.cp_client.delete_oauth2_credential_provider(name=provider.name)
                 console.print("    ✓ Deleted")
+            except identity_client.cp_client.exceptions.ResourceNotFoundException:
+                console.print("    ✓ Already deleted or never existed")
             except Exception as e:
-                console.print(f"    ⚠️  Error: {str(e)}")
+                console.print(f"    :warning:  Error: {repr(e)}")
 
     # Delete workload identity
     if agent_config.identity and agent_config.identity.workload:
@@ -708,8 +720,10 @@ def cleanup_identity(
             console.print(f"  • Deleting workload identity: {agent_config.identity.workload.name}")
             identity_client.identity_client.delete_workload_identity(name=agent_config.identity.workload.name)
             console.print("    ✓ Deleted")
+        except identity_client.identity_client.exceptions.ResourceNotFoundException:
+            console.print("    ✓ Already deleted or never existed")
         except Exception as e:
-            console.print(f"    ⚠️  Error: {str(e)}")
+            console.print(f"    ⚠️  Error: {repr(e)}")
 
     # Delete Cognito pools for each flow type found
     for flow in ["user", "m2m"]:
