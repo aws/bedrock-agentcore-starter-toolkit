@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import pytest
 from bedrock_agentcore import BedrockAgentCoreApp
 
-from bedrock_agentcore_starter_toolkit.bootstrap.types import ProjectContext
+from bedrock_agentcore_starter_toolkit.create.types import ProjectContext
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,

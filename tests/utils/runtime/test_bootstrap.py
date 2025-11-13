@@ -1,10 +1,10 @@
-"""Unit tests for bootstrap utility functions."""
+"""Unit tests for create utility functions."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 
-from bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap import resolve_bootstrap_project_config
+from bedrock_agentcore_starter_toolkit.utils.runtime.create import resolve_create_project_config
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
@@ -17,13 +17,13 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
 )
 
 
-class TestResolveBootstrapProjectConfig:
-    """Tests for resolve_bootstrap_project_config function."""
+class TestResolveCreateProjectConfig:
+    """Tests for resolve_create_project_config function."""
 
-    def test_returns_none_for_non_bootstrap_project(self, tmp_path, monkeypatch):
-        """Test that function returns None for non-bootstrap projects."""
+    def test_returns_none_for_non_create_project(self, tmp_path, monkeypatch):
+        """Test that function returns None for non-create projects."""
         # Arrange
-        # Create a config that is NOT a bootstrap project
+        # Create a config that is NOT a create project
         config = BedrockAgentCoreConfigSchema(
             default_agent="test-agent",
             agents={
@@ -47,14 +47,14 @@ class TestResolveBootstrapProjectConfig:
                     ),
                 )
             },
-            is_agentcore_bootstrap_project=False,  # Not a bootstrap project
+            is_agentcore_create_project=False,  # Not a create project
         )
 
         monkeypatch.chdir(tmp_path)
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.load_config", return_value=config):
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.load_config", return_value=config):
             # Act
-            result = resolve_bootstrap_project_config()
+            result = resolve_create_project_config()
 
             # Assert
             assert result is None
@@ -88,21 +88,21 @@ class TestResolveBootstrapProjectConfig:
                     ),
                 )
             },
-            is_agentcore_bootstrap_project=True,
+            is_agentcore_create_project=True,
         )
 
         monkeypatch.chdir(tmp_path)
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.load_config", return_value=config):
-            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.save_config") as mock_save:
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.load_config", return_value=config):
+            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.save_config") as mock_save:
                 with patch(
-                    "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.get_region", return_value="us-west-2"
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.create.get_region", return_value="us-west-2"
                 ):
                     with patch(
-                        "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.generate_session_id",
+                        "bedrock_agentcore_starter_toolkit.utils.runtime.create.generate_session_id",
                         return_value="session-123",
                     ):
-                        resolve_bootstrap_project_config()
+                        resolve_create_project_config()
 
                         # Assert
                         mock_save.assert_called_once()
@@ -138,7 +138,7 @@ class TestResolveBootstrapProjectConfig:
                     ),
                 )
             },
-            is_agentcore_bootstrap_project=True,
+            is_agentcore_create_project=True,
         )
 
         # Mock the client to return a matching agent
@@ -153,21 +153,21 @@ class TestResolveBootstrapProjectConfig:
 
         monkeypatch.chdir(tmp_path)
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.load_config", return_value=config):
-            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.save_config") as mock_save:
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.load_config", return_value=config):
+            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.save_config") as mock_save:
                 with patch(
-                    "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.get_region", return_value="us-west-2"
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.create.get_region", return_value="us-west-2"
                 ):
                     with patch(
-                        "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.generate_session_id",
+                        "bedrock_agentcore_starter_toolkit.utils.runtime.create.generate_session_id",
                         return_value="session-456",
                     ):
                         with patch(
-                            "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.BedrockAgentCoreClient",
+                            "bedrock_agentcore_starter_toolkit.utils.runtime.create.BedrockAgentCoreClient",
                             return_value=mock_client,
                         ):
                             # Act
-                            resolve_bootstrap_project_config()
+                            resolve_create_project_config()
 
                             # Assert
                             mock_save.assert_called_once()
@@ -204,7 +204,7 @@ class TestResolveBootstrapProjectConfig:
                     ),
                 )
             },
-            is_agentcore_bootstrap_project=True,
+            is_agentcore_create_project=True,
         )
 
         # Mock the client to return no matching agents
@@ -213,16 +213,14 @@ class TestResolveBootstrapProjectConfig:
 
         monkeypatch.chdir(tmp_path)
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.load_config", return_value=config):
-            with patch(
-                "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.get_region", return_value="us-west-2"
-            ):
+        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.load_config", return_value=config):
+            with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.get_region", return_value="us-west-2"):
                 with patch(
-                    "bedrock_agentcore_starter_toolkit.utils.runtime.bootstrap.BedrockAgentCoreClient",
+                    "bedrock_agentcore_starter_toolkit.utils.runtime.create.BedrockAgentCoreClient",
                     return_value=mock_client,
                 ):
                     # Act & Assert
                     with pytest.raises(
                         Exception, match="Could not find an agentcore runtime resource with name test-agent"
                     ):
-                        resolve_bootstrap_project_config()
+                        resolve_create_project_config()

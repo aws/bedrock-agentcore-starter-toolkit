@@ -238,7 +238,7 @@ def set_default(name: str = typer.Argument(...)):
 @configure_app.callback(invoke_without_command=True)
 def configure(
     ctx: typer.Context,
-    bootstrap: bool = typer.Option(False, "--bootstrap", "-b"),
+    create: bool = typer.Option(False, "--create", "-b"),
     entrypoint: Optional[str] = typer.Option(
         None,
         "--entrypoint",
@@ -383,26 +383,26 @@ def configure(
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     config_manager = ConfigurationManager(config_path, non_interactive)
 
-    # bootstrap mode configuration
-    bootstrap_mode_enabled = bootstrap
+    # create mode configuration
+    create_mode_enabled = create
     if not non_interactive:
         response = (
             prompt(
-                "Use bootstrap mode for a minimal default setup? (yes/no) "
-                "`agentcore bootstrap` is also compatible with other configure outputs: "
+                "Use create mode for a minimal default setup? (yes/no) "
+                "`agentcore create` is also compatible with other configure outputs: "
             )
             .strip()
             .lower()
         )
-        bootstrap_mode_enabled = response in ("y", "yes")
-        if bootstrap_mode_enabled:
-            console.print("[cyan]Bootstrap mode enabled[/cyan]")
+        create_mode_enabled = response in ("y", "yes")
+        if create_mode_enabled:
+            console.print("[cyan]Create mode enabled[/cyan]")
         else:
-            console.print("[dim]Bootstrap mode not enabled[/dim]")
+            console.print("[dim]Create mode not enabled[/dim]")
 
     # Interactive entrypoint selection
     if not entrypoint:
-        if non_interactive or bootstrap_mode_enabled:
+        if non_interactive or create_mode_enabled:
             entrypoint_input = "."
         else:
             console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
@@ -431,7 +431,7 @@ def configure(
             f"Consider copying the file into your project directory."
         )
 
-    if bootstrap_mode_enabled:
+    if create_mode_enabled:
         entrypoint = entrypoint_input
         source_path = "."
     elif entrypoint_path.is_file():
@@ -463,8 +463,8 @@ def configure(
 
     # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
     if not agent_name:
-        if bootstrap_mode_enabled:
-            suggested_name = "bootstrap_agent"
+        if create_mode_enabled:
+            suggested_name = "create_agent"
         else:
             entrypoint_path = Path(entrypoint)
             suggested_name = infer_agent_name(entrypoint_path)
@@ -491,7 +491,7 @@ def configure(
     _validate_deployment_type_compatibility(agent_name, deployment_type)
 
     # Handle dependency file selection with simplified logic
-    if bootstrap_mode_enabled:
+    if create_mode_enabled:
         final_requirements_file = None
     else:
         final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
@@ -570,9 +570,9 @@ def configure(
         deployment_type, runtime, ecr_repository, s3_bucket, non_interactive, direct_code_deploy_available, prereq_error
     ):
         """Determine final deployment_type and runtime_type."""
-        # bootstrap only supports container currently
-        if bootstrap_mode_enabled:
-            console.print("Bootstrap mode only uses the container deployment type.")
+        # create only supports container currently
+        if create_mode_enabled:
+            console.print("Create mode only uses the container deployment type.")
             return "container", None
 
         # Case 3: Only runtime provided -> default to direct_code_deploy
@@ -699,7 +699,7 @@ def configure(
 
     # Interactive prompts for missing values - clean and elegant
     if not execution_role:
-        if bootstrap_mode_enabled:
+        if create_mode_enabled:
             execution_role = None
         else:
             execution_role = config_manager.prompt_execution_role()
@@ -711,7 +711,7 @@ def configure(
             auto_create_ecr = True
             _print_success("Will auto-create ECR repository")
         elif not ecr_repository:
-            if bootstrap_mode_enabled:
+            if create_mode_enabled:
                 auto_create_ecr = False
             else:
                 ecr_repository, auto_create_ecr = config_manager.prompt_ecr_repository()
@@ -777,7 +777,7 @@ def configure(
 
     try:
         result = configure_bedrock_agentcore(
-            bootstrap_mode_enabled=bootstrap_mode_enabled,
+            create_mode_enabled=create_mode_enabled,
             agent_name=agent_name,
             entrypoint_path=Path(entrypoint),
             execution_role=execution_role,
@@ -877,7 +877,7 @@ def configure(
                 f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"[cyan]agentcore launch[/cyan]{' [cyan]agentcore bootstrap[/cyan]' if bootstrap_mode_enabled else ''}",
+                f"[cyan]agentcore launch[/cyan]{' [cyan]agentcore create[/cyan]' if create_mode_enabled else ''}",
                 title="Configuration Success",
                 border_style="bright_blue",
             )
@@ -963,9 +963,9 @@ def launch(
 
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
-    if project_config.is_agentcore_bootstrap_project:
+    if project_config.is_agentcore_create_project:
         _handle_error(
-            "Error: cannot launch a project that has been created by agentcore bootstrap. Deploy the project via the "
+            "Error: cannot launch a project that has been created by agentcore create. Deploy the project via the "
             "chosen iac provider "
         )
     agent_config = project_config.get_agent_config(agent)

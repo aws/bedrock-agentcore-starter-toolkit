@@ -134,7 +134,7 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
 def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
-    bootstrap_mode_enabled: bool = False,
+    create_mode_enabled: bool = False,
     execution_role: Optional[str] = None,
     code_build_execution_role: Optional[str] = None,
     ecr_repository: Optional[str] = None,
@@ -164,7 +164,7 @@ def configure_bedrock_agentcore(
     """Configure Bedrock AgentCore application with deployment settings.
 
     Args:
-        bootstrap_mode_enabled: Enable IaC and Agent code bootstrapping
+        create_mode_enabled: Enable IaC and Agent code createping
         agent_name: name of the agent,
         entrypoint_path: Path to the entrypoint file
         execution_role: AWS execution role ARN or name (auto-created if not provided)
@@ -422,7 +422,7 @@ def configure_bedrock_agentcore(
 
     # Generate Dockerfile only for container deployments
     dockerfile_path = None
-    if deployment_type == "container" and runtime and not bootstrap_mode_enabled:
+    if deployment_type == "container" and runtime and not create_mode_enabled:
         dockerfile_path = runtime.generate_dockerfile(
             entrypoint_path,
             dockerfile_output_dir,
@@ -441,7 +441,7 @@ def configure_bedrock_agentcore(
 
     # Ensure .dockerignore exists at Docker build context location (only for container deployments)
     dockerignore_path = None
-    if deployment_type == "container" and not bootstrap_mode_enabled:
+    if deployment_type == "container" and not create_mode_enabled:
         if source_path:
             # For source_path: .dockerignore at source directory (Docker build context)
             source_dockerignore = Path(source_path) / ".dockerignore"

@@ -2159,7 +2159,7 @@ agents:
         ):
             # Mock project config and agent config
             mock_project_config = Mock()
-            mock_project_config.is_agentcore_bootstrap_project = False
+            mock_project_config.is_agentcore_create_project = False
             mock_agent_config = Mock()
             mock_agent_config.name = "test-agent"
             mock_agent_config.entrypoint = "test.py"

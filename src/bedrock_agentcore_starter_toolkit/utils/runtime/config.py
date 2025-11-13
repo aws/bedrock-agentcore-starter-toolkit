@@ -124,13 +124,13 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
         config: BedrockAgentCoreConfigSchema instance to save
         config_path: Path to save configuration file
     """
-    bootstrap_project = config.is_agentcore_bootstrap_project
+    create_project = config.is_agentcore_create_project
     with open(config_path, "w") as f:
         yaml.dump(
             config.model_dump(
-                exclude_none=bootstrap_project,
-                exclude_unset=bootstrap_project,
-                exclude={"is_agentcore_bootstrap_project"},
+                exclude_none=create_project,
+                exclude_unset=create_project,
+                exclude={"is_agentcore_create_project"},
             ),
             f,
             default_flow_style=False,

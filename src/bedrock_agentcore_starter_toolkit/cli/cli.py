@@ -4,7 +4,7 @@ import typer
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from ..utils.logging_config import setup_toolkit_logging
-from .bootstrap.commands import bootstrap_app
+from .create.commands import create_app
 from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
@@ -37,8 +37,8 @@ app.add_typer(gateway_app, name="gateway")
 # import-agent
 app.command("import-agent")(import_agent)
 
-# bootstrap
-app.add_typer(bootstrap_app, name="bootstrap")
+# create
+app.add_typer(create_app, name="create")
 
 
 def main():

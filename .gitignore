@@ -29,6 +29,6 @@ coverage.json
 CLAUDE.md
 mise.toml
 .idea/
-!tests/bootstrap/fixtures/scenarios/
-!tests/bootstrap/fixtures/scenarios/**
+!tests/create/fixtures/scenarios/
+!tests/create/fixtures/scenarios/**
 .kiro/
