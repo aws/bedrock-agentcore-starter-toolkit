@@ -1500,13 +1500,23 @@ class TestCleanup:
 
         with patch("bedrock_agentcore.services.identity.IdentityClient") as mock_identity_class:
             mock_identity = Mock()
-            mock_identity.cp_client = Mock()
-            mock_identity.cp_client.delete_oauth2_credential_provider.side_effect = Exception("Deletion failed")
+            mock_cp_client = Mock()
+
+            # Create a mock exception class for ResourceNotFoundException
+            mock_exceptions = Mock()
+            mock_exceptions.ResourceNotFoundException = type("ResourceNotFoundException", (Exception,), {})
+            mock_cp_client.exceptions = mock_exceptions
+
+            # Set up the deletion to raise a generic exception (not ResourceNotFoundException)
+            mock_cp_client.delete_oauth2_credential_provider.side_effect = Exception("Deletion failed")
+
+            mock_identity.cp_client = mock_cp_client
+            mock_identity.identity_client = Mock()
             mock_identity_class.return_value = mock_identity
 
             result = runner.invoke(identity_app, ["cleanup", "--force"])
 
-        # Should complete despite error
+        # Should complete despite error (shows warning but continues)
         assert result.exit_code == 0
         assert "Error:" in result.stdout or "⚠️" in result.stdout
 

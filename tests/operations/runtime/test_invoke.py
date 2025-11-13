@@ -157,7 +157,6 @@ class TestInvokeBedrockAgentCore:
                 session_id=result.session_id,
                 bearer_token=bearer_token,
                 user_id=None,
-                workload_access_token=None,
                 custom_headers=None,
             )
 
@@ -204,7 +203,6 @@ class TestInvokeBedrockAgentCore:
                 session_id=custom_session_id,
                 bearer_token=bearer_token,
                 user_id=None,
-                workload_access_token=None,
                 custom_headers=None,
             )
 
@@ -608,7 +606,6 @@ class TestGetWorkloadName:
                 session_id=result.session_id,
                 bearer_token=bearer_token,
                 user_id=None,
-                workload_access_token=None,
                 custom_headers=custom_headers,
             )
 
