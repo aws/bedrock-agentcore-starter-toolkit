@@ -14,6 +14,7 @@ from rich.table import Table
 from ...operations.identity.helpers import (
     IdentityCognitoManager,
     get_cognito_access_token,
+    get_cognito_m2m_token,
     update_cognito_callback_urls,
 )
 from ...services.ecr import get_region
@@ -144,10 +145,12 @@ us-west-2_xxx/.well-known/openid-configuration \
 @identity_app.command("create-workload-identity")
 def create_workload_identity(
     name: Optional[str] = typer.Option(None, "--name", "-n", help="Workload identity name (auto-generated if empty)"),
-    callback_urls: Optional[str] = typer.Option(
+    return_urls: Optional[str] = typer.Option(
         None,
-        "--callback-urls",
-        help="Comma-separated OAuth2 callback URLs for your application (e.g., http://localhost:8081/oauth2/callback)",
+        "--return-urls",
+        help="Comma-separated OAuth2 return URLs for your application (e.g., http://localhost:8081/oauth2/callback). "
+        "These are URLs in YOUR application where AgentCore Identity redirects users after OAuth authorization "
+        "for session binding verification. ",
     ),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
@@ -160,25 +163,27 @@ def create_workload_identity(
     Examples:
         # Create with local callback URL
         agentcore identity create-workload --name MyAgent \
-            --callback-urls http://localhost:8081/oauth2/callback
+            --return-urls http://localhost:8081/oauth2/callback
 
         # Create with multiple callback URLs (local + production)
         agentcore identity create-workload --name MyAgent \
-            --callback-urls http://localhost:8081/oauth2/callback,https://prod.example.com/callback
+            --return-urls http://localhost:8081/oauth2/callback,https://prod.example.com/callback
     """
     try:
         from bedrock_agentcore.services.identity import IdentityClient
 
         region = region or get_region()
 
-        # Parse callback URLs
-        callback_url_list = []
-        if callback_urls:
-            callback_url_list = [url.strip() for url in callback_urls.split(",")]
+        # Parse return URLs
+        return_url_list = []
+        if return_urls:
+            return_url_list = [url.strip() for url in return_urls.split(",")]
         else:
             console.print(
-                "⚠️  Warning: No callback URLs provided. "
-                "OAuth flows will not work until you add them with update-workload-identity."
+                "[yellow]⚠️  Warning: No return URLs provided. "
+                "OAuth authorization flows will not work until you add them.\n"
+                "   Return URLs are endpoints in YOUR application for session binding verification.\n"
+                "   Add them later with: agentcore identity update-workload-identity --add-return-urls[/yellow]"
             )
 
         # Auto-generate name if not provided
@@ -198,13 +203,13 @@ def create_workload_identity(
 
         identity_client = IdentityClient(region)
         response = identity_client.create_workload_identity(
-            name=name, allowed_resource_oauth_2_return_urls=callback_url_list
+            name=name, allowed_resource_oauth_2_return_urls=return_url_list
         )
 
         workload_arn = response.get("workloadIdentityArn", "")
 
         # Store in config
-        _save_workload_config(name, workload_arn, callback_url_list)
+        _save_workload_config(name, workload_arn, return_url_list)
 
         # Display result
         table = Table(title="Workload Identity Created")
@@ -212,8 +217,8 @@ def create_workload_identity(
         table.add_column("Value", style="white")
         table.add_row("Name", name)
         table.add_row("ARN", workload_arn)
-        if callback_url_list:
-            table.add_row("Callback URLs", "\n".join(callback_url_list))
+        if return_url_list:
+            table.add_row("Callback URLs", "\n".join(return_url_list))
 
         console.print(table)
         _print_success("Workload identity created and saved to .bedrock_agentcore.yaml")
@@ -225,27 +230,25 @@ def create_workload_identity(
 @identity_app.command("update-workload-identity")
 def update_workload_identity(
     name: str = typer.Option(..., "--name", "-n", help="Workload identity name"),
-    add_callback_urls: Optional[str] = typer.Option(
-        None, "--add-callback-urls", help="Comma-separated callback URLs to ADD"
-    ),
-    set_callback_urls: Optional[str] = typer.Option(
-        None, "--set-callback-urls", help="Comma-separated callback URLs to SET (replaces existing)"
+    add_return_urls: Optional[str] = typer.Option(None, "--add-return-urls", help="Comma-separated return URLs to ADD"),
+    set_return_urls: Optional[str] = typer.Option(
+        None, "--set-return-urls", help="Comma-separated return URLs to SET (replaces existing)"
     ),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     r"""Update workload identity callback URLs.
 
-    Use --add-callback-urls to append new URLs to existing ones.
-    Use --set-callback-urls to replace all existing URLs.
+    Use --add-return-urls to append new URLs to existing ones.
+    Use --set-return-urls to replace all existing URLs.
 
     Examples:
-        # Add a production callback URL
+        # Add a production return URL
         agentcore identity update-workload --name MyAgent-workload \
-            --add-callback-urls https://prod.example.com/callback
+            --add-return-urls https://prod.example.com/callback
 
-        # Replace all callback URLs
+        # Replace all return URLs
         agentcore identity update-workload --name MyAgent-workload \
-            --set-callback-urls http://localhost:8081/callback,https://prod.example.com/callback
+            --set-return-urls http://localhost:8081/callback,https://prod.example.com/callback
     """
     try:
         from bedrock_agentcore.services.identity import IdentityClient
@@ -258,13 +261,13 @@ def update_workload_identity(
         current_urls = current_workload.get("allowedResourceOauth2ReturnUrls", [])
 
         # Determine new callback URLs
-        if set_callback_urls:
-            new_urls = [url.strip() for url in set_callback_urls.split(",")]
-        elif add_callback_urls:
-            additional_urls = [url.strip() for url in add_callback_urls.split(",")]
+        if set_return_urls:
+            new_urls = [url.strip() for url in set_return_urls.split(",")]
+        elif add_return_urls:
+            additional_urls = [url.strip() for url in add_return_urls.split(",")]
             new_urls = list(set(current_urls + additional_urls))  # Remove duplicates
         else:
-            _handle_error("Must provide either --add-callback-urls or --set-callback-urls")
+            _handle_error("Must provide either --add-return-urls or --set-return-urls")
 
         console.print(f"[cyan]Updating workload identity '{name}'...[/cyan]")
 
@@ -289,53 +292,90 @@ def update_workload_identity(
         _handle_error(f"Failed to update workload identity: {str(e)}", e)
 
 
-@identity_app.command("get-inbound-token")
-def get_inbound_token(
+@identity_app.command("get-cognito-inbound-token")
+def get_cognito_inbound_token(
+    auth_flow: str = typer.Option(
+        "user", "--auth-flow", help="OAuth flow type: 'user' (USER_FEDERATION) or 'm2m' (M2M client credentials)"
+    ),
     pool_id: str = typer.Option(..., "--pool-id", help="Cognito user pool ID"),
     client_id: str = typer.Option(..., "--client-id", help="Cognito client ID"),
-    username: str = typer.Option(..., "--username", "-u", help="Username"),
-    password: str = typer.Option(..., "--password", "-p", help="Password"),
-    client_secret: Optional[str] = typer.Option(
-        None, "--client-secret", help="Client secret (if client has secret enabled)"
-    ),
+    client_secret: Optional[str] = typer.Option(None, "--client-secret", help="Client secret (required for m2m flow)"),
+    username: Optional[str] = typer.Option(None, "--username", "-u", help="Username (required for user flow)"),
+    password: Optional[str] = typer.Option(None, "--password", "-p", help="Password (required for user flow)"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
-    """Get an access token from Cognito for testing Runtime inbound authentication.
+    """Get an access token from Cognito for Runtime inbound authentication.
 
-    Works with Cognito clients both with and without client secrets.
-    If your client has a secret enabled, provide it via --client-secret.
+    Supports both USER_FEDERATION and M2M flows. Runtime and Gateway support both flows.
 
     Examples:
-        # Client without secret
-        TOKEN=$(agentcore identity get-token --pool-id us-west-2_xxx \
-                 --client-id abc123 --username testuser --password Pass123!)
+        # User flow with shell variables
+        TOKEN=$(agentcore identity get-cognito-inbound-token \
+                 --pool-id $RUNTIME_POOL_ID \
+                 --client-id $RUNTIME_CLIENT_ID \
+                 --username $RUNTIME_USERNAME \
+                 --password $RUNTIME_PASSWORD)
 
-        # Client with secret
-        TOKEN=$(agentcore identity get-token --pool-id us-west-2_xxx \
-                 --client-id abc123 --username testuser --password Pass123! \
-                 --client-secret xyz789)
+        # M2M flow
+        TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m \
+                 --pool-id $RUNTIME_POOL_ID \
+                 --client-id $RUNTIME_CLIENT_ID \
+                 --client-secret $RUNTIME_CLIENT_SECRET)
 
+        # Use with agent
         agentcore invoke '{"prompt": "hello"}' --bearer-token "$TOKEN"
     """
     try:
         region = region or get_region()
-        token = get_cognito_access_token(
-            pool_id=pool_id,
-            client_id=client_id,
-            username=username,
-            password=password,
-            client_secret=client_secret,
-            region=region,
-        )
-        # Print only the token for easy shell capture
+
+        # Validate flow type
+        if auth_flow not in ["user", "m2m"]:
+            _handle_error("--auth-flow must be 'user' or 'm2m'")
+
+        # Validate required parameters for each flow
+        if auth_flow == "user":
+            if not username or not password:
+                _handle_error(
+                    "USER flow requires --username and --password\n"
+                    "Example: agentcore identity get-cognito-inbound-token \\\n"
+                    "           --pool-id <pool> --client-id <client> \\\n"
+                    "           --username <user> --password <pass>"
+                )
+
+            # Get token using USER_PASSWORD_AUTH
+            token = get_cognito_access_token(
+                pool_id=pool_id,
+                client_id=client_id,
+                username=username,
+                password=password,
+                client_secret=client_secret,
+                region=region,
+            )
+
+        else:  # m2m
+            if not client_secret:
+                _handle_error(
+                    "M2M flow requires --client-secret\n"
+                    "Example: agentcore identity get-cognito-inbound-token --auth-flow m2m \\\n"
+                    "           --pool-id <pool> --client-id <client> --client-secret <secret>"
+                )
+
+            # Get token using CLIENT_CREDENTIALS
+            token = get_cognito_m2m_token(
+                pool_id=pool_id,
+                client_id=client_id,
+                client_secret=client_secret,
+                region=region,
+            )
+        # Print only the token
         print(token)
 
     except Exception as e:
-        _handle_error(f"Failed to get token: {str(e)}", e)
+        _handle_error(f"Failed to get token: {repr(e)}", e)
 
 
-@identity_app.command("list-providers")
-def list_providers():
+@identity_app.command("list-credential-providers")
+def list_credential_providers():
     """List configured credential providers from .bedrock_agentcore.yaml."""
     try:
         config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -385,9 +425,9 @@ def list_providers():
         ):
             workload = agent_config.identity.workload
             console.print(f"\n[cyan]Workload Identity:[/cyan] {workload.name}")
-            if hasattr(workload, "callback_urls") and workload.callback_urls:
-                console.print("[cyan]App Callback URLs:[/cyan]")
-                for url in workload.callback_urls:
+            if hasattr(workload, "return_urls") and workload.return_urls:
+                console.print("[cyan]App Return URLs:[/cyan]")
+                for url in workload.return_urls:
                     console.print(f"  • {url}")
 
     except Exception as e:
@@ -477,7 +517,7 @@ def _save_provider_config(name: str, arn: str, provider_type: str, callback_url:
         _handle_warn(".bedrock_agentcore.yaml not found. Provider created but not saved to config.")
 
 
-def _save_workload_config(name: str, arn: str, callback_urls: List[str]):
+def _save_workload_config(name: str, arn: str, return_urls: List[str]):
     """Save workload identity configuration to .bedrock_agentcore.yaml."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     if config_path.exists():
@@ -493,7 +533,7 @@ def _save_workload_config(name: str, arn: str, callback_urls: List[str]):
         # Set workload info
         from ...utils.runtime.schema import WorkloadIdentityInfo
 
-        agent_config.identity.workload = WorkloadIdentityInfo(name=name, arn=arn, callback_urls=callback_urls)
+        agent_config.identity.workload = WorkloadIdentityInfo(name=name, arn=arn, return_urls=return_urls)
 
         # Save config
         project_config.agents[agent_config.name] = agent_config

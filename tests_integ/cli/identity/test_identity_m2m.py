@@ -91,6 +91,8 @@ class TestIdentityM2M(BaseCLIRuntimeTest):
             assert "identity" in config
             assert "token_endpoint" in config["identity"]
             assert "resource_server_identifier" in config["identity"]
+            assert "scopes" in config["identity"]
+            assert isinstance(config["identity"]["scopes"], list)
 
             # Check identity flow type (nested)
             assert config["identity"].get("flow_type") == "client_credentials"
@@ -99,6 +101,7 @@ class TestIdentityM2M(BaseCLIRuntimeTest):
             assert "runtime" in config
             assert "pool_id" in config["runtime"]
             assert "client_id" in config["runtime"]
+            assert "discovery_url" in config["runtime"]
 
     def validate_cleanup_m2m(self, result: Result):
         """Manual cleanup of Cognito pools and config files."""

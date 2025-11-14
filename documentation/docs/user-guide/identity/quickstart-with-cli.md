@@ -194,7 +194,7 @@ agentcore identity create-credential-provider \
 ```bash
 agentcore identity create-workload-identity \
   --name identity-demo-workload \
-  --callback-urls http://localhost:8081/oauth2/callback
+  --return-urls http://localhost:8081/oauth2/callback
 ```
 
 **What this does:**
@@ -233,7 +233,7 @@ agentcore launch
 
 ```bash
 # Get bearer token for Runtime authentication
-BEARER_TOKEN=$(agentcore identity get-inbound-token \
+BEARER_TOKEN=$(agentcore identity get-cognito-inbound-token \
   --pool-id $RUNTIME_POOL_ID \
   --client-id $RUNTIME_CLIENT_ID \
   --username $RUNTIME_USERNAME \
@@ -242,7 +242,7 @@ BEARER_TOKEN=$(agentcore identity get-inbound-token \
 # Invoke agent
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "demo_session_$(date +%s)"
+  --session-id test_session_12345678901234567890123456789012
 ```
 
 **Expected Response:**
@@ -272,7 +272,7 @@ After authorizing, invoke again with the same session ID.
 # Use the SAME session ID as before!
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "demo_session_1234567890"  # Same session ID!
+  --session-id test_session_12345678901234567890123456789012
 ```
 
 **Expected Response:**

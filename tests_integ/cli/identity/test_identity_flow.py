@@ -150,7 +150,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
                     "create-workload-identity",
                     "--name",
                     self.workload_name,
-                    "--callback-urls",
+                    "--return-urls",
                     "http://localhost:8081/oauth2/callback",
                 ],
                 user_input=[],
@@ -158,7 +158,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
             ),
             # Step 6: List providers
             CommandInvocation(
-                command=["identity", "list-providers"],
+                command=["identity", "list-credential-providers"],
                 user_input=[],
                 validator=lambda result: self.validate_list_providers(result),
             ),
@@ -170,13 +170,13 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
             ),
             # Step 8: Get bearer token
             CommandInvocation(
-                command=["identity", "get-inbound-token"],  # Will be modified
+                command=["identity", "get-cognito-inbound-token"],
                 user_input=[],
                 validator=lambda result: self.validate_get_token(result),
             ),
             # Step 9: Invoke with bearer token (expect auth URL)
             CommandInvocation(
-                command=["invoke", '{"prompt": "test"}'],  # Will add --bearer-token
+                command=["invoke", '{"prompt": "test"}'],
                 user_input=[],
                 validator=lambda result: self.validate_invoke_with_auth_url(result),
             ),
@@ -308,7 +308,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
         ]
 
     def _build_get_token_command(self) -> List[str]:
-        """Build get-inbound-token command."""
+        """Build get-cognito-inbound-token command."""
         cognito_config = self._load_cognito_config()
         if not cognito_config:
             raise RuntimeError("Cognito config not found")
@@ -319,7 +319,9 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
 
         return [
             "identity",
-            "get-inbound-token",
+            "get-cognito-inbound-token",
+            "--auth-flow",
+            "user",
             "--pool-id",
             self.runtime_pool_id,
             "--client-id",
@@ -411,6 +413,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
         assert "cognito" in output.lower()
         assert "Workload Identity:" in output
         assert self.workload_name in output
+        assert "App Return URLs" in output or "Return URLs" in output
 
     def validate_launch(self, result: Result):
         """Validate agent launch."""

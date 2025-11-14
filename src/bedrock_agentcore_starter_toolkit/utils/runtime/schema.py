@@ -54,7 +54,10 @@ class WorkloadIdentityInfo(BaseModel):
 
     name: str = Field(..., description="Workload identity name")
     arn: str = Field(..., description="Workload identity ARN")
-    callback_urls: List[str] = Field(default_factory=list, description="Application callback URLs for OAuth redirects")
+    return_urls: List[str] = Field(
+        default_factory=list,
+        description="Application return URLs where AgentCore redirects users for session binding verification",
+    )
 
 
 class IdentityConfig(BaseModel):

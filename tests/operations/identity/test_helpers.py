@@ -16,6 +16,7 @@ from bedrock_agentcore_starter_toolkit.operations.identity.helpers import (
     create_cognito_oauth_pool,
     ensure_identity_permissions,
     get_cognito_access_token,
+    get_cognito_m2m_token,
     update_cognito_callback_urls,
 )
 
@@ -861,3 +862,200 @@ class TestHelperUtilities:
         """Test that passwords are unique."""
         passwords = [_generate_password() for _ in range(10)]
         assert len(set(passwords)) == 10  # All should be unique
+
+
+class TestGetCognitoM2MToken:
+    """Test get_cognito_m2m_token function."""
+
+    def test_get_m2m_token_without_scopes(self):
+        """Test getting M2M access token without scopes."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "m2m-access-token-123"}}
+
+            token = get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id="m2m_client_123",
+                client_secret="m2m_secret_456",
+                region="us-west-2",
+            )
+
+            assert token == "m2m-access-token-123"
+
+            # Verify auth parameters
+            auth_call = mock_cognito.initiate_auth.call_args[1]
+            assert auth_call["ClientId"] == "m2m_client_123"
+            assert auth_call["AuthFlow"] == "CLIENT_CREDENTIALS"
+            assert "SECRET_HASH" in auth_call["AuthParameters"]
+            assert "SCOPE" not in auth_call["AuthParameters"]
+
+    def test_get_m2m_token_with_scopes(self):
+        """Test getting M2M access token with custom scopes."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "m2m-token-with-scopes"}}
+
+            scopes = ["resource-server/read", "resource-server/write"]
+            token = get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id="m2m_client_123",
+                client_secret="m2m_secret_456",
+                region="us-west-2",
+                scopes=scopes,
+            )
+
+            assert token == "m2m-token-with-scopes"
+
+            # Verify scopes were included
+            auth_call = mock_cognito.initiate_auth.call_args[1]
+            assert "SCOPE" in auth_call["AuthParameters"]
+            assert auth_call["AuthParameters"]["SCOPE"] == "resource-server/read resource-server/write"
+
+    def test_get_m2m_token_secret_hash_calculation(self):
+        """Test SECRET_HASH is calculated correctly for M2M flow."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "test-token"}}
+
+            client_id = "test_client_123"
+            client_secret = "test_secret_456"
+
+            get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id=client_id,
+                client_secret=client_secret,
+                region="us-west-2",
+            )
+
+            # Verify SECRET_HASH calculation
+            auth_call = mock_cognito.initiate_auth.call_args[1]
+            secret_hash = auth_call["AuthParameters"]["SECRET_HASH"]
+
+            # Calculate expected SECRET_HASH (for M2M, message is just client_id)
+            message = client_id
+            expected_hash = base64.b64encode(
+                hmac.new(client_secret.encode("utf-8"), msg=message.encode("utf-8"), digestmod=hashlib.sha256).digest()
+            ).decode()
+
+            assert secret_hash == expected_hash
+
+    def test_get_m2m_token_not_authorized_error(self):
+        """Test error handling when CLIENT_CREDENTIALS flow is not supported."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            # Mock NotAuthorizedException
+            mock_cognito.initiate_auth.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": "NotAuthorizedException",
+                        "Message": "CLIENT_CREDENTIALS grant not enabled for this client",
+                    }
+                },
+                "InitiateAuth",
+            )
+
+            with pytest.raises(ValueError) as exc_info:
+                get_cognito_m2m_token(
+                    pool_id="us-west-2_testpool",
+                    client_id="m2m_client_123",
+                    client_secret="m2m_secret_456",
+                    region="us-west-2",
+                )
+
+            # Verify error message is helpful
+            error_message = str(exc_info.value)
+            assert "CLIENT_CREDENTIALS flow not supported" in error_message
+            assert "setup-cognito --auth-flow m2m" in error_message
+
+    def test_get_m2m_token_other_client_error(self):
+        """Test that other ClientErrors are re-raised as-is."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            # Mock a different error
+            mock_cognito.initiate_auth.side_effect = ClientError(
+                {"Error": {"Code": "InvalidParameterException", "Message": "Invalid parameter"}}, "InitiateAuth"
+            )
+
+            with pytest.raises(ClientError) as exc_info:
+                get_cognito_m2m_token(
+                    pool_id="us-west-2_testpool",
+                    client_id="m2m_client_123",
+                    client_secret="m2m_secret_456",
+                    region="us-west-2",
+                )
+
+            # Verify original error is raised
+            assert exc_info.value.response["Error"]["Code"] == "InvalidParameterException"
+
+    def test_get_m2m_token_with_single_scope(self):
+        """Test M2M token with single scope."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "single-scope-token"}}
+
+            token = get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id="m2m_client_123",
+                client_secret="m2m_secret_456",
+                region="us-west-2",
+                scopes=["resource-server/read"],
+            )
+
+            assert token == "single-scope-token"
+
+            # Verify single scope format
+            auth_call = mock_cognito.initiate_auth.call_args[1]
+            assert auth_call["AuthParameters"]["SCOPE"] == "resource-server/read"
+
+    def test_get_m2m_token_with_empty_scopes(self):
+        """Test M2M token with empty scopes list."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "no-scope-token"}}
+
+            token = get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id="m2m_client_123",
+                client_secret="m2m_secret_456",
+                region="us-west-2",
+                scopes=[],  # Empty list
+            )
+
+            assert token == "no-scope-token"
+
+            # Verify SCOPE parameter is not included when empty list
+            auth_call = mock_cognito.initiate_auth.call_args[1]
+            # Empty list should result in empty string, which is falsy, so SCOPE should not be added
+            assert "SCOPE" not in auth_call["AuthParameters"]
+
+    def test_get_m2m_token_default_region(self):
+        """Test M2M token uses default region when not specified."""
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_cognito = Mock()
+            mock_boto3.return_value = mock_cognito
+
+            mock_cognito.initiate_auth.return_value = {"AuthenticationResult": {"AccessToken": "default-region-token"}}
+
+            get_cognito_m2m_token(
+                pool_id="us-west-2_testpool",
+                client_id="m2m_client_123",
+                client_secret="m2m_secret_456",
+                # region not specified
+            )
+
+            # Verify default region was used
+            mock_boto3.assert_called_once_with("cognito-idp", region_name="us-west-2")

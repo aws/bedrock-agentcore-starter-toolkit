@@ -531,7 +531,7 @@ class TestCreateWorkload:
     """Test create-workload-identity command."""
 
     def test_create_workload_with_name_and_urls(self, runner, tmp_path, monkeypatch):
-        """Test workload creation with explicit name and callback URLs."""
+        """Test workload creation with explicit name and return URLs."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -562,7 +562,7 @@ class TestCreateWorkload:
                         "create-workload-identity",
                         "--name",
                         "MyAgent",
-                        "--callback-urls",
+                        "--return-urls",
                         "http://localhost:8081/oauth2/callback,https://prod.example.com/callback",
                     ],
                 )
@@ -610,7 +610,7 @@ class TestCreateWorkload:
                     identity_app,
                     [
                         "create-workload-identity",
-                        "--callback-urls",
+                        "--return-urls",
                         "http://localhost:8081/oauth2/callback",
                     ],
                 )
@@ -637,7 +637,7 @@ class TestCreateWorkload:
                     identity_app,
                     [
                         "create-workload-identity",
-                        "--callback-urls",
+                        "--return-urls",
                         "http://localhost:8081/oauth2/callback",
                     ],
                 )
@@ -676,7 +676,7 @@ class TestCreateWorkload:
                         "create-workload-identity",
                         "--name",
                         "MyAgent",
-                        "--callback-urls",
+                        "--return-urls",
                         "http://localhost:8081/callback",
                     ],
                 )
@@ -688,7 +688,7 @@ class TestUpdateWorkload:
     """Test update-workload-identity command."""
 
     def test_update_workload_add_urls(self, runner, tmp_path, monkeypatch):
-        """Test adding callback URLs to existing workload."""
+        """Test adding return URLs to existing workload."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -721,7 +721,7 @@ class TestUpdateWorkload:
                         "update-workload-identity",
                         "--name",
                         "MyAgent",
-                        "--add-callback-urls",
+                        "--add-return-urls",
                         "https://prod.example.com/callback",
                     ],
                 )
@@ -737,7 +737,7 @@ class TestUpdateWorkload:
         }
 
     def test_update_workload_set_urls(self, runner, tmp_path, monkeypatch):
-        """Test replacing all callback URLs."""
+        """Test replacing all return URLs."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -770,7 +770,7 @@ class TestUpdateWorkload:
                         "update-workload-identity",
                         "--name",
                         "MyAgent",
-                        "--set-callback-urls",
+                        "--set-return-urls",
                         "https://new1.example.com/callback,https://new2.example.com/callback",
                     ],
                 )
@@ -837,7 +837,7 @@ class TestUpdateWorkload:
                         "update-workload-identity",
                         "--name",
                         "MyAgent",
-                        "--add-callback-urls",
+                        "--add-return-urls",
                         "https://example.com/callback",
                     ],
                 )
@@ -846,10 +846,10 @@ class TestUpdateWorkload:
 
 
 class TestGetToken:
-    """Test get-inbound-token command."""
+    """Test get-cognito-inbound-token command."""
 
-    def test_get_token_without_secret(self, runner):
-        """Test getting token from Cognito without client secret."""
+    def test_get_token_user_flow_without_secret(self, runner):
+        """Test getting token from Cognito using USER flow without client secret."""
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token") as mock_get_token,
             patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
@@ -859,7 +859,9 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-inbound-token",
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "user",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -883,8 +885,8 @@ class TestGetToken:
             region="us-west-2",
         )
 
-    def test_get_token_with_secret(self, runner):
-        """Test getting token with client secret."""
+    def test_get_token_user_flow_with_secret(self, runner):
+        """Test getting token with client secret (USER flow)."""
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token") as mock_get_token,
             patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
@@ -894,7 +896,9 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-inbound-token",
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "user",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -914,8 +918,150 @@ class TestGetToken:
         call_args = mock_get_token.call_args[1]
         assert call_args["client_secret"] == "mysecret"
 
-    def test_get_token_error(self, runner):
-        """Test error handling when token retrieval fails."""
+    def test_get_token_user_flow_default(self, runner):
+        """Test USER flow is default when --auth-flow not specified."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token") as mock_get_token,
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+        ):
+            mock_get_token.return_value = "default-flow-token"
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    "--username",
+                    "testuser",
+                    "--password",
+                    "Pass123!",
+                ],
+            )
+
+        assert result.exit_code == 0
+        mock_get_token.assert_called_once()
+
+    def test_get_token_m2m_flow_success(self, runner):
+        """Test getting token using M2M flow."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_m2m_token") as mock_m2m_token,
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+        ):
+            mock_m2m_token.return_value = "m2m-access-token-xyz"
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "m2m",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    "--client-secret",
+                    "secret789",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert "m2m-access-token-xyz" in result.stdout
+
+        mock_m2m_token.assert_called_once_with(
+            pool_id="us-west-2_testpool",
+            client_id="abc123",
+            client_secret="secret789",
+            region="us-west-2",
+        )
+
+    def test_get_token_user_flow_missing_username(self, runner):
+        """Test USER flow error when username missing."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "user",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    "--password",
+                    "Pass123!",
+                    # Missing --username
+                ],
+            )
+
+        assert result.exit_code != 0
+        assert "USER flow requires --username and --password" in result.stdout
+
+    def test_get_token_user_flow_missing_password(self, runner):
+        """Test USER flow error when password missing."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "user",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    "--username",
+                    "testuser",
+                    # Missing --password
+                ],
+            )
+
+        assert result.exit_code != 0
+        assert "USER flow requires --username and --password" in result.stdout
+
+    def test_get_token_m2m_flow_missing_secret(self, runner):
+        """Test M2M flow error when client secret missing."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "m2m",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    # Missing --client-secret
+                ],
+            )
+
+        assert result.exit_code != 0
+        assert "M2M flow requires --client-secret" in result.stdout
+
+    def test_get_token_invalid_auth_flow(self, runner):
+        """Test error with invalid auth flow type."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "invalid",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                ],
+            )
+
+        assert result.exit_code != 0
+        assert "--auth-flow must be 'user' or 'm2m'" in result.stdout
+
+    def test_get_token_user_flow_error(self, runner):
+        """Test error handling when token retrieval fails (USER flow)."""
         with (
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token",
@@ -926,7 +1072,9 @@ class TestGetToken:
             result = runner.invoke(
                 identity_app,
                 [
-                    "get-inbound-token",
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "user",
                     "--pool-id",
                     "us-west-2_testpool",
                     "--client-id",
@@ -940,9 +1088,35 @@ class TestGetToken:
 
         assert result.exit_code != 0
 
+    def test_get_token_m2m_flow_error(self, runner):
+        """Test error handling when M2M token retrieval fails."""
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_m2m_token",
+                side_effect=Exception("M2M auth failed"),
+            ),
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+        ):
+            result = runner.invoke(
+                identity_app,
+                [
+                    "get-cognito-inbound-token",
+                    "--auth-flow",
+                    "m2m",
+                    "--pool-id",
+                    "us-west-2_testpool",
+                    "--client-id",
+                    "abc123",
+                    "--client-secret",
+                    "secret789",
+                ],
+            )
+
+        assert result.exit_code != 0
+
 
 class TestListProviders:
-    """Test list-providers command."""
+    """Test list-credential-providers command."""
 
     def test_list_providers_success(self, runner, tmp_path, monkeypatch):
         """Test listing configured providers."""
@@ -981,7 +1155,7 @@ class TestListProviders:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        result = runner.invoke(identity_app, ["list-providers"])
+        result = runner.invoke(identity_app, ["list-credential-providers"])
 
         assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.stdout}"
         assert "Configured Credential Providers" in result.stdout
@@ -1008,7 +1182,7 @@ class TestListProviders:
         identity_config.workload = WorkloadIdentityInfo(
             name="test-agent-workload",
             arn="arn:aws:identity:us-west-2:123456789012:workload/test-agent-workload",
-            callback_urls=["http://localhost:8081/oauth2/callback"],
+            return_urls=["http://localhost:8081/oauth2/callback"],
         )
 
         agent_config = BedrockAgentCoreAgentSchema(
@@ -1025,23 +1199,24 @@ class TestListProviders:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        result = runner.invoke(identity_app, ["list-providers"])
+        result = runner.invoke(identity_app, ["list-credential-providers"])
 
         assert result.exit_code == 0
         assert "Workload Identity:" in result.stdout
         assert "test-agent-workload" in result.stdout
+        assert "App Return URLs" in result.stdout
 
     def test_list_providers_no_config(self, runner, tmp_path, monkeypatch):
-        """Test list-providers when no config file exists."""
+        """Test list-credential-providers when no config file exists."""
         monkeypatch.chdir(tmp_path)
 
-        result = runner.invoke(identity_app, ["list-providers"])
+        result = runner.invoke(identity_app, ["list-credential-providers"])
 
         assert result.exit_code == 1
         assert "No .bedrock_agentcore.yaml found" in result.stdout
 
     def test_list_providers_empty(self, runner, tmp_path, monkeypatch):
-        """Test list-providers when no providers configured."""
+        """Test list-credential-providers when no providers configured."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -1064,7 +1239,7 @@ class TestListProviders:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        result = runner.invoke(identity_app, ["list-providers"])
+        result = runner.invoke(identity_app, ["list-credential-providers"])
 
         # Command shows helpful message when no providers configured
         # Note: Currently exits with code 1 (typer.Exit(0) caught by error handler)
@@ -1074,7 +1249,7 @@ class TestListProviders:
         assert "agentcore identity create-credential-provider" in result.stdout
 
     def test_list_providers_no_identity_attribute(self, runner, tmp_path, monkeypatch):
-        """Test list-providers when identity attribute is not set at all."""
+        """Test list-credential-providers when identity attribute is not set at all."""
         monkeypatch.chdir(tmp_path)
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
@@ -1094,7 +1269,7 @@ class TestListProviders:
         project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
         save_config(project_config, config_path)
 
-        result = runner.invoke(identity_app, ["list-providers"])
+        result = runner.invoke(identity_app, ["list-credential-providers"])
 
         # Should handle missing identity attribute gracefully
         expected_exit_code_msg = (
@@ -1365,7 +1540,7 @@ class TestCleanup:
         identity_config.workload = WorkloadIdentityInfo(
             name="test-workload",
             arn="arn:aws:identity:us-west-2:123456789012:workload/test-workload",
-            callback_urls=["http://localhost:8081/callback"],
+            return_urls=["http://localhost:8081/callback"],
         )
 
         agent_config = BedrockAgentCoreAgentSchema(

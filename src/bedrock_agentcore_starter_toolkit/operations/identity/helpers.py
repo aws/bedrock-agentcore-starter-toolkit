@@ -5,7 +5,7 @@ import secrets
 import string
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -184,6 +184,59 @@ def get_cognito_access_token(
     response = cognito.initiate_auth(ClientId=client_id, AuthFlow="USER_PASSWORD_AUTH", AuthParameters=auth_parameters)
 
     return response["AuthenticationResult"]["AccessToken"]
+
+
+def get_cognito_m2m_token(
+    pool_id: str,
+    client_id: str,
+    client_secret: str,
+    region: str = "us-west-2",
+    scopes: Optional[List[str]] = None,
+) -> str:
+    """Retrieve an access token from Cognito using M2M client credentials flow.
+
+    Args:
+        pool_id: Cognito user pool ID
+        client_id: App client ID
+        client_secret: App client secret
+        region: AWS region
+        scopes: Optional list of scopes to request (e.g., ['resource-server/read'])
+
+    Returns:
+        Access token string
+    """
+    import base64
+    import hashlib
+    import hmac
+
+    cognito = boto3.client("cognito-idp", region_name=region)
+
+    # Calculate SECRET_HASH for client credentials
+    message = client_id
+    dig = hmac.new(client_secret.encode("utf-8"), msg=message.encode("utf-8"), digestmod=hashlib.sha256).digest()
+    secret_hash = base64.b64encode(dig).decode()
+
+    auth_parameters = {
+        "SECRET_HASH": secret_hash,
+    }
+
+    # Add scopes if provided
+    if scopes:
+        auth_parameters["SCOPE"] = " ".join(scopes)
+
+    try:
+        response = cognito.initiate_auth(
+            ClientId=client_id, AuthFlow="CLIENT_CREDENTIALS", AuthParameters=auth_parameters
+        )
+
+        return response["AuthenticationResult"]["AccessToken"]
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "NotAuthorizedException":
+            raise ValueError(
+                "CLIENT_CREDENTIALS flow not supported by this Cognito pool. "
+                "Ensure the pool was created with M2M flow support (setup-cognito --auth-flow m2m)"
+            ) from e
+        raise
 
 
 def _random_suffix(length: int = 4) -> str:
