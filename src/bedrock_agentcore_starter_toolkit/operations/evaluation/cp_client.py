@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional
 
 import boto3
 
+from ...utils.endpoints import get_control_plane_endpoint
+
 
 class EvaluationControlPlaneClient:
     """Client for Control Plane evaluator management operations.
@@ -17,7 +19,6 @@ class EvaluationControlPlaneClient:
     - delete_evaluator: Delete custom evaluator
     """
 
-    DEFAULT_ENDPOINT = "https://gamma.us-east-1.elcapcp.genesis-primitives.aws.dev"
     DEFAULT_REGION = "us-east-1"
 
     def __init__(self, region: Optional[str] = None, endpoint_url: Optional[str] = None):
@@ -25,10 +26,14 @@ class EvaluationControlPlaneClient:
 
         Args:
             region: AWS region (defaults to env var AGENTCORE_EVAL_REGION or us-east-1)
-            endpoint_url: API endpoint URL (defaults to env var AGENTCORE_EVAL_CP_ENDPOINT)
+            endpoint_url: Optional custom endpoint URL (defaults to env var AGENTCORE_EVAL_CP_ENDPOINT for testing)
         """
         self.region = region or os.getenv("AGENTCORE_EVAL_REGION", self.DEFAULT_REGION)
-        self.endpoint_url = endpoint_url or os.getenv("AGENTCORE_EVAL_CP_ENDPOINT", self.DEFAULT_ENDPOINT)
+
+        # Use AGENTCORE_EVAL_CP_ENDPOINT env var for gamma testing, otherwise use prod agentcore control endpoint
+        self.endpoint_url = (
+            endpoint_url or os.getenv("AGENTCORE_EVAL_CP_ENDPOINT") or get_control_plane_endpoint(self.region)
+        )
 
         self.client = boto3.client(
             "agentcore-evaluation-controlplane",
@@ -89,12 +94,27 @@ class EvaluationControlPlaneClient:
 
         Returns:
             API response with updated details
+
+        Note:
+            AWS API requires evaluatorConfig to be present even for description-only updates.
+            If only description is provided, the existing config will be fetched and reused.
         """
         params = {"evaluatorId": evaluator_id}
         if description:
             params["description"] = description
+
+        # AWS API requires evaluatorConfig to be present
+        # If only description is provided, fetch existing config
         if config:
             params["evaluatorConfig"] = config
+        elif description:
+            # Fetch current config to include in update
+            current = self.get_evaluator(evaluator_id=evaluator_id)
+            current_config = current.get("evaluatorConfig")
+            if current_config:
+                params["evaluatorConfig"] = current_config
+            # If no config found, let API handle the error
+
         return self.client.update_evaluator(**params)
 
     def delete_evaluator(self, evaluator_id: str) -> None:

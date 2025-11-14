@@ -9,7 +9,6 @@ from rich.tree import Tree
 from ...constants import GenAIAttributes, LLMAttributes, TruncationConfig
 from ..formatters import (
     format_duration_ms,
-    format_status_display,
     get_duration_style,
     get_status_icon,
     get_status_style,
@@ -534,39 +533,3 @@ class TraceVisualizer:
                 if not verbose:
                     value_str = TruncationConfig.truncate(value_str)
                 text.append(f"\n      {key}: {value_str}", style="dim yellow")
-
-    def print_trace_summary(self, trace_data: TraceData) -> None:
-        """Print a summary of all traces.
-
-        Args:
-            trace_data: TraceData containing the spans
-        """
-        trace_data.group_spans_by_trace()
-
-        if not trace_data.traces:
-            self.console.print("[yellow]No traces found[/yellow]")
-            return
-
-        from rich.table import Table
-
-        table = Table(title="Trace Summary")
-        table.add_column("Trace ID", style="cyan", no_wrap=True)
-        table.add_column("Spans", justify="right", style="bright_blue")
-        table.add_column("Duration (ms)", justify="right", style="green")
-        table.add_column("Errors", justify="right", style="red")
-        table.add_column("Status", style="yellow")
-
-        for trace_id, spans in trace_data.traces.items():
-            total_duration = sum(span.duration_ms or 0 for span in spans)
-            error_count = TraceData.count_error_spans(spans)
-            status_text, status_style = format_status_display(error_count > 0)
-
-            table.add_row(
-                trace_id,  # Show full trace ID for easy copy-paste
-                str(len(spans)),
-                format_duration_ms(total_duration, include_unit=False),
-                str(error_count) if error_count > 0 else "-",
-                Text(status_text, style=status_style),
-            )
-
-        self.console.print(table)

@@ -1,8 +1,8 @@
-"""Tests for Evaluation client interface."""
+"""Tests for Evaluation notebook interface."""
 
 import pytest
 
-from bedrock_agentcore_starter_toolkit.client import Evaluation
+from bedrock_agentcore_starter_toolkit.notebook import Evaluation
 
 
 class TestEvaluation:

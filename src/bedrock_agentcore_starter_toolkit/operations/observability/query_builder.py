@@ -127,7 +127,7 @@ class CloudWatchQueryBuilder:
         return f"""filter {base_filter}
 | parse resource.attributes.cloud.resource_id "runtime/*/" as parsedAgentId
 | filter parsedAgentId = '{agent_id}'
-1| stats max(endTimeUnixNano) as maxEnd by attributes.session.id
+| stats max(endTimeUnixNano) as maxEnd by attributes.session.id
 | sort maxEnd desc
 | limit {limit}"""
 

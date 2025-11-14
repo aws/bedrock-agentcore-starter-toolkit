@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import ClientError
 
+from ...utils.endpoints import get_data_plane_endpoint
 from ..constants import DEFAULT_RUNTIME_SUFFIX
 from ..observability.client import ObservabilityClient
 from ..observability.models.telemetry import TraceData
@@ -25,7 +26,6 @@ class EvaluationClient:
     - evaluate_session: Evaluate a full session with multiple evaluators
     """
 
-    DEFAULT_ENDPOINT = "https://gamma.us-east-1.elcapdp.genesis-primitives.aws.dev"
     DEFAULT_REGION = "us-east-1"
 
     def __init__(
@@ -34,18 +34,20 @@ class EvaluationClient:
         """Initialize evaluation client.
 
         Args:
-            region: AWS region (defaults to env var or us-west-2)
-            endpoint_url: API endpoint URL (defaults to env var or beta endpoint)
+            region: AWS region (defaults to env var or us-east-1)
+            endpoint_url: Optional custom endpoint URL (defaults to env var AGENTCORE_EVAL_ENDPOINT for testing)
             boto_client: Optional pre-configured boto3 client for testing
         """
         self.region = region or os.getenv("AGENTCORE_EVAL_REGION", self.DEFAULT_REGION)
-        self.endpoint_url = endpoint_url or os.getenv("AGENTCORE_EVAL_ENDPOINT", self.DEFAULT_ENDPOINT)
+
+        # Use AGENTCORE_EVAL_ENDPOINT env var for gamma testing, otherwise use prod agentcore endpoint
+        self.endpoint_url = endpoint_url or os.getenv("AGENTCORE_EVAL_ENDPOINT") or get_data_plane_endpoint(self.region)
 
         if boto_client:
             self.client = boto_client
         else:
             self.client = boto3.client(
-                "agentcore-evaluation-dataplane", region_name=region, endpoint_url=self.endpoint_url
+                "agentcore-evaluation-dataplane", region_name=self.region, endpoint_url=self.endpoint_url
             )
 
     def _is_session_scoped_evaluator(self, evaluator: str) -> bool:

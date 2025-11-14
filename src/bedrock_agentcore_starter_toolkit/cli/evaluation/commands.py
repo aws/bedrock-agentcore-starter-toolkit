@@ -263,7 +263,7 @@ def run_evaluation(
         console.print(f"[dim]Using AWS region: {region}[/dim]")
 
     # Convert evaluators to list (Typer returns list or None)
-    evaluator_list = evaluators if evaluators else ["Builtin.Helpfulness"]
+    evaluator_list = evaluators if evaluators else ["Builtin.GoalSuccessRate"]
 
     # Display what we're doing
     console.print(f"\n[cyan]Evaluating session:[/cyan] {session_id}")

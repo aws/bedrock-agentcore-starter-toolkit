@@ -101,7 +101,7 @@ class TestHelperFunctions:
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
     def test_create_observability_client_with_cli_args(self, mock_client_class):
         """Test creating client with CLI arguments."""
-        _create_observability_client(agent_id="agent-123", region="us-east-1")
+        _create_observability_client(agent_id="agent-123", agent=None, region="us-east-1")
 
         mock_client_class.assert_called_once_with(
             region_name="us-east-1", agent_id="agent-123", runtime_suffix="DEFAULT"
@@ -117,7 +117,7 @@ class TestHelperFunctions:
             "runtime_suffix": "DEFAULT",
         }
 
-        _create_observability_client(agent_id=None, region=None)
+        _create_observability_client(agent_id=None, agent=None, region=None)
 
         mock_client_class.assert_called_once_with(
             region_name="us-west-2", agent_id="agent-456", runtime_suffix="DEFAULT"
@@ -130,7 +130,7 @@ class TestHelperFunctions:
         mock_get_config.return_value = None
 
         with pytest.raises(typer.Exit) as exc_info:
-            _create_observability_client(agent_id=None, region=None)
+            _create_observability_client(agent_id=None, agent=None, region=None)
 
         assert exc_info.value.exit_code == 1
         assert mock_console.print.call_count >= 1
@@ -210,8 +210,7 @@ class TestShowCommand:
             trace_id="trace-123",
             session_id=None,
             agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
+            agent=None,
             days=7,
             all_traces=False,
             errors_only=False,
@@ -224,9 +223,9 @@ class TestShowCommand:
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_session_view")
-    def test_show_with_session_id(self, mock_show_session, mock_create_client, mock_get_time_range):
-        """Test show command with session ID."""
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_last_trace_from_session")
+    def test_show_with_session_id(self, mock_show_last, mock_create_client, mock_get_time_range):
+        """Test show command with session ID (default: shows latest trace)."""
         mock_get_time_range.return_value = (1000, 2000)
         mock_client = MagicMock()
         mock_create_client.return_value = mock_client
@@ -235,8 +234,7 @@ class TestShowCommand:
             trace_id=None,
             session_id="session-456",
             agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
+            agent=None,
             days=7,
             all_traces=False,
             errors_only=False,
@@ -245,9 +243,7 @@ class TestShowCommand:
             last=1,
         )
 
-        mock_show_session.assert_called_once_with(
-            mock_client, "session-456", 1000, 2000, False, True, False, False, None
-        )
+        mock_show_last.assert_called_once_with(mock_client, "session-456", 1000, 2000, False, 1, False, None)
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
@@ -261,8 +257,7 @@ class TestShowCommand:
                 trace_id="trace-123",
                 session_id="session-456",
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 all_traces=False,
                 errors_only=False,
@@ -286,8 +281,7 @@ class TestShowCommand:
                 trace_id="trace-123",
                 session_id=None,
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 all_traces=True,
                 errors_only=False,
@@ -311,8 +305,7 @@ class TestShowCommand:
                 trace_id="trace-123",
                 session_id=None,
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 all_traces=False,
                 errors_only=False,
@@ -336,8 +329,7 @@ class TestShowCommand:
                 trace_id=None,
                 session_id="session-456",
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 all_traces=True,
                 errors_only=False,
@@ -367,8 +359,7 @@ class TestShowCommand:
             trace_id=None,
             session_id=None,
             agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
+            agent=None,
             days=7,
             all_traces=False,
             errors_only=False,
@@ -392,8 +383,7 @@ class TestShowCommand:
                 trace_id="trace-123",
                 session_id=None,
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 all_traces=False,
                 errors_only=False,
@@ -446,8 +436,7 @@ class TestListCommand:
         list_traces(
             session_id="session-123",
             agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
+            agent=None,
             days=7,
             errors_only=False,
         )
@@ -470,7 +459,7 @@ class TestListCommand:
         mock_create_client.return_value = mock_client
         mock_get_config.return_value = {"session_id": "session-from-config"}
 
-        list_traces(session_id=None, agent_id="agent-1", region="us-east-1", agent_name=None, days=7, errors_only=False)
+        list_traces(session_id=None, agent_id="agent-1", agent=None, days=7, errors_only=False)
 
         mock_client.query_spans_by_session.assert_called_once_with("session-from-config", 1000, 2000)
 
@@ -487,8 +476,7 @@ class TestListCommand:
         list_traces(
             session_id="session-123",
             agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
+            agent=None,
             days=7,
             errors_only=False,
         )
@@ -533,9 +521,7 @@ class TestListCommand:
         mock_create_client.return_value = mock_client
 
         with pytest.raises(typer.Exit) as exc_info:
-            list_traces(
-                session_id=None, agent_id="agent-1", region="us-east-1", agent_name=None, days=7, errors_only=False
-            )
+            list_traces(session_id=None, agent_id="agent-1", agent=None, days=7, errors_only=False)
 
         assert exc_info.value.exit_code == 1
         assert any("No sessions found" in str(call) for call in mock_console.print.call_args_list)
@@ -552,8 +538,7 @@ class TestListCommand:
             list_traces(
                 session_id="session-123",
                 agent_id="agent-1",
-                region="us-east-1",
-                agent_name=None,
+                agent=None,
                 days=7,
                 errors_only=False,
             )
@@ -655,12 +640,13 @@ class TestInternalViewFunctions:
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_summary(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_session_view with summary mode."""
+    def test_show_session_view_basic(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_session_view shows all traces with full details."""
         from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
 
         mock_client = MagicMock()
         mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.query_runtime_logs_by_traces.return_value = []
 
         _show_session_view(
             mock_client,
@@ -668,20 +654,18 @@ class TestInternalViewFunctions:
             1000,
             2000,
             verbose=False,
-            summary_only=True,
-            all_traces=False,
             errors_only=False,
             output=None,
         )
 
         mock_client.query_spans_by_session.assert_called_once_with("session-1", 1000, 2000)
-        # Should call print_trace_summary
-        mock_visualizer_class.return_value.print_trace_summary.assert_called_once()
+        # Should call visualize_all_traces
+        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_all_traces(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_session_view with all traces mode."""
+    def test_show_session_view_verbose(self, mock_console, mock_visualizer_class, sample_spans):
+        """Test _show_session_view with verbose mode."""
         from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
 
         mock_client = MagicMock()
@@ -694,15 +678,17 @@ class TestInternalViewFunctions:
             1000,
             2000,
             verbose=True,
-            summary_only=False,
-            all_traces=True,
             errors_only=False,
             output=None,
         )
 
-        # Should query runtime logs and visualize all traces
+        # Should query runtime logs and visualize all traces with verbose=True
         mock_client.query_runtime_logs_by_traces.assert_called_once()
-        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
+        visualizer_instance = mock_visualizer_class.return_value
+        visualizer_instance.visualize_all_traces.assert_called_once()
+        # Check that verbose was passed
+        call_args = visualizer_instance.visualize_all_traces.call_args
+        assert call_args[1]["verbose"] is True
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
@@ -712,6 +698,7 @@ class TestInternalViewFunctions:
 
         mock_client = MagicMock()
         mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.query_runtime_logs_by_traces.return_value = []
 
         _show_session_view(
             mock_client,
@@ -719,14 +706,12 @@ class TestInternalViewFunctions:
             1000,
             2000,
             verbose=False,
-            summary_only=True,
-            all_traces=False,
             errors_only=True,
             output=None,
         )
 
         # Should still call visualizer (filtering happens in TraceData)
-        mock_visualizer_class.return_value.print_trace_summary.assert_called_once()
+        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
@@ -754,8 +739,6 @@ class TestInternalViewFunctions:
             1000,
             2000,
             verbose=False,
-            summary_only=True,
-            all_traces=False,
             errors_only=True,
             output=None,
         )

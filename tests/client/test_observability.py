@@ -1,8 +1,8 @@
-"""Tests for Observability client interface."""
+"""Tests for Observability notebook interface."""
 
 import pytest
 
-from bedrock_agentcore_starter_toolkit.client import Observability
+from bedrock_agentcore_starter_toolkit.notebook import Observability
 
 
 class TestObservability:

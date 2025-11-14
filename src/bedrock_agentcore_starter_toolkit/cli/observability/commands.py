@@ -13,8 +13,6 @@ from ...operations.constants import DEFAULT_RUNTIME_SUFFIX
 from ...operations.observability import (
     ObservabilityClient,
     TraceVisualizer,
-    format_age,
-    format_duration_seconds,
 )
 from ...operations.observability.constants import DEFAULT_LOOKBACK_DAYS
 from ...operations.observability.formatters import calculate_age_seconds
@@ -69,10 +67,18 @@ def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[di
 def _create_observability_client(
     agent_id: Optional[str],
     agent: Optional[str] = None,
+    region: Optional[str] = None,
+    runtime_suffix: Optional[str] = None,
 ) -> ObservabilityClient:
     """Create ObservabilityClient from CLI args or config file.
 
-    Falls back to AWS default region if not in config.
+    Args:
+        agent_id: Explicit agent ID
+        agent: Agent name to load from config
+        region: Explicit region (overrides config and auto-detection)
+        runtime_suffix: Explicit runtime suffix (overrides config default)
+
+    Falls back to AWS default region if not in config or explicitly provided.
     """
     import boto3
 
@@ -98,17 +104,114 @@ def _create_observability_client(
         console.print("  2. --agent AGENT_NAME (requires config)")
         raise typer.Exit(1)
 
-    # Determine region: config > boto3 session default
-    final_region = config.get("region") if config else None
-    if not final_region:
+    # Determine region: explicit > config > boto3 session default
+    if region:
+        final_region = region
+    elif config and config.get("region"):
+        final_region = config["region"]
+    else:
         # Use boto3's default region resolution (env vars, AWS config, etc.)
         session = boto3.Session()
         final_region = session.region_name or "us-east-1"
         console.print(f"[dim]Using AWS region: {final_region}[/dim]")
 
-    final_runtime_suffix = config.get("runtime_suffix") if config else DEFAULT_RUNTIME_SUFFIX
+    # Determine runtime_suffix: explicit > config > default
+    if runtime_suffix:
+        final_runtime_suffix = runtime_suffix
+    elif config and config.get("runtime_suffix"):
+        final_runtime_suffix = config["runtime_suffix"]
+    else:
+        final_runtime_suffix = DEFAULT_RUNTIME_SUFFIX
 
     return ObservabilityClient(region_name=final_region, agent_id=final_agent_id, runtime_suffix=final_runtime_suffix)
+
+
+def _display_trace_list(trace_data: TraceData, session_id: str) -> None:
+    """Display numbered list of traces with input/output (reusable by CLI and notebook).
+
+    Args:
+        trace_data: TraceData with traces and runtime logs
+        session_id: Session ID for table title
+    """
+    from datetime import datetime
+
+    from rich.console import Console
+    from rich.table import Table
+
+    from ...operations.observability.formatters import (
+        format_age,
+        format_duration_seconds,
+    )
+
+    # Create local console for consistent rendering across CLI and notebook
+    display_console = Console()
+
+    # Sort traces by most recent
+    def get_latest_time(spans_list):
+        end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
+        return max(end_times) if end_times else 0
+
+    sorted_traces = sorted(trace_data.traces.items(), key=lambda x: get_latest_time(x[1]), reverse=True)
+
+    table = Table(title=f"Traces in Session {session_id}")
+    table.add_column("#", style="cyan", justify="right")
+    table.add_column("Trace ID", style="bright_blue", no_wrap=True, width=36)
+    table.add_column("Duration", justify="right", style="green", width=10)
+    table.add_column("Status", justify="center", width=12)
+    table.add_column("Input", style="cyan", width=30, no_wrap=False)
+    table.add_column("Output", style="green", width=30, no_wrap=False)
+    table.add_column("Age", style="dim", width=8)
+
+    now = datetime.now().timestamp() * 1_000_000_000
+
+    for idx, (trace_id, spans_list) in enumerate(sorted_traces, 1):
+        # Calculate duration
+        start_times = [s.start_time_unix_nano for s in spans_list if s.start_time_unix_nano]
+        end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
+
+        if start_times and end_times:
+            duration_ms = (max(end_times) - min(start_times)) / 1_000_000
+        else:
+            duration_ms = sum(s.duration_ms or 0 for s in spans_list)
+
+        # Status - show span count and errors
+        error_count = sum(1 for s in spans_list if s.status_code == "ERROR")
+        total_spans = len(spans_list)
+
+        if error_count > 0:
+            status = Text(f"{total_spans} spans\n", style="dim")
+            status.append(f"❌ {error_count} err", style="red")
+        else:
+            status = Text(f"{total_spans} spans\n", style="dim")
+            status.append("✓ OK", style="green")
+
+        # Format age
+        latest_time = max(end_times) if end_times else 0
+        age_seconds = calculate_age_seconds(latest_time, now)
+        age = format_age(age_seconds)
+
+        # Mark first trace as latest
+        if idx == 1:
+            trace_id_display = Text(trace_id)
+            trace_id_display.append("\n(latest)", style="dim")
+        else:
+            trace_id_display = trace_id
+
+        # Extract input/output
+        input_text, output_text = trace_data.get_trace_messages(trace_id)
+
+        table.add_row(
+            str(idx),
+            trace_id_display,
+            format_duration_seconds(duration_ms),
+            status,
+            input_text or "[dim]-[/dim]",
+            output_text or "[dim]-[/dim]",
+            age,
+        )
+
+    display_console.print(table)
+    display_console.print(f"\n[green]✓[/green] Found {len(sorted_traces)} traces")
 
 
 def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_type: str = "trace") -> None:
@@ -151,7 +254,7 @@ def show(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
     last: int = typer.Option(1, "--last", "-n", help="[Session only] Show Nth most recent trace (default: 1 = latest)"),
 ) -> None:
-    """Show traces and sessions with explicit IDs.
+    """Show trace details with full visualization.
 
     TRACE COMMANDS:
         # Show specific trace with full details
@@ -161,7 +264,7 @@ def show(
         agentcore obs show --trace-id 690156557a198c... -o trace.json
 
     SESSION COMMANDS:
-        # Show session summary table
+        # Show latest trace from session
         agentcore obs show --session-id eb358f6f-fc68-47ed-b09a-669abfaf4469
 
         # Show all traces in session with full details
@@ -171,7 +274,7 @@ def show(
         agentcore obs show --session-id eb358f6f --errors
 
     CONFIG SESSION COMMANDS (uses .bedrock_agentcore.yaml):
-        # Show last trace from config session
+        # Show latest trace from config session
         agentcore obs show
 
         # Show 2nd most recent trace
@@ -190,6 +293,7 @@ def show(
         - --all, --errors, --last only work with sessions, not individual traces
         - Use --verbose/-v to show full event payloads and detailed metadata without truncation
         - Default view shows truncated payloads for cleaner output
+        - To list traces with Input/Output, use 'agentcore obs list' instead
     """
     try:
         client = _create_observability_client(agent_id, agent)
@@ -222,12 +326,10 @@ def show(
             _show_trace_view(client, trace_id, start_time_ms, end_time_ms, verbose, output)
 
         elif session_id:
-            # Show command always shows trace details, never summary table
+            # Show command always shows trace details
             if all_traces:
                 # Show all traces with full details
-                _show_session_view(
-                    client, session_id, start_time_ms, end_time_ms, verbose, False, True, errors_only, output
-                )
+                _show_session_view(client, session_id, start_time_ms, end_time_ms, verbose, errors_only, output)
             else:
                 # Default: show latest trace (or Nth trace if --last specified)
                 _show_last_trace_from_session(
@@ -258,9 +360,7 @@ def show(
 
             if all_traces:
                 # Show all traces with full details
-                _show_session_view(
-                    client, session_id, start_time_ms, end_time_ms, verbose, False, True, errors_only, output
-                )
+                _show_session_view(client, session_id, start_time_ms, end_time_ms, verbose, errors_only, output)
             else:
                 # Default: show last trace from session
                 _show_last_trace_from_session(
@@ -316,12 +416,10 @@ def _show_session_view(
     start_time_ms: int,
     end_time_ms: int,
     verbose: bool,
-    summary_only: bool,
-    all_traces: bool,
     errors_only: bool,
     output: Optional[str],
 ) -> None:
-    """Show session summary or all traces in session."""
+    """Show all traces in session with full details."""
     console.print(f"[cyan]Fetching session:[/cyan] {session_id}\n")
 
     spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms)
@@ -341,32 +439,20 @@ def _show_session_view(
             return
         trace_data.traces = error_traces
 
-    # Query runtime logs to show messages when displaying traces (not just summary)
-    if all_traces and not summary_only:
-        try:
-            trace_ids = list(trace_data.traces.keys())
-            runtime_logs = client.query_runtime_logs_by_traces(trace_ids, start_time_ms, end_time_ms)
-            trace_data.runtime_logs = runtime_logs
-        except Exception as e:
-            logger.warning("Failed to retrieve runtime logs: %s", e)
+    # Query runtime logs to show messages
+    try:
+        trace_ids = list(trace_data.traces.keys())
+        runtime_logs = client.query_runtime_logs_by_traces(trace_ids, start_time_ms, end_time_ms)
+        trace_data.runtime_logs = runtime_logs
+    except Exception as e:
+        logger.warning("Failed to retrieve runtime logs: %s", e)
 
     if output:
         _export_trace_data_to_json(trace_data, output, data_type="session")
 
+    # Show all traces with full details
     visualizer = TraceVisualizer(console)
-
-    if summary_only:
-        # Show summary table only
-        visualizer.print_trace_summary(trace_data)
-    elif all_traces:
-        # Show all traces with filtering (verbose controls truncation and filtering)
-        visualizer.visualize_all_traces(trace_data, show_details=False, show_messages=True, verbose=verbose)
-    else:
-        # Default: show summary table
-        visualizer.print_trace_summary(trace_data)
-        console.print(
-            f"\n💡 [dim]Tip: Use 'agentcore obs show --session-id {session_id} --all' to see detailed traces[/dim]"
-        )
+    visualizer.visualize_all_traces(trace_data, show_details=False, show_messages=True, verbose=verbose)
 
     console.print(f"\n[green]✓[/green] Found {len(trace_data.traces)} traces with {len(spans)} total spans")
 
@@ -523,7 +609,7 @@ def list_traces(
 
         # Query runtime logs for all traces to get input/output
         console.print("[dim]Fetching runtime logs for input/output...[/dim]")
-        trace_ids = [trace_id for trace_id, _ in sorted_traces]
+        trace_ids = list(trace_data.traces.keys())
         try:
             runtime_logs = client.query_runtime_logs_by_traces(trace_ids, start_time_ms, end_time_ms)
             trace_data.runtime_logs = runtime_logs
@@ -532,71 +618,9 @@ def list_traces(
             trace_data.runtime_logs = []
 
         # Display numbered list
-        from datetime import datetime
-
-        from rich.table import Table
-
-        table = Table(title=f"Traces in Session {session_id}")
-        table.add_column("#", style="cyan", justify="right", width=3)
-        table.add_column("Trace ID", style="bright_blue", no_wrap=True, width=36)  # Full UUID width
-        table.add_column("Duration", justify="right", style="green", width=10)
-        table.add_column("Status", justify="center", width=12)
-        table.add_column("Input", style="cyan", width=30, no_wrap=False)
-        table.add_column("Output", style="green", width=30, no_wrap=False)
-        table.add_column("Age", style="dim", width=8)
-
-        now = datetime.now().timestamp() * 1_000_000_000  # Convert to nanoseconds
-
-        for idx, (trace_id, spans_list) in enumerate(sorted_traces, 1):
-            # Calculate duration
-            start_times = [s.start_time_unix_nano for s in spans_list if s.start_time_unix_nano]
-            end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
-
-            if start_times and end_times:
-                duration_ms = (max(end_times) - min(start_times)) / 1_000_000
-            else:
-                duration_ms = sum(s.duration_ms or 0 for s in spans_list)
-
-            # Status - show span count and errors
-            error_count = sum(1 for s in spans_list if s.status_code == "ERROR")
-            total_spans = len(spans_list)
-
-            if error_count > 0:
-                status = Text(f"{total_spans} spans\n", style="dim")
-                status.append(f"❌ {error_count} err", style="red")
-            else:
-                status = Text(f"{total_spans} spans\n", style="dim")
-                status.append("✓ OK", style="green")
-
-            # Format age using utility
-            latest_time = max(end_times) if end_times else 0
-            age_seconds = calculate_age_seconds(latest_time, now)
-            age = format_age(age_seconds)
-
-            # Mark first trace as latest in Trace ID
-            if idx == 1:
-                trace_id_display = Text(trace_id)
-                trace_id_display.append("\n(latest)", style="dim")
-            else:
-                trace_id_display = trace_id
-
-            # Extract input/output using TraceData method
-            input_text, output_text = trace_data.get_trace_messages(trace_id)
-
-            table.add_row(
-                str(idx),
-                trace_id_display,
-                format_duration_seconds(duration_ms),
-                status,
-                input_text or "[dim]-[/dim]",
-                output_text or "[dim]-[/dim]",
-                age,
-            )
-
-        console.print(table)
+        _display_trace_list(trace_data, session_id)
 
         # Show helpful tips
-        console.print(f"\n[green]✓[/green] Found {len(sorted_traces)} traces")
         console.print("💡 [dim]Tip: Use 'agentcore obs show --last <N>' to view trace #N[/dim]")
         console.print("💡 [dim]     Use 'agentcore obs show --trace-id <trace-id>' to view specific trace[/dim]")
 
