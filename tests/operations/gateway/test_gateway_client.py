@@ -390,3 +390,69 @@ class TestGatewayClient:
             )
 
         assert "failed" in str(excinfo.value).lower()
+
+    def test_get_gateway_arn_parsing(self, gateway_client):
+        """Test get_gateway ARN parsing logic"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.get_gateway.return_value = {"gatewayId": "test-gateway"}
+        
+        # Test ARN parsing - should extract ID from ARN
+        arn = "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/test-gateway-123"
+        result = gateway_client.get_gateway(gateway_arn=arn)
+        
+        # Verify the ARN was parsed correctly and ID extracted
+        mock_bedrock.get_gateway.assert_called_once_with(gatewayIdentifier="test-gateway-123")
+        assert result["status"] == "success"
+
+    def test_get_gateway_name_lookup(self, gateway_client):
+        """Test get_gateway name lookup logic"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        
+        # Mock the name lookup method
+        with patch.object(gateway_client, '_get_gateway_id_by_name', return_value="resolved-id"):
+            mock_bedrock.get_gateway.return_value = {"gatewayId": "resolved-id"}
+            
+            result = gateway_client.get_gateway(name="TestGateway")
+            
+            # Verify name was looked up and resolved ID was used
+            gateway_client._get_gateway_id_by_name.assert_called_once_with("TestGateway")
+            mock_bedrock.get_gateway.assert_called_once_with(gatewayIdentifier="resolved-id")
+            assert result["status"] == "success"
+
+    def test_get_gateway_missing_parameters(self, gateway_client):
+        """Test get_gateway parameter validation"""
+        # Test with no parameters - should return error
+        result = gateway_client.get_gateway()
+        
+        assert result["status"] == "error"
+        assert "required" in result["message"]
+
+    def test_get_gateway_name_not_found(self, gateway_client):
+        """Test get_gateway when name lookup fails"""
+        # Mock name lookup to return None (not found)
+        with patch.object(gateway_client, '_get_gateway_id_by_name', return_value=None):
+            result = gateway_client.get_gateway(name="NonExistentGateway")
+            
+            assert result["status"] == "error"
+            assert "not found" in result["message"]
+
+    def test_delete_gateway_with_targets_check(self, gateway_client):
+        """Test delete_gateway checks for targets before deletion"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        
+        # Mock that gateway has targets
+        mock_bedrock.list_gateway_targets.return_value = {
+            "items": [{"targetId": "target-1"}]
+        }
+        
+        result = gateway_client.delete_gateway(gateway_identifier="test-gateway")
+        
+        # Should check for targets first
+        mock_bedrock.list_gateway_targets.assert_called_once_with(gatewayIdentifier="test-gateway")
+        # Should not delete gateway if targets exist
+        mock_bedrock.delete_gateway.assert_not_called()
+        assert result["status"] == "error"
+        assert "target(s)" in result["message"]
