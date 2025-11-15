@@ -49,6 +49,7 @@ dependencies = [
     "starlette>=0.46.2",
     "boto3>=1.40.65",
     "botocore>=1.40.65",
+    "bandit>=1.8.6",
 ]
 
 [project.scripts]
