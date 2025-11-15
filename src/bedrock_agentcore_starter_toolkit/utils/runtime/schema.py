@@ -40,6 +40,45 @@ class MemoryConfig(BaseModel):
         return self.mode == "STM_AND_LTM"
 
 
+class CredentialProviderInfo(BaseModel):
+    """Information about a credential provider."""
+
+    name: str = Field(..., description="Credential provider name")
+    arn: str = Field(..., description="Credential provider ARN")
+    type: str = Field(..., description="Provider type (cognito, github, google, salesforce, custom-oauth2)")
+    callback_url: str = Field(default="", description="AgentCore callback URL for OAuth 3LO")
+
+
+class WorkloadIdentityInfo(BaseModel):
+    """Information about workload identity."""
+
+    name: str = Field(..., description="Workload identity name")
+    arn: str = Field(..., description="Workload identity ARN")
+    return_urls: List[str] = Field(
+        default_factory=list,
+        description="Application return URLs where AgentCore redirects users for session binding verification",
+    )
+
+
+class IdentityConfig(BaseModel):
+    """Identity service configuration for outbound authentication."""
+
+    credential_providers: List[CredentialProviderInfo] = Field(
+        default_factory=list, description="List of configured credential providers"
+    )
+    workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if Identity is enabled (has providers configured)."""
+        return len(self.credential_providers) > 0
+
+    @property
+    def provider_names(self) -> List[str]:
+        """Get list of provider names."""
+        return [p.name for p in self.credential_providers]
+
+
 class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
@@ -209,6 +248,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
+    identity: IdentityConfig = Field(default_factory=IdentityConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")

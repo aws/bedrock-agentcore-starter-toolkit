@@ -141,7 +141,7 @@ class TestInvokeBedrockAgentCore:
         bearer_token = "test-bearer-token-123"
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "http client response"}
@@ -153,9 +153,10 @@ class TestInvokeBedrockAgentCore:
             mock_http_client_class.assert_called_once_with("us-west-2")
             mock_http_client.invoke_endpoint.assert_called_once_with(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-                payload='{"message": "Hello with bearer token"}',  # Payload is converted to JSON string
+                payload='{"message": "Hello with bearer token"}',
                 session_id=result.session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=None,
             )
 
@@ -184,7 +185,7 @@ class TestInvokeBedrockAgentCore:
         custom_session_id = "custom-session-789"
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "success"}
@@ -198,9 +199,10 @@ class TestInvokeBedrockAgentCore:
             assert result.session_id == custom_session_id
             mock_http_client.invoke_endpoint.assert_called_once_with(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-                payload='{"message": "Hello"}',  # Payload is converted to JSON string
+                payload='{"message": "Hello"}',
                 session_id=custom_session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=None,
             )
 
@@ -224,7 +226,7 @@ class TestInvokeBedrockAgentCore:
         payload = {"message": "Hello without bearer token"}
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             result = invoke_bedrock_agentcore(config_path, payload)
 
@@ -258,7 +260,7 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
@@ -330,7 +332,7 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
@@ -400,7 +402,7 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
@@ -586,7 +588,7 @@ class TestGetWorkloadName:
         }
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "http client response with headers"}
@@ -603,6 +605,7 @@ class TestGetWorkloadName:
                 payload='{"message": "Hello with headers and bearer token"}',
                 session_id=result.session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=custom_headers,
             )
 
@@ -636,7 +639,7 @@ class TestGetWorkloadName:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient

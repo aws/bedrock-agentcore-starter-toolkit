@@ -348,6 +348,359 @@ Options:
 
 - `--agent, -a TEXT`: Agent name
 
+## Identity Commands
+
+Manage AgentCore Identity resources for OAuth authentication and external service access.
+
+### Setup Cognito
+
+Create Cognito user pools for Identity authentication.
+
+```bash
+agentcore identity setup-cognito [OPTIONS]
+```
+
+Options:
+
+- `--region, -r TEXT`: AWS region (defaults to configured region)
+- `--auth-flow TEXT`: OAuth flow type - 'user' (USER_FEDERATION) or 'm2m' (M2M). Default: 'user'
+
+**Auth Flow Types:**
+
+- `user` (default): USER_FEDERATION flow requiring user login and consent
+  - Creates user pool with hosted UI
+  - Generates test user credentials
+  - For agents that act on behalf of users
+- `m2m`: CLIENT_CREDENTIALS flow for machine-to-machine
+  - Creates user pool with resource server and scopes
+  - No user accounts needed
+  - For agents that authenticate as themselves
+
+**What it creates:**
+
+**1. Runtime User Pool**: For agent inbound JWT authentication
+   - **Purpose**: Authenticates users TO your agent
+   - **Flow**: User → Runtime Pool → JWT token → `agentcore invoke --bearer-token`
+   - **Contains**: Test user credentials, no client secret (uses password auth)
+   - **Used by**: Your application's users to get JWT tokens
+
+**2. Identity User Pool**: For agent outbound OAuth to external services
+   - **Purpose**: Acts as OAuth credential provider so your agent can call external APIs
+   - **Flow**: Agent → Identity Service → External Service (GitHub, Google, etc.)
+   - **Contains**: Client ID and secret for OAuth flows, test user for authorization testing
+   - **Configured with**: Return URLs for OAuth authorization session binding
+   - **Used by**: `create-credential-provider` command to register this pool as an OAuth client
+
+**Return URLs vs Callback URLs:**
+- **Return URLs** (configured in workload identity): Your application endpoints where AgentCore redirects users after OAuth authorization for session binding verification
+- **Callback URLs** (managed by AgentCore): AgentCore endpoints where external IdPs (GitHub, Google) redirect after user authorization
+
+See [OAuth 2.0 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) for details.
+
+**Output:**
+
+- Displays Runtime and Identity pool configurations (passwords hidden)
+- Saves to `.agentcore_identity_cognito_{flow}.json` (flow-specific JSON)
+- Saves to `.agentcore_identity_{flow}.env` (flow-specific environment variables)
+- Provides copy-paste commands using actual values
+
+**Security:**
+
+- .env files have owner-only permissions (chmod 600)
+- Passwords and secrets not echoed to terminal
+- Flow-specific files prevent conflicts when using both flows
+
+**Examples:**
+
+```bash
+# Create pools for user consent flow (default)
+agentcore identity setup-cognito
+
+# Create pools for machine-to-machine flow
+agentcore identity setup-cognito --auth-flow m2m
+
+# Load environment variables (bash/zsh)
+export $(cat .agentcore_identity_user.env | xargs)
+# or for m2m:
+export $(cat .agentcore_identity_m2m.env | xargs)
+
+# In Python
+from dotenv import load_dotenv
+load_dotenv('.agentcore_identity_user.env')
+```
+
+### Create Credential Provider
+
+Create an OAuth 2.0 credential provider for external service authentication.
+
+```bash
+agentcore identity create-credential-provider [OPTIONS]
+```
+
+Options:
+
+- `--name TEXT`: Provider name (required)
+- `--type TEXT`: Provider type: cognito, github, google, salesforce (required)
+- `--client-id TEXT`: OAuth 2.0 client ID (required)
+- `--client-secret TEXT`: OAuth 2.0 client secret (required)
+- `--discovery-url TEXT`: OIDC discovery URL (required for cognito)
+- `--cognito-pool-id TEXT`: Cognito User Pool ID (optional, for auto-updating callback URLs)
+- `--region TEXT`: AWS region (defaults to configured region)
+
+**Provider Types:**
+
+- `cognito`: Amazon Cognito User Pools
+- `github`: GitHub OAuth
+- `google`: Google OAuth
+- `salesforce`: Salesforce OAuth
+
+**Discovery URL Format:**
+Must be the complete OIDC discovery URL including `.well-known/openid-configuration`:
+
+```bash
+# Cognito format
+https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xxxxx/.well-known/openid-configuration
+
+# Custom provider format
+https://your-auth-server.com/.well-known/openid-configuration
+```
+
+**Automatic Configuration:**
+
+- Creates the credential provider in AgentCore Identity
+- Adds provider configuration to `.bedrock_agentcore.yaml`
+- IAM permissions added automatically during `agentcore launch`
+
+**Note:** IAM permissions are not added immediately - they are added during `agentcore launch` to ensure the execution role exists.
+
+**Examples:**
+
+```bash
+# Using environment variables from setup-cognito
+agentcore identity create-credential-provider \
+  --name MyServiceProvider \
+  --type cognito \
+  --client-id $IDENTITY_CLIENT_ID \
+  --client-secret $IDENTITY_CLIENT_SECRET \
+  --discovery-url $IDENTITY_DISCOVERY_URL \
+  --cognito-pool-id $IDENTITY_POOL_ID
+
+# GitHub provider
+agentcore identity create-credential-provider \
+  --name MyGitHub \
+  --type github \
+  --client-id "github_client_id" \
+  --client-secret "github_client_secret"
+
+# IMPORTANT: After creation, register the callback URL from the response
+# in your GitHub OAuth app settings under "Authorization callback URL"
+```
+
+**Note:** After creating a provider, you must register the returned `callbackUrl` in your OAuth provider's settings (except for Cognito, which is auto-configured with `--cognito-pool-id`).
+
+### Create Workload Identity
+
+Create a workload identity for agent-to-Identity service authentication.
+
+```bash
+agentcore identity create-workload-identity [OPTIONS]
+```
+
+Options:
+
+- `--name TEXT`: Workload identity name (required)
+- `--return-urls TEXT`: Comma-separated OAuth return URLs for session binding (optional, but required for USER_FEDERATION flows)
+- `--region TEXT`: AWS region (defaults to configured region)
+
+- **Return URLs** (what you configure here): Endpoints in YOUR application where AgentCore Identity redirects users after OAuth authorization. Your application must verify the user session and call `CompleteResourceTokenAuth` API.
+- **Callback URLs** (managed by AgentCore): Endpoints hosted by AgentCore Identity where external IdPs (GitHub, Google, etc.) redirect after user grants permission.
+
+Return URLs are required for OAuth 2.0 authorization flows with user consent (USER_FEDERATION). They enable session binding to prevent authorization URL hijacking attacks.
+
+See [OAuth 2.0 Authorization URL Session Binding](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html) for implementation details.
+
+**Automatic Configuration:**
+
+- Creates workload identity in AgentCore Identity
+- Adds workload configuration to `.bedrock_agentcore.yaml`
+- Links workload to agent for automatic token exchange
+
+**Return URLs:**
+These are endpoints in YOUR application for session binding verification:
+
+```bash
+# Single return URL
+--return-urls http://localhost:8081/oauth2/callback
+
+# Multiple return URLs (comma-separated, for different environments)
+--return-urls http://localhost:8081/oauth2/callback,https://myapp.example.com/callback
+```
+
+**Example:**
+
+```bash
+agentcore identity create-workload-identity \
+  --name my-agent-workload \
+  --return-urls http://localhost:8081/oauth2/callback
+```
+
+### Update Workload Identity
+
+Update callback URLs for an existing workload identity.
+
+```bash
+agentcore identity update-workload-identity [OPTIONS]
+```
+
+Options:
+
+- `--name TEXT`: Workload identity name (required)
+- `--add-return-urls TEXT`: Comma-separated callback URLs to ADD to existing
+- `--set-return-urls TEXT`: Comma-separated callback URLs to SET (replaces all existing)
+- `--region TEXT`: AWS region
+
+**Examples:**
+
+```bash
+Use --add-return-urls to append new URLs to existing ones.
+Use --set-return-urls to replace all existing URLs.
+
+Examples:
+    # Add a production return URL
+    agentcore identity update-workload-identity --name MyAgent-workload \
+        --add-return-urls https://prod.example.com/callback
+```
+
+### Get Cognito Inbound Token
+
+Generate a JWT bearer token from Cognito for Runtime inbound authentication.
+
+```bash
+agentcore identity get-cognito-inbound-token [OPTIONS]
+```
+
+Options:
+
+- `--auth-flow TEXT`: OAuth flow type - ‘user’ (USER_FEDERATION, default) or ‘m2m’ (M2M client credentials)
+- `--pool-id TEXT`: Cognito User Pool ID (required)
+- `--client-id TEXT`: Cognito App Client ID (required)
+- `--client-secret TEXT`: Client secret (required for m2m flow)
+- `--username TEXT`: Username (required for user flow)
+- `--password TEXT`: Password (required for user flow)
+- `--region TEXT`: AWS region
+
+**Note:** This command is Cognito-specific. Both Runtime and Gateway support USER_FEDERATION and M2M flows.
+
+**Examples:**
+
+```bash
+# USER flow (default) - use shell variables from setup-cognito
+TOKEN=$(agentcore identity get-cognito-inbound-token \
+         --pool-id $RUNTIME_POOL_ID \
+         --client-id $RUNTIME_CLIENT_ID \
+         --username $RUNTIME_USERNAME \
+         --password $RUNTIME_PASSWORD)
+
+# M2M flow
+TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m \
+         --pool-id $RUNTIME_POOL_ID \
+         --client-id $RUNTIME_CLIENT_ID \
+         --client-secret $RUNTIME_CLIENT_SECRET)
+
+# Use token with agent
+agentcore invoke '{"prompt": "test"}' --bearer-token "$TOKEN"
+```
+
+
+### Cleanup Identity Resources
+
+Remove all Identity resources for an agent.
+
+```bash
+agentcore identity cleanup [OPTIONS]
+```
+
+Options:
+
+- `--agent, -a TEXT`: Agent name
+- `--force, -f`: Skip confirmation prompts
+
+**Deleted Resources:**
+
+- Credential providers
+- Workload identities
+- Cognito user pools (if created by setup-cognito)
+- IAM inline policies (AgentCoreIdentityAccess)
+- Configuration files (.agentcore_identity_*)
+
+**Example:**
+
+```bash
+# Clean up with confirmation
+agentcore identity cleanup --agent my-agent
+
+# Clean up without prompts
+agentcore identity cleanup --agent my-agent --force
+```
+
+## Identity Example Usage
+
+### Complete Identity Setup Workflow
+
+```bash
+# 1. Create Cognito pools (replaces 50-line bash script)
+agentcore identity setup-cognito --auth-flow user
+
+# 2. Load environment variables
+export $(cat .agentcore_identity_user.env | xargs)
+
+# 3. Configure agent with JWT auth
+agentcore configure \
+  -e agent.py \
+  --name my-agent \
+  --authorizer-config '{
+    \"customJWTAuthorizer\":  {
+      \"discoveryUrl\": \"$RUNTIME_DISCOVERY_URL\",
+      \"allowedClients\": [\"$RUNTIME_CLIENT_ID\"]
+    }
+  }' \
+  --disable-memory
+
+# 4. Create credential provider (IAM handled automatically)
+agentcore identity create-credential-provider \
+  --name MyServiceProvider \
+  --type cognito \
+  --client-id $IDENTITY_CLIENT_ID \
+  --client-secret $IDENTITY_CLIENT_SECRET \
+  --discovery-url $IDENTITY_DISCOVERY_URL \
+  --cognito-pool-id $IDENTITY_POOL_ID
+
+# 5. Create workload identity
+agentcore identity create-workload-identity \
+  --name my-agent-workload \
+  --return-urls http://localhost:8081/oauth2/callback
+
+# 6. Deploy agent (IAM permissions added automatically here)
+agentcore launch
+
+# 7. Get bearer token for Runtime auth
+BEARER_TOKEN=$(agentcore identity get-inbound-token \
+  --pool-id $RUNTIME_POOL_ID \
+  --client-id $RUNTIME_CLIENT_ID \
+  --username $RUNTIME_USERNAME \
+  --password $RUNTIME_PASSWORD)
+
+
+# 8. Invoke with JWT authentication
+agentcore invoke '{"prompt": "Call external service"}' \
+  --bearer-token "$BEARER_TOKEN" \
+  --session-id test_session_12345678901234567890123456789012
+
+# 9. Cleanup when done
+agentcore identity cleanup --agent my-agent --force
+```
+
+
 ## Gateway Commands
 
 Access gateway subcommands:

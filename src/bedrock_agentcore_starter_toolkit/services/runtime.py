@@ -717,6 +717,7 @@ class HttpBedrockAgentCoreClient:
         payload,
         session_id: str,
         bearer_token: Optional[str],
+        user_id: Optional[str] = None,
         endpoint_name: str = "DEFAULT",
         custom_headers: Optional[dict] = None,
     ) -> Dict:
@@ -727,6 +728,7 @@ class HttpBedrockAgentCoreClient:
             payload: Payload to send (dict or string)
             session_id: Session ID for the request
             bearer_token: Bearer token for authentication
+            user_id: User ID (required for Identity 3LO OAuth flows)
             endpoint_name: Endpoint name, defaults to "DEFAULT"
             custom_headers: Optional custom headers to include in the request
 
@@ -740,11 +742,20 @@ class HttpBedrockAgentCoreClient:
         url = f"{self.dp_endpoint}/runtimes/{escaped_arn}/invocations"
         # Headers
         headers = {
-            "Authorization": f"Bearer {bearer_token}",
             "Content-Type": "application/json",
             "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
             "User-Agent": _get_user_agent(),
         }
+
+        if bearer_token:
+            # JWT authentication mode
+            headers["Authorization"] = f"Bearer {bearer_token}"
+            # DO NOT add user_id header with JWT - Runtime extracts from token
+
+        elif user_id:
+            # SIGV4 authentication mode (no bearer token)
+            # Only add user_id header when NOT using JWT
+            headers["X-Amzn-Bedrock-AgentCore-Runtime-User-Id"] = user_id
 
         # Merge custom headers if provided
         if custom_headers:
