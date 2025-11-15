@@ -7,20 +7,16 @@ from typing import Optional
 
 # Mock responses for testing
 MOCK_RESPONSES = [
-    "Hello! I'm a mock agent. I can help you test the UI without needing "
-    "a real agent configuration.",
-    "This is a simulated response. In production, I would be powered by "
-    "Amazon Bedrock AgentCore.",
+    "Hello! I'm a mock agent. I can help you test the UI without needing a real agent configuration.",
+    "This is a simulated response. In production, I would be powered by Amazon Bedrock AgentCore.",
     "I'm processing your request... Here's a mock response with some "
     "**markdown** formatting!\n\n- Point 1\n- Point 2\n- Point 3",
     "Let me help you with that. This is a longer response to test how the UI "
     "handles multi-line content.\n\nI can include:\n1. Numbered lists\n"
     "2. **Bold text**\n3. *Italic text*\n\nAnd even code blocks:\n"
     "```python\ndef hello():\n    print('Hello, World!')\n```",
-    "Great question! In mock mode, I generate random responses to help you "
-    "test the UI functionality.",
-    "🎉 The UI is working perfectly! This mock agent helps you develop and "
-    "test without needing AWS credentials.",
+    "Great question! In mock mode, I generate random responses to help you test the UI functionality.",
+    "🎉 The UI is working perfectly! This mock agent helps you develop and test without needing AWS credentials.",
 ]
 
 

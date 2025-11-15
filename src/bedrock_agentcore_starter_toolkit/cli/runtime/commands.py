@@ -69,9 +69,7 @@ def _validate_requirements_file(file_path: str) -> str:
         _handle_error(str(e), e)
 
 
-def _prompt_for_requirements_file(
-    prompt_text: str, source_path: str, default: str = ""
-) -> Optional[str]:
+def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: str = "") -> Optional[str]:
     """Prompt user for requirements file path with validation.
 
     Args:
@@ -100,9 +98,7 @@ def _prompt_for_requirements_file(
         # Check if requirements file is within project root (allows shared requirements)
         try:
             if not req_file.is_relative_to(project_root):
-                console.print(
-                    "[red]Error: Requirements file must be within project directory[/red]"
-                )
+                console.print("[red]Error: Requirements file must be within project directory[/red]")
                 return _prompt_for_requirements_file(prompt_text, source_path, default)
         except (ValueError, AttributeError):
             # is_relative_to not available or other error - skip validation
@@ -136,9 +132,7 @@ def _handle_requirements_file_display(
         # Auto-detection for non-interactive mode
         if deps.found:
             rel_deps_path = get_relative_path(Path(deps.resolved_path))
-            _print_success(
-                f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]"
-            )
+            _print_success(f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]")
             return None  # Use detected file
         else:
             _handle_error("No requirements file specified and none found automatically")
@@ -147,12 +141,8 @@ def _handle_requirements_file_display(
     if deps.found:
         rel_deps_path = get_relative_path(Path(deps.resolved_path))
 
-        console.print(
-            f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{rel_deps_path}[/bold]"
-        )
-        console.print(
-            "[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]"
-        )
+        console.print(f"\n🔍 [cyan]Detected dependency file:[/cyan] [bold]{rel_deps_path}[/bold]")
+        console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
 
         result = _prompt_for_requirements_file(
             "Path or Press Enter to use detected dependency file: ",
@@ -162,18 +152,12 @@ def _handle_requirements_file_display(
 
         if result is None:
             # Use detected file
-            _print_success(
-                f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]"
-            )
+            _print_success(f"Using detected requirements file: [cyan]{rel_deps_path}[/cyan]")
 
         return result
     else:
-        console.print(
-            "\n[yellow]⚠️  No dependency file found (requirements.txt or pyproject.toml)[/yellow]"
-        )
-        console.print(
-            "[dim]Enter path to requirements file (use Tab for autocomplete), or press Enter to skip:[/dim]"
-        )
+        console.print("\n[yellow]⚠️  No dependency file found (requirements.txt or pyproject.toml)[/yellow]")
+        console.print("[dim]Enter path to requirements file (use Tab for autocomplete), or press Enter to skip:[/dim]")
 
         result = _prompt_for_requirements_file("Path: ", source_path=source_path)
 
@@ -183,9 +167,7 @@ def _handle_requirements_file_display(
         return result
 
 
-def _detect_entrypoint_in_source(
-    source_path: str, non_interactive: bool = False
-) -> str:
+def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False) -> str:
     """Detect entrypoint file in source directory with CLI display."""
     source_dir = Path(source_path)
 
@@ -240,17 +222,11 @@ def list_agents():
 
         console.print("[bold]Configured Agents:[/bold]")
         for name, agent in project_config.agents.items():
-            default_marker = (
-                " (default)" if name == project_config.default_agent else ""
-            )
+            default_marker = " (default)" if name == project_config.default_agent else ""
             status_icon = "✅" if agent.bedrock_agentcore.agent_arn else "⚠️"
-            status_text = (
-                "Ready" if agent.bedrock_agentcore.agent_arn else "Config only"
-            )
+            status_text = "Ready" if agent.bedrock_agentcore.agent_arn else "Config only"
 
-            console.print(
-                f"  {status_icon} [cyan]{name}[/cyan]{default_marker} - {status_text}"
-            )
+            console.print(f"  {status_icon} [cyan]{name}[/cyan]{default_marker} - {status_text}")
             console.print(f"     Entrypoint: {agent.entrypoint}")
             console.print(f"     Region: {agent.aws.region}")
             console.print()
@@ -288,25 +264,15 @@ def configure(
     ),
     agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
     execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
-    code_build_execution_role: Optional[str] = typer.Option(
-        None, "--code-build-execution-role", "-cber"
-    ),
+    code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
     ecr_repository: Optional[str] = typer.Option(None, "--ecr", "-ecr"),
-    s3_bucket: Optional[str] = typer.Option(
-        None, "--s3", "-s3", help="S3 bucket for direct_code_deploy deployment"
-    ),
-    container_runtime: Optional[str] = typer.Option(
-        None, "--container-runtime", "-ctr"
-    ),
+    s3_bucket: Optional[str] = typer.Option(None, "--s3", "-s3", help="S3 bucket for direct_code_deploy deployment"),
+    container_runtime: Optional[str] = typer.Option(None, "--container-runtime", "-ctr"),
     requirements_file: Optional[str] = typer.Option(
         None, "--requirements-file", "-rf", help="Path to requirements file"
     ),
-    disable_otel: bool = typer.Option(
-        False, "--disable-otel", "-do", help="Disable OpenTelemetry"
-    ),
-    disable_memory: bool = typer.Option(
-        False, "--disable-memory", "-dm", help="Disable memory"
-    ),
+    disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
+    disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory"),
     authorizer_config: Optional[str] = typer.Option(
         None,
         "--authorizer-config",
@@ -349,13 +315,9 @@ def configure(
         min=60,
         max=28800,
     ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Enable verbose output"
-    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     region: Optional[str] = typer.Option(None, "--region", "-r"),
-    protocol: Optional[str] = typer.Option(
-        None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"
-    ),
+    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
     non_interactive: bool = typer.Option(
         False,
         "--non-interactive",
@@ -416,9 +378,7 @@ def configure(
                 )
 
         # Parse and validate security group IDs - UPDATED VALIDATION
-        vpc_security_groups = [
-            sg.strip() for sg in security_groups.split(",") if sg.strip()
-        ]
+        vpc_security_groups = [sg.strip() for sg in security_groups.split(",") if sg.strip()]
         for sg_id in vpc_security_groups:
             # Format: sg-{8-17 hex characters}
             if not sg_id.startswith("sg-"):
@@ -446,9 +406,7 @@ def configure(
     # Validate lifecycle configuration
     if idle_timeout is not None and max_lifetime is not None:
         if idle_timeout > max_lifetime:
-            _handle_error(
-                f"Error: --idle-timeout ({idle_timeout}s) must be <= --max-lifetime ({max_lifetime}s)"
-            )
+            _handle_error(f"Error: --idle-timeout ({idle_timeout}s) must be <= --max-lifetime ({max_lifetime}s)")
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
 
@@ -462,13 +420,9 @@ def configure(
             entrypoint_input = "."
         else:
             console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
-            console.print(
-                "[dim]Specify the entry point (use Tab for autocomplete):[/dim]"
-            )
+            console.print("[dim]Specify the entry point (use Tab for autocomplete):[/dim]")
             console.print("[dim]  • File path: weather/agent.py[/dim]")
-            console.print(
-                "[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]"
-            )
+            console.print("[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]")
             console.print("[dim]  • Current directory: press Enter[/dim]")
 
             entrypoint_input = (
@@ -525,10 +479,7 @@ def configure(
 
     def _validate_deployment_type_compatibility(agent_name: str, deployment_type: str):
         """Validate that deployment type is compatible with existing agent configuration."""
-        if (
-            config_manager.existing_config
-            and config_manager.existing_config.name == agent_name
-        ):
+        if config_manager.existing_config and config_manager.existing_config.name == agent_name:
             existing_deployment_type = config_manager.existing_config.deployment_type
             if deployment_type and deployment_type != existing_deployment_type:
                 _handle_error(
@@ -543,9 +494,7 @@ def configure(
     _validate_deployment_type_compatibility(agent_name, deployment_type)
 
     # Handle dependency file selection with simplified logic
-    final_requirements_file = _handle_requirements_file_display(
-        requirements_file, non_interactive, source_path
-    )
+    final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     def _validate_cli_args(
         deployment_type,
@@ -560,9 +509,7 @@ def configure(
             "container",
             "direct_code_deploy",
         ]:
-            _handle_error(
-                "Error: --deployment-type must be either 'container' or 'direct_code_deploy'"
-            )
+            _handle_error("Error: --deployment-type must be either 'container' or 'direct_code_deploy'")
 
         if runtime:
             valid_runtimes = [
@@ -572,14 +519,10 @@ def configure(
                 "PYTHON_3_13",
             ]
             if runtime not in valid_runtimes:
-                _handle_error(
-                    f"Error: --runtime must be one of: {', '.join(valid_runtimes)}"
-                )
+                _handle_error(f"Error: --runtime must be one of: {', '.join(valid_runtimes)}")
 
         if runtime and deployment_type and deployment_type != "direct_code_deploy":
-            _handle_error(
-                "Error: --runtime can only be used with --deployment-type direct_code_deploy"
-            )
+            _handle_error("Error: --runtime can only be used with --deployment-type direct_code_deploy")
 
         # Check for incompatible ECR and runtime flags
         if ecr_repository and runtime:
@@ -589,9 +532,7 @@ def configure(
             )
 
         if ecr_repository and deployment_type == "direct_code_deploy":
-            _handle_error(
-                "Error: --ecr can only be used with container deployment, not direct_code_deploy"
-            )
+            _handle_error("Error: --ecr can only be used with container deployment, not direct_code_deploy")
 
         # Check for incompatible S3 and ECR flags
         if s3_bucket and ecr_repository:
@@ -601,17 +542,11 @@ def configure(
             )
 
         if s3_bucket and deployment_type == "container":
-            _handle_error(
-                "Error: --s3 can only be used with direct_code_deploy deployment, not container"
-            )
+            _handle_error("Error: --s3 can only be used with direct_code_deploy deployment, not container")
 
         # Only fail if user explicitly requested direct_code_deploy deployment
-        if (
-            deployment_type == "direct_code_deploy" or runtime or s3_bucket
-        ) and not direct_code_deploy_available:
-            _handle_error(
-                f"Error: Direct Code Deploy deployment unavailable ({prereq_error})"
-            )
+        if (deployment_type == "direct_code_deploy" or runtime or s3_bucket) and not direct_code_deploy_available:
+            _handle_error(f"Error: Direct Code Deploy deployment unavailable ({prereq_error})")
 
         return runtime
 
@@ -624,9 +559,7 @@ def configure(
         if current_py_version in ["3.10", "3.11", "3.12", "3.13"]:
             return f"PYTHON_{sys.version_info.major}_{sys.version_info.minor}"
         else:
-            console.print(
-                f"[dim]Note: Current Python {current_py_version} not supported, using python3.11[/dim]"
-            )
+            console.print(f"[dim]Note: Current Python {current_py_version} not supported, using python3.11[/dim]")
             return "PYTHON_3_11"
 
     def _prompt_for_runtime():
@@ -736,9 +669,7 @@ def configure(
         deployment_type = final_deployment_type
         if deployment_type == "direct_code_deploy":
             # Convert PYTHON_3_11 -> python3.11 for display
-            display_version = (
-                runtime_type.lower().replace("python_", "python").replace("_", ".")
-            )
+            display_version = runtime_type.lower().replace("python_", "python").replace("_", ".")
             _print_success(f"Using: Direct Code Deploy ({display_version})")
         else:
             _print_success("Using: Container")
@@ -783,9 +714,7 @@ def configure(
             if deployment_type == "direct_code_deploy":
                 runtime_type = _prompt_for_runtime()
                 display_version = runtime_type.lower().replace("_", ".")
-                _print_success(
-                    f"Deployment type: Direct Code Deploy ({display_version})"
-                )
+                _print_success(f"Deployment type: Direct Code Deploy ({display_version})")
             else:
                 runtime_type = None
                 _print_success("Deployment type: Container")
@@ -810,9 +739,7 @@ def configure(
         else:
             # User provided a specific ECR repository
             auto_create_ecr = False
-            _print_success(
-                f"Using existing ECR repository: [dim]{ecr_repository}[/dim]"
-            )
+            _print_success(f"Using existing ECR repository: [dim]{ecr_repository}[/dim]")
     else:
         # Code zip doesn't need ECR
         ecr_repository = None
@@ -855,16 +782,10 @@ def configure(
     request_header_config = None
     if request_header_allowlist:
         # Parse comma-separated headers and create configuration
-        headers = [
-            header.strip()
-            for header in request_header_allowlist.split(",")
-            if header.strip()
-        ]
+        headers = [header.strip() for header in request_header_allowlist.split(",") if header.strip()]
         if headers:
             request_header_config = {"requestHeaderAllowlist": headers}
-            _print_success(
-                f"Configured request header allowlist with {len(headers)} headers"
-            )
+            _print_success(f"Configured request header allowlist with {len(headers)} headers")
         else:
             _handle_error("Empty request header allowlist provided")
     else:
@@ -920,9 +841,7 @@ def configure(
         if vpc:
             network_info = f"VPC ({len(vpc_subnets)} subnets, {len(vpc_security_groups)} security groups)"
 
-        execution_role_display = (
-            "Auto-create" if not result.execution_role else result.execution_role
-        )
+        execution_role_display = "Auto-create" if not result.execution_role else result.execution_role
         saved_config = load_config(result.config_path)
         saved_agent = saved_config.get_agent_config(agent_name)
 
@@ -946,23 +865,15 @@ def configure(
         agent_details_info = ""
         config_info = ""
         if deployment_type == "container":
-            ecr_display = (
-                "Auto-create"
-                if result.auto_create_ecr
-                else result.ecr_repository or "N/A"
-            )
+            ecr_display = "Auto-create" if result.auto_create_ecr else result.ecr_repository or "N/A"
             config_info = f"ECR Repository: [cyan]{ecr_display}[/cyan]\n"
         else:  # direct_code_deploy
             runtime_display = (
-                result.runtime_type.lower()
-                .replace("python_", "python")
-                .replace("_", ".")
+                result.runtime_type.lower().replace("python_", "python").replace("_", ".")
                 if result.runtime_type
                 else "N/A"
             )
-            s3_display = (
-                "Auto-create" if result.auto_create_s3 else result.s3_path or "N/A"
-            )
+            s3_display = "Auto-create" if result.auto_create_s3 else result.s3_path or "N/A"
             agent_details_info = f"Runtime: [cyan]{runtime_display}[/cyan]\n"
             config_info = f"S3 Bucket: [cyan]{s3_display}[/cyan]\n"
 
@@ -1007,9 +918,7 @@ def launch(
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    local: bool = typer.Option(
-        False, "--local", "-l", help="Run locally for development and testing"
-    ),
+    local: bool = typer.Option(False, "--local", "-l", help="Run locally for development and testing"),
     local_build: bool = typer.Option(
         False,
         "--local-build",
@@ -1073,24 +982,14 @@ def launch(
     """
     # Handle deprecated --code-build flag
     if code_build:
-        console.print(
-            "[yellow]⚠️  DEPRECATION WARNING: --code-build flag is deprecated[/yellow]"
-        )
-        console.print(
-            "[yellow]   CodeBuild is now the default deployment method[/yellow]"
-        )
-        console.print(
-            "[yellow]   MIGRATION: Simply use 'agentcore launch' (no flags needed)[/yellow]"
-        )
-        console.print(
-            "[yellow]   This flag will be removed in a future version[/yellow]\n"
-        )
+        console.print("[yellow]⚠️  DEPRECATION WARNING: --code-build flag is deprecated[/yellow]")
+        console.print("[yellow]   CodeBuild is now the default deployment method[/yellow]")
+        console.print("[yellow]   MIGRATION: Simply use 'agentcore launch' (no flags needed)[/yellow]")
+        console.print("[yellow]   This flag will be removed in a future version[/yellow]\n")
 
     # Validate mutually exclusive options
     if sum([local, local_build, code_build]) > 1:
-        _handle_error(
-            "Error: --local, --local-build, and --code-build cannot be used together"
-        )
+        _handle_error("Error: --local, --local-build, and --code-build cannot be used together")
 
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
@@ -1123,70 +1022,46 @@ def launch(
         # Show launch mode with enhanced migration guidance
         if local:
             mode = "local"
-            console.print(
-                f"[cyan]🏠 Launching Bedrock AgentCore ({mode} mode)...[/cyan]"
-            )
+            console.print(f"[cyan]🏠 Launching Bedrock AgentCore ({mode} mode)...[/cyan]")
             console.print("[dim]   • Build and run container locally[/dim]")
-            console.print(
-                "[dim]   • Requires Docker/Finch/Podman to be installed[/dim]"
-            )
+            console.print("[dim]   • Requires Docker/Finch/Podman to be installed[/dim]")
             console.print("[dim]   • Perfect for development and testing[/dim]\n")
         elif local_build:
             mode = "local-build"
-            console.print(
-                f"[cyan]🔧 Launching Bedrock AgentCore ({mode} mode - NEW!)...[/cyan]"
-            )
+            console.print(f"[cyan]🔧 Launching Bedrock AgentCore ({mode} mode - NEW!)...[/cyan]")
             console.print("[dim]   • Build container locally with Docker[/dim]")
             console.print("[dim]   • Deploy to Bedrock AgentCore cloud runtime[/dim]")
-            console.print(
-                "[dim]   • Requires Docker/Finch/Podman to be installed[/dim]"
-            )
+            console.print("[dim]   • Requires Docker/Finch/Podman to be installed[/dim]")
             console.print("[dim]   • Use when you need custom build control[/dim]\n")
         elif code_build:
             # Handle deprecated flag - treat as default
             mode = "codebuild" if deployment_type == "container" else "cloud"
-            console.print(
-                f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]"
-            )
+            console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
             if deployment_type == "direct_code_deploy":
                 console.print("[dim]   • Deploy Python code directly to runtime[/dim]")
                 console.print("[dim]   • No Docker required[/dim]")
             else:
-                console.print(
-                    "[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]"
-                )
+                console.print("[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]")
                 console.print("[dim]   • No local Docker required[/dim]")
             console.print("[dim]   • Production-ready deployment[/dim]\n")
         else:
             mode = "codebuild" if deployment_type == "container" else "cloud"
-            console.print(
-                f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]"
-            )
+            console.print(f"[cyan]🚀 Launching Bedrock AgentCore ({mode} mode - RECOMMENDED)...[/cyan]")
             if deployment_type == "direct_code_deploy":
                 console.print("[dim]   • Deploy Python code directly to runtime[/dim]")
                 console.print("[dim]   • No Docker required (DEFAULT behavior)[/dim]")
             else:
-                console.print(
-                    "[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]"
-                )
-                console.print(
-                    "[dim]   • No local Docker required (DEFAULT behavior)[/dim]"
-                )
+                console.print("[dim]   • Build ARM64 containers in the cloud with CodeBuild[/dim]")
+                console.print("[dim]   • No local Docker required (DEFAULT behavior)[/dim]")
             console.print("[dim]   • Production-ready deployment[/dim]\n")
 
             # Show deployment options hint for first-time users
             console.print("[dim]💡 Deployment options:[/dim]")
             mode_name = "CodeBuild" if deployment_type == "container" else "Cloud"
-            console.print(
-                f"[dim]   • agentcore launch                → {mode_name} (current)[/dim]"
-            )
-            console.print(
-                "[dim]   • agentcore launch --local        → Local development[/dim]"
-            )
+            console.print(f"[dim]   • agentcore launch                → {mode_name} (current)[/dim]")
+            console.print("[dim]   • agentcore launch --local        → Local development[/dim]")
             if deployment_type == "container":
-                console.print(
-                    "[dim]   • agentcore launch --local-build  → Local build + cloud deploy[/dim]"
-                )
+                console.print("[dim]   • agentcore launch --local-build  → Local build + cloud deploy[/dim]")
             console.print()
 
         # Use the operations module
@@ -1197,9 +1072,7 @@ def launch(
                 env_vars = {}
                 for env_var in envs:
                     if "=" not in env_var:
-                        _handle_error(
-                            f"Invalid environment variable format: {env_var}. Use KEY=VALUE format."
-                        )
+                        _handle_error(f"Invalid environment variable format: {env_var}. Use KEY=VALUE format.")
                     key, value = env_var.split("=", 1)
                     env_vars[key] = value
 
@@ -1220,9 +1093,7 @@ def launch(
             _print_success(f"Docker image built: {result.tag}")
             _print_success("Ready to run locally")
             console.print("Starting server at http://localhost:8080")
-            console.print(
-                "Starting OAuth2 3LO callback server at http://localhost:8081"
-            )
+            console.print("Starting OAuth2 3LO callback server at http://localhost:8081")
 
             # Start UI server if requested
             if ui:
@@ -1246,15 +1117,11 @@ def launch(
 
                     if wait_for_server_ready(ui_server_port):
                         server_url = f"http://localhost:{ui_server_port}"
-                        console.print(
-                            f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]"
-                        )
+                        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
                         if open_browser(server_url):
                             console.print("[green]✓[/green] Browser opened")
                         else:
-                            console.print(
-                                f"[yellow]⚠️  Please open manually: {server_url}[/yellow]"
-                            )
+                            console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
                     else:
                         console.print("[yellow]⚠️  UI server failed to start[/yellow]")
                         if ui_server_process:
@@ -1317,15 +1184,11 @@ def launch(
 
                     if wait_for_server_ready(ui_server_port):
                         server_url = f"http://localhost:{ui_server_port}"
-                        console.print(
-                            f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]"
-                        )
+                        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
                         if open_browser(server_url):
                             console.print("[green]✓[/green] Browser opened")
                         else:
-                            console.print(
-                                f"[yellow]⚠️  Please open manually: {server_url}[/yellow]"
-                            )
+                            console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
                     else:
                         console.print("[yellow]⚠️  UI server failed to start[/yellow]")
                         if ui_server_process:
@@ -1342,11 +1205,7 @@ def launch(
                 import subprocess  # nosec B404
 
                 # Re-run the command in foreground for proper signal handling
-                source_dir = (
-                    Path(agent_config.source_path)
-                    if agent_config.source_path
-                    else Path.cwd()
-                )
+                source_dir = Path(agent_config.source_path) if agent_config.source_path else Path.cwd()
                 entrypoint_abs = Path(agent_config.entrypoint)
 
                 try:
@@ -1372,9 +1231,7 @@ def launch(
                     )
 
                 # Use the configured Python version (e.g., PYTHON_3_11 -> 3.11)
-                python_version = agent_config.runtime_type.replace(
-                    "PYTHON_", ""
-                ).replace("_", ".")
+                python_version = agent_config.runtime_type.replace("PYTHON_", "").replace("_", ".")
                 cmd = [
                     "uv",
                     "run",
@@ -1387,9 +1244,7 @@ def launch(
                 ]
 
                 # Run from source directory (same as direct_code_deploy)
-                subprocess.run(
-                    cmd, cwd=source_dir, env=local_env, check=False
-                )  # nosec B603
+                subprocess.run(cmd, cwd=source_dir, env=local_env, check=False)  # nosec B603
             except KeyboardInterrupt:
                 console.print("\n[yellow]Stopping...[/yellow]")
             finally:
@@ -1418,9 +1273,7 @@ def launch(
 
             # Add log information if we have agent_id
             if result.agent_id:
-                runtime_logs, otel_logs = get_agent_log_paths(
-                    result.agent_id, deployment_type="direct_code_deploy"
-                )
+                runtime_logs, otel_logs = get_agent_log_paths(result.agent_id, deployment_type="direct_code_deploy")
                 follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
                 deploy_panel += f"\n\n📋 [cyan]CloudWatch Logs:[/cyan]\n   {runtime_logs}\n   {otel_logs}\n\n"
                 # Only show GenAI Observability Dashboard if OTEL is enabled
@@ -1431,9 +1284,7 @@ def launch(
                         f"⏱️  [dim]Note: Observability data may take up to 10 minutes to appear "
                         f"after first launch[/dim]\n\n"
                     )
-                deploy_panel += (
-                    f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}"
-                )
+                deploy_panel += f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}"
 
             console.print(
                 Panel(
@@ -1475,9 +1326,7 @@ def launch(
                         f"[dim]Note: Observability data may take up to 10 minutes to appear "
                         f"after first launch[/dim]\n\n"
                     )
-                deploy_panel += (
-                    f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}"
-                )
+                deploy_panel += f"💡 [dim]Tail logs with:[/dim]\n   {follow_cmd}\n   {since_cmd}"
 
             console.print(
                 Panel(
@@ -1547,19 +1396,13 @@ def launch(
 
                 if wait_for_server_ready(ui_server_port):
                     server_url = f"http://localhost:{ui_server_port}"
-                    console.print(
-                        f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]"
-                    )
+                    console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
                     if open_browser(server_url):
                         console.print("[green]✓[/green] Browser opened")
                     else:
-                        console.print(
-                            f"[yellow]⚠️  Please open manually: {server_url}[/yellow]"
-                        )
+                        console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
 
-                    console.print(
-                        "\n[yellow]Press Ctrl+C to stop the UI server[/yellow]\n"
-                    )
+                    console.print("\n[yellow]Press Ctrl+C to stop the UI server[/yellow]\n")
 
                     # Keep the server running
                     try:
@@ -1576,9 +1419,7 @@ def launch(
                 console.print(f"[yellow]⚠️  Failed to start UI server: {e}[/yellow]")
 
     except FileNotFoundError:
-        _handle_error(
-            ".bedrock_agentcore.yaml not found. Run 'agentcore configure --entrypoint <file>' first"
-        )
+        _handle_error(".bedrock_agentcore.yaml not found. Run 'agentcore configure --entrypoint <file>' first")
     except ValueError as e:
         _handle_error(str(e), e)
     except RuntimeError as e:
@@ -1604,11 +1445,7 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
     if invoke_result and invoke_result.agent_arn:
         info_lines.append(f"ARN: [cyan]{invoke_result.agent_arn}[/cyan]")
     # CloudWatch logs and GenAI Observability Dashboard (if we have config with agent_id)
-    if (
-        config
-        and hasattr(config, "bedrock_agentcore")
-        and config.bedrock_agentcore.agent_id
-    ):
+    if config and hasattr(config, "bedrock_agentcore") and config.bedrock_agentcore.agent_id:
         try:
             # Get deployment type and session ID for direct_code_deploy specific logging
             deployment_type = getattr(config, "deployment_type", None)
@@ -1625,14 +1462,10 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
 
             # Only show GenAI Observability Dashboard if OTEL is enabled
             if config.aws.observability.enabled:
-                info_lines.append(
-                    f"GenAI Dashboard: {get_genai_observability_url(config.aws.region)}"
-                )
+                info_lines.append(f"GenAI Dashboard: {get_genai_observability_url(config.aws.region)}")
         except Exception:
             pass  # nosec B110
-    panel_content = (
-        "\n".join(info_lines) if info_lines else "Invoke information unavailable"
-    )
+    panel_content = "\n".join(info_lines) if info_lines else "Invoke information unavailable"
     console.print(
         Panel(
             panel_content,
@@ -1675,9 +1508,7 @@ def _parse_custom_headers(headers_str: str) -> dict:
 
     for pair in header_pairs:
         if ":" not in pair:
-            raise ValueError(
-                f"Invalid header format: '{pair}'. Expected format: 'Header:value'"
-            )
+            raise ValueError(f"Invalid header format: '{pair}'. Expected format: 'Header:value'")
 
         header_name, header_value = pair.split(":", 1)
         header_name = header_name.strip()
@@ -1708,12 +1539,8 @@ def invoke(
     bearer_token: Optional[str] = typer.Option(
         None, "--bearer-token", "-bt", help="Bearer token for OAuth authentication"
     ),
-    local_mode: Optional[bool] = typer.Option(
-        False, "--local", "-l", help="Send request to a running local container"
-    ),
-    user_id: Optional[str] = typer.Option(
-        None, "--user-id", "-u", help="User id for authorization flows"
-    ),
+    local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
+    user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
     headers: Optional[str] = typer.Option(
         None,
         "--headers",
@@ -1746,9 +1573,7 @@ def invoke(
             if final_bearer_token:
                 console.print("[dim]Using bearer token for OAuth authentication[/dim]")
             else:
-                console.print(
-                    "[yellow]Warning: OAuth is configured but no bearer token provided[/yellow]"
-                )
+                console.print("[yellow]Warning: OAuth is configured but no bearer token provided[/yellow]")
         elif bearer_token or os.getenv("BEDROCK_AGENTCORE_BEARER_TOKEN"):
             console.print(
                 "[yellow]Warning: Bearer token provided but OAuth is not configured in .bedrock_agentcore.yaml[/yellow]"
@@ -1761,9 +1586,7 @@ def invoke(
                 custom_headers = _parse_custom_headers(headers)
                 if custom_headers:
                     header_names = list(custom_headers.keys())
-                    console.print(
-                        f"[dim]Using custom headers: {', '.join(header_names)}[/dim]"
-                    )
+                    console.print(f"[dim]Using custom headers: {', '.join(header_names)}[/dim]")
             except ValueError as e:
                 _handle_error(f"Invalid headers format: {e}")
 
@@ -1820,9 +1643,7 @@ def invoke(
             agent_config = None
         _show_invoke_info_panel(agent_display, invoke_result=None, config=agent_config)
         if "not deployed" in str(e):
-            _show_error_response(
-                "Agent not deployed - run 'agentcore launch' to deploy"
-            )
+            _show_error_response("Agent not deployed - run 'agentcore launch' to deploy")
         else:
             _show_error_response(f"Invocation failed: {str(e)}")
         raise typer.Exit(1) from e
@@ -1841,9 +1662,7 @@ def invoke(
 
         from ...operations.runtime.models import InvokeResult
 
-        request_id = (
-            getattr(e, "response", {}).get("ResponseMetadata", {}).get("RequestId")
-        )
+        request_id = getattr(e, "response", {}).get("ResponseMetadata", {}).get("RequestId")
         effective_session = session_id or (
             agent_config.bedrock_agentcore.agent_session_id
             if agent_config and hasattr(agent_config, "bedrock_agentcore")
@@ -1852,11 +1671,7 @@ def invoke(
 
         error_result = (
             InvokeResult(
-                response=(
-                    {"ResponseMetadata": {"RequestId": request_id}}
-                    if request_id
-                    else {}
-                ),
+                response=({"ResponseMetadata": {"RequestId": request_id}} if request_id else {}),
                 session_id=effective_session or "unknown",
                 agent_arn=(
                     agent_config.bedrock_agentcore.agent_arn
@@ -1868,9 +1683,7 @@ def invoke(
             else None
         )
 
-        _show_invoke_info_panel(
-            agent_name, invoke_result=error_result, config=agent_config
-        )
+        _show_invoke_info_panel(agent_name, invoke_result=error_result, config=agent_config)
         _show_error_response(f"Invocation failed: {str(e)}")
         raise typer.Exit(1) from e
 
@@ -1882,9 +1695,7 @@ def ui(
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    port: Optional[int] = typer.Option(
-        None, "--port", "-p", help="Port to run UI server on (default: 8001)"
-    ),
+    port: Optional[int] = typer.Option(None, "--port", "-p", help="Port to run UI server on (default: 8001)"),
 ):
     """Launch the web UI interface.
 
@@ -1927,9 +1738,7 @@ def ui(
 
         # Open browser
         server_url = f"http://localhost:{server_port}"
-        console.print(
-            f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]"
-        )
+        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
 
         if open_browser(server_url):
             console.print("[green]✓[/green] Browser opened")
@@ -2001,11 +1810,7 @@ def status(
                     endpoint_data = status_json.get("endpoint", {})
 
                     # Determine overall status
-                    endpoint_status = (
-                        endpoint_data.get("status", "Unknown")
-                        if endpoint_data
-                        else "Not Ready"
-                    )
+                    endpoint_status = endpoint_data.get("status", "Unknown") if endpoint_data else "Not Ready"
                     if endpoint_status == "READY":
                         status_text = "Ready - Agent deployed and endpoint available"
                     else:
@@ -2024,29 +1829,19 @@ def status(
                     )
 
                     # Add network information
-                    network_mode = (
-                        status_json.get("agent", {})
-                        .get("networkConfiguration", {})
-                        .get("networkMode")
-                    )
+                    network_mode = status_json.get("agent", {}).get("networkConfiguration", {}).get("networkMode")
                     if network_mode == "VPC":
                         # Get VPC info from agent response (not config)
                         network_config = (
-                            status_json.get("agent", {})
-                            .get("networkConfiguration", {})
-                            .get("networkModeConfig", {})
+                            status_json.get("agent", {}).get("networkConfiguration", {}).get("networkModeConfig", {})
                         )
                         vpc_subnets = network_config.get("subnets", [])
                         vpc_security_groups = network_config.get("securityGroups", [])
                         subnet_count = len(vpc_subnets)
                         sg_count = len(vpc_security_groups)
-                        vpc_id = status_json.get("config", {}).get(
-                            "network_vpc_id", "unknown"
-                        )
+                        vpc_id = status_json.get("config", {}).get("network_vpc_id", "unknown")
                         if vpc_id:
-                            panel_content += (
-                                f"Network: [cyan]VPC[/cyan] ([dim]{vpc_id}[/dim])\n"
-                            )
+                            panel_content += f"Network: [cyan]VPC[/cyan] ([dim]{vpc_id}[/dim])\n"
                             panel_content += f"         {subnet_count} subnets, {sg_count} security groups\n\n"
                         else:
                             panel_content += "Network: [cyan]VPC[/cyan]\n\n"
@@ -2054,17 +1849,10 @@ def status(
                         panel_content += "Network: [cyan]Public[/cyan]\n\n"
 
                     # Add memory status with proper provisioning indication
-                    if (
-                        "memory_id" in status_json.get("config", {})
-                        and status_json["config"]["memory_id"]
-                    ):
-                        memory_type = status_json["config"].get(
-                            "memory_type", "Unknown"
-                        )
+                    if "memory_id" in status_json.get("config", {}) and status_json["config"]["memory_id"]:
+                        memory_type = status_json["config"].get("memory_type", "Unknown")
                         memory_id = status_json["config"]["memory_id"]
-                        memory_status = status_json["config"].get(
-                            "memory_status", "Unknown"
-                        )
+                        memory_status = status_json["config"].get("memory_status", "Unknown")
 
                         # Color-code based on status
                         if memory_status == "ACTIVE":
@@ -2089,9 +1877,7 @@ def status(
                         f"[/dim]\n\n"
                     )
 
-                    if status_json["config"].get("idle_timeout") or status_json[
-                        "config"
-                    ].get("max_lifetime"):
+                    if status_json["config"].get("idle_timeout") or status_json["config"].get("max_lifetime"):
                         panel_content += "[bold]Lifecycle Settings:[/bold]\n"
 
                         idle = status_json["config"].get("idle_timeout")
@@ -2111,11 +1897,7 @@ def status(
                             endpoint_name = endpoint_data.get("name")
                             project_config = load_config(config_path)
                             agent_config = project_config.get_agent_config(agent)
-                            deployment_type = (
-                                agent_config.deployment_type
-                                if agent_config
-                                else "container"
-                            )
+                            deployment_type = agent_config.deployment_type if agent_config else "container"
                             runtime_logs, otel_logs = get_agent_log_paths(
                                 agent_id, endpoint_name, deployment_type=deployment_type
                             )
@@ -2140,8 +1922,7 @@ def status(
                     # Add ready-to-invoke message if endpoint is ready
                     if endpoint_status == "READY":
                         panel_content += (
-                            "[bold]Ready to invoke:[/bold]\n"
-                            '   [cyan]agentcore invoke \'{"prompt": "Hello"}\'[/cyan]'
+                            '[bold]Ready to invoke:[/bold]\n   [cyan]agentcore invoke \'{"prompt": "Hello"}\'[/cyan]'
                         )
                     else:
                         panel_content += (
@@ -2321,9 +2102,7 @@ def destroy(
         "--dry-run",
         help="Show what would be destroyed without actually destroying anything",
     ),
-    force: bool = typer.Option(
-        False, "--force", help="Skip confirmation prompts and destroy immediately"
-    ),
+    force: bool = typer.Option(False, "--force", help="Skip confirmation prompts and destroy immediately"),
     delete_ecr_repo: bool = typer.Option(
         False,
         "--delete-ecr-repo",
@@ -2362,9 +2141,7 @@ def destroy(
                 f"'{actual_agent_name}'[/cyan]\n"
             )
         else:
-            console.print(
-                f"[yellow]⚠️  About to destroy resources for agent '{actual_agent_name}'[/yellow]\n"
-            )
+            console.print(f"[yellow]⚠️  About to destroy resources for agent '{actual_agent_name}'[/yellow]\n")
 
         # Check if agent is deployed
         if not agent_config.bedrock_agentcore:
@@ -2385,13 +2162,9 @@ def destroy(
 
         # Confirmation prompt (unless force or dry_run)
         if not dry_run and not force:
-            console.print(
-                "[red]This will permanently delete AWS resources and cannot be undone![/red]"
-            )
+            console.print("[red]This will permanently delete AWS resources and cannot be undone![/red]")
             if delete_ecr_repo:
-                console.print(
-                    "[red]This includes deleting the ECR repository itself![/red]"
-                )
+                console.print("[red]This includes deleting the ECR repository itself![/red]")
             response = typer.confirm(
                 f"Are you sure you want to destroy the agent '{actual_agent_name}' and all its resources?"
             )
@@ -2400,9 +2173,7 @@ def destroy(
                 return
 
         # Perform the destroy operation
-        with console.status(
-            f"[bold]{'Analyzing' if dry_run else 'Destroying'} Bedrock AgentCore resources...[/bold]"
-        ):
+        with console.status(f"[bold]{'Analyzing' if dry_run else 'Destroying'} Bedrock AgentCore resources...[/bold]"):
             result = destroy_bedrock_agentcore(
                 config_path=config_path,
                 agent_name=actual_agent_name,
@@ -2413,9 +2184,7 @@ def destroy(
 
         # Display results
         if dry_run:
-            console.print(
-                f"[cyan]📋 Dry run completed for agent '{result.agent_name}'[/cyan]\n"
-            )
+            console.print(f"[cyan]📋 Dry run completed for agent '{result.agent_name}'[/cyan]\n")
             title = "Resources That Would Be Destroyed"
             color = "cyan"
         else:
@@ -2426,17 +2195,13 @@ def destroy(
                 title = "Destruction Results (With Errors)"
                 color = "yellow"
             else:
-                console.print(
-                    f"[green]✅ Successfully destroyed resources for agent '{result.agent_name}'[/green]\n"
-                )
+                console.print(f"[green]✅ Successfully destroyed resources for agent '{result.agent_name}'[/green]\n")
                 title = "Resources Successfully Destroyed"
                 color = "green"
 
         # Show resources removed
         if result.resources_removed:
-            resources_text = "\n".join(
-                [f"  ✓ {resource}" for resource in result.resources_removed]
-            )
+            resources_text = "\n".join([f"  ✓ {resource}" for resource in result.resources_removed])
             console.print(Panel(resources_text, title=title, border_style=color))
         else:
             console.print(
@@ -2449,9 +2214,7 @@ def destroy(
 
         # Show warnings
         if result.warnings:
-            warnings_text = "\n".join(
-                [f"  ⚠️  {warning}" for warning in result.warnings]
-            )
+            warnings_text = "\n".join([f"  ⚠️  {warning}" for warning in result.warnings])
             console.print(Panel(warnings_text, title="Warnings", border_style="yellow"))
 
         # Show errors
@@ -2462,15 +2225,11 @@ def destroy(
         # Next steps
         if not dry_run and not result.errors:
             console.print("\n[dim]Next steps:[/dim]")
-            console.print(
-                "  • Run 'agentcore configure --entrypoint <file>' to set up a new agent"
-            )
+            console.print("  • Run 'agentcore configure --entrypoint <file>' to set up a new agent")
             console.print("  • Run 'agentcore launch' to deploy to Bedrock AgentCore")
         elif dry_run:
             console.print("\n[dim]To actually destroy these resources, run:[/dim]")
-            destroy_cmd = (
-                f"  agentcore destroy{f' --agent {actual_agent_name}' if agent else ''}"
-            )
+            destroy_cmd = f"  agentcore destroy{f' --agent {actual_agent_name}' if agent else ''}"
             if delete_ecr_repo:
                 destroy_cmd += " --delete-ecr-repo"
             console.print(destroy_cmd)

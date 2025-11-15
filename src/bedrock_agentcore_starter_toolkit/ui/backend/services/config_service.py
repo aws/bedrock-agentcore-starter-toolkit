@@ -87,11 +87,7 @@ class ConfigService:
         agent_config = self.get_agent_config(agent_name)
         if not agent_config:
             return None
-        return (
-            agent_config.bedrock_agentcore.agent_arn
-            if agent_config.bedrock_agentcore
-            else None
-        )
+        return agent_config.bedrock_agentcore.agent_arn if agent_config.bedrock_agentcore else None
 
     def get_region(self, agent_name: Optional[str] = None) -> Optional[str]:
         """Get AWS region.

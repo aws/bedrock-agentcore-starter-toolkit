@@ -34,9 +34,7 @@ def find_available_port(start_port: int = 8001, max_attempts: int = 10) -> int:
         except OSError:
             continue
 
-    raise RuntimeError(
-        f"Could not find available port in range {start_port}-{start_port + max_attempts}"
-    )
+    raise RuntimeError(f"Could not find available port in range {start_port}-{start_port + max_attempts}")
 
 
 def start_ui_server(
@@ -110,9 +108,7 @@ def start_ui_server(
         # Check if process is still running
         if process.poll() is not None:
             stdout, stderr = process.communicate()
-            raise RuntimeError(
-                f"UI server failed to start:\nSTDOUT: {stdout}\nSTDERR: {stderr}"
-            )
+            raise RuntimeError(f"UI server failed to start:\nSTDOUT: {stdout}\nSTDERR: {stderr}")
 
         logger.info(f"UI server started successfully on port {port}")
         return process, port
