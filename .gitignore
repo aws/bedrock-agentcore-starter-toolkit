@@ -27,3 +27,5 @@ specs/
 .specify/
 coverage.json
 CLAUDE.md
+
+!src/bedrock_agentcore_starter_toolkit/ui/frontend/dist/
