@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.33] - 2025-11-15
+
+### Changes
+
+- Update aws-opentelemetry-distro version in Dockerfile (#346) (d878ff8)
+- chore: bump version to 0.1.32 (#335) (65e7ff2)
+
 ## [0.1.32] - 2025-11-06
 
 ### Changes
