@@ -148,9 +148,7 @@ def create_workload_identity(
     return_urls: Optional[str] = typer.Option(
         None,
         "--return-urls",
-        help="Comma-separated OAuth2 return URLs for your application (e.g., http://localhost:8081/oauth2/callback). "
-        "These are URLs in YOUR application where AgentCore Identity redirects users after OAuth authorization "
-        "for session binding verification. ",
+        help="Optional: OAuth return URLs for enhanced session binding security. Not required for basic OAuth flows.",
     ),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
@@ -178,13 +176,6 @@ def create_workload_identity(
         return_url_list = []
         if return_urls:
             return_url_list = [url.strip() for url in return_urls.split(",")]
-        else:
-            console.print(
-                "[yellow]⚠️  Warning: No return URLs provided. "
-                "OAuth authorization flows will not work until you add them.\n"
-                "   Return URLs are endpoints in YOUR application for session binding verification.\n"
-                "   Add them later with: agentcore identity update-workload-identity --add-return-urls[/yellow]"
-            )
 
         # Auto-generate name if not provided
         if not name:
@@ -295,51 +286,88 @@ def update_workload_identity(
 @identity_app.command("get-cognito-inbound-token")
 def get_cognito_inbound_token(
     auth_flow: str = typer.Option(
-        "user", "--auth-flow", help="OAuth flow type: 'user' (USER_FEDERATION) or 'm2m' (M2M client credentials)"
+        "user", "--auth-flow", help="OAuth flow type: 'user' (USER_FEDERATION) or 'm2m' (M2M)"
     ),
-    pool_id: str = typer.Option(..., "--pool-id", help="Cognito user pool ID"),
-    client_id: str = typer.Option(..., "--client-id", help="Cognito client ID"),
-    client_secret: Optional[str] = typer.Option(None, "--client-secret", help="Client secret (required for m2m flow)"),
-    username: Optional[str] = typer.Option(None, "--username", "-u", help="Username (required for user flow)"),
-    password: Optional[str] = typer.Option(None, "--password", "-p", help="Password (required for user flow)"),
+    pool_id: Optional[str] = typer.Option(
+        None, "--pool-id", help="Cognito User Pool ID (auto-loads from RUNTIME_POOL_ID env var)"
+    ),
+    client_id: Optional[str] = typer.Option(
+        None, "--client-id", help="Cognito App Client ID (auto-loads from RUNTIME_CLIENT_ID env var)"
+    ),
+    client_secret: Optional[str] = typer.Option(
+        None, "--client-secret", help="Client secret (auto-loads from RUNTIME_CLIENT_SECRET env var, required for m2m)"
+    ),
+    username: Optional[str] = typer.Option(
+        None, "--username", "-u", help="Username (auto-loads from RUNTIME_USERNAME env var, required for user flow)"
+    ),
+    password: Optional[str] = typer.Option(
+        None, "--password", "-p", help="Password (auto-loads from RUNTIME_PASSWORD env var, required for user flow)"
+    ),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     """Get an access token from Cognito for Runtime inbound authentication.
 
-    Supports both USER_FEDERATION and M2M flows. Runtime and Gateway support both flows.
+    Supports USER_FEDERATION and M2M flows. Auto-loads credentials from environment.
 
     Examples:
-        # User flow with shell variables
+        # Auto-load from environment (user flow)
+        export $(cat .agentcore_identity_user.env | xargs)
+        TOKEN=$(agentcore identity get-cognito-inbound-token)
+
+        # Auto-load from environment (m2m flow)
+        export $(cat .agentcore_identity_m2m.env | xargs)
+        TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m)
+
+        # Explicit parameters (overrides env)
         TOKEN=$(agentcore identity get-cognito-inbound-token \
-                 --pool-id $RUNTIME_POOL_ID \
-                 --client-id $RUNTIME_CLIENT_ID \
-                 --username $RUNTIME_USERNAME \
-                 --password $RUNTIME_PASSWORD)
-
-        # M2M flow
-        TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m \
-                 --pool-id $RUNTIME_POOL_ID \
-                 --client-id $RUNTIME_CLIENT_ID \
-                 --client-secret $RUNTIME_CLIENT_SECRET)
-
-        # Use with agent
-        agentcore invoke '{"prompt": "hello"}' --bearer-token "$TOKEN"
+                 --pool-id us-west-2_xxx --client-id abc123 \
+                 --username user --password pass)
     """
     try:
+        import os
+
         region = region or get_region()
 
         # Validate flow type
         if auth_flow not in ["user", "m2m"]:
             _handle_error("--auth-flow must be 'user' or 'm2m'")
 
-        # Validate required parameters for each flow
+        # Auto-load from environment (explicit parameters override)
+        pool_id = pool_id or os.getenv("RUNTIME_POOL_ID")
+        client_id = client_id or os.getenv("RUNTIME_CLIENT_ID")
+        client_secret = client_secret or os.getenv("RUNTIME_CLIENT_SECRET")
+        username = username or os.getenv("RUNTIME_USERNAME")
+        password = password or os.getenv("RUNTIME_PASSWORD")
+
+        # Validate required parameters
+        if not pool_id:
+            _handle_error(
+                "Cognito pool ID required. Either:\n"
+                "  1. Set RUNTIME_POOL_ID environment variable, or\n"
+                "  2. Provide --pool-id parameter"
+            )
+
+        if not client_id:
+            _handle_error(
+                "Cognito client ID required. Either:\n"
+                "  1. Set RUNTIME_CLIENT_ID environment variable, or\n"
+                "  2. Provide --client-id parameter"
+            )
+
+        # Flow-specific validation and token retrieval
         if auth_flow == "user":
-            if not username or not password:
+            if not username:
                 _handle_error(
-                    "USER flow requires --username and --password\n"
-                    "Example: agentcore identity get-cognito-inbound-token \\\n"
-                    "           --pool-id <pool> --client-id <client> \\\n"
-                    "           --username <user> --password <pass>"
+                    "Username required for USER flow. Either:\n"
+                    "  1. Set RUNTIME_USERNAME environment variable, or\n"
+                    "  2. Provide --username parameter"
+                )
+
+            if not password:
+                _handle_error(
+                    "Password required for USER flow. Either:\n"
+                    "  1. Set RUNTIME_PASSWORD environment variable, or\n"
+                    "  2. Provide --password parameter"
                 )
 
             # Get token using USER_PASSWORD_AUTH
@@ -355,9 +383,9 @@ def get_cognito_inbound_token(
         else:  # m2m
             if not client_secret:
                 _handle_error(
-                    "M2M flow requires --client-secret\n"
-                    "Example: agentcore identity get-cognito-inbound-token --auth-flow m2m \\\n"
-                    "           --pool-id <pool> --client-id <client> --client-secret <secret>"
+                    "Client secret required for M2M flow. Either:\n"
+                    "  1. Set RUNTIME_CLIENT_SECRET environment variable, or\n"
+                    "  2. Provide --client-secret parameter"
                 )
 
             # Get token using CLIENT_CREDENTIALS
@@ -367,6 +395,7 @@ def get_cognito_inbound_token(
                 client_secret=client_secret,
                 region=region,
             )
+
         # Print only the token
         print(token)
 

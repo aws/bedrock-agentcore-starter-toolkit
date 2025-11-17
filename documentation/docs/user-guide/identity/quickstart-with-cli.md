@@ -36,24 +36,31 @@ pip install bedrock-agentcore bedrock-agentcore-starter-toolkit strands-agents b
 The `setup-cognito` command creates both Cognito pools needed for Identity in one step:
 
 ```bash
-agentcore identity setup-cognito --auth-flow user
+agentcore identity setup-cognito
 ```
 
 **What this creates:**
 
-- **Runtime User Pool**: For authenticating users to your agent (inbound)
-- **Identity User Pool**: For your agent to access external services (outbound)
+- **Cognito Agent User Pool**: Manages user authentication to your agent
+- **Cognito Resource User Pool**: Enables agent to access external resources
 - Test users with credentials for both pools
 - Environment variables file for easy access
+
+**Output shows:**
+
+```
+✅ Cognito pools created successfully!
+
+🔐 Credentials saved securely to:
+   • .agentcore_identity_cognito_user.json
+   • .agentcore_identity_user.env
+```
 
 ## Step 2: Load Environment Variables
 
 ```bash
 # Bash/Zsh (for USER flow)
 export $(cat .agentcore_identity_user.env | xargs)
-
-# For M2M flow, use:
-# export $(cat .agentcore_identity_m2m.env | xargs)
 
 # Verify variables are loaded
 echo $RUNTIME_POOL_ID
@@ -66,11 +73,6 @@ echo $IDENTITY_CLIENT_ID
 - `RUNTIME_USERNAME`, `RUNTIME_PASSWORD`
 - `IDENTITY_POOL_ID`, `IDENTITY_CLIENT_ID`, `IDENTITY_CLIENT_SECRET`
 - `IDENTITY_DISCOVERY_URL`, `IDENTITY_USERNAME`, `IDENTITY_PASSWORD`
-
-**For M2M flow, identity variables are:**
-
-- `IDENTITY_POOL_ID`, `IDENTITY_CLIENT_ID`, `IDENTITY_CLIENT_SECRET`
-- `IDENTITY_TOKEN_ENDPOINT`, `IDENTITY_RESOURCE_SERVER`
 
 ## Step 3: Create Agent Code
 
@@ -116,7 +118,7 @@ async def invoke(payload, context):
                     f"🔐 Authorization Required\n\n"
                     f"To access the external service, please authorize:\n"
                     f"{auth_url_holder['url']}\n\n"
-                    f"Login with Identity Pool credentials:\n"
+                    f"Login with Resource User Pool credentials:\n"
                     f"Username: {auth_url_holder.get('username', 'see IDENTITY_USERNAME')}\n"
                     f"Password: {auth_url_holder.get('password', 'see IDENTITY_PASSWORD')}\n\n"
                     f"After authorizing, invoke again with the same session ID."
@@ -167,7 +169,7 @@ agentcore configure \
 
 **What this does:**
 
-- Configures agent with JWT authentication using Runtime pool
+- Configures agent with JWT authentication using Cognito Agent User Pool
 - Creates execution role (or uses provided one)
 - Saves configuration to `.bedrock_agentcore.yaml`
 
@@ -193,15 +195,13 @@ agentcore identity create-credential-provider \
 
 ```bash
 agentcore identity create-workload-identity \
-  --name identity-demo-workload \
-  --return-urls http://localhost:8081/oauth2/callback
+  --name identity-demo-workload
 ```
 
 **What this does:**
 
 - Creates workload identity for agent-to-Identity authentication
-- Registers OAuth callback URLs
-- Links workload to agent configuration
+- Enables OAuth flows for external service access
 
 ## Step 7: Deploy Agent
 
@@ -232,17 +232,13 @@ agentcore launch
 ### First Invocation (Triggers OAuth Flow)
 
 ```bash
-# Get bearer token for Runtime authentication
-BEARER_TOKEN=$(agentcore identity get-cognito-inbound-token \
-  --pool-id $RUNTIME_POOL_ID \
-  --client-id $RUNTIME_CLIENT_ID \
-  --username $RUNTIME_USERNAME \
-  --password $RUNTIME_PASSWORD)
+# Get bearer token for Runtime authentication (auto-loads from env)
+BEARER_TOKEN=$(agentcore identity get-cognito-inbound-token)
 
 # Invoke agent
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id test_session_12345678901234567890123456789012
+  --session-id "demo_session_$(date +%s)"
 ```
 
 **Expected Response:**
@@ -253,7 +249,7 @@ agentcore invoke '{"prompt": "Call the external service"}' \
 To access the external service, please authorize:
 https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/authorize?request_uri=...
 
-Login with Identity Pool credentials:
+Login with Resource User Pool credentials:
 Username: externaluser12345678
 Password: Abc123...
 
@@ -264,7 +260,7 @@ After authorizing, invoke again with the same session ID.
 
 1. **Copy the authorization URL** from the response
 1. **Open in browser**
-1. **Login** with Identity Pool credentials (IDENTITY_USERNAME/IDENTITY_PASSWORD from env vars)
+1. **Login** with Resource User Pool credentials (IDENTITY_USERNAME/IDENTITY_PASSWORD from env vars)
 1. **Approve** the consent screen
 1. **Invoke again** with the **same session ID**:
 
@@ -272,7 +268,7 @@ After authorizing, invoke again with the same session ID.
 # Use the SAME session ID as before!
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id test_session_12345678901234567890123456789012
+  --session-id "demo_session_1234567890"
 ```
 
 **Expected Response:**
@@ -301,7 +297,7 @@ agentcore destroy --agent identity_demo --force
 
 - Credential provider (ExternalServiceProvider)
 - Workload identity (identity-demo-workload)
-- Both Cognito user pools (Runtime + Identity)
+- Both Cognito user pools
 - IAM inline policies
 - Configuration files (.agentcore_identity_*)
 
@@ -327,8 +323,7 @@ agentcore destroy --agent identity_demo --force
 
 **Cause**: Cognito client configured with secret but using password auth
 
-**Fix**: Run `agentcore identity setup-cognito` again (creates client without secret)
-
+**Fix**: Run `agentcore identity setup-cognito` again
 
 ## Next Steps
 
@@ -341,7 +336,7 @@ agentcore destroy --agent identity_demo --force
 
 You’ve built an agent with:
 
-- ✅ Automated Cognito pool setup (no bash scripts)
+- ✅ Automated Cognito pool setup
 - ✅ JWT authentication for user access
 - ✅ OAuth 2.0 flows for external service calls
 - ✅ Automatic IAM permission management

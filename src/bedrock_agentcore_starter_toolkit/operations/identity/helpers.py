@@ -248,7 +248,7 @@ def _random_suffix(length: int = 4) -> str:
 
 def _generate_password(length: int = 16) -> str:
     """Generate a secure random password using cryptographically secure random."""
-    # FIX 3: Use secrets.choice() instead of random.choices()
+    # Use secrets.choice() instead of random.choices()
     chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
     return "".join(secrets.choice(chars) for _ in range(length))
 

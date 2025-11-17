@@ -979,7 +979,13 @@ class TestGetToken:
 
     def test_get_token_user_flow_missing_username(self, runner):
         """Test USER flow error when username missing."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token") as mock_get_token,
+            patch.dict("os.environ", {}, clear=True),  # Clear all environment variables
+        ):
+            mock_get_token.return_value = "should-not-be-called"
+
             result = runner.invoke(
                 identity_app,
                 [
@@ -996,12 +1002,20 @@ class TestGetToken:
                 ],
             )
 
+        print(f"Exit code: {result.exit_code}")
+        print(f"Output: {result.stdout}")
         assert result.exit_code != 0
-        assert "USER flow requires --username and --password" in result.stdout
+        assert "Username required for USER flow" in result.stdout
 
     def test_get_token_user_flow_missing_password(self, runner):
         """Test USER flow error when password missing."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_access_token") as mock_get_token,
+            patch.dict("os.environ", {}, clear=True),  # Clear all environment variables
+        ):
+            mock_get_token.return_value = "should-not-be-called"
+
             result = runner.invoke(
                 identity_app,
                 [
@@ -1018,12 +1032,20 @@ class TestGetToken:
                 ],
             )
 
+        print(f"Exit code: {result.exit_code}")
+        print(f"Output: {result.stdout}")
         assert result.exit_code != 0
-        assert "USER flow requires --username and --password" in result.stdout
+        assert "Password required for USER flow" in result.stdout
 
     def test_get_token_m2m_flow_missing_secret(self, runner):
         """Test M2M flow error when client secret missing."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"):
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_region", return_value="us-west-2"),
+            patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.get_cognito_m2m_token") as mock_m2m_token,
+            patch.dict("os.environ", {}, clear=True),  # Clear all environment variables
+        ):
+            mock_m2m_token.return_value = "should-not-be-called"
+
             result = runner.invoke(
                 identity_app,
                 [
@@ -1038,8 +1060,10 @@ class TestGetToken:
                 ],
             )
 
+        print(f"Exit code: {result.exit_code}")
+        print(f"Output: {result.stdout}")
         assert result.exit_code != 0
-        assert "M2M flow requires --client-secret" in result.stdout
+        assert "Client secret required for M2M flow" in result.stdout
 
     def test_get_token_invalid_auth_flow(self, runner):
         """Test error with invalid auth flow type."""
