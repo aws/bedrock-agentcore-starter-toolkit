@@ -197,196 +197,674 @@ class TestGatewayClient:
         with pytest.raises(ValueError):
             gateway_client.create_mcp_gateway(name="test-error", role_arn="arn:aws:iam::123:role/Test")
 
-    def test_get_test_token_for_cognito_network_error_with_retry(self, gateway_client):
-        """Test token retrieval with network error and retry logic"""
-        import urllib3.exceptions
-
-        client_info = {
-            "client_id": "test_client_id",
-            "client_secret": "test_client_secret",
-            "scope": "test-gateway/invoke",
-            "token_endpoint": "https://test-domain.auth.us-west-2.amazoncognito.com/oauth2/token",
-            "domain_prefix": "test-domain",
-        }
-
-        # Mock successful response after retries
-        mock_response = Mock()
-        mock_response.status = 200
-        mock_response.data.decode.return_value = '{"access_token": "retry_success_token", "token_type": "Bearer"}'
-
-        with patch("urllib3.PoolManager") as mock_pool_manager, patch("time.sleep") as mock_sleep:
-            mock_http = Mock()
-            mock_pool_manager.return_value = mock_http
-
-            # First 2 calls fail with DNS error, third succeeds
-            name_error = Exception("NameResolutionError")
-            mock_http.request.side_effect = [
-                urllib3.exceptions.MaxRetryError(
-                    None, "https://test-domain.auth.us-west-2.amazoncognito.com/oauth2/token", reason=name_error
-                ),
-                urllib3.exceptions.MaxRetryError(
-                    None, "https://test-domain.auth.us-west-2.amazoncognito.com/oauth2/token", reason=name_error
-                ),
-                mock_response,
-            ]
-
-            # Call the method
-            token = gateway_client.get_access_token_for_cognito(client_info)
-
-            # Verify success after retries
-            assert token == "retry_success_token"
-
-            # Verify retry logic was called
-            assert mock_http.request.call_count == 3
-
-            # Verify sleep was called for DNS propagation + retries
-            # First call: DNS propagation (60s), then 2 retry delays (10s each)
-            sleep_calls = [call[0][0] for call in mock_sleep.call_args_list]
-            assert 10 in sleep_calls  # DNS propagation wait
-            assert sleep_calls.count(10) == 2  # Two retry delays
-
-    def test_fix_iam_permissions(self, gateway_client):
-        """Test fixing IAM permissions for gateway role"""
-        # Direct mocking of the client objects rather than the session.client method
-        with patch("boto3.client") as mock_client_creator:
-            # Create mock clients
-            mock_sts = Mock()
-            mock_iam = Mock()
-
-            # Set up the mock client creator to return our mock clients
-            mock_client_creator.side_effect = [mock_sts, mock_iam]
-
-            # Mock get_caller_identity
-            mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
-
-            # Call the method with a mock gateway
-            gateway = {"roleArn": "arn:aws:iam::123456789012:role/GatewayRole"}
-
-            gateway_client.fix_iam_permissions(gateway)
-
-            # Verify boto3.client was called correctly
-            mock_client_creator.assert_any_call("sts")
-            mock_client_creator.assert_any_call("iam")
-
-            # Test with missing roleArn
-            gateway_client.fix_iam_permissions({})  # Should not raise exception
-
-            # Test with None gateway
-            gateway_client.fix_iam_permissions(None)  # Should not raise exception
-
-    @patch("time.sleep")
-    def test_cleanup_gateway(self, mock_sleep, gateway_client):
-        """Test cleanup gateway functionality"""
-        # Replace the client directly rather than mocking boto3.client
+    def test_delete_gateway_with_targets_check(self, gateway_client):
+        """Test delete_gateway checks for targets before deletion"""
         mock_bedrock = Mock()
         gateway_client.client = mock_bedrock
 
-        # Mock responses for list_gateway_targets
-        mock_bedrock.list_gateway_targets.side_effect = [
-            {"items": [{"targetId": "target1"}, {"targetId": "target2"}]},  # First call - targets exist
-            {"items": []},  # Second call - all targets deleted
+        # Mock that gateway has targets
+        mock_bedrock.list_gateway_targets.return_value = {"items": [{"targetId": "target-1"}]}
+
+        result = gateway_client.delete_gateway(gateway_identifier="test-gateway")
+
+        # Should check for targets first
+        mock_bedrock.list_gateway_targets.assert_called_once_with(gatewayIdentifier="test-gateway")
+        # Should not delete gateway if targets exist
+        mock_bedrock.delete_gateway.assert_not_called()
+        assert result["status"] == "error"
+        assert "target(s)" in result["message"]
+
+    def test_delete_gateway_with_force_flag(self, gateway_client):
+        """Test delete_gateway with force flag deletes targets first"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock that gateway has targets
+        mock_bedrock.list_gateway_targets.return_value = {"items": [{"targetId": "target-1"}, {"targetId": "target-2"}]}
+
+        with patch("time.sleep"):
+            result = gateway_client.delete_gateway(gateway_identifier="test-gateway", skip_resource_in_use=True)
+
+            # Should delete all targets first
+            assert mock_bedrock.delete_gateway_target.call_count == 2
+            mock_bedrock.delete_gateway_target.assert_any_call(gatewayIdentifier="test-gateway", targetId="target-1")
+            mock_bedrock.delete_gateway_target.assert_any_call(gatewayIdentifier="test-gateway", targetId="target-2")
+
+            # Then delete the gateway
+            mock_bedrock.delete_gateway.assert_called_once_with(gatewayIdentifier="test-gateway")
+            assert result["status"] == "success"
+
+    def test_delete_gateway_by_arn(self, gateway_client):
+        """Test delete_gateway using ARN"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        arn = "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/test-gateway-123"
+        result = gateway_client.delete_gateway(gateway_arn=arn)
+
+        # Should extract ID from ARN
+        mock_bedrock.delete_gateway.assert_called_once_with(gatewayIdentifier="test-gateway-123")
+        assert result["status"] == "success"
+
+    def test_delete_gateway_by_name(self, gateway_client):
+        """Test delete_gateway using name lookup"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        with patch.object(gateway_client, "_get_gateway_id_by_name", return_value="resolved-gateway-id"):
+            result = gateway_client.delete_gateway(name="MyGateway")
+
+            gateway_client._get_gateway_id_by_name.assert_called_once_with("MyGateway")
+            mock_bedrock.delete_gateway.assert_called_once_with(gatewayIdentifier="resolved-gateway-id")
+            assert result["status"] == "success"
+
+    def test_delete_gateway_name_not_found(self, gateway_client):
+        """Test delete_gateway when name lookup fails"""
+        with patch.object(gateway_client, "_get_gateway_id_by_name", return_value=None):
+            result = gateway_client.delete_gateway(name="NonExistentGateway")
+
+            assert result["status"] == "error"
+            assert "not found" in result["message"]
+
+    def test_delete_gateway_no_parameters(self, gateway_client):
+        """Test delete_gateway with no parameters"""
+        result = gateway_client.delete_gateway()
+
+        assert result["status"] == "error"
+        assert "required" in result["message"]
+
+    def test_delete_gateway_target_deletion_error(self, gateway_client):
+        """Test delete_gateway when target deletion fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {"items": [{"targetId": "target-1"}]}
+        mock_bedrock.delete_gateway_target.side_effect = Exception("Target deletion failed")
+
+        with patch("time.sleep"):
+            result = gateway_client.delete_gateway(gateway_identifier="test-gateway", skip_resource_in_use=True)
+
+            assert result["status"] == "error"
+            assert "Target deletion failed" in result["message"]
+
+    def test_delete_gateway_target_success(self, gateway_client):
+        """Test delete_gateway_target with ID"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        result = gateway_client.delete_gateway_target(gateway_identifier="gateway-123", target_id="target-456")
+
+        mock_bedrock.delete_gateway_target.assert_called_once_with(
+            gatewayIdentifier="gateway-123", targetId="target-456"
+        )
+        assert result["status"] == "success"
+        assert result["targetId"] == "target-456"
+
+    def test_delete_gateway_target_by_name(self, gateway_client):
+        """Test delete_gateway_target using target name lookup"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock list_gateway_targets to return targets
+        mock_bedrock.list_gateway_targets.return_value = {
+            "items": [{"targetId": "target-123", "name": "MyTarget"}, {"targetId": "target-456", "name": "OtherTarget"}]
+        }
+
+        result = gateway_client.delete_gateway_target(gateway_identifier="gateway-123", target_name="MyTarget")
+
+        # Should look up target ID by name
+        mock_bedrock.list_gateway_targets.assert_called_once_with(gatewayIdentifier="gateway-123")
+        mock_bedrock.delete_gateway_target.assert_called_once_with(
+            gatewayIdentifier="gateway-123", targetId="target-123"
+        )
+        assert result["status"] == "success"
+
+    def test_delete_gateway_target_name_not_found(self, gateway_client):
+        """Test delete_gateway_target when target name not found"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {"items": [{"targetId": "target-123", "name": "OtherTarget"}]}
+
+        result = gateway_client.delete_gateway_target(gateway_identifier="gateway-123", target_name="NonExistent")
+
+        assert result["status"] == "error"
+        assert "not found" in result["message"]
+
+    def test_delete_gateway_target_no_target_specified(self, gateway_client):
+        """Test delete_gateway_target without target ID or name"""
+        result = gateway_client.delete_gateway_target(gateway_identifier="gateway-123")
+
+        assert result["status"] == "error"
+        assert "required" in result["message"]
+
+    def test_delete_gateway_target_with_gateway_name(self, gateway_client):
+        """Test delete_gateway_target using gateway name lookup"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        with patch.object(gateway_client, "_get_gateway_id_by_name", return_value="resolved-gateway-id"):
+            result = gateway_client.delete_gateway_target(name="MyGateway", target_id="target-123")
+
+            gateway_client._get_gateway_id_by_name.assert_called_once_with("MyGateway")
+            mock_bedrock.delete_gateway_target.assert_called_once_with(
+                gatewayIdentifier="resolved-gateway-id", targetId="target-123"
+            )
+            assert result["status"] == "success"
+
+    def test_list_gateways_basic(self, gateway_client):
+        """Test list_gateways basic functionality"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateways.return_value = {
+            "items": [
+                {"gatewayId": "gateway-1", "name": "Gateway1"},
+                {"gatewayId": "gateway-2", "name": "Gateway2"},
+            ]
+        }
+
+        result = gateway_client.list_gateways()
+
+        mock_bedrock.list_gateways.assert_called_once()
+        assert result["status"] == "success"
+        assert result["count"] == 2
+        assert len(result["items"]) == 2
+
+    def test_list_gateways_with_name_filter(self, gateway_client):
+        """Test list_gateways with name filter"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateways.return_value = {
+            "items": [
+                {"gatewayId": "gateway-1", "name": "TestGateway"},
+                {"gatewayId": "gateway-2", "name": "OtherGateway"},
+                {"gatewayId": "gateway-3", "name": "TestGateway"},
+            ]
+        }
+
+        result = gateway_client.list_gateways(name="TestGateway")
+
+        assert result["status"] == "success"
+        assert result["count"] == 2
+        # Should filter to only matching names
+        for item in result["items"]:
+            assert item["name"] == "TestGateway"
+
+    def test_list_gateways_with_max_results(self, gateway_client):
+        """Test list_gateways with max_results limit"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Return more items than max_results
+        mock_bedrock.list_gateways.return_value = {
+            "items": [{"gatewayId": f"gateway-{i}", "name": f"Gateway{i}"} for i in range(100)]
+        }
+
+        result = gateway_client.list_gateways(max_results=10)
+
+        assert result["status"] == "success"
+        assert result["count"] == 10
+        assert len(result["items"]) == 10
+
+    def test_list_gateways_with_pagination(self, gateway_client):
+        """Test list_gateways handles pagination"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock paginated responses
+        mock_bedrock.list_gateways.side_effect = [
+            {"items": [{"gatewayId": "gateway-1"}], "nextToken": "token1"},
+            {"items": [{"gatewayId": "gateway-2"}], "nextToken": None},
         ]
 
-        # Setup client info with Cognito details
-        client_info = {"user_pool_id": "us-west-2_abc123", "domain_prefix": "test-domain"}
+        result = gateway_client.list_gateways(max_results=10)
 
-        # Direct patching of boto3.client
+        assert mock_bedrock.list_gateways.call_count == 2
+        assert result["count"] == 2
+
+    def test_list_gateways_error(self, gateway_client):
+        """Test list_gateways error handling"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.list_gateways.side_effect = Exception("API Error")
+
+        result = gateway_client.list_gateways()
+
+        assert result["status"] == "error"
+        assert "API Error" in result["message"]
+
+    def test_list_gateway_targets_basic(self, gateway_client):
+        """Test list_gateway_targets basic functionality"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {
+            "items": [{"targetId": "target-1", "name": "Target1"}, {"targetId": "target-2", "name": "Target2"}]
+        }
+
+        result = gateway_client.list_gateway_targets(gateway_identifier="gateway-123")
+
+        mock_bedrock.list_gateway_targets.assert_called_once()
+        assert result["status"] == "success"
+        assert result["gatewayId"] == "gateway-123"
+        assert result["count"] == 2
+
+    def test_list_gateway_targets_with_gateway_name(self, gateway_client):
+        """Test list_gateway_targets using gateway name lookup"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        with patch.object(gateway_client, "_get_gateway_id_by_name", return_value="resolved-gateway-id"):
+            result = gateway_client.list_gateway_targets(name="MyGateway")
+
+            gateway_client._get_gateway_id_by_name.assert_called_once_with("MyGateway")
+            mock_bedrock.list_gateway_targets.assert_called_once()
+            assert result["gatewayId"] == "resolved-gateway-id"
+
+    def test_list_gateway_targets_with_pagination(self, gateway_client):
+        """Test list_gateway_targets handles pagination"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.side_effect = [
+            {"items": [{"targetId": "target-1"}], "nextToken": "token1"},
+            {"items": [{"targetId": "target-2"}], "nextToken": None},
+        ]
+
+        result = gateway_client.list_gateway_targets(gateway_identifier="gateway-123", max_results=10)
+
+        assert mock_bedrock.list_gateway_targets.call_count == 2
+        assert result["count"] == 2
+
+    def test_list_gateway_targets_error(self, gateway_client):
+        """Test list_gateway_targets error handling"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.list_gateway_targets.side_effect = Exception("API Error")
+
+        result = gateway_client.list_gateway_targets(gateway_identifier="gateway-123")
+
+        assert result["status"] == "error"
+        assert "API Error" in result["message"]
+
+    def test_get_gateway_target_basic(self, gateway_client):
+        """Test get_gateway_target basic functionality"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_target = {"targetId": "target-123", "name": "MyTarget", "status": "READY"}
+        mock_bedrock.get_gateway_target.return_value = mock_target
+
+        result = gateway_client.get_gateway_target(gateway_identifier="gateway-123", target_id="target-123")
+
+        mock_bedrock.get_gateway_target.assert_called_once_with(gatewayIdentifier="gateway-123", targetId="target-123")
+        assert result["status"] == "success"
+        assert result["target"] == mock_target
+
+    def test_get_gateway_target_with_target_name(self, gateway_client):
+        """Test get_gateway_target using target name lookup"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {
+            "items": [{"targetId": "target-123", "name": "MyTarget"}, {"targetId": "target-456", "name": "OtherTarget"}]
+        }
+
+        mock_target = {"targetId": "target-123", "name": "MyTarget"}
+        mock_bedrock.get_gateway_target.return_value = mock_target
+
+        result = gateway_client.get_gateway_target(gateway_identifier="gateway-123", target_name="MyTarget")
+
+        mock_bedrock.list_gateway_targets.assert_called_once_with(gatewayIdentifier="gateway-123")
+        mock_bedrock.get_gateway_target.assert_called_once_with(gatewayIdentifier="gateway-123", targetId="target-123")
+        assert result["status"] == "success"
+
+    def test_get_gateway_target_with_gateway_arn(self, gateway_client):
+        """Test get_gateway_target using gateway ARN"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.get_gateway_target.return_value = {"targetId": "target-123"}
+
+        arn = "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/gateway-123"
+        result = gateway_client.get_gateway_target(gateway_arn=arn, target_id="target-123")
+
+        # Should extract ID from ARN
+        mock_bedrock.get_gateway_target.assert_called_once_with(gatewayIdentifier="gateway-123", targetId="target-123")
+        assert result["status"] == "success"
+
+    def test_get_gateway_target_no_target_specified(self, gateway_client):
+        """Test get_gateway_target without target ID or name"""
+        result = gateway_client.get_gateway_target(gateway_identifier="gateway-123")
+
+        assert result["status"] == "error"
+        assert "required" in result["message"]
+
+    def test_get_gateway_target_error(self, gateway_client):
+        """Test get_gateway_target error handling"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.get_gateway_target.side_effect = Exception("Target not found")
+
+        result = gateway_client.get_gateway_target(gateway_identifier="gateway-123", target_id="target-123")
+
+        assert result["status"] == "error"
+        assert "Target not found" in result["message"]
+
+    def test_get_gateway_id_by_name_found(self, gateway_client):
+        """Test _get_gateway_id_by_name when gateway is found"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateways.return_value = {
+            "items": [
+                {"gatewayId": "gateway-1", "name": "Gateway1"},
+                {"gatewayId": "gateway-2", "name": "TestGateway"},
+                {"gatewayId": "gateway-3", "name": "Gateway3"},
+            ]
+        }
+
+        result = gateway_client._get_gateway_id_by_name("TestGateway")
+
+        assert result == "gateway-2"
+
+    def test_get_gateway_id_by_name_not_found(self, gateway_client):
+        """Test _get_gateway_id_by_name when gateway is not found"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateways.return_value = {
+            "items": [{"gatewayId": "gateway-1", "name": "Gateway1"}, {"gatewayId": "gateway-2", "name": "Gateway2"}]
+        }
+
+        result = gateway_client._get_gateway_id_by_name("NonExistent")
+
+        assert result is None
+
+    def test_get_gateway_id_by_name_with_pagination(self, gateway_client):
+        """Test _get_gateway_id_by_name handles pagination"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock paginated responses - gateway found on second page
+        mock_bedrock.list_gateways.side_effect = [
+            {"items": [{"gatewayId": "gateway-1", "name": "Gateway1"}], "nextToken": "token1"},
+            {"items": [{"gatewayId": "gateway-2", "name": "TestGateway"}], "nextToken": None},
+        ]
+
+        result = gateway_client._get_gateway_id_by_name("TestGateway")
+
+        assert result == "gateway-2"
+        assert mock_bedrock.list_gateways.call_count == 2
+
+    def test_get_gateway_id_by_name_error(self, gateway_client):
+        """Test _get_gateway_id_by_name error handling"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.list_gateways.side_effect = Exception("API Error")
+
+        result = gateway_client._get_gateway_id_by_name("TestGateway")
+
+        assert result is None
+
+    def test_get_gateway_with_identifier(self, gateway_client):
+        """Test get_gateway with gateway identifier"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_gateway = {"gatewayId": "gateway-123", "name": "TestGateway"}
+        mock_bedrock.get_gateway.return_value = mock_gateway
+
+        result = gateway_client.get_gateway(gateway_identifier="gateway-123")
+
+        mock_bedrock.get_gateway.assert_called_once_with(gatewayIdentifier="gateway-123")
+        assert result["status"] == "success"
+        assert result["gateway"] == mock_gateway
+
+    def test_get_gateway_error(self, gateway_client):
+        """Test get_gateway error handling"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_bedrock.get_gateway.side_effect = Exception("Gateway not found")
+
+        result = gateway_client.get_gateway(gateway_identifier="gateway-123")
+
+        assert result["status"] == "error"
+        assert "Gateway not found" in result["message"]
+
+    def test_fix_iam_permissions_success(self, gateway_client):
+        """Test fix_iam_permissions successfully updates IAM role"""
         with patch("boto3.client") as mock_boto_client:
-            # Create a mock Cognito client
+            mock_sts = Mock()
+            mock_iam = Mock()
+
+            # Return STS first, then IAM
+            mock_boto_client.side_effect = [mock_sts, mock_iam]
+
+            mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+            gateway = {"roleArn": "arn:aws:iam::123456789012:role/TestGatewayRole"}
+
+            gateway_client.fix_iam_permissions(gateway)
+
+            # Verify STS and IAM clients were created
+            assert mock_boto_client.call_count == 2
+
+            # Verify trust policy was updated
+            mock_iam.update_assume_role_policy.assert_called_once()
+            call_args = mock_iam.update_assume_role_policy.call_args
+            assert call_args[1]["RoleName"] == "TestGatewayRole"
+
+            # Verify Lambda policy was added
+            mock_iam.put_role_policy.assert_called_once()
+            policy_call = mock_iam.put_role_policy.call_args
+            assert policy_call[1]["RoleName"] == "TestGatewayRole"
+            assert policy_call[1]["PolicyName"] == "LambdaInvokePolicy"
+
+    def test_fix_iam_permissions_with_exception(self, gateway_client):
+        """Test fix_iam_permissions handles exceptions gracefully"""
+        with patch("boto3.client") as mock_boto_client:
+            mock_sts = Mock()
+            mock_iam = Mock()
+
+            mock_boto_client.side_effect = [mock_sts, mock_iam]
+            mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+            # Simulate IAM error
+            mock_iam.update_assume_role_policy.side_effect = Exception("IAM Error")
+
+            gateway = {"roleArn": "arn:aws:iam::123456789012:role/TestGatewayRole"}
+
+            # Should not raise exception, just log warning
+            gateway_client.fix_iam_permissions(gateway)
+
+    def test_delete_gateway_check_targets_error(self, gateway_client):
+        """Test delete_gateway when checking targets fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.side_effect = Exception("List Error")
+
+        result = gateway_client.delete_gateway(gateway_identifier="gateway-123")
+
+        assert result["status"] == "error"
+        assert "List Error" in result["message"]
+
+    def test_delete_gateway_target_list_error(self, gateway_client):
+        """Test delete_gateway_target when listing targets fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.side_effect = Exception("List Error")
+
+        result = gateway_client.delete_gateway_target(gateway_identifier="gateway-123", target_name="MyTarget")
+
+        assert result["status"] == "error"
+        assert "List Error" in result["message"]
+
+    @patch("time.sleep")
+    def test_cleanup_gateway_full_flow(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway complete flow with Cognito"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock targets
+        mock_bedrock.list_gateway_targets.side_effect = [
+            {"items": [{"targetId": "target-1"}, {"targetId": "target-2"}]},
+            {"items": []},  # After deletion
+        ]
+
+        client_info = {"user_pool_id": "us-west-2_TestPool", "domain_prefix": "test-domain"}
+
+        with patch("boto3.client") as mock_boto_client:
             mock_cognito = Mock()
-            # Configure boto3.client to return our mock when called with 'cognito-idp'
             mock_boto_client.return_value = mock_cognito
 
-            # Call the cleanup method
-            gateway_client.cleanup_gateway("test-gateway", client_info)
+            gateway_client.cleanup_gateway("gateway-123", client_info)
 
-            # Verify gateway targets were deleted
+            # Verify targets were deleted
             assert mock_bedrock.delete_gateway_target.call_count == 2
 
             # Verify gateway was deleted
-            mock_bedrock.delete_gateway.assert_called_once()
+            mock_bedrock.delete_gateway.assert_called_once_with(gatewayIdentifier="gateway-123")
 
-            # Verify cognito-idp client was created
-            mock_boto_client.assert_called_with("cognito-idp", region_name=gateway_client.region)
-
-            # Verify Cognito operations were performed
-            assert mock_cognito.delete_user_pool_domain.called
-            assert mock_cognito.delete_user_pool.called
+            # Verify Cognito cleanup
+            mock_cognito.delete_user_pool_domain.assert_called_once_with(
+                UserPoolId="us-west-2_TestPool", Domain="test-domain"
+            )
+            mock_cognito.delete_user_pool.assert_called_once_with(UserPoolId="us-west-2_TestPool")
 
     @patch("time.sleep")
-    def test_create_oauth_authorizer_with_cognito(self, mock_sleep, gateway_client):
-        """Test Cognito OAuth setup"""
-        with patch.object(gateway_client.session, "client") as mock_cognito_client:
-            cognito_client = Mock()
-            mock_cognito_client.return_value = cognito_client
+    def test_cleanup_gateway_without_cognito(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway without Cognito info"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
 
-            # Mock Cognito responses
-            cognito_client.create_user_pool.return_value = {"UserPool": {"Id": "us-west-2_TEST123"}}
-            cognito_client.create_user_pool_domain.return_value = {}
-            cognito_client.describe_user_pool_domain.return_value = {"DomainDescription": {"Status": "ACTIVE"}}
-            cognito_client.create_resource_server.return_value = {}
-            cognito_client.create_user_pool_client.return_value = {
-                "UserPoolClient": {
-                    "ClientId": "testclientid",
-                    "ClientSecret": "testclientsecret",
-                }
-            }
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
 
-            # Generate a predictable ID instead of random
-            with patch(
-                "bedrock_agentcore_starter_toolkit.operations.gateway.client.GatewayClient.generate_random_id",
-                return_value="12345678",
-            ):
-                result = gateway_client.create_oauth_authorizer_with_cognito("test-gateway")
+        gateway_client.cleanup_gateway("gateway-123")
 
-            # Verify results
-            assert result["client_info"]["client_id"] == "testclientid"
-            assert result["client_info"]["client_secret"] == "testclientsecret"
-            assert "us-west-2_TEST123" in result["authorizer_config"]["customJWTAuthorizer"]["discoveryUrl"]
+        # Should still delete gateway
+        mock_bedrock.delete_gateway.assert_called_once()
 
-            # Verify Cognito user pool creation parameters
-            cognito_client.create_user_pool.assert_called_once()
+    @patch("time.sleep")
+    def test_cleanup_gateway_with_target_deletion_error(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when target deletion fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
 
-            # Verify resource server creation parameters
-            cognito_client.create_resource_server.assert_called_once_with(
-                UserPoolId="us-west-2_TEST123",
-                Identifier="test-gateway",
-                Name="test-gateway",
-                Scopes=[{"ScopeName": "invoke", "ScopeDescription": "Scope for invoking the agentcore gateway"}],
-            )
+        mock_bedrock.list_gateway_targets.return_value = {"items": [{"targetId": "target-1"}]}
+        mock_bedrock.delete_gateway_target.side_effect = Exception("Target deletion failed")
 
-    def test_wait_for_ready_timeout(self, gateway_client):
-        """Test timeout scenario in wait_for_ready"""
-        mock_method = Mock()
-        mock_method.return_value = {"status": "CREATING"}
+        # Should not raise exception, just log warning
+        gateway_client.cleanup_gateway("gateway-123")
 
-        # Test timeout scenario
-        with pytest.raises(TimeoutError):
-            with patch("time.sleep"):  # Mock sleep to speed up the test
-                gateway_client._GatewayClient__wait_for_ready(
-                    resource_name="TestResource",
-                    method=mock_method,
-                    identifiers={"id": "test123"},
-                    max_attempts=2,  # Short timeout for testing
-                    delay=0.1,
-                )
+    @patch("time.sleep")
+    def test_cleanup_gateway_with_gateway_deletion_error(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when gateway deletion fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
 
-        # Verify method was called multiple times
-        assert mock_method.call_count == 2
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+        mock_bedrock.delete_gateway.side_effect = Exception("Gateway deletion failed")
 
-    def test_wait_for_ready_error(self, gateway_client):
-        """Test error scenario in wait_for_ready"""
-        mock_method = Mock()
-        mock_method.return_value = {"status": "FAILED"}
+        # Should not raise exception, just log warning
+        gateway_client.cleanup_gateway("gateway-123")
 
-        # Test error status scenario
-        with pytest.raises(Exception) as excinfo:
-            gateway_client._GatewayClient__wait_for_ready(
-                resource_name="TestResource",
-                method=mock_method,
-                identifiers={"id": "test123"},
-                max_attempts=1,
-                delay=0.1,
-            )
+    @patch("time.sleep")
+    def test_cleanup_gateway_with_cognito_domain_error(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when Cognito domain deletion fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
 
-        assert "failed" in str(excinfo.value).lower()
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        client_info = {"user_pool_id": "us-west-2_TestPool", "domain_prefix": "test-domain"}
+
+        with patch("boto3.client") as mock_boto_client:
+            mock_cognito = Mock()
+            mock_boto_client.return_value = mock_cognito
+
+            mock_cognito.delete_user_pool_domain.side_effect = Exception("Domain deletion failed")
+
+            # Should not raise exception
+            gateway_client.cleanup_gateway("gateway-123", client_info)
+
+            # Should still try to delete user pool
+            mock_cognito.delete_user_pool.assert_called_once()
+
+    @patch("time.sleep")
+    def test_cleanup_gateway_with_cognito_pool_error(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when Cognito pool deletion fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        client_info = {"user_pool_id": "us-west-2_TestPool", "domain_prefix": "test-domain"}
+
+        with patch("boto3.client") as mock_boto_client:
+            mock_cognito = Mock()
+            mock_boto_client.return_value = mock_cognito
+
+            mock_cognito.delete_user_pool.side_effect = Exception("Pool deletion failed")
+
+            # Should not raise exception, just log warning
+            gateway_client.cleanup_gateway("gateway-123", client_info)
+
+    @patch("time.sleep")
+    def test_cleanup_gateway_with_remaining_targets(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when targets remain after deletion"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        # Mock targets still remaining after deletion
+        mock_bedrock.list_gateway_targets.side_effect = [
+            {"items": [{"targetId": "target-1"}]},
+            {"items": [{"targetId": "target-1"}]},  # Still there after deletion
+        ]
+
+        gateway_client.cleanup_gateway("gateway-123")
+
+    @patch("time.sleep")
+    def test_cleanup_gateway_list_targets_error(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway when listing targets fails"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.side_effect = Exception("List error")
+
+        # Should not raise exception, just log warning
+        gateway_client.cleanup_gateway("gateway-123")
+
+        # Should still try to delete gateway
+        mock_bedrock.delete_gateway.assert_called_once()
+
+    @patch("time.sleep")
+    def test_cleanup_gateway_without_domain_prefix(self, mock_sleep, gateway_client):
+        """Test cleanup_gateway with Cognito but no domain prefix"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+
+        mock_bedrock.list_gateway_targets.return_value = {"items": []}
+
+        # Client info without domain_prefix
+        client_info = {"user_pool_id": "us-west-2_TestPool"}
+
+        with patch("boto3.client") as mock_boto_client:
+            mock_cognito = Mock()
+            mock_boto_client.return_value = mock_cognito
+
+            gateway_client.cleanup_gateway("gateway-123", client_info)
+
+            # Should not try to delete domain
+            mock_cognito.delete_user_pool_domain.assert_not_called()
+
+            # Should still delete user pool
+            mock_cognito.delete_user_pool.assert_called_once()

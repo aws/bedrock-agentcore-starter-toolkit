@@ -2,7 +2,12 @@
 
 import typer
 
-from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
+from ..cli.gateway.commands import (
+    create_mcp_gateway,
+    create_mcp_gateway_target,
+    gateway_app,
+)
+from ..cli.memory.commands import memory_app
 from ..utils.logging_config import setup_toolkit_logging
 from .identity.commands import identity_app
 from .import_agent.commands import import_agent
@@ -34,6 +39,9 @@ app.add_typer(configure_app)
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.add_typer(gateway_app, name="gateway")
+
+# memory
+app.add_typer(memory_app, name="memory")
 
 # import-agent
 app.command("import-agent")(import_agent)

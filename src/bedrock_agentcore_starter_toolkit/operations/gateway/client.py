@@ -238,6 +238,360 @@ class GatewayClient:
         except Exception as e:
             self.logger.warning("⚠️ IAM role update failed: %s. Continuing with best effort.", str(e))
 
+    def delete_gateway(
+        self,
+        gateway_identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        gateway_arn: Optional[str] = None,
+        skip_resource_in_use: bool = False,
+    ) -> dict:
+        """Delete a gateway resource.
+
+        :param gateway_identifier: Gateway ID to delete
+        :param name: Gateway name to delete (will look up ID)
+        :param gateway_arn: Gateway ARN to delete (will extract ID)
+        :param skip_resource_in_use: If True, delete all targets before deleting the gateway (default: False)
+        :return: Result dict with status and details
+        """
+        resolved_id: Optional[str] = None
+
+        # Resolve gateway ID from different input types
+        if gateway_identifier:
+            resolved_id = gateway_identifier.split("/")[-1]
+        elif gateway_arn:
+            resolved_id = gateway_arn.split("/")[-1]
+        elif name:
+            # Look up gateway ID by name
+            resolved_id = self._get_gateway_id_by_name(name)
+            if not resolved_id:
+                self.logger.error("Gateway not found with name: %s", name)
+                return {"status": "error", "message": f"Gateway not found with name: {name}"}
+        else:
+            self.logger.error("gateway_identifier, gateway_arn, or name required")
+            return {"status": "error", "message": "gateway_identifier, gateway_arn, or name required"}
+
+        # Check if gateway has targets
+        try:
+            targets_resp = self.client.list_gateway_targets(gatewayIdentifier=resolved_id)
+            targets = targets_resp.get("items", [])
+            if targets:
+                if skip_resource_in_use:
+                    # Delete all targets first
+                    self.logger.info("Gateway has %s target(s). Deleting them first...", len(targets))
+                    deleted_targets = []
+                    for target in targets:
+                        target_id = target.get("targetId")
+                        try:
+                            self.client.delete_gateway_target(gatewayIdentifier=resolved_id, targetId=target_id)
+                            self.logger.info("  ✓ Deleted target: %s", target_id)
+                            deleted_targets.append(target_id)
+                            time.sleep(2)  # Brief wait between deletions
+                        except Exception as e:
+                            self.logger.error("  Error deleting target %s: %s", target_id, str(e))
+                            return {
+                                "status": "error",
+                                "message": f"Error deleting target {target_id}: {str(e)}",
+                                "deletedTargets": deleted_targets,
+                            }
+
+                    # Wait for all targets to be deleted
+                    self.logger.info("  Waiting for targets to be fully deleted...")
+                    time.sleep(5)
+                else:
+                    self.logger.error("Gateway has %s target(s). Delete them first.", len(targets))
+                    return {"status": "error", "message": f"Gateway has {len(targets)} target(s). Delete them first."}
+        except Exception as e:
+            self.logger.error("Error checking gateway targets: %s", str(e))
+            return {"status": "error", "message": f"Error checking gateway targets: {str(e)}"}
+
+        # Delete the gateway
+        try:
+            self.client.delete_gateway(gatewayIdentifier=resolved_id)
+            self.logger.info("✓ Gateway deleted successfully: %s", resolved_id)
+            return {"status": "success", "gatewayId": resolved_id}
+        except Exception as e:
+            self.logger.error("Error deleting gateway: %s", str(e))
+            return {"status": "error", "message": f"Error deleting gateway: {str(e)}"}
+
+    def delete_gateway_target(
+        self,
+        gateway_identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        gateway_arn: Optional[str] = None,
+        target_id: Optional[str] = None,
+        target_name: Optional[str] = None,
+    ) -> dict:
+        """Delete a gateway target.
+
+        :param gateway_identifier: Gateway ID
+        :param name: Gateway name (will look up ID)
+        :param gateway_arn: Gateway ARN (will extract ID)
+        :param target_id: Target ID to delete
+        :param target_name: Target name to delete (will look up ID)
+        :return: Result dict with status and details
+        """
+        resolved_id: Optional[str] = None
+
+        # Resolve gateway ID
+        if gateway_identifier:
+            resolved_id = gateway_identifier.split("/")[-1]
+        elif gateway_arn:
+            resolved_id = gateway_arn.split("/")[-1]
+        elif name:
+            resolved_id = self._get_gateway_id_by_name(name)
+            if not resolved_id:
+                self.logger.error("Gateway not found with name: %s", name)
+                return {"status": "error", "message": f"Gateway not found with name: {name}"}
+        else:
+            self.logger.error("gateway_identifier, gateway_arn, or name required")
+            return {"status": "error", "message": "gateway_identifier, gateway_arn, or name required"}
+
+        # Resolve target ID
+        resolved_target_id = target_id
+        if not resolved_target_id and target_name:
+            try:
+                targets_resp = self.client.list_gateway_targets(gatewayIdentifier=resolved_id)
+                for t in targets_resp.get("items", []):
+                    if t.get("name") == target_name:
+                        resolved_target_id = t.get("targetId")
+                        break
+                if not resolved_target_id:
+                    self.logger.error("Target named %s not found", target_name)
+                    return {"status": "error", "message": f"Target named {target_name} not found"}
+            except Exception as e:
+                self.logger.error("Error listing gateway targets: %s", str(e))
+                return {"status": "error", "message": f"Error listing gateway targets: {str(e)}"}
+
+        if not resolved_target_id:
+            self.logger.error("target_id or target_name required")
+            return {"status": "error", "message": "target_id or target_name required"}
+
+        # Delete the target
+        try:
+            self.client.delete_gateway_target(gatewayIdentifier=resolved_id, targetId=resolved_target_id)
+            self.logger.info("✓ Gateway target deleted successfully")
+            self.logger.info("  Gateway ID: %s", resolved_id)
+            self.logger.info("  Target ID: %s", resolved_target_id)
+            return {"status": "success", "gatewayId": resolved_id, "targetId": resolved_target_id}
+        except Exception as e:
+            self.logger.error("Error deleting gateway target: %s", str(e))
+            return {"status": "error", "message": f"Error deleting gateway target: {str(e)}"}
+
+    def _get_gateway_id_by_name(self, name: str) -> Optional[str]:
+        """Get gateway ID by name.
+
+        :param name: Gateway name to look up
+        :return: Gateway ID if found, None otherwise
+        """
+        try:
+            next_token = None
+            while True:
+                kwargs: Dict[str, Any] = {"maxResults": 1000}
+                if next_token:
+                    kwargs["nextToken"] = next_token
+                resp = self.client.list_gateways(**kwargs)
+                items = [g for g in resp.get("items", []) if g.get("name") == name]
+                if items:
+                    return items[0].get("gatewayId")
+                next_token = resp.get("nextToken")
+                if not next_token:
+                    break
+            return None
+        except Exception as e:
+            self.logger.error("Error looking up gateway by name: %s", str(e))
+            return None
+
+    def list_gateways(
+        self,
+        name: Optional[str] = None,
+        max_results: int = 50,
+    ) -> dict:
+        """List all gateways.
+
+        :param name: Optional name filter
+        :param max_results: Maximum number of results to return (default: 50)
+        :return: Result dict with status and list of gateways
+        """
+        try:
+            next_token = None
+            items = []
+            while True:
+                kwargs: Dict[str, Any] = {"maxResults": min(max_results - len(items), 1000)}
+                if next_token:
+                    kwargs["nextToken"] = next_token
+                resp = self.client.list_gateways(**kwargs)
+                batch = resp.get("items", [])
+                if name:
+                    batch = [g for g in batch if g.get("name") == name]
+                items.extend(batch)
+                next_token = resp.get("nextToken")
+                if not next_token or (name and items) or len(items) >= max_results:
+                    break
+
+            if len(items) > max_results:
+                items = items[:max_results]
+
+            self.logger.info("Found %s gateways", len(items))
+            return {"status": "success", "count": len(items), "items": items}
+        except Exception as e:
+            self.logger.error("Error listing gateways: %s", str(e))
+            return {"status": "error", "message": f"Error listing gateways: {str(e)}"}
+
+    def get_gateway(
+        self,
+        gateway_identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        gateway_arn: Optional[str] = None,
+    ) -> dict:
+        """Get gateway details.
+
+        :param gateway_identifier: Gateway ID
+        :param name: Gateway name (will look up ID)
+        :param gateway_arn: Gateway ARN (will extract ID)
+        :return: Result dict with status and gateway details
+        """
+        resolved_id: Optional[str] = None
+
+        # Resolve gateway ID
+        if gateway_identifier:
+            resolved_id = gateway_identifier.split("/")[-1]
+        elif gateway_arn:
+            resolved_id = gateway_arn.split("/")[-1]
+        elif name:
+            resolved_id = self._get_gateway_id_by_name(name)
+            if not resolved_id:
+                self.logger.error("Gateway not found with name: %s", name)
+                return {"status": "error", "message": f"Gateway not found with name: {name}"}
+        else:
+            self.logger.error("gateway_identifier, gateway_arn, or name required")
+            return {"status": "error", "message": "gateway_identifier, gateway_arn, or name required"}
+
+        try:
+            result = self.client.get_gateway(gatewayIdentifier=resolved_id)
+            self.logger.info("Retrieved gateway: %s", resolved_id)
+            return {"status": "success", "gateway": result}
+        except Exception as e:
+            self.logger.error("Error getting gateway: %s", str(e))
+            return {"status": "error", "message": f"Error getting gateway: {str(e)}"}
+
+    def list_gateway_targets(
+        self,
+        gateway_identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        gateway_arn: Optional[str] = None,
+        max_results: int = 50,
+    ) -> dict:
+        """List gateway targets.
+
+        :param gateway_identifier: Gateway ID
+        :param name: Gateway name (will look up ID)
+        :param gateway_arn: Gateway ARN (will extract ID)
+        :param max_results: Maximum number of results to return (default: 50)
+        :return: Result dict with status and list of targets
+        """
+        resolved_id: Optional[str] = None
+
+        # Resolve gateway ID
+        if gateway_identifier:
+            resolved_id = gateway_identifier.split("/")[-1]
+        elif gateway_arn:
+            resolved_id = gateway_arn.split("/")[-1]
+        elif name:
+            resolved_id = self._get_gateway_id_by_name(name)
+            if not resolved_id:
+                self.logger.error("Gateway not found with name: %s", name)
+                return {"status": "error", "message": f"Gateway not found with name: {name}"}
+        else:
+            self.logger.error("gateway_identifier, gateway_arn, or name required")
+            return {"status": "error", "message": "gateway_identifier, gateway_arn, or name required"}
+
+        try:
+            next_token = None
+            items = []
+            while True:
+                kwargs: Dict[str, Any] = {
+                    "gatewayIdentifier": resolved_id,
+                    "maxResults": min(max_results - len(items), 1000),
+                }
+                if next_token:
+                    kwargs["nextToken"] = next_token
+                resp = self.client.list_gateway_targets(**kwargs)
+                batch = resp.get("items", [])
+                items.extend(batch)
+                next_token = resp.get("nextToken")
+                if not next_token or len(items) >= max_results:
+                    break
+
+            if len(items) > max_results:
+                items = items[:max_results]
+
+            self.logger.info("Found %s targets for gateway %s", len(items), resolved_id)
+            return {"status": "success", "gatewayId": resolved_id, "count": len(items), "items": items}
+        except Exception as e:
+            self.logger.error("Error listing gateway targets: %s", str(e))
+            return {"status": "error", "message": f"Error listing gateway targets: {str(e)}"}
+
+    def get_gateway_target(
+        self,
+        gateway_identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        gateway_arn: Optional[str] = None,
+        target_id: Optional[str] = None,
+        target_name: Optional[str] = None,
+    ) -> dict:
+        """Get gateway target details.
+
+        :param gateway_identifier: Gateway ID
+        :param name: Gateway name (will look up ID)
+        :param gateway_arn: Gateway ARN (will extract ID)
+        :param target_id: Target ID
+        :param target_name: Target name (will look up ID)
+        :return: Result dict with status and target details
+        """
+        resolved_id: Optional[str] = None
+
+        # Resolve gateway ID
+        if gateway_identifier:
+            resolved_id = gateway_identifier.split("/")[-1]
+        elif gateway_arn:
+            resolved_id = gateway_arn.split("/")[-1]
+        elif name:
+            resolved_id = self._get_gateway_id_by_name(name)
+            if not resolved_id:
+                self.logger.error("Gateway not found with name: %s", name)
+                return {"status": "error", "message": f"Gateway not found with name: {name}"}
+        else:
+            self.logger.error("gateway_identifier, gateway_arn, or name required")
+            return {"status": "error", "message": "gateway_identifier, gateway_arn, or name required"}
+
+        # Resolve target ID
+        resolved_target_id = target_id
+        if not resolved_target_id and target_name:
+            try:
+                targets_resp = self.client.list_gateway_targets(gatewayIdentifier=resolved_id)
+                for t in targets_resp.get("items", []):
+                    if t.get("name") == target_name:
+                        resolved_target_id = t.get("targetId")
+                        break
+                if not resolved_target_id:
+                    self.logger.error("Target named %s not found", target_name)
+                    return {"status": "error", "message": f"Target named {target_name} not found"}
+            except Exception as e:
+                self.logger.error("Error listing gateway targets: %s", str(e))
+                return {"status": "error", "message": f"Error listing gateway targets: {str(e)}"}
+
+        if not resolved_target_id:
+            self.logger.error("target_id or target_name required")
+            return {"status": "error", "message": "target_id or target_name required"}
+
+        try:
+            result = self.client.get_gateway_target(gatewayIdentifier=resolved_id, targetId=resolved_target_id)
+            self.logger.info("Retrieved target %s for gateway %s", resolved_target_id, resolved_id)
+            return {"status": "success", "gatewayId": resolved_id, "target": result}
+        except Exception as e:
+            self.logger.error("Error getting gateway target: %s", str(e))
+            return {"status": "error", "message": f"Error getting gateway target: {str(e)}"}
+
     def cleanup_gateway(self, gateway_id: str, client_info: Optional[Dict] = None) -> None:
         """Remove all resources associated with a gateway.
 
