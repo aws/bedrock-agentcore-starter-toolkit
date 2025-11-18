@@ -4,6 +4,7 @@ import typer
 
 from ..cli.gateway.commands import create_mcp_gateway, create_mcp_gateway_target, gateway_app
 from ..utils.logging_config import setup_toolkit_logging
+from .identity.commands import identity_app
 from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
@@ -26,6 +27,7 @@ app.command("launch")(launch)
 app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
+app.add_typer(identity_app, name="identity")
 app.add_typer(configure_app)
 
 # gateway
