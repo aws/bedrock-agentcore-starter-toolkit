@@ -405,9 +405,9 @@ agentcore identity setup-cognito
 agentcore identity setup-cognito --auth-flow m2m
 
 # Load environment variables (bash/zsh)
-export $(cat .agentcore_identity_user.env | xargs)
+export $(grep -v '^#' .agentcore_identity_user.env | xargs)
 # or for m2m:
-export $(cat .agentcore_identity_m2m.env | xargs)
+export $(grep -v '^#' .agentcore_identity_m2m.env | xargs)
 
 # In Python
 from dotenv import load_dotenv
@@ -521,11 +521,11 @@ Options:
 
 ```bash
 # Auto-load from environment (user flow - simplest)
-export $(cat .agentcore_identity_user.env | xargs)
+export $(grep -v '^#' .agentcore_identity_user.env | xargs)
 TOKEN=$(agentcore identity get-cognito-inbound-token)
 
 # Auto-load from environment (m2m flow)
-export $(cat .agentcore_identity_m2m.env | xargs)
+export $(grep -v '^#' .agentcore_identity_m2m.env | xargs)
 TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m)
 
 # Explicit parameters (overrides env)
@@ -577,7 +577,7 @@ agentcore identity cleanup --agent my-agent --force
 agentcore identity setup-cognito
 
 # 2. Load environment variables
-export $(cat .agentcore_identity_user.env | xargs)
+export $(grep -v '^#' .agentcore_identity_user.env | xargs)
 
 # 3. Configure agent with JWT auth
 agentcore configure \
@@ -613,7 +613,7 @@ TOKEN=$(agentcore identity get-cognito-inbound-token)
 # 8. Invoke with JWT authentication
 agentcore invoke '{"prompt": "Call external service"}' \
   --bearer-token "$TOKEN" \
-  --session-id "session_$(date +%s)"
+  --session-id "demo_session_$(uuidgen | tr -d '-')"
 
 # 9. Cleanup when done
 agentcore identity cleanup --agent my-agent --force

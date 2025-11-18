@@ -60,7 +60,7 @@ agentcore identity setup-cognito
 
 ```bash
 # Bash/Zsh (for USER flow)
-export $(cat .agentcore_identity_user.env | xargs)
+export $(grep -v '^#' .agentcore_identity_user.env | xargs)
 
 # Verify variables are loaded
 echo $RUNTIME_POOL_ID
@@ -79,65 +79,89 @@ echo $IDENTITY_CLIENT_ID
 Create `agent.py`:
 
 ```python
-"""Identity Demo Agent - OAuth 2.0 USER_FEDERATION Flow"""
-
-from strands import Agent
+"""AgentCore Identity Quickstart: Inbound + Outbound Authentication"""
+import os
+import asyncio
+from strands import Agent, tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from bedrock_agentcore.identity.auth import requires_access_token
 
 app = BedrockAgentCoreApp()
 
-# Store authorization URL for returning to user
-auth_url_holder = {"url": None}
+MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+# Store authorization URL to return to user
+auth_url_holder = {"url": None, "needs_auth": False}
 
 @requires_access_token(
     provider_name="ExternalServiceProvider",
     scopes=["openid"],
     auth_flow="USER_FEDERATION",
-    on_auth_url=lambda url: auth_url_holder.update({"url": url}),
+    on_auth_url=lambda url: auth_url_holder.update({"url": url, "needs_auth": True}),
     force_authentication=False
 )
-async def get_external_service_token(*, access_token: str) -> str:
-    """Get OAuth token for external service"""
+async def get_identity_token(*, access_token: str) -> str:
+    """Get OAuth token from Identity service"""
+    auth_url_holder["needs_auth"] = False
     return access_token
+
+@tool
+async def check_external_service() -> str:
+    """Check authentication to external services via Identity OAuth."""
+    # Reset state
+    auth_url_holder["url"] = None
+    auth_url_holder["needs_auth"] = False
+
+    try:
+        # Start token request with short timeout
+        token_task = asyncio.create_task(get_identity_token())
+        await asyncio.sleep(0.5)
+
+        # Check if authorization is needed
+        if auth_url_holder["needs_auth"] and auth_url_holder["url"]:
+            token_task.cancel()
+            try:
+                await token_task
+            except asyncio.CancelledError:
+                pass
+
+            return (
+                f"🔐 Authorization Required\n\n"
+                f"Please open this URL in your browser to authorize:\n"
+                f"{auth_url_holder['url']}\n\n"
+                f"After authorizing, call this tool again with the same session ID."
+            )
+
+        # Token obtained
+        token = await token_task
+        return (
+            f"✅ Authenticated to external service\n"
+            f"Token length: {len(token)} characters\n"
+            f"Status: Active and cached for this session"
+        )
+
+    except Exception as e:
+        return f"❌ Failed to authenticate: {str(e)}"
 
 @app.entrypoint
 async def invoke(payload, context):
     """Main entrypoint"""
-
     user_message = payload.get("prompt", "")
 
-    try:
-        auth_url_holder["url"] = None  # Reset
-        token = await get_external_service_token()
+    agent = Agent(
+        model=MODEL_ID,
+        system_prompt=(
+            "You are a helpful assistant with access to external services via OAuth.\n"
+            "When check_external_service returns an authorization URL, "
+            "present it clearly to the user and ask them to authorize."
+        ),
+        tools=[check_external_service]
+    )
 
-        # If URL was set, authorization is needed
-        if auth_url_holder["url"]:
-            return {
-                "response": (
-                    f"🔐 Authorization Required\n\n"
-                    f"To access the external service, please authorize:\n"
-                    f"{auth_url_holder['url']}\n\n"
-                    f"Login with Resource User Pool credentials:\n"
-                    f"Username: {auth_url_holder.get('username', 'see IDENTITY_USERNAME')}\n"
-                    f"Password: {auth_url_holder.get('password', 'see IDENTITY_PASSWORD')}\n\n"
-                    f"After authorizing, invoke again with the same session ID."
-                )
-            }
+    response = await agent.invoke_async(user_message)
+    response_text = str(response.message.get('content', [{}])[0].get('text', ''))
 
-        # Token obtained - success
-        return {
-            "response": (
-                f"✅ External Service Response\n\n"
-                f"Successfully called external service!\n"
-                f"Token obtained and cached for this session.\n"
-                f"Token length: {len(token)} characters\n\n"
-                f"Subsequent calls in this session will use the cached token."
-            )
-        }
-
-    except Exception as e:
-        return {"response": f"❌ Error: {str(e)}"}
+    return {"response": response_text}
 
 if __name__ == "__main__":
     app.run()
@@ -238,7 +262,7 @@ BEARER_TOKEN=$(agentcore identity get-cognito-inbound-token)
 # Invoke agent
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "demo_session_$(date +%s)"
+  --session-id "demo_session_$(uuidgen | tr -d '-')"
 ```
 
 **Expected Response:**
@@ -268,7 +292,7 @@ After authorizing, invoke again with the same session ID.
 # Use the SAME session ID as before!
 agentcore invoke '{"prompt": "Call the external service"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "demo_session_1234567890"
+  --session-id "demo_session_$(uuidgen | tr -d '-')"
 ```
 
 **Expected Response:**

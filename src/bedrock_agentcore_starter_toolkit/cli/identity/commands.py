@@ -311,11 +311,11 @@ def get_cognito_inbound_token(
 
     Examples:
         # Auto-load from environment (user flow)
-        export $(cat .agentcore_identity_user.env | xargs)
+        export $(grep -v '^#' .agentcore_identity_user.env | xargs)
         TOKEN=$(agentcore identity get-cognito-inbound-token)
 
         # Auto-load from environment (m2m flow)
-        export $(cat .agentcore_identity_m2m.env | xargs)
+        export $(grep -v '^#' .agentcore_identity_m2m.env | xargs)
         TOKEN=$(agentcore identity get-cognito-inbound-token --auth-flow m2m)
 
         # Explicit parameters (overrides env)
@@ -635,8 +635,7 @@ def setup_cognito(
     env_file_path = Path.cwd() / f".agentcore_identity_{auth_flow}.env"
     with open(env_file_path, "w") as f:
         f.write("# AgentCore Identity Environment Variables\n")
-        f.write(f"# Load with: export $(cat .agentcore_identity_{auth_flow}.env | xargs)\n")
-        f.write(f"# Or use python-dotenv: load_dotenv('.agentcore_identity_{auth_flow}.env')\n\n")
+        f.write(f"# To load: export $(grep -v '^#' .agentcore_identity_{auth_flow}.env | xargs)\n\n")
         f.write("# Runtime Pool (Inbound Auth)\n")
         f.write(f"RUNTIME_POOL_ID={result['runtime']['pool_id']}\n")
         f.write(f"RUNTIME_CLIENT_ID={result['runtime']['client_id']}\n")
@@ -705,13 +704,8 @@ def setup_cognito(
     console.print("[bold]To load environment variables:[/bold]")
     console.print()
     console.print("Bash/Zsh:")
-    load_cmd = f"export $(cat .agentcore_identity_{auth_flow}.env | xargs)"
+    load_cmd = f"export $(grep -v '^#' .agentcore_identity_{auth_flow}.env | xargs)"
     syntax = Syntax(load_cmd, "bash", theme="monokai", line_numbers=False)
-    console.print(syntax)
-    console.print()
-    console.print("Python:")
-    python_cmd = f"from dotenv import load_dotenv\nload_dotenv('.agentcore_identity_{auth_flow}.env')"
-    syntax = Syntax(python_cmd, "python", theme="monokai", line_numbers=False)
     console.print(syntax)
     console.print()
 
