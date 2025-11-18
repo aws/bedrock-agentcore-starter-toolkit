@@ -114,6 +114,7 @@ class IdentityClient:
         force_authentication: bool = False,
         token_poller: Optional[TokenPoller] = None,
         custom_state: Optional[str] = None,
+        custom_parameters: Optional[Dict[str, str]] = None,
     ) -> str:
         """Get an OAuth2 access token for the specified provider.
 
@@ -127,6 +128,8 @@ class IdentityClient:
             force_authentication: Force re-authentication even if token exists in the token vault
             token_poller: Custom token poller implementation
             custom_state: A state that allows applications to verify the validity of callbacks to callback_url
+            custom_parameters: A map of custom parameters to include in authorization request to the credential provider
+                               Note: these parameters are in addition to standard OAuth 2.0 flow parameters
 
         Returns:
             The access token string
@@ -152,6 +155,8 @@ class IdentityClient:
             req["forceAuthentication"] = force_authentication
         if custom_state:
             req["customState"] = custom_state
+        if custom_parameters:
+            req["customParameters"] = custom_parameters
 
         response = self.dp_client.get_resource_oauth2_token(**req)
 
@@ -298,23 +303,24 @@ async def get_api_key(self, *, provider_name: str, agent_identity_token: str) ->
     return self.dp_client.get_resource_api_key(**req)["apiKey"]
 ```
 
-##### `get_token(*, provider_name, scopes=None, agent_identity_token, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None)`
+##### `get_token(*, provider_name, scopes=None, agent_identity_token, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None, custom_parameters=None)`
 
 Get an OAuth2 access token for the specified provider.
 
 Parameters:
 
-| Name                   | Type                                | Description                                                                          | Default    |
-| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------ | ---------- |
-| `provider_name`        | `str`                               | The credential provider name                                                         | *required* |
-| `scopes`               | `Optional[List[str]]`               | Optional list of OAuth2 scopes to request                                            | `None`     |
-| `agent_identity_token` | `str`                               | Agent identity token for authentication                                              | *required* |
-| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                             | `None`     |
-| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                | *required* |
-| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL (must be pre-registered)                                         | `None`     |
-| `force_authentication` | `bool`                              | Force re-authentication even if token exists in the token vault                      | `False`    |
-| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                   | `None`     |
-| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url | `None`     |
+| Name                   | Type                                | Description                                                                                                                                                            | Default    |
+| ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `provider_name`        | `str`                               | The credential provider name                                                                                                                                           | *required* |
+| `scopes`               | `Optional[List[str]]`               | Optional list of OAuth2 scopes to request                                                                                                                              | `None`     |
+| `agent_identity_token` | `str`                               | Agent identity token for authentication                                                                                                                                | *required* |
+| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                                                                                                               | `None`     |
+| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                                                                                                  | *required* |
+| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL (must be pre-registered)                                                                                                                           | `None`     |
+| `force_authentication` | `bool`                              | Force re-authentication even if token exists in the token vault                                                                                                        | `False`    |
+| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                                                                                                     | `None`     |
+| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url                                                                                   | `None`     |
+| `custom_parameters`    | `Optional[Dict[str, str]]`          | A map of custom parameters to include in authorization request to the credential provider Note: these parameters are in addition to standard OAuth 2.0 flow parameters | `None`     |
 
 Returns:
 
@@ -343,6 +349,7 @@ async def get_token(
     force_authentication: bool = False,
     token_poller: Optional[TokenPoller] = None,
     custom_state: Optional[str] = None,
+    custom_parameters: Optional[Dict[str, str]] = None,
 ) -> str:
     """Get an OAuth2 access token for the specified provider.
 
@@ -356,6 +363,8 @@ async def get_token(
         force_authentication: Force re-authentication even if token exists in the token vault
         token_poller: Custom token poller implementation
         custom_state: A state that allows applications to verify the validity of callbacks to callback_url
+        custom_parameters: A map of custom parameters to include in authorization request to the credential provider
+                           Note: these parameters are in addition to standard OAuth 2.0 flow parameters
 
     Returns:
         The access token string
@@ -381,6 +390,8 @@ async def get_token(
         req["forceAuthentication"] = force_authentication
     if custom_state:
         req["customState"] = custom_state
+    if custom_parameters:
+        req["customParameters"] = custom_parameters
 
     response = self.dp_client.get_resource_oauth2_token(**req)
 
@@ -538,23 +549,24 @@ class UserTokenIdentifier(BaseModel):
 
 Bedrock AgentCore SDK identity package.
 
-#### `requires_access_token(*, provider_name, into='access_token', scopes, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None)`
+#### `requires_access_token(*, provider_name, into='access_token', scopes, on_auth_url=None, auth_flow, callback_url=None, force_authentication=False, token_poller=None, custom_state=None, custom_parameters=None)`
 
 Decorator that fetches an OAuth2 access token before calling the decorated function.
 
 Parameters:
 
-| Name                   | Type                                | Description                                                                          | Default          |
-| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------ | ---------------- |
-| `provider_name`        | `str`                               | The credential provider name                                                         | *required*       |
-| `into`                 | `str`                               | Parameter name to inject the token into                                              | `'access_token'` |
-| `scopes`               | `List[str]`                         | OAuth2 scopes to request                                                             | *required*       |
-| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                             | `None`           |
-| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                | *required*       |
-| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL                                                                  | `None`           |
-| `force_authentication` | `bool`                              | Force re-authentication                                                              | `False`          |
-| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                   | `None`           |
-| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url | `None`           |
+| Name                   | Type                                | Description                                                                                                                                                            | Default          |
+| ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `provider_name`        | `str`                               | The credential provider name                                                                                                                                           | *required*       |
+| `into`                 | `str`                               | Parameter name to inject the token into                                                                                                                                | `'access_token'` |
+| `scopes`               | `List[str]`                         | OAuth2 scopes to request                                                                                                                                               | *required*       |
+| `on_auth_url`          | `Optional[Callable[[str], Any]]`    | Callback for handling authorization URLs                                                                                                                               | `None`           |
+| `auth_flow`            | `Literal['M2M', 'USER_FEDERATION']` | Authentication flow type ("M2M" or "USER_FEDERATION")                                                                                                                  | *required*       |
+| `callback_url`         | `Optional[str]`                     | OAuth2 callback URL                                                                                                                                                    | `None`           |
+| `force_authentication` | `bool`                              | Force re-authentication                                                                                                                                                | `False`          |
+| `token_poller`         | `Optional[TokenPoller]`             | Custom token poller implementation                                                                                                                                     | `None`           |
+| `custom_state`         | `Optional[str]`                     | A state that allows applications to verify the validity of callbacks to callback_url                                                                                   | `None`           |
+| `custom_parameters`    | `Optional[Dict[str, str]]`          | A map of custom parameters to include in authorization request to the credential provider Note: these parameters are in addition to standard OAuth 2.0 flow parameters | `None`           |
 
 Returns:
 
@@ -576,6 +588,7 @@ def requires_access_token(
     force_authentication: bool = False,
     token_poller: Optional[TokenPoller] = None,
     custom_state: Optional[str] = None,
+    custom_parameters: Optional[Dict[str, str]] = None,
 ) -> Callable:
     """Decorator that fetches an OAuth2 access token before calling the decorated function.
 
@@ -589,6 +602,8 @@ def requires_access_token(
         force_authentication: Force re-authentication
         token_poller: Custom token poller implementation
         custom_state: A state that allows applications to verify the validity of callbacks to callback_url
+        custom_parameters: A map of custom parameters to include in authorization request to the credential provider
+                           Note: these parameters are in addition to standard OAuth 2.0 flow parameters
 
     Returns:
         Decorator function
@@ -609,6 +624,7 @@ def requires_access_token(
                 force_authentication=force_authentication,
                 token_poller=token_poller,
                 custom_state=custom_state,
+                custom_parameters=custom_parameters,
             )
 
         @wraps(func)

@@ -335,7 +335,6 @@ CMD ["opentelemetry-instrument", "python", "-m", "basic_agent"]
 
 ```
 from strands import Agent
-import os
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
 app = BedrockAgentCoreApp()

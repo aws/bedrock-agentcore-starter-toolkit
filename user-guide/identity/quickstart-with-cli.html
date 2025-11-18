@@ -10,13 +10,13 @@
     
     
     
-      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/overview.html">
+      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/identity/quickstart-with-cli.html">
     
     
       <link rel="prev" href="quickstart.html">
     
     
-      <link rel="next" href="configuration.html">
+      <link rel="next" href="../builtin-tools/quickstart-browser.html">
     
     
     <link rel="icon" href="../.." sizes="any">
@@ -25,7 +25,7 @@
 
     
       
-        <title>Import Agent Overview - Amazon Bedrock AgentCore</title>
+        <title>Identity CLI Quickstart - Amazon Bedrock AgentCore</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#import-agent-overview" class="md-skip">
+        <a href="#getting-started-with-agentcore-identity-cli" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Agent Overview
+              Identity CLI Quickstart
             
           </span>
         </div>
@@ -863,6 +863,8 @@
                 
   
   
+    
+  
   
   
     
@@ -878,11 +880,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_5" checked>
         
           
           <label class="md-nav__link" for="__nav_1_5" id="__nav_1_5_label" tabindex="">
@@ -903,7 +905,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -921,7 +923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../identity/quickstart.html" class="md-nav__link">
+      <a href="quickstart.html" class="md-nav__link">
         
   
   
@@ -946,10 +948,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../identity/quickstart-with-cli.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity CLI Quickstart
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="quickstart-with-cli.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -965,6 +994,271 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-youll-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You'll Build
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-cognito-pools-automated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create Cognito Pools (Automated)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-load-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Load Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-create-agent-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Agent Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-configure-agent-with-jwt-auth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Configure Agent with JWT Auth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-create-credential-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Create Credential Provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-create-workload-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6: Create Workload Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-deploy-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7: Deploy Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-8-invoke-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 8: Invoke the Agent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 8: Invoke the Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-invocation-triggers-oauth-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First Invocation (Triggers OAuth Flow)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complete-oauth-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete OAuth Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workload-access-token-has-not-been-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        “Workload access token has not been set”
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorization-url-not-showing-in-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization URL not showing in response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-expired-or-authorization-failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token expired or authorization failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failed-to-get-token-secret_hash-was-not-received" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        “Failed to get token: SECRET_HASH was not received”
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1339,8 +1633,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1356,11 +1648,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
         
           
           <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="">
@@ -1381,7 +1673,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1399,7 +1691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="quickstart.html" class="md-nav__link">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
         
   
   
@@ -1424,37 +1716,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Import Agent Overview
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="overview.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -1470,133 +1735,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-is-import-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What is Import Agent?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-benefits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Benefits
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#supported-target-platforms" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Supported Target Platforms
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Supported Target Platforms">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#langchain-langgraph" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        LangChain + LangGraph
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#strands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Strands
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Generated Output
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#migration-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Migration Workflow
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#feature-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Feature Support
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next Steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1609,7 +1747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -2303,10 +2441,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-is-import-agent" class="md-nav__link">
+  <a href="#what-youll-build" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What is Import Agent?
+        What You'll Build
       
     </span>
   </a>
@@ -2314,10 +2452,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-benefits" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Benefits
+        Prerequisites
       
     </span>
   </a>
@@ -2325,22 +2463,110 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-target-platforms" class="md-nav__link">
+  <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Supported Target Platforms
+        Installation
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Supported Target Platforms">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-create-cognito-pools-automated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create Cognito Pools (Automated)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-load-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Load Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-create-agent-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Agent Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-configure-agent-with-jwt-auth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Configure Agent with JWT Auth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-create-credential-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Create Credential Provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-create-workload-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6: Create Workload Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-deploy-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7: Deploy Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-8-invoke-the-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 8: Invoke the Agent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 8: Invoke the Agent">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#langchain-langgraph" class="md-nav__link">
+  <a href="#first-invocation-triggers-oauth-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        LangChain + LangGraph
+        First Invocation (Triggers OAuth Flow)
       
     </span>
   </a>
@@ -2348,10 +2574,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#strands" class="md-nav__link">
+  <a href="#complete-oauth-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Strands
+        Complete OAuth Flow
       
     </span>
   </a>
@@ -2364,10 +2590,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
+  <a href="#cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Output
+        Cleanup
       
     </span>
   </a>
@@ -2375,24 +2601,63 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-workflow" class="md-nav__link">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Migration Workflow
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workload-access-token-has-not-been-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        “Workload access token has not been set”
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#feature-support" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#authorization-url-not-showing-in-response" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Feature Support
+        Authorization URL not showing in response
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-expired-or-authorization-failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token expired or authorization failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failed-to-get-token-secret_hash-was-not-received" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        “Failed to get token: SECRET_HASH was not received”
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2401,6 +2666,17 @@
     <span class="md-ellipsis">
       
         Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
       
     </span>
   </a>
@@ -2427,222 +2703,308 @@
   
 
 
-<h1 id="import-agent-overview">Import Agent Overview<a class="headerlink" href="#import-agent-overview" title="Permanent link">&para;</a></h1>
-<p>The <code>import-agent</code> utility enables you to migrate existing Amazon Bedrock Agents to Bedrock AgentCore, converting them into framework-specific implementations while leveraging AgentCore's enterprise-grade primitives.</p>
-<blockquote>
-<p><strong>Note</strong>
-Use the output agent definition as a starting point for your custom agent implementation.
-Review the generated code, evaluate agent behavior, and make necessary changes before deploying.
-Extend the agent with additional tools, memory, and other features as required.</p>
-<p><strong>Note</strong>
-Use the output agent definition as a starting point for your custom agent implementation.
-Review the generated code, evaluate agent behavior, and make necessary changes before deploying.
-Extend the agent with additional tools, memory, and other features as required.</p>
-</blockquote>
-<h2 id="what-is-import-agent">What is Import Agent?<a class="headerlink" href="#what-is-import-agent" title="Permanent link">&para;</a></h2>
-<p>The import-agent utility automates the process of:</p>
+<h1 id="getting-started-with-agentcore-identity-cli">Getting Started with AgentCore Identity (CLI)<a class="headerlink" href="#getting-started-with-agentcore-identity-cli" title="Permanent link">&para;</a></h1>
+<p>Amazon Bedrock AgentCore Identity provides secure OAuth 2.0 authentication for your AI agents. This quickstart demonstrates how to build an agent that authenticates users and accesses external services using the AgentCore CLI.</p>
+<h2 id="what-youll-build">What You'll Build<a class="headerlink" href="#what-youll-build" title="Permanent link">&para;</a></h2>
+<p>A simple agent that:
+1. Accepts JWT bearer tokens for user authentication (inbound auth)
+2. Obtains OAuth tokens to call external services on behalf of users (outbound auth)
+3. Demonstrates the complete OAuth flow with user consent</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li>AWS account with appropriate permissions</li>
+<li>Python 3.10+ installed</li>
+<li>AWS CLI configured (<code>aws configure</code>)</li>
+<li>bedrock-agentcore-starter-toolkit installed</li>
+</ul>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create project directory</span>
+mkdir<span class="w"> </span>agentcore-identity-demo
+<span class="nb">cd</span><span class="w"> </span>agentcore-identity-demo
+
+<span class="c1"># Create virtual environment</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Install dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore<span class="w"> </span>bedrock-agentcore-starter-toolkit<span class="w"> </span>strands-agents<span class="w"> </span>boto3
+</code></pre></div>
+<h2 id="step-1-create-cognito-pools-automated">Step 1: Create Cognito Pools (Automated)<a class="headerlink" href="#step-1-create-cognito-pools-automated" title="Permanent link">&para;</a></h2>
+<p>The <code>setup-cognito</code> command creates both Cognito pools needed for Identity in one step:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>setup-cognito
+</code></pre></div>
+<p><strong>What this creates:</strong></p>
+<ul>
+<li><strong>Cognito Agent User Pool</strong>: Manages user authentication to your agent</li>
+<li><strong>Cognito Resource User Pool</strong>: Enables agent to access external resources</li>
+<li>Test users with credentials for both pools</li>
+<li>Environment variables file for easy access</li>
+</ul>
+<p><strong>Output shows:</strong></p>
+<div class="highlight"><pre><span></span><code>✅ Cognito pools created successfully!
+
+🔐 Credentials saved securely to:
+   • .agentcore_identity_cognito_user.json
+   • .agentcore_identity_user.env
+</code></pre></div>
+<h2 id="step-2-load-environment-variables">Step 2: Load Environment Variables<a class="headerlink" href="#step-2-load-environment-variables" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Bash/Zsh (for USER flow)</span>
+<span class="nb">export</span><span class="w"> </span><span class="k">$(</span>grep<span class="w"> </span>-v<span class="w"> </span><span class="s1">&#39;^#&#39;</span><span class="w"> </span>.agentcore_identity_user.env<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="k">)</span>
+
+<span class="c1"># Verify variables are loaded</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$RUNTIME_POOL_ID</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$IDENTITY_CLIENT_ID</span>
+</code></pre></div>
+<p><strong>Available variables (USER flow):</strong></p>
+<ul>
+<li><code>RUNTIME_POOL_ID</code>, <code>RUNTIME_CLIENT_ID</code>, <code>RUNTIME_DISCOVERY_URL</code></li>
+<li><code>RUNTIME_USERNAME</code>, <code>RUNTIME_PASSWORD</code></li>
+<li><code>IDENTITY_POOL_ID</code>, <code>IDENTITY_CLIENT_ID</code>, <code>IDENTITY_CLIENT_SECRET</code></li>
+<li><code>IDENTITY_DISCOVERY_URL</code>, <code>IDENTITY_USERNAME</code>, <code>IDENTITY_PASSWORD</code></li>
+</ul>
+<h2 id="step-3-create-agent-code">Step 3: Create Agent Code<a class="headerlink" href="#step-3-create-agent-code" title="Permanent link">&para;</a></h2>
+<p>Create <code>agent.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;AgentCore Identity Quickstart: Inbound + Outbound Authentication&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">strands</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">tool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.identity.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires_access_token</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
+
+<span class="n">MODEL_ID</span> <span class="o">=</span> <span class="s2">&quot;us.anthropic.claude-sonnet-4-5-20250929-v1:0&quot;</span>
+
+<span class="c1"># Store authorization URL to return to user</span>
+<span class="n">auth_url_holder</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;needs_auth&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+<span class="nd">@requires_access_token</span><span class="p">(</span>
+    <span class="n">provider_name</span><span class="o">=</span><span class="s2">&quot;ExternalServiceProvider&quot;</span><span class="p">,</span>
+    <span class="n">scopes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;openid&quot;</span><span class="p">],</span>
+    <span class="n">auth_flow</span><span class="o">=</span><span class="s2">&quot;USER_FEDERATION&quot;</span><span class="p">,</span>
+    <span class="n">on_auth_url</span><span class="o">=</span><span class="k">lambda</span> <span class="n">url</span><span class="p">:</span> <span class="n">auth_url_holder</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span> <span class="s2">&quot;needs_auth&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}),</span>
+    <span class="n">force_authentication</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_identity_token</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">access_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get OAuth token from Identity service&quot;&quot;&quot;</span>
+    <span class="n">auth_url_holder</span><span class="p">[</span><span class="s2">&quot;needs_auth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">access_token</span>
+
+<span class="nd">@tool</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">check_external_service</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check authentication to external services via Identity OAuth.&quot;&quot;&quot;</span>
+    <span class="c1"># Reset state</span>
+    <span class="n">auth_url_holder</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">auth_url_holder</span><span class="p">[</span><span class="s2">&quot;needs_auth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Start token request with short timeout</span>
+        <span class="n">token_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">get_identity_token</span><span class="p">())</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="c1"># Check if authorization is needed</span>
+        <span class="k">if</span> <span class="n">auth_url_holder</span><span class="p">[</span><span class="s2">&quot;needs_auth&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">auth_url_holder</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">]:</span>
+            <span class="n">token_task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">await</span> <span class="n">token_task</span>
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;🔐 Authorization Required</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Please open this URL in your browser to authorize:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">auth_url_holder</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;After authorizing, call this tool again with the same session ID.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Token obtained</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="k">await</span> <span class="n">token_task</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;✅ Authenticated to external service</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Token length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Status: Active and cached for this session&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;❌ Failed to authenticate: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entrypoint&quot;&quot;&quot;</span>
+    <span class="n">user_message</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">MODEL_ID</span><span class="p">,</span>
+        <span class="n">system_prompt</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;You are a helpful assistant with access to external services via OAuth.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;When check_external_service returns an authorization URL, &quot;</span>
+            <span class="s2">&quot;present it clearly to the user and ask them to authorize.&quot;</span>
+        <span class="p">),</span>
+        <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">check_external_service</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">invoke_async</span><span class="p">(</span><span class="n">user_message</span><span class="p">)</span>
+    <span class="n">response_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="p">[{}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response_text</span><span class="p">}</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<p>Create <code>requirements.txt</code>:</p>
+<div class="highlight"><pre><span></span><code>bedrock-agentcore
+bedrock-agentcore-starter-toolkit
+strands-agents
+boto3
+</code></pre></div>
+<h2 id="step-4-configure-agent-with-jwt-auth">Step 4: Configure Agent with JWT Auth<a class="headerlink" href="#step-4-configure-agent-with-jwt-auth" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-e<span class="w"> </span>agent.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>identity_demo<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--authorizer-config<span class="w"> </span><span class="s1">&#39;{</span>
+<span class="s1">    &quot;customJWTAuthorizer&quot;: {</span>
+<span class="s1">      &quot;discoveryUrl&quot;: &quot;&#39;</span><span class="nv">$RUNTIME_DISCOVERY_URL</span><span class="s1">&#39;&quot;,</span>
+<span class="s1">      &quot;allowedClients&quot;: [&quot;&#39;</span><span class="nv">$RUNTIME_CLIENT_ID</span><span class="s1">&#39;&quot;]</span>
+<span class="s1">    }</span>
+<span class="s1">  }&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--disable-memory
+</code></pre></div>
+<p><strong>What this does:</strong></p>
+<ul>
+<li>Configures agent with JWT authentication using Cognito Agent User Pool</li>
+<li>Creates execution role (or uses provided one)</li>
+<li>Saves configuration to <code>.bedrock_agentcore.yaml</code></li>
+</ul>
+<h2 id="step-5-create-credential-provider">Step 5: Create Credential Provider<a class="headerlink" href="#step-5-create-credential-provider" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>create-credential-provider<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>ExternalServiceProvider<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--type<span class="w"> </span>cognito<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--client-id<span class="w"> </span><span class="nv">$IDENTITY_CLIENT_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--client-secret<span class="w"> </span><span class="nv">$IDENTITY_CLIENT_SECRET</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--discovery-url<span class="w"> </span><span class="nv">$IDENTITY_DISCOVERY_URL</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cognito-pool-id<span class="w"> </span><span class="nv">$IDENTITY_POOL_ID</span>
+</code></pre></div>
+<p><strong>What this does:</strong></p>
+<ul>
+<li>Creates OAuth credential provider in Identity service</li>
+<li>Saves provider configuration to <code>.bedrock_agentcore.yaml</code></li>
+<li>IAM permissions will be added automatically during <code>launch</code></li>
+</ul>
+<h2 id="step-6-create-workload-identity">Step 6: Create Workload Identity<a class="headerlink" href="#step-6-create-workload-identity" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>create-workload-identity<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>identity-demo-workload
+</code></pre></div>
+<p><strong>What this does:</strong></p>
+<ul>
+<li>Creates workload identity for agent-to-Identity authentication</li>
+<li>Enables OAuth flows for external service access</li>
+</ul>
+<h2 id="step-7-deploy-agent">Step 7: Deploy Agent<a class="headerlink" href="#step-7-deploy-agent" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
+</code></pre></div>
+<p><strong>What happens during launch:</strong></p>
+<ul>
+<li>Agent container built and pushed to ECR</li>
+<li>Runtime instance created</li>
+<li><strong>IAM permissions automatically added</strong> for Identity:</li>
+<li>Trust policy updated</li>
+<li>GetWorkloadAccessToken permissions</li>
+<li>GetResourceOauth2Token permissions</li>
+<li>Secrets Manager access for credential provider</li>
+<li>Agent endpoint created</li>
+</ul>
+<p><strong>Look for this in the output:</strong></p>
+<div class="highlight"><pre><span></span><code>✅ Identity permissions added automatically
+   Providers: ExternalServiceProvider
+</code></pre></div>
+<h2 id="step-8-invoke-the-agent">Step 8: Invoke the Agent<a class="headerlink" href="#step-8-invoke-the-agent" title="Permanent link">&para;</a></h2>
+<h3 id="first-invocation-triggers-oauth-flow">First Invocation (Triggers OAuth Flow)<a class="headerlink" href="#first-invocation-triggers-oauth-flow" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Get bearer token for Runtime authentication (auto-loads from env)</span>
+<span class="nv">BEARER_TOKEN</span><span class="o">=</span><span class="k">$(</span>agentcore<span class="w"> </span>identity<span class="w"> </span>get-cognito-inbound-token<span class="k">)</span>
+
+<span class="c1"># Invoke agent</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Call the external service&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--bearer-token<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BEARER_TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session-id<span class="w"> </span><span class="s2">&quot;demo_session_</span><span class="k">$(</span>uuidgen<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p><strong>Expected Response:</strong></p>
+<div class="highlight"><pre><span></span><code>🔐 Authorization Required
+
+To access the external service, please authorize:
+https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/authorize?request_uri=...
+
+Login with Resource User Pool credentials:
+Username: externaluser12345678
+Password: Abc123...
+
+After authorizing, invoke again with the same session ID.
+</code></pre></div>
+<h3 id="complete-oauth-flow">Complete OAuth Flow<a class="headerlink" href="#complete-oauth-flow" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Fetching</strong> your existing Bedrock Agent configuration</li>
-<li><strong>Converting</strong> it to LangChain/LangGraph or Strands framework code</li>
-<li><strong>Integrating</strong> AgentCore primitives (Memory, Code Interpreter, Observability, Gateway)</li>
-<li><strong>Integrating</strong> AgentCore primitives (Memory, Code Interpreter, Observability, Gateway)</li>
-<li><strong>Deploying</strong> to AgentCore Runtime (optional)</li>
+<li><strong>Copy the authorization URL</strong> from the response</li>
+<li><strong>Open in browser</strong></li>
+<li><strong>Login</strong> with Resource User Pool credentials (IDENTITY_USERNAME/IDENTITY_PASSWORD from env vars)</li>
+<li><strong>Approve</strong> the consent screen</li>
+<li><strong>Invoke again</strong> with the <strong>same session ID</strong>:</li>
 </ol>
-<h2 id="key-benefits">Key Benefits<a class="headerlink" href="#key-benefits" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Use the SAME session ID as before!</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Call the external service&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--bearer-token<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BEARER_TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session-id<span class="w"> </span><span class="s2">&quot;demo_session_</span><span class="k">$(</span>uuidgen<span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span>-d<span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p><strong>Expected Response:</strong></p>
+<div class="highlight"><pre><span></span><code>✅ External Service Response
+
+Successfully called external service!
+Token obtained and cached for this session.
+Token length: 1234 characters
+
+Subsequent calls in this session will use the cached token.
+</code></pre></div>
+<h2 id="cleanup">Cleanup<a class="headerlink" href="#cleanup" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Delete all Identity resources</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>cleanup<span class="w"> </span>--agent<span class="w"> </span>identity_demo<span class="w"> </span>--force
+
+<span class="c1"># Destroy agent</span>
+agentcore<span class="w"> </span>destroy<span class="w"> </span>--agent<span class="w"> </span>identity_demo<span class="w"> </span>--force
+</code></pre></div>
+<p><strong>What gets cleaned up:</strong></p>
 <ul>
-<li><strong>Framework Flexibility</strong>: Convert to LangChain/LangGraph or Strands</li>
-<li><strong>Zero Infrastructure</strong>: Leverage AgentCore's serverless platform</li>
-<li><strong>Enhanced Capabilities</strong>: Add Memory, Code Interpreter, and Observability</li>
-<li><strong>Production Ready</strong>: Deploy directly to AgentCore Runtime</li>
-<li><strong>Preserved Logic</strong>: Maintains your agent's core functionality</li>
+<li>Credential provider (ExternalServiceProvider)</li>
+<li>Workload identity (identity-demo-workload)</li>
+<li>Both Cognito user pools</li>
+<li>IAM inline policies</li>
+<li>Configuration files (.agentcore_identity_*)</li>
 </ul>
-<h2 id="supported-target-platforms">Supported Target Platforms<a class="headerlink" href="#supported-target-platforms" title="Permanent link">&para;</a></h2>
-<h3 id="langchain-langgraph">LangChain + LangGraph<a class="headerlink" href="#langchain-langgraph" title="Permanent link">&para;</a></h3>
-<p>Perfect for teams already using the LangChain ecosystem or those looking for extensive third-party integrations.</p>
-<h3 id="strands">Strands<a class="headerlink" href="#strands" title="Permanent link">&para;</a></h3>
-<p>Ideal for teams wanting AWS-native agent development with streamlined patterns.</p>
-<h2 id="generated-output">Generated Output<a class="headerlink" href="#generated-output" title="Permanent link">&para;</a></h2>
-<p>The utility generates an agent implementation including:</p>
-<ul>
-<li><strong>Agent Code</strong>: Framework-specific implementation of your Bedrock Agent</li>
-<li><strong>Dependencies</strong>: All required packages and versions</li>
-<li><strong>Configuration</strong>: Environment setup and deployment configuration</li>
-<li><strong>AgentCore Integration</strong>: Memory, Code Interpreter, and Observability primitives</li>
-</ul>
-<h2 id="migration-workflow">Migration Workflow<a class="headerlink" href="#migration-workflow" title="Permanent link">&para;</a></h2>
-<pre class="mermaid"><code>flowchart TD
-    A[Existing Bedrock Agent] --&gt; B[Import Agent Utility]
-    B --&gt; C{Select Target Platform}
-    C --&gt; D[LangChain/LangGraph]
-    C --&gt; E[Strands]
-    D --&gt; F[Generate Agent Code]
-    E --&gt; F
-    F --&gt; G{Deploy to Runtime?}
-    G --&gt;|Yes| H[AgentCore Runtime]
-    G --&gt;|No| I[Local Development]</code></pre>
-<h2 id="feature-support">Feature Support<a class="headerlink" href="#feature-support" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Bedrock Agent Feature</th>
-<th>Langchain</th>
-<th>Strands</th>
-<th>AgentCore</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><em>Guardrails</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Orchestration (via reAct)</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Knowledge Bases</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Code Interpreter</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: 1P Code Interpreter</td>
-</tr>
-<tr>
-<td><em>Lambda Function Definitions</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: AgentCore Gateway</td>
-</tr>
-<tr>
-<td><em>Lambda OpenAPI Definitions</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: AgentCore Gateway</td>
-</tr>
-<tr>
-<td><em>Return of Control</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Short Term (Conversational) Memory</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Long Term (Cross-Session) Memory</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: AgentCore Memory</td>
-</tr>
-<tr>
-<td><em>Session Summarization</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: AgentCore Memory</td>
-</tr>
-<tr>
-<td><em>Pre Processing Step</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Post Processing Step</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>KB Generation Routing/Optimizations</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Idle Timeouts</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>User Input (as a tool)</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Traces</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td>SUPPORTED: AgentCore Observability</td>
-</tr>
-<tr>
-<td><em>Multi-Agent Collaboration - Supervisor Mode</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Multi-Agent Collaboration - Routing Mode</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Multi-Agent Collaboration - Conversation Relay</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Custom Bedrock Model Usage</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Chat Interface (via CLI)</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Custom Inference Configurations</em></td>
-<td>SUPPORTED</td>
-<td>SUPPORTED</td>
-<td></td>
-</tr>
-<tr>
-<td><em>Agent Deployment</em></td>
-<td>N/A</td>
-<td>N/A</td>
-<td>SUPPORTED: AgentCore Runtime</td>
-</tr>
-<tr>
-<td><em>Lambda Parsing and Orchestration</em></td>
-<td>N/A</td>
-<td>N/A</td>
-<td></td>
-</tr>
-</tbody>
-</table>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="workload-access-token-has-not-been-set">“Workload access token has not been set”<a class="headerlink" href="#workload-access-token-has-not-been-set" title="Permanent link">&para;</a></h3>
+<p><strong>Cause</strong>: Using <code>agent(message)</code> instead of <code>await agent.invoke_async(message)</code></p>
+<p><strong>Fix</strong>: Update your entrypoint to use <code>invoke_async</code></p>
+<h3 id="authorization-url-not-showing-in-response">Authorization URL not showing in response<a class="headerlink" href="#authorization-url-not-showing-in-response" title="Permanent link">&para;</a></h3>
+<p><strong>Cause</strong>: <code>on_auth_url</code> callback using <code>print()</code> which goes to logs</p>
+<p><strong>Fix</strong>: Use the pattern shown in this guide with <code>auth_url_holder</code></p>
+<h3 id="token-expired-or-authorization-failed">Token expired or authorization failed<a class="headerlink" href="#token-expired-or-authorization-failed" title="Permanent link">&para;</a></h3>
+<p><strong>Solution</strong>: Use a new session ID and start the OAuth flow again</p>
+<h3 id="failed-to-get-token-secret_hash-was-not-received">“Failed to get token: SECRET_HASH was not received”<a class="headerlink" href="#failed-to-get-token-secret_hash-was-not-received" title="Permanent link">&para;</a></h3>
+<p><strong>Cause</strong>: Cognito client configured with secret but using password auth</p>
+<p><strong>Fix</strong>: Run <code>agentcore identity setup-cognito</code> again</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="quickstart.html">Quick Start Guide</a> - Get started in 5 minutes</li>
-<li><a href="configuration.html">Configuration Reference</a> - Detailed parameter guide</li>
-<li><a href="design.html">Design Choices</a> - Details on the design of the generated agent</li>
-<li><a href="design.html">Design Choices</a> - Details on the design of the generated agent</li>
+<li>Add multiple credential providers for different external services</li>
+<li>Implement M2M (machine-to-machine) OAuth flows</li>
+<li>Build production agents with Memory and Code Interpreter</li>
+<li>Explore VPC networking for secure service access</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>You’ve built an agent with:</p>
+<ul>
+<li>✅ Automated Cognito pool setup</li>
+<li>✅ JWT authentication for user access</li>
+<li>✅ OAuth 2.0 flows for external service calls</li>
+<li>✅ Automatic IAM permission management</li>
+<li>✅ Token caching per session</li>
+<li>✅ Secure credential storage</li>
+<li>✅ One-command cleanup</li>
 </ul>
 
 
