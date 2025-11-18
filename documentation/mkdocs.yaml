@@ -84,6 +84,7 @@ nav:
       - Memory Quickstart: user-guide/memory/quickstart.md
     - Identity:
       - Identity Quickstart: user-guide/identity/quickstart.md
+      - Identity CLI Quickstart: user-guide/identity/quickstart-with-cli.md
     - Built-in Tools:
       - Quickstart Browser Tool: user-guide/builtin-tools/quickstart-browser.md
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
