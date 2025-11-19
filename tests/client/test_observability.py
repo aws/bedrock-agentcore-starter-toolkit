@@ -245,8 +245,8 @@ class TestObservabilityShow:
             obs.show(session_id="session-123", all=True, last=2)
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_last_trace_from_session")
-    def test_show_with_last_flag(self, mock_show_last, mock_create):
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_session_view")
+    def test_show_with_last_flag(self, mock_show_session, mock_create):
         """Test show with last=N flag."""
         mock_client = MagicMock()
         mock_client.region = "us-east-1"
@@ -268,5 +268,5 @@ class TestObservabilityShow:
         obs = Observability(agent_id="test-agent")
         result = obs.show(session_id="session-789", last=2)
 
-        mock_show_last.assert_called_once()
+        mock_show_session.assert_called_once()
         assert isinstance(result, TraceData)

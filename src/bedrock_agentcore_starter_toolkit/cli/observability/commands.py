@@ -344,34 +344,20 @@ def show(
             )
 
         elif session_id:
-            # Show command always shows trace details
-            if all_traces:
-                # Show all traces with full details
-                _show_session_view(
-                    client,
-                    session_id,
-                    start_time_ms,
-                    end_time_ms,
-                    verbose,
-                    errors_only,
-                    output,
-                    agent_id=final_agent_id,
-                    endpoint_name=endpoint_name,
-                )
-            else:
-                # Default: show latest trace (or Nth trace if --last specified)
-                _show_last_trace_from_session(
-                    client,
-                    session_id,
-                    start_time_ms,
-                    end_time_ms,
-                    verbose,
-                    last,
-                    errors_only,
-                    output,
-                    agent_id=final_agent_id,
-                    endpoint_name=endpoint_name,
-                )
+            # Show traces from session
+            _show_session_view(
+                client,
+                session_id,
+                start_time_ms,
+                end_time_ms,
+                verbose,
+                errors_only,
+                output,
+                agent_id=final_agent_id,
+                endpoint_name=endpoint_name,
+                show_all=all_traces,
+                nth_last=last,
+            )
 
         else:
             # No ID provided - try config first, then fallback to latest session
@@ -395,33 +381,20 @@ def show(
             else:
                 console.print(f"[dim]Using session from config: {session_id}[/dim]\n")
 
-            if all_traces:
-                # Show all traces with full details
-                _show_session_view(
-                    client,
-                    session_id,
-                    start_time_ms,
-                    end_time_ms,
-                    verbose,
-                    errors_only,
-                    output,
-                    agent_id=final_agent_id,
-                    endpoint_name=endpoint_name,
-                )
-            else:
-                # Default: show last trace from session
-                _show_last_trace_from_session(
-                    client,
-                    session_id,
-                    start_time_ms,
-                    end_time_ms,
-                    verbose,
-                    last,
-                    errors_only,
-                    output,
-                    agent_id=final_agent_id,
-                    endpoint_name=endpoint_name,
-                )
+            # Show traces from session (auto-discovered or from config)
+            _show_session_view(
+                client,
+                session_id,
+                start_time_ms,
+                end_time_ms,
+                verbose,
+                errors_only,
+                output,
+                agent_id=final_agent_id,
+                endpoint_name=endpoint_name,
+                show_all=all_traces,
+                nth_last=last,
+            )
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")
@@ -480,9 +453,17 @@ def _show_session_view(
     output: Optional[str],
     agent_id: str,
     endpoint_name: str = "DEFAULT",
+    show_all: bool = True,
+    nth_last: int = 1,
 ) -> None:
-    """Show all traces in session with full details."""
-    console.print(f"[cyan]Fetching session:[/cyan] {session_id}\n")
+    """Show traces from a session.
+
+    Args:
+        show_all: If True, shows all traces. If False, shows only the Nth most recent trace.
+        nth_last: Which trace to show when show_all=False (1=latest, 2=2nd latest, etc.)
+    """
+    if show_all:
+        console.print(f"[cyan]Fetching session:[/cyan] {session_id}\n")
 
     spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=agent_id)
 
@@ -501,97 +482,61 @@ def _show_session_view(
             return
         trace_data.traces = error_traces
 
-    # Query runtime logs to show messages
-    try:
-        trace_ids = list(trace_data.traces.keys())
-        runtime_logs = client.query_runtime_logs_by_traces(
-            trace_ids, start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
-        )
-        trace_data.runtime_logs = runtime_logs
-    except Exception as e:
-        logger.warning("Failed to retrieve runtime logs: %s", e)
+    if show_all:
+        # Show all traces in session
+        try:
+            trace_ids = list(trace_data.traces.keys())
+            runtime_logs = client.query_runtime_logs_by_traces(
+                trace_ids, start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
+            )
+            trace_data.runtime_logs = runtime_logs
+        except Exception as e:
+            logger.warning("Failed to retrieve runtime logs: %s", e)
 
-    if output:
-        _export_trace_data_to_json(trace_data, output, data_type="session")
+        if output:
+            _export_trace_data_to_json(trace_data, output, data_type="session")
 
-    # Show all traces with full details
-    visualizer = TraceVisualizer(console)
-    visualizer.visualize_all_traces(trace_data, show_details=False, show_messages=True, verbose=verbose)
+        visualizer = TraceVisualizer(console)
+        visualizer.visualize_all_traces(trace_data, show_details=False, show_messages=True, verbose=verbose)
+        console.print(f"\n[green]✓[/green] Found {len(trace_data.traces)} traces with {len(spans)} total spans")
 
-    console.print(f"\n[green]✓[/green] Found {len(trace_data.traces)} traces with {len(spans)} total spans")
+    else:
+        # Show only the Nth most recent trace
+        def get_latest_time(spans_list):
+            end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
+            return max(end_times) if end_times else 0
 
+        sorted_traces = sorted(trace_data.traces.items(), key=lambda x: get_latest_time(x[1]), reverse=True)
 
-def _show_last_trace_from_session(
-    client: ObservabilityClient,
-    session_id: str,
-    start_time_ms: int,
-    end_time_ms: int,
-    verbose: bool,
-    nth_last: int,
-    errors_only: bool,
-    output: Optional[str],
-    agent_id: str,
-    endpoint_name: str = "DEFAULT",
-) -> None:
-    """Show the Nth most recent trace from a session."""
-    spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=agent_id)
+        if len(sorted_traces) < nth_last:
+            console.print(f"[yellow]Only {len(sorted_traces)} trace(s) found, but you requested the {nth_last}th[/yellow]")
+            nth_last = len(sorted_traces)
 
-    if not spans:
-        console.print(f"[yellow]No spans found for session {session_id}[/yellow]")
-        return
+        trace_id, trace_spans = sorted_traces[nth_last - 1]
+        position_text = "latest" if nth_last == 1 else f"{nth_last}th most recent"
+        console.print(f"[cyan]Showing {position_text} trace from session {session_id}[/cyan]\n")
 
-    trace_data = TraceData(session_id=session_id, spans=spans, agent_id=agent_id)
-    TraceProcessor.group_spans_by_trace(trace_data)
+        # Build trace data for just this trace
+        single_trace_data = TraceData(session_id=session_id, spans=trace_spans, agent_id=agent_id)
+        TraceProcessor.group_spans_by_trace(single_trace_data)
 
-    # Filter to errors if requested
-    if errors_only:
-        error_traces = TraceProcessor.filter_error_traces(trace_data)
-        if not error_traces:
-            console.print("[yellow]No failed traces found in session[/yellow]")
-            return
-        trace_data.traces = error_traces
+        try:
+            runtime_logs = client.query_runtime_logs_by_traces(
+                [trace_id], start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
+            )
+            single_trace_data.runtime_logs = runtime_logs
+        except Exception as e:
+            logger.warning("Failed to retrieve runtime logs: %s", e)
 
-    # Sort traces by most recent (using latest end time)
-    def get_latest_time(spans_list):
-        end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
-        return max(end_times) if end_times else 0
+        if output:
+            _export_trace_data_to_json(single_trace_data, output, data_type="trace")
 
-    sorted_traces = sorted(trace_data.traces.items(), key=lambda x: get_latest_time(x[1]), reverse=True)
+        visualizer = TraceVisualizer(console)
+        visualizer.visualize_trace(single_trace_data, trace_id, show_details=False, show_messages=True, verbose=verbose)
 
-    if len(sorted_traces) < nth_last:
-        console.print(f"[yellow]Only {len(sorted_traces)} trace(s) found, but you requested the {nth_last}th[/yellow]")
-        nth_last = len(sorted_traces)
-
-    # Get the Nth most recent trace
-    trace_id, trace_spans = sorted_traces[nth_last - 1]
-
-    position_text = "latest" if nth_last == 1 else f"{nth_last}th most recent"
-    console.print(f"[cyan]Showing {position_text} trace from session {session_id}[/cyan]\n")
-
-    # Build trace data for just this trace
-    single_trace_data = TraceData(session_id=session_id, spans=trace_spans, agent_id=agent_id)
-    TraceProcessor.group_spans_by_trace(single_trace_data)
-
-    # Query runtime logs to show messages (always fetch, verbose controls truncation)
-    try:
-        runtime_logs = client.query_runtime_logs_by_traces(
-            [trace_id], start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
-        )
-        single_trace_data.runtime_logs = runtime_logs
-    except Exception as e:
-        logger.warning("Failed to retrieve runtime logs: %s", e)
-
-    if output:
-        _export_trace_data_to_json(single_trace_data, output, data_type="trace")
-
-    visualizer = TraceVisualizer(console)
-    # Always show messages, but verbose controls truncation and filtering
-    visualizer.visualize_trace(single_trace_data, trace_id, show_details=False, show_messages=True, verbose=verbose)
-
-    # Show helpful tips
-    console.print(f"\n[green]✓[/green] Showing trace {nth_last} of {len(sorted_traces)}")
-    if len(sorted_traces) > 1:
-        console.print(f"💡 [dim]Tip: Use 'agentcore obs list' to see all {len(sorted_traces)} traces[/dim]")
+        console.print(f"\n[green]✓[/green] Showing trace {nth_last} of {len(sorted_traces)}")
+        if len(sorted_traces) > 1:
+            console.print(f"💡 [dim]Tip: Use 'agentcore obs list' to see all {len(sorted_traces)} traces[/dim]")
 
 
 @observability_app.command("list")

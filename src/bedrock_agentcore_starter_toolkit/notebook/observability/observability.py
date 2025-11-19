@@ -169,7 +169,6 @@ class Observability:
         # Reuse CLI logic
         from ...cli.observability.commands import (
             _get_default_time_range,
-            _show_last_trace_from_session,
             _show_session_view,
             _show_trace_view,
         )
@@ -217,54 +216,39 @@ class Observability:
                 return TraceData(spans=[])
             self.console.print(f"[dim]Using session: {session_id}[/dim]\n")
 
-        # Show all traces in session
+        # Show traces from session (all or Nth most recent)
+        _show_session_view(
+            self.client,
+            session_id,
+            start_time_ms,
+            end_time_ms,
+            verbose,
+            errors,
+            output,
+            agent_id=self.agent_id,
+            endpoint_name=self.endpoint_name,
+            show_all=all,
+            nth_last=last,
+        )
+
+        # Return TraceData for programmatic use
+        spans = self.client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=self.agent_id)
+        trace_data = TraceData(session_id=session_id, spans=spans, agent_id=self.agent_id)
+        TraceProcessor.group_spans_by_trace(trace_data)
+
+        if errors:
+            trace_data.traces = TraceProcessor.filter_error_traces(trace_data)
+
         if all:
-            _show_session_view(
-                self.client,
-                session_id,
-                start_time_ms,
-                end_time_ms,
-                verbose,
-                errors,
-                output,
-                agent_id=self.agent_id,
-                endpoint_name=self.endpoint_name,
-            )
-            # Return TraceData for programmatic use
-            spans = self.client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=self.agent_id)
-            trace_data = TraceData(session_id=session_id, spans=spans, agent_id=self.agent_id)
-            TraceProcessor.group_spans_by_trace(trace_data)
-            if errors:
-                trace_data.traces = TraceProcessor.filter_error_traces(trace_data)
+            # Return all traces
             trace_ids = list(trace_data.traces.keys())
             runtime_logs = self.client.query_runtime_logs_by_traces(
                 trace_ids, start_time_ms, end_time_ms, agent_id=self.agent_id, endpoint_name=self.endpoint_name
             )
             trace_data.runtime_logs = runtime_logs
             return trace_data
-
-        # Show Nth most recent trace
         else:
-            _show_last_trace_from_session(
-                self.client,
-                session_id,
-                start_time_ms,
-                end_time_ms,
-                verbose,
-                last,
-                errors,
-                output,
-                agent_id=self.agent_id,
-                endpoint_name=self.endpoint_name,
-            )
-            # Return TraceData for programmatic use
-            spans = self.client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=self.agent_id)
-            trace_data = TraceData(session_id=session_id, spans=spans, agent_id=self.agent_id)
-            TraceProcessor.group_spans_by_trace(trace_data)
-            if errors:
-                trace_data.traces = TraceProcessor.filter_error_traces(trace_data)
-
-            # Get Nth trace
+            # Return Nth most recent trace
             def get_latest_time(spans_list):
                 end_times = [s.end_time_unix_nano for s in spans_list if s.end_time_unix_nano]
                 return max(end_times) if end_times else 0
