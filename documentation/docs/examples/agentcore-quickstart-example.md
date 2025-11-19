@@ -407,12 +407,12 @@ Test AgentCore Code Interpreter:
 # Store data
 agentcore invoke '{"prompt": "My dataset has values: 23, 45, 67, 89, 12, 34, 56."}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "session_$(uuidgen | tr -d '-')"
+  --session-id "$SESSION_ID"
 
 # Create visualization
 agentcore invoke '{"prompt": "Create a text-based bar chart visualization showing the distribution of values in my dataset with proper labels"}' \
   --bearer-token "$BEARER_TOKEN" \
-  --session-id "session_$(uuidgen | tr -d '-')"
+  --session-id "$SESSION_ID"
 
 # Expected: Agent generates matplotlib code to create a bar chart
 ```
