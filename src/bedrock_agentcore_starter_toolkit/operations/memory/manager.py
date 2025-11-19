@@ -73,7 +73,8 @@ class MemoryManager:
         else:
             client_config = BotocoreConfig(user_agent_extra="bedrock-agentcore-starter-toolkit")
 
-        self.region_name = region_name
+        # Use provided region or fall back to session region
+        self.region_name = region_name or session_region
         self._control_plane_client = session.client(
             "bedrock-agentcore-control", region_name=self.region_name, config=client_config
         )
@@ -85,14 +86,13 @@ class MemoryManager:
             "update_memory",
             "delete_memory",
         }
-        logger.info("✅ MemoryManager initialized for region: %s", region_name)
+        logger.info("✅ MemoryManager initialized for region: %s", self.region_name)
 
     def __getattr__(self, name: str):
         """Dynamically forward method calls to the appropriate boto3 client.
 
         This method enables access to all control_plane boto3 client methods without explicitly
-        defining them. Methods are looked up in the following order:
-        _control_plane_client (bedrock-agentcore-control) - for control plane operations
+        defining them.
 
         Args:
             name: The method name being accessed
@@ -121,7 +121,7 @@ class MemoryManager:
             f"'{self.__class__.__name__}' object has no attribute '{name}'. "
             f"Method not found on control_plane_client. "
             f"Available methods can be found in the boto3 documentation for "
-            f"'bedrock-agentcore-control' services."
+            f"'bedrock-agentcore-control' service."
         )
 
     def _validate_namespace(self, namespace: str) -> bool:

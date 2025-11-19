@@ -2971,3 +2971,26 @@ def test_get_or_create_memory_no_strategy_validation_when_none_provided():
         assert isinstance(result, Memory)
 
         # Should not raise any validation error
+
+
+def test_region_fallback_to_session():
+    """Test that region falls back to session region when not specified."""
+    with patch("boto3.Session") as mock_session_class:
+        # Setup the mock session with a region
+        mock_session = MagicMock()
+        mock_session.region_name = "eu-west-1"
+        mock_session_class.return_value = mock_session
+
+        # Setup the mock client
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        # Create manager without specifying region
+        manager = MemoryManager()
+
+        # Verify region was set from session
+        assert manager.region_name == "eu-west-1"
+
+        # Verify client was created with session region
+        call_args = mock_session.client.call_args
+        assert call_args[1]["region_name"] == "eu-west-1"

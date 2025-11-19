@@ -3656,3 +3656,427 @@ class TestCodeZipDeployment:
             updated_config = load_config(config_path)
             agent = updated_config.agents["test-agent"]
             assert agent.bedrock_agentcore.agent_session_id is None
+
+    def test_validate_vpc_resources_public_mode(self, tmp_path):
+        """Test VPC validation skips for PUBLIC network mode."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Set to PUBLIC mode
+        agent_config.aws.network_configuration.network_mode = "PUBLIC"
+
+        session = Mock()
+
+        # Should not raise any errors for PUBLIC mode
+        _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_validate_vpc_resources_missing_config(self, tmp_path):
+        """Test VPC validation fails when VPC mode but no config."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Set to VPC mode without config
+        agent_config.aws.network_configuration.network_mode = "VPC"
+        agent_config.aws.network_configuration.network_mode_config = None
+
+        session = Mock()
+
+        with pytest.raises(ValueError, match="VPC mode requires network configuration"):
+            _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_validate_vpc_resources_missing_subnets_or_sgs(self, tmp_path):
+        """Test VPC validation fails when missing subnets or security groups."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkModeConfig
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Set to VPC mode with empty subnets
+        agent_config.aws.network_configuration.network_mode = "VPC"
+        agent_config.aws.network_configuration.network_mode_config = NetworkModeConfig(
+            subnets=[], security_groups=["sg-123"]
+        )
+
+        session = Mock()
+
+        with pytest.raises(ValueError, match="VPC mode requires both subnets and security groups"):
+            _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_validate_vpc_resources_subnets_in_different_vpcs(self, tmp_path):
+        """Test VPC validation fails when subnets are in different VPCs."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkModeConfig
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Set to VPC mode
+        agent_config.aws.network_configuration.network_mode = "VPC"
+        agent_config.aws.network_configuration.network_mode_config = NetworkModeConfig(
+            subnets=["subnet-1", "subnet-2"], security_groups=["sg-123"]
+        )
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock subnets in different VPCs
+        mock_ec2.describe_subnets.return_value = {
+            "Subnets": [{"SubnetId": "subnet-1", "VpcId": "vpc-111"}, {"SubnetId": "subnet-2", "VpcId": "vpc-222"}]
+        }
+
+        with pytest.raises(ValueError, match="All subnets must be in the same VPC"):
+            _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_validate_vpc_resources_subnet_not_found(self, tmp_path):
+        """Test VPC validation fails when subnet not found."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkModeConfig
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        agent_config.aws.network_configuration.network_mode = "VPC"
+        agent_config.aws.network_configuration.network_mode_config = NetworkModeConfig(
+            subnets=["subnet-invalid"], security_groups=["sg-123"]
+        )
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock subnet not found error
+        mock_ec2.describe_subnets.side_effect = ClientError(
+            {"Error": {"Code": "InvalidSubnetID.NotFound", "Message": "Subnet not found"}}, "DescribeSubnets"
+        )
+
+        with pytest.raises(ValueError, match="One or more subnet IDs not found"):
+            _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_validate_vpc_resources_sg_in_different_vpc(self, tmp_path):
+        """Test VPC validation fails when security groups are in different VPC than subnets."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _validate_vpc_resources
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import NetworkModeConfig
+
+        config_path = create_test_config(tmp_path)
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        agent_config.aws.network_configuration.network_mode = "VPC"
+        agent_config.aws.network_configuration.network_mode_config = NetworkModeConfig(
+            subnets=["subnet-1"], security_groups=["sg-123"]
+        )
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock subnets in vpc-111, security groups in vpc-222
+        mock_ec2.describe_subnets.return_value = {"Subnets": [{"SubnetId": "subnet-1", "VpcId": "vpc-111"}]}
+        mock_ec2.describe_security_groups.return_value = {"SecurityGroups": [{"GroupId": "sg-123", "VpcId": "vpc-222"}]}
+
+        with pytest.raises(ValueError, match="Security groups must be in the same VPC as subnets"):
+            _validate_vpc_resources(session, agent_config, "us-west-2")
+
+    def test_ensure_network_service_linked_role_exists(self):
+        """Test service-linked role check when role already exists."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _ensure_network_service_linked_role
+
+        session = Mock()
+        mock_iam = Mock()
+        session.client.return_value = mock_iam
+
+        # Mock role exists
+        mock_iam.get_role.return_value = {"Role": {"RoleName": "AWSServiceRoleForBedrockAgentCoreNetwork"}}
+
+        logger = Mock()
+
+        # Should not raise any errors
+        _ensure_network_service_linked_role(session, logger)
+
+        # Should not try to create role
+        mock_iam.create_service_linked_role.assert_not_called()
+
+    def test_ensure_network_service_linked_role_creates(self):
+        """Test service-linked role creation when role doesn't exist."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _ensure_network_service_linked_role
+
+        session = Mock()
+        mock_iam = Mock()
+        session.client.return_value = mock_iam
+
+        # Mock role doesn't exist
+        mock_iam.get_role.side_effect = ClientError(
+            {"Error": {"Code": "NoSuchEntity", "Message": "Role not found"}}, "GetRole"
+        )
+
+        logger = Mock()
+
+        with patch("time.sleep"):
+            _ensure_network_service_linked_role(session, logger)
+
+        # Should create role
+        mock_iam.create_service_linked_role.assert_called_once_with(
+            AWSServiceName="network.bedrock-agentcore.amazonaws.com",
+            Description="Service-linked role for Amazon Bedrock AgentCore VPC networking",
+        )
+
+    def test_ensure_network_service_linked_role_already_created(self):
+        """Test service-linked role when created by another process."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _ensure_network_service_linked_role
+
+        session = Mock()
+        mock_iam = Mock()
+        session.client.return_value = mock_iam
+
+        # Mock role doesn't exist
+        mock_iam.get_role.side_effect = ClientError(
+            {"Error": {"Code": "NoSuchEntity", "Message": "Role not found"}}, "GetRole"
+        )
+
+        # Mock role creation fails with InvalidInput (already exists)
+        mock_iam.create_service_linked_role.side_effect = ClientError(
+            {"Error": {"Code": "InvalidInput", "Message": "Role already exists"}}, "CreateServiceLinkedRole"
+        )
+
+        logger = Mock()
+
+        # Should not raise error
+        _ensure_network_service_linked_role(session, logger)
+
+    def test_check_vpc_deployment_with_enis(self):
+        """Test VPC deployment check when ENIs are found."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _check_vpc_deployment
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock ENIs found
+        mock_ec2.describe_network_interfaces.return_value = {
+            "NetworkInterfaces": [
+                {
+                    "NetworkInterfaceId": "eni-123",
+                    "SubnetId": "subnet-1",
+                    "PrivateIpAddress": "10.0.1.5",
+                    "Status": "in-use",
+                    "Groups": [{"GroupId": "sg-123"}],
+                }
+            ]
+        }
+
+        _check_vpc_deployment(session, "agent-123", ["subnet-1"], "us-west-2")
+
+        # Should describe network interfaces
+        mock_ec2.describe_network_interfaces.assert_called_once()
+
+    def test_check_vpc_deployment_no_enis(self):
+        """Test VPC deployment check when no ENIs found yet."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _check_vpc_deployment
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock no ENIs found
+        mock_ec2.describe_network_interfaces.return_value = {"NetworkInterfaces": []}
+
+        _check_vpc_deployment(session, "agent-123", ["subnet-1"], "us-west-2")
+
+        # Should still complete without error
+        mock_ec2.describe_network_interfaces.assert_called_once()
+
+    def test_check_vpc_deployment_error_handling(self):
+        """Test VPC deployment check handles errors gracefully."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _check_vpc_deployment
+
+        session = Mock()
+        mock_ec2 = Mock()
+        session.client.return_value = mock_ec2
+
+        # Mock error
+        mock_ec2.describe_network_interfaces.side_effect = Exception("API Error")
+
+        # Should not raise error, just log it
+        _check_vpc_deployment(session, "agent-123", ["subnet-1"], "us-west-2")
+
+    def test_deploy_to_bedrock_agentcore_with_lifecycle_config(self, mock_boto3_clients, tmp_path):
+        """Test deployment with custom lifecycle configuration."""
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _deploy_to_bedrock_agentcore
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import LifecycleConfiguration
+
+        config_path = create_test_config(tmp_path, execution_role="arn:aws:iam::123456789012:role/TestRole")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Set custom lifecycle config
+        agent_config.aws.lifecycle_configuration = LifecycleConfiguration(
+            idle_runtime_session_timeout=600, max_lifetime=3600
+        )
+
+        # Setup mocks
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.BedrockAgentCoreClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+            mock_client.create_or_update_agent.return_value = {
+                "id": "agent-123",
+                "arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            }
+            mock_client.wait_for_agent_endpoint_ready.return_value = "https://example.com"
+            mock_client_class.return_value = mock_client
+
+            agent_id, agent_arn = _deploy_to_bedrock_agentcore(
+                agent_config=agent_config,
+                project_config=project_config,
+                config_path=config_path,
+                agent_name="test-agent",
+                ecr_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                region="us-west-2",
+                account_id="123456789012",
+                env_vars={},
+                auto_update_on_conflict=False,
+            )
+
+            # Verify lifecycle config was passed
+            call_args = mock_client.create_or_update_agent.call_args
+            assert call_args.kwargs["lifecycle_config"] is not None
+
+    def test_deploy_to_bedrock_agentcore_role_validation_retry(self, mock_boto3_clients, tmp_path):
+        """Test deployment retries on role validation failure."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _deploy_to_bedrock_agentcore
+
+        config_path = create_test_config(tmp_path, execution_role="arn:aws:iam::123456789012:role/TestRole")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Setup mocks
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.BedrockAgentCoreClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+
+            # First call fails with role validation error, second succeeds
+            mock_client.create_or_update_agent.side_effect = [
+                ClientError(
+                    {
+                        "Error": {
+                            "Code": "ValidationException",
+                            "Message": "Role validation failed for arn:aws:iam::123456789012:role/TestRole",
+                        }
+                    },
+                    "CreateAgentRuntime",
+                ),
+                {"id": "agent-123", "arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123"},
+            ]
+            mock_client.wait_for_agent_endpoint_ready.return_value = "https://example.com"
+            mock_client_class.return_value = mock_client
+
+            with patch("time.sleep"):
+                agent_id, agent_arn = _deploy_to_bedrock_agentcore(
+                    agent_config=agent_config,
+                    project_config=project_config,
+                    config_path=config_path,
+                    agent_name="test-agent",
+                    ecr_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                    region="us-west-2",
+                    account_id="123456789012",
+                    env_vars={},
+                    auto_update_on_conflict=False,
+                )
+
+            # Should have retried
+            assert mock_client.create_or_update_agent.call_count == 2
+
+    def test_deploy_to_bedrock_agentcore_role_validation_max_retries(self, mock_boto3_clients, tmp_path):
+        """Test deployment fails after max retries on role validation."""
+        from botocore.exceptions import ClientError
+
+        from bedrock_agentcore_starter_toolkit.operations.runtime.launch import _deploy_to_bedrock_agentcore
+
+        config_path = create_test_config(tmp_path, execution_role="arn:aws:iam::123456789012:role/TestRole")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        # Setup mocks
+        mock_factory = MockAWSClientFactory()
+        mock_factory.setup_full_session_mock(mock_boto3_clients)
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch.BedrockAgentCoreClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+
+            # Always fail with role validation error
+            mock_client.create_or_update_agent.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "Role validation failed for arn:aws:iam::123456789012:role/TestRole",
+                    }
+                },
+                "CreateAgentRuntime",
+            )
+            mock_client_class.return_value = mock_client
+
+            with patch("time.sleep"):
+                with pytest.raises(ClientError):
+                    _deploy_to_bedrock_agentcore(
+                        agent_config=agent_config,
+                        project_config=project_config,
+                        config_path=config_path,
+                        agent_name="test-agent",
+                        ecr_uri="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+                        region="us-west-2",
+                        account_id="123456789012",
+                        env_vars={},
+                        auto_update_on_conflict=False,
+                    )
+
+            # Should have tried max retries (4 attempts total: initial + 3 retries)
+            assert mock_client.create_or_update_agent.call_count == 4
