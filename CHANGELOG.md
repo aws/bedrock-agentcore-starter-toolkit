@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.34] - 2025-11-19
+
+### Changes
+
+- docs: add identity CLI quickstart and fix claude SDK path (#353) (1415eb3)
+- feat: Add Memory/Gateway CLI support (#338) (70c4dee)
+- feat: add Identity CLI commands for managing OAuth authentication and external service access (#332) (1dcc546)
+- Add AWS Marketplace subscription permissions to execution role (#349) (0707685)
+- chore: bump version to 0.1.33 (#347) (bc978cc)
+
 ## [0.1.33] - 2025-11-15
 
 ### Changes
