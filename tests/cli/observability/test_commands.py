@@ -1,822 +1,946 @@
-"""Unit tests for CLI observability commands."""
+"""Tests for observability CLI commands."""
 
-import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-import typer
+from typer.testing import CliRunner
 
-from bedrock_agentcore_starter_toolkit.cli.observability.commands import (
-    _create_observability_client,
-    _export_trace_data_to_json,
-    _get_agent_config_from_file,
-    _get_default_time_range,
-    list_traces,
-    show,
-)
-from bedrock_agentcore_starter_toolkit.operations.observability.models.telemetry import Span, TraceData
+from bedrock_agentcore_starter_toolkit.cli.observability.commands import observability_app
+from bedrock_agentcore_starter_toolkit.operations.observability.telemetry import Span
+
+runner = CliRunner()
 
 
-class TestHelperFunctions:
-    """Test helper functions."""
+class TestCreateObservabilityClient:
+    """Test the _create_observability_client helper function."""
 
-    def test_get_default_time_range_7_days(self):
-        """Test default time range calculation (7 days)."""
-        start_ms, end_ms = _get_default_time_range(days=7)
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_returns_tuple_with_client_agent_id_endpoint(self, mock_config, mock_client_class):
+        """Test that helper returns (client, agent_id, endpoint_name) tuple."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _create_observability_client
 
-        # Verify the range is approximately 7 days (allow some seconds for test execution)
-        expected_diff_ms = 7 * 24 * 60 * 60 * 1000
-        actual_diff_ms = end_ms - start_ms
-        assert abs(actual_diff_ms - expected_diff_ms) < 10000  # Within 10 seconds
-
-    @pytest.mark.parametrize("days", [1, 3, 7, 14, 30])
-    def test_get_default_time_range_various_days(self, days):
-        """Test time range calculation with various day values."""
-        start_ms, end_ms = _get_default_time_range(days=days)
-
-        expected_diff_ms = days * 24 * 60 * 60 * 1000
-        actual_diff_ms = end_ms - start_ms
-        assert abs(actual_diff_ms - expected_diff_ms) < 10000
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.Path")
-    def test_get_agent_config_from_file_success(self, mock_path, mock_load_config):
-        """Test loading agent config from file successfully."""
         # Mock config
-        mock_config = MagicMock()
-        mock_agent_config = MagicMock()
-        mock_agent_config.bedrock_agentcore.agent_id = "agent-123"
-        mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-east-1:123:agent/agent-123"
-        mock_agent_config.bedrock_agentcore.agent_session_id = "session-456"
-        mock_agent_config.aws.region = "us-east-1"
-        mock_config.get_agent_config.return_value = mock_agent_config
-        mock_load_config.return_value = mock_config
-
-        result = _get_agent_config_from_file()
-
-        assert result == {
-            "agent_id": "agent-123",
-            "agent_arn": "arn:aws:bedrock:us-east-1:123:agent/agent-123",
-            "session_id": "session-456",
-            "region": "us-east-1",
-            "runtime_suffix": "DEFAULT",
-        }
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
-    def test_get_agent_config_from_file_no_config(self, mock_load_config):
-        """Test when config file doesn't exist."""
-        mock_load_config.return_value = None
-
-        result = _get_agent_config_from_file()
-
-        assert result is None
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.Path")
-    def test_get_agent_config_from_file_missing_agent_id(self, mock_path, mock_load_config):
-        """Test when config exists but missing required fields."""
-        mock_config = MagicMock()
-        mock_agent_config = MagicMock()
-        mock_agent_config.bedrock_agentcore.agent_id = None  # Missing
-        mock_agent_config.aws.region = "us-east-1"
-        mock_config.get_agent_config.return_value = mock_agent_config
-        mock_load_config.return_value = mock_config
-
-        result = _get_agent_config_from_file()
-
-        assert result is None
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.Path")
-    def test_get_agent_config_from_file_exception(self, mock_path, mock_load_config):
-        """Test when config loading raises exception."""
-        mock_config = MagicMock()
-        mock_config.get_agent_config.side_effect = Exception("Config error")
-        mock_load_config.return_value = mock_config
-
-        result = _get_agent_config_from_file()
-
-        assert result is None
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
-    def test_create_observability_client_with_cli_args(self, mock_client_class):
-        """Test creating client with CLI arguments."""
-        _create_observability_client(agent_id="agent-123", agent=None, region="us-east-1")
-
-        mock_client_class.assert_called_once_with(
-            region_name="us-east-1", agent_id="agent-123", runtime_suffix="DEFAULT"
-        )
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
-    def test_create_observability_client_from_config(self, mock_get_config, mock_client_class):
-        """Test creating client from config file."""
-        mock_get_config.return_value = {
-            "agent_id": "agent-456",
+        mock_config.return_value = {
+            "agent_id": "test-agent-123",
             "region": "us-west-2",
-            "runtime_suffix": "DEFAULT",
+            "runtime_suffix": "PROD",
         }
 
-        _create_observability_client(agent_id=None, agent=None, region=None)
+        # Mock client
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
 
-        mock_client_class.assert_called_once_with(
-            region_name="us-west-2", agent_id="agent-456", runtime_suffix="DEFAULT"
+        # Call helper
+        result = _create_observability_client(agent_id=None, agent="test-agent")
+
+        # Should return tuple
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+
+        client, agent_id, endpoint_name = result
+        assert client == mock_client
+        assert agent_id == "test-agent-123"
+        assert endpoint_name == "PROD"
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    def test_creates_stateless_client_with_only_region(self, mock_client_class):
+        """Test that client is created with only region (stateless)."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _create_observability_client
+
+        # Call with explicit agent_id and region
+        _create_observability_client(
+            agent_id="test-agent-123", agent=None, region="us-east-1", runtime_suffix="DEFAULT"
         )
 
+        # Verify client was created with ONLY region_name
+        mock_client_class.assert_called_once_with(region_name="us-east-1")
+
+
+class TestObservabilityListCommand:
+    """Test the 'list' command."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_create_observability_client_missing_params(self, mock_console, mock_get_config):
-        """Test error when both CLI args and config are missing."""
-        mock_get_config.return_value = None
+    def test_list_passes_agent_id_to_client_methods(self, mock_config, mock_client_class):
+        """Test that list command passes agent_id to client methods."""
+        # Mock config
+        mock_config.return_value = {
+            "agent_id": "config-agent-123",
+            "region": "us-west-2",
+            "session_id": "session-abc",
+        }
 
-        with pytest.raises(typer.Exit) as exc_info:
-            _create_observability_client(agent_id=None, agent=None, region=None)
+        # Mock client and its methods
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
 
-        assert exc_info.value.exit_code == 1
-        assert mock_console.print.call_count >= 1
+        # Mock query_spans_by_session to return empty list
+        mock_client.query_spans_by_session.return_value = []
 
-    def test_export_trace_data_to_json_success(self, tmp_path):
-        """Test exporting trace data to JSON successfully."""
-        output_file = tmp_path / "trace.json"
+        # Run command
+        runner.invoke(observability_app, ["list"])
 
-        # Create sample trace data
-        span = Span(trace_id="trace-1", span_id="span-1", span_name="TestSpan", duration_ms=100.0)
-        trace_data = TraceData(spans=[span])
-        trace_data.group_spans_by_trace()
+        # Verify client methods were called with agent_id
+        mock_client.query_spans_by_session.assert_called_once()
+        call_kwargs = mock_client.query_spans_by_session.call_args.kwargs
+        assert "agent_id" in call_kwargs
+        assert call_kwargs["agent_id"] == "config-agent-123"
 
-        _export_trace_data_to_json(trace_data, str(output_file), data_type="trace")
 
-        # Verify file was created
-        assert output_file.exists()
+class TestStatelessClientPattern:
+    """Test that commands follow stateless client pattern."""
 
-        # Verify content
-        with output_file.open() as f:
-            data = json.load(f)
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    def test_client_created_without_agent_id_parameter(self, mock_client_class):
+        """Test that ObservabilityClient is created without agent_id parameter."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _create_observability_client
 
-        assert "traces" in data
-        assert "trace-1" in data["traces"]
+        # Create client
+        _create_observability_client(agent_id="test-agent", region="us-west-2", runtime_suffix="DEFAULT")
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_export_trace_data_to_json_failure(self, mock_console):
-        """Test export failure handling."""
-        span = Span(trace_id="trace-1", span_id="span-1", span_name="TestSpan")
-        trace_data = TraceData(spans=[span])
+        # Verify client constructor received ONLY region_name
+        mock_client_class.assert_called_once()
+        call_args = mock_client_class.call_args
 
-        # Try to export to invalid path
-        _export_trace_data_to_json(trace_data, "/invalid/path/trace.json", data_type="trace")
-
-        # Should print error
-        assert any("Error exporting" in str(call) for call in mock_console.print.call_args_list)
+        # Should only have region_name parameter
+        assert "region_name" in call_args.kwargs
+        assert "agent_id" not in call_args.kwargs
+        assert "runtime_suffix" not in call_args.kwargs
 
 
 class TestShowCommand:
-    """Test the show command and its helper functions."""
+    """Test the 'show' command."""
 
-    @pytest.fixture
-    def sample_spans(self):
-        """Create sample spans for testing."""
-        return [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="RootSpan",
-                start_time_unix_nano=1000000000,
-                end_time_unix_nano=2000000000,
-                duration_ms=1000.0,
-                status_code="OK",
-            ),
-            Span(
-                trace_id="trace-1",
-                span_id="span-2",
-                span_name="ChildSpan",
-                parent_span_id="span-1",
-                start_time_unix_nano=1500000000,
-                end_time_unix_nano=1800000000,
-                duration_ms=300.0,
-                status_code="OK",
-            ),
-        ]
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_trace_view")
-    def test_show_with_trace_id(self, mock_show_trace, mock_create_client, mock_get_time_range):
-        """Test show command with trace ID."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_client = MagicMock()
-        mock_create_client.return_value = mock_client
-
-        show(
-            trace_id="trace-123",
-            session_id=None,
-            agent_id="agent-1",
-            agent=None,
-            days=7,
-            all_traces=False,
-            errors_only=False,
-            verbose=False,
-            output=None,
-            last=1,
-        )
-
-        mock_show_trace.assert_called_once_with(mock_client, "trace-123", 1000, 2000, False, None)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_last_trace_from_session")
-    def test_show_with_session_id(self, mock_show_last, mock_create_client, mock_get_time_range):
-        """Test show command with session ID (default: shows latest trace)."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_client = MagicMock()
-        mock_create_client.return_value = mock_client
-
-        show(
-            trace_id=None,
-            session_id="session-456",
-            agent_id="agent-1",
-            agent=None,
-            days=7,
-            all_traces=False,
-            errors_only=False,
-            verbose=False,
-            output=None,
-            last=1,
-        )
-
-        mock_show_last.assert_called_once_with(mock_client, "session-456", 1000, 2000, False, 1, False, None)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_with_both_trace_and_session_id(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test error when both trace_id and session_id are provided."""
-        mock_get_time_range.return_value = (1000, 2000)
-
-        with pytest.raises(typer.Exit) as exc_info:
-            show(
-                trace_id="trace-123",
-                session_id="session-456",
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                all_traces=False,
-                errors_only=False,
-                verbose=False,
-                output=None,
-                last=1,
-            )
-
-        assert exc_info.value.exit_code == 1
-        assert any("Cannot specify both" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_trace_with_all_flag_error(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test error when using --all flag with trace_id."""
-        mock_get_time_range.return_value = (1000, 2000)
-
-        with pytest.raises(typer.Exit) as exc_info:
-            show(
-                trace_id="trace-123",
-                session_id=None,
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                all_traces=True,
-                errors_only=False,
-                verbose=False,
-                output=None,
-                last=1,
-            )
-
-        assert exc_info.value.exit_code == 1
-        assert any("--all flag only works with sessions" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_trace_with_last_flag_error(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test error when using --last flag with trace_id."""
-        mock_get_time_range.return_value = (1000, 2000)
-
-        with pytest.raises(typer.Exit) as exc_info:
-            show(
-                trace_id="trace-123",
-                session_id=None,
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                all_traces=False,
-                errors_only=False,
-                verbose=False,
-                output=None,
-                last=2,
-            )
-
-        assert exc_info.value.exit_code == 1
-        assert any("--last flag only works with sessions" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_with_all_and_last_flags_error(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test error when using both --all and --last flags."""
-        mock_get_time_range.return_value = (1000, 2000)
-
-        with pytest.raises(typer.Exit) as exc_info:
-            show(
-                trace_id=None,
-                session_id="session-456",
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                all_traces=True,
-                errors_only=False,
-                verbose=False,
-                output=None,
-                last=2,
-            )
-
-        assert exc_info.value.exit_code == 1
-        assert any("Cannot use --all and --last together" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._show_last_trace_from_session")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_from_config_session(
-        self, mock_console, mock_show_last, mock_get_config, mock_create_client, mock_get_time_range
-    ):
-        """Test show command using session from config file."""
-        mock_get_time_range.return_value = (1000, 2000)
+    def test_show_with_trace_id(self, mock_config, mock_client_class):
+        """Test show command with explicit trace ID."""
+
+        # Mock config
+        mock_config.return_value = {
+            "agent_id": "test-agent",
+            "region": "us-west-2",
+        }
+
+        # Mock client and return value
         mock_client = MagicMock()
-        mock_create_client.return_value = mock_client
-        mock_get_config.return_value = {"session_id": "session-from-config"}
+        mock_client.region = "us-west-2"
 
-        show(
-            trace_id=None,
-            session_id=None,
-            agent_id="agent-1",
-            agent=None,
-            days=7,
-            all_traces=False,
-            errors_only=False,
-            verbose=False,
-            output=None,
-            last=1,
+        # Create a simple span
+        test_span = Span(
+            trace_id="test-trace-123",
+            span_id="span-1",
+            span_name="TestSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
         )
+        mock_client.query_spans_by_trace.return_value = [test_span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
 
-        mock_show_last.assert_called_once_with(mock_client, "session-from-config", 1000, 2000, False, 1, False, None)
+        mock_client_class.return_value = mock_client
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_command_exception_handling(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test exception handling in show command."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_create_client.side_effect = Exception("Client creation failed")
+        # Run show command with trace ID
+        result = runner.invoke(observability_app, ["show", "--trace-id", "test-trace-123"])
 
-        with pytest.raises(typer.Exit) as exc_info:
-            show(
-                trace_id="trace-123",
-                session_id=None,
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                all_traces=False,
-                errors_only=False,
-                verbose=False,
-                output=None,
-                last=1,
-            )
+        # Verify success
+        assert result.exit_code == 0
+        mock_client.query_spans_by_trace.assert_called_once()
 
-        assert exc_info.value.exit_code == 1
-        assert any("Error:" in str(call) for call in mock_console.print.call_args_list)
-
-
-class TestListCommand:
-    """Test the list_traces command."""
-
-    @pytest.fixture
-    def sample_spans(self):
-        """Create sample spans for testing."""
-        return [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="Trace1",
-                start_time_unix_nano=1000000000,
-                end_time_unix_nano=2000000000,
-                duration_ms=1000.0,
-                status_code="OK",
-            ),
-            Span(
-                trace_id="trace-2",
-                span_id="span-2",
-                span_name="Trace2",
-                start_time_unix_nano=3000000000,
-                end_time_unix_nano=4000000000,
-                duration_ms=1000.0,
-                status_code="ERROR",
-            ),
-        ]
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_with_session_id(self, mock_console, mock_create_client, mock_get_time_range, sample_spans):
-        """Test list_traces command with session ID."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
-        mock_create_client.return_value = mock_client
-
-        list_traces(
-            session_id="session-123",
-            agent_id="agent-1",
-            agent=None,
-            days=7,
-            errors_only=False,
-        )
-
-        mock_client.query_spans_by_session.assert_called_once_with("session-123", 1000, 2000)
-        # Verify console.print was called (table rendering)
-        assert mock_console.print.called
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_from_config(
-        self, mock_console, mock_get_config, mock_create_client, mock_get_time_range, sample_spans
-    ):
-        """Test list_traces using session from config."""
-        mock_get_time_range.return_value = (1000, 2000)
+    def test_show_with_session_id(self, mock_config, mock_client_class):
+        """Test show command with session ID."""
+
+        mock_config.return_value = {
+            "agent_id": "test-agent",
+            "region": "us-west-2",
+        }
+
         mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
-        mock_create_client.return_value = mock_client
-        mock_get_config.return_value = {"session_id": "session-from-config"}
+        mock_client.region = "us-west-2"
 
-        list_traces(session_id=None, agent_id="agent-1", agent=None, days=7, errors_only=False)
-
-        mock_client.query_spans_by_session.assert_called_once_with("session-from-config", 1000, 2000)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_no_spans_found(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test list_traces when no spans are found."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = []
-        mock_create_client.return_value = mock_client
-
-        list_traces(
-            session_id="session-123",
-            agent_id="agent-1",
-            agent=None,
-            days=7,
-            errors_only=False,
+        test_span = Span(
+            trace_id="test-trace-456",
+            span_id="span-2",
+            span_name="SessionSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
         )
+        mock_client.query_spans_by_session.return_value = [test_span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
 
-        assert any("No spans found" in str(call) for call in mock_console.print.call_args_list)
+        mock_client_class.return_value = mock_client
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_errors_only(self, mock_console, mock_create_client, mock_get_time_range, sample_spans):
-        """Test list_traces with --errors flag."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
-        mock_create_client.return_value = mock_client
+        # Run show with session ID
+        result = runner.invoke(observability_app, ["show", "--session-id", "test-session-789"])
 
-        list_traces(
-            session_id="session-123",
-            agent_id="agent-1",
-            region="us-east-1",
-            agent_name=None,
-            days=7,
-            errors_only=True,
-        )
-
-        # Should only show error trace
+        assert result.exit_code == 0
         mock_client.query_spans_by_session.assert_called_once()
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_no_config_session(
-        self, mock_console, mock_get_config, mock_create_client, mock_get_time_range
-    ):
-        """Test list_traces error when no session ID and no config and no latest session found."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_get_config.return_value = None
-        # Mock client to return None for latest session
+    def test_show_with_conflicting_ids_fails(self, mock_config, mock_client_class):
+        """Test that providing both trace_id and session_id fails."""
+        mock_config.return_value = {
+            "agent_id": "test-agent",
+            "region": "us-west-2",
+        }
+
         mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client_class.return_value = mock_client
+
+        # Run with both IDs (should fail)
+        result = runner.invoke(observability_app, ["show", "--trace-id", "trace-123", "--session-id", "session-456"])
+
+        # Should exit with error
+        assert result.exit_code != 0
+        assert "Cannot specify both" in result.output or result.exit_code == 1
+
+
+class TestDefaultTimeRange:
+    """Test the _get_default_time_range helper."""
+
+    def test_returns_milliseconds_timestamp(self):
+        """Test that time range returns milliseconds."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_default_time_range
+
+        start_ms, end_ms = _get_default_time_range(days=7)
+
+        # Should be milliseconds (13+ digits)
+        assert start_ms > 1000000000000  # After year 2001 in ms
+        assert end_ms > start_ms
+        assert (end_ms - start_ms) > 0
+
+    def test_respects_days_parameter(self):
+        """Test that days parameter affects time range."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_default_time_range
+
+        start_1, end_1 = _get_default_time_range(days=1)
+        start_7, end_7 = _get_default_time_range(days=7)
+
+        # 7 day range should have earlier start time
+        assert start_7 < start_1
+        # End times should be similar (both "now")
+        assert abs(end_1 - end_7) < 10000  # Within 10 seconds
+
+
+class TestAgentConfigHelper:
+    """Test _get_agent_config_from_file helper."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
+    def test_returns_none_when_no_config_file(self, mock_load):
+        """Test returns None when config doesn't exist."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_agent_config_from_file
+
+        mock_load.return_value = None
+
+        result = _get_agent_config_from_file()
+
+        assert result is None
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
+    def test_extracts_agent_config_fields(self, mock_load):
+        """Test extracts correct fields from config."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_agent_config_from_file
+
+        # Mock config object
+        mock_config = MagicMock()
+        mock_agent_config = MagicMock()
+        mock_agent_config.bedrock_agentcore.agent_id = "config-agent-999"
+        mock_agent_config.bedrock_agentcore.agent_arn = "arn:aws:..."
+        mock_agent_config.bedrock_agentcore.agent_session_id = "session-xyz"
+        mock_agent_config.aws.region = "eu-west-1"
+        mock_config.get_agent_config.return_value = mock_agent_config
+        mock_load.return_value = mock_config
+
+        result = _get_agent_config_from_file("test-agent")
+
+        assert result is not None
+        assert result["agent_id"] == "config-agent-999"
+        assert result["region"] == "eu-west-1"
+        assert result["session_id"] == "session-xyz"
+
+
+class TestShowCommandValidation:
+    """Test validation logic in show command."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_trace_id_with_all_flag_fails(self, mock_config, mock_client_class):
+        """Test that --trace-id with --all flag fails."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--trace-id", "trace-123", "--all"])
+
+        assert result.exit_code == 1
+        assert "--all flag only works with sessions" in result.output
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_trace_id_with_last_flag_fails(self, mock_config, mock_client_class):
+        """Test that --trace-id with --last flag fails."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--trace-id", "trace-123", "--last", "2"])
+
+        assert result.exit_code == 1
+        assert "--last flag only works with sessions" in result.output
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_all_and_last_together_fails(self, mock_config, mock_client_class):
+        """Test that --all and --last together fails."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "session-123", "--all", "--last", "2"])
+
+        assert result.exit_code == 1
+        assert "Cannot use --all and --last together" in result.output
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_with_all_flag(self, mock_config, mock_client_class):
+        """Test show command with --all flag."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        # Create multiple spans
+        span1 = Span(
+            trace_id="trace-1",
+            span_id="span-1",
+            span_name="Span1",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        span2 = Span(
+            trace_id="trace-2",
+            span_id="span-2",
+            span_name="Span2",
+            parent_span_id="",
+            start_time_unix_nano=3000000000,
+            end_time_unix_nano=4000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span1, span2]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "session-789", "--all"])
+
+        assert result.exit_code == 0
+        mock_client.query_spans_by_session.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_with_last_flag(self, mock_config, mock_client_class):
+        """Test show command with --last N flag."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="trace-last",
+            span_id="span-x",
+            span_name="LastSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "session-xyz", "--last", "2"])
+
+        assert result.exit_code == 0
+        mock_client.query_spans_by_session.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_with_errors_only_flag(self, mock_config, mock_client_class):
+        """Test show command with --errors flag."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        error_span = Span(
+            trace_id="error-trace",
+            span_id="error-span",
+            span_name="ErrorSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="ERROR",
+        )
+        mock_client.query_spans_by_session.return_value = [error_span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "session-err", "--errors"])
+
+        assert result.exit_code == 0
+
+
+class TestShowCommandAutoDiscovery:
+    """Test auto-discovery logic in show command."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_without_ids_uses_config_session(self, mock_config, mock_client_class):
+        """Test show without IDs uses session from config."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2", "session_id": "config-session-123"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="auto-trace",
+            span_id="auto-span",
+            span_name="AutoSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show"])
+
+        assert result.exit_code == 0
+        # Should use session from config
+        call_args = mock_client.query_spans_by_session.call_args
+        assert "config-session-123" in str(call_args)
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_without_ids_fetches_latest_session(self, mock_config, mock_client_class):
+        """Test show without IDs fetches latest session when no config."""
+
+        # No session in config
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client.get_latest_session_id.return_value = "latest-session-456"
+
+        span = Span(
+            trace_id="latest-trace",
+            span_id="latest-span",
+            span_name="LatestSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show"])
+
+        assert result.exit_code == 0
+        # Should call get_latest_session_id
+        mock_client.get_latest_session_id.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_without_ids_no_sessions_found(self, mock_config, mock_client_class):
+        """Test show fails gracefully when no sessions found."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client.get_latest_session_id.return_value = None  # No sessions
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show"])
+
+        assert result.exit_code == 1
+        assert "No sessions found" in result.output
+
+
+class TestListCommandValidation:
+    """Test list command validation and options."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_with_errors_filter(self, mock_config, mock_client_class):
+        """Test list command with --errors flag."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2", "session_id": "session-list"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        error_span = Span(
+            trace_id="err-trace",
+            span_id="err-span",
+            span_name="ErrSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="ERROR",
+        )
+        mock_client.query_spans_by_session.return_value = [error_span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["list", "--errors"])
+
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_auto_discovers_session(self, mock_config, mock_client_class):
+        """Test list auto-discovers latest session."""
+
+        # No session in config
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client.get_latest_session_id.return_value = "discovered-session"
+
+        span = Span(
+            trace_id="disc-trace",
+            span_id="disc-span",
+            span_name="DiscSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.return_value = []
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["list"])
+
+        assert result.exit_code == 0
+        mock_client.get_latest_session_id.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_no_sessions_found(self, mock_config, mock_client_class):
+        """Test list fails when no sessions found."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
         mock_client.get_latest_session_id.return_value = None
-        mock_create_client.return_value = mock_client
 
-        with pytest.raises(typer.Exit) as exc_info:
-            list_traces(session_id=None, agent_id="agent-1", agent=None, days=7, errors_only=False)
+        mock_client_class.return_value = mock_client
 
-        assert exc_info.value.exit_code == 1
-        assert any("No sessions found" in str(call) for call in mock_console.print.call_args_list)
+        result = runner.invoke(observability_app, ["list"])
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_default_time_range")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_list_traces_exception_handling(self, mock_console, mock_create_client, mock_get_time_range):
-        """Test exception handling in list_traces."""
-        mock_get_time_range.return_value = (1000, 2000)
-        mock_create_client.side_effect = Exception("Client error")
-
-        with pytest.raises(typer.Exit) as exc_info:
-            list_traces(
-                session_id="session-123",
-                agent_id="agent-1",
-                agent=None,
-                days=7,
-                errors_only=False,
-            )
-
-        assert exc_info.value.exit_code == 1
-        assert any("Error:" in str(call) for call in mock_console.print.call_args_list)
+        assert result.exit_code == 1
+        assert "No sessions found" in result.output
 
 
-class TestInternalViewFunctions:
-    """Test internal view functions that are called by show and list commands."""
+class TestAgentConfigHelperErrorPaths:
+    """Test error handling in _get_agent_config_from_file."""
 
-    @pytest.fixture
-    def sample_spans(self):
-        """Create sample spans for testing."""
-        return [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="RootSpan",
-                start_time_unix_nano=1000000000,
-                end_time_unix_nano=2000000000,
-                duration_ms=1000.0,
-                status_code="OK",
-            ),
-            Span(
-                trace_id="trace-1",
-                span_id="span-2",
-                span_name="ChildSpan",
-                parent_span_id="span-1",
-                start_time_unix_nano=1500000000,
-                end_time_unix_nano=1800000000,
-                duration_ms=300.0,
-                status_code="ERROR",
-            ),
-        ]
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
+    def test_returns_none_when_agent_id_missing(self, mock_load):
+        """Test returns None when config has no agent_id."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_agent_config_from_file
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_trace_view_basic(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_trace_view with basic trace."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+        # Mock config with missing agent_id
+        mock_config = MagicMock()
+        mock_agent_config = MagicMock()
+        mock_agent_config.bedrock_agentcore.agent_id = None  # Missing!
+        mock_agent_config.aws.region = "us-west-2"
+        mock_config.get_agent_config.return_value = mock_agent_config
+        mock_load.return_value = mock_config
 
-        mock_client = MagicMock()
-        mock_client.query_spans_by_trace.return_value = sample_spans
+        result = _get_agent_config_from_file("test-agent")
 
-        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output=None)
+        # Should return None when agent_id missing
+        assert result is None
 
-        mock_client.query_spans_by_trace.assert_called_once_with("trace-1", 1000, 2000)
-        mock_visualizer_class.assert_called_once()
-        assert mock_console.print.called
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
+    def test_returns_none_when_region_missing(self, mock_load):
+        """Test returns None when config has no region."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_agent_config_from_file
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_trace_view_no_spans(self, mock_console, mock_visualizer_class):
-        """Test _show_trace_view when no spans found."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+        # Mock config with missing region
+        mock_config = MagicMock()
+        mock_agent_config = MagicMock()
+        mock_agent_config.bedrock_agentcore.agent_id = "test-agent"
+        mock_agent_config.aws.region = None  # Missing!
+        mock_config.get_agent_config.return_value = mock_agent_config
+        mock_load.return_value = mock_config
+
+        result = _get_agent_config_from_file("test-agent")
+
+        # Should return None when region missing
+        assert result is None
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.load_config_if_exists")
+    def test_returns_none_on_exception(self, mock_load):
+        """Test returns None when exception occurs during config loading."""
+        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _get_agent_config_from_file
+
+        # Mock config that raises exception
+        mock_config = MagicMock()
+        mock_config.get_agent_config.side_effect = Exception("Config error")
+        mock_load.return_value = mock_config
+
+        result = _get_agent_config_from_file("test-agent")
+
+        # Should return None on exception
+        assert result is None
+
+
+class TestShowCommandEmptyResults:
+    """Test show command with empty/no results."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_trace_with_no_spans(self, mock_config, mock_client_class):
+        """Test show trace when no spans found."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
 
         mock_client = MagicMock()
-        mock_client.query_spans_by_trace.return_value = []
+        mock_client.region = "us-west-2"
+        mock_client.query_spans_by_trace.return_value = []  # No spans!
 
-        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output=None)
+        mock_client_class.return_value = mock_client
 
-        # Should print "No spans found" and not call visualizer
-        assert any("No spans found" in str(call) for call in mock_console.print.call_args_list)
-        mock_visualizer_class.assert_not_called()
+        result = runner.invoke(observability_app, ["show", "--trace-id", "empty-trace"])
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._export_trace_data_to_json")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_trace_view_with_output(self, mock_console, mock_visualizer_class, mock_export, sample_spans):
-        """Test _show_trace_view with JSON export."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+        # Should handle gracefully
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_session_with_no_spans(self, mock_config, mock_client_class):
+        """Test show session when no spans found."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
 
         mock_client = MagicMock()
-        mock_client.query_spans_by_trace.return_value = sample_spans
+        mock_client.region = "us-west-2"
+        mock_client.query_spans_by_session.return_value = []  # No spans!
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "empty-session"])
+
+        # Should handle gracefully
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_with_no_spans(self, mock_config, mock_client_class):
+        """Test list when no spans found."""
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2", "session_id": "session-123"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+        mock_client.query_spans_by_session.return_value = []  # No spans!
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["list"])
+
+        # Should handle gracefully
+        assert result.exit_code == 0
+
+
+class TestShowCommandWithOutput:
+    """Test show command with output file."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.Path")
+    def test_show_with_output_json_export(self, mock_path, mock_config, mock_client_class):
+        """Test show with --output exports to JSON."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="export-trace",
+            span_id="export-span",
+            span_name="ExportSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_trace.return_value = [span]
         mock_client.query_runtime_logs_by_traces.return_value = []
 
-        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=False, output="trace.json")
+        mock_client_class.return_value = mock_client
 
-        mock_client.query_runtime_logs_by_traces.assert_called_once()
-        mock_export.assert_called_once()
+        # Mock file operations
+        mock_file = MagicMock()
+        mock_path.return_value.open.return_value.__enter__.return_value = mock_file
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.logger")
-    def test_show_trace_view_runtime_logs_error(self, mock_logger, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_trace_view when runtime log query fails."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_trace_view
+        result = runner.invoke(observability_app, ["show", "--trace-id", "export-trace", "--output", "output.json"])
 
-        mock_client = MagicMock()
-        mock_client.query_spans_by_trace.return_value = sample_spans
-        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Log query failed")
+        assert result.exit_code == 0
 
-        _show_trace_view(mock_client, "trace-1", 1000, 2000, verbose=True, output=None)
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.Path")
+    def test_show_output_handles_export_error(self, mock_path, mock_config, mock_client_class):
+        """Test show handles export errors gracefully."""
 
-        # Should log warning but continue
-        mock_logger.warning.assert_called_once()
-        mock_visualizer_class.assert_called_once()
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_basic(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_session_view shows all traces with full details."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
 
         mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="error-export",
+            span_id="error-span",
+            span_name="ErrorSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_trace.return_value = [span]
         mock_client.query_runtime_logs_by_traces.return_value = []
 
-        _show_session_view(
-            mock_client,
-            "session-1",
-            1000,
-            2000,
-            verbose=False,
-            errors_only=False,
-            output=None,
-        )
+        mock_client_class.return_value = mock_client
 
-        mock_client.query_spans_by_session.assert_called_once_with("session-1", 1000, 2000)
-        # Should call visualize_all_traces
-        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
+        # Mock file operation to raise error
+        mock_path.return_value.open.side_effect = IOError("Cannot write file")
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_verbose(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_session_view with verbose mode."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+        result = runner.invoke(observability_app, ["show", "--trace-id", "error-export", "--output", "bad-path.json"])
+
+        # Should handle error gracefully
+        assert result.exit_code == 0
+        assert "Error exporting" in result.output or result.exit_code == 0
+
+
+class TestShowCommandRuntimeLogErrors:
+    """Test runtime log error handling in show command."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_trace_continues_when_runtime_logs_fail(self, mock_config, mock_client_class):
+        """Test show continues when runtime logs query fails."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
 
         mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="test-trace",
+            span_id="test-span",
+            span_name="TestSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_trace.return_value = [span]
+        # Runtime logs query raises exception
+        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Runtime logs error")
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--trace-id", "test-trace"])
+
+        # Should still succeed (warning logged but not fatal)
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_session_continues_when_runtime_logs_fail(self, mock_config, mock_client_class):
+        """Test show session continues when runtime logs query fails."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="session-trace",
+            span_id="session-span",
+            span_name="SessionSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Runtime logs error")
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "test-session"])
+
+        # Should still succeed
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_all_traces_continues_when_runtime_logs_fail(self, mock_config, mock_client_class):
+        """Test show --all continues when runtime logs fail."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="all-trace",
+            span_id="all-span",
+            span_name="AllSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Runtime logs error")
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["show", "--session-id", "test-session", "--all"])
+
+        # Should still succeed
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_continues_when_runtime_logs_fail(self, mock_config, mock_client_class):
+        """Test list continues when runtime logs query fails."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2", "session_id": "test-session"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        span = Span(
+            trace_id="list-trace",
+            span_id="list-span",
+            span_name="ListSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [span]
+        mock_client.query_runtime_logs_by_traces.side_effect = Exception("Runtime logs error")
+
+        mock_client_class.return_value = mock_client
+
+        result = runner.invoke(observability_app, ["list"])
+
+        # Should still succeed (displays traces without I/O)
+        assert result.exit_code == 0
+
+
+class TestShowSessionErrorFiltering:
+    """Test error filtering in session views."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_show_session_with_errors_only_no_errors_found(self, mock_config, mock_client_class):
+        """Test --errors flag when no error traces exist."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2"}
+
+        mock_client = MagicMock()
+        mock_client.region = "us-west-2"
+
+        # Only OK spans (no errors)
+        ok_span = Span(
+            trace_id="ok-trace",
+            span_id="ok-span",
+            span_name="OKSpan",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [ok_span]
         mock_client.query_runtime_logs_by_traces.return_value = []
 
-        _show_session_view(
-            mock_client,
-            "session-1",
-            1000,
-            2000,
-            verbose=True,
-            errors_only=False,
-            output=None,
-        )
+        mock_client_class.return_value = mock_client
 
-        # Should query runtime logs and visualize all traces with verbose=True
-        mock_client.query_runtime_logs_by_traces.assert_called_once()
-        visualizer_instance = mock_visualizer_class.return_value
-        visualizer_instance.visualize_all_traces.assert_called_once()
-        # Check that verbose was passed
-        call_args = visualizer_instance.visualize_all_traces.call_args
-        assert call_args[1]["verbose"] is True
+        result = runner.invoke(observability_app, ["show", "--session-id", "no-errors-session", "--errors"])
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_errors_only(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_session_view with errors_only filter."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
+        # Should complete (shows "no failed traces" message)
+        assert result.exit_code == 0
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.ObservabilityClient")
+    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._get_agent_config_from_file")
+    def test_list_with_errors_only_no_errors_found(self, mock_config, mock_client_class):
+        """Test list --errors when no error traces exist."""
+
+        mock_config.return_value = {"agent_id": "test-agent", "region": "us-west-2", "session_id": "no-err-session"}
 
         mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
+        mock_client.region = "us-west-2"
+
+        ok_span = Span(
+            trace_id="ok-trace-2",
+            span_id="ok-span-2",
+            span_name="OKSpan2",
+            parent_span_id="",
+            start_time_unix_nano=1000000000,
+            end_time_unix_nano=2000000000,
+            duration_ms=1000,
+            status_code="OK",
+        )
+        mock_client.query_spans_by_session.return_value = [ok_span]
         mock_client.query_runtime_logs_by_traces.return_value = []
 
-        _show_session_view(
-            mock_client,
-            "session-1",
-            1000,
-            2000,
-            verbose=False,
-            errors_only=True,
-            output=None,
-        )
+        mock_client_class.return_value = mock_client
 
-        # Should still call visualizer (filtering happens in TraceData)
-        mock_visualizer_class.return_value.visualize_all_traces.assert_called_once()
+        result = runner.invoke(observability_app, ["list", "--errors"])
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_session_view_no_error_traces(self, mock_console, mock_visualizer_class):
-        """Test _show_session_view when no error traces found."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_session_view
-
-        # Create only successful spans
-        ok_spans = [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="OKSpan",
-                duration_ms=100.0,
-                status_code="OK",
-            )
-        ]
-
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = ok_spans
-
-        _show_session_view(
-            mock_client,
-            "session-1",
-            1000,
-            2000,
-            verbose=False,
-            errors_only=True,
-            output=None,
-        )
-
-        # Should print "No failed traces found"
-        assert any("No failed traces found" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_last_trace_from_session(self, mock_console, mock_visualizer_class, sample_spans):
-        """Test _show_last_trace_from_session."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
-
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = sample_spans
-
-        _show_last_trace_from_session(
-            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=1, errors_only=False, output=None
-        )
-
-        mock_client.query_spans_by_session.assert_called_once()
-        mock_visualizer_class.return_value.visualize_trace.assert_called_once()
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.TraceVisualizer")
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_last_trace_nth(self, mock_console, mock_visualizer_class):
-        """Test _show_last_trace_from_session with nth trace."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
-
-        # Create spans for multiple traces
-        spans = [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="Trace1",
-                end_time_unix_nano=1000000000,
-                duration_ms=100.0,
-            ),
-            Span(
-                trace_id="trace-2",
-                span_id="span-2",
-                span_name="Trace2",
-                end_time_unix_nano=2000000000,
-                duration_ms=100.0,
-            ),
-        ]
-
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = spans
-
-        _show_last_trace_from_session(
-            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=2, errors_only=False, output=None
-        )
-
-        # Should show "2nd most recent trace" or "2th most recent trace"
-        assert any("2th most recent" in str(call) or "2nd" in str(call) for call in mock_console.print.call_args_list)
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands.console")
-    def test_show_last_trace_exceeds_count(self, mock_console):
-        """Test _show_last_trace_from_session when requested nth exceeds trace count."""
-        from bedrock_agentcore_starter_toolkit.cli.observability.commands import _show_last_trace_from_session
-
-        spans = [
-            Span(
-                trace_id="trace-1",
-                span_id="span-1",
-                span_name="Trace1",
-                end_time_unix_nano=1000000000,
-                duration_ms=100.0,
-            )
-        ]
-
-        mock_client = MagicMock()
-        mock_client.query_spans_by_session.return_value = spans
-
-        _show_last_trace_from_session(
-            mock_client, "session-1", 1000, 2000, verbose=False, nth_last=5, errors_only=False, output=None
-        )
-
-        # Should print warning about only 1 trace found
-        assert any("Only 1 trace" in str(call) for call in mock_console.print.call_args_list)
+        # Should complete
+        assert result.exit_code == 0

@@ -11,8 +11,8 @@ from .formatters import (
     get_status_icon,
     get_status_style,
 )
-from .models import RuntimeLog, Span, TraceData
-from .visualizers import TraceVisualizer
+from .telemetry import RuntimeLog, Span, TraceData
+from .trace_visualizer import TraceVisualizer
 
 __all__ = [
     "ObservabilityClient",

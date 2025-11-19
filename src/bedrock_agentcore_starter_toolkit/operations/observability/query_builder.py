@@ -5,27 +5,16 @@ class CloudWatchQueryBuilder:
     """Builder for CloudWatch Logs Insights queries for spans, traces, and runtime logs."""
 
     @staticmethod
-    def build_spans_by_session_query(session_id: str, agent_id: str | None = None) -> str:
+    def build_spans_by_session_query(session_id: str, agent_id: str) -> str:
         """Build query to get all spans for a session from aws/spans log group.
 
         Args:
             session_id: The session ID to filter by
-            agent_id: Optional agent ID to filter by (prevents cross-agent session collisions)
+            agent_id: Agent ID to filter by (required to prevent cross-agent session collisions)
 
         Returns:
             CloudWatch Logs Insights query string
         """
-        # Base filter by session ID
-        base_filter = f"attributes.session.id = '{session_id}'"
-
-        # Build parse and agent filter clauses if agent_id provided
-        if agent_id:
-            # Parse agent ID from resourceId ARN, then filter by it (matches dashboard pattern)
-            parse_and_filter = f"""| parse resource.attributes.cloud.resource_id \"runtime/*/\" as parsedAgentId
-        | filter parsedAgentId = '{agent_id}'"""
-        else:
-            parse_and_filter = ""
-
         return f"""fields @timestamp,
                @message,
                traceId,
@@ -43,8 +32,9 @@ class CloudWatchQueryBuilder:
                resource.attributes.service.name as serviceName,
                resource.attributes.cloud.resource_id as resourceId,
                attributes.aws.remote.service as serviceType
-        | filter {base_filter}
-        {parse_and_filter}
+        | filter attributes.session.id = '{session_id}'
+        | parse resource.attributes.cloud.resource_id \"runtime/*/\" as parsedAgentId
+        | filter parsedAgentId = '{agent_id}'
         | sort startTimeUnixNano asc"""
 
     @staticmethod

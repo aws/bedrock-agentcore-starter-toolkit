@@ -6,14 +6,21 @@ from rich.console import Console
 from rich.text import Text
 from rich.tree import Tree
 
-from ...constants import GenAIAttributes, LLMAttributes, TruncationConfig
-from ..formatters import (
+from ..constants import GenAIAttributes, LLMAttributes, TruncationConfig
+from .formatters import (
+    extract_completion,
+    extract_input_data,
+    extract_invocation_payload,
+    extract_output_data,
+    extract_prompt,
     format_duration_ms,
     get_duration_style,
     get_status_icon,
     get_status_style,
+    truncate_for_display,
 )
-from ..models.telemetry import Span, TraceData
+from .telemetry import Span, TraceData
+from .trace_processor import TraceProcessor
 
 
 class TraceVisualizer:
@@ -46,21 +53,21 @@ class TraceVisualizer:
         """
         # Ensure spans are grouped and hierarchy is built
         if trace_id not in trace_data.traces:
-            trace_data.group_spans_by_trace()
+            TraceProcessor.group_spans_by_trace(trace_data)
 
         if trace_id not in trace_data.traces:
             self.console.print(f"[red]Trace {trace_id} not found[/red]")
             return
 
         # Build span hierarchy
-        root_spans = trace_data.build_span_hierarchy(trace_id)
+        root_spans = TraceProcessor.build_span_hierarchy(trace_data, trace_id)
 
         if not root_spans:
             self.console.print(f"[yellow]No spans found for trace {trace_id}[/yellow]")
             return
 
         # Get messages grouped by span if show_messages is enabled
-        messages_by_span = trace_data.get_messages_by_span() if show_messages else {}
+        messages_by_span = TraceProcessor.get_messages_by_span(trace_data) if show_messages else {}
 
         # Create the tree
         trace_tree = Tree(
@@ -94,7 +101,7 @@ class TraceVisualizer:
             show_messages: Whether to show chat messages and invocation payloads
             verbose: Whether to show full details without truncation
         """
-        trace_data.group_spans_by_trace()
+        TraceProcessor.group_spans_by_trace(trace_data)
 
         if not trace_data.traces:
             self.console.print("[yellow]No traces found[/yellow]")
@@ -116,8 +123,8 @@ class TraceVisualizer:
         Returns:
             Formatted Rich Text object
         """
-        total_duration = TraceData.calculate_trace_duration(spans)
-        error_count = TraceData.count_error_spans(spans)
+        total_duration = TraceProcessor.calculate_trace_duration(spans)
+        error_count = TraceProcessor.count_error_spans(spans)
 
         header = Text()
         header.append("🔍 Trace: ", style="bold cyan")
@@ -296,56 +303,32 @@ class TraceVisualizer:
 
         # Show messages if requested
         if show_messages and span.attributes:
-            # Extract chat messages from span attributes (using configured truncation)
-            prompt = span.attributes.get(GenAIAttributes.PROMPT) or span.attributes.get(LLMAttributes.PROMPTS)
+            # Extract chat messages from span attributes (using helper functions)
+            prompt = extract_prompt(span.attributes)
             if prompt:
-                prompt_str = str(prompt)
-                if not verbose:
-                    prompt_str = TruncationConfig.truncate(prompt_str)
+                prompt_str = truncate_for_display(prompt, verbose)
                 text.append(f"\n  └─ 💬 User: {prompt_str}", style="cyan")
 
-            completion = span.attributes.get(GenAIAttributes.COMPLETION) or span.attributes.get(LLMAttributes.RESPONSES)
+            completion = extract_completion(span.attributes)
             if completion:
-                completion_str = str(completion)
-                if not verbose:
-                    completion_str = TruncationConfig.truncate(completion_str)
+                completion_str = truncate_for_display(completion, verbose)
                 text.append(f"\n  └─ 🤖 Assistant: {completion_str}", style="green")
 
             # Extract invocation payloads (provider-agnostic)
-            # Try multiple attribute names in priority order
-            invocation = (
-                span.attributes.get(GenAIAttributes.REQUEST_MODEL_INPUT)  # Standard GenAI
-                or span.attributes.get(GenAIAttributes.INVOCATION_BEDROCK)  # AWS Bedrock
-                or span.attributes.get(GenAIAttributes.INVOCATION_REQUEST_BODY)  # Generic HTTP
-                or span.attributes.get(GenAIAttributes.INVOCATION_INPUT)  # Generic input
-            )
+            invocation = extract_invocation_payload(span.attributes)
             if invocation:
-                invocation_str = str(invocation)
-                if not verbose:
-                    invocation_str = TruncationConfig.truncate(invocation_str)
+                invocation_str = truncate_for_display(invocation, verbose)
                 text.append(f"\n  └─ 📦 Payload: {invocation_str}", style="yellow")
 
             # Show input/output if available (provider-agnostic)
-            input_data = (
-                span.attributes.get(GenAIAttributes.REQUEST_MODEL_INPUT)
-                or span.attributes.get(GenAIAttributes.INVOCATION_INPUT)
-                or span.attributes.get("input")  # Legacy fallback
-            )
+            input_data = extract_input_data(span.attributes)
             if input_data:
-                input_str = str(input_data)
-                if not verbose:
-                    input_str = TruncationConfig.truncate(input_str)
+                input_str = truncate_for_display(input_data, verbose)
                 text.append(f"\n  └─ 📥 Input: {input_str}", style="bright_blue")
 
-            output_data = (
-                span.attributes.get(GenAIAttributes.RESPONSE_MODEL_OUTPUT)
-                or span.attributes.get(GenAIAttributes.INVOCATION_OUTPUT)
-                or span.attributes.get("output")  # Legacy fallback
-            )
+            output_data = extract_output_data(span.attributes)
             if output_data:
-                output_str = str(output_data)
-                if not verbose:
-                    output_str = TruncationConfig.truncate(output_str)
+                output_str = truncate_for_display(output_data, verbose)
                 text.append(f"\n  └─ 📤 Output: {output_str}", style="magenta")
 
         # Show messages from runtime logs if available

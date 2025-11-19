@@ -50,7 +50,8 @@ class GenAIAttributes:
 
     # Provider-specific invocation attributes (priority order)
     INVOCATION_BEDROCK = "aws.bedrock.invocation"  # AWS Bedrock
-    INVOCATION_REQUEST_BODY = "request.body"  # Generic HTTP
+    INVOCATION_REQUEST_BODY = "request.body"  # Generic HTTP request
+    INVOCATION_RESPONSE_BODY = "response.body"  # Generic HTTP response
     INVOCATION_INPUT = "input"  # Generic input
     INVOCATION_OUTPUT = "output"  # Generic output
 
@@ -64,7 +65,9 @@ class LLMAttributes:
 
 
 # Default Runtime Configuration
-DEFAULT_RUNTIME_SUFFIX = os.getenv("AGENTCORE_RUNTIME_SUFFIX", "DEFAULT")
+DEFAULT_RUNTIME_ENDPOINT = os.getenv("AGENTCORE_RUNTIME_ENDPOINT", "DEFAULT")
+# Deprecated - kept for backward compatibility
+DEFAULT_RUNTIME_SUFFIX = DEFAULT_RUNTIME_ENDPOINT
 
 
 # Truncation Configuration

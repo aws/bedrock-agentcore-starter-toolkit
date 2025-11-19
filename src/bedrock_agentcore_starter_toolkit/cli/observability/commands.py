@@ -16,7 +16,8 @@ from ...operations.observability import (
 )
 from ...operations.observability.constants import DEFAULT_LOOKBACK_DAYS
 from ...operations.observability.formatters import calculate_age_seconds
-from ...operations.observability.models import TraceData
+from ...operations.observability.telemetry import TraceData
+from ...operations.observability.trace_processor import TraceProcessor
 from ...utils.runtime.config import load_config_if_exists
 from ..common import console
 
@@ -69,14 +70,17 @@ def _create_observability_client(
     agent: Optional[str] = None,
     region: Optional[str] = None,
     runtime_suffix: Optional[str] = None,
-) -> ObservabilityClient:
-    """Create ObservabilityClient from CLI args or config file.
+) -> tuple[ObservabilityClient, str, str]:
+    """Create stateless ObservabilityClient and return agent context.
 
     Args:
         agent_id: Explicit agent ID
         agent: Agent name to load from config
         region: Explicit region (overrides config and auto-detection)
         runtime_suffix: Explicit runtime suffix (overrides config default)
+
+    Returns:
+        Tuple of (client, agent_id, endpoint_name) for passing to client methods
 
     Falls back to AWS default region if not in config or explicitly provided.
     """
@@ -115,15 +119,19 @@ def _create_observability_client(
         final_region = session.region_name or "us-east-1"
         console.print(f"[dim]Using AWS region: {final_region}[/dim]")
 
-    # Determine runtime_suffix: explicit > config > default
+    # Determine endpoint_name (renamed from runtime_suffix): explicit > config > default
     if runtime_suffix:
-        final_runtime_suffix = runtime_suffix
+        final_endpoint_name = runtime_suffix
     elif config and config.get("runtime_suffix"):
-        final_runtime_suffix = config["runtime_suffix"]
+        final_endpoint_name = config["runtime_suffix"]
     else:
-        final_runtime_suffix = DEFAULT_RUNTIME_SUFFIX
+        final_endpoint_name = DEFAULT_RUNTIME_SUFFIX
 
-    return ObservabilityClient(region_name=final_region, agent_id=final_agent_id, runtime_suffix=final_runtime_suffix)
+    # Create stateless client - no agent_id/endpoint_name stored
+    client = ObservabilityClient(region_name=final_region)
+
+    # Return client + context that callers will pass to methods
+    return client, final_agent_id, final_endpoint_name
 
 
 def _display_trace_list(trace_data: TraceData, session_id: str) -> None:
@@ -198,7 +206,7 @@ def _display_trace_list(trace_data: TraceData, session_id: str) -> None:
             trace_id_display = trace_id
 
         # Extract input/output
-        input_text, output_text = trace_data.get_trace_messages(trace_id)
+        input_text, output_text = TraceProcessor.get_trace_messages(trace_data, trace_id)
 
         table.add_row(
             str(idx),
@@ -225,7 +233,7 @@ def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_typ
     path = Path(output_path)
     try:
         with path.open("w") as f:
-            json.dump(trace_data.to_dict(), f, indent=2)
+            json.dump(TraceProcessor.to_dict(trace_data), f, indent=2)
         console.print(f"[green]✓[/green] Exported full {data_type} data to {path}")
     except Exception as e:
         console.print(f"[red]Error exporting to file:[/red] {str(e)}")
@@ -296,7 +304,8 @@ def show(
         - To list traces with Input/Output, use 'agentcore obs list' instead
     """
     try:
-        client = _create_observability_client(agent_id, agent)
+        # Get stateless client + agent context
+        client, final_agent_id, endpoint_name = _create_observability_client(agent_id, agent)
         start_time_ms, end_time_ms = _get_default_time_range(days)
 
         # Validate mutually exclusive options
@@ -323,17 +332,45 @@ def show(
         # Determine what to show based on arguments
         if trace_id:
             # Show specific trace
-            _show_trace_view(client, trace_id, start_time_ms, end_time_ms, verbose, output)
+            _show_trace_view(
+                client,
+                trace_id,
+                start_time_ms,
+                end_time_ms,
+                verbose,
+                output,
+                agent_id=final_agent_id,
+                endpoint_name=endpoint_name,
+            )
 
         elif session_id:
             # Show command always shows trace details
             if all_traces:
                 # Show all traces with full details
-                _show_session_view(client, session_id, start_time_ms, end_time_ms, verbose, errors_only, output)
+                _show_session_view(
+                    client,
+                    session_id,
+                    start_time_ms,
+                    end_time_ms,
+                    verbose,
+                    errors_only,
+                    output,
+                    agent_id=final_agent_id,
+                    endpoint_name=endpoint_name,
+                )
             else:
                 # Default: show latest trace (or Nth trace if --last specified)
                 _show_last_trace_from_session(
-                    client, session_id, start_time_ms, end_time_ms, verbose, last, errors_only, output
+                    client,
+                    session_id,
+                    start_time_ms,
+                    end_time_ms,
+                    verbose,
+                    last,
+                    errors_only,
+                    output,
+                    agent_id=final_agent_id,
+                    endpoint_name=endpoint_name,
                 )
 
         else:
@@ -344,7 +381,7 @@ def show(
             if not session_id:
                 # No config session - try to find latest session for this agent
                 console.print("[dim]No session ID provided, fetching latest session for agent...[/dim]")
-                session_id = client.get_latest_session_id(start_time_ms, end_time_ms)
+                session_id = client.get_latest_session_id(start_time_ms, end_time_ms, agent_id=final_agent_id)
 
                 if not session_id:
                     console.print(f"[yellow]No sessions found for agent in the last {days} days[/yellow]")
@@ -360,11 +397,30 @@ def show(
 
             if all_traces:
                 # Show all traces with full details
-                _show_session_view(client, session_id, start_time_ms, end_time_ms, verbose, errors_only, output)
+                _show_session_view(
+                    client,
+                    session_id,
+                    start_time_ms,
+                    end_time_ms,
+                    verbose,
+                    errors_only,
+                    output,
+                    agent_id=final_agent_id,
+                    endpoint_name=endpoint_name,
+                )
             else:
                 # Default: show last trace from session
                 _show_last_trace_from_session(
-                    client, session_id, start_time_ms, end_time_ms, verbose, last, errors_only, output
+                    client,
+                    session_id,
+                    start_time_ms,
+                    end_time_ms,
+                    verbose,
+                    last,
+                    errors_only,
+                    output,
+                    agent_id=final_agent_id,
+                    endpoint_name=endpoint_name,
                 )
 
     except Exception as e:
@@ -380,22 +436,26 @@ def _show_trace_view(
     end_time_ms: int,
     verbose: bool,
     output: Optional[str],
+    agent_id: str,
+    endpoint_name: str = "DEFAULT",
 ) -> None:
     """Show a specific trace."""
     console.print(f"[cyan]Fetching trace:[/cyan] {trace_id}\n")
 
-    spans = client.query_spans_by_trace(trace_id, start_time_ms, end_time_ms)
+    spans = client.query_spans_by_trace(trace_id, start_time_ms, end_time_ms, agent_id=agent_id)
 
     if not spans:
         console.print(f"[yellow]No spans found for trace {trace_id}[/yellow]")
         return
 
-    trace_data = TraceData(spans=spans)
-    trace_data.group_spans_by_trace()
+    trace_data = TraceData(spans=spans, agent_id=agent_id)
+    TraceProcessor.group_spans_by_trace(trace_data)
 
     # Query runtime logs to show messages (always fetch, verbose controls truncation)
     try:
-        runtime_logs = client.query_runtime_logs_by_traces([trace_id], start_time_ms, end_time_ms)
+        runtime_logs = client.query_runtime_logs_by_traces(
+            [trace_id], start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
+        )
         trace_data.runtime_logs = runtime_logs
     except Exception as e:
         logger.warning("Failed to retrieve runtime logs: %s", e)
@@ -418,22 +478,24 @@ def _show_session_view(
     verbose: bool,
     errors_only: bool,
     output: Optional[str],
+    agent_id: str,
+    endpoint_name: str = "DEFAULT",
 ) -> None:
     """Show all traces in session with full details."""
     console.print(f"[cyan]Fetching session:[/cyan] {session_id}\n")
 
-    spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms)
+    spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=agent_id)
 
     if not spans:
         console.print(f"[yellow]No spans found for session {session_id}[/yellow]")
         return
 
-    trace_data = TraceData(session_id=session_id, spans=spans)
-    trace_data.group_spans_by_trace()
+    trace_data = TraceData(session_id=session_id, spans=spans, agent_id=agent_id)
+    TraceProcessor.group_spans_by_trace(trace_data)
 
     # Filter to errors if requested
     if errors_only:
-        error_traces = trace_data.filter_error_traces()
+        error_traces = TraceProcessor.filter_error_traces(trace_data)
         if not error_traces:
             console.print("[yellow]No failed traces found in session[/yellow]")
             return
@@ -442,7 +504,9 @@ def _show_session_view(
     # Query runtime logs to show messages
     try:
         trace_ids = list(trace_data.traces.keys())
-        runtime_logs = client.query_runtime_logs_by_traces(trace_ids, start_time_ms, end_time_ms)
+        runtime_logs = client.query_runtime_logs_by_traces(
+            trace_ids, start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
+        )
         trace_data.runtime_logs = runtime_logs
     except Exception as e:
         logger.warning("Failed to retrieve runtime logs: %s", e)
@@ -466,20 +530,22 @@ def _show_last_trace_from_session(
     nth_last: int,
     errors_only: bool,
     output: Optional[str],
+    agent_id: str,
+    endpoint_name: str = "DEFAULT",
 ) -> None:
     """Show the Nth most recent trace from a session."""
-    spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms)
+    spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=agent_id)
 
     if not spans:
         console.print(f"[yellow]No spans found for session {session_id}[/yellow]")
         return
 
-    trace_data = TraceData(session_id=session_id, spans=spans)
-    trace_data.group_spans_by_trace()
+    trace_data = TraceData(session_id=session_id, spans=spans, agent_id=agent_id)
+    TraceProcessor.group_spans_by_trace(trace_data)
 
     # Filter to errors if requested
     if errors_only:
-        error_traces = trace_data.filter_error_traces()
+        error_traces = TraceProcessor.filter_error_traces(trace_data)
         if not error_traces:
             console.print("[yellow]No failed traces found in session[/yellow]")
             return
@@ -503,12 +569,14 @@ def _show_last_trace_from_session(
     console.print(f"[cyan]Showing {position_text} trace from session {session_id}[/cyan]\n")
 
     # Build trace data for just this trace
-    single_trace_data = TraceData(session_id=session_id, spans=trace_spans)
-    single_trace_data.group_spans_by_trace()
+    single_trace_data = TraceData(session_id=session_id, spans=trace_spans, agent_id=agent_id)
+    TraceProcessor.group_spans_by_trace(single_trace_data)
 
     # Query runtime logs to show messages (always fetch, verbose controls truncation)
     try:
-        runtime_logs = client.query_runtime_logs_by_traces([trace_id], start_time_ms, end_time_ms)
+        runtime_logs = client.query_runtime_logs_by_traces(
+            [trace_id], start_time_ms, end_time_ms, agent_id=agent_id, endpoint_name=endpoint_name
+        )
         single_trace_data.runtime_logs = runtime_logs
     except Exception as e:
         logger.warning("Failed to retrieve runtime logs: %s", e)
@@ -556,7 +624,8 @@ def list_traces(
         agentcore obs list --errors
     """
     try:
-        client = _create_observability_client(agent_id, agent)
+        # Get stateless client + agent context
+        client, final_agent_id, endpoint_name = _create_observability_client(agent_id, agent)
         start_time_ms, end_time_ms = _get_default_time_range(days)
 
         # Get session ID from config if not provided, or fallback to latest session
@@ -567,7 +636,7 @@ def list_traces(
             if not session_id:
                 # No config session - try to find latest session for this agent
                 console.print("[dim]No session ID provided, fetching latest session for agent...[/dim]")
-                session_id = client.get_latest_session_id(start_time_ms, end_time_ms)
+                session_id = client.get_latest_session_id(start_time_ms, end_time_ms, agent_id=final_agent_id)
 
                 if not session_id:
                     console.print(f"[yellow]No sessions found for agent in the last {days} days[/yellow]")
@@ -583,18 +652,18 @@ def list_traces(
 
         # Query spans
         console.print(f"[cyan]Fetching traces from session:[/cyan] {session_id}\n")
-        spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms)
+        spans = client.query_spans_by_session(session_id, start_time_ms, end_time_ms, agent_id=final_agent_id)
 
         if not spans:
             console.print(f"[yellow]No spans found for session {session_id}[/yellow]")
             return
 
-        trace_data = TraceData(session_id=session_id, spans=spans)
-        trace_data.group_spans_by_trace()
+        trace_data = TraceData(session_id=session_id, spans=spans, agent_id=final_agent_id)
+        TraceProcessor.group_spans_by_trace(trace_data)
 
         # Filter to errors if requested
         if errors_only:
-            error_traces = trace_data.filter_error_traces()
+            error_traces = TraceProcessor.filter_error_traces(trace_data)
             if not error_traces:
                 console.print("[yellow]No failed traces found in session[/yellow]")
                 return
@@ -605,7 +674,9 @@ def list_traces(
         console.print("[dim]Fetching runtime logs for input/output...[/dim]")
         trace_ids = list(trace_data.traces.keys())
         try:
-            runtime_logs = client.query_runtime_logs_by_traces(trace_ids, start_time_ms, end_time_ms)
+            runtime_logs = client.query_runtime_logs_by_traces(
+                trace_ids, start_time_ms, end_time_ms, agent_id=final_agent_id, endpoint_name=endpoint_name
+            )
             trace_data.runtime_logs = runtime_logs
         except Exception as e:
             logger.warning("Failed to retrieve runtime logs: %s", e)

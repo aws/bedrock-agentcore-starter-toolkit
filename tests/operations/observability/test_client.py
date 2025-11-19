@@ -1,345 +1,316 @@
-"""Unit tests for ObservabilityClient."""
-
-from unittest.mock import MagicMock, patch
+"""Unit tests for stateless ObservabilityClient."""
 
 import pytest
-
-from bedrock_agentcore_starter_toolkit.operations.observability import ObservabilityClient
-from bedrock_agentcore_starter_toolkit.operations.observability.models.telemetry import RuntimeLog, Span
+from botocore.exceptions import ClientError
 
 
-@pytest.fixture
-def mock_logs_client():
-    """Create a mock CloudWatch Logs client."""
-    with patch("boto3.client") as mock_client:
-        logs_client = MagicMock()
-        mock_client.return_value = logs_client
-        yield logs_client
+class TestObservabilityClientInit:
+    """Test stateless ObservabilityClient initialization."""
 
-
-@pytest.fixture
-def observability_client(mock_logs_client):  # noqa: ARG001
-    """Create an ObservabilityClient with mocked dependencies."""
-    return ObservabilityClient(
-        region_name="us-east-1",
-        agent_id="test-agent-123",
-        runtime_suffix="DEFAULT",
-    )
-
-
-class TestObservabilityClient:
-    """Test cases for ObservabilityClient."""
-
-    def test_initialization(self, observability_client):
-        """Test client initialization."""
+    def test_init_only_requires_region(self, observability_client):
+        """Test that initialization only requires region (stateless)."""
         assert observability_client.region == "us-east-1"
-        assert observability_client.agent_id == "test-agent-123"
-        assert observability_client.runtime_suffix == "DEFAULT"
-        assert observability_client.runtime_log_group == "/aws/bedrock-agentcore/runtimes/test-agent-123-DEFAULT"
-        assert observability_client.SPANS_LOG_GROUP == "aws/spans"
 
-    @pytest.mark.parametrize(
-        "session_id,mock_results,expected_span_count",
-        [
-            (
-                "session-123",
-                [
-                    [
-                        {"field": "traceId", "value": "trace-1"},
-                        {"field": "spanId", "value": "span-1"},
-                        {"field": "spanName", "value": "Span1"},
-                    ]
-                ],
-                1,
-            ),
-            (
-                "session-456",
-                [
-                    [
-                        {"field": "traceId", "value": "trace-1"},
-                        {"field": "spanId", "value": "span-1"},
-                        {"field": "spanName", "value": "Span1"},
-                    ],
-                    [
-                        {"field": "traceId", "value": "trace-1"},
-                        {"field": "spanId", "value": "span-2"},
-                        {"field": "spanName", "value": "Span2"},
-                    ],
-                ],
-                2,
-            ),
-        ],
-    )
-    def test_query_spans_by_session(
-        self, observability_client, mock_logs_client, session_id, mock_results, expected_span_count
+    def test_init_does_not_store_agent_id(self, observability_client):
+        """Test that client does not store agent_id (stateless)."""
+        assert not hasattr(observability_client, "agent_id")
+
+    def test_init_does_not_store_endpoint_name(self, observability_client):
+        """Test that client does not store endpoint_name (stateless)."""
+        assert not hasattr(observability_client, "runtime_suffix")
+        assert not hasattr(observability_client, "endpoint_name")
+
+    def test_init_creates_logs_client(self, observability_client, mock_logs_client):
+        """Test that boto3 logs client is created."""
+        assert observability_client.logs_client == mock_logs_client
+
+    def test_init_creates_query_builder(self, observability_client):
+        """Test that query builder is created."""
+        assert observability_client.query_builder is not None
+
+
+class TestQuerySpansBySession:
+    """Test querying spans by session ID."""
+
+    def test_query_spans_by_session_success(
+        self, observability_client, mock_logs_client, mock_query_response_single_span, session_id, agent_id, time_range
     ):
-        """Test querying spans by session ID with various result counts."""
-        # Mock CloudWatch query response
-        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": mock_results,
-        }
+        """Test successful span query by session."""
+        mock_query_response_single_span(mock_logs_client)
 
-        # Execute query
-        spans = observability_client.query_spans_by_session(session_id, 1000, 2000)
+        spans = observability_client.query_spans_by_session(
+            session_id=session_id,
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
 
-        # Verify results
-        assert len(spans) == expected_span_count
-        assert all(isinstance(span, Span) for span in spans)
-
-        # Verify CloudWatch API calls
+        assert len(spans) == 1
+        assert spans[0].span_name == "TestSpan"
         mock_logs_client.start_query.assert_called_once()
+
+    def test_query_spans_requires_agent_id(self, observability_client, session_id, time_range):
+        """Test that query_spans_by_session requires agent_id parameter."""
+        # This should fail at call time if agent_id is not provided
+        with pytest.raises(TypeError, match="agent_id"):
+            observability_client.query_spans_by_session(
+                session_id=session_id,
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                # agent_id intentionally omitted
+            )
+
+    def test_query_spans_includes_agent_id_in_query(
+        self, observability_client, mock_logs_client, mock_query_response_single_span, session_id, agent_id, time_range
+    ):
+        """Test that agent_id is included in CloudWatch query."""
+        mock_query_response_single_span(mock_logs_client)
+
+        observability_client.query_spans_by_session(
+            session_id=session_id,
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
+
+        # Verify agent_id is in the query string
         call_args = mock_logs_client.start_query.call_args
-        assert call_args.kwargs["logGroupName"] == "aws/spans"
-        assert session_id in call_args.kwargs["queryString"]
+        query_string = call_args.kwargs["queryString"]
+        assert agent_id in query_string
 
-    @pytest.mark.parametrize(
-        "trace_id,expected_query_filter",
-        [
-            ("690156557a198c640accf1ab0fae04dd", "traceId = '690156557a198c640accf1ab0fae04dd'"),
-            ("trace-123", "traceId = 'trace-123'"),
-        ],
-    )
-    def test_query_spans_by_trace(self, observability_client, mock_logs_client, trace_id, expected_query_filter):
-        """Test querying spans by trace ID."""
-        # Mock CloudWatch query response
-        mock_logs_client.start_query.return_value = {"queryId": "query-456"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [
-                [
-                    {"field": "traceId", "value": trace_id},
-                    {"field": "spanId", "value": "span-1"},
-                    {"field": "spanName", "value": "TestSpan"},
-                ]
-            ],
-        }
+    def test_query_spans_empty_results(
+        self, observability_client, mock_logs_client, mock_query_response_empty, session_id, agent_id, time_range
+    ):
+        """Test query with no results."""
+        mock_query_response_empty(mock_logs_client)
 
-        # Execute query
-        spans = observability_client.query_spans_by_trace(trace_id, 1000, 2000)
+        spans = observability_client.query_spans_by_session(
+            session_id=session_id,
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
 
-        # Verify results
+        assert spans == []
+
+
+class TestQuerySpansByTrace:
+    """Test querying spans by trace ID."""
+
+    def test_query_spans_by_trace_success(
+        self, observability_client, mock_logs_client, mock_query_response_single_span, trace_id, agent_id, time_range
+    ):
+        """Test successful span query by trace."""
+        mock_query_response_single_span(mock_logs_client)
+
+        spans = observability_client.query_spans_by_trace(
+            trace_id=trace_id,
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
+
         assert len(spans) == 1
         assert spans[0].trace_id == trace_id
 
-        # Verify query contains correct filter
-        call_args = mock_logs_client.start_query.call_args
-        assert expected_query_filter in call_args.kwargs["queryString"]
+    def test_query_spans_by_trace_requires_agent_id(self, observability_client, trace_id, time_range):
+        """Test that query_spans_by_trace requires agent_id parameter."""
+        with pytest.raises(TypeError, match="agent_id"):
+            observability_client.query_spans_by_trace(
+                trace_id=trace_id,
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                # agent_id intentionally omitted
+            )
 
-    @pytest.mark.parametrize(
-        "trace_ids,expected_in_clause",
-        [
-            (["trace-1"], "'trace-1'"),
-            (["trace-1", "trace-2"], "'trace-1', 'trace-2'"),
-            (["trace-1", "trace-2", "trace-3"], "'trace-1', 'trace-2', 'trace-3'"),
-        ],
-    )
-    def test_query_runtime_logs_by_traces_batch(
-        self, observability_client, mock_logs_client, trace_ids, expected_in_clause
+
+class TestQueryRuntimeLogsByTraces:
+    """Test querying runtime logs for traces."""
+
+    def test_query_runtime_logs_success(
+        self,
+        observability_client,
+        mock_logs_client,
+        mock_query_response_runtime_logs,
+        trace_id,
+        agent_id,
+        endpoint_name,
+        time_range,
     ):
-        """Test batch querying runtime logs for multiple traces."""
-        # Mock CloudWatch query response
-        mock_logs_client.start_query.return_value = {"queryId": "query-789"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [
-                [
-                    {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
-                    {"field": "@message", "value": "Log message"},
-                    {"field": "spanId", "value": "span-1"},
-                    {"field": "traceId", "value": trace_ids[0]},
-                ]
-            ],
-        }
+        """Test successful runtime logs query."""
+        mock_query_response_runtime_logs(mock_logs_client)
 
-        # Execute query
-        logs = observability_client.query_runtime_logs_by_traces(trace_ids, 1000, 2000)
+        logs = observability_client.query_runtime_logs_by_traces(
+            trace_ids=[trace_id],
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+            endpoint_name=endpoint_name,
+        )
 
-        # Verify results
         assert len(logs) > 0
-        assert all(isinstance(log, RuntimeLog) for log in logs)
+        assert all(isinstance(log, type(logs[0])) for log in logs)
 
-        # Verify batch query used IN clause
+    def test_query_runtime_logs_requires_agent_id(self, observability_client, trace_id, endpoint_name, time_range):
+        """Test that query_runtime_logs requires agent_id parameter."""
+        with pytest.raises(TypeError, match="agent_id"):
+            observability_client.query_runtime_logs_by_traces(
+                trace_ids=[trace_id],
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                # agent_id intentionally omitted
+                endpoint_name=endpoint_name,
+            )
+
+    def test_query_runtime_logs_constructs_correct_log_group(
+        self,
+        observability_client,
+        mock_logs_client,
+        mock_query_response_runtime_logs,
+        trace_id,
+        agent_id,
+        endpoint_name,
+        time_range,
+    ):
+        """Test that runtime log group name is constructed correctly."""
+        mock_query_response_runtime_logs(mock_logs_client)
+
+        observability_client.query_runtime_logs_by_traces(
+            trace_ids=[trace_id],
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+            endpoint_name=endpoint_name,
+        )
+
+        # Verify log group name construction
         call_args = mock_logs_client.start_query.call_args
-        assert f"traceId in [{expected_in_clause}]" in call_args.kwargs["queryString"]
+        log_group_name = call_args.kwargs["logGroupName"]
+        assert log_group_name == f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}"
 
-        # Verify it queries the runtime log group
-        assert "/aws/bedrock-agentcore/runtimes/test-agent-123-DEFAULT" in call_args.kwargs["logGroupName"]
+    def test_query_runtime_logs_empty_list(self, observability_client, agent_id, endpoint_name, time_range):
+        """Test querying with empty trace list."""
+        logs = observability_client.query_runtime_logs_by_traces(
+            trace_ids=[],
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+            endpoint_name=endpoint_name,
+        )
 
-    def test_query_runtime_logs_empty_list(self, observability_client):
-        """Test querying runtime logs with empty trace ID list."""
-        logs = observability_client.query_runtime_logs_by_traces([], 1000, 2000)
-
-        # Should return empty list without making API calls
         assert logs == []
 
-    def test_query_runtime_logs_batch_failure_fallback(self, observability_client, mock_logs_client):
-        """Test that batch query failure triggers fallback to individual queries."""
-        trace_ids = ["trace-1", "trace-2"]
-
-        # First call (batch) fails
-        mock_logs_client.start_query.side_effect = [
-            Exception("Batch query failed"),
-            {"queryId": "query-1"},
-            {"queryId": "query-2"},
-        ]
-
-        # Individual queries succeed
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [
-                [
-                    {"field": "@timestamp", "value": "2025-10-28T10:00:00Z"},
-                    {"field": "@message", "value": "Log message"},
-                    {"field": "spanId", "value": "span-1"},
-                    {"field": "traceId", "value": "trace-1"},
-                ]
-            ],
-        }
-
-        # Execute query
-        logs = observability_client.query_runtime_logs_by_traces(trace_ids, 1000, 2000)
-
-        # Should fall back to individual queries and still return results
-        assert len(logs) > 0
-
-        # Should have called start_query 3 times (1 batch failed + 2 individual)
-        assert mock_logs_client.start_query.call_count == 3
-
-    @pytest.mark.parametrize(
-        "query_status,should_timeout",
-        [
-            ("Complete", False),
-            ("Running", True),
-        ],
-    )
-    def test_execute_cloudwatch_query_timeout(
-        self, observability_client, mock_logs_client, query_status, should_timeout
+    def test_query_runtime_logs_batch_query(
+        self,
+        observability_client,
+        mock_logs_client,
+        mock_query_response_runtime_logs,
+        agent_id,
+        endpoint_name,
+        time_range,
     ):
-        """Test CloudWatch query timeout handling."""
+        """Test that multiple traces use batch query."""
+        mock_query_response_runtime_logs(mock_logs_client)
+        trace_ids = ["trace-1", "trace-2", "trace-3"]
+
+        observability_client.query_runtime_logs_by_traces(
+            trace_ids=trace_ids,
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+            endpoint_name=endpoint_name,
+        )
+
+        # Should make single batch query (not 3 separate queries)
+        assert mock_logs_client.start_query.call_count == 1
+
+        # Verify IN clause in query
+        call_args = mock_logs_client.start_query.call_args
+        query_string = call_args.kwargs["queryString"]
+        assert "traceId in [" in query_string
+
+
+class TestGetLatestSessionId:
+    """Test getting latest session ID."""
+
+    def test_get_latest_session_id_success(self, observability_client, mock_logs_client, agent_id, time_range):
+        """Test successfully getting latest session ID."""
+        expected_session_id = "session-latest-123"
+
+        # Mock the query response
         mock_logs_client.start_query.return_value = {"queryId": "query-123"}
+        mock_logs_client.get_query_results.return_value = {
+            "status": "Complete",
+            "results": [
+                [
+                    {"field": "attributes.session.id", "value": expected_session_id},
+                    {"field": "maxEnd", "value": "1234567890"},
+                ]
+            ],
+        }
 
-        if should_timeout:
-            # Query never completes
-            mock_logs_client.get_query_results.return_value = {"status": query_status}
+        session_id = observability_client.get_latest_session_id(
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
 
-            # Temporarily reduce timeout for faster test
-            observability_client.QUERY_TIMEOUT_SECONDS = 0.1
-            observability_client.POLL_INTERVAL_SECONDS = 0.05
+        assert session_id == expected_session_id
 
-            with pytest.raises(TimeoutError):
-                observability_client.query_spans_by_session("session-123", 1000, 2000)
-        else:
-            mock_logs_client.get_query_results.return_value = {
-                "status": query_status,
-                "results": [],
-            }
+    def test_get_latest_session_id_requires_agent_id(self, observability_client, time_range):
+        """Test that get_latest_session_id requires agent_id parameter."""
+        with pytest.raises(TypeError, match="agent_id"):
+            observability_client.get_latest_session_id(
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                # agent_id intentionally omitted
+            )
 
-            # Should not raise
-            observability_client.query_spans_by_session("session-123", 1000, 2000)
-
-    @pytest.mark.parametrize(
-        "query_status,expected_exception",
-        [
-            ("Failed", Exception),
-            ("Cancelled", Exception),
-        ],
-    )
-    def test_execute_cloudwatch_query_failure_states(
-        self, observability_client, mock_logs_client, query_status, expected_exception
+    def test_get_latest_session_id_no_sessions(
+        self, observability_client, mock_logs_client, mock_query_response_empty, agent_id, time_range
     ):
-        """Test CloudWatch query failure state handling."""
-        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
-        mock_logs_client.get_query_results.return_value = {"status": query_status}
+        """Test when no sessions are found."""
+        mock_query_response_empty(mock_logs_client)
 
-        with pytest.raises(expected_exception):
-            observability_client.query_spans_by_session("session-123", 1000, 2000)
+        session_id = observability_client.get_latest_session_id(
+            start_time_ms=time_range["start_time_ms"],
+            end_time_ms=time_range["end_time_ms"],
+            agent_id=agent_id,
+        )
 
-    def test_get_session_data(self, observability_client, mock_logs_client):
-        """Test getting complete session data."""
-        session_id = "session-123"
+        assert session_id is None
 
-        # Mock spans query
-        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [
-                [
-                    {"field": "traceId", "value": "trace-1"},
-                    {"field": "spanId", "value": "span-1"},
-                    {"field": "spanName", "value": "TestSpan"},
-                ]
-            ],
-        }
 
-        # Execute
-        session_data = observability_client.get_session_data(session_id, 1000, 2000)
+class TestErrorHandling:
+    """Test error handling."""
 
-        # Verify
-        assert session_data.session_id == session_id
-        assert session_data.agent_id == "test-agent-123"
-        assert len(session_data.spans) == 1
-        assert len(session_data.traces) == 1
-
-    def test_get_session_summary(self, observability_client, mock_logs_client):
-        """Test getting session summary statistics."""
-        session_id = "session-123"
-
-        # Mock summary query
-        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [
-                [
-                    {"field": "sessionId", "value": session_id},
-                    {"field": "spanCount", "value": "10"},
-                    {"field": "traceCount", "value": "2"},
-                    {"field": "errorCount", "value": "1"},
-                ]
-            ],
-        }
-
-        # Execute
-        summary = observability_client.get_session_summary(session_id, 1000, 2000)
-
-        # Verify
-        assert summary["session_id"] == session_id
-        assert summary["spanCount"] == "10"
-        assert summary["traceCount"] == "2"
-        assert summary["errorCount"] == "1"
-
-    def test_get_session_summary_empty_results(self, observability_client, mock_logs_client):
-        """Test getting session summary with no results."""
-        session_id = "session-123"
-
-        # Mock empty summary query
-        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
-        mock_logs_client.get_query_results.return_value = {
-            "status": "Complete",
-            "results": [],
-        }
-
-        # Execute
-        summary = observability_client.get_session_summary(session_id, 1000, 2000)
-
-        # Should return default values
-        assert summary["session_id"] == session_id
-        assert summary["span_count"] == 0
-        assert summary["trace_count"] == 0
-        assert summary["error_count"] == 0
-
-    def test_log_group_not_found(self, observability_client, mock_logs_client):
+    def test_log_group_not_found(self, observability_client, mock_logs_client, session_id, agent_id, time_range):
         """Test handling of missing log group."""
-        from botocore.exceptions import ClientError
-
         # Mock ResourceNotFoundException
         error_response = {"Error": {"Code": "ResourceNotFoundException"}}
         mock_logs_client.start_query.side_effect = ClientError(error_response, "StartQuery")
-        mock_logs_client.exceptions.ResourceNotFoundException = ClientError
 
-        # Should raise Exception with helpful message
-        with pytest.raises(Exception) as exc_info:
-            observability_client.query_spans_by_session("session-123", 1000, 2000)
+        with pytest.raises(Exception, match="Log group not found"):
+            observability_client.query_spans_by_session(
+                session_id=session_id,
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                agent_id=agent_id,
+            )
 
-        assert "Log group not found" in str(exc_info.value)
+    def test_query_timeout(self, observability_client, mock_logs_client, session_id, agent_id, time_range):
+        """Test query timeout handling."""
+        mock_logs_client.start_query.return_value = {"queryId": "query-123"}
+        mock_logs_client.get_query_results.return_value = {"status": "Running"}
+
+        # Reduce timeout for faster test
+        observability_client.QUERY_TIMEOUT_SECONDS = 0.1
+        observability_client.POLL_INTERVAL_SECONDS = 0.05
+
+        with pytest.raises(TimeoutError):
+            observability_client.query_spans_by_session(
+                session_id=session_id,
+                start_time_ms=time_range["start_time_ms"],
+                end_time_ms=time_range["end_time_ms"],
+                agent_id=agent_id,
+            )

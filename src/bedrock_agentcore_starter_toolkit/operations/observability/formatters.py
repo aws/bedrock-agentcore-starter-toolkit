@@ -1,5 +1,9 @@
 """Formatting utilities for observability data display."""
 
+from typing import Any, Dict, Optional
+
+from ..constants import GenAIAttributes, LLMAttributes, TruncationConfig
+
 # Time conversion constants
 NANOSECONDS_PER_SECOND = 1_000_000_000
 NANOSECONDS_PER_MILLISECOND = 1_000_000
@@ -214,3 +218,205 @@ def format_status_display(has_errors: bool) -> tuple[str, str]:
         return "❌ ERROR", "red"
     else:
         return "✓ OK", "green"
+
+
+# Attribute extraction helpers
+
+
+def get_span_attribute(attributes: Dict[str, Any], *attr_names: str) -> Optional[Any]:
+    """Get first available attribute from a list of attribute names.
+
+    Args:
+        attributes: Span attributes dictionary
+        *attr_names: Variable number of attribute names to check in priority order
+
+    Returns:
+        Value of first available attribute, or None if none found
+
+    Examples:
+        >>> attrs = {"gen_ai.prompt": "Hello", "llm.prompts": "World"}
+        >>> get_span_attribute(attrs, "gen_ai.prompt", "llm.prompts")
+        'Hello'
+        >>> get_span_attribute(attrs, "missing", "llm.prompts")
+        'World'
+        >>> get_span_attribute(attrs, "missing")
+        None
+    """
+    for attr_name in attr_names:
+        value = attributes.get(attr_name)
+        if value is not None:
+            return value
+    return None
+
+
+def extract_prompt(attributes: Dict[str, Any]) -> Optional[str]:
+    """Extract prompt/user message from span attributes.
+
+    Checks GenAI and LLM attribute patterns in priority order.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        Prompt string if found, None otherwise
+
+    Examples:
+        >>> extract_prompt({"gen_ai.prompt": "Hello"})
+        'Hello'
+        >>> extract_prompt({"llm.prompts": "World"})
+        'World'
+    """
+    value = get_span_attribute(
+        attributes,
+        GenAIAttributes.PROMPT,
+        LLMAttributes.PROMPTS,
+    )
+    return str(value) if value is not None else None
+
+
+def extract_completion(attributes: Dict[str, Any]) -> Optional[str]:
+    """Extract completion/assistant response from span attributes.
+
+    Checks GenAI and LLM attribute patterns in priority order.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        Completion string if found, None otherwise
+
+    Examples:
+        >>> extract_completion({"gen_ai.completion": "Response"})
+        'Response'
+        >>> extract_completion({"llm.responses": "Answer"})
+        'Answer'
+    """
+    value = get_span_attribute(
+        attributes,
+        GenAIAttributes.COMPLETION,
+        LLMAttributes.RESPONSES,
+    )
+    return str(value) if value is not None else None
+
+
+def extract_invocation_payload(attributes: Dict[str, Any]) -> Optional[str]:
+    """Extract invocation request payload from span attributes.
+
+    Checks multiple GenAI attribute patterns for invocation data.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        Invocation payload string if found, None otherwise
+
+    Examples:
+        >>> extract_invocation_payload({"gen_ai.request.model.input": "{...}"})
+        '{...}'
+    """
+    value = get_span_attribute(
+        attributes,
+        GenAIAttributes.REQUEST_MODEL_INPUT,
+        GenAIAttributes.INVOCATION_BEDROCK,
+        GenAIAttributes.INVOCATION_REQUEST_BODY,
+        GenAIAttributes.INVOCATION_INPUT,
+    )
+    return str(value) if value is not None else None
+
+
+def extract_input_data(attributes: Dict[str, Any]) -> Optional[str]:
+    """Extract input data from span attributes.
+
+    Checks multiple GenAI attribute patterns for input data.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        Input data string if found, None otherwise
+
+    Examples:
+        >>> extract_input_data({"gen_ai.request.model.input": "{...}"})
+        '{...}'
+    """
+    value = get_span_attribute(
+        attributes,
+        GenAIAttributes.REQUEST_MODEL_INPUT,
+        GenAIAttributes.INVOCATION_INPUT,
+        GenAIAttributes.INVOCATION_REQUEST_BODY,
+    )
+    return str(value) if value is not None else None
+
+
+def extract_output_data(attributes: Dict[str, Any]) -> Optional[str]:
+    """Extract output data from span attributes.
+
+    Checks multiple GenAI attribute patterns for output data.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        Output data string if found, None otherwise
+
+    Examples:
+        >>> extract_output_data({"gen_ai.response.model.output": "{...}"})
+        '{...}'
+    """
+    value = get_span_attribute(
+        attributes,
+        GenAIAttributes.RESPONSE_MODEL_OUTPUT,
+        GenAIAttributes.INVOCATION_OUTPUT,
+        GenAIAttributes.INVOCATION_RESPONSE_BODY,
+    )
+    return str(value) if value is not None else None
+
+
+def truncate_for_display(text: str, verbose: bool = False, is_tool_use: bool = False) -> str:
+    """Truncate text for display based on verbose mode and content type.
+
+    Args:
+        text: Text to truncate
+        verbose: If True, skip truncation and return full text
+        is_tool_use: If True, use tool-specific truncation length
+
+    Returns:
+        Truncated or original text
+
+    Examples:
+        >>> truncate_for_display("Short text", verbose=False)
+        'Short text'
+        >>> long_text = "x" * 300
+        >>> result = truncate_for_display(long_text, verbose=False)
+        >>> len(result) <= 253  # 250 + "..." marker
+        True
+        >>> truncate_for_display(long_text, verbose=True) == long_text
+        True
+    """
+    if verbose:
+        return text
+    return TruncationConfig.truncate(text, is_tool_use=is_tool_use)
+
+
+def has_llm_attributes(attributes: Dict[str, Any]) -> bool:
+    """Check if span has any LLM-related attributes.
+
+    Args:
+        attributes: Span attributes dictionary
+
+    Returns:
+        True if span has prompt, completion, or invocation attributes
+
+    Examples:
+        >>> has_llm_attributes({"gen_ai.prompt": "Hello"})
+        True
+        >>> has_llm_attributes({"span.kind": "internal"})
+        False
+    """
+    return any(
+        [
+            extract_prompt(attributes) is not None,
+            extract_completion(attributes) is not None,
+            extract_invocation_payload(attributes) is not None,
+        ]
+    )
