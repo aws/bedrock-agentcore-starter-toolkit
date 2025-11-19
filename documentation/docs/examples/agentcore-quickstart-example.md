@@ -269,8 +269,8 @@ agentcore configure \
 
 Create the credential provider and workload identity for OAuth flows:
 
+##### Create credential provider (uses Resource User Pool)
 ```bash
-# Create credential provider (uses Resource User Pool)
 agentcore identity create-credential-provider \
   --name ExternalServiceProvider \
   --type cognito \
@@ -278,8 +278,10 @@ agentcore identity create-credential-provider \
   --client-secret $IDENTITY_CLIENT_SECRET \
   --discovery-url $IDENTITY_DISCOVERY_URL \
   --cognito-pool-id $IDENTITY_POOL_ID
+```
 
-# Create workload identity
+##### Create workload identity
+```bash
 agentcore identity create-workload-identity \
   --name quickstart-workload
 ```
