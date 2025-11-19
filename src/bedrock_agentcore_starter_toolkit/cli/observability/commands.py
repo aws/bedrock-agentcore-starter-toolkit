@@ -459,6 +459,15 @@ def _show_session_view(
     """Show traces from a session.
 
     Args:
+        client: ObservabilityClient instance
+        session_id: Session ID to query
+        start_time_ms: Query start time in milliseconds
+        end_time_ms: Query end time in milliseconds
+        verbose: Show full payloads without truncation
+        errors_only: Filter to only show failed traces
+        output: Optional file path to export JSON data
+        agent_id: Agent ID for querying
+        endpoint_name: Runtime log group suffix
         show_all: If True, shows all traces. If False, shows only the Nth most recent trace.
         nth_last: Which trace to show when show_all=False (1=latest, 2=2nd latest, etc.)
     """
@@ -509,7 +518,9 @@ def _show_session_view(
         sorted_traces = sorted(trace_data.traces.items(), key=lambda x: get_latest_time(x[1]), reverse=True)
 
         if len(sorted_traces) < nth_last:
-            console.print(f"[yellow]Only {len(sorted_traces)} trace(s) found, but you requested the {nth_last}th[/yellow]")
+            console.print(
+                f"[yellow]Only {len(sorted_traces)} trace(s) found, but you requested the {nth_last}th[/yellow]"
+            )
             nth_last = len(sorted_traces)
 
         trace_id, trace_spans = sorted_traces[nth_last - 1]

@@ -40,9 +40,7 @@ class TestObservabilityInit:
         assert obs.agent_id == "config-agent"
         assert obs.region == "us-west-2"
         assert obs.endpoint_name == "PROD"
-        mock_create.assert_called_once_with(
-            agent="my-agent", agent_id=None, region=None, runtime_suffix="PROD"
-        )
+        mock_create.assert_called_once_with(agent="my-agent", agent_id=None, region=None, runtime_suffix="PROD")
 
     @patch("bedrock_agentcore_starter_toolkit.cli.observability.commands._create_observability_client")
     def test_init_creates_visualizer(self, mock_create):
