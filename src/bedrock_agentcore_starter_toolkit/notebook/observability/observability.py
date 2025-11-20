@@ -5,9 +5,8 @@ from typing import Optional
 
 from rich.console import Console
 
-from ...operations.constants import DEFAULT_RUNTIME_SUFFIX
+from ...operations.constants import DEFAULT_LOOKBACK_DAYS, DEFAULT_RUNTIME_SUFFIX
 from ...operations.observability import TraceVisualizer
-from ...operations.observability.constants import DEFAULT_LOOKBACK_DAYS
 from ...operations.observability.telemetry import TraceData
 from ...operations.observability.trace_processor import TraceProcessor
 

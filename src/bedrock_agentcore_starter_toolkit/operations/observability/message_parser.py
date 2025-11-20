@@ -138,7 +138,9 @@ class UnifiedLogParser:
 
         return None
 
-    def _extract_generic_otel(self, raw_message: Dict[str, Any], body: Dict[str, Any], timestamp: str) -> List[Dict[str, Any]]:
+    def _extract_generic_otel(
+        self, raw_message: Dict[str, Any], body: Dict[str, Any], timestamp: str
+    ) -> List[Dict[str, Any]]:
         """Extract from generic OTEL format (gen_ai events or input/output structure)."""
         attributes = raw_message.get("attributes", {})
         event_name = attributes.get("event.name", "") if isinstance(attributes, dict) else ""

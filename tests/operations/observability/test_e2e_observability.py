@@ -530,23 +530,20 @@ class TestE2EObservabilityMessageDisplay:
             assert "Input" in output, "Table should have Input column"
             assert "Output" in output, "Table should have Output column"
 
-            # Validate specific user input from fixtures (may be truncated)
-            # Check for partial match since list view truncates
-            assert "Hello" in output and ("find everything" in output or "abo..." in output), (
+            # Validate specific user input from fixtures (may be truncated or split across lines)
+            # Check for partial match since list view truncates and table may wrap text
+            assert "Hello" in output and ("find" in output or "memory" in output), (
                 "User input message content should be visible (may be truncated)"
             )
 
-            # Validate assistant response structure from fixtures
-            assert "outputs" in output.lower() or "messages" in output, "Assistant response structure should be visible"
+            # Validate assistant response - check for actual extracted content, not raw JSON
+            assert "apologize" in output.lower() or "help you" in output.lower(), (
+                "Assistant response content should be visible"
+            )
 
             # Validate status indicators in table
             has_status = "✓" in output or "❌" in output or "⚠" in output
             assert has_status, "Status indicators should be present in trace list"
-
-            # Validate input/output structure with JSON-like format
-            assert '{"inputs"' in output or '{"outputs"' in output or "inputs" in output.lower(), (
-                "Input/Output JSON structure should be visible in list table"
-            )
 
             # Validate trace count message
             assert "Found" in output and "trace" in output.lower(), "Summary message with trace count should be shown"

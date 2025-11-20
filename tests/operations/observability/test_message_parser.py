@@ -107,7 +107,8 @@ class TestUnifiedLogParserWithLangchain:
     def test_langchain_scope_detection(self, parser, langchain_runtime_logs):
         """Test that LangChain instrumentation is detected via scope.name."""
         langchain_logs = [
-            log for log in langchain_runtime_logs
+            log
+            for log in langchain_runtime_logs
             if log.get("scope", {}).get("name") == "opentelemetry.instrumentation.langchain"
         ]
 

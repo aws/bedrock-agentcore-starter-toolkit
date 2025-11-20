@@ -2,7 +2,6 @@
 
 import os
 
-
 # Default Time Ranges
 DEFAULT_LOOKBACK_DAYS = int(os.getenv("AGENTCORE_DEFAULT_LOOKBACK_DAYS", "7"))
 
