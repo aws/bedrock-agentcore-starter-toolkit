@@ -8,6 +8,7 @@ from ..cli.gateway.commands import (
     gateway_app,
 )
 from ..cli.memory.commands import memory_app
+from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
 from .identity.commands import identity_app
 from .import_agent.commands import import_agent
@@ -42,6 +43,9 @@ app.add_typer(gateway_app, name="gateway")
 
 # memory
 app.add_typer(memory_app, name="memory")
+
+# observability
+app.add_typer(observability_app, name="obs")
 
 # import-agent
 app.command("import-agent")(import_agent)
