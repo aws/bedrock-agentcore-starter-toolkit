@@ -3,6 +3,14 @@
 import os
 
 
+# Default Time Ranges
+DEFAULT_LOOKBACK_DAYS = int(os.getenv("AGENTCORE_DEFAULT_LOOKBACK_DAYS", "7"))
+
+
+# Query Batch Sizes
+DEFAULT_BATCH_SIZE = int(os.getenv("AGENTCORE_BATCH_SIZE", "50"))
+
+
 # OpenTelemetry Field Names
 class OTelFields:
     """Standard OpenTelemetry field names used across spans and logs."""
@@ -62,6 +70,15 @@ class LLMAttributes:
 
     PROMPTS = f"{AttributePrefixes.LLM}.prompts"
     RESPONSES = f"{AttributePrefixes.LLM}.responses"
+
+
+# Instrumentation Scope Names
+class InstrumentationScopes:
+    """Standard scope.name values for different instrumentation sources."""
+
+    OTEL_LANGCHAIN = "opentelemetry.instrumentation.langchain"
+    OPENINFERENCE_LANGCHAIN = "openinference.instrumentation.langchain"
+    STRANDS = "strands.telemetry.tracer"
 
 
 # Default Runtime Configuration

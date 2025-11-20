@@ -9,12 +9,11 @@ from typing import Optional
 import typer
 from rich.text import Text
 
-from ...operations.constants import DEFAULT_RUNTIME_SUFFIX
+from ...operations.constants import DEFAULT_LOOKBACK_DAYS, DEFAULT_RUNTIME_SUFFIX
 from ...operations.observability import (
     ObservabilityClient,
     TraceVisualizer,
 )
-from ...operations.observability.constants import DEFAULT_LOOKBACK_DAYS
 from ...operations.observability.formatters import calculate_age_seconds
 from ...operations.observability.telemetry import TraceData
 from ...operations.observability.trace_processor import TraceProcessor
@@ -162,13 +161,13 @@ def _display_trace_list(trace_data: TraceData, session_id: str) -> None:
     sorted_traces = sorted(trace_data.traces.items(), key=lambda x: get_latest_time(x[1]), reverse=True)
 
     table = Table(title=f"Traces in Session {session_id}")
-    table.add_column("#", style="cyan", justify="right")
-    table.add_column("Trace ID", style="bright_blue", no_wrap=True, width=36)
-    table.add_column("Duration", justify="right", style="green", width=10)
-    table.add_column("Status", justify="center", width=12)
-    table.add_column("Input", style="cyan", width=30, no_wrap=False)
-    table.add_column("Output", style="green", width=30, no_wrap=False)
-    table.add_column("Age", style="dim", width=8)
+    table.add_column("#", style="cyan", justify="right", width=3)
+    table.add_column("Trace ID", style="bright_blue", no_wrap=True, width=34)
+    table.add_column("Duration", justify="right", style="green", width=9)
+    table.add_column("Status", justify="center", width=11)
+    table.add_column("Input", style="cyan", width=29, no_wrap=False)
+    table.add_column("Output", style="green", width=29, no_wrap=False)
+    table.add_column("Age", style="dim", width=7)
 
     now = datetime.now().timestamp() * 1_000_000_000
 

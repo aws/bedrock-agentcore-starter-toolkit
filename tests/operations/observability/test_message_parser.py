@@ -69,7 +69,60 @@ class TestUnifiedLogParserWithLangchain:
                     assert item["role"] in ["user", "assistant", "system", "tool", "unknown"]
 
         # Langchain should have some messages
-        assert message_count >= 0  # May be 0 if logs don't contain gen_ai events
+        assert message_count > 0  # Should extract messages from JSON strings
+
+    def test_langchain_json_string_extraction(self, parser, langchain_runtime_logs):
+        """Test that LangChain JSON strings are parsed correctly."""
+        user_messages = []
+        assistant_messages = []
+
+        for log in langchain_runtime_logs:
+            items = parser.parse(log, timestamp="2025-11-18T00:00:00Z")
+
+            for item in items:
+                if item.get("type") == "message":
+                    if item["role"] == "user":
+                        user_messages.append(item)
+                    elif item["role"] == "assistant":
+                        assistant_messages.append(item)
+
+        # Should extract user messages from inputs
+        assert len(user_messages) > 0
+        for msg in user_messages:
+            # Should extract actual text, not raw JSON
+            assert not msg["content"].startswith('{"inputs"')
+            assert not msg["content"].startswith('{"lc"')
+            # Should have actual readable content
+            assert len(msg["content"]) > 0
+
+        # Should extract assistant messages from outputs (last message)
+        assert len(assistant_messages) > 0
+        for msg in assistant_messages:
+            # Should extract actual AI response, not raw JSON or echo of input
+            assert not msg["content"].startswith('{"outputs"')
+            assert not msg["content"].startswith('{"lc"')
+            # Should have actual readable content
+            assert len(msg["content"]) > 0
+
+    def test_langchain_scope_detection(self, parser, langchain_runtime_logs):
+        """Test that LangChain instrumentation is detected via scope.name."""
+        langchain_logs = [
+            log for log in langchain_runtime_logs
+            if log.get("scope", {}).get("name") == "opentelemetry.instrumentation.langchain"
+        ]
+
+        # Should have logs with langchain scope
+        assert len(langchain_logs) > 0
+
+        # Count total messages extracted from all langchain logs
+        total_messages = 0
+        for log in langchain_logs:
+            items = parser.parse(log, timestamp="2025-11-18T00:00:00Z")
+            messages = [item for item in items if item.get("type") == "message"]
+            total_messages += len(messages)
+
+        # Should extract at least some messages from langchain instrumented logs
+        assert total_messages > 0
 
     def test_langchain_exception_extraction(self, parser, langchain_runtime_logs):
         """Test that langchain exceptions are extracted correctly."""
