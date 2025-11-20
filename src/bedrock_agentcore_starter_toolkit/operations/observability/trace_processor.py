@@ -181,7 +181,7 @@ class TraceProcessor:
                 items = parser.parse(log.raw_message, log.timestamp)
                 msgs = [item for item in items if item.get("type") == "message"]
                 messages.extend(msgs)
-            except Exception:
+            except Exception:  # nosec B112  # Skip malformed logs gracefully
                 continue
 
         messages.sort(key=lambda m: m.get("timestamp", ""))
