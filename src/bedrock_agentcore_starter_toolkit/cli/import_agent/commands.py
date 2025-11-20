@@ -101,7 +101,6 @@ def _agentcore_invoke_cli(output_dir):
             continue
 
 
-@app.command()
 def import_agent(
     agent_id: str = typer.Option(None, "--agent-id", help="ID of the Bedrock Agent to import"),
     agent_alias_id: str = typer.Option(None, "--agent-alias-id", help="ID of the Agent Alias to use"),
