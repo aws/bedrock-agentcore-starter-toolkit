@@ -175,5 +175,5 @@ CodeBuild automatically:
 - [Amazon Bedrock AgentCore Documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/agentcore.html)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [CloudFormation Template Reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/AWS_BedrockAgentCore.html)
-- [Original Tutorial](../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/01-tutorials/01-AgentCore-runtime/02-hosting-MCP-server/)
-- [Detailed Technical Guide](../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime/DETAILED_GUIDE.md)
+- [Original Tutorial](https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/01-tutorials/01-AgentCore-runtime/02-hosting-MCP-server/index.md)
+- [Detailed Technical Guide](https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime/DETAILED_GUIDE.md)

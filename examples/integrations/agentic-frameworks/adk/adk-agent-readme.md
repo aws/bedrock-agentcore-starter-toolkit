@@ -145,6 +145,6 @@ The agent is wrapped with the Bedrock AgentCore framework, which handles:
 
 ## Additional Resources
 
-- [Google ADK Documentation](<../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/03-integrations/agentic-frameworks/adk/%5Bhttps:/github.com/google/adk%5D(https:/google.github.io/adk-docs/)>)
+- [Google ADK Documentation](<https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/03-integrations/agentic-frameworks/adk/%5Bhttps:/github.com/google/adk%5D(https:/google.github.io/adk-docs/)>)
 - [Gemini API Documentation](https://ai.google.dev/docs)
 - [Bedrock AgentCore Documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/agents-core.html)

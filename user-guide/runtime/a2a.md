@@ -209,7 +209,7 @@ strands-agents-tools
 
 #### Set up Cognito user pool for authentication
 
-Configure authentication for secure access to your deployed server. For detailed Cognito setup instructions, see [Set up Cognito user pool for authentication](./runtime-mcp.html#runtime-mcp-appendix-a "./runtime-mcp.html#runtime-mcp-appendix-a"). This provides the OAuth tokens required for secure access to your deployed server.
+Configure authentication for secure access to your deployed server. For detailed Cognito setup instructions, see [Set up Cognito user pool for authentication](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/runtime-mcp.html#runtime-mcp-appendix-a "./runtime-mcp.html#runtime-mcp-appendix-a"). This provides the OAuth tokens required for secure access to your deployed server.
 
 #### Configure your A2A server for deployment
 

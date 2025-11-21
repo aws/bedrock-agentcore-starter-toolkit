@@ -96,7 +96,7 @@ aws configure
 
 ### CDK vs CloudFormation
 
-This is the **CDK version** of the basic AgentCore runtime. If you prefer CloudFormation, see the [CloudFormation version](../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/cloudformation/basic-runtime/).
+This is the **CDK version** of the basic AgentCore runtime. If you prefer CloudFormation, see the [CloudFormation version](https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/cloudformation/basic-runtime/index.md).
 
 ### Option 1: Quick Deploy (Recommended)
 
@@ -310,8 +310,8 @@ If the runtime fails to start:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](../../../../../https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://aws.github.io/https:/raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/LICENSE) file for details.

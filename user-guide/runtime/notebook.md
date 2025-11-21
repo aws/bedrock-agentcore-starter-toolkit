@@ -84,4 +84,4 @@ print(response)  # {"result": "You said: Test from notebook"}
 - **Configuration limitations** - Fewer options than full CLI interface
 - **No interactive prompts** - All configuration must be provided programmatically
 
-For full-featured development and production deployment, use the [AgentCore CLI](../../api-reference/runtime-cli.md) instead.
+For full-featured development and production deployment, use the [AgentCore CLI](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/runtime-cli.md) instead.

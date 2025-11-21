@@ -28,7 +28,7 @@ pip install bedrock-agentcore-starter-toolkit
 
 **Note:** The AgentCore Starter Toolkit is intended to help developers get started quickly. For the complete set of AgentCore Memory operations, see the Boto3 documentation: [bedrock-agentcore-control](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore-control.html) and [bedrock-agentcore](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agentcore.html).
 
-**Full example:** See the [complete code example](../../examples/semantic_search.html) that demonstrates steps 1-3.
+**Full example:** See the [complete code example](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/semantic_search.html) that demonstrates steps 1-3.
 
 ## Step One: Create a Memory Resource
 

@@ -158,4 +158,4 @@ agentcore import-agent --output-dir ./my-custom-agent
 - **Customize Integration**: Add custom AgentCore primitive configurations
 - **Production Deployment**: Deploy to AgentCore Runtime for production usage
 
-For detailed configuration options, see the [Configuration Reference](configuration.html).
+For detailed configuration options, see the [Configuration Reference](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/configuration.html).

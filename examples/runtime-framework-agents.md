@@ -4,7 +4,7 @@ This guide shows how to use popular AI agent frameworks with Amazon Bedrock Agen
 
 ## Prerequisites
 
-Before starting, ensure you've completed the [QuickStart guide](../runtime/quickstart.md) and have:
+Before starting, ensure you've completed the [QuickStart guide](https://aws.github.io/bedrock-agentcore-starter-toolkit/runtime/quickstart.md) and have:
 
 - AWS credentials configured
 - AgentCore CLI installed (`agentcore --help` works)

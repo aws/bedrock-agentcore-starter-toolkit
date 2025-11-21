@@ -89,7 +89,7 @@ flowchart TD
 
 ## Next Steps
 
-- [Quick Start Guide](quickstart.html) - Get started in 5 minutes
-- [Configuration Reference](configuration.html) - Detailed parameter guide
-- [Design Choices](design.html) - Details on the design of the generated agent
-- [Design Choices](design.html) - Details on the design of the generated agent
+- [Quick Start Guide](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/quickstart.html) - Get started in 5 minutes
+- [Configuration Reference](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/configuration.html) - Detailed parameter guide
+- [Design Choices](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/design.html) - Details on the design of the generated agent
+- [Design Choices](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/design.html) - Details on the design of the generated agent

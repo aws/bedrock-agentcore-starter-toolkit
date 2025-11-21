@@ -252,7 +252,7 @@ AgentCore Runtime supports asynchronous processing for long-running tasks. Your 
 - External API calls with retries
 - Batch operations and reports
 
-See the [Async Processing Guide](async.html) for detailed examples and testing strategies.
+See the [Async Processing Guide](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/async.html) for detailed examples and testing strategies.
 
 ## Local Development
 
