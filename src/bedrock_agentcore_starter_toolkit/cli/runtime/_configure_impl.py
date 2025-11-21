@@ -130,54 +130,74 @@ def configure_impl(
     # create mode configuration is only passed by CLI
     create_mode_enabled = create
 
-    # Interactive entrypoint selection
-    if not entrypoint:
-        if non_interactive or create_mode_enabled:
-            entrypoint_input = "."
-        else:
-            console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
-            console.print("[dim]Specify the entry point (use Tab for autocomplete):[/dim]")
-            console.print("[dim]  • File path: weather/agent.py[/dim]")
-            console.print("[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]")
-            console.print("[dim]  • Current directory: press Enter[/dim]")
+    # Existing agent created via create flow
+    existing_create_agent = (
+        existing_config.agents[existing_config.default_agent].is_created_via_create_flow
+        if existing_config and existing_config.default_agent in existing_config.agents
+        else False
+    )
 
-            entrypoint_input = (
-                prompt("Entrypoint: ", completer=PathCompleter(), complete_while_typing=True, default="").strip() or "."
+    # If existing create-flow agent detected, use its configuration and inform user
+    if existing_create_agent:
+        existing_agent_config = existing_config.agents[existing_config.default_agent]
+
+        console.print(
+            Panel(
+                f"[bold]Agent:[/bold] {existing_agent_config.name}\n"
+                f"[bold]Entrypoint:[/bold] {existing_agent_config.entrypoint}\n"
+                f"[bold]Source Path:[/bold] {existing_agent_config.source_path}\n\n"
+                "[yellow]Continuing may overwrite your existing configuration for: "
+                "deployment type, memory, request headers, VPC, authorizer, and other settings.\n\n"
+                "Press Ctrl+C to cancel if you want to keep your current configuration.[/yellow]",
+                title="Existing Agent Detected",
+                border_style="cyan",
             )
-    else:
-        entrypoint_input = entrypoint
-
-    # Resolve the entrypoint_input (handles both file and directory)
-    entrypoint_path = Path(entrypoint_input).resolve()
-
-    # Validate that the path is within the current directory
-    current_dir = Path.cwd().resolve()
-    try:
-        entrypoint_path.relative_to(current_dir)
-    except ValueError:
-        _handle_error(
-            f"Path must be within the current directory: {entrypoint_input}\n"
-            f"External paths are not supported for project portability.\n"
-            f"Consider copying the file into your project directory."
         )
 
-    if create_mode_enabled:
-        entrypoint = entrypoint_input
-        source_path = "."
-    elif entrypoint_path.is_file():
-        # It's a file - use directly as entrypoint
-        entrypoint = str(entrypoint_path)
-        source_path = str(entrypoint_path.parent)
-        if not non_interactive:
-            rel_path = get_relative_path(entrypoint_path)
-            _print_success(f"Using file: {rel_path}")
-    elif entrypoint_path.is_dir():
-        # It's a directory - detect entrypoint within it
-        source_path = str(entrypoint_path)
-        entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
-    else:
+        # Use values from existing config
+        entrypoint = existing_agent_config.entrypoint
+        agent_name = existing_agent_config.name
+        source_path = existing_agent_config.source_path or "."
+        # Skip requirements prompt for create-flow agents
+        final_requirements_file = None
+
+    # Interactive entrypoint selection (skip if existing create-flow agent)
+    if not existing_create_agent:
+        if not entrypoint:
+            if non_interactive or create_mode_enabled:
+                entrypoint_input = "."
+            else:
+                console.print("\n📂 [cyan]Entrypoint Selection[/cyan]")
+                console.print("[dim]Specify the entry point (use Tab for autocomplete):[/dim]")
+                console.print("[dim]  • File path: weather/agent.py[/dim]")
+                console.print("[dim]  • Directory: weather/ (auto-detects main.py, agent.py, app.py)[/dim]")
+                console.print("[dim]  • Current directory: press Enter[/dim]")
+
+                entrypoint_input = (
+                    prompt("Entrypoint: ", completer=PathCompleter(), complete_while_typing=True, default="").strip()
+                    or "."
+                )
+        else:
+            entrypoint_input = entrypoint
+
+        # Resolve the entrypoint_input (handles both file and directory)
         entrypoint_path = Path(entrypoint_input).resolve()
-        if entrypoint_path.is_file():
+
+        # Validate that the path is within the current directory
+        current_dir = Path.cwd().resolve()
+        try:
+            entrypoint_path.relative_to(current_dir)
+        except ValueError:
+            _handle_error(
+                f"Path must be within the current directory: {entrypoint_input}\n"
+                f"External paths are not supported for project portability.\n"
+                f"Consider copying the file into your project directory."
+            )
+
+        if create_mode_enabled:
+            entrypoint = entrypoint_input
+            source_path = "."
+        elif entrypoint_path.is_file():
             # It's a file - use directly as entrypoint
             entrypoint = str(entrypoint_path)
             source_path = str(entrypoint_path.parent)
@@ -189,16 +209,29 @@ def configure_impl(
             source_path = str(entrypoint_path)
             entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
         else:
-            _handle_error(f"Path not found: {entrypoint_input}")
+            entrypoint_path = Path(entrypoint_input).resolve()
+            if entrypoint_path.is_file():
+                # It's a file - use directly as entrypoint
+                entrypoint = str(entrypoint_path)
+                source_path = str(entrypoint_path.parent)
+                if not non_interactive:
+                    rel_path = get_relative_path(entrypoint_path)
+                    _print_success(f"Using file: {rel_path}")
+            elif entrypoint_path.is_dir():
+                # It's a directory - detect entrypoint within it
+                source_path = str(entrypoint_path)
+                entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+            else:
+                _handle_error(f"Path not found: {entrypoint_input}")
 
-    # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
-    if not agent_name:
-        if create_mode_enabled:
-            suggested_name = "create_agent"
-        else:
-            entrypoint_path = Path(entrypoint)
-            suggested_name = infer_agent_name(entrypoint_path)
-        agent_name = config_manager.prompt_agent_name(suggested_name)
+        # Infer agent name from full entrypoint path (e.g., agents/writer/main.py -> agents_writer_main)
+        if not agent_name:
+            if create_mode_enabled:
+                suggested_name = "create_agent"
+            else:
+                entrypoint_path = Path(entrypoint)
+                suggested_name = infer_agent_name(entrypoint_path)
+            agent_name = config_manager.prompt_agent_name(suggested_name)
 
     valid, error = validate_agent_name(agent_name)
     if not valid:
@@ -221,9 +254,10 @@ def configure_impl(
     _validate_deployment_type_compatibility(agent_name, deployment_type)
 
     # Handle dependency file selection with simplified logic
+    # Skip for create mode and existing create-flow agents (already set to None above)
     if create_mode_enabled:
         final_requirements_file = None
-    else:
+    elif not existing_create_agent:
         final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     def _validate_cli_args(
@@ -534,6 +568,7 @@ def configure_impl(
             max_lifetime=max_lifetime,
             deployment_type=deployment_type,
             runtime_type=runtime_type,
+            is_created_via_create_flow=existing_create_agent,
         )
 
         # Prepare authorization info for summary

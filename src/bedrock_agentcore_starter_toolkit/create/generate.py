@@ -63,6 +63,7 @@ def generate_project(
         python_dependencies=[],
         agent_name=name + "_Agent",
         api_key_env_var_name=api_key_name,
+        is_created_via_create_flow=True,
     )
     # override IAC specific settings
     if iac_provider:

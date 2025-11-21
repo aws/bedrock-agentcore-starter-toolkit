@@ -160,6 +160,7 @@ def configure_bedrock_agentcore(
     max_lifetime: Optional[int] = None,
     deployment_type: str = "direct_code_deploy",
     runtime_type: Optional[str] = None,
+    is_created_via_create_flow: bool = False,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -194,6 +195,7 @@ def configure_bedrock_agentcore(
         runtime_type: Python runtime version for direct_code_deploy (e.g., "PYTHON_3_10", "PYTHON_3_11")
         auto_create_s3: Whether to auto-create S3 bucket for direct_code_deploy deployment
         s3_path: S3 path for direct_code_deploy deployment
+        is_created_via_create_flow: Whether this agent was created via agentcore create command
 
     Returns:
         ConfigureResult model with configuration details
@@ -553,6 +555,7 @@ def configure_bedrock_agentcore(
         authorizer_configuration=authorizer_configuration,
         request_header_configuration=request_header_configuration,
         memory=memory_config,
+        is_created_via_create_flow=is_created_via_create_flow,
     )
 
     # Use simplified config merging

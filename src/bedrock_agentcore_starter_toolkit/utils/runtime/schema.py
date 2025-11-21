@@ -259,6 +259,9 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     api_key_credential_provider_name: Optional[str] = Field(
         default=None, description="Name of the API Key Credential Provider created in AgentCore Identity"
     )
+    is_created_via_create_flow: Optional[bool] = Field(
+        default=False, description="True if the agent is created with agentcore create"
+    )
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""

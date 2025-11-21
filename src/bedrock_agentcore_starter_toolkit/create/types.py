@@ -63,6 +63,9 @@ class ProjectContext:
     # api key authentication
     api_key_env_var_name: Optional[str] = False
 
+    # Supports editing existing agent in .bedrock_agentcore.yaml
+    is_created_via_create_flow: Optional[bool] = False
+
     def dict(self):
         """Return dataclass as dictionary."""
         return asdict(self)
