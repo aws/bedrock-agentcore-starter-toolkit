@@ -16,12 +16,12 @@ class StrandsFeature(Feature):
 
         # For monorepo, only Bedrock is supported (templates don't have model provider subdirs)
         if context.template_dir_selection == TemplateDirSelection.MONOREPO:
-            self.python_dependencies = ["strands-agents >= 1.13.0", "mcp >= 1.19.0"]
+            self.python_dependencies = ["strands-agents >= 1.13.0", "mcp >= 1.19.0", "strands-agents-tools >= 0.2.16"]
             # model_provider_name not needed for monorepo (no subdirectories)
         else:
             # For runtime_only, set model_provider_name to select correct template subdirectory
             self.model_provider_name = context.model_provider.lower()
-            base_python_dependencies = ["mcp >= 1.19.0"]
+            base_python_dependencies = ["mcp >= 1.19.0", "strands-agents-tools >= 0.2.16"]
             match context.model_provider:
                 case ModelProvider.Bedrock:
                     self.python_dependencies = base_python_dependencies + ["strands-agents >= 1.13.0"]
