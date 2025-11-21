@@ -1,0 +1,367 @@
+"""UI components for interactive CLI selectors."""
+
+import re
+from time import sleep
+
+from prompt_toolkit.application import Application
+from prompt_toolkit.filters import Condition
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import HSplit, Layout, VSplit
+from prompt_toolkit.layout.containers import ConditionalContainer, Window
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.output import ColorDepth
+from prompt_toolkit.styles import Style, StyleTransformation
+from prompt_toolkit.widgets import TextArea
+
+from ..cli.common import console
+
+# Updated Color: #42B4FF from UX designer
+RICH_CYAN_COLOR_CODE = "fg:#42B4FF"
+
+STYLE = Style.from_dict(
+    {
+        "": "nounderline",
+        "title": "bold fg:#ffffff",
+        "option-name": "bold fg:#ffffff",
+        "option-desc": "fg:#777777",
+        "cyan": RICH_CYAN_COLOR_CODE,
+        "selected-bullet": RICH_CYAN_COLOR_CODE,
+        "selected-name": f"bold {RICH_CYAN_COLOR_CODE}",
+        "error": "fg:#ff5f5f",
+    }
+)
+
+
+class NoUnderline(StyleTransformation):
+    """Disable underline styling."""
+
+    def transform_attrs(self, attrs):
+        """Return attrs without underline."""
+        return attrs._replace(underline=False)
+
+
+# ---------------------------------------------------------------------------
+# STATE + FRAGMENTS
+# ---------------------------------------------------------------------------
+
+
+class OptionState:
+    """Track selector cursor and chosen value."""
+
+    def __init__(self, values: list[tuple[str, str, str | None]]):
+        """Initialize state with a list of (value, name, desc)."""
+        self.values = values
+        self.current = 0
+        self.selected = values[0][0] if values else None
+        self.finalized = False  # <--- NEW: Tracks if selection is made
+
+        # Calculate the maximum length of the names for alignment purposes
+        self.max_name_len = max((len(n) for _, n, _ in values), default=0)
+
+    @property
+    def current_value(self):
+        """Return the value at the cursor."""
+        return self.values[self.current][0]
+
+
+def build_option_fragments(state: OptionState):
+    """Produce formatted line fragments for the option list."""
+    # <--- NEW: If finalized, ONLY return the selected line (Collapse effect)
+    if state.finalized:
+        return [
+            ("class:cyan", "> ● "),
+            ("class:selected-name", state.selected or ""),
+            ("", "\n"),
+        ]
+
+    # Standard rendering logic
+    frags = []
+    for idx, (val, name, desc) in enumerate(state.values):
+        is_cursor = idx == state.current
+        is_checked = val == state.selected
+
+        if is_cursor:
+            prefix_style = "class:cyan"
+            bullet_style = "class:cyan"
+            name_style = "class:selected-name"
+        else:
+            prefix_style = ""
+            bullet_style = "class:option-name"
+            name_style = "class:option-name"
+
+        cursor_prefix = "> " if is_cursor else "  "
+        bullet = "● " if is_checked else "○ "
+
+        frags.append((prefix_style, cursor_prefix))
+        frags.append((bullet_style, bullet))
+        frags.append((name_style, name))
+
+        if desc and desc.strip():
+            required_padding = state.max_name_len - len(name)
+            pad_len = min(required_padding, 7)
+            padding = " " * pad_len
+            frags.append(("class:option-desc", f"{padding} - {desc}"))
+
+        frags.append(("", "\n"))
+
+    return frags
+
+
+# ---------------------------------------------------------------------------
+# WELCOME SCREEN
+# ---------------------------------------------------------------------------
+
+
+def show_create_welcome_ascii() -> None:
+    """Display the simple welcome message."""
+    console.print()
+    console.print("[bold #00bfff]🤖 AgentCore activated.[/bold #00bfff] Let's build your agent.")
+    _pause_and_new_line_on_finish()
+
+
+# ---------------------------------------------------------------------------
+# SELECT-ONE CONTROL
+# ---------------------------------------------------------------------------
+
+
+def select_one(title: str, options: list[str] | dict[str, str], default: str | None = None):
+    """Interactive single-choice selector."""
+    if isinstance(options, dict):
+        values = [(val, val, desc) for val, desc in options.items()]
+    else:
+        values = [(val, val, None) for val in options]
+
+    state = OptionState(values)
+
+    options_control = FormattedTextControl(
+        lambda: build_option_fragments(state),
+        focusable=True,
+        show_cursor=False,
+    )
+
+    # Note: We keep the title separate so it stays visible even after collapse
+    title_window = Window(
+        FormattedTextControl([("class:title", title)], focusable=False),
+        height=1,
+        dont_extend_height=True,
+    )
+
+    options_window = Window(
+        options_control,
+        always_hide_cursor=True,
+        wrap_lines=False,
+    )
+
+    kb = KeyBindings()
+
+    @kb.add("down")
+    def _(e):
+        if not state.finalized and state.current < len(state.values) - 1:
+            state.current += 1
+        state.selected = state.current_value
+        e.app.invalidate()
+
+    @kb.add("up")
+    def _(e):
+        if not state.finalized and state.current > 0:
+            state.current -= 1
+        state.selected = state.current_value
+        e.app.invalidate()
+
+    @kb.add("enter")
+    def _(e):
+        # <--- NEW: Don't exit immediately.
+        # 1. Lock state
+        state.selected = state.current_value
+        state.finalized = True
+
+        # 2. Force one last redraw (which will trigger the "collapsed" view)
+        # 3. Then exit
+        e.app.exit(result=state.current_value)
+
+    @kb.add("escape")
+    @kb.add("c-c")
+    def _(e):
+        raise KeyboardInterrupt
+
+    root = HSplit(
+        [
+            title_window,
+            options_window,
+        ]
+    )
+
+    app = Application(
+        layout=Layout(root, focused_element=options_window),
+        key_bindings=kb,
+        style=STYLE,
+        style_transformation=NoUnderline(),
+        color_depth=ColorDepth.DEPTH_24_BIT,
+        erase_when_done=False,  # <--- IMPORTANT: Keep the last frame on screen
+        full_screen=False,
+        mouse_support=False,
+    )
+
+    result = app.run()
+    # No manual print here! The "collapsed" UI frame remains as the print record.
+    sleep(0.1)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# ASK TEXT INPUT
+# ---------------------------------------------------------------------------
+
+
+def ask_text(title: str, default: str | None = None, redact: bool = False, starting_chars: str = "> ") -> str | None:
+    """Prompt user for a single-line text value."""
+    field = TextArea(
+        text=default or "",
+        multiline=False,
+        style="class:cyan",
+        focus_on_click=True,
+        wrap_lines=False,
+        password=redact,
+    )
+    field.buffer.cursor_position = len(field.text)
+
+    kb = KeyBindings()
+
+    @kb.add("enter")
+    def _(ev):
+        ev.app.exit(result=field.text.strip())
+
+    @kb.add("escape")
+    @kb.add("c-c")
+    def _(ev):
+        raise KeyboardInterrupt
+
+    input_row = VSplit(
+        [
+            Window(FormattedTextControl([("class:cyan", starting_chars)]), width=2, align="left"),
+            field,
+        ],
+        height=1,
+    )
+
+    root = HSplit(
+        [
+            Window(FormattedTextControl([("class:title", title)]), height=1),
+            input_row,
+        ]
+    )
+
+    app = Application(
+        layout=Layout(root, focused_element=field),
+        key_bindings=kb,
+        style=STYLE,
+        style_transformation=NoUnderline(),
+        erase_when_done=False,
+        full_screen=False,
+        color_depth=ColorDepth.DEPTH_24_BIT,
+        mouse_support=False,
+    )
+
+    result = app.run()
+    _pause_and_new_line_on_finish()
+    return result
+
+
+# ---------------------------------------------------------------------------
+# ASK TEXT WITH VALIDATION
+# ---------------------------------------------------------------------------
+
+
+def ask_text_with_validation(
+    title: str,
+    regex: str,
+    error_message: str,
+    default: str | None = None,
+    redact: bool = False,
+    starting_chars: str = "> ",
+) -> str:
+    """Prompt user for text with regex validation."""
+    state = {"error": ""}
+
+    field = TextArea(
+        text=default or "",
+        multiline=False,
+        style="class:cyan",
+        focus_on_click=True,
+        wrap_lines=False,
+        password=redact,
+    )
+    field.buffer.cursor_position = len(field.text)
+
+    # Helper to show text only if error exists
+    def get_error_text():
+        return [("class:error", f"{state['error']}")]
+
+    # Condition: Only show the error window if state['error'] is not empty
+    has_error = Condition(lambda: bool(state["error"]))
+
+    kb = KeyBindings()
+
+    @kb.add("enter")
+    def _(ev):
+        val = field.text.strip()
+        if re.fullmatch(regex, val):
+            ev.app.exit(result=val)
+        else:
+            state["error"] = error_message
+            ev.app.invalidate()
+
+    @kb.add("escape")
+    @kb.add("c-c")
+    def _(ev):
+        raise KeyboardInterrupt
+
+    def on_text_changed(_):
+        if state["error"]:
+            state["error"] = ""
+
+    field.buffer.on_text_changed += on_text_changed
+
+    input_row = VSplit(
+        [
+            Window(
+                FormattedTextControl([("class:cyan", starting_chars)]),
+                width=len(starting_chars),
+                dont_extend_width=True,
+            ),
+            field,
+        ],
+        height=1,
+    )
+
+    # ConditionalContainer ensures this takes 0 height when there is no error
+    error_row = ConditionalContainer(content=Window(FormattedTextControl(get_error_text), height=1), filter=has_error)
+
+    root = HSplit(
+        [
+            Window(FormattedTextControl([("class:title", title)]), height=1),
+            input_row,
+            error_row,  # Only appears on error
+        ]
+    )
+
+    app = Application(
+        layout=Layout(root, focused_element=field),
+        key_bindings=kb,
+        style=STYLE,
+        style_transformation=NoUnderline(),
+        erase_when_done=False,
+        full_screen=False,
+        color_depth=ColorDepth.DEPTH_24_BIT,
+        mouse_support=False,
+    )
+
+    result = app.run()
+    _pause_and_new_line_on_finish()
+    return result
+
+
+def _pause_and_new_line_on_finish(sleep_override: float | None = None):
+    """Sleep and print a line for polish after a command finishes."""
+    sleep(sleep_override or 0.10)
+    print()

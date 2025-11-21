@@ -1,0 +1,16 @@
+import os
+from crewai_tools import MCPServerAdapter
+
+# ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+
+def get_streamable_http_mcp_client() -> MCPServerAdapter:
+    """
+    Returns an MCP Client compatible with CrewAI SDK
+    """
+    # to use an MCP server that supports bearer authentication, add    "headers": { "Authorization": f"Bearer {_get_access_token()}"}
+    server_params = {
+        "url": EXAMPLE_MCP_ENDPOINT,
+        "transport": "streamable-http",
+    }
+    return MCPServerAdapter(serverparams=server_params)

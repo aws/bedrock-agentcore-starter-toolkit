@@ -17,7 +17,7 @@ from ...operations.identity.helpers import (
     get_cognito_m2m_token,
     update_cognito_callback_urls,
 )
-from ...services.ecr import get_region
+from ...utils.aws import get_region
 from ...utils.runtime.config import load_config, save_config
 from ..common import _handle_error, _handle_warn, _print_success, console
 

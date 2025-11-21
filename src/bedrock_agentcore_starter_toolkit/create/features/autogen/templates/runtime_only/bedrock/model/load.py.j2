@@ -1,0 +1,21 @@
+import os
+from autogen_ext.models.anthropic import AnthropicBedrockChatCompletionClient
+from autogen_core.models import ModelInfo, ModelFamily
+
+# Uses global inference profile for Claude Sonnet 4.5
+# https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+def load_model() -> AnthropicBedrockChatCompletionClient:
+    # Initialize the model client
+    return AnthropicBedrockChatCompletionClient(
+        model=MODEL_ID,
+        model_info=ModelInfo(
+            vision=False,
+            function_calling=True,
+            json_output=False,
+            family=ModelFamily.CLAUDE_4_SONNET,
+            structured_output=True
+        ),
+        bedrock_info = {"aws_region": os.environ.get("AWS_REGION", "us-east-1")}
+    )

@@ -116,8 +116,12 @@ concurrency = ["thread", "multiprocessing"]
 omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py", # CLI commands require user interaction
+    "src/bedrock_agentcore_starter_toolkit/cli/create/commands.py", # CLI commands require user interaction
+    "src/bedrock_agentcore_starter_toolkit/cli/create/prompt_util.py", # Interactive prompts require user input
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
     "src/bedrock_agentcore_starter_toolkit/operations/runtime/exceptions.py", # Simple exception classes
+    "src/bedrock_agentcore_starter_toolkit/create/features/*/templates/*", # Jinja Templates
+    "src/bedrock_agentcore_starter_toolkit/create/templates/*", # Jinja Templates
 ]
 
 [tool.coverage.report]
@@ -163,6 +167,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "ruff>=0.12.0",
     "strands-agents>=0.1.8",
+    "syrupy>=5.0.0",
     "wheel>=0.45.1",
     "mike~=2.1.3",
     "mkdocs~=1.6.1",

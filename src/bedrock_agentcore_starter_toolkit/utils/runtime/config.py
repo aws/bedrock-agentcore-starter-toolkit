@@ -8,6 +8,7 @@ import yaml
 from pydantic import ValidationError
 
 from ...operations.runtime.exceptions import RuntimeToolkitException
+from ...utils.aws import get_account_id, get_region
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
 log = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ def _migrate_deployment_type(config: BedrockAgentCoreConfigSchema) -> None:
         # runtime_type is optional for direct_code_deploy deployments (will default to PYTHON_3_11 in service layer)
 
 
-def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
+def load_config(config_path: Path, autofill_missing_aws=True) -> BedrockAgentCoreConfigSchema:
     """Load config with automatic legacy format transformation and migration."""
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
@@ -80,11 +81,19 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     if _is_legacy_format(data):
         return _transform_legacy_to_multi_agent(data)
 
-    # Add backwards compatibility for missing deployment_type field
+    # Add backwards compatibility for missing deployment_type field and handle missing aws account/region
     if "agents" in data:
         for agent_name, agent_data in data["agents"].items():
+            # If aws details haven't been set, fetch them
+            if autofill_missing_aws:
+                aws_data = agent_data["aws"]
+                if "account" in aws_data:
+                    aws_data["account"] = aws_data["account"] or get_account_id()
+                if "region" in aws_data:
+                    aws_data["region"] = aws_data["region"] or get_region()
+
+            # Default to container for backwards compatibility with existing agents
             if "deployment_type" not in agent_data:
-                # Default to container for backwards compatibility with existing agents
                 agent_data["deployment_type"] = "container"
                 log.info("Using default deployment_type='container' for existing agent '%s'", agent_name)
 
@@ -124,22 +133,33 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
         config: BedrockAgentCoreConfigSchema instance to save
         config_path: Path to save configuration file
     """
+    create_project = config.is_agentcore_create_with_iac
     with open(config_path, "w") as f:
-        yaml.dump(config.model_dump(), f, default_flow_style=False, sort_keys=False)
+        yaml.dump(
+            config.model_dump(
+                exclude_none=create_project,
+                exclude_unset=create_project,
+                exclude={"is_agentcore_create_with_iac"},
+            ),
+            f,
+            default_flow_style=False,
+            sort_keys=False,
+        )
 
 
-def load_config_if_exists(config_path: Path) -> Optional[BedrockAgentCoreConfigSchema]:
+def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> Optional[BedrockAgentCoreConfigSchema]:
     """Load configuration if file exists, otherwise return None.
 
     Args:
         config_path: Path to configuration file
+        autofill_missing_aws: default true. Uses boto to fill in None aws details
 
     Returns:
         BedrockAgentCoreConfigSchema instance or None if file doesn't exist
     """
     if not config_path.exists():
         return None
-    return load_config(config_path)
+    return load_config(config_path, autofill_missing_aws)
 
 
 def merge_agent_config(

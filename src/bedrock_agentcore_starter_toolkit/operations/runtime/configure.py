@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import boto3
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
-from ...services.ecr import get_account_id, get_region
+from ...utils.aws import get_account_id, get_region
 from ...utils.runtime.config import load_config_if_exists, merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.entrypoint import detect_dependencies
@@ -134,6 +134,7 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
 def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
+    create_mode_enabled: bool = False,
     execution_role: Optional[str] = None,
     code_build_execution_role: Optional[str] = None,
     ecr_repository: Optional[str] = None,
@@ -163,6 +164,7 @@ def configure_bedrock_agentcore(
     """Configure Bedrock AgentCore application with deployment settings.
 
     Args:
+        create_mode_enabled: Enable IaC and Agent code createping
         agent_name: name of the agent,
         entrypoint_path: Path to the entrypoint file
         execution_role: AWS execution role ARN or name (auto-created if not provided)
@@ -420,7 +422,7 @@ def configure_bedrock_agentcore(
 
     # Generate Dockerfile only for container deployments
     dockerfile_path = None
-    if deployment_type == "container" and runtime:
+    if deployment_type == "container" and runtime and not create_mode_enabled:
         dockerfile_path = runtime.generate_dockerfile(
             entrypoint_path,
             dockerfile_output_dir,
@@ -439,7 +441,7 @@ def configure_bedrock_agentcore(
 
     # Ensure .dockerignore exists at Docker build context location (only for container deployments)
     dockerignore_path = None
-    if deployment_type == "container":
+    if deployment_type == "container" and not create_mode_enabled:
         if source_path:
             # For source_path: .dockerignore at source directory (Docker build context)
             source_dockerignore = Path(source_path) / ".dockerignore"
@@ -575,7 +577,7 @@ def configure_bedrock_agentcore(
     return ConfigureResult(
         config_path=config_path,
         dockerfile_path=dockerfile_path,
-        dockerignore_path=dockerignore_path if dockerignore_path and dockerignore_path.exists() else None,
+        dockerignore_path=dockerignore_path if dockerignore_path is not None and dockerignore_path.exists() else None,
         runtime=runtime.get_name() if runtime else None,
         runtime_type=runtime_type,
         region=region,

@@ -1,0 +1,68 @@
+from crewai import Agent, Crew, LLM, Task, Process
+from crewai.tools import tool
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+import os
+from mcp_client.client import get_streamable_http_mcp_client
+
+if os.getenv("LOCAL_DEV") == "1":
+    # In local dev, instantiate dummy MCP client so the code runs without deploying
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    mcp_adapter = nullcontext([])
+else:
+    # Import AgentCore Gateway as Streamable HTTP MCP Client
+    mcp_adapter = get_streamable_http_mcp_client()
+
+# Uses global inference profile for Claude Sonnet 4.5
+# https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+MODEL_ID="bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+# Initialize the model client
+llm = LLM(model=MODEL_ID)
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    with mcp_adapter as tools:
+        # Define the Agent, Task and Crew with Tools
+        agent = Agent(
+            role="Question Answering Assistant",
+            goal="Answer the users questions",
+            backstory="Always eager to answer any questions",
+            llm=llm,
+            tools=[add_numbers] + tools
+        )
+
+        task = Task(
+            agent=agent,
+            description="Answer the users question: {prompt}",
+            expected_output="An answer to the users question"
+        )
+
+        crew = Crew(
+            agents=[agent],
+            tasks=[task],
+            process=Process.sequential
+        )
+
+        # Process the user prompt
+        prompt = payload.get("prompt", "What is Agentic AI?")
+
+        # Run the agent
+        result = crew.kickoff(inputs={"prompt": prompt})
+
+        # Return result
+        return result.raw
+
+if __name__ == "__main__":
+    app.run()

@@ -10,6 +10,7 @@ from ..cli.gateway.commands import (
 from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
+from .create.commands import create_app
 from .identity.commands import identity_app
 from .import_agent.commands import import_agent
 from .runtime.commands import (
@@ -20,6 +21,7 @@ from .runtime.commands import (
     status,
     stop_session,
 )
+from .runtime.dev_command import dev
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
 
@@ -30,6 +32,7 @@ setup_toolkit_logging(mode="cli")
 app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("launch")(launch)
+app.command("dev")(dev)
 app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
@@ -49,6 +52,9 @@ app.add_typer(observability_app, name="obs")
 
 # import-agent
 app.command("import-agent")(import_agent)
+
+# create
+app.add_typer(create_app, name="create")
 
 
 def main():

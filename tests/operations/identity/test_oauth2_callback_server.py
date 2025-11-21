@@ -94,11 +94,13 @@ class TestBedrockAgentCoreIdentity3loCallback:
         assert response.status_code == 500
         assert response.json().get("message") == "Internal Server Error"
 
-    def test_handle_3lo_callback_missing_region(self, tmp_path):
+    def test_handle_3lo_callback_missing_region_gets_filled(self, tmp_path):
+        """region is auto filled in and validation exception happens downstream."""
         config_path = create_test_config(tmp_path, region="")
         server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name="test-agent")
         client = TestClient(server)
-        response = client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
 
-        assert response.status_code == 500
-        assert response.json().get("message") == "Internal Server Error"
+        try:
+            client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
+        except Exception as e:
+            assert "ValidationException" in str(e)

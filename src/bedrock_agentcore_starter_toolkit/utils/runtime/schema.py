@@ -252,6 +252,13 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
+    api_key_env_var_name: Optional[str] = Field(
+        default=None,
+        description="Environment variable name for API key (e.g., 'OPENAI_API_KEY' for non-Bedrock providers)",
+    )
+    api_key_credential_provider_name: Optional[str] = Field(
+        default=None, description="Name of the API Key Credential Provider created in AgentCore Identity"
+    )
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
@@ -295,6 +302,9 @@ class BedrockAgentCoreConfigSchema(BaseModel):
     """
 
     default_agent: Optional[str] = Field(default=None, description="Default agent name for operations")
+    is_agentcore_create_with_iac: Optional[bool] = Field(
+        default=False
+    )  # will only be provided by projects created from agentcore create
     agents: Dict[str, BedrockAgentCoreAgentSchema] = Field(
         default_factory=dict, description="Named agent configurations"
     )

@@ -1,0 +1,77 @@
+from google.adk.agents import Agent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from google.genai import types
+import os
+from mcp_client.client import get_streamable_http_mcp_client
+
+if os.getenv("LOCAL_DEV") == "1":
+    # In local dev, instantiate dummy MCP client so the code runs without deploying
+    mcp_toolset = []
+else:
+    # Import AgentCore Gateway as Streamable HTTP MCP Client
+    mcp_toolset = get_streamable_http_mcp_client()
+
+# https://google.github.io/adk-docs/agents/models/
+MODEL_ID = "gemini-2.0-flash"
+
+APP_NAME="{{ agent_name }}"
+USER_ID="user1234"
+
+# Define a simple function tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Agent Definition
+# Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
+agent = Agent(
+    model=MODEL_ID,
+    name="{{ agent_name }}",
+    description="Agent to answer questions",
+    instruction="I can answer your questions using the knowledge I have!",
+    tools=[mcp_toolset, add_numbers]
+)
+
+# Session and Runner
+async def setup_session_and_runner(user_id, session_id):
+    session_service = InMemorySessionService()
+    session = await session_service.create_session(app_name=APP_NAME, user_id=user_id, session_id=session_id)
+    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    return session, runner
+
+# Agent Interaction
+async def call_agent_async(query, user_id, session_id):
+    content = types.Content(role='user', parts=[types.Part(text=query)])
+    session, runner = await setup_session_and_runner(user_id, session_id)
+    events = runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
+
+    async for event in events:
+        if event.is_final_response():
+            final_response = event.content.parts[0].text
+
+    return final_response
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+async def agent_invocation(payload, context):
+    # assume payload input is structured as { "prompt": "<user input>", "user_id": "<id>", "context": { "session_id": "<id>" } }
+
+    # Process the user prompt
+    prompt = payload.get("prompt", "What is Agentic AI?")
+    session_id = context.session_id or "session_id_1"
+
+    # Run the agent
+    result = await call_agent_async(prompt, payload.get("user_id",USER_ID), session_id)
+
+    # Return result
+    return {
+        "result": result
+    }
+
+
+if __name__ == "__main__":
+    app.run()

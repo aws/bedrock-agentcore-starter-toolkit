@@ -1,0 +1,42 @@
+from langchain_core.messages import HumanMessage
+from langchain.agents import create_agent
+from langchain.tools import tool
+from bedrock_agentcore import BedrockAgentCoreApp
+from mcp_client.client import get_streamable_http_mcp_client
+from model.load import load_model
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Import AgentCore Gateway as Streamable HTTP MCP Client
+mcp_client = get_streamable_http_mcp_client()
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+async def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    # Load MCP Tools
+    tools = await mcp_client.get_tools()
+
+    # Define the agent
+    graph = create_agent(load_model(), tools=tools + [add_numbers])
+
+    # Process the user prompt
+    prompt = payload.get("prompt", "What is Agentic AI?")
+
+    # Run the agent
+    result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+
+    # Return result
+    return {
+        "result": result["messages"][-1].content
+    }
+
+if __name__ == "__main__":
+    app.run()

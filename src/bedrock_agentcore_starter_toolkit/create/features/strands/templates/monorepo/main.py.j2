@@ -1,0 +1,50 @@
+from strands import Agent, tool
+from strands.models import BedrockModel
+from bedrock_agentcore import BedrockAgentCoreApp
+import os
+from mcp_client.client import get_streamable_http_mcp_client
+
+model = BedrockModel(model_id="global.anthropic.claude-sonnet-4-20250514-v1:0")
+
+if os.getenv("LOCAL_DEV") == "1":
+    # In local dev, instantiate dummy MCP client so the code runs without deploying
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    strands_mcp_client = nullcontext(SimpleNamespace(list_tools_sync=lambda: []))
+else:
+    # Import AgentCore Gateway as Streamable HTTP MCP Client
+    strands_mcp_client = get_streamable_http_mcp_client()
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    # Create an Agent with MCP tools
+    with strands_mcp_client as mcp_client:
+        # Create an Agent with MCP tools
+        tools = mcp_client.list_tools_sync()
+
+        agent = Agent(model=model, tools=tools + [add_numbers])
+
+        # Process the user prompt
+        prompt = payload.get("prompt", "What is Agentic AI?")
+
+        # Run the agent
+        response = agent(prompt)
+
+        # Return result
+        return {
+            "response": response
+        }
+
+if __name__ == "__main__":
+    app.run()
