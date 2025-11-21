@@ -629,6 +629,134 @@ agentcore invoke '{"prompt": "Call external service"}' \
 agentcore identity cleanup --agent my-agent --force
 ```
 
+## Memory Commands
+
+Manage AgentCore Memory resources:
+
+```bash
+agentcore memory [COMMAND]
+```
+
+### Create Memory
+
+```bash
+agentcore memory create NAME [OPTIONS]
+```
+
+Arguments:
+
+- `NAME`: Name for the memory resource (required)
+
+Options:
+
+- `--region, -r TEXT`: AWS region (defaults to session region)
+
+- `--description, -d TEXT`: Description for the memory
+
+- `--event-expiry-days, -e INTEGER`: Event retention in days (defaults to 90)
+
+- `--strategies, -s TEXT`: JSON string of memory strategies (e.g., '[{"semanticMemoryStrategy": {"name": "Facts"}}]')
+
+- `--role-arn TEXT`: IAM role ARN for memory execution
+
+- `--encryption-key-arn TEXT`: KMS key ARN for encryption
+
+- `--wait/--no-wait`: Wait for memory to become ACTIVE (defaults to True)
+
+- `--max-wait INTEGER`: Maximum wait time in seconds (defaults to 300)
+
+**Examples:**
+
+```bash
+# Create basic memory (STM only)
+agentcore memory create my_agent_memory
+
+# Create with LTM strategies
+agentcore memory create my_memory --strategies '[{"semanticMemoryStrategy": {"name": "Facts"}}]' --wait
+```
+
+### Get Memory
+
+```bash
+agentcore memory get MEMORY_ID [OPTIONS]
+```
+
+Arguments:
+
+- `MEMORY_ID`: Memory resource ID (required)
+
+Options:
+
+- `--region, -r TEXT`: AWS region
+
+**Example:**
+
+```bash
+agentcore memory get my_memory_abc123
+```
+
+### List Memories
+
+```bash
+agentcore memory list [OPTIONS]
+```
+
+Options:
+
+- `--region, -r TEXT`: AWS region
+
+- `--max-results, -n INTEGER`: Maximum number of results (defaults to 100)
+
+**Example:**
+
+```bash
+agentcore memory list
+```
+
+### Delete Memory
+
+```bash
+agentcore memory delete MEMORY_ID [OPTIONS]
+```
+
+Arguments:
+
+- `MEMORY_ID`: Memory resource ID to delete (required)
+
+Options:
+
+- `--region, -r TEXT`: AWS region
+
+- `--wait`: Wait for deletion to complete
+
+- `--max-wait INTEGER`: Maximum wait time in seconds (defaults to 300)
+
+**Example:**
+
+```bash
+agentcore memory delete my_memory_abc123 --wait
+```
+
+### Memory Status
+
+```bash
+agentcore memory status MEMORY_ID [OPTIONS]
+```
+
+Arguments:
+
+- `MEMORY_ID`: Memory resource ID (required)
+
+Options:
+
+- `--region, -r TEXT`: AWS region
+
+**Example:**
+
+```bash
+agentcore memory status mem_123
+```
+
 ## Gateway Commands
 
 Access gateway subcommands:
@@ -663,21 +791,137 @@ agentcore gateway create-mcp-gateway-target [OPTIONS]
 
 Options:
 
-- `--gateway-arn TEXT`: ARN of the created gateway
+- `--gateway-arn TEXT`: ARN of the created gateway (required)
 
-- `--gateway-url TEXT`: URL of the created gateway
+- `--gateway-url TEXT`: URL of the created gateway (required)
 
-- `--role-arn TEXT`: Role ARN of the created gateway
+- `--role-arn TEXT`: Role ARN of the created gateway (required)
 
 - `--region TEXT`: Region to use (defaults to us-west-2)
 
 - `--name TEXT`: Name of the target (defaults to TestGatewayTarget)
 
-- `--target-type TEXT`: Type of target (lambda, openApiSchema, smithyModel)
+- `--target-type TEXT`: Type of target: lambda, openApiSchema, mcpServer, or smithyModel (defaults to lambda)
 
 - `--target-payload TEXT`: Specification of the target (required for openApiSchema)
 
 - `--credentials TEXT`: Credentials for calling this target (API key or OAuth2)
+
+### Delete MCP Gateway
+
+```bash
+agentcore gateway delete-mcp-gateway [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use (defaults to us-west-2)
+
+- `--id TEXT`: Gateway ID to delete
+
+- `--name TEXT`: Gateway name to delete
+
+- `--arn TEXT`: Gateway ARN to delete
+
+- `--force`: Delete all targets before deleting the gateway
+
+**Note:** The gateway must have zero targets before deletion, unless `--force` is used. You can specify the gateway by ID, ARN, or name.
+
+### Delete MCP Gateway Target
+
+```bash
+agentcore gateway delete-mcp-gateway-target [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use (defaults to us-west-2)
+
+- `--id TEXT`: Gateway ID
+
+- `--name TEXT`: Gateway name
+
+- `--arn TEXT`: Gateway ARN
+
+- `--target-id TEXT`: Target ID to delete
+
+- `--target-name TEXT`: Target name to delete
+
+**Note:** You can specify the gateway by ID, ARN, or name. You can specify the target by ID or name.
+
+### List MCP Gateways
+
+```bash
+agentcore gateway list-mcp-gateways [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use
+
+- `--name TEXT`: Filter by gateway name
+
+- `--max-results, -m INTEGER`: Maximum number of results (1-1000, defaults to 50)
+
+### Get MCP Gateway
+
+```bash
+agentcore gateway get-mcp-gateway [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use
+
+- `--id TEXT`: Gateway ID
+
+- `--name TEXT`: Gateway name
+
+- `--arn TEXT`: Gateway ARN
+
+**Note:** You can specify the gateway by ID, ARN, or name.
+
+### List MCP Gateway Targets
+
+```bash
+agentcore gateway list-mcp-gateway-targets [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use
+
+- `--id TEXT`: Gateway ID
+
+- `--name TEXT`: Gateway name
+
+- `--arn TEXT`: Gateway ARN
+
+- `--max-results, -m INTEGER`: Maximum number of results (1-1000, defaults to 50)
+
+**Note:** You can specify the gateway by ID, ARN, or name.
+
+### Get MCP Gateway Target
+
+```bash
+agentcore gateway get-mcp-gateway-target [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: Region to use
+
+- `--id TEXT`: Gateway ID
+
+- `--name TEXT`: Gateway name
+
+- `--arn TEXT`: Gateway ARN
+
+- `--target-id TEXT`: Target ID
+
+- `--target-name TEXT`: Target name
+
+**Note:** You can specify the gateway by ID, ARN, or name. You can specify the target by ID or name.
 
 ## Example Usage
 
@@ -805,6 +1049,53 @@ agentcore gateway create-mcp-gateway-target \
   --gateway-arn arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abcdef \
   --gateway-url https://gateway-url.us-west-2.amazonaws.com \
   --role-arn arn:aws:iam::123456789012:role/GatewayRole
+
+# List all gateways
+agentcore gateway list-mcp-gateways
+
+# Get gateway details
+agentcore gateway get-mcp-gateway --name MyGateway
+
+# List gateway targets
+agentcore gateway list-mcp-gateway-targets --name MyGateway
+
+# Get target details
+agentcore gateway get-mcp-gateway-target --name MyGateway --target-name MyTarget
+
+# Delete a target
+agentcore gateway delete-mcp-gateway-target --name MyGateway --target-name MyTarget
+
+# Delete a gateway (must have no targets)
+agentcore gateway delete-mcp-gateway --name MyGateway
+
+# Delete a gateway and all its targets
+agentcore gateway delete-mcp-gateway --name MyGateway --force
+```
+
+### Memory Operations
+
+```bash
+# Create memory with STM only
+agentcore memory create my_agent_memory
+
+# Create memory with LTM strategies
+agentcore memory create my_memory \
+  --strategies '[{"semanticMemoryStrategy": {"name": "Facts"}}]' \
+  --description "Agent memory for customer service" \
+  --event-expiry-days 90 \
+  --wait
+
+# List all memories
+agentcore memory list
+
+# Get memory details
+agentcore memory get my_memory_abc123
+
+# Check memory status
+agentcore memory status my_memory_abc123
+
+# Delete memory
+agentcore memory delete my_memory_abc123 --wait
 ```
 
 ### Importing from Bedrock Agents
