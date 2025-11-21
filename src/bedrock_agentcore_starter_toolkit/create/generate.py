@@ -17,7 +17,7 @@ from .types import CreateIACProvider, CreateModelProvider, CreateSDKProvider, Pr
 from .util.console_print import emit_create_completed_message
 from .util.create_agentcore_yaml import write_minimal_create_runtime_yaml, write_minimal_create_with_iac_project_yaml
 from .util.dotenv import _write_env_file_directly
-from .util.post_generate_venv import create_and_init_venv
+from .util.subprocess import create_and_init_venv, init_git_project
 
 
 def generate_project(
@@ -28,6 +28,7 @@ def generate_project(
     provider_api_key: str | None,
     agent_config: BedrockAgentCoreAgentSchema | None,
     use_venv: bool,
+    git_init: bool,
 ):
     """Generate a new Bedrock Agent Core project with specified SDK and IaC providers."""
     sink = ProgressSink()
@@ -101,6 +102,8 @@ def generate_project(
     # we have a project... create a venv install deps
     if use_venv:
         create_and_init_venv(ctx, sink=sink)
+    if git_init:
+        init_git_project(ctx, sink=sink)
     _emit_python_version_warning_if_applicable(ctx)
     # everything is done emit the blue success panel
     emit_create_completed_message(ctx)

@@ -24,6 +24,7 @@ from ..runtime.commands import configure_impl
 from .prompt_util import (
     get_auto_generated_project_name,
     prompt_configure,
+    prompt_git_init,
     prompt_iac_provider,
     prompt_model_provider,
     prompt_runtime_or_monorepo,
@@ -118,7 +119,10 @@ def create(
                 sdk, model_provider, iac, non_interactive_flag
             )
 
-        console.print("Agent initializing...")
+        git_init = False
+        if not non_interactive_flag:
+            git_init = prompt_git_init() == "Yes"
+        console.print("[cyan]Agent initializing...[/cyan]")
         generate_project(
             name=project_name,
             sdk_provider=sdk,
@@ -127,6 +131,7 @@ def create(
             iac_provider=iac,
             agent_config=agent_config,
             use_venv=venv_option,
+            git_init=git_init,
         )
 
 

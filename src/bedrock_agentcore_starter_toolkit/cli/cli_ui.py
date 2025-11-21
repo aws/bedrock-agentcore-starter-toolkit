@@ -16,17 +16,17 @@ from prompt_toolkit.widgets import TextArea
 from ..cli.common import console
 
 # Updated Color: #42B4FF from UX designer
-RICH_CYAN_COLOR_CODE = "fg:#42B4FF"
+RICH_CYAN_COLOR_CODE = "ansicyan"
 
 STYLE = Style.from_dict(
     {
         "": "nounderline",
         "title": "bold fg:#ffffff",
-        "option-name": "bold fg:#ffffff",
+        "option-name": "fg:#ffffff",
         "option-desc": "fg:#777777",
         "cyan": RICH_CYAN_COLOR_CODE,
         "selected-bullet": RICH_CYAN_COLOR_CODE,
-        "selected-name": f"bold {RICH_CYAN_COLOR_CODE}",
+        "selected-name": RICH_CYAN_COLOR_CODE,
         "error": "fg:#ff5f5f",
     }
 )
@@ -115,7 +115,7 @@ def build_option_fragments(state: OptionState):
 def show_create_welcome_ascii() -> None:
     """Display the simple welcome message."""
     console.print()
-    console.print("[bold #00bfff]🤖 AgentCore activated.[/bold #00bfff] Let's build your agent.")
+    console.print("[bold cyan]🤖 AgentCore activated.[/bold cyan] Let's build your agent.")
     _pause_and_new_line_on_finish()
 
 

@@ -11,7 +11,7 @@ from ..types import ProjectContext
 def emit_create_completed_message(ctx: ProjectContext):
     """Take in the project context and emit a helpful message to console."""
     # end of progress sandwhich
-    console.print("✓ Agent Initialized")
+    console.print("[cyan]✓ Agent Initialized.[/cyan]")
     # create some space so its not cramped
     console.print()
 

@@ -21,19 +21,47 @@ def create_and_init_venv(ctx: ProjectContext, sink: ProgressSink) -> None:
     if not _has_uv():
         return
 
-    # Use the new quiet runner here
-    with sink.step("Venv dependencies installing", "Venv created and installed."):
+    with sink.step(
+        "Venv dependencies installing",
+        "Venv created and installed",
+        "Venv setup failed. Continuing.",
+        swallow_fail=True,
+    ):
         _run_quiet(["uv", "venv", ".venv"], cwd=project_root)
         _run_quiet(["uv", "sync"], cwd=project_root)
 
 
+def init_git_project(ctx: ProjectContext, sink: ProgressSink) -> None:
+    """Initialize a git repo and stage files if git is present."""
+    project_root = ctx.output_dir
+
+    # Check if git is installed
+    if not _has_git():
+        return
+
+    # Avoid re-initializing if .git already exists
+    if (project_root / ".git").exists():
+        return
+
+    with sink.step(
+        "Git initializing", "Git initialized", error_message="Git initialization failed. Continuing.", swallow_fail=True
+    ):
+        _run_quiet(["git", "init"], cwd=project_root)
+        _run_quiet(["git", "add", "."], cwd=project_root)
+        _run_quiet(["git", "commit", "-m", "feat: initialze agentcore create project"], cwd=project_root)
+
+
 # ---------------------------------------------------------------------------
-# Helpers live *after* the main function
+# Helpers
 # ---------------------------------------------------------------------------
 
 
 def _has_uv() -> bool:
     return shutil.which("uv") is not None
+
+
+def _has_git() -> bool:
+    return shutil.which("git") is not None
 
 
 def _run(cmd: list[str], cwd: Path) -> None:
