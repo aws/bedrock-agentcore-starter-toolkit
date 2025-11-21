@@ -282,10 +282,16 @@ def handler(payload):
         def mock_handle_error_side_effect():
             raise typer.Exit(1)
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
-            side_effect=mock_handle_error_side_effect,
-        ) as mock_error:
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
+                side_effect=mock_handle_error_side_effect,
+            ) as mock_error,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ),
+        ):
             try:
                 self.runner.invoke(app, ["configure", "--entrypoint", str(agent_file), "--protocol", "HTTPS"])
             except typer.Exit:
@@ -361,6 +367,10 @@ agents:
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
                 side_effect=mock_handle_error_side_effect,
             ) as mock_error,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ),
         ):
             mock_rel_path.return_value = "test-agent.py"
             mock_validate.return_value = (False, "Agent name contains invalid characters: @#$")
@@ -557,27 +567,31 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            # Test with malformed JSON (missing closing brace) - should fail
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--name",
-                    "test_agent",
-                    "--execution-role",
-                    "TestRole",
-                    "--authorizer-config",
-                    '{"customJWTAuthorizer": {"discoveryUrl": "test"',
-                    "--non-interactive",
-                ],
-            )
-            # Should fail with invalid JSON error
-            assert result.exit_code != 0
-            # Check for JSON error in stdout or stderr (may be in exception message)
-            output = result.stdout + str(result.exception) if result.exception else result.stdout
-            assert "json" in output.lower() or "JSON" in output
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                # Test with malformed JSON (missing closing brace) - should fail
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--name",
+                        "test_agent",
+                        "--execution-role",
+                        "TestRole",
+                        "--authorizer-config",
+                        '{"customJWTAuthorizer": {"discoveryUrl": "test"',
+                        "--non-interactive",
+                    ],
+                )
+                # Should fail with invalid JSON error
+                assert result.exit_code != 0
+                # Check for JSON error in stdout or stderr (may be in exception message)
+                output = result.stdout + str(result.exception) if result.exception else result.stdout
+                assert "json" in output.lower() or "JSON" in output
         finally:
             os.chdir(original_cwd)
 
@@ -671,21 +685,25 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(nonexistent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--non-interactive",
-                ],
-            )
-            print(result.stdout)
-            # Should fail with exit code 1 and contain path error info
-            assert result.exit_code == 1
-            assert "not found" in result.stdout.lower()
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(nonexistent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--non-interactive",
+                    ],
+                )
+                print(result.stdout)
+                # Should fail with exit code 1 and contain path error info
+                assert result.exit_code == 1
+                assert "not found" in result.stdout.lower()
         finally:
             os.chdir(original_cwd)
 
@@ -3478,25 +3496,29 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--idle-timeout",
-                    "1000",
-                    "--max-lifetime",
-                    "500",  # Less than idle_timeout
-                    "--non-interactive",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--idle-timeout",
+                        "1000",
+                        "--max-lifetime",
+                        "500",  # Less than idle_timeout
+                        "--non-interactive",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "idle-timeout" in result.stdout.lower()
-            assert "max-lifetime" in result.stdout.lower()
+                assert result.exit_code == 1
+                assert "idle-timeout" in result.stdout.lower()
+                assert "max-lifetime" in result.stdout.lower()
         finally:
             os.chdir(original_cwd)
 
@@ -3586,21 +3608,25 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--subnets",
-                    "subnet-abc123def456",  # No --vpc flag
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--subnets",
+                        "subnet-abc123def456",  # No --vpc flag
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "require --vpc flag" in result.stdout
+                assert result.exit_code == 1
+                assert "require --vpc flag" in result.stdout
 
         finally:
             os.chdir(original_cwd)
@@ -3614,24 +3640,28 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--vpc",
-                    "--subnets",
-                    "invalid-subnet",
-                    "--security-groups",
-                    "sg-abc123xyz789",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "invalid-subnet",
+                        "--security-groups",
+                        "sg-abc123xyz789",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "Invalid subnet ID format" in result.stdout
+                assert result.exit_code == 1
+                assert "Invalid subnet ID format" in result.stdout
 
         finally:
             os.chdir(original_cwd)
@@ -3645,24 +3675,28 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--vpc",
-                    "--subnets",
-                    "subnet-abc123def456",
-                    "--security-groups",
-                    "invalid-sg",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "subnet-abc123def456",
+                        "--security-groups",
+                        "invalid-sg",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "Invalid security group ID format" in result.stdout
+                assert result.exit_code == 1
+                assert "Invalid security group ID format" in result.stdout
 
         finally:
             os.chdir(original_cwd)

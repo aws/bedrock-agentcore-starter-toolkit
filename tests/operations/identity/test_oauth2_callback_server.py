@@ -100,7 +100,13 @@ class TestBedrockAgentCoreIdentity3loCallback:
         server = BedrockAgentCoreIdentity3loCallback(config_path=config_path, agent_name="test-agent")
         client = TestClient(server)
 
-        try:
-            client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
-        except Exception as e:
-            assert "ValidationException" in str(e)
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.identity.oauth2_callback_server.IdentityClient"
+        ) as mock_identity_client:
+            mock_identity_client.return_value.complete_resource_token_auth.side_effect = Exception(
+                "ValidationException: Invalid region"
+            )
+            try:
+                client.get(f"{OAUTH2_CALLBACK_ENDPOINT}?session_id=test-session-123")
+            except Exception as e:
+                assert "ValidationException" in str(e)

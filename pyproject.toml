@@ -122,6 +122,9 @@ omit = [
     "src/bedrock_agentcore_starter_toolkit/operations/runtime/exceptions.py", # Simple exception classes
     "src/bedrock_agentcore_starter_toolkit/create/features/*/templates/*", # Jinja Templates
     "src/bedrock_agentcore_starter_toolkit/create/templates/*", # Jinja Templates
+    "src/bedrock_agentcore_starter_toolkit/cli/identity/commands.py", # Tests use actual credentials. Skipping till fixed
+    "src/bedrock_agentcore_starter_toolkit/cli/cli_ui.py", # UI Presentation logic
+    "cli/runtime/dev_command.py", # Local Server Command, requires interaction
 ]
 
 [tool.coverage.report]
