@@ -91,8 +91,8 @@ def get_auto_generated_project_name() -> str:
         "amber",
     ]
 
-    a = random.choice(adjectives)
-    c = random.choice(colors)
+    a = random.choice(adjectives)  # nosec B311 - not used for security/crypto, just friendly name generation
+    c = random.choice(colors)  # nosec B311 - not used for security/crypto, just friendly name generation
 
     # camelCase: adjective + CapitalizedColor
     return f"{a}{c.capitalize()}"

@@ -3,7 +3,7 @@
 import logging
 import os
 import socket
-import subprocess
+import subprocess  # nosec B404 - subprocess required for running uvicorn dev server
 from pathlib import Path
 from typing import List, Optional
 
@@ -56,7 +56,7 @@ def dev(
 
     process = None
     try:
-        process = subprocess.Popen(cmd, env=local_env)
+        process = subprocess.Popen(cmd, env=local_env)  # nosec B603 - cmd args are hardcoded uv/uvicorn commands, not user input
         process.wait()
     except KeyboardInterrupt:
         console.print("\n[yellow]Shutting down development server...[/yellow]")

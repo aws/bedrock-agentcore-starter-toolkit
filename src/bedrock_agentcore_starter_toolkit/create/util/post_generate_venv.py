@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
+import subprocess  # nosec B404 - subprocess required for running uv venv setup commands
 from pathlib import Path
 
 from ..progress.progress_sink import ProgressSink
@@ -38,12 +38,12 @@ def _has_uv() -> bool:
 
 def _run(cmd: list[str], cwd: Path) -> None:
     """Original run method preserved as-is."""
-    subprocess.run(cmd, cwd=str(cwd), check=True)
+    subprocess.run(cmd, cwd=str(cwd), check=True)  # nosec B603 - cmd args are hardcoded uv commands, not user input
 
 
 def _run_quiet(cmd: list[str], cwd: Path) -> None:
     """Run a command quietly; show the full output only if it fails."""
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # nosec B603 - cmd args are hardcoded uv commands, not user input
         cmd,
         cwd=str(cwd),
         stdout=subprocess.PIPE,
