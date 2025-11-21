@@ -292,7 +292,7 @@ class TestCodeZipPackager:
         target = tmp_path / "target"
 
         packager = CodeZipPackager()
-        cmd = packager._build_uv_command(reqs, target, "3.10", cross=False)
+        cmd = packager._build_uv_command(reqs, target, "3.10", None)
 
         assert "uv" in cmd
         assert "--python-version" in cmd
@@ -306,7 +306,7 @@ class TestCodeZipPackager:
         target = tmp_path / "target"
 
         packager = CodeZipPackager()
-        cmd = packager._build_uv_command(reqs, target, "3.10", cross=True)
+        cmd = packager._build_uv_command(reqs, target, "3.10", "aarch64-manylinux2014")
 
         assert "--python-platform" in cmd
         assert "aarch64-manylinux2014" in cmd
@@ -498,15 +498,15 @@ class TestCodeZipPackager:
 
         # Note: Normalization happens in _install_dependencies before calling _build_uv_command
         # This method receives already-normalized versions (e.g., "3.10")
-        cmd1 = packager._build_uv_command(reqs, target, "3.10", cross=False)
+        cmd1 = packager._build_uv_command(reqs, target, "3.10", None)
         assert "--python-version" in cmd1
         assert "3.10" in cmd1
 
-        cmd2 = packager._build_uv_command(reqs, target, "3.11", cross=False)
+        cmd2 = packager._build_uv_command(reqs, target, "3.11", None)
         assert "--python-version" in cmd2
         assert "3.11" in cmd2
 
-        cmd3 = packager._build_uv_command(reqs, target, "3.12", cross=True)
+        cmd3 = packager._build_uv_command(reqs, target, "3.12", "aarch64-manylinux2014")
         assert "--python-version" in cmd3
         assert "3.12" in cmd3
         assert "--python-platform" in cmd3

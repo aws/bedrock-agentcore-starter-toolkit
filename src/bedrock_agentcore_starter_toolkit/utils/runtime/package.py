@@ -350,23 +350,47 @@ class CodeZipPackager:
         # Input: "PYTHON_3_10" or "python3.10" → Output: "3.10"
         python_version = runtime_version.upper().replace("PYTHON", "").replace("_", ".").strip("_. ")
 
-        cmd = self._build_uv_command(requirements_file, target_dir, python_version, cross_compile)
-        log.info("Installing dependencies with uv%s...", " (cross-compiling for Linux ARM64)" if cross_compile else "")
+        if cross_compile:
+            # Try multiple platforms in order of preference for better compatibility
+            platforms = ["aarch64-manylinux2014", "aarch64-manylinux_2_17", "aarch64-manylinux_2_28"]
 
-        try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)  # nosec B603 - using uv command
-            log.info("✓ Dependencies installed with uv")
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to install dependencies with uv: {e.stderr}") from e
+            for i, platform in enumerate(platforms):
+                cmd = self._build_uv_command(requirements_file, target_dir, python_version, platform)
 
-    def _build_uv_command(self, requirements: Path, target: Path, py_version: str, cross: bool) -> List[str]:
+                try:
+                    log.info(
+                        "Installing dependencies with uv for %s%s...",
+                        platform,
+                        " (cross-compiling for Linux ARM64)" if i == 0 else "",
+                    )
+                    subprocess.run(cmd, check=True, capture_output=True, text=True)  # nosec B603 - using uv command
+                    log.info("✓ Dependencies installed with uv")
+                    break  # Success - exit the loop
+                except subprocess.CalledProcessError as e:
+                    if i == len(platforms) - 1:  # Last platform failed
+                        raise RuntimeError(f"Failed to install dependencies with uv: {e.stderr}") from e
+                    # Try next platform
+                    continue
+        else:
+            cmd = self._build_uv_command(requirements_file, target_dir, python_version, None)
+            log.info("Installing dependencies with uv...")
+
+            try:
+                subprocess.run(cmd, check=True, capture_output=True, text=True)  # nosec B603 - using uv command
+                log.info("✓ Dependencies installed with uv")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Failed to install dependencies with uv: {e.stderr}") from e
+
+    def _build_uv_command(
+        self, requirements: Path, target: Path, py_version: str, platform: Optional[str]
+    ) -> List[str]:
         """Build uv pip install command.
 
         Args:
             requirements: Path to requirements.txt
             target: Target directory
             py_version: Python version (e.g., "3.10")
-            cross: Whether to cross-compile
+            platform: Platform string (e.g., "aarch64-manylinux2014") or None for native
 
         Returns:
             Command as list of strings
@@ -381,13 +405,12 @@ class CodeZipPackager:
             py_version,
         ]
 
-        # Always use aarch64-manylinux2014 for AgentCore Runtime (ARM64)
-        # Note: uv uses --python-platform (not --platform like pip)
-        if cross:
+        # Add platform-specific options for cross-compilation
+        if platform:
             cmd.extend(
                 [
                     "--python-platform",
-                    "aarch64-manylinux2014",
+                    platform,
                     "--only-binary",
                     ":all:",
                 ]
