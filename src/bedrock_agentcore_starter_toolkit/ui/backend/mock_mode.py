@@ -30,7 +30,7 @@ class MockAgentService:
     @staticmethod
     def _generate_session_id() -> str:
         """Generate a mock session ID."""
-        return f"mock-session-{int(time.time())}-{random.randint(1000, 9999)}"
+        return f"mock-session-{int(time.time())}-{random.randint(1000, 9999)}"  # nosec B311
 
     def get_config(self) -> dict:
         """Return mock configuration."""
@@ -51,13 +51,13 @@ class MockAgentService:
             self.session_id = session_id
 
         # Simulate processing delay
-        time.sleep(random.uniform(0.5, 1.5))
+        time.sleep(random.uniform(0.5, 1.5))  # nosec B311
 
         # Select a random response
-        response_text = random.choice(MOCK_RESPONSES)
+        response_text = random.choice(MOCK_RESPONSES)  # nosec B311
 
         # Sometimes add the user's message context
-        if random.random() > 0.5:
+        if random.random() > 0.5:  # nosec B311
             response_text = f"You asked: '{message}'\n\n{response_text}"
 
         return {
