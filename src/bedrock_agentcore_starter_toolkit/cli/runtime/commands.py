@@ -27,7 +27,11 @@ from ...operations.runtime import (
     validate_agent_name,
 )
 from ...utils.runtime.config import load_config
-from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
+from ...utils.runtime.logs import (
+    get_agent_log_paths,
+    get_aws_tail_commands,
+    get_genai_observability_url,
+)
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
@@ -79,7 +83,12 @@ def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: s
         default = f"{rel_source}/"
 
     # Use PathCompleter without filter - allow navigation anywhere
-    response = prompt(prompt_text, completer=PathCompleter(), complete_while_typing=True, default=default)
+    response = prompt(
+        prompt_text,
+        completer=PathCompleter(),
+        complete_while_typing=True,
+        default=default,
+    )
 
     if response.strip():
         # Validate file exists and is within project boundaries
@@ -101,7 +110,9 @@ def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: s
 
 
 def _handle_requirements_file_display(
-    requirements_file: Optional[str], non_interactive: bool = False, source_path: Optional[str] = None
+    requirements_file: Optional[str],
+    non_interactive: bool = False,
+    source_path: Optional[str] = None,
 ) -> Optional[str]:
     """Handle requirements file with display logic for CLI.
 
@@ -134,7 +145,9 @@ def _handle_requirements_file_display(
         console.print("[dim]Press Enter to use this file, or type a different path (use Tab for autocomplete):[/dim]")
 
         result = _prompt_for_requirements_file(
-            "Path or Press Enter to use detected dependency file: ", source_path=source_path, default=rel_deps_path
+            "Path or Press Enter to use detected dependency file: ",
+            source_path=source_path,
+            default=rel_deps_path,
         )
 
         if result is None:
@@ -186,7 +199,12 @@ def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False
 
 
 # Define options at module level to avoid B008
-ENV_OPTION = typer.Option(None, "--env", "-env", help="Environment variables for local mode (format: KEY=VALUE)")
+ENV_OPTION = typer.Option(
+    None,
+    "--env",
+    "-env",
+    help="Environment variables for local mode (format: KEY=VALUE)",
+)
 
 # Configure command group
 configure_app = typer.Typer(name="configure", help="Configuration management")
@@ -256,7 +274,10 @@ def configure(
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
     disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory"),
     authorizer_config: Optional[str] = typer.Option(
-        None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
+        None,
+        "--authorizer-config",
+        "-ac",
+        help="OAuth authorizer configuration as JSON string",
     ),
     request_header_allowlist: Optional[str] = typer.Option(
         None,
@@ -266,7 +287,9 @@ def configure(
         "(Authorization or X-Amzn-Bedrock-AgentCore-Runtime-Custom-*)",
     ),
     vpc: bool = typer.Option(
-        False, "--vpc", help="Enable VPC networking mode (requires --subnets and --security-groups)"
+        False,
+        "--vpc",
+        help="Enable VPC networking mode (requires --subnets and --security-groups)",
     ),
     subnets: Optional[str] = typer.Option(
         None,
@@ -296,13 +319,22 @@ def configure(
     region: Optional[str] = typer.Option(None, "--region", "-r"),
     protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
     non_interactive: bool = typer.Option(
-        False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
+        False,
+        "--non-interactive",
+        "-ni",
+        help="Skip prompts; use defaults unless overridden",
     ),
     deployment_type: Optional[str] = typer.Option(
-        None, "--deployment-type", "-dt", help="Deployment type (container or direct_code_deploy)"
+        None,
+        "--deployment-type",
+        "-dt",
+        help="Deployment type (container or direct_code_deploy)",
     ),
     runtime: Optional[str] = typer.Option(
-        None, "--runtime", "-rt", help="Python runtime version for direct_code_deploy (e.g., PYTHON_3_10, PYTHON_3_11)"
+        None,
+        "--runtime",
+        "-rt",
+        help="Python runtime version for direct_code_deploy (e.g., PYTHON_3_10, PYTHON_3_11)",
     ),
 ):
     """Configure a Bedrock AgentCore agent interactively or with parameters.
@@ -394,7 +426,13 @@ def configure(
             console.print("[dim]  • Current directory: press Enter[/dim]")
 
             entrypoint_input = (
-                prompt("Entrypoint: ", completer=PathCompleter(), complete_while_typing=True, default="").strip() or "."
+                prompt(
+                    "Entrypoint: ",
+                    completer=PathCompleter(),
+                    complete_while_typing=True,
+                    default="",
+                ).strip()
+                or "."
             )
     else:
         entrypoint_input = entrypoint
@@ -459,14 +497,27 @@ def configure(
     final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     def _validate_cli_args(
-        deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error
+        deployment_type,
+        runtime,
+        ecr_repository,
+        s3_bucket,
+        direct_code_deploy_available,
+        prereq_error,
     ):
         """Validate CLI arguments."""
-        if deployment_type and deployment_type not in ["container", "direct_code_deploy"]:
+        if deployment_type and deployment_type not in [
+            "container",
+            "direct_code_deploy",
+        ]:
             _handle_error("Error: --deployment-type must be either 'container' or 'direct_code_deploy'")
 
         if runtime:
-            valid_runtimes = ["PYTHON_3_10", "PYTHON_3_11", "PYTHON_3_12", "PYTHON_3_13"]
+            valid_runtimes = [
+                "PYTHON_3_10",
+                "PYTHON_3_11",
+                "PYTHON_3_12",
+                "PYTHON_3_13",
+            ]
             if runtime not in valid_runtimes:
                 _handle_error(f"Error: --runtime must be one of: {', '.join(valid_runtimes)}")
 
@@ -529,7 +580,13 @@ def configure(
             console.print("[red]Invalid choice. Please enter 1-4.[/red]")
 
     def _determine_deployment_config(
-        deployment_type, runtime, ecr_repository, s3_bucket, non_interactive, direct_code_deploy_available, prereq_error
+        deployment_type,
+        runtime,
+        ecr_repository,
+        s3_bucket,
+        non_interactive,
+        direct_code_deploy_available,
+        prereq_error,
     ):
         """Determine final deployment_type and runtime_type."""
         # Case 3: Only runtime provided -> default to direct_code_deploy
@@ -587,7 +644,12 @@ def configure(
 
     # Validate CLI arguments
     runtime = _validate_cli_args(
-        deployment_type, runtime, ecr_repository, s3_bucket, direct_code_deploy_available, prereq_error
+        deployment_type,
+        runtime,
+        ecr_repository,
+        s3_bucket,
+        direct_code_deploy_available,
+        prereq_error,
     )
 
     # Determine deployment configuration
@@ -615,8 +677,14 @@ def configure(
         # Interactive mode
         if direct_code_deploy_available:
             deployment_options = [
-                ("Direct Code Deploy (recommended) - Python only, no Docker required", "direct_code_deploy"),
-                ("Container - For custom runtimes or complex dependencies", "container"),
+                (
+                    "Direct Code Deploy (recommended) - Python only, no Docker required",
+                    "direct_code_deploy",
+                ),
+                (
+                    "Container - For custom runtimes or complex dependencies",
+                    "container",
+                ),
             ]
         else:
             console.print(
@@ -845,7 +913,10 @@ def configure(
 
 def launch(
     agent: Optional[str] = typer.Option(
-        None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
     local: bool = typer.Option(False, "--local", "-l", help="Run locally for development and testing"),
     local_build: bool = typer.Option(
@@ -867,7 +938,15 @@ def launch(
         help="Force rebuild of dependencies even if cached (direct_code_deploy deployments only)",
     ),
     envs: List[str] = typer.Option(  # noqa: B008
-        None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
+        None,
+        "--env",
+        "-env",
+        help="Environment variables for agent (format: KEY=VALUE)",
+    ),
+    ui: bool = typer.Option(
+        False,
+        "--ui",
+        help="Launch with web UI interface",
     ),
     code_build: bool = typer.Option(
         False,
@@ -913,6 +992,10 @@ def launch(
         _handle_error("Error: --local, --local-build, and --code-build cannot be used together")
 
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+
+    # Store UI mode for later - we'll start the UI server after launching the agent
+    ui_server_process = None
+    ui_server_port = None
 
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
@@ -1011,6 +1094,43 @@ def launch(
             _print_success("Ready to run locally")
             console.print("Starting server at http://localhost:8080")
             console.print("Starting OAuth2 3LO callback server at http://localhost:8081")
+
+            # Start UI server if requested
+            if ui:
+                from ...utils.ui_server import (
+                    open_browser,
+                    shutdown_server,
+                    start_ui_server,
+                    wait_for_server_ready,
+                )
+
+                console.print("[cyan]🌐 Starting Web UI...[/cyan]")
+                try:
+                    _temp_process, _temp_port = start_ui_server(
+                        config_path=config_path,
+                        agent_name=agent,
+                        local_mode=local,
+                    )
+                    # Assign to outer scope variables to ensure cleanup works
+                    ui_server_process = _temp_process
+                    ui_server_port = _temp_port
+
+                    if wait_for_server_ready(ui_server_port):
+                        server_url = f"http://localhost:{ui_server_port}"
+                        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
+                        if open_browser(server_url):
+                            console.print("[green]✓[/green] Browser opened")
+                        else:
+                            console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
+                    else:
+                        console.print("[yellow]⚠️  UI server failed to start[/yellow]")
+                        if ui_server_process:
+                            shutdown_server(ui_server_process)
+                        ui_server_process = None
+                except Exception as e:
+                    console.print(f"[yellow]⚠️  Failed to start UI server: {e}[/yellow]")
+                    ui_server_process = None
+
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             if result.runtime is None or result.port is None:
@@ -1029,11 +1149,55 @@ def launch(
                 oauth2_callback_endpoint.start()
                 result.runtime.run_local(result.tag, result.port, result.env_vars)
             except KeyboardInterrupt:
-                console.print("\n[yellow]Stopped[/yellow]")
+                console.print("\n[yellow]Stopping...[/yellow]")
+            finally:
+                if ui_server_process:
+                    from ...utils.ui_server import shutdown_server
+
+                    console.print("[dim]Shutting down UI server...[/dim]")
+                    shutdown_server(ui_server_process)
+                console.print("[green]✓[/green] Stopped")
 
         elif result.mode == "local_direct_code_deploy":
             _print_success("Ready to run locally with uv run")
             console.print(f"Starting server at http://localhost:{result.port}")
+
+            # Start UI server if requested
+            if ui:
+                from ...utils.ui_server import (
+                    open_browser,
+                    shutdown_server,
+                    start_ui_server,
+                    wait_for_server_ready,
+                )
+
+                console.print("[cyan]🌐 Starting Web UI...[/cyan]")
+                try:
+                    _temp_process, _temp_port = start_ui_server(
+                        config_path=config_path,
+                        agent_name=agent,
+                        local_mode=local,
+                    )
+                    # Assign to outer scope variables to ensure cleanup works
+                    ui_server_process = _temp_process
+                    ui_server_port = _temp_port
+
+                    if wait_for_server_ready(ui_server_port):
+                        server_url = f"http://localhost:{ui_server_port}"
+                        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
+                        if open_browser(server_url):
+                            console.print("[green]✓[/green] Browser opened")
+                        else:
+                            console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
+                    else:
+                        console.print("[yellow]⚠️  UI server failed to start[/yellow]")
+                        if ui_server_process:
+                            shutdown_server(ui_server_process)
+                        ui_server_process = None
+                except Exception as e:
+                    console.print(f"[yellow]⚠️  Failed to start UI server: {e}[/yellow]")
+                    ui_server_process = None
+
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             try:
@@ -1082,7 +1246,14 @@ def launch(
                 # Run from source directory (same as direct_code_deploy)
                 subprocess.run(cmd, cwd=source_dir, env=local_env, check=False)  # nosec B603
             except KeyboardInterrupt:
-                console.print("\n[yellow]Stopped[/yellow]")
+                console.print("\n[yellow]Stopping...[/yellow]")
+            finally:
+                if ui_server_process:
+                    from ...utils.ui_server import shutdown_server
+
+                    console.print("[dim]Shutting down UI server...[/dim]")
+                    shutdown_server(ui_server_process)
+                console.print("[green]✓[/green] Stopped")
 
         elif result.mode == "direct_code_deploy":
             # Code zip deployment success
@@ -1206,6 +1377,47 @@ def launch(
                 )
             )
 
+        # Handle UI mode for cloud deployments (non-local)
+        if ui and not local:
+            from ...utils.ui_server import (
+                open_browser,
+                shutdown_server,
+                start_ui_server,
+                wait_for_server_ready,
+            )
+
+            console.print("\n[cyan]🌐 Starting Web UI for remote agent...[/cyan]")
+            try:
+                ui_server_process, ui_server_port = start_ui_server(
+                    config_path=config_path,
+                    agent_name=agent,
+                    local_mode=False,
+                )
+
+                if wait_for_server_ready(ui_server_port):
+                    server_url = f"http://localhost:{ui_server_port}"
+                    console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
+                    if open_browser(server_url):
+                        console.print("[green]✓[/green] Browser opened")
+                    else:
+                        console.print(f"[yellow]⚠️  Please open manually: {server_url}[/yellow]")
+
+                    console.print("\n[yellow]Press Ctrl+C to stop the UI server[/yellow]\n")
+
+                    # Keep the server running
+                    try:
+                        ui_server_process.wait()
+                    except KeyboardInterrupt:
+                        console.print("\n[yellow]Stopping UI server...[/yellow]")
+                        shutdown_server(ui_server_process)
+                        console.print("[green]✓[/green] UI server stopped")
+                else:
+                    console.print("[yellow]⚠️  UI server failed to start[/yellow]")
+                    if ui_server_process:
+                        shutdown_server(ui_server_process)
+            except Exception as e:
+                console.print(f"[yellow]⚠️  Failed to start UI server: {e}[/yellow]")
+
     except FileNotFoundError:
         _handle_error(".bedrock_agentcore.yaml not found. Run 'agentcore configure --entrypoint <file>' first")
     except ValueError as e:
@@ -1240,7 +1452,9 @@ def _show_invoke_info_panel(agent_name: str, invoke_result=None, config=None):
             session_id = invoke_result.session_id if invoke_result else None
 
             runtime_logs, _ = get_agent_log_paths(
-                config.bedrock_agentcore.agent_id, deployment_type=deployment_type, session_id=session_id
+                config.bedrock_agentcore.agent_id,
+                deployment_type=deployment_type,
+                session_id=session_id,
             )
             follow_cmd, since_cmd = get_aws_tail_commands(runtime_logs)
             info_lines.append(f"Logs: {follow_cmd}")
@@ -1316,7 +1530,10 @@ def _parse_custom_headers(headers_str: str) -> dict:
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
     agent: Optional[str] = typer.Option(
-        None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'bedrock_agentcore configure list' to see available)",
     ),
     session_id: Optional[str] = typer.Option(None, "--session-id", "-s"),
     bearer_token: Optional[str] = typer.Option(
@@ -1454,11 +1671,13 @@ def invoke(
 
         error_result = (
             InvokeResult(
-                response={"ResponseMetadata": {"RequestId": request_id}} if request_id else {},
+                response=({"ResponseMetadata": {"RequestId": request_id}} if request_id else {}),
                 session_id=effective_session or "unknown",
-                agent_arn=agent_config.bedrock_agentcore.agent_arn
-                if agent_config and hasattr(agent_config, "bedrock_agentcore")
-                else None,
+                agent_arn=(
+                    agent_config.bedrock_agentcore.agent_arn
+                    if agent_config and hasattr(agent_config, "bedrock_agentcore")
+                    else None
+                ),
             )
             if (request_id or effective_session or agent_config)
             else None
@@ -1469,12 +1688,90 @@ def invoke(
         raise typer.Exit(1) from e
 
 
+def ui(
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
+    ),
+    port: Optional[int] = typer.Option(None, "--port", "-p", help="Port to run UI server on (default: 8001)"),
+):
+    """Launch the web UI interface.
+
+    This command starts the web UI server that provides a browser-based interface
+    for interacting with your agent.
+
+    Examples:
+        agentcore ui                    # Connect to deployed agent
+        agentcore ui --local            # Connect to local agent
+        agentcore ui --port 8080        # Use custom port
+    """
+    from ...utils.ui_server import (
+        open_browser,
+        shutdown_server,
+        start_ui_server,
+        wait_for_server_ready,
+    )
+
+    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+
+    # Determine mode
+
+    console.print("[cyan]🌐 Starting UI for remote agent...[/cyan]")
+    console.print("[dim]   • Connecting to deployed agent[/dim]\n")
+    local_mode = False
+
+    try:
+        # Start the UI server
+        server_process, server_port = start_ui_server(
+            config_path=config_path,
+            agent_name=agent,
+            local_mode=local_mode,
+            port=port,
+        )
+
+        # Wait for server to be ready
+        if not wait_for_server_ready(server_port):
+            shutdown_server(server_process)
+            _handle_error("UI server failed to start within timeout")
+
+        # Open browser
+        server_url = f"http://localhost:{server_port}"
+        console.print(f"[green]✓[/green] UI server running at: [cyan]{server_url}[/cyan]")
+
+        if open_browser(server_url):
+            console.print("[green]✓[/green] Browser opened")
+        else:
+            console.print("[yellow]⚠️  Could not open browser automatically[/yellow]")
+            console.print(f"[yellow]   Please open manually: {server_url}[/yellow]")
+
+        console.print("\n[yellow]Press Ctrl+C to stop the UI server[/yellow]\n")
+
+        # Keep the server running
+        try:
+            server_process.wait()
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Stopping UI server...[/yellow]")
+            shutdown_server(server_process)
+            console.print("[green]✓[/green] UI server stopped")
+
+    except Exception as e:
+        _handle_error(f"Failed to start UI server: {e}")
+
+
 def status(
     agent: Optional[str] = typer.Option(
-        None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'bedrock_agentcore configure list' to see available)",
     ),
     verbose: Optional[bool] = typer.Option(
-        None, "--verbose", "-v", help="Verbose json output of config, agent and endpoint status"
+        None,
+        "--verbose",
+        "-v",
+        help="Verbose json output of config, agent and endpoint status",
     ),
 ):
     """Get Bedrock AgentCore status including config and runtime details."""
@@ -1795,14 +2092,21 @@ def stop_session(
 
 def destroy(
     agent: Optional[str] = typer.Option(
-        None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
+        None,
+        "--agent",
+        "-a",
+        help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
     dry_run: bool = typer.Option(
-        False, "--dry-run", help="Show what would be destroyed without actually destroying anything"
+        False,
+        "--dry-run",
+        help="Show what would be destroyed without actually destroying anything",
     ),
     force: bool = typer.Option(False, "--force", help="Skip confirmation prompts and destroy immediately"),
     delete_ecr_repo: bool = typer.Option(
-        False, "--delete-ecr-repo", help="Also delete the ECR repository after removing images"
+        False,
+        "--delete-ecr-repo",
+        help="Also delete the ECR repository after removing images",
     ),
 ) -> None:
     """Destroy Bedrock AgentCore resources.
@@ -1900,7 +2204,13 @@ def destroy(
             resources_text = "\n".join([f"  ✓ {resource}" for resource in result.resources_removed])
             console.print(Panel(resources_text, title=title, border_style=color))
         else:
-            console.print(Panel("No resources were found to destroy", title="Results", border_style="yellow"))
+            console.print(
+                Panel(
+                    "No resources were found to destroy",
+                    title="Results",
+                    border_style="yellow",
+                )
+            )
 
         # Show warnings
         if result.warnings:
@@ -1933,7 +2243,10 @@ def destroy(
         raise typer.Exit(1) from None
     except ValueError as e:
         if "not found" in str(e):
-            _handle_error("Agent not found. Use 'agentcore configure list' to see available agents", e)
+            _handle_error(
+                "Agent not found. Use 'agentcore configure list' to see available agents",
+                e,
+            )
         else:
             _handle_error(f"Destruction failed: {e}", e)
     except RuntimeError as e:
