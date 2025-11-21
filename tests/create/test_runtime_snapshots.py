@@ -53,6 +53,7 @@ def test_runtime_only_snapshots(sdk_provider, model_provider, tmp_path, monkeypa
             provider_api_key="test-api-key" if model_provider != ModelProvider.Bedrock else None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
     project_dir = tmp_path / "testProject"

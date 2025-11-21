@@ -37,6 +37,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         output_dir = tmp_path / "testProject"
@@ -62,6 +63,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_yaml.assert_called_once()
@@ -85,6 +87,7 @@ class TestGenerateProject:
             provider_api_key="test-key",
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_env.assert_called_once()
@@ -111,6 +114,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_env.assert_not_called()
@@ -134,6 +138,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         output_dir = tmp_path / "testProject"
@@ -159,6 +164,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_iac_gen.assert_called_once()
@@ -182,6 +188,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=True,
+            git_init=False,
         )
 
         mock_venv.assert_called_once()
@@ -205,6 +212,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_venv.assert_not_called()
@@ -228,6 +236,7 @@ class TestGenerateProject:
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
+            git_init=False,
         )
 
         mock_emit.assert_called_once()
