@@ -34,7 +34,7 @@ def find_available_port(start_port: int = 8001, max_attempts: int = 10) -> int:
         except OSError:
             continue
 
-    raise RuntimeError(f"Could not find available port in range {start_port}-{start_port + max_attempts}")
+    raise RuntimeError("Could not find available port in range %s-%s" % (start_port, start_port + max_attempts))
 
 
 def start_ui_server(
@@ -66,7 +66,7 @@ def start_ui_server(
     ui_backend_dir = ui_dir / "backend"
 
     if not ui_backend_dir.exists():
-        raise RuntimeError(f"UI backend directory not found: {ui_backend_dir}")
+        raise RuntimeError("UI backend directory not found: %s" % ui_backend_dir)
 
     # Prepare environment variables
     env = os.environ.copy()
@@ -90,7 +90,7 @@ def start_ui_server(
         "info",
     ]
 
-    logger.info(f"Starting UI server on port {port}...")
+    logger.info("Starting UI server on port %s...", port)
 
     try:
         process = subprocess.Popen(  # nosec B603
@@ -108,14 +108,14 @@ def start_ui_server(
         # Check if process is still running
         if process.poll() is not None:
             stdout, stderr = process.communicate()
-            raise RuntimeError(f"UI server failed to start:\nSTDOUT: {stdout}\nSTDERR: {stderr}")
+            raise RuntimeError("UI server failed to start:\nSTDOUT: %s\nSTDERR: %s" % (stdout, stderr))
 
-        logger.info(f"UI server started successfully on port {port}")
+        logger.info("UI server started successfully on port %s", port)
         return process, port
 
     except Exception as e:
-        logger.error(f"Failed to start UI server: {e}")
-        raise RuntimeError(f"Failed to start UI server: {e}") from e
+        logger.error("Failed to start UI server: %s", e)
+        raise RuntimeError("Failed to start UI server: %s" % e) from e
 
 
 def open_browser(url: str, delay: float = 1.0) -> bool:
@@ -132,10 +132,10 @@ def open_browser(url: str, delay: float = 1.0) -> bool:
 
     try:
         webbrowser.open(url)
-        logger.info(f"Opened browser to {url}")
+        logger.info("Opened browser to %s", url)
         return True
     except Exception as e:
-        logger.warning(f"Failed to open browser: {e}")
+        logger.warning("Failed to open browser: %s", e)
         return False
 
 
@@ -164,7 +164,7 @@ def shutdown_server(process: subprocess.Popen, timeout: int = 5) -> None:
         process.wait()
         logger.info("UI server forcefully terminated")
     except Exception as e:
-        logger.error(f"Error shutting down UI server: {e}")
+        logger.error("Error shutting down UI server: %s", e)
 
 
 def wait_for_server_ready(port: int, timeout: int = 10) -> bool:
@@ -178,7 +178,7 @@ def wait_for_server_ready(port: int, timeout: int = 10) -> bool:
         True if server is ready, False if timeout
     """
     start_time = time.time()
-    url = f"http://127.0.0.1:{port}/health"
+    url = "http://127.0.0.1:%s/health" % port
 
     while time.time() - start_time < timeout:
         try:

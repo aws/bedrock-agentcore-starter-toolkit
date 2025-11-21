@@ -17,13 +17,7 @@ class CustomBuildHook(BuildHookInterface):
             return
 
         # Get the frontend directory path
-        frontend_dir = (
-            Path(self.root)
-            / "src"
-            / "bedrock_agentcore_starter_toolkit"
-            / "ui"
-            / "frontend"
-        )
+        frontend_dir = Path(self.root) / "src" / "bedrock_agentcore_starter_toolkit" / "ui" / "frontend"
 
         if not frontend_dir.exists():
             print(
@@ -48,11 +42,7 @@ class CustomBuildHook(BuildHookInterface):
             self._run_command(
                 [
                     "npm",
-                    (
-                        "ci"
-                        if (frontend_dir / "package-lock.json").exists()
-                        else "install"
-                    ),
+                    ("ci" if (frontend_dir / "package-lock.json").exists() else "install"),
                 ],
                 cwd=frontend_dir,
             )

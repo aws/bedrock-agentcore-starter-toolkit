@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Run the UI backend server in mock mode for testing.
+"""Run the UI backend server in mock mode for testing.
 
 This allows you to test the UI without needing a real agent configuration.
 

@@ -1,26 +1,21 @@
 """Tests for run_mock_server.py."""
 
 import os
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 def test_mock_server_file_exists():
     """Test that the mock server file exists."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
     assert script_path.exists()
     assert script_path.is_file()
 
 
 def test_mock_server_has_shebang():
     """Test that the script has proper shebang."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         first_line = f.readline()
@@ -29,10 +24,7 @@ def test_mock_server_has_shebang():
 
 def test_mock_server_has_docstring():
     """Test that the script has a docstring."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -43,10 +35,7 @@ def test_mock_server_has_docstring():
 
 def test_mock_server_sets_environment_variable():
     """Test that the script sets AGENTCORE_MOCK_MODE."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -55,10 +44,7 @@ def test_mock_server_sets_environment_variable():
 
 def test_mock_server_imports():
     """Test that the script has required imports."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -69,10 +55,7 @@ def test_mock_server_imports():
 
 def test_mock_server_uvicorn_configuration():
     """Test that uvicorn is configured correctly."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -85,10 +68,7 @@ def test_mock_server_uvicorn_configuration():
 
 def test_mock_server_error_handling():
     """Test that the script handles ImportError."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -98,10 +78,7 @@ def test_mock_server_error_handling():
 
 def test_mock_server_user_messages():
     """Test that the script prints helpful messages."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -112,10 +89,7 @@ def test_mock_server_user_messages():
 
 def test_mock_server_main_guard():
     """Test that script has proper main guard."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -124,19 +98,13 @@ def test_mock_server_main_guard():
 
 def test_mock_server_readable():
     """Test that the script is readable."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
     assert os.access(script_path, os.R_OK)
 
 
 def test_mock_server_syntax_valid():
     """Test that the script has valid Python syntax."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         code = f.read()
@@ -148,10 +116,7 @@ def test_mock_server_syntax_valid():
 
 def test_mock_server_help_text():
     """Test that script contains helpful usage information."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -161,10 +126,7 @@ def test_mock_server_help_text():
 
 def test_mock_server_backend_reference():
     """Test that script references the backend module correctly."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -173,10 +135,7 @@ def test_mock_server_backend_reference():
 
 def test_mock_server_port_configuration():
     """Test that the server port is 8001."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -185,10 +144,7 @@ def test_mock_server_port_configuration():
 
 def test_mock_server_host_configuration():
     """Test that the server host is set to localhost."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()
@@ -197,10 +153,7 @@ def test_mock_server_host_configuration():
 
 def test_mock_server_reload_enabled():
     """Test that reload is enabled for development."""
-    script_path = (
-        Path(__file__).parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
-    )
+    script_path = Path(__file__).parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/run_mock_server.py"
 
     with open(script_path, "r") as f:
         content = f.read()

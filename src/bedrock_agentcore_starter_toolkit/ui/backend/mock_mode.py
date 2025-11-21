@@ -24,6 +24,7 @@ class MockAgentService:
     """Mock service that simulates agent behavior."""
 
     def __init__(self):
+        """Initialize the mock agent service."""
         self.session_id = self._generate_session_id()
 
     @staticmethod

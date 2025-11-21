@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 class ConfigService:
     """Service for loading and managing agent configuration from project_config.yaml."""
 
-    def __init__(
-        self, config_path: Optional[Path] = None, agent_name: Optional[str] = None
-    ):
+    def __init__(self, config_path: Optional[Path] = None, agent_name: Optional[str] = None):
         """Initialize ConfigService.
 
         Args:
@@ -34,11 +32,11 @@ class ConfigService:
         try:
             self._config = load_config_if_exists(self.config_path)
             if self._config:
-                logger.info(f"Loaded configuration from {self.config_path}")
+                logger.info("Loaded configuration from %s", self.config_path)
             else:
-                logger.warning(f"Configuration file not found at {self.config_path}")
+                logger.warning("Configuration file not found at %s", self.config_path)
         except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
+            logger.error("Failed to load configuration: %s", e)
             self._config = None
 
     def get_config(self) -> Optional[BedrockAgentCoreConfigSchema]:
@@ -66,7 +64,7 @@ class ConfigService:
             name_to_use = agent_name or self.agent_name
             return self._config.get_agent_config(name_to_use)
         except Exception as e:
-            logger.error(f"Failed to get agent config: {e}")
+            logger.error("Failed to get agent config: %s", e)
             return None
 
     def get_agent_name(self, agent_name: Optional[str] = None) -> Optional[str]:
@@ -93,11 +91,7 @@ class ConfigService:
         agent_config = self.get_agent_config(agent_name)
         if not agent_config:
             return None
-        return (
-            agent_config.bedrock_agentcore.agent_arn
-            if agent_config.bedrock_agentcore
-            else None
-        )
+        return agent_config.bedrock_agentcore.agent_arn if agent_config.bedrock_agentcore else None
 
     def get_region(self, agent_name: Optional[str] = None) -> Optional[str]:
         """Get AWS region.

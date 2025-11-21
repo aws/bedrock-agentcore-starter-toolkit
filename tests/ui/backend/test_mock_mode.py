@@ -1,7 +1,5 @@
 """Tests for UI backend mock mode."""
 
-import time
-from unittest.mock import patch
 from bedrock_agentcore_starter_toolkit.ui.backend.mock_mode import MockAgentService
 
 
@@ -27,10 +25,7 @@ def test_get_config():
 
     assert config["mode"] == "local"
     assert config["agent_name"] == "Mock Agent (Test Mode)"
-    assert (
-        config["agent_arn"]
-        == "arn:aws:bedrock:us-east-1:123456789012:agent/mock-agent-id"
-    )
+    assert config["agent_arn"] == "arn:aws:bedrock:us-east-1:123456789012:agent/mock-agent-id"
     assert config["region"] == "us-east-1"
     assert config["session_id"] == service.session_id
     assert config["auth_method"] == "none"
@@ -53,7 +48,7 @@ def test_invoke():
 def test_invoke_with_new_session():
     """Test invoke with new session ID."""
     service = MockAgentService()
-    old_session = service.session_id
+    _ = service.session_id  # Store old session for potential future use
     new_session = "custom-session-123"
 
     result = service.invoke("Test message", new_session)

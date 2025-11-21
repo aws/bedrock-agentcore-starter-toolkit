@@ -1,10 +1,11 @@
 """Additional tests for UI backend main to increase coverage."""
 
-import pytest
 import json
 import os
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -28,15 +29,9 @@ def test_startup_event_with_config_path():
             "AGENTCORE_MOCK_MODE": "false",
         },
     ):
-        with patch(
-            "bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService"
-        ) as mock_config:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService"
-            ) as mock_invoke:
-                with patch(
-                    "bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id"
-                ) as mock_gen:
+        with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService") as mock_config:
+            with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService"):
+                with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id") as mock_gen:
                     mock_gen.return_value = "test-session"
                     mock_config_instance = Mock()
                     mock_config_instance.is_configured.return_value = False
@@ -63,18 +58,10 @@ def test_startup_event_with_memory_service():
             "AGENTCORE_MOCK_MODE": "false",
         },
     ):
-        with patch(
-            "bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService"
-        ) as mock_config:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService"
-            ):
-                with patch(
-                    "bedrock_agentcore_starter_toolkit.ui.backend.main.MemoryService"
-                ) as mock_memory:
-                    with patch(
-                        "bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id"
-                    ) as mock_gen:
+        with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService") as mock_config:
+            with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService"):
+                with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.MemoryService") as mock_memory:
+                    with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id") as mock_gen:
                         mock_gen.return_value = "test-session"
                         mock_config_instance = Mock()
                         mock_config_instance.is_configured.return_value = True
@@ -107,9 +94,7 @@ def test_invoke_agent_mock_mode_json_message(test_client):
     )
 
     assert response.status_code == 200
-    main.mock_service.invoke.assert_called_once_with(
-        "Hello from JSON", "mock-session-123"
-    )
+    main.mock_service.invoke.assert_called_once_with("Hello from JSON", "mock-session-123")
 
     # Reset
     main.mock_mode = False
@@ -134,9 +119,7 @@ def test_invoke_agent_mock_mode_invalid_json(test_client):
     )
 
     assert response.status_code == 200
-    main.mock_service.invoke.assert_called_once_with(
-        "Plain text message", "mock-session-123"
-    )
+    main.mock_service.invoke.assert_called_once_with("Plain text message", "mock-session-123")
 
     # Reset
     main.mock_mode = False
@@ -300,13 +283,9 @@ def test_invoke_agent_invalid_json_string():
 
 def test_serve_spa_api_route(test_client):
     """Test serve_spa rejects API routes."""
-    from bedrock_agentcore_starter_toolkit.ui.backend import main
 
     # Check if frontend build exists
-    frontend_dir = (
-        Path(__file__).parent.parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
-    )
+    frontend_dir = Path(__file__).parent.parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
     if not frontend_dir.exists():
         pytest.skip("Frontend build directory not found")
 
@@ -316,13 +295,9 @@ def test_serve_spa_api_route(test_client):
 
 def test_serve_spa_existing_file(test_client):
     """Test serve_spa serves existing files."""
-    from bedrock_agentcore_starter_toolkit.ui.backend import main
 
     # Check if frontend build exists
-    frontend_dir = (
-        Path(__file__).parent.parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
-    )
+    frontend_dir = Path(__file__).parent.parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
     if not frontend_dir.exists():
         pytest.skip("Frontend build directory not found")
 
@@ -334,13 +309,9 @@ def test_serve_spa_existing_file(test_client):
 
 def test_serve_spa_index_fallback(test_client):
     """Test serve_spa serves index.html for non-existent routes."""
-    from bedrock_agentcore_starter_toolkit.ui.backend import main
 
     # Check if frontend build exists
-    frontend_dir = (
-        Path(__file__).parent.parent.parent.parent
-        / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
-    )
+    frontend_dir = Path(__file__).parent.parent.parent.parent / "src/bedrock_agentcore_starter_toolkit/ui/frontend/dist"
     if not frontend_dir.exists():
         pytest.skip("Frontend build directory not found")
 
@@ -361,15 +332,9 @@ def test_startup_event_with_agent_name():
             "AGENTCORE_AGENT_NAME": "custom-agent",
         },
     ):
-        with patch(
-            "bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService"
-        ) as mock_config:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService"
-            ) as mock_invoke:
-                with patch(
-                    "bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id"
-                ) as mock_gen:
+        with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.ConfigService") as mock_config:
+            with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.InvokeService") as mock_invoke:
+                with patch("bedrock_agentcore_starter_toolkit.ui.backend.main.generate_session_id") as mock_gen:
                     mock_gen.return_value = "test-session"
                     mock_config_instance = Mock()
                     mock_config_instance.is_configured.return_value = False

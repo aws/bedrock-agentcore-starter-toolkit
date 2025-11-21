@@ -1,7 +1,9 @@
 """Tests for MemoryService."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from bedrock_agentcore_starter_toolkit.ui.backend.services.memory_service import (
     MemoryService,
 )

@@ -61,7 +61,7 @@ class InvokeService:
             session_id = self.current_session_id or generate_session_id()
             self.current_session_id = session_id
 
-        logger.info(f"Invoking agent with session ID: {session_id}")
+        logger.info("Invoking agent with session ID: %s", session_id)
 
         # Use provided agent_name, or fall back to instance agent_name
         name_to_use = agent_name or self.agent_name
@@ -87,7 +87,7 @@ class InvokeService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to invoke agent: {e}")
+            logger.error("Failed to invoke agent: %s", e)
             raise
 
     def generate_new_session_id(self) -> str:
@@ -97,7 +97,7 @@ class InvokeService:
             New session ID
         """
         self.current_session_id = generate_session_id()
-        logger.info(f"Generated new session ID: {self.current_session_id}")
+        logger.info("Generated new session ID: %s", self.current_session_id)
         return self.current_session_id
 
     def get_current_session_id(self) -> Optional[str]:

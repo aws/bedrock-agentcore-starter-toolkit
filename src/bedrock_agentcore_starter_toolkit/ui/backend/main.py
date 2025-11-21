@@ -1,5 +1,4 @@
-"""
-FastAPI backend server for AgentCore UI.
+"""FastAPI backend server for AgentCore UI.
 
 This server provides REST API endpoints for the frontend to interact with
 AgentCore agents and memory resources. It also serves the built frontend
@@ -9,17 +8,18 @@ To run the server:
     cd ui && python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
 """
 
+import json
 import logging
 import os
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-import json
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import traceback
+from fastapi.staticfiles import StaticFiles
 
 from bedrock_agentcore_starter_toolkit.services.runtime import generate_session_id
 
@@ -106,15 +106,13 @@ async def startup_event():
     else:
         config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 
-    logger.info(f"Loading configuration from: {config_path}")
-    logger.info(f"Local mode: {local_mode}")
+    logger.info("Loading configuration from: %s", config_path)
+    logger.info("Local mode: %s", local_mode)
     if agent_name:
-        logger.info(f"Agent name: {agent_name}")
+        logger.info("Agent name: %s", agent_name)
 
     config_service = ConfigService(config_path, agent_name=agent_name)
-    invoke_service = InvokeService(
-        config_path, agent_name=agent_name, local_mode=local_mode
-    )
+    invoke_service = InvokeService(config_path, agent_name=agent_name, local_mode=local_mode)
 
     # Initialize memory service if region is available
     region = config_service.get_region() if config_service.is_configured() else None
@@ -122,7 +120,7 @@ async def startup_event():
         memory_service = MemoryService(region=region)
 
     current_session_id = generate_session_id()
-    logger.info(f"Backend started with session ID: {current_session_id}")
+    logger.info("Backend started with session ID: %s", current_session_id)
 
 
 @app.get("/health")
@@ -257,14 +255,14 @@ async def invoke_agent(request: InvokeRequest):
         )
 
     except Exception as e:
-        logger.error(f"Error invoking agent: {e}")
+        logger.error("Error invoking agent: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "code": "INVOCATION_FAILED",
                 "message": f"Failed to invoke agent: {str(e)}",
             },
-        )
+        ) from e
 
 
 @app.post("/api/session/new", response_model=NewSessionResponse)
@@ -280,7 +278,7 @@ async def create_new_session():
     if mock_mode and mock_service:
         result = mock_service.create_new_session()
         current_session_id = result["session_id"]
-        logger.info(f"Created new mock session: {current_session_id}")
+        logger.info("Created new mock session: %s", current_session_id)
         return NewSessionResponse(session_id=current_session_id)
 
     if not invoke_service:
@@ -295,19 +293,19 @@ async def create_new_session():
     try:
         new_session_id = invoke_service.generate_new_session_id()
         current_session_id = new_session_id
-        logger.info(f"Created new session: {new_session_id}")
+        logger.info("Created new session: %s", new_session_id)
 
         return NewSessionResponse(session_id=new_session_id)
 
     except Exception as e:
-        logger.error(f"Error creating new session: {e}")
+        logger.error("Error creating new session: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "code": "SESSION_CREATION_FAILED",
                 "message": f"Failed to create new session: {str(e)}",
             },
-        )
+        ) from e
 
 
 @app.get("/api/memory", response_model=MemoryResourceResponse)
@@ -375,14 +373,14 @@ async def get_memory():
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving memory: {e}")
+        logger.error("Error retrieving memory: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "code": "MEMORY_RETRIEVAL_FAILED",
                 "message": f"Failed to retrieve memory details: {traceback.format_exc()}",
             },
-        )
+        ) from e
 
 
 # Mount static files for production build
@@ -422,8 +420,9 @@ if FRONTEND_BUILD_DIR.exists():
 
 else:
     logger.warning(
-        f"Frontend build directory not found at {FRONTEND_BUILD_DIR}. "
-        "Static file serving disabled. Run 'npm run build' in ui/frontend/ to build the frontend."
+        "Frontend build directory not found at %s. "
+        "Static file serving disabled. Run 'npm run build' in ui/frontend/ to build the frontend.",
+        FRONTEND_BUILD_DIR,
     )
 
 

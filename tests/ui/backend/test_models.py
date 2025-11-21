@@ -1,14 +1,13 @@
 """Tests for UI backend models."""
 
-import pytest
 from bedrock_agentcore_starter_toolkit.ui.backend.models import (
     AgentConfigResponse,
+    ErrorResponse,
     InvokeRequest,
     InvokeResponse,
-    NewSessionResponse,
-    MemoryStrategyResponse,
     MemoryResourceResponse,
-    ErrorResponse,
+    MemoryStrategyResponse,
+    NewSessionResponse,
 )
 
 

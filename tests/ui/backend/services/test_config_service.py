@@ -1,8 +1,10 @@
 """Tests for ConfigService."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
+
 from bedrock_agentcore_starter_toolkit.ui.backend.services.config_service import (
     ConfigService,
 )
@@ -18,9 +20,7 @@ def mock_config():
     agent_config = Mock()
     agent_config.name = "test-agent"
     agent_config.bedrock_agentcore = Mock()
-    agent_config.bedrock_agentcore.agent_arn = (
-        "arn:aws:bedrock:us-east-1:123456789012:agent/test"
-    )
+    agent_config.bedrock_agentcore.agent_arn = "arn:aws:bedrock:us-east-1:123456789012:agent/test"
     agent_config.aws = Mock()
     agent_config.aws.region = "us-east-1"
     agent_config.memory = Mock()

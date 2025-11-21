@@ -1,9 +1,8 @@
 """Tests for UI backend main FastAPI application."""
 
+from unittest.mock import Mock
+
 import pytest
-import json
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
 
 
@@ -22,9 +21,7 @@ def mock_config_service():
     service = Mock()
     service.is_configured.return_value = True
     service.get_agent_name.return_value = "test-agent"
-    service.get_agent_arn.return_value = (
-        "arn:aws:bedrock:us-east-1:123456789012:agent/test"
-    )
+    service.get_agent_arn.return_value = "arn:aws:bedrock:us-east-1:123456789012:agent/test"
     service.get_region.return_value = "us-east-1"
     service.get_memory_id.return_value = "memory-123"
     service.has_oauth_config.return_value = False

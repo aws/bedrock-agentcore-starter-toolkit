@@ -52,7 +52,7 @@ class MemoryService:
         try:
             memory_manager = self._get_memory_manager()
             memory = memory_manager.get_memory(memory_id)
-            logger.info(f"Retrieved memory: {memory}")
+            logger.info("Retrieved memory: %s", memory)
             # Extract memory details
             memory_data = dict(memory)
 
@@ -72,7 +72,7 @@ class MemoryService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get memory details: {e}")
+            logger.error("Failed to get memory details: %s", e)
             raise
 
     def _format_strategies(self, strategies: List) -> List[Dict]:

@@ -17,9 +17,9 @@ from .runtime.commands import (
     destroy,
     invoke,
     launch,
-    ui,
     status,
     stop_session,
+    ui,
 )
 
 app = typer.Typer(

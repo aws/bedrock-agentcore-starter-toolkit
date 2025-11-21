@@ -1,8 +1,10 @@
 """Tests for InvokeService."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
+
 from bedrock_agentcore_starter_toolkit.ui.backend.services.invoke_service import (
     InvokeService,
 )
@@ -48,9 +50,7 @@ def test_invoke_with_session_id(config_path):
 
         assert result["response"] == "Test response"
         assert result["session_id"] == "session-123"
-        assert (
-            result["agent_arn"] == "arn:aws:bedrock:us-east-1:123456789012:agent/test"
-        )
+        assert result["agent_arn"] == "arn:aws:bedrock:us-east-1:123456789012:agent/test"
         assert service.current_session_id == "session-123"
 
 
@@ -92,7 +92,7 @@ def test_invoke_with_bearer_token(config_path):
     ) as mock_invoke:
         mock_invoke.return_value = mock_result
 
-        result = service.invoke(
+        _ = service.invoke(
             "Hello",
             session_id="session-123",
             bearer_token="token-abc",
@@ -123,7 +123,7 @@ def test_invoke_with_user_id(config_path):
     ) as mock_invoke:
         mock_invoke.return_value = mock_result
 
-        result = service.invoke(
+        _ = service.invoke(
             "Hello",
             session_id="session-123",
             user_id="user-456",
@@ -154,7 +154,7 @@ def test_invoke_with_agent_name(config_path):
     ) as mock_invoke:
         mock_invoke.return_value = mock_result
 
-        result = service.invoke(
+        _ = service.invoke(
             "Hello",
             session_id="session-123",
             agent_name="custom-agent",
@@ -188,9 +188,7 @@ def test_generate_new_session_id(config_path):
     """Test generate_new_session_id."""
     service = InvokeService(config_path)
 
-    with patch(
-        "bedrock_agentcore_starter_toolkit.ui.backend.services.invoke_service.generate_session_id"
-    ) as mock_gen:
+    with patch("bedrock_agentcore_starter_toolkit.ui.backend.services.invoke_service.generate_session_id") as mock_gen:
         mock_gen.return_value = "new-session-789"
 
         session_id = service.generate_new_session_id()
@@ -223,7 +221,7 @@ def test_invoke_local_mode(config_path):
     ) as mock_invoke:
         mock_invoke.return_value = mock_result
 
-        result = service.invoke("Hello", session_id="session-123")
+        _ = service.invoke("Hello", session_id="session-123")
 
         mock_invoke.assert_called_once_with(
             config_path=config_path,
