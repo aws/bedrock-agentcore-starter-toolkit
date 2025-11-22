@@ -5,10 +5,10 @@ from ...types import ProjectContext
 from ..base_feature import Feature
 
 
-class LangGraphFeature(Feature):
+class LangChainFeature(Feature):
     """Implements Langgraph code generation."""
 
-    feature_dir_name = SDKProvider.LANG_GRAPH
+    feature_dir_name = SDKProvider.LANG_CHAIN
 
     def before_apply(self, context: ProjectContext) -> None:
         """Hook called before template rendering and code generation."""

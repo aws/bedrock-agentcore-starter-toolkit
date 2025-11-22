@@ -15,8 +15,8 @@ MONOREPO_SCENARIOS_WITHOUT_EXISTING_CONFIG = [
     pytest.param(SDKProvider.STRANDS, IACProvider.CDK, id="strands-cdk"),
     pytest.param(SDKProvider.STRANDS, IACProvider.TERRAFORM, id="strands-terraform"),
     # LangGraph with CDK and Terraform
-    pytest.param(SDKProvider.LANG_GRAPH, IACProvider.CDK, id="langgraph-cdk"),
-    pytest.param(SDKProvider.LANG_GRAPH, IACProvider.TERRAFORM, id="langgraph-terraform"),
+    pytest.param(SDKProvider.LANG_CHAIN, IACProvider.CDK, id="langgraph-cdk"),
+    pytest.param(SDKProvider.LANG_CHAIN, IACProvider.TERRAFORM, id="langgraph-terraform"),
     # CrewAI with CDK and Terraform
     pytest.param(SDKProvider.CREWAI, IACProvider.CDK, id="crewai-cdk"),
     pytest.param(SDKProvider.CREWAI, IACProvider.TERRAFORM, id="crewai-terraform"),

@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Literal, Optional, get_args
 
-CreateSDKProvider = Literal["Strands", "LangGraph", "GoogleADK", "OpenAIAgents", "AutoGen", "CrewAI"]
+CreateSDKProvider = Literal["Strands", "LangChain", "GoogleADK", "OpenAIAgents", "AutoGen", "CrewAI"]
 SupportedSDKProviders = list(get_args(CreateSDKProvider))
 
 CreateIACProvider = Literal["CDK", "Terraform"]

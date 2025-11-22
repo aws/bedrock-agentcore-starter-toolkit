@@ -58,7 +58,7 @@ class SDKProvider:
     """Supported Agent SDKs for agentcore create."""
 
     STRANDS = "Strands"
-    LANG_GRAPH = "LangGraph"
+    LANG_CHAIN = "LangChain"
     GOOGLE_ADK = "GoogleADK"
     OPENAI_AGENTS = "OpenAIAgents"
     AUTOGEN = "AutoGen"
@@ -66,7 +66,7 @@ class SDKProvider:
 
     _DISPLAY_MAP = {
         STRANDS: "Strands Agents SDK",
-        LANG_GRAPH: "LangGraph",
+        LANG_CHAIN: "LangChain",
         GOOGLE_ADK: "Google Agent Development Kit",
         OPENAI_AGENTS: "OpenAI Agents SDK",
         AUTOGEN: "Microsoft AutoGen",
@@ -77,7 +77,7 @@ class SDKProvider:
         STRANDS,
         CREWAI,
         GOOGLE_ADK,
-        LANG_GRAPH,
+        LANG_CHAIN,
         AUTOGEN,
         OPENAI_AGENTS,
     ]
@@ -141,7 +141,7 @@ class ModelProvider:
         SDKProvider.CREWAI: {Bedrock, OpenAI, Anthropic, Gemini},
         SDKProvider.AUTOGEN: {Bedrock, OpenAI, Anthropic, Gemini},
         SDKProvider.STRANDS: {Bedrock, OpenAI, Anthropic, Gemini},
-        SDKProvider.LANG_GRAPH: {Bedrock, OpenAI, Anthropic, Gemini},
+        SDKProvider.LANG_CHAIN: {Bedrock, OpenAI, Anthropic, Gemini},
     }
 
     @classmethod

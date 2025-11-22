@@ -85,9 +85,9 @@ class TestSDKProvider:
         """Test STRANDS constant value."""
         assert SDKProvider.STRANDS == "Strands"
 
-    def test_langgraph_value(self):
-        """Test LANG_GRAPH constant value."""
-        assert SDKProvider.LANG_GRAPH == "LangGraph"
+    def test_langchain_value(self):
+        """Test LANG_CHAIN constant value."""
+        assert SDKProvider.LANG_CHAIN == "LangChain"
 
     def test_google_adk_value(self):
         """Test GOOGLE_ADK constant value."""
@@ -112,7 +112,7 @@ class TestSDKProvider:
             "Strands Agents SDK",
             "CrewAI",
             "Google Agent Development Kit",
-            "LangGraph",
+            "LangChain",
             "Microsoft AutoGen",
             "OpenAI Agents SDK",
         ]
@@ -139,9 +139,9 @@ class TestSDKProvider:
         assert result == "GoogleADK"
 
     def test_get_id_from_display_langgraph(self):
-        """Test converting LangGraph display name to ID."""
-        result = SDKProvider.get_id_from_display("LangGraph")
-        assert result == "LangGraph"
+        """Test converting LangChain display name to ID."""
+        result = SDKProvider.get_id_from_display("LangChain")
+        assert result == "LangChain"
 
     def test_get_id_from_display_autogen(self):
         """Test converting AutoGen display name to ID."""
@@ -161,7 +161,7 @@ class TestSDKProvider:
     def test_resolve_to_internal_id_with_internal_id(self):
         """Test resolve_to_internal_id with already valid internal ID."""
         assert SDKProvider.resolve_to_internal_id("Strands") == "Strands"
-        assert SDKProvider.resolve_to_internal_id("LangGraph") == "LangGraph"
+        assert SDKProvider.resolve_to_internal_id("LangChain") == "LangChain"
         assert SDKProvider.resolve_to_internal_id("CrewAI") == "CrewAI"
 
     def test_resolve_to_internal_id_with_display_name(self):
