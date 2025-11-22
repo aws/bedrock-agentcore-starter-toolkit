@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-from ..cli.common import _handle_warn
-from ..utils.python_env import is_recommended_python_version
 from ..utils.runtime.container import ContainerRuntime
 from ..utils.runtime.schema import BedrockAgentCoreAgentSchema
 from .baseline_feature import BaselineFeature
@@ -103,7 +101,6 @@ def generate_project(
         create_and_init_venv(ctx, sink=sink)
     if git_init:
         init_git_project(ctx, sink=sink)
-    _emit_python_version_warning_if_applicable(ctx)
     # everything is done emit the blue success panel
     emit_create_completed_message(ctx)
 
@@ -151,15 +148,3 @@ def _apply_iac_generation(ctx: ProjectContext, agent_config) -> None:
         agent_name=ctx.agent_name,
         enable_observability=ctx.observability_enabled,
     )
-
-
-def _emit_python_version_warning_if_applicable(ctx: ProjectContext):
-    """With direct code deploy, there are platform/library compatibility concerns."""
-    if ctx.deployment_type == DeploymentType.DIRECT_CODE_DEPLOY:
-        deployment_string = "agentcore launch" if not ctx.iac_provider else "deploying"
-        recommended, version = is_recommended_python_version()
-        if not recommended:
-            _handle_warn(
-                f"Detected python version: {version}. For AgentCore runtime "
-                f"platform compatibility switch to Python 3.10 before running {deployment_string}"
-            )

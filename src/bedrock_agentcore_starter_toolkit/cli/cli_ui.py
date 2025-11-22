@@ -115,7 +115,7 @@ def build_option_fragments(state: OptionState):
 def show_create_welcome_ascii() -> None:
     """Display the simple welcome message."""
     console.print()
-    sandwich_ui(style=RICH_CYAN, text="[cyan]🤖 AgentCore activated.[/cyan] Let's build your agent.")
+    sandwich_text_ui(style=RICH_CYAN, text="[cyan]🤖 AgentCore activated.[/cyan] Let's build your agent.")
 
 
 # ---------------------------------------------------------------------------
@@ -424,7 +424,7 @@ def print_border(char: str = "-", style: str = "") -> None:
     console.print(char * safe_width, style=style)
 
 
-def sandwich_ui(style: str, text: str) -> None:
+def sandwich_text_ui(style: str, text: str) -> None:
     """Wrap the input in border."""
     print_border(style=style)
     console.print(text)

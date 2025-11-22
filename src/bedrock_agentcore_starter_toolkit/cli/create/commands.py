@@ -218,9 +218,7 @@ def _handle_monorepo_flow(
         model_provider = prompt_model_provider()
 
     if model_provider and model_provider in ModelProvider.REQUIRES_API_KEY:
-        _handle_warn(
-            "In runtime + IaC mode: Securely providing the API key to AgentCore Runtime is your responsibility."
-        )
+        _handle_warn("In production template mode, securely hadling your API key is your responsibility.")
 
     if not iac:
         if non_interactive_flag:
