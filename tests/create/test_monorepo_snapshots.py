@@ -36,6 +36,7 @@ MONOREPO_SCENARIOS_WITHOUT_EXISTING_CONFIG = [
 def test_monorepo_snapshots(sdk_provider, iac_provider, tmp_path, monkeypatch, snapshot, mock_container_runtime):
     """Test monorepo template generation for all SDK/IaC provider combinations."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("time.sleep", lambda _: None)  # skip sleeps used for nice UX
 
     # Generate project
     with patch("bedrock_agentcore_starter_toolkit.create.generate.emit_create_completed_message"):

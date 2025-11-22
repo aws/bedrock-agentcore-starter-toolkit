@@ -1,7 +1,7 @@
 """UI components for interactive CLI selectors."""
 
 import re
-from time import sleep
+import time
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.filters import Condition
@@ -12,6 +12,7 @@ from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.styles import Style, StyleTransformation
 from prompt_toolkit.widgets import TextArea
+from rich.control import Control
 
 from ..cli.common import console
 
@@ -22,7 +23,7 @@ STYLE = Style.from_dict(
     {
         "": "nounderline",
         "title": "",
-        "option-name": "fg:#ffffff",
+        "option-name": "fg:default",
         "option-desc": "fg:#777777",
         "cyan": PROMPT_TOOLKIT_RICH_CYAN,
         "selected-bullet": PROMPT_TOOLKIT_RICH_CYAN,
@@ -212,7 +213,7 @@ def select_one(title: str, options: list[str] | dict[str, str], default: str | N
 
     result = app.run()
     # No manual print here! The "collapsed" UI frame remains as the print record.
-    sleep(0.1)
+    time.sleep(0.1)
     return result
 
 
@@ -221,8 +222,21 @@ def select_one(title: str, options: list[str] | dict[str, str], default: str | N
 # ---------------------------------------------------------------------------
 
 
-def ask_text(title: str, default: str | None = None, redact: bool = False, starting_chars: str = "> ") -> str | None:
+def ask_text(
+    title: str,
+    default: str | None = None,
+    redact: bool = False,
+    starting_chars: str = "> ",
+    erase_prompt_on_submit: bool = True,
+) -> str | None:
     """Prompt user for a single-line text value."""
+    is_active = True
+
+    @Condition
+    def show_prompt():
+        # Show if we are NOT erasing, OR if we are still active
+        return not erase_prompt_on_submit or is_active
+
     field = TextArea(
         text=default or "",
         multiline=False,
@@ -237,6 +251,8 @@ def ask_text(title: str, default: str | None = None, redact: bool = False, start
 
     @kb.add("enter")
     def _(ev):
+        nonlocal is_active
+        is_active = False
         ev.app.exit(result=field.text.strip())
 
     @kb.add("escape")
@@ -244,9 +260,15 @@ def ask_text(title: str, default: str | None = None, redact: bool = False, start
     def _(ev):
         raise KeyboardInterrupt
 
+    # Always use ConditionalContainer, logic handles the persistence
+    prompt_container = ConditionalContainer(
+        content=Window(FormattedTextControl([("class:cyan", starting_chars)]), width=len(starting_chars), align="left"),
+        filter=show_prompt,
+    )
+
     input_row = VSplit(
         [
-            Window(FormattedTextControl([("class:cyan", starting_chars)]), width=2, align="left"),
+            prompt_container,
             field,
         ],
         height=1,
@@ -287,9 +309,15 @@ def ask_text_with_validation(
     default: str | None = None,
     redact: bool = False,
     starting_chars: str = "> ",
+    erase_prompt_on_submit: bool = True,
 ) -> str:
     """Prompt user for text with regex validation."""
     state = {"error": ""}
+    is_active = True
+
+    @Condition
+    def show_prompt():
+        return not erase_prompt_on_submit or is_active
 
     field = TextArea(
         text=default or "",
@@ -314,6 +342,8 @@ def ask_text_with_validation(
     def _(ev):
         val = field.text.strip()
         if re.fullmatch(regex, val):
+            nonlocal is_active
+            is_active = False
             ev.app.exit(result=val)
         else:
             state["error"] = error_message
@@ -330,13 +360,18 @@ def ask_text_with_validation(
 
     field.buffer.on_text_changed += on_text_changed
 
+    prompt_container = ConditionalContainer(
+        content=Window(
+            FormattedTextControl([("class:cyan", starting_chars)]),
+            width=len(starting_chars),
+            dont_extend_width=True,
+        ),
+        filter=show_prompt,
+    )
+
     input_row = VSplit(
         [
-            Window(
-                FormattedTextControl([("class:cyan", starting_chars)]),
-                width=len(starting_chars),
-                dont_extend_width=True,
-            ),
+            prompt_container,
             field,
         ],
         height=1,
@@ -370,12 +405,17 @@ def ask_text_with_validation(
 
 
 def intro_animate_once():
-    """Intro animation."""
+    """Animation at the beginning of project generation."""
     base = "Agent initializing"
-    for dots in ["", ".", "..", "..."]:
-        console.print(f"{base}{dots}", end="\r", highlight=False, markup=False)
-        sleep(0.25)
-    console.print(f"{base}...", highlight=False, markup=False)
+
+    console.print(Control.show_cursor(show=False))
+    try:
+        for dots in ["", ".", "..", "..."]:
+            console.print(f"{base}{dots}", end="\r", highlight=False, markup=False)
+            time.sleep(0.25)
+        console.print(f"{base}...", highlight=False, markup=False)
+    finally:
+        console.print(Control.show_cursor(show=True))
 
 
 def print_border(char: str = "-", style: str = "") -> None:
@@ -394,5 +434,5 @@ def sandwich_ui(style: str, text: str) -> None:
 
 def _pause_and_new_line_on_finish(sleep_override: float | None = None):
     """Sleep and print a line for polish after a command finishes."""
-    sleep(sleep_override or 0.10)
+    time.sleep(sleep_override or 0.10)
     print()

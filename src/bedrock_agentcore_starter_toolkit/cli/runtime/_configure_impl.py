@@ -132,7 +132,7 @@ def configure_impl(
 
     # Existing agent created via create flow
     existing_create_agent = (
-        existing_config.agents[existing_config.default_agent].is_created_via_create_flow
+        existing_config.agents[existing_config.default_agent].is_generated_by_agentcore_create
         if existing_config and existing_config.default_agent in existing_config.agents
         else False
     )
@@ -568,7 +568,7 @@ def configure_impl(
             max_lifetime=max_lifetime,
             deployment_type=deployment_type,
             runtime_type=runtime_type,
-            is_created_via_create_flow=existing_create_agent,
+            is_generated_by_agentcore_create=existing_create_agent,
         )
 
         # Prepare authorization info for summary

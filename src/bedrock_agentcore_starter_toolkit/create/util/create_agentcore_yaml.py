@@ -31,6 +31,7 @@ def write_minimal_create_with_iac_project_yaml(ctx: ProjectContext) -> Path:
                     "agent_arn": None,
                     "agent_session_id": None,
                 },
+                "is_generated_by_agentcore_create": True,
             }
         },
     }
@@ -51,7 +52,7 @@ def write_minimal_create_runtime_yaml(ctx: ProjectContext) -> Path:
         source_path=str(ctx.src_dir),
         aws=AWSConfig(execution_role_auto_create=True, s3_auto_create=True, region=None, account=None),
         api_key_env_var_name=ctx.api_key_env_var_name,
-        is_created_via_create_flow=ctx.is_created_via_create_flow,
+        is_generated_by_agentcore_create=True,
     )
     schema = BedrockAgentCoreConfigSchema(default_agent=ctx.agent_name, agents={ctx.agent_name: agent_schema})
     save_config(schema, ctx.output_dir / CONFIG_YAML_NAME)

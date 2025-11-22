@@ -105,6 +105,7 @@ def create(
                 error_message="Prjoect directory names need to be alphanumeric.",
                 default=get_auto_generated_project_name(),
                 starting_chars="./",
+                erase_prompt_on_submit=False,
             )
 
         if not VALID_PROJECT_NAME_PATTERN.fullmatch(project_name):

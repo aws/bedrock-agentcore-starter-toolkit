@@ -24,7 +24,7 @@ class TestConfigureImplExistingCreateAgent:
         self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
     ):
         """Test that configure_impl detects and uses existing create-flow agent config."""
-        # Create existing config with is_created_via_create_flow=True
+        # Create existing config with is_generated_by_agentcore_create=True
         agent_schema = BedrockAgentCoreAgentSchema(
             name="my_created_agent",
             entrypoint="src/main.py",
@@ -37,7 +37,7 @@ class TestConfigureImplExistingCreateAgent:
                 region=None,
                 account=None,
             ),
-            is_created_via_create_flow=True,
+            is_generated_by_agentcore_create=True,
         )
         config = BedrockAgentCoreConfigSchema(
             default_agent="my_created_agent",
@@ -99,7 +99,7 @@ class TestConfigureImplExistingCreateAgent:
                 )
 
                 # The agent name should be used from existing config
-                # No entrypoint prompts should be triggered since is_created_via_create_flow=True
+                # No entrypoint prompts should be triggered since is_generated_by_agentcore_create=True
 
         finally:
             os.chdir(original_cwd)
@@ -119,7 +119,7 @@ class TestConfigureImplExistingCreateAgent:
                 execution_role_auto_create=True,
                 s3_auto_create=True,
             ),
-            is_created_via_create_flow=True,
+            is_generated_by_agentcore_create=True,
         )
         config = BedrockAgentCoreConfigSchema(
             default_agent="test_agent",
@@ -200,7 +200,7 @@ class TestConfigureImplExistingCreateAgent:
                 execution_role_auto_create=True,
                 s3_auto_create=True,
             ),
-            is_created_via_create_flow=True,
+            is_generated_by_agentcore_create=True,
         )
         config = BedrockAgentCoreConfigSchema(
             default_agent="test_agent",

@@ -1,5 +1,6 @@
 """Shared test fixtures for Bedrock AgentCore Starter Toolkit tests."""
 
+import time
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -127,6 +128,12 @@ def mock_bedrock_agentcore_app():
         return {"result": "test"}
 
     return app
+
+
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    """Globally disable sleep in all tests for execution time."""
+    monkeypatch.setattr(time, "sleep", lambda *_: None)
 
 
 @pytest.fixture
