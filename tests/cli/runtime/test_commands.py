@@ -34,20 +34,26 @@ def handler(payload):
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_deployment_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_deployment_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
             ) as mock_load_if_exists,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+            ) as mock_get_account_id,
         ):
+            # Mock get_account_id to prevent real AWS calls
+            mock_get_account_id.return_value = "123456789012"
+
             # Mock agent name inference
             mock_infer_name.return_value = "test_agent"
 
@@ -62,8 +68,8 @@ def handler(payload):
             # Second call: runtime version selection (default for python3.11)
             mock_deployment_prompt.side_effect = ["1", "2"]
 
-            # Mock the OAuth prompt to return "no" (default behavior)
-            mock_prompt.return_value = "no"
+            # Mock prompts: agent name (use inferred), S3 bucket (auto-create), OAuth (no)
+            mock_prompt.side_effect = ["", "", "no"]
 
             # Mock load_config_if_exists (used by ConfigurationManager initialization)
             mock_load_if_exists.return_value = None  # No existing config
@@ -115,27 +121,33 @@ def handler(payload):
         try:
             with (
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
                 ) as mock_configure,
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
                 ) as mock_req_display,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_deployment_prompt,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_deployment_prompt,
                 patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name"
+                ) as mock_infer_name,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path"
+                ) as mock_rel_path,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
                 patch(
                     "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
                 ) as mock_load_if_exists,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.Path.is_file") as mock_is_file,
                 patch("boto3.Session") as mock_session,
                 patch(
                     "bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.parse_entrypoint"
                 ) as mock_parse_entrypoint,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+                ) as mock_get_account_id,
             ):
-                # Mock file existence
-                mock_is_file.return_value = True
+                # Mock get_account_id to prevent real AWS calls
+                mock_get_account_id.return_value = "123456789012"
 
                 # Mock AWS session to prevent real AWS calls
                 mock_session.return_value = Mock()
@@ -155,8 +167,8 @@ def handler(payload):
                 # Mock deployment type and runtime version prompts
                 mock_deployment_prompt.side_effect = ["1", "2"]
 
-                # Mock the OAuth prompt to return "no" (default behavior)
-                mock_prompt.return_value = "no"
+                # Mock prompts: agent name (use inferred), S3 bucket (auto-create), OAuth (no)
+                mock_prompt.side_effect = ["", "", "no"]
 
                 # Mock load_config_if_exists
                 mock_load_if_exists.return_value = None
@@ -190,8 +202,11 @@ def handler(payload):
                     ],
                 )
 
-                # Test expects failure due to CLI validation
-                assert result.exit_code == 1
+                print("STDOUT")
+                print(result.stdout)
+                print(result.stderr)
+                print("===///====")
+                assert result.exit_code == 0
         finally:
             os.chdir(original_cwd)
 
@@ -202,15 +217,15 @@ def handler(payload):
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_deployment_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_deployment_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
@@ -267,10 +282,16 @@ def handler(payload):
         def mock_handle_error_side_effect():
             raise typer.Exit(1)
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error",
-            side_effect=mock_handle_error_side_effect,
-        ) as mock_error:
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
+                side_effect=mock_handle_error_side_effect,
+            ) as mock_error,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ),
+        ):
             try:
                 self.runner.invoke(app, ["configure", "--entrypoint", str(agent_file), "--protocol", "HTTPS"])
             except typer.Exit:
@@ -340,12 +361,16 @@ agents:
             raise typer.Exit(1)
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.validate_agent_name") as mock_validate,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.validate_agent_name") as mock_validate,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error",
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
                 side_effect=mock_handle_error_side_effect,
             ) as mock_error,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ),
         ):
             mock_rel_path.return_value = "test-agent.py"
             mock_validate.return_value = (False, "Agent name contains invalid characters: @#$")
@@ -364,6 +389,7 @@ agents:
                         "test@agent#123",
                         "--execution-role",
                         "TestRole",
+                        "--non-interactive",
                     ],
                 )
                 assert result.exit_code == 1
@@ -382,7 +408,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error",
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
                 side_effect=mock_handle_error_side_effect,
             ) as mock_error,
         ):
@@ -411,14 +437,16 @@ agents:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.ConfigurationManager") as mock_config_manager,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.ConfigurationManager"
+            ) as mock_config_manager,
         ):
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
@@ -450,26 +478,31 @@ agents:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_deployment_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_deployment_prompt,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
             ) as mock_load_if_exists,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+            ) as mock_get_account_id,
         ):
+            mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
             # Mock deployment type as "2" (container) since this test is for ECR configuration
             mock_deployment_prompt.return_value = "2"
-            mock_prompt.return_value = "no"
+            # Mock prompts: agent name (use inferred), S3 bucket (auto-create), OAuth (no)
+            mock_prompt.side_effect = ["", "", "no"]
 
             # Mock load_config_if_exists
             mock_load_if_exists.return_value = None
@@ -534,27 +567,31 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            # Test with malformed JSON (missing closing brace) - should fail
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--name",
-                    "test_agent",
-                    "--execution-role",
-                    "TestRole",
-                    "--authorizer-config",
-                    '{"customJWTAuthorizer": {"discoveryUrl": "test"',
-                    "--non-interactive",
-                ],
-            )
-            # Should fail with invalid JSON error
-            assert result.exit_code != 0
-            # Check for JSON error in stdout or stderr (may be in exception message)
-            output = result.stdout + str(result.exception) if result.exception else result.stdout
-            assert "json" in output.lower() or "JSON" in output
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                # Test with malformed JSON (missing closing brace) - should fail
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--name",
+                        "test_agent",
+                        "--execution-role",
+                        "TestRole",
+                        "--authorizer-config",
+                        '{"customJWTAuthorizer": {"discoveryUrl": "test"',
+                        "--non-interactive",
+                    ],
+                )
+                # Should fail with invalid JSON error
+                assert result.exit_code != 0
+                # Check for JSON error in stdout or stderr (may be in exception message)
+                output = result.stdout + str(result.exception) if result.exception else result.stdout
+                assert "json" in output.lower() or "JSON" in output
         finally:
             os.chdir(original_cwd)
 
@@ -625,7 +662,7 @@ agents:
 
         try:
             with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure:
                 # Simulate ValueError during configure operation
                 mock_configure.side_effect = ValueError("Invalid configuration")
@@ -648,13 +685,25 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app, ["configure", "--entrypoint", str(nonexistent_file), "--execution-role", "TestRole"]
-            )
-
-            # Should fail with exit code 1 and contain path error info
-            assert result.exit_code == 1
-            assert "not found" in result.stdout.lower()
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(nonexistent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--non-interactive",
+                    ],
+                )
+                print(result.stdout)
+                # Should fail with exit code 1 and contain path error info
+                assert result.exit_code == 1
+                assert "not found" in result.stdout.lower()
         finally:
             os.chdir(original_cwd)
 
@@ -665,16 +714,18 @@ agents:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.validate_agent_name") as mock_validate,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.ConfigurationManager") as mock_config_mgr,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.validate_agent_name") as mock_validate,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.ConfigurationManager"
+            ) as mock_config_mgr,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
         ):
             # Mock the validation functions to pass
             mock_infer_name.return_value = "test_agent"
@@ -748,7 +799,7 @@ agents:
 
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error") as mock_error,
         ):
             # Simulate ValueError during launch
             mock_launch.side_effect = ValueError("Invalid configuration: missing required field")
@@ -786,7 +837,7 @@ agents:
 
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error") as mock_error,
         ):
             # Simulate general Exception during launch
             mock_launch.side_effect = Exception("Docker daemon not running")
@@ -812,7 +863,16 @@ agents:
         """Test invoke command with ValueError for not deployed agent."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text(
-            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+            """
+ default_agent: test-agent
+ agents:
+     test-agent:
+         name: test-agent
+         entrypoint: test.py
+         aws:
+             account: '123456789012'
+             region: any-region-1
+ """
         )
 
         with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
@@ -835,7 +895,16 @@ agents:
         """Test invoke command with general ValueError."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text(
-            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+            """
+            default_agent: test-agent
+            agents:
+                test-agent:
+                    name: test-agent
+                    entrypoint: test.py
+                    aws:
+                        account: '123456789012'
+                        region: any-region-1
+            """
         )
 
         with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
@@ -862,6 +931,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+      account: '123456789012'
+      region: any-region-1
     bedrock_agentcore:
       agent_id: AGENT123
 """
@@ -887,7 +959,16 @@ agents:
         """Test invoke command with general Exception."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text(
-            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+            """
+            default_agent: test-agent
+            agents:
+                test-agent:
+                    name: test-agent
+                    entrypoint: test.py
+                    aws:
+                        account: '123456789012'
+                        region: any-region-1
+            """
         )
 
         with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.invoke_bedrock_agentcore") as mock_invoke:
@@ -1019,13 +1100,13 @@ agents:
 
     def test_validate_requirements_file_error(self, tmp_path):
         """Test _validate_requirements_file with validation error."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _validate_requirements_file
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _validate_requirements_file
 
         with (
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.validate_requirements_file"
             ) as mock_validate,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error") as mock_error,
         ):
             # Simulate validation error
             mock_validate.side_effect = ValueError("Invalid requirements file format")
@@ -1050,12 +1131,12 @@ agents:
 
     def test_prompt_for_requirements_file_validation_error(self, tmp_path):
         """Test _prompt_for_requirements_file with validation error and retry."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _prompt_for_requirements_file
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _prompt_for_requirements_file
 
         with (
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_prompt,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_prompt,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._validate_requirements_file"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._validate_requirements_file"
             ) as mock_validate,
         ):
             # First call should succeed, so return the file path
@@ -1075,13 +1156,13 @@ agents:
 
     def test_handle_requirements_file_display_none_return(self, tmp_path):
         """Test _handle_requirements_file_display with no deps found raises typer.Exit."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _handle_requirements_file_display
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _handle_requirements_file_display
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._prompt_for_requirements_file"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._prompt_for_requirements_file"
             ) as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.detect_requirements") as mock_detect,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.detect_requirements") as mock_detect,
         ):
             mock_prompt.return_value = None
             # Mock detect_requirements to return no dependencies found
@@ -1094,9 +1175,9 @@ agents:
 
     def test_prompt_for_requirements_empty_response(self, tmp_path):
         """Test _prompt_for_requirements_file with empty response."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _prompt_for_requirements_file
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _prompt_for_requirements_file
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt") as mock_prompt:
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt") as mock_prompt:
             mock_prompt.return_value = "   "  # Empty/whitespace response
 
             result = _prompt_for_requirements_file("Enter path: ", str(tmp_path), "")
@@ -1185,6 +1266,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -1224,6 +1308,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -1240,6 +1327,8 @@ agents:
             try:
                 # Test invoke - should show clean response
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
+                print(result.stdout)
+                print(result.stderr)
                 assert result.exit_code == 0
                 assert "Session: test-session-123" in result.stdout
                 assert "hello world" in result.stdout
@@ -1257,6 +1346,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -1561,6 +1653,9 @@ agents:
     name: test-agent
     entrypoint: test.py
     deployment_type: container
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -1605,6 +1700,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -1764,7 +1862,7 @@ agents:
 
     def test_handle_requirements_file_display_with_provided_file(self, tmp_path):
         """Test _handle_requirements_file_display with user-provided file."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _handle_requirements_file_display
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _handle_requirements_file_display
 
         # Create a requirements file in the project directory
         req_file = tmp_path / "requirements.txt"
@@ -1776,7 +1874,7 @@ agents:
 
         try:
             with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._validate_requirements_file",
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._validate_requirements_file",
                 return_value=str(req_file.resolve()),
             ) as mock_validate:
                 result = _handle_requirements_file_display("requirements.txt", False, str(tmp_path))
@@ -1787,7 +1885,7 @@ agents:
 
     def test_handle_requirements_file_display_auto_detect_found(self, tmp_path):
         """Test _handle_requirements_file_display with auto-detection finding a file."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _handle_requirements_file_display
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _handle_requirements_file_display
         from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
 
         # Mock the detect_dependencies function with resolved_path
@@ -1801,16 +1899,18 @@ agents:
         try:
             with (
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands.detect_requirements",
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.detect_requirements",
                     return_value=mock_deps,
                 ),
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands._prompt_for_requirements_file",
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._prompt_for_requirements_file",
                     return_value=None,
                 ) as mock_prompt,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.console.print") as mock_print,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._print_success") as mock_success,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console.print") as mock_print,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._print_success") as mock_success,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path"
+                ) as mock_rel_path,
             ):
                 mock_rel_path.return_value = "pyproject.toml"
                 result = _handle_requirements_file_display(None, False, str(tmp_path))
@@ -1824,7 +1924,7 @@ agents:
 
     def test_handle_requirements_file_display_no_file_found(self, tmp_path):
         """Test _handle_requirements_file_display with no auto-detection and user provides file."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _handle_requirements_file_display
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _handle_requirements_file_display
         from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
 
         # Mock the detect_requirements function to return no file found
@@ -1836,14 +1936,14 @@ agents:
         try:
             with (
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands.detect_requirements",
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.detect_requirements",
                     return_value=mock_deps,
                 ),
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands._prompt_for_requirements_file",
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._prompt_for_requirements_file",
                     return_value="user_requirements.txt",
                 ) as mock_prompt,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.console.print") as mock_print,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console.print") as mock_print,
             ):
                 result = _handle_requirements_file_display(None, False, str(tmp_path))
 
@@ -1855,7 +1955,7 @@ agents:
 
     def test_configure_oauth(self, tmp_path):
         """Test _configure_oauth with discovery URL, client IDs, and audience."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import ConfigurationManager
 
         with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -1891,7 +1991,7 @@ agents:
 
     def test_configure_oauth_with_existing_values(self, tmp_path):
         """Test _configure_oauth now uses env vars as defaults, not existing config."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import ConfigurationManager
 
         # Mock existing config with OAuth settings (no longer used as defaults)
         mock_project_config = Mock()
@@ -1943,7 +2043,7 @@ agents:
         """Test _configure_oauth raises error when no discovery URL provided."""
         import typer
 
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import ConfigurationManager
 
         with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -1970,7 +2070,7 @@ agents:
 
     def test_configure_oauth_no_client_or_audience_error(self, tmp_path):
         """Test _configure_oauth raises error when neither client IDs nor audience provided."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import ConfigurationManager
 
         with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
             config_manager = ConfigurationManager(tmp_path / ".bedrock_agentcore.yaml")
@@ -2002,11 +2102,17 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        region: any-region-1
+        account: "123456789012"
     bedrock_agentcore:
       agent_arn: arn:aws:bedrock:us-west-2:123456789012:agent/test-id
   another-agent:
     name: another-agent
     entrypoint: another.py
+    aws:
+        region: any-region-1
+        account: "123456789012"
     bedrock_agentcore:
       agent_arn: null
 """
@@ -2078,7 +2184,7 @@ agents:
 
     def test_validate_requirements_file_success(self, tmp_path):
         """Test _validate_requirements_file with valid file."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _validate_requirements_file
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _validate_requirements_file
         from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
 
         # Create a requirements file
@@ -2093,7 +2199,9 @@ agents:
                 patch(
                     "bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint.validate_requirements_file"
                 ) as mock_validate,
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path"
+                ) as mock_rel_path,
             ):
                 mock_deps = DependencyInfo(file="requirements.txt", type="requirements", resolved_path=str(req_file))
                 mock_validate.return_value = mock_deps
@@ -2107,7 +2215,7 @@ agents:
 
     def test_prompt_for_requirements_file_success(self, tmp_path):
         """Test _prompt_for_requirements_file with valid response."""
-        from bedrock_agentcore_starter_toolkit.cli.runtime.commands import _prompt_for_requirements_file
+        from bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl import _prompt_for_requirements_file
 
         # Create a requirements file
         req_file = tmp_path / "requirements.txt"
@@ -2118,9 +2226,12 @@ agents:
 
         try:
             with (
-                patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.prompt", return_value="requirements.txt"),
                 patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime.commands._validate_requirements_file",
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.prompt",
+                    return_value="requirements.txt",
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._validate_requirements_file",
                     return_value="requirements.txt",
                 ) as mock_validate,
             ):
@@ -2139,6 +2250,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
     memory:
       enabled: true
       memory_id: mem_123456
@@ -2151,6 +2265,7 @@ agents:
         ):
             # Mock project config and agent config
             mock_project_config = Mock()
+            mock_project_config.is_agentcore_create_with_iac = False
             mock_agent_config = Mock()
             mock_agent_config.name = "test-agent"
             mock_agent_config.entrypoint = "test.py"
@@ -2232,6 +2347,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
     memory:
       enabled: true
       enable_ltm: false
@@ -2497,6 +2615,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -2550,6 +2671,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -2602,6 +2726,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -2659,6 +2786,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -2717,6 +2847,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
     memory:
       enabled: true
       memory_id: mem_123456
@@ -2812,9 +2945,15 @@ agents:
   agent1:
     name: agent1
     entrypoint: agent1.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
   agent2:
     name: agent2
     entrypoint: agent2.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -2847,6 +2986,9 @@ agents:
             try:
                 result = self.runner.invoke(app, ["destroy", "--agent", "agent2", "--dry-run"])
 
+                print(result.stdout)
+                print(result.stderr)
+
                 assert result.exit_code == 0
                 assert "agent2" in result.stdout
 
@@ -2865,6 +3007,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        account: "123456789012"
+        region: any-region-1
 """
         config_file.write_text(config_content.strip())
 
@@ -3135,6 +3280,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+        region: any-region-1
+        account: "123456789012"
 """
         config_file.write_text(config_content.strip())
 
@@ -3249,19 +3397,23 @@ agents:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
             ) as mock_load_if_exists,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+            ) as mock_get_account_id,
         ):
+            mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
@@ -3344,25 +3496,29 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--idle-timeout",
-                    "1000",
-                    "--max-lifetime",
-                    "500",  # Less than idle_timeout
-                    "--non-interactive",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--idle-timeout",
+                        "1000",
+                        "--max-lifetime",
+                        "500",  # Less than idle_timeout
+                        "--non-interactive",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "idle-timeout" in result.stdout.lower()
-            assert "max-lifetime" in result.stdout.lower()
+                assert result.exit_code == 1
+                assert "idle-timeout" in result.stdout.lower()
+                assert "max-lifetime" in result.stdout.lower()
         finally:
             os.chdir(original_cwd)
 
@@ -3375,19 +3531,23 @@ class TestCommandsAdditionalCoverage:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req_display,
             patch("bedrock_agentcore_starter_toolkit.cli.common.prompt") as mock_prompt,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
             ) as mock_load_if_exists,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+            ) as mock_get_account_id,
         ):
+            mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req_display.return_value = tmp_path / "requirements.txt"
@@ -3448,21 +3608,25 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--subnets",
-                    "subnet-abc123def456",  # No --vpc flag
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--subnets",
+                        "subnet-abc123def456",  # No --vpc flag
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "require --vpc flag" in result.stdout
+                assert result.exit_code == 1
+                assert "require --vpc flag" in result.stdout
 
         finally:
             os.chdir(original_cwd)
@@ -3476,24 +3640,28 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--vpc",
-                    "--subnets",
-                    "invalid-subnet",
-                    "--security-groups",
-                    "sg-abc123xyz789",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "invalid-subnet",
+                        "--security-groups",
+                        "sg-abc123xyz789",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "Invalid subnet ID format" in result.stdout
+                assert result.exit_code == 1
+                assert "Invalid subnet ID format" in result.stdout
 
         finally:
             os.chdir(original_cwd)
@@ -3507,24 +3675,28 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(
-                app,
-                [
-                    "configure",
-                    "--entrypoint",
-                    str(agent_file),
-                    "--execution-role",
-                    "TestRole",
-                    "--vpc",
-                    "--subnets",
-                    "subnet-abc123def456",
-                    "--security-groups",
-                    "invalid-sg",
-                ],
-            )
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                return_value="123456789012",
+            ):
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "configure",
+                        "--entrypoint",
+                        str(agent_file),
+                        "--execution-role",
+                        "TestRole",
+                        "--vpc",
+                        "--subnets",
+                        "subnet-abc123def456",
+                        "--security-groups",
+                        "invalid-sg",
+                    ],
+                )
 
-            assert result.exit_code == 1
-            assert "Invalid security group ID format" in result.stdout
+                assert result.exit_code == 1
+                assert "Invalid security group ID format" in result.stdout
 
         finally:
             os.chdir(original_cwd)
@@ -3598,18 +3770,22 @@ class TestCommandsAdditionalCoverage:
 
         with (
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.configure_bedrock_agentcore"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.configure_bedrock_agentcore"
             ) as mock_configure,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.infer_agent_name") as mock_infer_name,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_relative_path") as mock_rel_path,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.infer_agent_name") as mock_infer_name,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_relative_path") as mock_rel_path,
             patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_requirements_file_display"
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_requirements_file_display"
             ) as mock_req,
-            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.load_config") as mock_load_config,
             patch(
                 "bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists"
             ) as mock_load_if_exists,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
+            ) as mock_get_account_id,
         ):
+            mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
             mock_rel_path.return_value = "test_agent.py"
             mock_req.return_value = None
@@ -3786,7 +3962,18 @@ agents:
     def test_status_command_with_memory_creating_state(self, tmp_path):
         """Test status command shows warning when memory is in CREATING state."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+        config_file.write_text(
+            """
+default_agent: test-agent
+agents:
+    test-agent:
+        name: test-agent
+        entrypoint: test.py
+        aws:
+          region: any-region-1
+          account: "123456789012"
+"""
+        )
 
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status,
@@ -3842,7 +4029,18 @@ agents:
     def test_status_command_with_lifecycle_settings(self, tmp_path):
         """Test status command displays lifecycle settings."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+        config_file.write_text(
+            """
+default_agent: test-agent
+agents:
+    test-agent:
+        name: test-agent
+        entrypoint: test.py
+        aws:
+          region: any-region-1
+          account: "123456789012"
+"""
+        )
 
         with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
             mock_result = Mock()
@@ -3906,7 +4104,8 @@ test-agent:
     name: test-agent
     entrypoint: test.py
     aws:
-    region: us-west-2
+        region: us-west-2
+        account: 123456789012
     network_configuration:
         network_mode: PUBLIC
     bedrock_agentcore:
@@ -3962,7 +4161,18 @@ test-agent:
     def test_status_command_not_deployed(self, tmp_path):
         """Test status command when agent is configured but not deployed."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
-        config_file.write_text("default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent")
+        config_file.write_text(
+            """
+default_agent: test-agent
+agents:
+    test-agent:
+        name: test-agent
+        entrypoint: test.py
+        aws:
+          region: any-region-1
+          account: "123456789012"
+"""
+        )
 
         with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.get_status") as mock_status:
             mock_result = Mock()
@@ -4002,6 +4212,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
 """
         config_file.write_text(config_content.strip())
 
@@ -4051,6 +4264,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
 """
         config_file.write_text(config_content.strip())
 
@@ -4089,6 +4305,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
 """
         config_file.write_text(config_content.strip())
 
@@ -4142,6 +4361,9 @@ agents:
   test-agent:
     name: test-agent
     entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
 """
         config_file.write_text(config_content.strip())
 
@@ -4173,7 +4395,16 @@ agents:
         """Test launch command with invalid environment variable format."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text(
-            "default_agent: test-agent\nagents:\n  test-agent:\n    name: test-agent\n    entrypoint: test.py"
+            """
+            default_agent: test-agent
+            agents:
+                test-agent:
+                    name: test-agent
+                    entrypoint: test.py
+                    aws:
+                      region: any-region-1
+                      account: "123456789012"
+            """
         )
 
         original_cwd = Path.cwd()
@@ -4181,6 +4412,11 @@ agents:
 
         try:
             result = self.runner.invoke(app, ["launch", "--local", "--env", "INVALID_FORMAT"])
+            print("STDOUT")
+            print(result.stdout)
+            print("STDERR")
+            print(result.stderr)
+            print(result.exception)
 
             assert result.exit_code == 1
             # Error might be in stdout, stderr, or exception output

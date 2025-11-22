@@ -1,0 +1,49 @@
+import os
+from typing import List
+from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
+{%- if not custom_authorizer_enabled %}
+import requests
+
+COGNITO_TOKEN_URL = os.getenv("COGNITO_TOKEN_URL")
+COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
+COGNITO_CLIENT_SECRET = os.getenv("COGNITO_CLIENT_SECRET")
+COGNITO_SCOPE = os.getenv("COGNITO_SCOPE")
+
+def _get_access_token():
+    """
+    Make a POST request to the Cognito OAuth token URL using client credentials.
+    """
+    response = requests.post(
+        COGNITO_TOKEN_URL,
+        auth=(COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET),
+        data={
+            "grant_type": "client_credentials",
+            "scope": COGNITO_SCOPE,
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    return response.json()["access_token"]
+{%- else %}
+
+def _get_access_token():
+    """
+    Stub implementation if using a custom authorizer.
+    """
+    raise NotImplementedError("Custom authorizer flow is not implemented.")
+{%- endif %}
+
+async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
+    """
+    Returns an MCP Client for AgentCore Gateway compatible with AutoGen
+    """
+    gateway_url = os.getenv("GATEWAY_URL")
+    if not gateway_url:
+        raise RuntimeError("Missing required environment variable: GATEWAY_URL")
+
+    server_params = StreamableHttpServerParams(
+        url=gateway_url,
+        headers={
+            "Authorization": f"Bearer {_get_access_token()}"
+        }
+    )
+    return await mcp_server_tools(server_params)

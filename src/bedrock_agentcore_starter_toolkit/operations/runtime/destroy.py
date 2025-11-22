@@ -107,7 +107,11 @@ def destroy_bedrock_agentcore(
         # 7. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
 
-        # 8. Clean up configuration
+        # 8. Destroy API Key Credential Provider created by agentcore create
+        if agent_config.api_key_credential_provider_name:
+            _destroy_api_key_credential_provider(session, agent_config, result, dry_run)
+
+        # 9. Clean up configuration
         if not dry_run and not result.errors:
             _cleanup_agent_config(config_path, project_config, agent_config.name, result)
 
@@ -189,6 +193,54 @@ def _destroy_agentcore_endpoint(
     except Exception as e:
         result.warnings.append(f"Error during endpoint destruction: {e}")
         log.warning("Error during endpoint destruction: %s", e)
+
+
+def _destroy_api_key_credential_provider(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Destroy Bedrock AgentCore Identity API Key Credential Provider."""
+    if not agent_config.api_key_credential_provider_name:
+        return
+
+    try:
+        client = BedrockAgentCoreClient(agent_config.aws.region)
+
+        if dry_run:
+            result.resources_removed.append(
+                f"AgentCore Identity API Key Credential Provider: {agent_config.api_key_credential_provider_name} "
+                f"(DRY RUN)"
+            )
+            return
+
+        try:
+            client.delete_api_key_credential_provider(agent_config.api_key_credential_provider_name)
+            result.resources_removed.append(
+                f"AgentCore Identity API Key Credential Provider: {agent_config.api_key_credential_provider_name}"
+            )
+            log.info(
+                "AgentCore Identity API Key Credential Provider: %s", agent_config.api_key_credential_provider_name
+            )
+        except ClientError as delete_error:
+            error_code = delete_error.response["Error"]["Code"]
+            if error_code not in ["ResourceNotFoundException", "NotFound"]:
+                result.errors.append(
+                    f"Failed to delete Identity API Key Credential Provider "
+                    f"{agent_config.api_key_credential_provider_name}: {delete_error}"
+                )
+                log.error(
+                    "Failed to delete AgentCore Identity API Key Credential Provider: %s",
+                    agent_config.api_key_credential_provider_name,
+                )
+            else:
+                result.warnings.append(
+                    "AgentCore Identity API Key Credential Provider not found or already deleted during deletion"
+                )
+    except Exception as e:
+        result.warnings.append(f"Error during AgentCore Identity API Key Credential Provider destruction: {e}")
+        log.warning("Error during AgentCore Identity API Key Credential Provider destruction: %s", e)
 
 
 def _destroy_agentcore_agent(

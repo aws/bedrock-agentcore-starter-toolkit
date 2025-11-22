@@ -26,6 +26,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^tests/create/__snapshots__/.*\.ambr$
         stages: [pre-commit]
       - id: end-of-file-fixer
         stages: [pre-commit]

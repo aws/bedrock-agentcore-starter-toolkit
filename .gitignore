@@ -27,3 +27,8 @@ specs/
 .specify/
 coverage.json
 CLAUDE.md
+mise.toml
+.idea/
+!tests/create/fixtures/scenarios/
+!tests/create/fixtures/scenarios/**
+.kiro/

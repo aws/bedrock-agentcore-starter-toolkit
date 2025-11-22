@@ -27,7 +27,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -74,7 +77,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -103,7 +109,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -128,7 +137,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -171,7 +183,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -214,7 +229,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -245,7 +263,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "existing-workload-456"},
@@ -315,7 +336,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-east-1", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-east-1",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "test-workload-789"},
@@ -387,7 +411,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             # No oauth_configuration - should trigger workload creation
@@ -464,7 +491,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "existing-workload-123"},
@@ -492,7 +522,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             # No oauth_configuration
@@ -526,7 +559,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -571,7 +607,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -620,7 +659,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "test-workload-456"},
@@ -682,7 +724,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -717,7 +762,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -751,7 +799,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
