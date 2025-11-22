@@ -11,6 +11,7 @@ CreateIACProvider = Literal["CDK", "Terraform"]
 SupportedIACProivders = list(get_args(CreateIACProvider))
 
 CreateTemplateDirSelection = Literal["monorepo", "common", "runtime_only"]
+CreateTemplateDisplay = Literal["basic", "production"]
 
 CreateRuntimeProtocol = Literal["HTTP", "MCP", "A2A"]
 

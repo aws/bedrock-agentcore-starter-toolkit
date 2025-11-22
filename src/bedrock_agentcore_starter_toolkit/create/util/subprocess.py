@@ -89,9 +89,4 @@ def _run_quiet(cmd: list[str], cwd: Path) -> None:
     proc.wait()
 
     if proc.returncode != 0:
-        print("\n----- command failed ---------------------------------\n")
-        print(f"Command: {' '.join(cmd)}\n")
-        print("Output:\n")
-        print("".join(captured))
-        print("\n-------------------------------------------------------\n")
         raise subprocess.CalledProcessError(proc.returncode, cmd)

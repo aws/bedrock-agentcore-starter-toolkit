@@ -3,6 +3,7 @@
 from rich import box  # <--- Added import for ASCII style box
 from rich.panel import Panel
 
+from ...cli.cli_ui import sandwich_ui
 from ...cli.common import console
 from ..constants import IACProvider
 from ..types import ProjectContext
@@ -11,7 +12,7 @@ from ..types import ProjectContext
 def emit_create_completed_message(ctx: ProjectContext):
     """Take in the project context and emit a helpful message to console."""
     # end of progress sandwhich
-    console.print("[cyan]✓ Agent Initialized.[/cyan]")
+    console.print("✓ Agent Initialized.")
     # create some space so its not cramped
     console.print()
 
@@ -21,17 +22,13 @@ def emit_create_completed_message(ctx: ProjectContext):
     intro_text = "You're ready to go! Happy building 🚀\n"
 
     if not ctx.iac_provider:
-        console.print(
-            Panel(
-                f"{intro_text}"
-                f"Enter your project directory using [cyan]cd ./{ctx.name}[/cyan]\n"
-                f"Run [cyan]agentcore dev[/cyan] to start the dev server\n"
-                f"Add memory with [cyan]agentcore configure[/cyan]\n"
-                f"Launch with [cyan]agentcore deploy[/cyan]\n",
-                title="Create Success",
-                title_align="center",
-                border_style="#39F56B",
-            )
+        sandwich_ui(
+            style="#39F56B",
+            text=f"{intro_text}"
+            f"Enter your project directory using [cyan]cd ./{ctx.name}[/cyan]\n"
+            f"Run [cyan]agentcore dev[/cyan] to start the dev server\n"
+            f"Add memory with [cyan]agentcore configure[/cyan]\n"
+            f"Launch with [cyan]agentcore deploy[/cyan]",
         )
         return
 

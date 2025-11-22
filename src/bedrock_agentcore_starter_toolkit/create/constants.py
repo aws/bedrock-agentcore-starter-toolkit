@@ -7,6 +7,13 @@ This structure is chosen because StrEnum is available in 3.11+ and we need to su
 from .types import CreateIACProvider, CreateModelProvider, CreateSDKProvider
 
 
+class TemplateDisplay:
+    """This is how we describe the templates in the UI."""
+
+    BASIC = "basic"
+    PROODUCTION = "production"
+
+
 class TemplateDirSelection:
     """Used to keep track of which directories within templates/ to render."""
 

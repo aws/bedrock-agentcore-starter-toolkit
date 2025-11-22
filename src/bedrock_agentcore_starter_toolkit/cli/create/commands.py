@@ -7,19 +7,25 @@ from typing import Optional, Tuple
 
 import typer
 
-from ...cli.common import _handle_error, _handle_warn, console
-from ...create.constants import ModelProvider
+from ...cli.common import _handle_error, _handle_warn
+from ...create.constants import ModelProvider, TemplateDisplay
 from ...create.generate import generate_project
 from ...create.types import (
     CreateIACProvider,
     CreateModelProvider,
     CreateSDKProvider,
+    CreateTemplateDisplay,
     SupportedIACProivders,
-    SupportedSDKProviders,
 )
 from ...utils.runtime.config import load_config
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
-from ..cli_ui import _pause_and_new_line_on_finish, ask_text, ask_text_with_validation, show_create_welcome_ascii
+from ..cli_ui import (
+    _pause_and_new_line_on_finish,
+    ask_text,
+    ask_text_with_validation,
+    intro_animate_once,
+    show_create_welcome_ascii,
+)
 from ..runtime.commands import configure_impl
 from .prompt_util import (
     get_auto_generated_project_name,
@@ -38,27 +44,32 @@ create_app = typer.Typer(
 # create arn friendly names on the shorter side (used for prefix in infra ids) no - or _ for now
 VALID_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9]{0,35}$")
 
-iac_option = typer.Option(None, "--iac", help="Infrastructure as code provider (CDK or Terraform)")
-sdk_option = typer.Option(None, "--sdk", help="SDK provider (Strands, ClaudeAgents, OpenAI, etc.)")
-runtime_init_option = typer.Option(
-    None, "--init/--no-init", help="Use --init for runtime-only mode or --no-init for monorepo mode"
+project_name_option = typer.Option(
+    None, "--project-name", "-p", help="Project name to create (assumes current folder for creation)"
 )
+template_option = typer.Option(
+    None,
+    "--template",
+    "-t",
+    help="The template to use. `basic creates just runtime code. `production` includes an MCP setup and IaC.",
+)
+sdk_option = typer.Option(None, "--agent-framework", help="Agent SDK provider (Strands, ClaudeAgents, OpenAI, etc.)")
 model_provider_option = typer.Option(None, "--model-provider", "-mp", help="Model provider to use with the Agent SDK")
 model_provider_api_key_option = typer.Option(None, "--provider-api-key", "-key", help="API key for the model provider")
+iac_option = typer.Option(None, "--iac", help="Infrastructure as code provider (CDK or Terraform)")
 non_interactive_flag_opt = typer.Option(False, "--non-interactive", help="Run in non-interactive mode")
 venv_option = typer.Option(True, "--venv/--no-venv", help="Automatically create a venv and install dependencies")
-project_name_option = (typer.Option(None, "--project-name", "-p", help="Project name to create"),)
 
 
 @create_app.callback(invoke_without_command=True)
 def create(
     ctx: typer.Context,
-    project_name: Optional[str] = typer.Option(None, "--project-name", "-p", help="Project name to create"),
-    iac: Optional[CreateIACProvider] = iac_option,
+    project_name: Optional[str] = project_name_option,
+    template: Optional[CreateTemplateDisplay] = template_option,
     sdk: CreateSDKProvider = sdk_option,
-    runtime_init: bool = runtime_init_option,
     model_provider: CreateModelProvider = model_provider_option,
     provider_api_key: Optional[str] = model_provider_api_key_option,
+    iac: Optional[CreateIACProvider] = iac_option,
     non_interactive_flag: Optional[bool] = non_interactive_flag_opt,
     venv_option: bool = venv_option,
 ):
@@ -76,7 +87,9 @@ def create(
         non_interactive_flag = True
 
     if non_interactive_flag:
-        _validate_non_interactive_input(project_name, iac, sdk, runtime_init, model_provider)
+        _validate_non_interactive_input(
+            project_name=project_name, iac=iac, sdk=sdk, template=template, model_provider=model_provider
+        )
     else:
         show_create_welcome_ascii()
 
@@ -102,16 +115,17 @@ def create(
             raise typer.BadParameter(f"A directory already exists with name {project_name}!")
 
         # 2. Determine Mode (Runtime vs Monorepo)
-        if runtime_init is None:
+        if template is None:
             if non_interactive_flag:
-                runtime_init = True
+                template = TemplateDisplay.BASIC
             else:
-                runtime_opt_text = "A basic starter project (recommended)"
-                runtime_init = prompt_runtime_or_monorepo(runtime_only_text=runtime_opt_text) == runtime_opt_text
+                basic_opt_text = "A basic starter project (recommended)"
+                is_basic = prompt_runtime_or_monorepo(runtime_only_text=basic_opt_text) == basic_opt_text
+                template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PROODUCTION
 
         # 3. Run specific flows (Pass args IN, get results OUT)
-        if runtime_init:
-            sdk, model_provider, provider_api_key = _handle_runtime_flow(
+        if template == TemplateDisplay.BASIC:
+            sdk, model_provider, provider_api_key = _handle_basic_runtime_flow(
                 sdk, model_provider, provider_api_key, non_interactive_flag
             )
         else:
@@ -122,7 +136,7 @@ def create(
         git_init = False
         if not non_interactive_flag:
             git_init = prompt_git_init() == "Yes"
-        console.print("[cyan]Agent initializing...[/cyan]")
+        intro_animate_once()
         generate_project(
             name=project_name,
             sdk_provider=sdk,
@@ -140,7 +154,7 @@ def create(
 # ------------------------------------------------------------------------------
 
 
-def _handle_runtime_flow(
+def _handle_basic_runtime_flow(
     sdk: CreateSDKProvider,
     model_provider: CreateModelProvider,
     provider_api_key: Optional[str],
@@ -224,16 +238,16 @@ def _handle_monorepo_flow(
 
 
 def _validate_non_interactive_input(
-    project_name: str = project_name_option,
-    iac: Optional[CreateIACProvider] = iac_option,
-    sdk: CreateSDKProvider = sdk_option,
-    runtime_init: bool = runtime_init_option,
-    model_provider: CreateModelProvider = model_provider_option,
+    project_name: str,
+    iac: Optional[CreateIACProvider],
+    sdk: CreateSDKProvider,
+    template: CreateTemplateDisplay,
+    model_provider: CreateModelProvider,
 ):
     # Make it easy for LLMs to understand what went wrong
     REQUIRED_OPTS = """
-    Required options for non-interactive mode are: --project-name, --sdk and --model-provider
-    If --no-init is specified, --iac is also a required parameter.
+    Required options for non-interactive mode are: --project-name, --agent-framework and --model-provider
+    If --template production is specified, --iac is also a required parameter.
     Run agentcore create --help for more information
     """
 
@@ -241,7 +255,8 @@ def _validate_non_interactive_input(
         raise typer.BadParameter(f"--project-name is required in non-interactive mode.{REQUIRED_OPTS}")
     if not sdk:
         raise typer.BadParameter(
-            f"--sdk is required in non-interactive mode. Supported SDK providers: {', '.join(SupportedSDKProviders)}."
+            f"--agent-framework is required in non-interactive mode. "
+            "Supported SDK providers: {', '.join(SupportedSDKProviders)}."
             f"{REQUIRED_OPTS}"
         )
     if not model_provider:
@@ -251,28 +266,12 @@ def _validate_non_interactive_input(
             f"Supported providers for the chosen SDK '{sdk}' are: {', '.join(supported_providers)}"
             f"{REQUIRED_OPTS}"
         )
-    if not runtime_init_option and not iac:
+    if template == TemplateDisplay.PROODUCTION and not iac:
         raise typer.BadParameter(
-            f"--iac is required for --no-init non-interactive mode. "
+            f"--iac is required for --template production in non-interactive mode. "
             f"Supported providers for IAC: {', '.join(SupportedIACProivders)}"
             f"{REQUIRED_OPTS}"
         )
-
-
-def _ask_project_name_with_retry() -> str:
-    RETRY_COUNT = 3
-    while RETRY_COUNT > 0:
-        project_name = ask_text(title="Project Name (alphanumeric):", default=get_auto_generated_project_name())
-        if VALID_PROJECT_NAME_PATTERN.fullmatch(project_name):
-            return project_name
-        _handle_warn(
-            "Project must only contain alphanumeric characters (no '-' or '_') up to 36 chars. Please Try again"
-        )
-        RETRY_COUNT -= 1
-    raise typer.BadParameter(
-        "Project must only contain alphanumeric characters (no '-' or '_') up to 36 chars. \n"
-        "Run agentcore create to try again"
-    )
 
 
 @contextmanager

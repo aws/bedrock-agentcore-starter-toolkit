@@ -35,7 +35,17 @@ def run_create_with_config(tmp_path, monkeypatch, scenario, iac: Optional[IACPro
 
     project_name = "testProj"
 
-    args = ["--project-name", project_name, "--sdk", sdk, "--no-venv", "--iac", iac, "--model-provider", model_provider]
+    args = [
+        "--project-name",
+        project_name,
+        "--agent-framework",
+        sdk,
+        "--no-venv",
+        "--iac",
+        iac,
+        "--model-provider",
+        model_provider,
+    ]
 
     result = test_runner.invoke(
         create_app,

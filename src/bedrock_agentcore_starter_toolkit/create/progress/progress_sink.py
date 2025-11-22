@@ -15,7 +15,6 @@ class ProgressSink:
     """Handles indented sub-steps with physically indented spinners."""
 
     MIN_PHASE_SECONDS = 1.0
-    STYLE = "cyan"
     INDENT_SPACES = 4
 
     @contextmanager
@@ -32,8 +31,8 @@ class ProgressSink:
         start = time.time()
 
         # 1. Prepare Spinner
-        spinner_text = Text.from_markup(f"[{self.STYLE}] {message}...[/]")
-        spinner = Spinner("dots", text=spinner_text, style=self.STYLE)
+        spinner_text = Text.from_markup(f"{message}...")
+        spinner = Spinner("dots", text=spinner_text)
         indented_spinner = Padding(spinner, (0, 0, 0, self.INDENT_SPACES))
 
         success = False
@@ -46,7 +45,7 @@ class ProgressSink:
                 # ONLY handle the UI for the error if a message was provided
                 if error_message:
                     # Use standard style (no red)
-                    fail_text = Text.from_markup(f"[{self.STYLE}]• {error_message}.[/]")
+                    fail_text = Text.from_markup(f"• {error_message}.")
                     indented_fail = Padding(fail_text, (0, 0, 0, self.INDENT_SPACES))
                     console.print(indented_fail)
                 if not swallow_fail:
@@ -60,6 +59,6 @@ class ProgressSink:
         # 2. Handle Success (Outside the Live context so it persists)
         if success:
             final_msg = done_message or "done"
-            bullet_text = Text.from_markup(f"[{self.STYLE}]• {final_msg}.[/]")
+            bullet_text = Text.from_markup(f"• {final_msg}.")
             indented_bullet = Padding(bullet_text, (0, 0, 0, self.INDENT_SPACES))
             console.print(indented_bullet)

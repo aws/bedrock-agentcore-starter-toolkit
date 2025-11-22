@@ -15,18 +15,18 @@ from prompt_toolkit.widgets import TextArea
 
 from ..cli.common import console
 
-# Updated Color: #42B4FF from UX designer
-RICH_CYAN_COLOR_CODE = "ansicyan"
+PROMPT_TOOLKIT_RICH_CYAN = "ansicyan"
+RICH_CYAN = "cyan"
 
 STYLE = Style.from_dict(
     {
         "": "nounderline",
-        "title": "bold fg:#ffffff",
+        "title": "",
         "option-name": "fg:#ffffff",
         "option-desc": "fg:#777777",
-        "cyan": RICH_CYAN_COLOR_CODE,
-        "selected-bullet": RICH_CYAN_COLOR_CODE,
-        "selected-name": RICH_CYAN_COLOR_CODE,
+        "cyan": PROMPT_TOOLKIT_RICH_CYAN,
+        "selected-bullet": PROMPT_TOOLKIT_RICH_CYAN,
+        "selected-name": PROMPT_TOOLKIT_RICH_CYAN,
         "error": "fg:#ff5f5f",
     }
 )
@@ -53,7 +53,7 @@ class OptionState:
         self.values = values
         self.current = 0
         self.selected = values[0][0] if values else None
-        self.finalized = False  # <--- NEW: Tracks if selection is made
+        self.finalized = False  # <--- Tracks if selection is made
 
         # Calculate the maximum length of the names for alignment purposes
         self.max_name_len = max((len(n) for _, n, _ in values), default=0)
@@ -66,10 +66,9 @@ class OptionState:
 
 def build_option_fragments(state: OptionState):
     """Produce formatted line fragments for the option list."""
-    # <--- NEW: If finalized, ONLY return the selected line (Collapse effect)
+    # <--- If finalized, ONLY return the selected line (Collapse effect)
     if state.finalized:
         return [
-            ("class:cyan", "> ● "),
             ("class:selected-name", state.selected or ""),
             ("", "\n"),
         ]
@@ -115,8 +114,7 @@ def build_option_fragments(state: OptionState):
 def show_create_welcome_ascii() -> None:
     """Display the simple welcome message."""
     console.print()
-    console.print("[bold cyan]🤖 AgentCore activated.[/bold cyan] Let's build your agent.")
-    _pause_and_new_line_on_finish()
+    sandwich_ui(style=RICH_CYAN, text="[cyan]🤖 AgentCore activated.[/cyan] Let's build your agent.")
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +131,16 @@ def select_one(title: str, options: list[str] | dict[str, str], default: str | N
 
     state = OptionState(values)
 
+    if "(optional)" in title:
+        main_text, _, remainder = title.partition("(optional)")
+        title_fragments = [
+            ("class:title", main_text),
+            ("", "(optional)"),  # Uses terminal default (no bold, default color)
+            ("class:title", remainder),
+        ]
+    else:
+        title_fragments = [("class:title", title)]
+
     options_control = FormattedTextControl(
         lambda: build_option_fragments(state),
         focusable=True,
@@ -141,7 +149,7 @@ def select_one(title: str, options: list[str] | dict[str, str], default: str | N
 
     # Note: We keep the title separate so it stays visible even after collapse
     title_window = Window(
-        FormattedTextControl([("class:title", title)], focusable=False),
+        FormattedTextControl(title_fragments, focusable=False),
         height=1,
         dont_extend_height=True,
     )
@@ -170,7 +178,7 @@ def select_one(title: str, options: list[str] | dict[str, str], default: str | N
 
     @kb.add("enter")
     def _(e):
-        # <--- NEW: Don't exit immediately.
+        # <--- Don't exit immediately.
         # 1. Lock state
         state.selected = state.current_value
         state.finalized = True
@@ -359,6 +367,29 @@ def ask_text_with_validation(
     result = app.run()
     _pause_and_new_line_on_finish()
     return result
+
+
+def intro_animate_once():
+    """Intro animation."""
+    base = "Agent initializing"
+    for dots in ["", ".", "..", "..."]:
+        console.print(f"{base}{dots}", end="\r", highlight=False, markup=False)
+        sleep(0.25)
+    console.print(f"{base}...", highlight=False, markup=False)
+
+
+def print_border(char: str = "-", style: str = "") -> None:
+    """Print a border spanning up to 100 chars."""
+    safe_width = min(console.width, 100)
+    console.print(char * safe_width, style=style)
+
+
+def sandwich_ui(style: str, text: str) -> None:
+    """Wrap the input in border."""
+    print_border(style=style)
+    console.print(text)
+    print_border(style=style)
+    _pause_and_new_line_on_finish()
 
 
 def _pause_and_new_line_on_finish(sleep_override: float | None = None):
