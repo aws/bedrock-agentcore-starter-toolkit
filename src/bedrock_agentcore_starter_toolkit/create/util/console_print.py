@@ -22,7 +22,7 @@ def emit_create_completed_message(ctx: ProjectContext):
         sandwich_text_ui(
             style="#39F56B",
             text=f"{intro_text}"
-            f"Enter your project directory using [cyan]cd ./{ctx.name}[/cyan]\n"
+            f"Enter your project directory using [cyan]cd {ctx.name}[/cyan]\n"
             f"Run [cyan]agentcore dev[/cyan] to start the dev server\n"
             f"Add memory with [cyan]agentcore configure[/cyan]\n"
             f"Launch with [cyan]agentcore deploy[/cyan]",
@@ -48,8 +48,8 @@ def emit_create_completed_message(ctx: ProjectContext):
         f"\n"
         f"[bold]Project Details[/bold]\n"
         f"SDK Provider: [cyan]{ctx.sdk_provider}[/cyan]\n"
-        f"Runtime Entrypoint: [cyan]./{ctx.name}/src/main.py[/cyan]\n"
-        f"IAC Entrypoint: [cyan]./{ctx.name}/{ctx.iac_provider}/[/cyan]\n"
+        f"Runtime Entrypoint: [cyan]{ctx.name}/src/main.py[/cyan]\n"
+        f"IAC Entrypoint: [cyan]{ctx.name}/{ctx.iac_provider}/[/cyan]\n"
         f"Deployment: [cyan]{ctx.deployment_type}[/cyan]\n"
         f"\n"
         f"[bold]Configuration[/bold]\n"
@@ -58,7 +58,7 @@ def emit_create_completed_message(ctx: ProjectContext):
         f"Gateway Authorization: [cyan]{gateway_auth}[/cyan]\n"
         f"Network Mode: [cyan]{'VPC' if ctx.vpc_enabled else 'Public'}[/cyan]\n"
         f"{memory_output_line}"
-        f"📄 Config saved to: [cyan]./{ctx.name}/.bedrock_agentcore.yaml[/cyan]\n"
+        f"📄 Config saved to: [cyan]{ctx.name}/.bedrock_agentcore.yaml[/cyan]\n"
         f"\n"
         f"{next_steps_header}\n"
         f"[cyan]cd {ctx.name}[/cyan]\n"

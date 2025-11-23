@@ -131,14 +131,14 @@ def configure_impl(
     create_mode_enabled = create
 
     # Existing agent created via create flow
-    existing_create_agent = (
+    is_agentcore_create_agent = (
         existing_config.agents[existing_config.default_agent].is_generated_by_agentcore_create
         if existing_config and existing_config.default_agent in existing_config.agents
         else False
     )
 
     # If existing create-flow agent detected, use its configuration and inform user
-    if existing_create_agent:
+    if is_agentcore_create_agent:
         existing_agent_config = existing_config.agents[existing_config.default_agent]
 
         console.print(
@@ -162,7 +162,7 @@ def configure_impl(
         final_requirements_file = None
 
     # Interactive entrypoint selection (skip if existing create-flow agent)
-    if not existing_create_agent:
+    if not is_agentcore_create_agent:
         if not entrypoint:
             if non_interactive or create_mode_enabled:
                 entrypoint_input = "."
@@ -257,7 +257,7 @@ def configure_impl(
     # Skip for create mode and existing create-flow agents (already set to None above)
     if create_mode_enabled:
         final_requirements_file = None
-    elif not existing_create_agent:
+    elif not is_agentcore_create_agent:
         final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
     def _validate_cli_args(
@@ -568,7 +568,7 @@ def configure_impl(
             max_lifetime=max_lifetime,
             deployment_type=deployment_type,
             runtime_type=runtime_type,
-            is_generated_by_agentcore_create=existing_create_agent,
+            is_generated_by_agentcore_create=is_agentcore_create_agent,
         )
 
         # Prepare authorization info for summary
