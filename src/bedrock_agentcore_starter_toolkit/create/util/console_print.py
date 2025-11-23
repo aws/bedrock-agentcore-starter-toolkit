@@ -34,6 +34,8 @@ def emit_create_completed_message(ctx: ProjectContext):
 
     gateway_auth = "Cognito" if not ctx.custom_authorizer_enabled else "Custom Authorizer"
 
+    memory_output_line = f"Memory Name: [cyan]{ctx.memory_name}[/cyan]\n" if ctx.memory_enabled else ""
+
     next_steps_cmd = (
         "cd cdk && npm install && npm run cdk synth && npm run cdk:deploy"
         if ctx.iac_provider == IACProvider.CDK
@@ -51,10 +53,11 @@ def emit_create_completed_message(ctx: ProjectContext):
         f"Deployment: [cyan]{ctx.deployment_type}[/cyan]\n"
         f"\n"
         f"[bold]Configuration[/bold]\n"
-        f"Network Mode: [cyan]{'VPC' if ctx.vpc_enabled else 'Public'}[/cyan]\n"
+        f"Agent Name: [cyan]{ctx.agent_name}[/cyan]\n"
         f"Gateway Name: [cyan]{gateway_name}[/cyan]\n"
         f"Gateway Authorization: [cyan]{gateway_auth}[/cyan]\n"
-        f"Memory Name: [cyan]{ctx.memory_name if ctx.memory_enabled else 'Memory Disabled'}[/cyan]\n"
+        f"Network Mode: [cyan]{'VPC' if ctx.vpc_enabled else 'Public'}[/cyan]\n"
+        f"{memory_output_line}"
         f"📄 Config saved to: [cyan]./{ctx.name}/.bedrock_agentcore.yaml[/cyan]\n"
         f"\n"
         f"{next_steps_header}\n"

@@ -11,7 +11,7 @@ class TemplateDisplay:
     """This is how we describe the templates in the UI."""
 
     BASIC = "basic"
-    PROODUCTION = "production"
+    PRODUCTION = "production"
 
 
 class TemplateDirSelection:

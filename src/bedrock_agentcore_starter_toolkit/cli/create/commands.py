@@ -8,14 +8,13 @@ from typing import Optional, Tuple
 import typer
 
 from ...cli.common import _handle_error, _handle_warn
-from ...create.constants import ModelProvider, TemplateDisplay
+from ...create.constants import IACProvider, ModelProvider, SDKProvider, TemplateDisplay
 from ...create.generate import generate_project
 from ...create.types import (
     CreateIACProvider,
     CreateModelProvider,
     CreateSDKProvider,
     CreateTemplateDisplay,
-    SupportedIACProivders,
 )
 from ...utils.runtime.config import load_config
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
@@ -38,7 +37,7 @@ from .prompt_util import (
 )
 
 create_app = typer.Typer(
-    name="create", help="create an agent core project", invoke_without_command=True, no_args_is_help=False
+    name="create", help="create an agentcore project", invoke_without_command=True, no_args_is_help=False
 )
 
 # create arn friendly names on the shorter side (used for prefix in infra ids) no - or _ for now
@@ -47,16 +46,31 @@ VALID_PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9]{0,35}$")
 project_name_option = typer.Option(
     None, "--project-name", "-p", help="Project name to create (assumes current folder for creation)"
 )
+"""
+We use the `default=None` + `show_default` pattern.
+`None` allows us to detect if flags were omitted (triggering interactive mode),
+while `show_default` documents the fallback values used in non-interactive mode.
+"""
 template_option = typer.Option(
     None,
     "--template",
     "-t",
     help="The template to use. `basic creates just runtime code. `production` includes an MCP setup and IaC.",
+    show_default=TemplateDisplay.BASIC,
 )
-sdk_option = typer.Option(None, "--agent-framework", help="Agent SDK provider (Strands, ClaudeAgents, OpenAI, etc.)")
-model_provider_option = typer.Option(None, "--model-provider", "-mp", help="Model provider to use with the Agent SDK")
+sdk_option = typer.Option(
+    None,
+    "--agent-framework",
+    help="Agent SDK provider (Strands, ClaudeAgents, OpenAI, etc.)",
+    show_default=SDKProvider.STRANDS,
+)
+model_provider_option = typer.Option(
+    None, "--model-provider", "-mp", help="Model provider to use with the Agent SDK", show_default=ModelProvider.Bedrock
+)
 model_provider_api_key_option = typer.Option(None, "--provider-api-key", "-key", help="API key for the model provider")
-iac_option = typer.Option(None, "--iac", help="Infrastructure as code provider (CDK or Terraform)")
+iac_option = typer.Option(
+    None, "--iac", help="Infrastructure as code provider (CDK or Terraform)", show_default=IACProvider.CDK
+)
 non_interactive_flag_opt = typer.Option(False, "--non-interactive", help="Run in non-interactive mode")
 venv_option = typer.Option(True, "--venv/--no-venv", help="Automatically create a venv and install dependencies")
 
@@ -78,18 +92,18 @@ def create(
         return
 
     # Auto-set non-interactive mode
-    if not non_interactive_flag and (project_name or sdk or model_provider):
+    user_provided_args = any([project_name, sdk, model_provider, iac, template])
+    if user_provided_args and not non_interactive_flag:
         _handle_warn(
-            "Automatically using interactive mode because project_name sdk or model_provider"
-            " were given directly as flags. "
-            "Use agentcore create without arguments to enter interactive mode."
+            "Automatically using non-interactive mode because flags were provided. "
+            "Run 'agentcore create' without arguments to enter interactive mode."
         )
         non_interactive_flag = True
 
     if non_interactive_flag:
-        _validate_non_interactive_input(
-            project_name=project_name, iac=iac, sdk=sdk, template=template, model_provider=model_provider
-        )
+        if not project_name:
+            raise typer.BadParameter("--project-name is required in non-interactive mode.")
+        template, sdk, model_provider, iac = _apply_non_interactive_defaults(template, sdk, model_provider, iac)
     else:
         show_create_welcome_ascii()
 
@@ -102,7 +116,7 @@ def create(
             project_name = ask_text_with_validation(
                 title="Where should we create your new agent?",
                 regex=VALID_PROJECT_NAME_PATTERN,
-                error_message="Prjoect directory names need to be alphanumeric.",
+                error_message="Project directory names need to be alphanumeric.",
                 default=get_auto_generated_project_name(),
                 starting_chars="./",
                 erase_prompt_on_submit=False,
@@ -117,14 +131,11 @@ def create(
 
         # 2. Determine Mode (Runtime vs Monorepo)
         if template is None:
-            if non_interactive_flag:
-                template = TemplateDisplay.BASIC
-            else:
-                basic_opt_text = "A basic starter project (recommended)"
-                is_basic = prompt_runtime_or_monorepo(runtime_only_text=basic_opt_text) == basic_opt_text
-                template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PROODUCTION
+            basic_opt_text = "A basic starter project (recommended)"
+            is_basic = prompt_runtime_or_monorepo(runtime_only_text=basic_opt_text) == basic_opt_text
+            template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PRODUCTION
 
-        # 3. Run specific flows (Pass args IN, get results OUT)
+        # 3. Run specific flows
         if template == TemplateDisplay.BASIC:
             sdk, model_provider, provider_api_key = _handle_basic_runtime_flow(
                 sdk, model_provider, provider_api_key, non_interactive_flag
@@ -153,6 +164,47 @@ def create(
 # ------------------------------------------------------------------------------
 # Helper Functions & Utilities
 # ------------------------------------------------------------------------------
+
+
+def _apply_non_interactive_defaults(
+    template: Optional[CreateTemplateDisplay],
+    sdk: Optional[CreateSDKProvider],
+    model_provider: Optional[CreateModelProvider],
+    iac: Optional[CreateIACProvider],
+) -> Tuple[CreateTemplateDisplay, CreateSDKProvider, CreateModelProvider, Optional[CreateIACProvider]]:
+    """Applies defaults for non-interactive mode.
+
+    Assumes non-interactive mode is already active.
+
+    Returns:
+        template, sdk, model_provider (Guaranteed defined)
+        iac (Optional - defined only if template is Production)
+    """
+    defaults_applied = []
+
+    if not template:
+        template = TemplateDisplay.BASIC
+        defaults_applied.append(f"--template={template}")
+
+    if not sdk:
+        sdk = SDKProvider.STRANDS
+        defaults_applied.append(f"--agent-framework={sdk}")
+
+    if not model_provider:
+        model_provider = ModelProvider.Bedrock
+        defaults_applied.append(f"--model-provider={model_provider}")
+
+    if template == TemplateDisplay.PRODUCTION and not iac:
+        iac = IACProvider.CDK
+        defaults_applied.append(f"--iac={iac}")
+
+    if defaults_applied:
+        typer.echo(
+            typer.style(
+                f"Auto-filling defaults: {', '.join(defaults_applied)}",
+            )
+        )
+    return template, sdk, model_provider, iac
 
 
 def _handle_basic_runtime_flow(
@@ -217,8 +269,12 @@ def _handle_monorepo_flow(
         sdk = prompt_sdk_provider()
         model_provider = prompt_model_provider()
 
+    supported_providers = ModelProvider.get_providers_list(sdk_provider=sdk)
+    if model_provider not in supported_providers:
+        raise typer.BadParameter(f"Model provider '{model_provider}' is not supported for SDK '{sdk}'.")
+
     if model_provider and model_provider in ModelProvider.REQUIRES_API_KEY:
-        _handle_warn("In production template mode, securely hadling your API key is your responsibility.")
+        _handle_warn("In production template mode, securely handling your API key is your responsibility.")
 
     if not iac:
         if non_interactive_flag:
@@ -234,43 +290,6 @@ def _handle_monorepo_flow(
             agent_config = load_config(configure_yaml)
 
     return sdk, model_provider, iac, agent_config
-
-
-def _validate_non_interactive_input(
-    project_name: str,
-    iac: Optional[CreateIACProvider],
-    sdk: CreateSDKProvider,
-    template: CreateTemplateDisplay,
-    model_provider: CreateModelProvider,
-):
-    # Make it easy for LLMs to understand what went wrong
-    REQUIRED_OPTS = """
-    Required options for non-interactive mode are: --project-name, --agent-framework and --model-provider
-    If --template production is specified, --iac is also a required parameter.
-    Run agentcore create --help for more information
-    """
-
-    if not project_name:
-        raise typer.BadParameter(f"--project-name is required in non-interactive mode.{REQUIRED_OPTS}")
-    if not sdk:
-        raise typer.BadParameter(
-            f"--agent-framework is required in non-interactive mode. "
-            "Supported SDK providers: {', '.join(SupportedSDKProviders)}."
-            f"{REQUIRED_OPTS}"
-        )
-    if not model_provider:
-        supported_providers = ModelProvider.get_providers_list(sdk_provider=sdk)
-        raise typer.BadParameter(
-            f"--model-provider is required in non-interactive mode. "
-            f"Supported providers for the chosen SDK '{sdk}' are: {', '.join(supported_providers)}"
-            f"{REQUIRED_OPTS}"
-        )
-    if template == TemplateDisplay.PROODUCTION and not iac:
-        raise typer.BadParameter(
-            f"--iac is required for --template production in non-interactive mode. "
-            f"Supported providers for IAC: {', '.join(SupportedIACProivders)}"
-            f"{REQUIRED_OPTS}"
-        )
 
 
 @contextmanager

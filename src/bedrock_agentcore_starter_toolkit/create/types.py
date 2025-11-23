@@ -8,7 +8,6 @@ CreateSDKProvider = Literal["Strands", "LangChain", "GoogleADK", "OpenAIAgents",
 SupportedSDKProviders = list(get_args(CreateSDKProvider))
 
 CreateIACProvider = Literal["CDK", "Terraform"]
-SupportedIACProivders = list(get_args(CreateIACProvider))
 
 CreateTemplateDirSelection = Literal["monorepo", "common", "runtime_only"]
 CreateTemplateDisplay = Literal["basic", "production"]
