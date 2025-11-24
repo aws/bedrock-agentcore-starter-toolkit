@@ -57,6 +57,12 @@ def prompt_configure():
     return choice
 
 
+def prompt_memory_enabled() -> bool:
+    """Prompt user to enable memory (default configuration: STM + LTM)."""
+    choice = select_one(title="Do you want to enable memory?", options=["No", "Yes, use default memory configuration"])
+    return choice == "Yes, use default memory configuration"
+
+
 def prompt_git_init():
     """Prompt user to decide if they want to run git init."""
     choice = select_one(title="Initialize a new git repository? (optional)", options=["Yes", "No"])

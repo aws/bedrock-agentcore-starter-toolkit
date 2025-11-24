@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 
 from ...utils.runtime.config import save_config
-from ...utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
+from ...utils.runtime.schema import AWSConfig, BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema, MemoryConfig
 from ..types import ProjectContext
 
 CONFIG_YAML_NAME = ".bedrock_agentcore.yaml"
@@ -44,6 +44,17 @@ def write_minimal_create_with_iac_project_yaml(ctx: ProjectContext) -> Path:
 
 def write_minimal_create_runtime_yaml(ctx: ProjectContext) -> Path:
     """Create the most simple .bedrock_agentcore.yaml for runtime projects."""
+    # Build memory configuration based on ProjectContext (only if memory is enabled)
+    memory_config = None
+    if ctx.memory_enabled:
+        memory_config = MemoryConfig()
+        if ctx.memory_is_long_term:
+            memory_config.mode = "STM_AND_LTM"
+        else:
+            memory_config.mode = "STM_ONLY"
+        memory_config.memory_name = ctx.memory_name
+        memory_config.event_expiry_days = ctx.memory_event_expiry_days or 30
+
     agent_schema = BedrockAgentCoreAgentSchema(
         name=ctx.agent_name,
         entrypoint=str(ctx.entrypoint_path),
@@ -54,5 +65,12 @@ def write_minimal_create_runtime_yaml(ctx: ProjectContext) -> Path:
         api_key_env_var_name=ctx.api_key_env_var_name,
         is_generated_by_agentcore_create=True,
     )
+
+    # Only add memory config if it's enabled
+    if memory_config:
+        agent_schema.memory = memory_config
+
     schema = BedrockAgentCoreConfigSchema(default_agent=ctx.agent_name, agents={ctx.agent_name: agent_schema})
-    save_config(schema, ctx.output_dir / CONFIG_YAML_NAME)
+    config_path = ctx.output_dir / CONFIG_YAML_NAME
+    save_config(schema, config_path)
+    return config_path

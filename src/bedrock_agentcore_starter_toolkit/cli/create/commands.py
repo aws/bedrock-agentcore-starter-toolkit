@@ -31,6 +31,7 @@ from .prompt_util import (
     prompt_configure,
     prompt_git_init,
     prompt_iac_provider,
+    prompt_memory_enabled,
     prompt_model_provider,
     prompt_runtime_or_monorepo,
     prompt_sdk_provider,
@@ -136,8 +137,9 @@ def create(
             template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PRODUCTION
 
         # 3. Run specific flows
+        enable_memory = False
         if template == TemplateDisplay.BASIC:
-            sdk, model_provider, provider_api_key = _handle_basic_runtime_flow(
+            sdk, model_provider, provider_api_key, enable_memory = _handle_basic_runtime_flow(
                 sdk, model_provider, provider_api_key, non_interactive_flag
             )
         else:
@@ -158,6 +160,7 @@ def create(
             agent_config=agent_config,
             use_venv=venv_option,
             git_init=git_init,
+            enable_memory=enable_memory,
         )
 
 
@@ -212,7 +215,7 @@ def _handle_basic_runtime_flow(
     model_provider: CreateModelProvider,
     provider_api_key: Optional[str],
     non_interactive_flag: bool,
-) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str]]:
+) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str], bool]:
     """Handles prompt logic for Runtime-only mode."""
     if not sdk:
         sdk = prompt_sdk_provider()
@@ -239,7 +242,12 @@ def _handle_basic_runtime_flow(
                 redact=True,
             )
 
-    return sdk, model_provider, provider_api_key
+    # Memory configuration - only for Strands SDK in interactive mode
+    enable_memory = False
+    if sdk == SDKProvider.STRANDS and not non_interactive_flag:
+        enable_memory = prompt_memory_enabled()
+
+    return sdk, model_provider, provider_api_key, enable_memory
 
 
 def _handle_monorepo_flow(

@@ -27,6 +27,7 @@ def generate_project(
     agent_config: BedrockAgentCoreAgentSchema | None,
     use_venv: bool,
     git_init: bool,
+    enable_memory: bool = False,
 ):
     """Generate a new Bedrock Agent Core project with specified SDK and IaC providers."""
     sink = ProgressSink()
@@ -83,11 +84,21 @@ def generate_project(
         # observability
         ctx.observability_enabled = True
 
+    # Apply memory configuration for runtime-only (basic) template BEFORE rendering templates
+    # Default memory configuration is STM + LTM
+    if not iac_provider:
+        if enable_memory:
+            ctx.memory_enabled = True
+            ctx.memory_name = name + "_Memory"
+            ctx.memory_event_expiry_days = 30
+            ctx.memory_is_long_term = True  # Default: both STM and LTM
+        else:
+            ctx.memory_enabled = False
+
     with sink.step("Template copying", "Template copied"):
         _apply_baseline_and_sdk_features(ctx)
 
         if not ctx.iac_provider:
-            ctx.memory_enabled = False
             write_minimal_create_runtime_yaml(ctx)
             # Write .env file for non-Bedrock providers (outside template system for security)
             # Always write if model provider requires API key, even if empty (user can fill in later)
