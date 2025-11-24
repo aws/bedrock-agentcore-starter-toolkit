@@ -10,7 +10,7 @@ from bedrock_agentcore_starter_toolkit.create.constants import (
 from bedrock_agentcore_starter_toolkit.create.features.autogen.feature import AutogenFeature
 from bedrock_agentcore_starter_toolkit.create.features.crewai.feature import CrewAIFeature
 from bedrock_agentcore_starter_toolkit.create.features.googleadk.feature import GoogleADKFeature
-from bedrock_agentcore_starter_toolkit.create.features.langchain.feature import LangChainFeature
+from bedrock_agentcore_starter_toolkit.create.features.langchain_langgraph.feature import LangChainLangGraphFeature
 from bedrock_agentcore_starter_toolkit.create.features.openaiagents.feature import OpenAIAgentsFeature
 from bedrock_agentcore_starter_toolkit.create.features.strands.feature import StrandsFeature
 from bedrock_agentcore_starter_toolkit.create.types import ProjectContext
@@ -147,17 +147,19 @@ class TestCrewAIFeature:
         assert feature.model_provider_name == "gemini"
 
 
-class TestLangChainFeature:
-    """Tests for LangChainFeature class."""
+class TestLangChainLangGraphFeature:
+    """Tests for LangChainLangGraphFeature class."""
 
     def test_feature_dir_name(self):
         """Test that feature_dir_name is set correctly."""
-        assert LangChainFeature.feature_dir_name == SDKProvider.LANG_CHAIN
+        assert LangChainLangGraphFeature.feature_dir_name == SDKProvider.LANG_CHAIN_LANG_GRAPH
 
     def test_monorepo_dependencies(self, tmp_path):
         """Test monorepo mode dependencies."""
-        ctx = create_context(tmp_path, SDKProvider.LANG_CHAIN, ModelProvider.Bedrock, TemplateDirSelection.MONOREPO)
-        feature = LangChainFeature()
+        ctx = create_context(
+            tmp_path, SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Bedrock, TemplateDirSelection.MONOREPO
+        )
+        feature = LangChainLangGraphFeature()
         feature.before_apply(ctx)
 
         assert "langgraph >= 1.0.2" in feature.python_dependencies
@@ -166,8 +168,10 @@ class TestLangChainFeature:
 
     def test_runtime_only_bedrock_dependencies(self, tmp_path):
         """Test runtime_only mode with Bedrock dependencies."""
-        ctx = create_context(tmp_path, SDKProvider.LANG_CHAIN, ModelProvider.Bedrock, TemplateDirSelection.RUNTIME_ONLY)
-        feature = LangChainFeature()
+        ctx = create_context(
+            tmp_path, SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Bedrock, TemplateDirSelection.RUNTIME_ONLY
+        )
+        feature = LangChainLangGraphFeature()
         feature.before_apply(ctx)
 
         assert "langchain_aws >= 1.0.0" in feature.python_dependencies
@@ -175,8 +179,10 @@ class TestLangChainFeature:
 
     def test_runtime_only_openai_dependencies(self, tmp_path):
         """Test runtime_only mode with OpenAI dependencies."""
-        ctx = create_context(tmp_path, SDKProvider.LANG_CHAIN, ModelProvider.OpenAI, TemplateDirSelection.RUNTIME_ONLY)
-        feature = LangChainFeature()
+        ctx = create_context(
+            tmp_path, SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.OpenAI, TemplateDirSelection.RUNTIME_ONLY
+        )
+        feature = LangChainLangGraphFeature()
         feature.before_apply(ctx)
 
         assert "langchain-openai >= 1.0.3" in feature.python_dependencies
@@ -185,9 +191,9 @@ class TestLangChainFeature:
     def test_runtime_only_anthropic_dependencies(self, tmp_path):
         """Test runtime_only mode with Anthropic dependencies."""
         ctx = create_context(
-            tmp_path, SDKProvider.LANG_CHAIN, ModelProvider.Anthropic, TemplateDirSelection.RUNTIME_ONLY
+            tmp_path, SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Anthropic, TemplateDirSelection.RUNTIME_ONLY
         )
-        feature = LangChainFeature()
+        feature = LangChainLangGraphFeature()
         feature.before_apply(ctx)
 
         assert "langchain-anthropic >= 1.1.0" in feature.python_dependencies
@@ -195,8 +201,10 @@ class TestLangChainFeature:
 
     def test_runtime_only_gemini_dependencies(self, tmp_path):
         """Test runtime_only mode with Gemini dependencies."""
-        ctx = create_context(tmp_path, SDKProvider.LANG_CHAIN, ModelProvider.Gemini, TemplateDirSelection.RUNTIME_ONLY)
-        feature = LangChainFeature()
+        ctx = create_context(
+            tmp_path, SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Gemini, TemplateDirSelection.RUNTIME_ONLY
+        )
+        feature = LangChainLangGraphFeature()
         feature.before_apply(ctx)
 
         assert "langchain-google-genai >= 3.0.3" in feature.python_dependencies

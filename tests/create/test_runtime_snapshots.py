@@ -17,10 +17,10 @@ RUNTIME_SCENARIOS = [
     pytest.param(SDKProvider.STRANDS, ModelProvider.Anthropic, id="strands-anthropic"),
     pytest.param(SDKProvider.STRANDS, ModelProvider.Gemini, id="strands-gemini"),
     # LangGraph with all providers
-    pytest.param(SDKProvider.LANG_CHAIN, ModelProvider.Bedrock, id="langgraph-bedrock"),
-    pytest.param(SDKProvider.LANG_CHAIN, ModelProvider.OpenAI, id="langgraph-openai"),
-    pytest.param(SDKProvider.LANG_CHAIN, ModelProvider.Anthropic, id="langgraph-anthropic"),
-    pytest.param(SDKProvider.LANG_CHAIN, ModelProvider.Gemini, id="langgraph-gemini"),
+    pytest.param(SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Bedrock, id="langgraph-bedrock"),
+    pytest.param(SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.OpenAI, id="langgraph-openai"),
+    pytest.param(SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Anthropic, id="langgraph-anthropic"),
+    pytest.param(SDKProvider.LANG_CHAIN_LANG_GRAPH, ModelProvider.Gemini, id="langgraph-gemini"),
     # CrewAI with all providers
     pytest.param(SDKProvider.CREWAI, ModelProvider.Bedrock, id="crewai-bedrock"),
     pytest.param(SDKProvider.CREWAI, ModelProvider.OpenAI, id="crewai-openai"),

@@ -217,13 +217,10 @@ def _handle_basic_runtime_flow(
     if not sdk:
         sdk = prompt_sdk_provider()
 
-    supported_providers = ModelProvider.get_providers_list(sdk_provider=sdk)
-
     if not model_provider:
         model_provider = prompt_model_provider(sdk_provider=sdk)
 
-    if model_provider not in supported_providers:
-        raise typer.BadParameter(f"Model provider '{model_provider}' is not supported for SDK '{sdk}'.")
+    _assert_sdk_and_model_provider_combination(sdk, model_provider)
 
     if model_provider in ModelProvider.REQUIRES_API_KEY and not provider_api_key:
         if non_interactive_flag:
@@ -269,9 +266,7 @@ def _handle_monorepo_flow(
         sdk = prompt_sdk_provider()
         model_provider = prompt_model_provider()
 
-    supported_providers = ModelProvider.get_providers_list(sdk_provider=sdk)
-    if model_provider not in supported_providers:
-        raise typer.BadParameter(f"Model provider '{model_provider}' is not supported for SDK '{sdk}'.")
+    _assert_sdk_and_model_provider_combination(sdk, model_provider)
 
     if model_provider and model_provider in ModelProvider.REQUIRES_API_KEY:
         _handle_warn("In production template mode, securely handling your API key is your responsibility.")
@@ -290,6 +285,15 @@ def _handle_monorepo_flow(
             agent_config = load_config(configure_yaml)
 
     return sdk, model_provider, iac, agent_config
+
+
+def _assert_sdk_and_model_provider_combination(sdk: SDKProvider, model_provider: ModelProvider):
+    """Helper function to assert chosen sdk + model_provider."""
+    supported_providers = ModelProvider.get_providers_list(sdk_provider=sdk)
+    if model_provider not in supported_providers:
+        raise typer.BadParameter(f"Model provider '{model_provider}' is not supported for SDK '{sdk}'.")
+    else:
+        pass  # valid combination continue
 
 
 @contextmanager

@@ -9,14 +9,14 @@ from .base_feature import Feature
 from .cdk.feature import CDKFeature
 from .crewai.feature import CrewAIFeature
 from .googleadk.feature import GoogleADKFeature
-from .langchain.feature import LangChainFeature
+from .langchain_langgraph.feature import LangChainLangGraphFeature
 from .openaiagents.feature import OpenAIAgentsFeature
 from .strands.feature import StrandsFeature
 from .terraform.feature import TerraformFeature
 
 sdk_feature_registry: dict[CreateSDKProvider, Type[Feature]] = {
     SDKProvider.STRANDS: StrandsFeature,
-    SDKProvider.LANG_CHAIN: LangChainFeature,
+    SDKProvider.LANG_CHAIN_LANG_GRAPH: LangChainLangGraphFeature,
     SDKProvider.GOOGLE_ADK: GoogleADKFeature,
     SDKProvider.OPENAI_AGENTS: OpenAIAgentsFeature,
     SDKProvider.CREWAI: CrewAIFeature,
