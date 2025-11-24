@@ -46,7 +46,7 @@ agentcore configure -e my_agent.py
 ```bash
 # Uses CodeBuild by default
 agentcore configure -e my_agent.py
-agentcore launch
+agentcore deploy
 ```
 
 ## Developer/Caller Permissions

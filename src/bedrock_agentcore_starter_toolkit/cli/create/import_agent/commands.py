@@ -396,7 +396,7 @@ def import_agent(
 
                 configure_cmd = f"agentcore configure --entrypoint {output_path} --requirements-file {requirements_path} --ecr auto -n '{agent_name}'"  # noqa: E501
                 set_default_cmd = f"agentcore configure set-default '{agent_name}'"
-                launch_cmd = f"agentcore launch {env_injection_code}"
+                launch_cmd = f"agentcore deploy {env_injection_code}"
 
                 os.system(f"cd {output_dir} && {configure_cmd} && {set_default_cmd} && {launch_cmd}")  # nosec
 

@@ -15,9 +15,9 @@ from .create.import_agent.commands import import_agent
 from .identity.commands import identity_app
 from .runtime.commands import (
     configure_app,
+    deploy,
     destroy,
     invoke,
-    launch,
     status,
     stop_session,
 )
