@@ -2855,10 +2855,9 @@
 <span class="w">                          </span><span class="no">console.print(&quot;[cyan]🔄 Initializing browser session...[/cyan]&quot;)</span>
 <span class="w">                          </span><span class="no">await browser_session.start()</span>
 
-<span class="w">                          </span><span class="no"># Create ChatBedrockConverse once</span>
-<span class="w">                          </span><span class="no">bedrock_chat = ChatAnthropicBedrock(</span>
-<span class="w">                              </span><span class="no">model=&#39;us.anthropic.claude-sonnet-4-5-20250929-v1:0&#39;,</span>
-<span class="w">                              </span><span class="no">aws_region=region</span>
+<span class="w">                          </span><span class="no">bedrock_chat = ChatBedrockConverse(</span>
+<span class="w">                              </span><span class="no">model_id=&quot;global.anthropic.claude-haiku-4-5-20251001-v1:0&quot;,</span>
+<span class="w">                              </span><span class="no">region_name=&quot;us-west-2&quot;</span>
 <span class="w">                          </span><span class="no">)</span>
 
 <span class="w">                          </span><span class="no">console.print(&quot;[green]✅ Browser session initialized and ready[/green]&quot;)</span>

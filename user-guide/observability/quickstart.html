@@ -1439,9 +1439,10 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Enabling Observability for AgentCore Runtime hosted Agents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#step-0-setup-folder-and-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1450,8 +1451,7 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 0: Setup folder and virtual environment">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#step-1-create-your-agent-shown-below-is-an-example-with-strands-agents-sdk" class="md-nav__link">
@@ -1553,27 +1553,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agentcore-observability-on-genai-observability-on-amazon-cloudwatch" class="md-nav__link">
+  <a href="#agentcore-observability-on-amazon-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AgentCore Observability on GenAI Observability on Amazon CloudWatch
+        AgentCore Observability on Amazon CloudWatch
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AgentCore Observability on Amazon CloudWatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bedrock-agentcore-genai-observability-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bedrock AgentCore GenAI Observability dashboard
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bedrock-agentcore-overview-on-genai-observability-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bedrock AgentCore Overview on GenAI Observability dashboard
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Bedrock AgentCore Overview on GenAI Observability dashboard">
-      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#view-logs-in-cloudwatch" class="md-nav__link">
@@ -2522,9 +2522,10 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Enabling Observability for AgentCore Runtime hosted Agents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#step-0-setup-folder-and-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2533,8 +2534,7 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 0: Setup folder and virtual environment">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#step-1-create-your-agent-shown-below-is-an-example-with-strands-agents-sdk" class="md-nav__link">
@@ -2636,27 +2636,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agentcore-observability-on-genai-observability-on-amazon-cloudwatch" class="md-nav__link">
+  <a href="#agentcore-observability-on-amazon-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AgentCore Observability on GenAI Observability on Amazon CloudWatch
+        AgentCore Observability on Amazon CloudWatch
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AgentCore Observability on Amazon CloudWatch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bedrock-agentcore-genai-observability-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bedrock AgentCore GenAI Observability dashboard
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#bedrock-agentcore-overview-on-genai-observability-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bedrock AgentCore Overview on GenAI Observability dashboard
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Bedrock AgentCore Overview on GenAI Observability dashboard">
-      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#view-logs-in-cloudwatch" class="md-nav__link">
@@ -2768,17 +2768,21 @@
 <div class="highlight"><pre><span></span><code>aws<span class="w"> </span>xray<span class="w"> </span>update-indexing-rule<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Default&quot;</span><span class="w"> </span>--rule<span class="w"> </span><span class="s1">&#39;{&quot;Probabilistic&quot;: {&quot;DesiredSamplingPercentage&quot;: number}}&#39;</span>
 </code></pre></div>
 <h3 id="option-2-enabling-transaction-search-in-the-cloudwatch-console">Option 2: Enabling Transaction Search in the CloudWatch console<a class="headerlink" href="#option-2-enabling-transaction-search-in-the-cloudwatch-console" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/.</li>
-<li>From the navigation pane, under Application Signals, choose Transaction Search.</li>
-<li>Choose Enable Transaction Search.</li>
-<li>Select the box to ingest spans as structured logs, and enter a percentage of spans to be indexed. You can index spans at 1% for free and change the percentage later based on your requirements.</li>
-</ul>
+<ol>
+<li>Open the <a href="https://console.aws.amazon.com/cloudwatch/">CloudWatch console</a></li>
+<li>In the navigation pane under <strong>Setup</strong>, choose <strong>Settings</strong></li>
+<li>Select <strong>Account</strong> and choose <strong>X-Ray traces</strong> tab</li>
+<li>In the <strong>Transaction Search</strong> section, choose <strong>View settings</strong></li>
+<li>On the page that opens, choose <strong>Edit</strong></li>
+<li>Choose <strong>Enable Transaction Search</strong></li>
+<li>Select <strong>For X-Ray users</strong> and enter the percentage of traces to index. You can index 1% of traces at no cost and adjust this percentage later based on your needs</li>
+<li>Choose <strong>Save</strong>. Wait till <strong>Ingest OpenTelemetry spans</strong> shows <strong>Enabled</strong> before sending traces</li>
+</ol>
 <p>Let's now proceed to exploring the two ways to configure observability.</p>
 <h2 id="enabling-observability-for-agentcore-runtime-hosted-agents">Enabling Observability for AgentCore Runtime hosted Agents<a class="headerlink" href="#enabling-observability-for-agentcore-runtime-hosted-agents" title="Permanent link">&para;</a></h2>
 <p>AgentCore Runtime-hosted agents are deployed and executed directly within the AgentCore environment, providing automatic instrumentation with minimal configuration. This approach offers the fastest path to deployment and is ideal for rapid development and testing.</p>
 <p>For a complete example please refer to this <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/01-Agentcore-runtime-hosted/runtime_with_strands_and_bedrock_models.ipynb">notebook</a></p>
-<h2 id="step-0-setup-folder-and-virtual-environment">Step 0: Setup folder and virtual environment<a class="headerlink" href="#step-0-setup-folder-and-virtual-environment" title="Permanent link">&para;</a></h2>
+<h3 id="step-0-setup-folder-and-virtual-environment">Step 0: Setup folder and virtual environment<a class="headerlink" href="#step-0-setup-folder-and-virtual-environment" title="Permanent link">&para;</a></h3>
 <p>Create a new folder for this quickstart, create and initialize a new python virtual environment</p>
 <div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>agentcore-observability-quickstart
 <span class="nb">cd</span><span class="w"> </span>agentcore-observability-quickstart
@@ -2851,7 +2855,7 @@ python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </
 <span class="n">launch_result</span> <span class="o">=</span> <span class="n">agentcore_runtime</span><span class="o">.</span><span class="n">launch</span><span class="p">()</span>
 <span class="n">launch_result</span>
 </code></pre></div>
-<p>In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automaticcally instruments your agent invocation using Open Telemetry. Now, you can invoke your agent using the command shown below and see the Traces, sessions and metrics on GenAI Obsrvability dashboard on Amazon Cloudwatch.</p>
+<p>In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automatically instruments your agent invocation using Open Telemetry. Now, you can invoke your agent using the command shown below and see the Traces, sessions and metrics on GenAI Observability dashboard on Amazon Cloudwatch.</p>
 <div class="highlight"><pre><span></span><code><span class="n">invoke_response</span> <span class="o">=</span> <span class="n">agentcore_runtime</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;How is the weather now?&quot;</span><span class="p">})</span>
 <span class="n">invoke_response</span>
 </code></pre></div>
@@ -2929,27 +2933,22 @@ python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </
 <p>Run the session-enabled version following command, complete implementation provided in the <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/02-Agent-not-hosted-on-runtime/Strands/Strands_Observability.ipynb">notebook</a>:</p>
 <div class="highlight"><pre><span></span><code>opentelemetry-instrument<span class="w"> </span>python<span class="w"> </span>strands_travel_agent_with_session.py<span class="w"> </span>--session-id<span class="w"> </span><span class="s2">&quot;user-session-123&quot;</span>
 </code></pre></div>
-<h2 id="agentcore-observability-on-genai-observability-on-amazon-cloudwatch">AgentCore Observability on GenAI Observability on Amazon CloudWatch<a class="headerlink" href="#agentcore-observability-on-genai-observability-on-amazon-cloudwatch" title="Permanent link">&para;</a></h2>
+<h2 id="agentcore-observability-on-amazon-cloudwatch">AgentCore Observability on Amazon CloudWatch<a class="headerlink" href="#agentcore-observability-on-amazon-cloudwatch" title="Permanent link">&para;</a></h2>
 <p>After implementing observability, you can view the collected data in CloudWatch:</p>
-<h2 id="bedrock-agentcore-overview-on-genai-observability-dashboard">Bedrock AgentCore Overview on GenAI Observability dashboard<a class="headerlink" href="#bedrock-agentcore-overview-on-genai-observability-dashboard" title="Permanent link">&para;</a></h2>
+<h3 id="bedrock-agentcore-genai-observability-dashboard">Bedrock AgentCore GenAI Observability dashboard<a class="headerlink" href="#bedrock-agentcore-genai-observability-dashboard" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Open the <a href="https://console.aws.amazon.com/cloudwatch/home#gen-ai-observability">GenAI Observability on CloudWatch console</a></li>
-<li>You are able to view the data related to model invocations and agents on Bedrock AgentCore on the dashboard.</li>
-<li>In the Bedrock Agentcore tab you are able to see Agents View, Sessions View and Traces View.</li>
-<li>Agents View lists all your Agents that are on and not on runtime, you can also click on the agent and view further details like runtime metrics, sessions and traces specific to an agent.</li>
-<li>In the Sessions View tab, you can navigate across all the sessions associated with agents.</li>
-<li>In the Trace View tab, you can look into the traces and span information for agents. Also explore the trace trajectory and timeline by clicking on a trace.</li>
+<li>Open the <a href="https://console.aws.amazon.com/cloudwatch/home#gen-ai-observability/agent-core/agents">Bedrock AgentCore GenAI Observability on CloudWatch console</a>.</li>
+<li>The Bedrock AgentCore observability page displays three views: Agents View, Sessions View, and Traces View.</li>
+<li>Agents View lists all your agents, including both runtime and non-runtime hosted agents. Click on any agent to view detailed information such as runtime metrics, sessions, and traces specific to that agent.</li>
+<li>The Sessions View tab displays all sessions associated with your agents.</li>
+<li>The Traces View tab shows trace and span information for agents. Click on a trace to explore its trajectory and timeline.</li>
 </ol>
 <h3 id="view-logs-in-cloudwatch">View Logs in CloudWatch<a class="headerlink" href="#view-logs-in-cloudwatch" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Open the <a href="https://console.aws.amazon.com/cloudwatch/">CloudWatch console</a></li>
 <li>In the left navigation pane, expand <strong>Logs</strong> and select <strong>Log groups</strong></li>
-<li>
-<p>Search for your agent's log group:</p>
-</li>
-<li>
-<p>Standard logs (stdout/stderr) Location: <code>/aws/bedrock-agentcore/runtimes/&lt;agent_id&gt;-&lt;endpoint_name&gt;/[runtime-logs] &lt;UUID&gt;</code></p>
-</li>
+<li>Search for your agent's log group:</li>
+<li>Standard logs (stdout/stderr) Location: <code>/aws/bedrock-agentcore/runtimes/&lt;agent_id&gt;-&lt;endpoint_name&gt;/[runtime-logs] &lt;UUID&gt;</code></li>
 <li>OTEL structured logs: <code>/aws/bedrock-agentcore/runtimes/&lt;agent_id&gt;-&lt;endpoint_name&gt;/runtime-logs</code></li>
 </ol>
 <h3 id="view-traces-and-spans">View Traces and Spans<a class="headerlink" href="#view-traces-and-spans" title="Permanent link">&para;</a></h3>
@@ -2963,8 +2962,8 @@ python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </
 <h3 id="view-metrics">View Metrics<a class="headerlink" href="#view-metrics" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Open the <a href="https://console.aws.amazon.com/cloudwatch/">CloudWatch console</a></li>
-<li>Select <strong>Metrics</strong> from the left navigation</li>
-<li>Browse to the <code>bedrock-agentcore</code> namespace</li>
+<li>In the navigation pane under <strong>Metrics</strong>, choose <strong>All metrics</strong></li>
+<li>Under <strong>AWS namespaces</strong>, browse to the <strong>Bedrock-AgentCore</strong> namespace</li>
 <li>Explore the available metrics</li>
 </ol>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
