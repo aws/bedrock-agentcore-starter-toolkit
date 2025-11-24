@@ -1447,7 +1447,7 @@
     'src': None,
     'src/main.py': '''
       import os
-      from strands import Agent
+      from strands import Agent, tool
       from strands_tools.code_interpreter import AgentCoreCodeInterpreter
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
@@ -1592,7 +1592,7 @@
     'src': None,
     'src/main.py': '''
       import os
-      from strands import Agent
+      from strands import Agent, tool
       from strands_tools.code_interpreter import AgentCoreCodeInterpreter
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
@@ -1718,7 +1718,7 @@
     'src': None,
     'src/main.py': '''
       import os
-      from strands import Agent
+      from strands import Agent, tool
       from strands_tools.code_interpreter import AgentCoreCodeInterpreter
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
@@ -1862,7 +1862,7 @@
     'src': None,
     'src/main.py': '''
       import os
-      from strands import Agent
+      from strands import Agent, tool
       from strands_tools.code_interpreter import AgentCoreCodeInterpreter
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
