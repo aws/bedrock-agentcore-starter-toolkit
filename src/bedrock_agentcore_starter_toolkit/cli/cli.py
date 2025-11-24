@@ -32,9 +32,13 @@ app.command("status")(status)
 app.command("deploy")(deploy)
 app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
-app.command("stop-session")(stop_session)
 app.add_typer(identity_app, name="identity")
 app.add_typer(configure_app)
+
+# session command group
+session_app = typer.Typer(name="session", help="Manage runtime sessions")
+session_app.command("stop")(stop_session)
+app.add_typer(session_app, name="session")
 
 # gateway
 app.command("create_mcp_gateway")(create_mcp_gateway)

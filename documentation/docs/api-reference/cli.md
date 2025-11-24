@@ -321,7 +321,7 @@ agentcore destroy --agent my-agent --delete-ecr-repo
 Terminate active runtime sessions to free resources and reduce costs.
 
 ```bash
-agentcore stop-session [OPTIONS]
+agentcore session stop [OPTIONS]
 ```
 
 **Session Tracking:**
@@ -332,13 +332,13 @@ The CLI automatically tracks the runtime session ID from the last `agentcore inv
 
 ```bash
 # Stop the last invoked session (tracked automatically)
-agentcore stop-session
+agentcore session stop
 
 # Stop a specific session by ID
-agentcore stop-session --session-id abc123xyz
+agentcore session stop--session-id abc123xyz
 
 # Stop session for specific agent
-agentcore stop-session --agent my-agent --session-id abc123xyz
+agentcore session stop --agent my-agent --session-id abc123xyz
 ```
 
 

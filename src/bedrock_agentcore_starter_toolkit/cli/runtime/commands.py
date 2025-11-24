@@ -1722,17 +1722,17 @@ def stop_session(
 
     Examples:
         # Stop the last invoked session (most common)
-        agentcore stop-session
+        agentcore session stop
 
         # Stop a specific session by ID
-        agentcore stop-session --session-id abc123xyz
+        agentcore session stop --session-id abc123xyz
 
         # Stop last session for a specific agent
-        agentcore stop-session --agent my-agent
+        agentcore session stop --agent my-agent
 
         # Get current session ID before stopping
         agentcore status  # Shows tracked session ID
-        agentcore stop-session
+        agentcore session stop
     """
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
 

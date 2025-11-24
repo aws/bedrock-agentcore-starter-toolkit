@@ -3657,10 +3657,10 @@ class TestCommandsAdditionalCoverage:
             finally:
                 os.chdir(original_cwd)
 
-    # ========== Stop Session Command ==========
+    # ========== Session Stop Command ==========
 
     def test_stop_session_command_success(self, tmp_path):
-        """Test stop-session command success."""
+        """Test session stop command success."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_content = """
 default_agent: test-agent
@@ -3698,7 +3698,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["stop-session", "--session-id", "session-123"])
+                result = self.runner.invoke(app, ["session", "stop", "--session-id", "session-123"])
 
                 assert result.exit_code == 0
                 assert "Session Stopped" in result.stdout
@@ -3709,7 +3709,7 @@ agents:
                 os.chdir(original_cwd)
 
     def test_stop_session_command_no_session_id_error(self, tmp_path):
-        """Test stop-session command without session ID (uses last session)."""
+        """Test session stop command without session ID (uses last session)."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_content = """
 default_agent: test-agent
@@ -3734,7 +3734,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["stop-session"])  # No session ID
+                result = self.runner.invoke(app, ["session", "stop"])  # No session ID
 
                 assert result.exit_code == 0
                 assert "last-session-456" in result.stdout
@@ -3742,7 +3742,7 @@ agents:
                 os.chdir(original_cwd)
 
     def test_stop_session_command_value_error(self, tmp_path):
-        """Test stop-session command with ValueError (no session found)."""
+        """Test session stop command with ValueError (no session found)."""
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_content = """
 default_agent: test-agent
@@ -3760,7 +3760,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["stop-session"])
+                result = self.runner.invoke(app, ["session", "stop"])
 
                 assert result.exit_code == 1
                 assert "Failed to Stop Session" in result.stdout
@@ -3769,12 +3769,12 @@ agents:
                 os.chdir(original_cwd)
 
     def test_stop_session_command_no_config(self, tmp_path):
-        """Test stop-session command without config file."""
+        """Test session stop command without config file."""
         original_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(app, ["stop-session"])
+            result = self.runner.invoke(app, ["session", "stop"])
 
             assert result.exit_code == 1
             assert "Configuration Not Found" in result.stdout
