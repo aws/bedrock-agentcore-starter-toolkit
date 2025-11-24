@@ -132,7 +132,7 @@ us-west-2_xxx/.well-known/openid-configuration \
                 f"[bold]Next Steps:[/bold]\n"
                 f"   1. Ensure callback URL is registered with your IdP\n"
                 f"   2. Create/update workload identity with your app's callback URLs\n"
-                f"   3. [cyan]agentcore launch[/cyan]  # Permissions auto-added",
+                f"   3. [cyan]agentcore deploy[/cyan]  # Permissions auto-added",
                 title="✅ Success",
                 border_style="green",
             )

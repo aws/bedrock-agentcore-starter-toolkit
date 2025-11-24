@@ -14,9 +14,9 @@ from .identity.commands import identity_app
 from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
+    deploy,
     destroy,
     invoke,
-    launch,
     status,
     stop_session,
 )
@@ -29,7 +29,7 @@ setup_toolkit_logging(mode="cli")
 # runtime
 app.command("invoke")(invoke)
 app.command("status")(status)
-app.command("launch")(launch)
+app.command("deploy")(deploy)
 app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)

@@ -227,7 +227,7 @@ curl http://localhost:8080/ping
 ```bash
 # Configure and test locally
 agentcore configure -e my_async_agent.py
-agentcore launch -l
+agentcore deploy -l
 
 # Test in another terminal
 agentcore invoke '{"prompt": "start processing"}' -l
