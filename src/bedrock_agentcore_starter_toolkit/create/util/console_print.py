@@ -19,12 +19,15 @@ def emit_create_completed_message(ctx: ProjectContext):
     intro_text = "You're ready to go! Happy building 🚀\n"
 
     if not ctx.iac_provider:
+        # Add memory line only if memory is not enabled
+        memory_config_line = "Add memory with [cyan]agentcore configure[/cyan]\n" if not ctx.memory_enabled else ""
+
         sandwich_text_ui(
             style="#39F56B",
             text=f"{intro_text}"
             f"Enter your project directory using [cyan]cd {ctx.name}[/cyan]\n"
             f"Run [cyan]agentcore dev[/cyan] to start the dev server\n"
-            f"Add memory with [cyan]agentcore configure[/cyan]\n"
+            f"{memory_config_line}"
             f"Launch with [cyan]agentcore deploy[/cyan]",
         )
         return

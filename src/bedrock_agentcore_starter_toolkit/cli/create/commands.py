@@ -285,8 +285,7 @@ def _handle_monorepo_flow(
         iac = prompt_iac_provider()
 
     if not configure_yaml.exists() and not non_interactive_flag:
-        no_title = "No, use default settings"
-        if prompt_configure(no_title) != no_title:
+        if prompt_configure() == "Yes":
             configure_impl(create=True)
             _pause_and_new_line_on_finish(sleep_override=1.0)
             # load new config in
