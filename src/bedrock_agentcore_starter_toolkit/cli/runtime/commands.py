@@ -26,7 +26,7 @@ from ...operations.runtime import (
 )
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
-from ..common import _handle_error, _print_success, console
+from ..common import _handle_error, _print_success, console, requires_aws_creds
 from ._configure_impl import configure_impl
 
 # Create a module-specific logger
@@ -100,6 +100,7 @@ def set_default(name: str = typer.Argument(...)):
 
 
 @configure_app.callback(invoke_without_command=True)
+@requires_aws_creds
 def configure(
     ctx: typer.Context,
     *,
@@ -208,6 +209,7 @@ def configure(
     )
 
 
+@requires_aws_creds
 def launch(
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"

@@ -2,6 +2,7 @@
 
 import re
 import time
+from typing import Optional
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.filters import Condition
@@ -430,6 +431,28 @@ def sandwich_text_ui(style: str, text: str) -> None:
     console.print(text)
     print_border(style=style)
     _pause_and_new_line_on_finish()
+
+
+def show_invalid_aws_creds(ok: bool, msg: Optional[str], optional_header: Optional[str] = None) -> bool:
+    """Standard UI messaging for AWS credential validation.
+
+    Returns True if creds are valid, False otherwise.
+    """
+    if ok:
+        return True
+
+    header_text = f"{optional_header}\n\n" if optional_header else ""
+    error_msg_text = f"Exception message: {msg}" if msg else ""
+    sandwich_text_ui(
+        style="yellow",
+        text=(
+            f"{header_text}"
+            f"Environment does not contain valid AWS credentials\n"
+            f"{error_msg_text}\n"
+            f"[cyan]Log into AWS with `aws login` or add credentials to your environment to continue[/cyan]"
+        ),
+    )
+    return False
 
 
 def _pause_and_new_line_on_finish(sleep_override: float | None = None):

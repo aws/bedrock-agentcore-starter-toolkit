@@ -9,8 +9,8 @@ from typing import List, Optional
 
 import typer
 
-from ...utils.runtime.config import load_config
-from ..common import _handle_error, console
+from ...utils.runtime.config import load_config, load_config_if_exists
+from ..common import _handle_error, assert_valid_aws_creds_or_exit, console
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ def dev(
 ):
     """Start a local development server for your agent with hot reloading."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+    _assert_aws_creds_if_required(config_path)
     module_path, agent_name = _get_module_path_and_agent_name(config_path)
 
     # Setup environment and port
@@ -155,7 +156,7 @@ def _setup_dev_environment(envs: List[str], port: Optional[int]) -> dict:
 
 def _find_available_port(start_port: int = 8080) -> int:
     """Find an available port starting from the given port."""
-    for port in range(start_port, start_port + 100):
+    for port in range(start_port, start_port + 101):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.bind(("localhost", port))
@@ -163,6 +164,23 @@ def _find_available_port(start_port: int = 8080) -> int:
         except OSError:
             continue
     _handle_error("Could not find available port in range 8080-8180")
+
+
+def _assert_aws_creds_if_required(config_path: Path):
+    """For dev, only assert creds if using bedrock."""
+    config = load_config_if_exists(config_path, autofill_missing_aws=False)
+    if not config:
+        # There is no config so don't validate
+        return
+    agent_config = config.agents[config.default_agent]
+    if agent_config.api_key_credential_provider_name is not None:
+        # If it's an API key based provider, aws creds aren't needed
+        return
+    else:
+        # If it's Bedrock, assert there are valid aws creds.
+        assert_valid_aws_creds_or_exit(
+            failure_message="Local dev with Bedrock as the model provider requires AWS creds"
+        )
 
 
 def _cleanup_process(process):
