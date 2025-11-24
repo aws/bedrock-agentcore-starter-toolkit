@@ -218,7 +218,7 @@ If successful, you should see a joke in the response. If the call fails, check t
 If you no longer want to host the agent in the AgentCore Runtime, use the AgentCore console or the DeleteAgentRuntime AWS SDK operation to delete the AgentCore Runtime.
 
 ```bash
-agentcore destroy
+agentcore remove all
 ```
 
 ## Find Your Resources

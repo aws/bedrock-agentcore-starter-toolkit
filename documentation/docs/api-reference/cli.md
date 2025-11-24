@@ -277,23 +277,23 @@ Shows comprehensive agent information including:
 
 ### Destroy
 
-Destroy Bedrock AgentCore resources.
+Remove all Bedrock AgentCore resources for an agent.
 
 ```bash
-agentcore destroy [OPTIONS]
+agentcore remove all [OPTIONS]
 ```
 
 Options:
 
 - `--agent, -a TEXT`: Agent name
 
-- `--dry-run`: Show what would be destroyed without actually destroying
+- `--dry-run`: Show what would be removed without actually removing
 
 - `--force`: Skip confirmation prompts
 
 - `--delete-ecr-repo`: Also delete the ECR repository after removing images
 
-**Destroyed Resources:**
+**Removed Resources:**
 
 - AgentCore endpoint
 - AgentCore agent runtime
@@ -304,17 +304,17 @@ Options:
 - Agent deployment configuration
 
 ```bash
-# Preview what would be destroyed
-agentcore destroy --dry-run
+# Preview what would be removed
+agentcore remove all --dry-run
 
-# Destroy with confirmation
-agentcore destroy --agent my-agent
+# Remove with confirmation
+agentcore remove all --agent my-agent
 
-# Destroy without confirmation
-agentcore destroy --agent my-agent --force
+# Remove without confirmation
+agentcore remove all --agent my-agent --force
 
-# Destroy and delete ECR repository
-agentcore destroy --agent my-agent --delete-ecr-repo
+# Remove and delete ECR repository
+agentcore remove all --agent my-agent --delete-ecr-repo
 ```
 ### Stop Session
 
@@ -1029,13 +1029,13 @@ agentcore status --verbose
 
 ```bash
 # Preview destruction
-agentcore destroy --dry-run
+agentcore remove all --dry-run
 
 # Destroy with confirmation
-agentcore destroy
+agentcore remove all
 
 # Destroy specific agent without confirmation
-agentcore destroy --agent my-agent --force
+agentcore remove all --agent my-agent --force
 ```
 
 ### Gateway Operations

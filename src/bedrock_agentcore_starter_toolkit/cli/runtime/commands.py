@@ -447,8 +447,8 @@ def configure(
                 _handle_error(
                     f"Cannot change deployment type from '{existing_deployment_type}' to "
                     f"'{deployment_type}' for existing agent '{agent_name}'.\n"
-                    f"To change deployment types, first destroy the existing agent:\n"
-                    f"  agentcore destroy --agent {agent_name}\n"
+                    f"To change deployment types, first remove the existing agent:\n"
+                    f"  agentcore remove all --agent {agent_name}\n"
                     f"Then reconfigure with the new deployment type."
                 )
 
@@ -1805,7 +1805,7 @@ def destroy(
         False, "--delete-ecr-repo", help="Also delete the ECR repository after removing images"
     ),
 ) -> None:
-    """Destroy Bedrock AgentCore resources.
+    """Remove all Bedrock AgentCore resources for an agent.
 
     This command removes the following AWS resources for the specified agent:
     - Bedrock AgentCore endpoint (if exists)
@@ -1918,8 +1918,8 @@ def destroy(
             console.print("  • Run 'agentcore configure --entrypoint <file>' to set up a new agent")
             console.print("  • Run 'agentcore deploy' to deploy to Bedrock AgentCore")
         elif dry_run:
-            console.print("\n[dim]To actually destroy these resources, run:[/dim]")
-            destroy_cmd = f"  agentcore destroy{f' --agent {actual_agent_name}' if agent else ''}"
+            console.print("\n[dim]To actually remove these resources, run:[/dim]")
+            destroy_cmd = f"  agentcore remove all{f' --agent {actual_agent_name}' if agent else ''}"
             if delete_ecr_repo:
                 destroy_cmd += " --delete-ecr-repo"
             console.print(destroy_cmd)

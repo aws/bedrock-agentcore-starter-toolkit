@@ -5,8 +5,11 @@ import typer
 from ..cli.gateway.commands import (
     create_mcp_gateway,
     create_mcp_gateway_target,
+    delete_mcp_gateway,
+    delete_mcp_gateway_target,
     gateway_app,
 )
+from ..cli.memory.commands import delete as delete_memory
 from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
@@ -26,14 +29,37 @@ app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=
 # Setup centralized logging for CLI
 setup_toolkit_logging(mode="cli")
 
+
+# Placeholder functions for unimplemented subcommands
+def remove_idp():
+    """Remove Identity Provider configuration."""
+    typer.echo("Command not yet implemented")
+    raise typer.Exit(1)
+
+
+def remove_agent_identity():
+    """Remove agent identity configuration."""
+    typer.echo("Command not yet implemented")
+    raise typer.Exit(1)
+
+
 # runtime
 app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("deploy")(deploy)
 app.command("import-agent")(import_agent)
-app.command("destroy")(destroy)
 app.add_typer(identity_app, name="identity")
 app.add_typer(configure_app)
+
+# remove command group
+remove_app = typer.Typer(name="remove", help="Remove AgentCore resources")
+remove_app.command("all")(destroy)
+remove_app.command("gateway")(delete_mcp_gateway)
+remove_app.command("gateway-target")(delete_mcp_gateway_target)
+remove_app.command("memory")(delete_memory)
+remove_app.command("idp")(remove_idp)
+remove_app.command("agent-identity")(remove_agent_identity)
+app.add_typer(remove_app, name="remove")
 
 # session command group
 session_app = typer.Typer(name="session", help="Manage runtime sessions")

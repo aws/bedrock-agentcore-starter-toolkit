@@ -2695,7 +2695,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--dry-run"])
+                result = self.runner.invoke(app, ["remove", "all", "--dry-run"])
 
                 assert result.exit_code == 0
                 assert "Dry run completed" in result.stdout
@@ -2757,7 +2757,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--force"])
+                result = self.runner.invoke(app, ["remove", "all", "--force"])
 
                 assert result.exit_code == 0
                 assert "Successfully destroyed resources" in result.stdout
@@ -2796,7 +2796,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy"])
+                result = self.runner.invoke(app, ["remove", "all"])
 
                 assert result.exit_code == 0
                 assert "Agent is not deployed, nothing to destroy" in result.stdout
@@ -2845,7 +2845,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--agent", "agent2", "--dry-run"])
+                result = self.runner.invoke(app, ["remove", "all", "--agent", "agent2", "--dry-run"])
 
                 assert result.exit_code == 0
                 assert "agent2" in result.stdout
@@ -2880,7 +2880,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--agent", "nonexistent"])
+                result = self.runner.invoke(app, ["remove", "all", "--agent", "nonexistent"])
 
                 assert result.exit_code == 1
                 assert "not found" in result.stdout
@@ -2893,7 +2893,7 @@ agents:
         os.chdir(tmp_path)  # Directory without .bedrock_agentcore.yaml
 
         try:
-            result = self.runner.invoke(app, ["destroy"])
+            result = self.runner.invoke(app, ["remove", "all"])
 
             assert result.exit_code == 1
             assert ".bedrock_agentcore.yaml not found" in result.stdout
@@ -4031,7 +4031,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--force"])
+                result = self.runner.invoke(app, ["remove", "all", "--force"])
 
                 assert result.exit_code == 0
                 assert "completed with errors" in result.stdout
@@ -4073,7 +4073,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--force"])
+                result = self.runner.invoke(app, ["remove", "all", "--force"])
 
                 assert result.exit_code == 1
                 assert "AWS service unavailable" in result.stdout
@@ -4119,7 +4119,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["destroy", "--force", "--delete-ecr-repo"])
+                result = self.runner.invoke(app, ["remove", "all", "--force", "--delete-ecr-repo"])
 
                 assert result.exit_code == 0
                 assert "Successfully destroyed resources" in result.stdout

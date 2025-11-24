@@ -314,7 +314,7 @@ Subsequent calls in this session will use the cached token.
 agentcore identity cleanup --agent identity_demo --force
 
 # Destroy agent
-agentcore destroy --agent identity_demo --force
+agentcore remove all --agent identity_demo --force
 ```
 
 **What gets cleaned up:**

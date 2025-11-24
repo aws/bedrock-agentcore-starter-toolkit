@@ -301,7 +301,7 @@ aws logs tail /aws/bedrock-agentcore/runtimes/AGENT_ID-DEFAULT --log-stream-name
 Remove all resources created during this tutorial:
 
 ```bash
-agentcore destroy
+agentcore remove all
 
 # Removes:
 #   - AgentCore Runtime endpoint and agent
@@ -377,7 +377,7 @@ pip install --no-cache-dir "bedrock-agentcore-starter-toolkit>=0.1.21" strands-a
 
 1. Clean up resources in the incorrect region:
    ```bash
-   agentcore destroy
+   agentcore remove all
 
    # This removes:
    #   - Runtime endpoint and agent
