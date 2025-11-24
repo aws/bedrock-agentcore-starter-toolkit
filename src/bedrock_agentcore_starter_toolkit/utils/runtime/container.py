@@ -76,7 +76,7 @@ class ContainerRuntime:
                     "• Finch: https://github.com/runfinch/finch\n"
                     "• Podman: https://podman.io/getting-started/installation\n\n"
                     "Alternative: Use CodeBuild for cloud-based building (no container engine needed):\n"
-                    "  agentcore launch  # Uses CodeBuild (default)"
+                    "  agentcore deploy  # Uses CodeBuild (default)"
                 )
             else:
                 raise ValueError(f"Unsupported runtime: {runtime_type}")
@@ -282,7 +282,7 @@ class ContainerRuntime:
             return False, [
                 "No container runtime available for local build",
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud",
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment",
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment",
                 "💡 For local builds, please install Docker, Finch, or Podman",
             ]
 
@@ -324,7 +324,7 @@ class ContainerRuntime:
             raise RuntimeError(
                 "No container runtime available for local run\n"
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment\n"
                 "💡 For local runs, please install Docker, Finch, or Podman"
             )
 

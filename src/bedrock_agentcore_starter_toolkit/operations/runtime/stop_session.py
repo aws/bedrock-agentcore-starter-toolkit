@@ -42,7 +42,7 @@ def stop_runtime_session(
     # Check if agent is deployed
     if not agent_config.bedrock_agentcore.agent_arn:
         raise ValueError(
-            f"Agent '{agent_config.name}' is not deployed. Run 'agentcore launch' to deploy the agent first."
+            f"Agent '{agent_config.name}' is not deployed. Run 'agentcore deploy' to deploy the agent first."
         )
 
     # Determine session ID to stop
