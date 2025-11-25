@@ -50,6 +50,7 @@ def handler(payload):
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
             ) as mock_get_account_id,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             # Mock get_account_id to prevent real AWS calls
             mock_get_account_id.return_value = "123456789012"
@@ -145,6 +146,7 @@ def handler(payload):
                 patch(
                     "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
                 ) as mock_get_account_id,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 # Mock get_account_id to prevent real AWS calls
                 mock_get_account_id.return_value = "123456789012"
@@ -291,6 +293,7 @@ def handler(payload):
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
                 return_value="123456789012",
             ),
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             try:
                 self.runner.invoke(app, ["configure", "--entrypoint", str(agent_file), "--protocol", "HTTPS"])
@@ -371,6 +374,7 @@ agents:
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
                 return_value="123456789012",
             ),
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_rel_path.return_value = "test-agent.py"
             mock_validate.return_value = (False, "Agent name contains invalid characters: @#$")
@@ -411,6 +415,7 @@ agents:
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl._handle_error",
                 side_effect=mock_handle_error_side_effect,
             ) as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             # Mock prompt to return current directory
             mock_prompt.return_value = "."
@@ -494,6 +499,7 @@ agents:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
             ) as mock_get_account_id,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
@@ -567,9 +573,12 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 # Test with malformed JSON (missing closing brace) - should fail
                 result = self.runner.invoke(
@@ -685,9 +694,12 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 result = self.runner.invoke(
                     app,
@@ -1034,7 +1046,10 @@ agents:
 
     def test_configure_set_default_file_not_found_error(self, tmp_path):
         """Test configure set-default command with missing config file."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
 
             def mock_handle_error_side_effect(message):
                 raise typer.Exit(1)
@@ -1062,6 +1077,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands._handle_error") as mock_error,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             # Mock load_config to raise ValueError
             mock_load_config.side_effect = ValueError("Invalid YAML configuration")
@@ -1090,11 +1106,14 @@ agents:
         os.chdir(tmp_path)  # Directory without .bedrock_agentcore.yaml
 
         try:
-            result = self.runner.invoke(app, ["configure", "list"])
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)
+            ):
+                result = self.runner.invoke(app, ["configure", "list"])
 
-            # Should show message about no config file
-            assert result.exit_code == 0
-            assert ".bedrock_agentcore.yaml not found" in result.stdout
+                # Should show message about no config file
+                assert result.exit_code == 0
+                assert ".bedrock_agentcore.yaml not found" in result.stdout
         finally:
             os.chdir(original_cwd)
 
@@ -1188,7 +1207,10 @@ agents:
         config_file = tmp_path / ".bedrock_agentcore.yaml"
         config_file.write_text("default_agent: null\nagents: {}")
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             # Mock empty agents config
             mock_config = type("obj", (object,), {"agents": {}})()
             mock_load_config.return_value = mock_config
@@ -1213,6 +1235,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_launch.return_value = None
             # Mock config loading
@@ -1587,11 +1610,14 @@ agents:
         os.chdir(tmp_path)  # Directory without .bedrock_agentcore.yaml
 
         try:
-            result = self.runner.invoke(app, ["launch"])
-            assert result.exit_code == 1
-            # Error might be in stdout or stderr, or in the exception output
-            error_output = result.stdout + result.stderr + str(result.exception) if result.exception else ""
-            assert "Configuration not found:" in error_output
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)
+            ):
+                result = self.runner.invoke(app, ["launch"])
+                assert result.exit_code == 1
+                # Error might be in stdout or stderr, or in the exception output
+                error_output = result.stdout + result.stderr + str(result.exception) if result.exception else ""
+                assert "Configuration not found:" in error_output
         finally:
             os.chdir(original_cwd)
 
@@ -1638,10 +1664,11 @@ agents:
 
     def test_launch_command_mutually_exclusive_options(self):
         """Test launch command with mutually exclusive options."""
-        # Test local and local-build together (not allowed)
-        result = self.runner.invoke(app, ["launch", "--local", "--local-build"])
-        assert result.exit_code == 1
-        assert "cannot be used together" in result.stdout
+        with patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)):
+            # Test local and local-build together (not allowed)
+            result = self.runner.invoke(app, ["launch", "--local", "--local-build"])
+            assert result.exit_code == 1
+            assert "cannot be used together" in result.stdout
 
     def test_launch_command_local_build_success(self, tmp_path):
         """Test launch command with --local-build for cloud deployment."""
@@ -1659,7 +1686,10 @@ agents:
 """
         config_file.write_text(config_content.strip())
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             mock_result = Mock()
             mock_result.mode = "cloud"
             mock_result.tag = "bedrock_agentcore-test-agent"
@@ -1706,7 +1736,10 @@ agents:
 """
         config_file.write_text(config_content.strip())
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             mock_result = Mock()
             mock_result.mode = "codebuild"  # This should trigger the missing code path
             mock_result.tag = "bedrock_agentcore-test-agent"
@@ -2118,7 +2151,10 @@ agents:
 """
         config_file.write_text(config_content.strip())
 
-        with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             mock_project_config = Mock()
             mock_project_config.default_agent = "test-agent"
             mock_project_config.agents = {
@@ -2163,6 +2199,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.save_config") as mock_save_config,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_project_config = Mock()
             mock_project_config.agents = {"old-agent": Mock(), "new-agent": Mock()}
@@ -2262,6 +2299,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             # Mock project config and agent config
             mock_project_config = Mock()
@@ -2358,7 +2396,10 @@ agents:
 """
         config_file.write_text(config_content.strip())
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             mock_result = Mock()
             mock_result.mode = "cloud"
             mock_result.tag = "bedrock_agentcore-test-agent"
@@ -3412,6 +3453,7 @@ agents:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
             ) as mock_get_account_id,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
@@ -3496,9 +3538,12 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 result = self.runner.invoke(
                     app,
@@ -3546,6 +3591,7 @@ class TestCommandsAdditionalCoverage:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
             ) as mock_get_account_id,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
@@ -3608,9 +3654,12 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 result = self.runner.invoke(
                     app,
@@ -3640,9 +3689,12 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 result = self.runner.invoke(
                     app,
@@ -3675,9 +3727,12 @@ class TestCommandsAdditionalCoverage:
         os.chdir(tmp_path)
 
         try:
-            with patch(
-                "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
-                return_value="123456789012",
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id",
+                    return_value="123456789012",
+                ),
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 result = self.runner.invoke(
                     app,
@@ -3784,6 +3839,7 @@ class TestCommandsAdditionalCoverage:
             patch(
                 "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.get_account_id"
             ) as mock_get_account_id,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_get_account_id.return_value = "123456789012"
             mock_infer_name.return_value = "test_agent"
@@ -4367,7 +4423,10 @@ agents:
 """
         config_file.write_text(config_content.strip())
 
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch:
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
             mock_result = Mock()
             mock_result.mode = "codebuild"
             mock_result.tag = "bedrock_agentcore-test-agent"
@@ -4411,17 +4470,20 @@ agents:
         os.chdir(tmp_path)
 
         try:
-            result = self.runner.invoke(app, ["launch", "--local", "--env", "INVALID_FORMAT"])
-            print("STDOUT")
-            print(result.stdout)
-            print("STDERR")
-            print(result.stderr)
-            print(result.exception)
+            with patch(
+                "bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)
+            ):
+                result = self.runner.invoke(app, ["launch", "--local", "--env", "INVALID_FORMAT"])
+                print("STDOUT")
+                print(result.stdout)
+                print("STDERR")
+                print(result.stderr)
+                print(result.exception)
 
-            assert result.exit_code == 1
-            # Error might be in stdout, stderr, or exception output
-            error_output = result.stdout + result.stderr + str(result.exception) if result.exception else ""
-            assert "Invalid environment variable format" in error_output
-            assert "Use KEY=VALUE format" in result.stdout
+                assert result.exit_code == 1
+                # Error might be in stdout, stderr, or exception output
+                error_output = result.stdout + result.stderr + str(result.exception) if result.exception else ""
+                assert "Invalid environment variable format" in error_output
+                assert "Use KEY=VALUE format" in result.stdout
         finally:
             os.chdir(original_cwd)

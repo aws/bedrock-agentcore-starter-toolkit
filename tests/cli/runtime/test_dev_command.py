@@ -368,6 +368,7 @@ class TestDevCommand:
                     "bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080
                 ),
                 patch("subprocess.Popen") as mock_popen,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 mock_process = Mock()
                 mock_process.wait.return_value = 0
@@ -420,6 +421,7 @@ class TestDevCommand:
                 ),
                 patch("subprocess.Popen") as mock_popen,
                 patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._cleanup_process") as mock_cleanup,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 mock_process = Mock()
                 mock_process.wait.side_effect = KeyboardInterrupt()
@@ -466,6 +468,7 @@ class TestDevCommand:
                 ),
                 patch("subprocess.Popen") as mock_popen,
                 patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._cleanup_process") as mock_cleanup,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 mock_process = Mock()
                 mock_process.wait.side_effect = Exception("Server error")
@@ -512,6 +515,7 @@ class TestDevCommand:
                     "bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=9000
                 ),
                 patch("subprocess.Popen") as mock_popen,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 mock_process = Mock()
                 mock_process.wait.return_value = 0
@@ -559,6 +563,7 @@ class TestDevCommand:
                     "bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080
                 ),
                 patch("subprocess.Popen") as mock_popen,
+                patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
             ):
                 mock_process = Mock()
                 mock_process.wait.return_value = 0
