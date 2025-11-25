@@ -38,6 +38,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         output_dir = tmp_path / "testProject"
@@ -64,6 +65,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_yaml.assert_called_once()
@@ -88,6 +90,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_env.assert_called_once()
@@ -115,6 +118,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_env.assert_not_called()
@@ -139,6 +143,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         output_dir = tmp_path / "testProject"
@@ -165,6 +170,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_iac_gen.assert_called_once()
@@ -189,6 +195,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=True,
             git_init=False,
+            memory=None,
         )
 
         mock_venv.assert_called_once()
@@ -213,6 +220,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_venv.assert_not_called()
@@ -237,6 +245,7 @@ class TestGenerateProject:
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
         mock_emit.assert_called_once()

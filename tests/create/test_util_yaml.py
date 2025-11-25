@@ -4,6 +4,7 @@ import yaml
 
 from bedrock_agentcore_starter_toolkit.create.constants import (
     DeploymentType,
+    MemoryConfig,
     ModelProvider,
     RuntimeProtocol,
     TemplateDirSelection,
@@ -170,7 +171,7 @@ class TestWriteMinimalCreateRuntimeYaml:
     def test_yaml_file_created(self, tmp_path):
         """Test that YAML file is created for runtime projects."""
         ctx = self._create_runtime_context(tmp_path)
-        write_minimal_create_runtime_yaml(ctx)
+        write_minimal_create_runtime_yaml(ctx, None)
 
         yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
         assert yaml_path.exists()
@@ -179,7 +180,7 @@ class TestWriteMinimalCreateRuntimeYaml:
     def test_yaml_includes_agent_name(self, tmp_path):
         """Test that runtime YAML includes agent name."""
         ctx = self._create_runtime_context(tmp_path)
-        write_minimal_create_runtime_yaml(ctx)
+        write_minimal_create_runtime_yaml(ctx, None)
 
         yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
         with open(yaml_path) as f:
@@ -191,7 +192,7 @@ class TestWriteMinimalCreateRuntimeYaml:
     def test_yaml_includes_api_key_env_var_for_openai(self, tmp_path):
         """Test that runtime YAML includes api_key_env_var_name for OpenAI."""
         ctx = self._create_runtime_context(tmp_path, ModelProvider.OpenAI)
-        write_minimal_create_runtime_yaml(ctx)
+        write_minimal_create_runtime_yaml(ctx, None)
 
         yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
         with open(yaml_path) as f:
@@ -203,7 +204,7 @@ class TestWriteMinimalCreateRuntimeYaml:
     def test_yaml_no_api_key_env_var_for_bedrock(self, tmp_path):
         """Test that runtime YAML has no api_key_env_var_name for Bedrock."""
         ctx = self._create_runtime_context(tmp_path, ModelProvider.Bedrock)
-        write_minimal_create_runtime_yaml(ctx)
+        write_minimal_create_runtime_yaml(ctx, None)
 
         yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
         with open(yaml_path) as f:
@@ -213,10 +214,36 @@ class TestWriteMinimalCreateRuntimeYaml:
         # Should be None or not present
         assert agent_config.get("api_key_env_var_name") is None
 
+    def test_yaml_memory_works_stm(self, tmp_path):
+        """Test that runtime YAML has no api_key_env_var_name for Bedrock."""
+        ctx = self._create_runtime_context(tmp_path, ModelProvider.Bedrock)
+        ctx.memory_enabled = True
+        write_minimal_create_runtime_yaml(ctx, MemoryConfig.STM)
+
+        yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
+        with open(yaml_path) as f:
+            data = yaml.safe_load(f)
+
+        agent_config = data["agents"][ctx.agent_name]
+        assert agent_config.get("memory").get("mode") == "STM_ONLY"
+
+    def test_yaml_memory_works_ltm(self, tmp_path):
+        """Test that runtime YAML has no api_key_env_var_name for Bedrock."""
+        ctx = self._create_runtime_context(tmp_path, ModelProvider.Bedrock)
+        ctx.memory_enabled = True
+        write_minimal_create_runtime_yaml(ctx, MemoryConfig.STM_AND_LTM)
+
+        yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
+        with open(yaml_path) as f:
+            data = yaml.safe_load(f)
+
+        agent_config = data["agents"][ctx.agent_name]
+        assert agent_config.get("memory").get("mode") == "STM_AND_LTM"
+
     def test_yaml_includes_aws_auto_create_settings(self, tmp_path):
         """Test that runtime YAML includes AWS auto-create settings."""
         ctx = self._create_runtime_context(tmp_path)
-        write_minimal_create_runtime_yaml(ctx)
+        write_minimal_create_runtime_yaml(ctx, None)
 
         yaml_path = ctx.output_dir / ".bedrock_agentcore.yaml"
         with open(yaml_path) as f:

@@ -31,7 +31,7 @@ from .prompt_util import (
     prompt_configure,
     prompt_git_init,
     prompt_iac_provider,
-    prompt_memory_enabled,
+    prompt_memory,
     prompt_model_provider,
     prompt_runtime_or_monorepo,
     prompt_sdk_provider,
@@ -137,9 +137,9 @@ def create(
             template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PRODUCTION
 
         # 3. Run specific flows
-        enable_memory = False
+        memory = None
         if template == TemplateDisplay.BASIC:
-            sdk, model_provider, provider_api_key, enable_memory = _handle_basic_runtime_flow(
+            sdk, model_provider, provider_api_key, memory = _handle_basic_runtime_flow(
                 sdk, model_provider, provider_api_key, non_interactive_flag
             )
         else:
@@ -160,7 +160,7 @@ def create(
             agent_config=agent_config,
             use_venv=venv_option,
             git_init=git_init,
-            enable_memory=enable_memory,
+            memory=memory,
         )
 
 
@@ -249,11 +249,11 @@ def _handle_basic_runtime_flow(
             )
 
     # Memory configuration - only for Strands SDK in interactive mode
-    enable_memory = False
+    memory = None
     if sdk == SDKProvider.STRANDS and not non_interactive_flag:
-        enable_memory = prompt_memory_enabled()
+        memory = prompt_memory()
 
-    return sdk, model_provider, provider_api_key, enable_memory
+    return sdk, model_provider, provider_api_key, memory
 
 
 def _handle_monorepo_flow(

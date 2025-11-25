@@ -8,10 +8,10 @@ from .baseline_feature import BaselineFeature
 from .configure.resolve import (
     resolve_agent_config_with_project_context,
 )
-from .constants import DeploymentType, ModelProvider, RuntimeProtocol, TemplateDirSelection
+from .constants import DeploymentType, MemoryConfig, ModelProvider, RuntimeProtocol, TemplateDirSelection
 from .features import iac_feature_registry, sdk_feature_registry
 from .progress.progress_sink import ProgressSink
-from .types import CreateIACProvider, CreateModelProvider, CreateSDKProvider, ProjectContext
+from .types import CreateIACProvider, CreateMemoryType, CreateModelProvider, CreateSDKProvider, ProjectContext
 from .util.console_print import emit_create_completed_message
 from .util.create_agentcore_yaml import write_minimal_create_runtime_yaml, write_minimal_create_with_iac_project_yaml
 from .util.dotenv import _write_env_file_directly
@@ -27,7 +27,7 @@ def generate_project(
     agent_config: BedrockAgentCoreAgentSchema | None,
     use_venv: bool,
     git_init: bool,
-    enable_memory: bool = False,
+    memory: CreateMemoryType | None,
 ):
     """Generate a new Bedrock Agent Core project with specified SDK and IaC providers."""
     sink = ProgressSink()
@@ -64,7 +64,7 @@ def generate_project(
         agent_name=name + "_Agent",
         api_key_env_var_name=api_key_name,
     )
-    # override IAC specific settings
+    # override with the IAC specific settings
     if iac_provider:
         ctx.memory_enabled = True
         ctx.memory_name = name + "_Memory"
@@ -84,22 +84,18 @@ def generate_project(
         # observability
         ctx.observability_enabled = True
 
-    # Apply memory configuration for runtime-only (basic) template BEFORE rendering templates
-    # Default memory configuration is STM + LTM
-    if not iac_provider:
-        if enable_memory:
-            ctx.memory_enabled = True
-            ctx.memory_name = name + "_Memory"
-            ctx.memory_event_expiry_days = 30
-            ctx.memory_is_long_term = True  # Default: both STM and LTM
-        else:
-            ctx.memory_enabled = False
+    # honor memory passed in to generate
+    if memory and memory != MemoryConfig.NONE:
+        ctx.memory_enabled = True
+        ctx.memory_name = name + "_Memory"
+        ctx.memory_event_expiry_days = 30
+        ctx.memory_is_long_term = memory == MemoryConfig.STM_AND_LTM
 
     with sink.step("Template copying", "Template copied"):
         _apply_baseline_and_sdk_features(ctx)
 
         if not ctx.iac_provider:
-            write_minimal_create_runtime_yaml(ctx)
+            write_minimal_create_runtime_yaml(ctx, memory)
             # Write .env file for non-Bedrock providers (outside template system for security)
             # Always write if model provider requires API key, even if empty (user can fill in later)
             if ctx.model_provider and ctx.model_provider != ModelProvider.Bedrock:

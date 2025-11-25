@@ -4,7 +4,7 @@ Define class members in all caps so pylance treats them as literals
 This structure is chosen because StrEnum is available in 3.11+ and we need to support 3.10
 """
 
-from .types import CreateIACProvider, CreateModelProvider, CreateSDKProvider
+from .types import CreateIACProvider, CreateMemoryType, CreateModelProvider, CreateSDKProvider
 
 
 class TemplateDisplay:
@@ -52,6 +52,33 @@ class IACProvider:
     def get_iac_as_list(cls) -> list[CreateIACProvider]:
         """Get IAC in intended order for display."""
         return cls._ORDER
+
+
+class MemoryConfig:
+    """Constants and utilities related to memory."""
+
+    NONE = "NO_MEMORY"
+    STM = "STM_ONLY"
+    STM_AND_LTM = "STM_AND_LTM"
+
+    _DISPLAY_MAP = {NONE: "None", STM: "Short-term memory", STM_AND_LTM: "Long-term and short-term memory"}
+    _REVERSE_DISPLAY_MAP = {v: k for k, v in _DISPLAY_MAP.items()}
+
+    _ORDER = [NONE, STM, STM_AND_LTM]
+
+    @classmethod
+    def get_memory_display_names_as_list(cls) -> list[str]:
+        """Display names in correct order."""
+        keys = cls._ORDER
+        return [cls._DISPLAY_MAP[k] for k in keys]
+
+    @classmethod
+    def get_id_from_display(cls, display_name: str) -> CreateMemoryType:
+        """Converts 'Short-term memory' -> 'STM_ONLY'."""
+        try:
+            return cls._REVERSE_DISPLAY_MAP[display_name]
+        except KeyError as e:
+            raise ValueError(f"Unknown memory display name: {display_name}") from e
 
 
 class SDKProvider:

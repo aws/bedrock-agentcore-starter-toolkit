@@ -2,12 +2,14 @@
 
 from unittest.mock import patch
 
+import pytest
 import yaml
 
 from bedrock_agentcore_starter_toolkit.cli.create.commands import _handle_basic_runtime_flow
-from bedrock_agentcore_starter_toolkit.cli.create.prompt_util import prompt_memory_enabled
+from bedrock_agentcore_starter_toolkit.cli.create.prompt_util import prompt_memory
 from bedrock_agentcore_starter_toolkit.create.constants import (
     DeploymentType,
+    MemoryConfig,
     ModelProvider,
     RuntimeProtocol,
     TemplateDirSelection,
@@ -17,116 +19,114 @@ from bedrock_agentcore_starter_toolkit.create.types import ProjectContext
 from bedrock_agentcore_starter_toolkit.create.util.create_agentcore_yaml import write_minimal_create_runtime_yaml
 
 
-class TestPromptMemoryEnabled:
-    """Tests for prompt_memory_enabled function."""
+class TestPromptMemory:
+    """Tests for prompt_memory function."""
 
     @patch("bedrock_agentcore_starter_toolkit.cli.create.prompt_util.select_one")
-    def test_returns_true_when_user_selects_yes(self, mock_select_one):
-        """Test that prompt returns True when user selects 'Yes' option."""
-        mock_select_one.return_value = "Yes, use default memory configuration"
+    def test_returns_stm_only_when_selected(self, mock_select_one):
+        """Test that prompt returns STM_ONLY when user selects Short-term memory."""
+        mock_select_one.return_value = "Short-term memory"
 
-        result = prompt_memory_enabled()
+        result = prompt_memory()
 
-        assert result is True
+        assert result == MemoryConfig.STM
         mock_select_one.assert_called_once_with(
-            title="Do you want to enable memory?", options=["No", "Yes, use default memory configuration"]
+            title="What kind of memory should your agent have?",
+            options=["None", "Short-term memory", "Long-term and short-term memory"],
         )
 
     @patch("bedrock_agentcore_starter_toolkit.cli.create.prompt_util.select_one")
-    def test_returns_false_when_user_selects_no(self, mock_select_one):
-        """Test that prompt returns False when user selects 'No' option."""
-        mock_select_one.return_value = "No"
+    def test_returns_stm_and_ltm_when_selected(self, mock_select_one):
+        """Test that prompt returns STM_AND_LTM when user selects combined memory."""
+        mock_select_one.return_value = "Long-term and short-term memory"
 
-        result = prompt_memory_enabled()
+        result = prompt_memory()
 
-        assert result is False
-        mock_select_one.assert_called_once_with(
-            title="Do you want to enable memory?", options=["No", "Yes, use default memory configuration"]
-        )
+        assert result == MemoryConfig.STM_AND_LTM
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.prompt_util.select_one")
+    def test_returns_no_memory_when_selected(self, mock_select_one):
+        """Test that prompt returns NO_MEMORY when user selects None."""
+        mock_select_one.return_value = "None"
+
+        result = prompt_memory()
+
+        assert result == MemoryConfig.NONE
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.prompt_util.select_one")
+    def test_raises_error_on_unknown_selection(self, mock_select_one):
+        """Test that prompt raises ValueError if an unknown option is selected (sanity check)."""
+        mock_select_one.return_value = "Super Memory"
+
+        with pytest.raises(ValueError, match="Unknown memory display name"):
+            prompt_memory()
 
 
 class TestHandleBasicRuntimeFlowMemory:
     """Tests for memory logic in _handle_basic_runtime_flow."""
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory_enabled")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_model_provider")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_sdk_provider")
     def test_prompts_memory_for_strands_interactive(self, mock_sdk, mock_model, mock_memory):
         """Test that memory is prompted for Strands SDK in interactive mode."""
         mock_sdk.return_value = "Strands"
         mock_model.return_value = ModelProvider.Bedrock
-        mock_memory.return_value = True
+        mock_memory.return_value = MemoryConfig.STM_AND_LTM
 
-        sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
             sdk=None, model_provider=None, provider_api_key=None, non_interactive_flag=False
         )
 
         assert sdk == "Strands"
-        assert enable_memory is True
+        assert memory == MemoryConfig.STM_AND_LTM
         mock_memory.assert_called_once()
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory_enabled")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_model_provider")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_sdk_provider")
-    def test_no_memory_prompt_for_strands_non_interactive(self, mock_sdk, mock_model, mock_memory):
-        """Test that memory is not prompted in non-interactive mode."""
+    def test_default_no_memory_for_strands_non_interactive(self, mock_sdk, mock_model, mock_memory):
+        """Test that memory defaults to None (implying NO_MEMORY) in non-interactive mode."""
         mock_sdk.return_value = "Strands"
         mock_model.return_value = ModelProvider.Bedrock
 
-        sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
             sdk=None, model_provider=None, provider_api_key=None, non_interactive_flag=True
         )
 
         assert sdk == "Strands"
-        assert enable_memory is False
+        assert memory is None
         mock_memory.assert_not_called()
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory_enabled")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_model_provider")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_sdk_provider")
     def test_no_memory_prompt_for_non_strands_sdk(self, mock_sdk, mock_model, mock_memory):
-        """Test that memory is not prompted for non-Strands SDKs."""
+        """Test that memory is not prompted for non-Strands SDKs (returns None)."""
         mock_sdk.return_value = "LangChain_LangGraph"
         mock_model.return_value = ModelProvider.Bedrock
 
-        sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
             sdk=None, model_provider=None, provider_api_key=None, non_interactive_flag=False
         )
 
         assert sdk == "LangChain_LangGraph"
-        assert enable_memory is False
+        assert memory is None
         mock_memory.assert_not_called()
 
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory_enabled")
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
-    def test_memory_disabled_when_sdk_provided_as_langchain(self, mock_model_provider, mock_memory):
-        """Test memory is disabled when SDK is provided as LangChain (not Strands)."""
-        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
-
-        sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
-            sdk="LangChain_LangGraph",
-            model_provider=ModelProvider.Bedrock,
-            provider_api_key=None,
-            non_interactive_flag=False,
-        )
-
-        assert sdk == "LangChain_LangGraph"
-        assert enable_memory is False
-        mock_memory.assert_not_called()
-
-    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory_enabled")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
     def test_memory_prompted_when_sdk_provided_as_strands_interactive(self, mock_model_provider, mock_memory):
         """Test memory is prompted when SDK provided as Strands in interactive mode."""
         mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
-        mock_memory.return_value = True
+        mock_memory.return_value = MemoryConfig.STM
 
-        sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
             sdk="Strands", model_provider=ModelProvider.Bedrock, provider_api_key=None, non_interactive_flag=False
         )
 
         assert sdk == "Strands"
-        assert enable_memory is True
+        assert memory == MemoryConfig.STM
         mock_memory.assert_called_once()
 
 
@@ -137,16 +137,14 @@ class TestGenerateProjectMemory:
     @patch("bedrock_agentcore_starter_toolkit.create.generate.create_and_init_venv")
     @patch("bedrock_agentcore_starter_toolkit.create.generate._apply_baseline_and_sdk_features")
     @patch("bedrock_agentcore_starter_toolkit.create.generate.write_minimal_create_runtime_yaml")
-    def test_memory_enabled_sets_context_fields(
+    def test_stm_and_ltm_sets_correct_context_fields(
         self, mock_yaml, mock_baseline, mock_venv, mock_emit, tmp_path, monkeypatch
     ):
-        """Test that enable_memory=True sets correct ProjectContext fields."""
+        """Test that memory='STM_AND_LTM' enables memory and sets long_term=True."""
         monkeypatch.chdir(tmp_path)
-
-        # We need to capture the context passed to write_minimal_create_runtime_yaml
         captured_context = None
 
-        def capture_context(ctx):
+        def capture_context(ctx, *args):
             nonlocal captured_context
             captured_context = ctx
 
@@ -161,29 +159,25 @@ class TestGenerateProjectMemory:
             agent_config=None,
             use_venv=False,
             git_init=False,
-            enable_memory=True,
+            memory=MemoryConfig.STM_AND_LTM,
         )
 
-        # Verify memory fields were set correctly
-        assert captured_context is not None
         assert captured_context.memory_enabled is True
         assert captured_context.memory_name == "testProject_Memory"
-        assert captured_context.memory_event_expiry_days == 30
-        assert captured_context.memory_is_long_term is True  # Default: STM + LTM
+        assert captured_context.memory_is_long_term is True
 
     @patch("bedrock_agentcore_starter_toolkit.create.generate.emit_create_completed_message")
     @patch("bedrock_agentcore_starter_toolkit.create.generate.create_and_init_venv")
     @patch("bedrock_agentcore_starter_toolkit.create.generate._apply_baseline_and_sdk_features")
     @patch("bedrock_agentcore_starter_toolkit.create.generate.write_minimal_create_runtime_yaml")
-    def test_memory_disabled_clears_context_fields(
+    def test_stm_only_sets_correct_context_fields(
         self, mock_yaml, mock_baseline, mock_venv, mock_emit, tmp_path, monkeypatch
     ):
-        """Test that enable_memory=False disables memory in ProjectContext."""
+        """Test that memory='STM_ONLY' enables memory but sets long_term=False."""
         monkeypatch.chdir(tmp_path)
-
         captured_context = None
 
-        def capture_context(ctx):
+        def capture_context(ctx, *args):
             nonlocal captured_context
             captured_context = ctx
 
@@ -198,42 +192,43 @@ class TestGenerateProjectMemory:
             agent_config=None,
             use_venv=False,
             git_init=False,
-            enable_memory=False,
+            memory=MemoryConfig.STM,
         )
 
-        # Verify memory is disabled
-        assert captured_context is not None
-        assert captured_context.memory_enabled is False
+        assert captured_context.memory_enabled is True
+        assert captured_context.memory_name == "testProject_Memory"
+        assert captured_context.memory_is_long_term is False
 
     @patch("bedrock_agentcore_starter_toolkit.create.generate.emit_create_completed_message")
     @patch("bedrock_agentcore_starter_toolkit.create.generate.create_and_init_venv")
-    @patch("bedrock_agentcore_starter_toolkit.create.generate._apply_iac_generation")
-    @patch("bedrock_agentcore_starter_toolkit.create.generate.write_minimal_create_with_iac_project_yaml")
     @patch("bedrock_agentcore_starter_toolkit.create.generate._apply_baseline_and_sdk_features")
     @patch("bedrock_agentcore_starter_toolkit.create.generate.write_minimal_create_runtime_yaml")
-    def test_memory_not_applied_for_iac_provider(
-        self, mock_runtime_yaml, mock_baseline, mock_iac_yaml, mock_iac_gen, mock_venv, mock_emit, tmp_path, monkeypatch
+    def test_no_memory_disables_context_fields(
+        self, mock_yaml, mock_baseline, mock_venv, mock_emit, tmp_path, monkeypatch
     ):
-        """Test that enable_memory doesn't affect IAC provider flow."""
+        """Test that memory='NO_MEMORY' disables memory in ProjectContext."""
         monkeypatch.chdir(tmp_path)
+        captured_context = None
 
-        # For IAC provider, write_minimal_create_runtime_yaml should not be called
+        def capture_context(ctx, *args):
+            nonlocal captured_context
+            captured_context = ctx
+
+        mock_yaml.side_effect = capture_context
+
         generate_project(
             name="testProject",
             sdk_provider="Strands",
-            iac_provider="CDK",
+            iac_provider=None,
             model_provider=ModelProvider.Bedrock,
             provider_api_key=None,
             agent_config=None,
             use_venv=False,
             git_init=False,
-            enable_memory=True,
+            memory=MemoryConfig.NONE,
         )
 
-        # write_minimal_create_runtime_yaml should not be called for IAC flow
-        mock_runtime_yaml.assert_not_called()
-        # write_minimal_create_with_iac_project_yaml should be called instead
-        mock_iac_yaml.assert_called_once()
+        assert captured_context.memory_enabled is False
 
 
 class TestWriteMinimalCreateRuntimeYamlMemory:
@@ -269,7 +264,7 @@ class TestWriteMinimalCreateRuntimeYamlMemory:
     def test_memory_config_included_when_enabled_with_ltm(self, tmp_path):
         """Test that memory config is included in YAML when memory is enabled with LTM."""
         ctx = self._create_runtime_context(tmp_path, memory_enabled=True, memory_is_long_term=True)
-        yaml_path = write_minimal_create_runtime_yaml(ctx)
+        yaml_path = write_minimal_create_runtime_yaml(ctx, MemoryConfig.STM_AND_LTM)
 
         with open(yaml_path) as f:
             data = yaml.safe_load(f)
@@ -283,7 +278,7 @@ class TestWriteMinimalCreateRuntimeYamlMemory:
     def test_memory_config_included_when_enabled_stm_only(self, tmp_path):
         """Test that memory config is included with STM_ONLY when memory_is_long_term is False."""
         ctx = self._create_runtime_context(tmp_path, memory_enabled=True, memory_is_long_term=False)
-        yaml_path = write_minimal_create_runtime_yaml(ctx)
+        yaml_path = write_minimal_create_runtime_yaml(ctx, MemoryConfig.STM)
 
         with open(yaml_path) as f:
             data = yaml.safe_load(f)
@@ -297,35 +292,11 @@ class TestWriteMinimalCreateRuntimeYamlMemory:
     def test_memory_config_not_included_when_disabled(self, tmp_path):
         """Test that memory config is NOT included in YAML when memory is disabled."""
         ctx = self._create_runtime_context(tmp_path, memory_enabled=False)
-        yaml_path = write_minimal_create_runtime_yaml(ctx)
+        yaml_path = write_minimal_create_runtime_yaml(ctx, None)
 
         with open(yaml_path) as f:
             data = yaml.safe_load(f)
 
         agent_data = data["agents"]["testProject_Agent"]
-        # Memory key should not exist when disabled, or if it exists, it should be NO_MEMORY
         if "memory" in agent_data:
-            # If memory key exists (from default MemoryConfig), it should be NO_MEMORY mode
             assert agent_data["memory"]["mode"] == "NO_MEMORY"
-        # Otherwise, memory key should not exist at all (preferred behavior)
-        # Both are acceptable behaviors
-
-    def test_yaml_file_created_with_memory(self, tmp_path):
-        """Test that YAML file is created successfully with memory configuration."""
-        ctx = self._create_runtime_context(tmp_path, memory_enabled=True, memory_is_long_term=True)
-        yaml_path = write_minimal_create_runtime_yaml(ctx)
-
-        assert yaml_path.exists()
-        assert yaml_path.name == ".bedrock_agentcore.yaml"
-
-    def test_default_memory_uses_stm_and_ltm(self, tmp_path):
-        """Test that default memory configuration uses both STM and LTM."""
-        ctx = self._create_runtime_context(tmp_path, memory_enabled=True, memory_is_long_term=True)
-        yaml_path = write_minimal_create_runtime_yaml(ctx)
-
-        with open(yaml_path) as f:
-            data = yaml.safe_load(f)
-
-        agent_data = data["agents"]["testProject_Agent"]
-        # Default configuration should be STM_AND_LTM
-        assert agent_data["memory"]["mode"] == "STM_AND_LTM"

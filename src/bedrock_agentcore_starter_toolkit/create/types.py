@@ -19,6 +19,8 @@ CreateDeploymentType = Literal["container", "direct_code_deploy"]
 
 CreateModelProvider = Literal["Bedrock", "OpenAI", "Anthropic", "Gemini"]
 
+CreateMemoryType = Literal["STM_ONLY", "STM_AND_LTM", "NO_MEMORY"]
+
 
 @dataclass
 class ProjectContext:

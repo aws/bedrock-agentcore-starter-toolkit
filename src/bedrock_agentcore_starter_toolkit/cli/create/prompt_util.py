@@ -2,7 +2,7 @@
 
 import random
 
-from ...create.constants import IACProvider, ModelProvider, SDKProvider
+from ...create.constants import IACProvider, MemoryConfig, ModelProvider, SDKProvider
 from ...create.types import CreateModelProvider, CreateSDKProvider
 from ..cli_ui import ask_text, select_one
 
@@ -58,15 +58,17 @@ def prompt_configure():
     return choice
 
 
-def prompt_memory_enabled() -> bool:
-    """Prompt user to enable memory (default configuration: STM + LTM)."""
-    choice = select_one(title="Do you want to enable memory?", options=["No", "Yes, use default memory configuration"])
-    return choice == "Yes, use default memory configuration"
+def prompt_memory() -> bool:
+    """Prompt user to enable memory."""
+    choice = select_one(
+        title="What kind of memory should your agent have?", options=MemoryConfig.get_memory_display_names_as_list()
+    )
+    return MemoryConfig.get_id_from_display(choice)
 
 
 def prompt_git_init():
     """Prompt user to decide if they want to run git init."""
-    choice = select_one(title="Initialize a new git repository? (optional)", options=["Yes", "No"])
+    choice = select_one(title="Initialize a new git repository?", options=["Yes", "No"])
     return choice
 
 

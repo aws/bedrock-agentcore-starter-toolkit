@@ -49,6 +49,7 @@ def test_monorepo_snapshots(sdk_provider, iac_provider, tmp_path, monkeypatch, s
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
     project_dir = tmp_path / "testProject"

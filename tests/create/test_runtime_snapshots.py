@@ -54,6 +54,7 @@ def test_runtime_only_snapshots(sdk_provider, model_provider, tmp_path, monkeypa
             agent_config=None,
             use_venv=False,
             git_init=False,
+            memory=None,
         )
 
     project_dir = tmp_path / "testProject"

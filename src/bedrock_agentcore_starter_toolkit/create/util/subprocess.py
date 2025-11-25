@@ -25,7 +25,7 @@ def create_and_init_venv(ctx: ProjectContext, sink: ProgressSink) -> None:
     with sink.step(
         "Venv dependencies installing",
         "Venv created and installed",
-        "Venv setup failed. Continuing.",
+        "Venv setup failed. Continuing",
         swallow_fail=True,
     ):
         _run_quiet(["uv", "venv", ".venv"], cwd=project_root)
