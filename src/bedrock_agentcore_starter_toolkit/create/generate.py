@@ -149,7 +149,10 @@ def _apply_baseline_and_sdk_features(ctx: ProjectContext) -> None:
 
 def _apply_iac_generation(ctx: ProjectContext, agent_config) -> None:
     if agent_config:
-        resolve_agent_config_with_project_context(ctx, agent_config)
+        # Extract the default agent from the config schema
+        default_agent_name = agent_config.default_agent
+        default_agent = agent_config.agents[default_agent_name]
+        resolve_agent_config_with_project_context(ctx, default_agent)
     iac_feature_registry[ctx.iac_provider]().apply(ctx)
     # create dockerfile
     ContainerRuntime().generate_dockerfile(

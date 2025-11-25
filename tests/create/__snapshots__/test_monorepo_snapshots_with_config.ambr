@@ -203,7 +203,7 @@
               const cognitoTokenUrl = cognitoDomain.baseUrl() + '/oauth2/token';
       
               this.agentCoreGateway = new bedrockagentcore.CfnGateway(this, `${props.appName}-AgentCoreGateway`, {
-                  name: `${props.appName}-AgentCoreGateway`,
+                  name: `${props.appName}-Gateway`,
                   protocolType: "MCP",
                   roleArn: agentCoreGatewayRole.roleArn,
                   authorizerType: "CUSTOM_JWT",
@@ -221,7 +221,7 @@
               });
       
               new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
-                  name: `${props.appName}-AgentCoreGatewayLambdaTarget`,
+                  name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
                       {
@@ -961,7 +961,7 @@
               const cognitoTokenUrl = cognitoDomain.baseUrl() + '/oauth2/token';
       
               this.agentCoreGateway = new bedrockagentcore.CfnGateway(this, `${props.appName}-AgentCoreGateway`, {
-                  name: `${props.appName}-AgentCoreGateway`,
+                  name: `${props.appName}-Gateway`,
                   protocolType: "MCP",
                   roleArn: agentCoreGatewayRole.roleArn,
                   authorizerType: "CUSTOM_JWT",
@@ -979,7 +979,7 @@
               });
       
               new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
-                  name: `${props.appName}-AgentCoreGatewayLambdaTarget`,
+                  name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
                       {

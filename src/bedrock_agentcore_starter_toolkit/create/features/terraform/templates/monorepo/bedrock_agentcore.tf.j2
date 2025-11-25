@@ -163,7 +163,7 @@ locals {
 ################################################################################
 
 resource "aws_bedrockagentcore_gateway" "agentcore_gateway" {
-  name            = "${var.app_name}-AgentCoreGateway"
+  name            = "${var.app_name}-Gateway"
   protocol_type   = "MCP"
   role_arn        = aws_iam_role.agentcore_gateway_role.arn
   authorizer_type = "CUSTOM_JWT"
@@ -186,7 +186,7 @@ resource "aws_bedrockagentcore_gateway" "agentcore_gateway" {
 }
 
 resource "aws_bedrockagentcore_gateway_target" "agentcore_gateway_lambda_target" {
-  name               = "${var.app_name}-AgentCoreGatewayTarget"
+  name               = "${var.app_name}-Target"
   gateway_identifier = aws_bedrockagentcore_gateway.agentcore_gateway.gateway_id
 
   credential_provider_configuration {

@@ -110,7 +110,7 @@ class TestCrewAIFeature:
         feature = CrewAIFeature()
         feature.before_apply(ctx)
 
-        assert "crewai[tools]>=1.3.0" in feature.python_dependencies
+        assert "crewai[tools,bedrock]>=1.3.0" in feature.python_dependencies
         assert "crewai-tools[mcp]>=1.3.0" in feature.python_dependencies
         assert "mcp>=1.20.0" in feature.python_dependencies
 
@@ -121,7 +121,8 @@ class TestCrewAIFeature:
         feature.before_apply(ctx)
 
         assert "crewai[tools,bedrock]>=1.3.0" in feature.python_dependencies
-        assert feature.model_provider_name == "bedrock"
+        # model_provider_name is no longer set for CrewAI (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_openai_dependencies(self, tmp_path):
         """Test runtime_only mode with OpenAI dependencies."""
@@ -130,7 +131,8 @@ class TestCrewAIFeature:
         feature.before_apply(ctx)
 
         assert "crewai[tools,openai]>=1.3.0" in feature.python_dependencies
-        assert feature.model_provider_name == "openai"
+        # model_provider_name is no longer set for CrewAI (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_anthropic_dependencies(self, tmp_path):
         """Test runtime_only mode with Anthropic dependencies."""
@@ -139,7 +141,8 @@ class TestCrewAIFeature:
         feature.before_apply(ctx)
 
         assert "crewai[tools,anthropic]>=1.3.0" in feature.python_dependencies
-        assert feature.model_provider_name == "anthropic"
+        # model_provider_name is no longer set for CrewAI (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_gemini_dependencies(self, tmp_path):
         """Test runtime_only mode with Gemini dependencies."""
@@ -148,7 +151,8 @@ class TestCrewAIFeature:
         feature.before_apply(ctx)
 
         assert "crewai[tools,google-genai]>=1.3.0" in feature.python_dependencies
-        assert feature.model_provider_name == "gemini"
+        # model_provider_name is no longer set for CrewAI (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
 
 class TestLangChainLangGraphFeature:
@@ -234,7 +238,8 @@ class TestOpenAIAgentsFeature:
         feature = OpenAIAgentsFeature()
         feature.before_apply(ctx)
 
-        assert feature.model_provider_name == "openai"
+        # model_provider_name is no longer set for OpenAI Agents (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_monorepo_no_model_provider_name(self, tmp_path):
         """Test monorepo mode does not set model_provider_name."""
@@ -262,7 +267,8 @@ class TestGoogleADKFeature:
         feature = GoogleADKFeature()
         feature.before_apply(ctx)
 
-        assert feature.model_provider_name == "gemini"
+        # model_provider_name is no longer set for Google ADK (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_monorepo_no_model_provider_name(self, tmp_path):
         """Test monorepo mode does not set model_provider_name."""
@@ -287,7 +293,7 @@ class TestAutogenFeature:
         feature.before_apply(ctx)
 
         assert "autogen-agentchat>=0.7.5" in feature.python_dependencies
-        assert "autogen-ext[bedrock]>=0.7.5" in feature.python_dependencies
+        assert "autogen-ext[anthropic]>=0.7.5" in feature.python_dependencies
         assert "autogen-ext[mcp]>=0.7.5" in feature.python_dependencies
 
     def test_runtime_only_bedrock_dependencies(self, tmp_path):
@@ -297,7 +303,8 @@ class TestAutogenFeature:
         feature.before_apply(ctx)
 
         assert "autogen-ext[anthropic]>=0.7.5" in feature.python_dependencies
-        assert feature.model_provider_name == "bedrock"
+        # model_provider_name is no longer set for AutoGen (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_openai_dependencies(self, tmp_path):
         """Test runtime_only mode with OpenAI dependencies."""
@@ -306,7 +313,8 @@ class TestAutogenFeature:
         feature.before_apply(ctx)
 
         assert "autogen-ext[openai]>=0.7.5" in feature.python_dependencies
-        assert feature.model_provider_name == "openai"
+        # model_provider_name is no longer set for AutoGen (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_anthropic_dependencies(self, tmp_path):
         """Test runtime_only mode with Anthropic dependencies."""
@@ -315,7 +323,8 @@ class TestAutogenFeature:
         feature.before_apply(ctx)
 
         assert "autogen-ext[anthropic]>=0.7.5" in feature.python_dependencies
-        assert feature.model_provider_name == "anthropic"
+        # model_provider_name is no longer set for AutoGen (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_gemini_dependencies(self, tmp_path):
         """Test runtime_only mode with Gemini uses OpenAI client."""
@@ -325,4 +334,5 @@ class TestAutogenFeature:
 
         # Gemini uses OpenAI's client for AutoGen
         assert "autogen-ext[openai]>=0.7.5" in feature.python_dependencies
-        assert feature.model_provider_name == "gemini"
+        # model_provider_name is no longer set for AutoGen (templates moved to centralized location)
+        assert feature.model_provider_name is None

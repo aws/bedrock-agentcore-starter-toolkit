@@ -55,7 +55,7 @@ def configure_impl(
     existing_config = load_config_if_exists(config_path=config_path, autofill_missing_aws=False)
     if existing_config and existing_config.is_agentcore_create_with_iac:
         _handle_error(
-            "Error: Cannot configure a project created with agentcore create monorepo mode"
+            "Error: Cannot configure a project created with agentcore create monorepo mode. "
             "Create a new project monorepo project to provide configure settings"
         )
     # try an operation requiring credentials upfront, so we don't start interactive mode and then fail later.
