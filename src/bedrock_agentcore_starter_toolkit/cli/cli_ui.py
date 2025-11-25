@@ -447,7 +447,6 @@ def show_invalid_aws_creds(ok: bool, msg: Optional[str], optional_header: Option
         style="yellow",
         text=(
             f"{header_text}"
-            f"Environment does not contain valid AWS credentials\n"
             f"{error_msg_text}\n"
             f"[cyan]Log into AWS with `aws login` or add credentials to your environment to continue[/cyan]"
         ),

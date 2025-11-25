@@ -27,6 +27,7 @@ def emit_create_completed_message(ctx: ProjectContext):
             text=f"{intro_text}"
             f"Enter your project directory using [cyan]cd {ctx.name}[/cyan]\n"
             f"Run [cyan]agentcore dev[/cyan] to start the dev server\n"
+            f"Log into AWS with [cyan]aws login[/cyan]\n"
             f"{memory_config_line}"
             f"Launch with [cyan]agentcore deploy[/cyan]",
         )
@@ -66,6 +67,7 @@ def emit_create_completed_message(ctx: ProjectContext):
         f"{next_steps_header}\n"
         f"[cyan]cd {ctx.name}[/cyan]\n"
         f"[cyan]agentcore dev[/cyan] - Start local development server\n"
+        f"Log into AWS with [cyan]aws login[/cyan]\n"
         f'[cyan]agentcore invoke --dev "Hello"[/cyan] - Test your agent locally\n'
         f"[cyan]{next_steps_cmd}[/cyan] - Deploy your project\n"
         f"[cyan]agentcore invoke[/cyan] - Test your deployed agent",
