@@ -14,7 +14,7 @@ def _get_api_key() -> str:
     and falls back to .env file for local development.
     """
     if os.getenv("LOCAL_DEV") == "1":
-        load_dotenv()
+        load_dotenv(".env.local")
         return os.getenv("OPENAI_API_KEY")
     else:
         return agentcore_identity_api_key_provider()

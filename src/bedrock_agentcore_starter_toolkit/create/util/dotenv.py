@@ -21,7 +21,7 @@ def _write_env_file_directly(output_dir: Path, model_provider: str, api_key: str
         return
 
     # Write .env for non-Bedrock providers, with empty string if no key provided
-    env_path = output_dir / ".env"
+    env_path = output_dir / ".env.local"
     api_key_value = api_key if api_key else '""'
     env_content = f"{model_provider.upper()}_API_KEY={api_key_value}\n"
     env_path.write_text(env_content)

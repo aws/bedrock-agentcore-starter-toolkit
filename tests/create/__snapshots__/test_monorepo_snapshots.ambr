@@ -605,10 +605,10 @@
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
-          async def get_streamable_http_mcp_tools():
+          async def get_mcp_tools():
               return []
       else:
-          get_streamable_http_mcp_tools = deployed_get_tools
+          get_mcp_tools = deployed_get_tools
       
       # Define a simple function tool
       def add_numbers(a: int, b: int) -> int:
@@ -624,7 +624,7 @@
           # assume payload input is structured as { "prompt": "<user input>" }
       
           # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
-          tools = await get_streamable_http_mcp_tools()
+          tools = await get_mcp_tools()
       
           # Define an AssistantAgent with the model and tool
           agent = AssistantAgent(
@@ -796,10 +796,10 @@
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
-          async def get_streamable_http_mcp_tools():
+          async def get_mcp_tools():
               return []
       else:
-          get_streamable_http_mcp_tools = deployed_get_tools
+          get_mcp_tools = deployed_get_tools
       
       # Define a simple function tool
       def add_numbers(a: int, b: int) -> int:
@@ -815,7 +815,7 @@
           # assume payload input is structured as { "prompt": "<user input>" }
       
           # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
-          tools = await get_streamable_http_mcp_tools()
+          tools = await get_mcp_tools()
       
           # Define an AssistantAgent with the model and tool
           agent = AssistantAgent(
@@ -1512,7 +1512,6 @@
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
           from contextlib import nullcontext
-          from types import SimpleNamespace
           mcp_adapter = nullcontext([])
       else:
           # Import AgentCore Gateway as Streamable HTTP MCP Client
@@ -1703,7 +1702,6 @@
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
           from contextlib import nullcontext
-          from types import SimpleNamespace
           mcp_adapter = nullcontext([])
       else:
           # Import AgentCore Gateway as Streamable HTTP MCP Client

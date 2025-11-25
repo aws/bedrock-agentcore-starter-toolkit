@@ -11,7 +11,7 @@ def agentcore_identity_api_key_provider(api_key: str) -> str:
 def _get_api_key() -> str:
     """Provide API key"""
     if os.getenv("LOCAL_DEV") == "1":
-        load_dotenv()
+        load_dotenv(".env.local")
         return os.getenv("ANTHROPIC_API_KEY")
     else:
         return agentcore_identity_api_key_provider()
