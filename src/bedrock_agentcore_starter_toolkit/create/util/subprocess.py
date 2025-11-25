@@ -43,10 +43,11 @@ def init_git_project(ctx: ProjectContext, sink: ProgressSink) -> None:
 
     # Avoid re-initializing if .git already exists
     if (project_root / ".git").exists():
+        sink.notification("Git setup skipped because .git already exists")
         return
 
     with sink.step(
-        "Git initializing", "Git initialized", error_message="Git initialization failed. Continuing.", swallow_fail=True
+        "Git initializing", "Git initialized", error_message="Git initialization failed. Continuing", swallow_fail=True
     ):
         _run_quiet(["git", "init"], cwd=project_root)
         _run_quiet(["git", "add", "."], cwd=project_root)

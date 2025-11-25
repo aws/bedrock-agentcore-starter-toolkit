@@ -30,10 +30,11 @@ def prompt_iac_provider() -> IACProvider:
     return choice
 
 
-def prompt_sdk_provider() -> CreateSDKProvider:
+def prompt_sdk_provider(is_direct_code_deploy: bool = False) -> CreateSDKProvider:
     """Prompt user to choose agent SDK."""
     choice = select_one(
-        title="What agent framework should we use?", options=SDKProvider.get_sdk_display_names_as_list()
+        title="What agent framework should we use?",
+        options=SDKProvider.get_sdk_display_names_as_list(is_direct_code_deploy),
     )
     return SDKProvider.get_id_from_display(choice)
 

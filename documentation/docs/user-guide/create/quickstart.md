@@ -277,9 +277,4 @@ These are included automatically based on your selections.
 * Modify IaC to include downstream AWS services (DynamoDB, SQS, Step Functions)
 * Extend the model loader with custom provider logic
 
-```
-
 ---
-
-If you'd like a split version (one quickstart per template, or per SDK), just tell me.
-```

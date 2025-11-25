@@ -83,10 +83,15 @@ class SDKProvider:
         OPENAI_AGENTS,
     ]
 
+    NOT_SUPPORTED_BY_DIRECT_CODE_DEPLOY = {CREWAI}
+
     @classmethod
-    def get_sdk_display_names_as_list(cls) -> list[str]:
+    def get_sdk_display_names_as_list(cls, is_direct_code_deploy: bool = False) -> list[str]:
         """Returns a list of DISPLAY names."""
-        return [cls._DISPLAY_MAP[k] for k in cls._ORDER]
+        keys = cls._ORDER
+        if is_direct_code_deploy:
+            keys = [k for k in keys if k not in cls.NOT_SUPPORTED_BY_DIRECT_CODE_DEPLOY]
+        return [cls._DISPLAY_MAP[k] for k in keys]
 
     @classmethod
     def get_id_from_display(cls, display_name: str) -> CreateSDKProvider:

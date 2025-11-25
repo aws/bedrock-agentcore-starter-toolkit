@@ -219,7 +219,12 @@ def _handle_basic_runtime_flow(
 ) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str], bool]:
     """Handles prompt logic for Runtime-only mode."""
     if not sdk:
-        sdk = prompt_sdk_provider()
+        sdk = prompt_sdk_provider(is_direct_code_deploy=True)
+    if sdk in SDKProvider.NOT_SUPPORTED_BY_DIRECT_CODE_DEPLOY:
+        _handle_error(
+            f"{sdk} is not supported by direct code deploy. "
+            f"Use the 'production' template to configure {sdk} with a Docker based AgentCore Runtime"
+        )
 
     if not model_provider:
         model_provider = prompt_model_provider(sdk_provider=sdk)
