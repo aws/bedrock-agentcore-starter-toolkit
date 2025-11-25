@@ -33,7 +33,7 @@ class ProjectContext:
     src_dir: Path
     entrypoint_path: Path
     sdk_provider: Optional[CreateSDKProvider]
-    iac_provider: CreateIACProvider
+    iac_provider: Optional[CreateIACProvider]
     model_provider: CreateModelProvider
     template_dir_selection: CreateTemplateDirSelection
     runtime_protocol: CreateRuntimeProtocol

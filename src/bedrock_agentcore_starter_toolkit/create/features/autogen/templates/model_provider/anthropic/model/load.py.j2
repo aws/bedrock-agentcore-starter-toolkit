@@ -1,0 +1,34 @@
+import os
+from autogen_ext.models.anthropic import AnthropicChatCompletionClient
+{%- if not iac_provider %}
+from bedrock_agentcore.identity.auth import requires_api_key
+from dotenv import load_dotenv
+
+@requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+def agentcore_identity_api_key_provider(api_key: str) -> str:
+    return api_key
+
+def _get_api_key() -> str:
+    """Provide API key"""
+    if os.getenv("LOCAL_DEV") == "1":
+        load_dotenv()
+        return os.getenv("ANTHROPIC_API_KEY")
+    else:
+        return agentcore_identity_api_key_provider()
+{%- else %}
+
+def _get_api_key() -> str:
+    """Provide API key"""
+    raise NotImplementedError("API key retrieval is not defined!")
+{%- endif %}
+
+def load_model() -> AnthropicChatCompletionClient:
+    """
+    Get authenticated Anthropic model client.
+    Uses AgentCore Identity for API key management in deployed environments,
+    and falls back to .env file for local development.
+    """
+    return AnthropicChatCompletionClient(
+        model="claude-sonnet-4-5-20250929",
+        api_key=_get_api_key()
+    )

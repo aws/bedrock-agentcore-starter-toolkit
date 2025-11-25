@@ -33,17 +33,9 @@ class Feature(ABC):
         if self.template_override_dir:
             self.template_dir = self.template_override_dir
         else:
-            self.base_path = (
-                Path(__file__).parent / self.feature_dir_name.lower() / "templates" / context.template_dir_selection
-            )
-            # Only append model provider name if it's set (SDK features have it, IaC features don't)
-            # For monorepo, templates are directly in the template_dir_selection folder (no model provider subdirs)
-            # For runtime_only, templates are in model provider subdirectories
-
-            if self.model_provider_name:
-                self.template_dir = self.base_path / self.model_provider_name
-            else:
-                self.template_dir = self.base_path
+            # standard features in features/ will have a base path
+            self.base_path = Path(__file__).parent / self.feature_dir_name.lower() / "templates"
+            self.template_dir = self.base_path / context.template_dir_selection
         if not self.template_dir.exists():
             raise FileNotFoundError(f"Template directory not found: {self.template_dir}")
 
@@ -69,9 +61,37 @@ class Feature(ABC):
         """Executes code generation and directory creation."""
         pass
 
-    # --- core rendering helper ---
+    def render_dir(self, dest_dir: Path, context: ProjectContext) -> None:
+        """Render templates for the variant only (common handled automatically in apply)."""
+        # Case 1: global 'common' directory
+        # e.g., cdk/templates/common
+        if self.base_path:
+            global_common_dir = self.base_path / TemplateDirSelection.COMMON
+            if self.render_common_dir and global_common_dir.exists():
+                self._render_from_template_src_dir(global_common_dir, dest_dir, context)
+
+        # Case 2: feature-local 'common' directory within the resolved template_dir
+        #  e.g., strands/templates/runtime_only/common/
+        local_common_dir = self.template_dir / TemplateDirSelection.COMMON
+        if local_common_dir.exists():
+            self._render_from_template_src_dir(local_common_dir, dest_dir, context)
+        else:
+            # If no common directory, render the template_dir directly
+            self._render_from_template_src_dir(self.template_dir, dest_dir, context)
+
+        # Case 3: model_provider templates (SDK-specific, model-specific)
+        # e.g., autogen/templates/model_provider/bedrock
+        if self.base_path:
+            local_model_provider_dir = self.base_path / "model_provider"
+            if local_common_dir.exists():
+                model_provider_template = local_model_provider_dir / context.model_provider.lower()
+                self._render_from_template_src_dir(model_provider_template, dest_dir, context)
+
     def _render_from_template_src_dir(self, template_src_dir: Path, dest_dir: Path, context: ProjectContext) -> None:
-        """Render all templates under a given source directory into dest_dir."""
+        """Render all templates under a given source directory into dest_dir.
+
+        Core rendering helper called by render_dir
+        """
         env = Environment(loader=FileSystemLoader(template_src_dir), autoescape=True)
         for src in template_src_dir.rglob("*.j2"):
             rel = src.relative_to(template_src_dir)
@@ -82,51 +102,3 @@ class Feature(ABC):
             # Only write the file if it has content (skip empty files)
             if rendered_content.strip():
                 dest.write_text(rendered_content)
-
-    def _render_model_provider_templates(self, dest_dir: Path, context: ProjectContext) -> None:
-        """Render model provider templates based on SDK and model provider.
-
-        This method renders templates from:
-        create/templates/model_provider/{sdk_provider}/{model_provider}/
-
-        These templates were previously under SDK-specific runtime_only directories,
-        but now apply to both runtime_only and monorepo modes.
-        """
-        # Construct path to model provider templates
-        # e.g., create/templates/model_provider/strands/bedrock/
-        model_provider_base = Path(__file__).parent.parent / "templates" / "model_provider"
-        model_provider_template_dir = (
-            model_provider_base / context.sdk_provider.lower() / context.model_provider.lower()
-        )
-
-        # Only render if the directory exists
-        if model_provider_template_dir.exists():
-            self._render_from_template_src_dir(model_provider_template_dir, dest_dir, context)
-
-    def render_dir(self, dest_dir: Path, context: ProjectContext) -> None:
-        """Render templates for the variant only (common handled automatically in apply)."""
-        # Case 1: global 'common' directory
-        if self.base_path:
-            global_common_dir = self.base_path / TemplateDirSelection.COMMON
-            if self.render_common_dir and global_common_dir.exists():
-                self._render_from_template_src_dir(global_common_dir, dest_dir, context)
-
-        # Case 2: feature-local 'common' directory within the resolved template_dir
-        # e.g., strands/templates/runtime_only/common/
-        local_common_dir = self.template_dir / TemplateDirSelection.COMMON
-        if local_common_dir.exists():
-            self._render_from_template_src_dir(local_common_dir, dest_dir, context)
-        else:
-            # If no common directory, render the template_dir directly
-            self._render_from_template_src_dir(self.template_dir, dest_dir, context)
-
-        # Case 3: model_provider templates (SDK-specific, model-specific)
-        # Render model provider templates if both sdk_provider and model_provider are set
-        # Only SDK features (not baseline features) should render model provider templates
-        if (
-            context.sdk_provider
-            and context.model_provider
-            and hasattr(self, "feature_dir_name")
-            and self.feature_dir_name
-        ):
-            self._render_model_provider_templates(dest_dir, context)

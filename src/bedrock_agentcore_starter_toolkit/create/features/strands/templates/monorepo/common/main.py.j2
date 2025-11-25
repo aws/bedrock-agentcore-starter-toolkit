@@ -8,8 +8,6 @@ from bedrock_agentcore.memory.integrations.strands.session_manager import AgentC
 from .mcp_client.client import get_streamable_http_mcp_client
 from .model.load import load_model
 
-model = load_model()
-
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
 REGION = os.getenv("AWS_REGION")
 
@@ -65,7 +63,7 @@ async def invoke(payload, context):
 
         # Create agent
         agent = Agent(
-            model=model,
+            model=load_model(),
             session_manager=session_manager,
             system_prompt="""
                 You are a helpful assistant with code execution capabilities. Use tools when appropriate.
