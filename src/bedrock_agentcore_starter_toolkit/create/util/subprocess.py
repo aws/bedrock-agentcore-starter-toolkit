@@ -19,6 +19,7 @@ def create_and_init_venv(ctx: ProjectContext, sink: ProgressSink) -> None:
         return
 
     if not _has_uv():
+        sink.notification("Venv setup skipped because uv not found")
         return
 
     with sink.step(
@@ -37,6 +38,7 @@ def init_git_project(ctx: ProjectContext, sink: ProgressSink) -> None:
 
     # Check if git is installed
     if not _has_git():
+        sink.notification("Git setup skipped because git not found")
         return
 
     # Avoid re-initializing if .git already exists

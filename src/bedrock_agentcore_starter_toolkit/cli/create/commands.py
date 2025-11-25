@@ -207,6 +207,7 @@ def _apply_non_interactive_defaults(
                 f"Auto-filling defaults: {', '.join(defaults_applied)}",
             )
         )
+        _pause_and_new_line_on_finish()
     return template, sdk, model_provider, iac
 
 
@@ -272,7 +273,8 @@ def _handle_monorepo_flow(
     # Interactively accept IAC/SDK if not provided
     if not sdk and (not agent_config or agent_config.entrypoint == "."):
         sdk = prompt_sdk_provider()
-        model_provider = prompt_model_provider()
+    if not model_provider:
+        model_provider = prompt_model_provider(sdk_provider=sdk)
 
     _assert_sdk_and_model_provider_combination(sdk, model_provider)
 

@@ -1,6 +1,6 @@
 """Console print utils for create command."""
 
-from ...cli.cli_ui import sandwich_text_ui
+from ...cli.cli_ui import _pause_and_new_line_on_finish, sandwich_text_ui
 from ...cli.common import console
 from ..constants import IACProvider
 from ..types import ProjectContext
@@ -9,9 +9,8 @@ from ..types import ProjectContext
 def emit_create_completed_message(ctx: ProjectContext):
     """Take in the project context and emit a helpful message to console."""
     # end of progress sandwhich
-    console.print("✓ Agent Initialized.")
-    # create some space so its not cramped
-    console.print()
+    console.print("✓ Agent initialized.")
+    _pause_and_new_line_on_finish(sleep_override=0.3)
 
     # Common "Next Steps" styling to match the screenshot
     next_steps_header = "[bold]Next Steps[/bold]"

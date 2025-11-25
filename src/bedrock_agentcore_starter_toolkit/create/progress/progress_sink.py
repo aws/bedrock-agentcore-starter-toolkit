@@ -62,3 +62,22 @@ class ProgressSink:
             bullet_text = Text.from_markup(f"• {final_msg}.")
             indented_bullet = Padding(bullet_text, (0, 0, 0, self.INDENT_SPACES))
             console.print(indented_bullet)
+
+    def notification(self, message: str):
+        """Displays a standalone bullet notification with a simulated delay.
+
+        Useful for indicating skipped steps or prerequisite checks.
+        """
+        # 1. Show spinner briefly to simulate 'checking'
+        spinner_text = Text.from_markup(f"{message}...")
+        spinner = Spinner("dots", text=spinner_text)
+        indented_spinner = Padding(spinner, (0, 0, 0, self.INDENT_SPACES))
+
+        with Live(indented_spinner, console=console, refresh_per_second=12, transient=True):
+            # Enforce the minimum phase time so it doesn't flash instantly
+            time.sleep(self.MIN_PHASE_SECONDS)
+
+        # 2. Print final bullet
+        bullet_text = Text.from_markup(f"• {message}.")
+        indented_bullet = Padding(bullet_text, (0, 0, 0, self.INDENT_SPACES))
+        console.print(indented_bullet)

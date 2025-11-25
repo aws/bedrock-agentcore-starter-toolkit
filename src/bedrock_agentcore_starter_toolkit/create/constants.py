@@ -72,6 +72,7 @@ class SDKProvider:
         AUTOGEN: "Microsoft AutoGen",
         CREWAI: "CrewAI",
     }
+    _REVERSE_DISPLAY_MAP = {v: k for k, v in _DISPLAY_MAP.items()}
 
     _ORDER = [
         STRANDS,
@@ -90,10 +91,10 @@ class SDKProvider:
     @classmethod
     def get_id_from_display(cls, display_name: str) -> CreateSDKProvider:
         """Converts 'Strands Agents SDK' -> 'Strands'."""
-        for internal, display in cls._DISPLAY_MAP.items():
-            if display == display_name:
-                return internal
-        raise ValueError(f"Unknown SDK display name: {display_name}")
+        try:
+            return cls._REVERSE_DISPLAY_MAP[display_name]
+        except KeyError as e:
+            raise ValueError(f"Unknown SDK display name: {display_name}") from e
 
     @classmethod
     def resolve_to_internal_id(cls, input_val: str) -> str:
@@ -104,7 +105,7 @@ class SDKProvider:
         3. Otherwise raise ValueError.
         """
         # Check if it is already an internal ID
-        if input_val in cls._DISPLAY_MAP:
+        if input_val in cls._ORDER:
             return input_val
 
         # Try to resolve from display name
@@ -125,6 +126,7 @@ class ModelProvider:
         Anthropic: "Anthropic",
         Gemini: "Google Gemini",
     }
+    _REVERSE_DISPLAY_MAP = {v: k for k, v in _DISPLAY_MAP.items()}
 
     _ORDER = [
         Bedrock,
@@ -162,7 +164,7 @@ class ModelProvider:
                 if sdk_support:
                     available_ids = available_ids & sdk_support
             except ValueError:
-                # If SDK is unrecognized, we default to returning all providers
+                # swallow and return all. Shouldn't happen
                 pass
 
         # Return sorted internal IDs
@@ -182,7 +184,7 @@ class ModelProvider:
     @classmethod
     def get_id_from_display(cls, display_name: str) -> str:
         """Converts 'Amazon Bedrock' -> 'Bedrock'."""
-        for internal, display in cls._DISPLAY_MAP.items():
-            if display == display_name:
-                return internal
-        raise ValueError(f"Unknown Model display name: {display_name}")
+        try:
+            return cls._REVERSE_DISPLAY_MAP[display_name]
+        except KeyError as e:
+            raise ValueError(f"Unknown Model display name: {display_name}") from e
