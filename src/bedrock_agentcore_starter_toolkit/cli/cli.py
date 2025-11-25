@@ -11,8 +11,8 @@ from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
 from .create.commands import create_app
+from .create.import_agent.commands import import_agent
 from .identity.commands import identity_app
-from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
     destroy,
@@ -33,7 +33,6 @@ app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("launch")(launch)
 app.command("dev")(dev)
-app.command("import-agent")(import_agent)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
 app.add_typer(identity_app, name="identity")
@@ -50,11 +49,9 @@ app.add_typer(memory_app, name="memory")
 # observability
 app.add_typer(observability_app, name="obs")
 
-# import-agent
-app.command("import-agent")(import_agent)
-
 # create
 app.add_typer(create_app, name="create")
+create_app.command("import")(import_agent)
 
 
 def main():

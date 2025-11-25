@@ -1,4 +1,4 @@
-"""Bedrock Agent Translation Tool."""
+"""Bedrock Agent Translation Tool. Subcomand of create."""
 
 import os
 import subprocess  # nosec # needed to run the agent file
@@ -13,32 +13,10 @@ from rich.text import Text
 
 from bedrock_agentcore_starter_toolkit.services.runtime import generate_session_id
 
-from ...services.import_agent.scripts.bedrock_to_langchain import BedrockLangchainTranslation
-from ...services.import_agent.scripts.bedrock_to_strands import BedrockStrandsTranslation
-from ..common import console
+from ....services.import_agent.scripts.bedrock_to_langchain import BedrockLangchainTranslation
+from ....services.import_agent.scripts.bedrock_to_strands import BedrockStrandsTranslation
+from ...common import console, requires_aws_creds
 from .agent_info import auth_and_get_info, get_agent_aliases, get_agents, get_clients
-
-app = typer.Typer(help="Import Agent")
-
-
-def _verify_aws_credentials() -> bool:
-    """Verify that AWS credentials are present and valid."""
-    try:
-        # Try to get the caller identity to verify credentials
-        boto3.client("sts").get_caller_identity()
-        return True
-    except Exception as e:
-        console.print(
-            Panel(
-                f"[bold red]AWS credentials are invalid![/bold red]\n"
-                f"Error: {str(e)}\n"
-                f"Please reconfigure your AWS credentials by running:\n"
-                f"[bold]aws configure[/bold]",
-                title="Authentication Error",
-                border_style="red",
-            )
-        )
-        return False
 
 
 def _run_agent(output_dir, output_path):
@@ -101,7 +79,7 @@ def _agentcore_invoke_cli(output_dir):
             continue
 
 
-@app.command()
+@requires_aws_creds
 def import_agent(
     agent_id: str = typer.Option(None, "--agent-id", help="ID of the Bedrock Agent to import"),
     agent_alias_id: str = typer.Option(None, "--agent-alias-id", help="ID of the Agent Alias to use"),
@@ -120,7 +98,7 @@ def import_agent(
     run_option: str = typer.Option(None, "--run-option", help="How to run the agent (locally, runtime, none)"),
     output_dir: str = typer.Option("./output/", "--output-dir", help="Output directory for generated code"),
 ):
-    """Use a Bedrock Agent to generate a LangChain or Strands agent with AgentCore primitives."""
+    """Import an Amazon Bedrock Agent to generate an AgentCore project."""
     try:
         run_agent_choice = ""
         output_path = ""
@@ -135,13 +113,6 @@ def import_agent(
                 border_style="cyan",
             )
         )
-
-        # Verify AWS credentials
-        console.print("\n[bold]Verifying AWS credentials...[/bold]")
-        if not _verify_aws_credentials():
-            return
-
-        console.print("[bold green]✓[/bold green] AWS credentials verified!")
 
         # Available AWS regions for Bedrock Agents
         aws_regions = [

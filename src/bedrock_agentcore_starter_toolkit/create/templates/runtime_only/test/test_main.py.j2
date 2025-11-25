@@ -21,7 +21,7 @@
 #     from main import app, invoke
     {%- endif %}
 
-{%- elif model_provider == "Bedrock" and sdk_provider in ["Strands", "LangChain", "AutoGen"] %}
+{%- elif model_provider == "Bedrock" and sdk_provider in ["Strands", "LangChain_LangGraph", "AutoGen"] %}
 # # Mock MCP client to prevent Gateway connection attempts
 {%- if sdk_provider == "AutoGen" %}
 # # Mock anthropic module to prevent import errors
@@ -33,7 +33,7 @@
 #     from main import app, main
 {%- else %}
 # mock_mcp_client = Mock()
-{%- if sdk_provider == "LangChain" %}
+{%- if sdk_provider == "LangChain_LangGraph" %}
 # mock_mcp_client.get_tools = AsyncMock(return_value=[])
 {%- else %}
 # mock_mcp_client.list_tools_sync.return_value = []
@@ -59,7 +59,7 @@
 {%- endif %}
 
 # class TestAgent:
-    {%- if sdk_provider == "LangChain" %}
+    {%- if sdk_provider == "LangChain_LangGraph" %}
 #     @patch('main.load_model')
 #     @patch('main.create_agent')
 #     @pytest.mark.asyncio

@@ -86,14 +86,14 @@ class TestHandleBasicRuntimeFlowMemory:
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_sdk_provider")
     def test_no_memory_prompt_for_non_strands_sdk(self, mock_sdk, mock_model, mock_memory):
         """Test that memory is not prompted for non-Strands SDKs."""
-        mock_sdk.return_value = "LangChain"
+        mock_sdk.return_value = "LangChain_LangGraph"
         mock_model.return_value = ModelProvider.Bedrock
 
         sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
             sdk=None, model_provider=None, provider_api_key=None, non_interactive_flag=False
         )
 
-        assert sdk == "LangChain"
+        assert sdk == "LangChain_LangGraph"
         assert enable_memory is False
         mock_memory.assert_not_called()
 
@@ -104,10 +104,13 @@ class TestHandleBasicRuntimeFlowMemory:
         mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
 
         sdk, model, api_key, enable_memory = _handle_basic_runtime_flow(
-            sdk="LangChain", model_provider=ModelProvider.Bedrock, provider_api_key=None, non_interactive_flag=False
+            sdk="LangChain_LangGraph",
+            model_provider=ModelProvider.Bedrock,
+            provider_api_key=None,
+            non_interactive_flag=False,
         )
 
-        assert sdk == "LangChain"
+        assert sdk == "LangChain_LangGraph"
         assert enable_memory is False
         mock_memory.assert_not_called()
 

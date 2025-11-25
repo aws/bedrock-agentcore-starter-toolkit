@@ -2,7 +2,7 @@
 
 This document explains how to use the `import_agent` command.
 
-The workflow can be started with `agentcore import-agent`. Additionally, the following flags can be provided.
+The workflow can be started with `agentcore create import`. Additionally, the following flags can be provided.
 
 ## Available Flags
 
