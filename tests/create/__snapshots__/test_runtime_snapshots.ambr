@@ -611,7 +611,7 @@
           return a+b
       
       @app.entrypoint
-      def invoke(payload, context):
+      async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
           
           # Create code interpreter
@@ -749,7 +749,7 @@
           return a+b
       
       @app.entrypoint
-      def invoke(payload, context):
+      async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
           
           # Create code interpreter
@@ -867,7 +867,7 @@
           return a+b
       
       @app.entrypoint
-      def invoke(payload, context):
+      async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
           
           # Create code interpreter
@@ -1004,7 +1004,7 @@
           return a+b
       
       @app.entrypoint
-      def invoke(payload, context):
+      async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
           
           # Create code interpreter

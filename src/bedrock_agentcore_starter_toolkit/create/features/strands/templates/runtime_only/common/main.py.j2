@@ -22,7 +22,7 @@ def add_numbers(a: int, b: int) -> int:
     return a+b
 
 @app.entrypoint
-def invoke(payload, context):
+async def invoke(payload, context):
     session_id = getattr(context, 'session_id', 'default')
     {% if memory_enabled %}
     # Configure memory
