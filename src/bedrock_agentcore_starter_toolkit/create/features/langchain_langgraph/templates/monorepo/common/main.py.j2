@@ -27,7 +27,7 @@ def add_numbers(a: int, b: int) -> int:
     return a+b
 
 # Import AgentCore Gateway as Streamable HTTP MCP Client
-mcp_client = deployed_get_tools()
+mcp_client = get_tools()
 
 # Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()

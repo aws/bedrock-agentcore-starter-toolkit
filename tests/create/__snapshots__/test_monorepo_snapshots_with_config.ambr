@@ -1476,7 +1476,7 @@
       
       def _get_api_key() -> str:
           """Provide API key"""
-          raise NotImplementedError("API key retrieval is not defined!")
+          raise NotImplementedError("API key retrieval isn't implemented. Complete _get_api_key() in model/load.py.")
       
       def load_model() -> None:
           """
@@ -1916,7 +1916,7 @@
       
       def _get_api_key() -> str:
           """Provide API key"""
-          raise NotImplementedError("API key retrieval is not defined!")
+          raise NotImplementedError("API key retrieval isn't implemented. Complete _get_api_key() in model/load.py.")
       
       def load_model() -> None:
           """

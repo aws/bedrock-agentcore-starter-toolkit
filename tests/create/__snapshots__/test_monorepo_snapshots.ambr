@@ -2424,7 +2424,7 @@
           mcp_toolset = []
       else:
           # Import AgentCore Gateway as Streamable HTTP MCP Client
-          mcp_toolset = get_streamable_http_mcp_client()
+          mcp_toolset = [get_streamable_http_mcp_client()]
       
       # https://google.github.io/adk-docs/agents/models/
       MODEL_ID = "gemini-2.0-flash"
@@ -2444,7 +2444,7 @@
           name="testProject_Agent",
           description="Agent to answer questions",
           instruction="I can answer your questions using the knowledge I have!",
-          tools=[mcp_toolset, add_numbers]
+          tools=mcp_toolset + [add_numbers]
       )
       
       # Session and Runner
@@ -2617,7 +2617,7 @@
           mcp_toolset = []
       else:
           # Import AgentCore Gateway as Streamable HTTP MCP Client
-          mcp_toolset = get_streamable_http_mcp_client()
+          mcp_toolset = [get_streamable_http_mcp_client()]
       
       # https://google.github.io/adk-docs/agents/models/
       MODEL_ID = "gemini-2.0-flash"
@@ -2637,7 +2637,7 @@
           name="testProject_Agent",
           description="Agent to answer questions",
           instruction="I can answer your questions using the knowledge I have!",
-          tools=[mcp_toolset, add_numbers]
+          tools=mcp_toolset + [add_numbers]
       )
       
       # Session and Runner
@@ -3353,7 +3353,7 @@
           return a+b
       
       # Import AgentCore Gateway as Streamable HTTP MCP Client
-      mcp_client = deployed_get_tools()
+      mcp_client = get_tools()
       
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
@@ -3542,7 +3542,7 @@
           return a+b
       
       # Import AgentCore Gateway as Streamable HTTP MCP Client
-      mcp_client = deployed_get_tools()
+      mcp_client = get_tools()
       
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()

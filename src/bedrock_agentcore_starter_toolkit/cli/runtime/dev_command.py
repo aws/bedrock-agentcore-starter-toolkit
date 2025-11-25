@@ -149,6 +149,7 @@ def _setup_dev_environment(envs: List[str], port: Optional[int]) -> dict:
     actual_port = _find_available_port(requested_port or 8080)
     if requested_port and requested_port != actual_port:
         console.print(f"[yellow]⚠️  Port {requested_port} is in use, using port {actual_port} instead[/yellow]")
+        console.print(f"[cyan]Use agentcore invoke --dev --port {actual_port} to invoke your dev server.[/cyan]")
 
     local_env["PORT"] = str(actual_port)
     return local_env

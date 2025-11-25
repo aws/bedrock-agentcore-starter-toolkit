@@ -11,7 +11,7 @@ if os.getenv("LOCAL_DEV") == "1":
     mcp_toolset = []
 else:
     # Import AgentCore Gateway as Streamable HTTP MCP Client
-    mcp_toolset = get_streamable_http_mcp_client()
+    mcp_toolset = [get_streamable_http_mcp_client()]
 
 # https://google.github.io/adk-docs/agents/models/
 MODEL_ID = "gemini-2.0-flash"
@@ -31,7 +31,7 @@ agent = Agent(
     name="{{ agent_name }}",
     description="Agent to answer questions",
     instruction="I can answer your questions using the knowledge I have!",
-    tools=[mcp_toolset, add_numbers]
+    tools=mcp_toolset + [add_numbers]
 )
 
 # Session and Runner
