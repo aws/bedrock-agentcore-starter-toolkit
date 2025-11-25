@@ -5,7 +5,7 @@ from autogen_ext.models.anthropic import AnthropicBedrockChatCompletionClient
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from autogen_core.tools import FunctionTool
 from autogen_core.models import ModelInfo, ModelFamily
-from mcp_client.client import get_streamable_http_mcp_tools as deployed_get_tools
+from .mcp_client.client import get_streamable_http_mcp_tools as deployed_get_tools
 
 if os.getenv("LOCAL_DEV") == "1":
     # In local dev, instantiate dummy MCP client so the code runs without deploying

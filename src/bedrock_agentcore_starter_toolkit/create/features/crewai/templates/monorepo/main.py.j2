@@ -2,7 +2,7 @@ from crewai import Agent, Crew, LLM, Task, Process
 from crewai.tools import tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 import os
-from mcp_client.client import get_streamable_http_mcp_client
+from .mcp_client.client import get_streamable_http_mcp_client
 
 if os.getenv("LOCAL_DEV") == "1":
     # In local dev, instantiate dummy MCP client so the code runs without deploying

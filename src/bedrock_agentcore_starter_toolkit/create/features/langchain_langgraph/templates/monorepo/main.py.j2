@@ -4,7 +4,7 @@ from langchain_aws import ChatBedrock
 from langchain.tools import tool
 from bedrock_agentcore import BedrockAgentCoreApp
 import os
-from mcp_client.client import get_streamable_http_mcp_client as deployed_get_tools
+from .mcp_client.client import get_streamable_http_mcp_client as deployed_get_tools
 
 if os.getenv("LOCAL_DEV") == "1":
     # In local dev, instantiate dummy MCP client so the code runs without deploying

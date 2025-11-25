@@ -1340,10 +1340,11 @@
     'src/main.py': '''
       from agents import Agent, Runner, function_tool
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from contextlib import asynccontextmanager
       import logging
       import sys
       import os
-      from mcp_client.client import get_streamable_http_mcp_client
+      from .mcp_client.client import get_streamable_http_mcp_client
       
       if os.getenv("LOCAL_DEV") == "1":
           @asynccontextmanager
@@ -1746,10 +1747,11 @@
     'src/main.py': '''
       from agents import Agent, Runner, function_tool
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from contextlib import asynccontextmanager
       import logging
       import sys
       import os
-      from mcp_client.client import get_streamable_http_mcp_client
+      from .mcp_client.client import get_streamable_http_mcp_client
       
       if os.getenv("LOCAL_DEV") == "1":
           @asynccontextmanager
