@@ -8,7 +8,6 @@ from model.load import load_model
 if os.getenv("LOCAL_DEV") == "1":
     # In local dev, instantiate dummy MCP client so the code runs without deploying
     from contextlib import nullcontext
-    from types import SimpleNamespace
     mcp_adapter = nullcontext([])
 else:
     # Import AgentCore Gateway as Streamable HTTP MCP Client
