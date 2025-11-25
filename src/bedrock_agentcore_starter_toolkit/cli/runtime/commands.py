@@ -24,6 +24,7 @@ from ...operations.runtime import (
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
 )
+from ...services.runtime import _handle_http_response
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
 from ..common import _handle_error, _print_success, console, requires_aws_creds
@@ -1332,15 +1333,12 @@ def _invoke_dev_server(payload: str, port: int = 8080) -> None:
     url = f"http://localhost:{port}/invocations"
 
     try:
-        response = requests.post(url, json=payload_data, headers={"Content-Type": "application/json"}, timeout=180)
-
-        if response.status_code == 200:
+        session = requests.Session()
+        with session.post(url, json=payload_data, timeout=180, stream=True) as response:
             console.print("[green]✓ Response from dev server:[/green]")
-            response_json = response.json()
-            console.print_json(data=response_json)
-        else:
-            console.print(f"[yellow]Dev server responded with status {response.status_code}[/yellow]")
-            console.print(response.text)
+            result = _handle_http_response(response)
+            if result:
+                console.print(result)
     except requests.exceptions.ConnectionError:
         console.print(
             Panel(
