@@ -5075,7 +5075,7 @@
       from bedrock_agentcore import BedrockAgentCoreApp
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
-      from mcp_client.client import get_streamable_http_mcp_client
+      from .mcp_client.client import get_streamable_http_mcp_client
       
       model = BedrockModel(model_id="global.anthropic.claude-sonnet-4-20250514-v1:0")
       
@@ -5294,7 +5294,7 @@
       from bedrock_agentcore import BedrockAgentCoreApp
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
-      from mcp_client.client import get_streamable_http_mcp_client
+      from .mcp_client.client import get_streamable_http_mcp_client
       
       model = BedrockModel(model_id="global.anthropic.claude-sonnet-4-20250514-v1:0")
       

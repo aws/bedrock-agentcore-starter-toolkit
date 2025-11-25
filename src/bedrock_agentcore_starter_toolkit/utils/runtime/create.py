@@ -7,14 +7,13 @@ from .config import load_config, save_config
 from .schema import BedrockAgentCoreConfigSchema
 
 
-def resolve_create_with_iac_project_config() -> BedrockAgentCoreConfigSchema:
+def resolve_create_with_iac_project_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     """Handle the unset create config. Save a new one and return it.
 
     Create command can't populate the runtime id/arn because it's not known until the IAC is deployed
     This command uses a workaround to find the id/arn by iterating through the agentRuntimeName properties in a
     list_agents() call. Only the default_agent is supported by this command. Multi-agent is not supported.
     """
-    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     create_project = load_config(config_path)
     default_agent = create_project.default_agent
     default_agent_config = create_project.agents[default_agent]

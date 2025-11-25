@@ -54,7 +54,8 @@ class TestResolveCreateProjectConfig:
 
         with patch("bedrock_agentcore_starter_toolkit.utils.runtime.create.load_config", return_value=config):
             # Act
-            result = resolve_create_with_iac_project_config()
+            config_path = tmp_path / ".bedrock_agentcore.yaml"
+            result = resolve_create_with_iac_project_config(config_path)
 
             # Assert
             assert result is None
@@ -99,7 +100,8 @@ class TestResolveCreateProjectConfig:
                     "bedrock_agentcore_starter_toolkit.utils.runtime.create.generate_session_id",
                     return_value="session-123",
                 ):
-                    resolve_create_with_iac_project_config()
+                    config_path = tmp_path / ".bedrock_agentcore.yaml"
+                    resolve_create_with_iac_project_config(config_path)
 
                     # Assert
                     mock_save.assert_called_once()
@@ -161,7 +163,8 @@ class TestResolveCreateProjectConfig:
                         return_value=mock_client,
                     ):
                         # Act
-                        resolve_create_with_iac_project_config()
+                        config_path = tmp_path / ".bedrock_agentcore.yaml"
+                        resolve_create_with_iac_project_config(config_path)
 
                         # Assert
                         mock_save.assert_called_once()
@@ -213,7 +216,8 @@ class TestResolveCreateProjectConfig:
                 return_value=mock_client,
             ):
                 # Act & Assert
+                config_path = tmp_path / ".bedrock_agentcore.yaml"
                 with pytest.raises(
                     Exception, match="Could not find an agentcore runtime resource with name test-agent"
                 ):
-                    resolve_create_with_iac_project_config()
+                    resolve_create_with_iac_project_config(config_path)
