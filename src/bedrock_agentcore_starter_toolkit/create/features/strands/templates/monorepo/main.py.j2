@@ -31,7 +31,7 @@ def add_numbers(a: int, b: int) -> int:
 app = BedrockAgentCoreApp()
 
 @app.entrypoint
-def invoke(payload, context):
+async def invoke(payload, context):
     session_id = getattr(context, 'session_id', 'default')
 
     # Configure memory if available
@@ -73,8 +73,20 @@ def invoke(payload, context):
         )
 
         # Execute and format response
-        result = agent(payload.get("prompt", ""))
-        return {"response": format_response(result)}
+        stream = agent.stream_async(payload.get("prompt"))
+
+        async for event in stream:
+            # Handle Text parts of the response
+            if "data" in event and isinstance(event["data"], str):
+                yield event["data"]
+
+            # Implement additional handling for other events
+            # if "toolUse" in event:
+            #   # Process toolUse
+
+            # Handle end of stream
+            # if "result" in event:
+            #    yield(format_response(event["result"]))
 
 def format_response(result) -> str:
     """Extract code from metrics and format with LLM response."""

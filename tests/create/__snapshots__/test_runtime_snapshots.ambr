@@ -1505,7 +1505,7 @@
       
                   # Handle end of stream
                   # if "result" in event:
-                  #     yield(event)
+                  #    yield(format_response(event["result"]))
       
       def format_response(result) -> str:
           """Extract code from metrics and format with LLM response."""
@@ -1642,7 +1642,7 @@
       
                   # Handle end of stream
                   # if "result" in event:
-                  #     yield(event)
+                  #    yield(format_response(event["result"]))
       
       def format_response(result) -> str:
           """Extract code from metrics and format with LLM response."""
@@ -1760,7 +1760,7 @@
       
                   # Handle end of stream
                   # if "result" in event:
-                  #     yield(event)
+                  #    yield(format_response(event["result"]))
       
       def format_response(result) -> str:
           """Extract code from metrics and format with LLM response."""
@@ -1896,7 +1896,7 @@
       
                   # Handle end of stream
                   # if "result" in event:
-                  #     yield(event)
+                  #    yield(format_response(event["result"]))
       
       def format_response(result) -> str:
           """Extract code from metrics and format with LLM response."""
