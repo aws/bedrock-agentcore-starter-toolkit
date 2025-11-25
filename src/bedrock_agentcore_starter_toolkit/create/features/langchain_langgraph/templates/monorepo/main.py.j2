@@ -4,14 +4,15 @@ from langchain_aws import ChatBedrock
 from langchain.tools import tool
 from bedrock_agentcore import BedrockAgentCoreApp
 import os
-from .mcp_client.client import get_streamable_http_mcp_client as deployed_get_tools
+from .mcp_client.client import get_streamable_http_mcp_client
 
-if os.getenv("LOCAL_DEV") == "1":
-    # In local dev, instantiate dummy MCP client so the code runs without deploying
-    async def get_tools():
+async def get_mcp_tools():
+    if os.getenv("LOCAL_DEV") == "1":
+        # In local dev, return an empty tools list to work with Gateway
         return []
-else:
-    get_tools = deployed_get_tools
+    else:
+        mcp_client = get_streamable_http_mcp_client()
+        return await mcp_client.get_tools()
 
 # Uses global inference profile for Claude Sonnet 4.5
 # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
@@ -26,9 +27,6 @@ def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 
-# Import AgentCore Gateway as Streamable HTTP MCP Client
-mcp_client = deployed_get_tools()
-
 # Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
 
@@ -36,8 +34,8 @@ app = BedrockAgentCoreApp()
 async def invoke(payload):
     # assume payload input is structured as { "prompt": "<user input>" }
 
-    # Load MCP Tools
-    tools = await mcp_client.get_tools()
+    # Load MCP Tools from AgentCore Gateway
+    tools = await get_mcp_tools()
 
     # Define the agent
     graph = create_agent(llm, tools=tools + [add_numbers])

@@ -63,7 +63,8 @@ class TestStrandsFeature:
         feature.before_apply(ctx)
 
         assert "strands-agents >= 1.13.0" in feature.python_dependencies
-        assert feature.model_provider_name == "bedrock"
+        # model_provider_name is no longer set for Strands (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_openai_dependencies(self, tmp_path):
         """Test runtime_only mode with OpenAI dependencies."""
@@ -72,7 +73,8 @@ class TestStrandsFeature:
         feature.before_apply(ctx)
 
         assert "strands-agents[openai] >= 1.13.0" in feature.python_dependencies
-        assert feature.model_provider_name == "openai"
+        # model_provider_name is no longer set for Strands (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_anthropic_dependencies(self, tmp_path):
         """Test runtime_only mode with Anthropic dependencies."""
@@ -81,7 +83,8 @@ class TestStrandsFeature:
         feature.before_apply(ctx)
 
         assert "strands-agents[anthropic] >= 1.13.0" in feature.python_dependencies
-        assert feature.model_provider_name == "anthropic"
+        # model_provider_name is no longer set for Strands (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
     def test_runtime_only_gemini_dependencies(self, tmp_path):
         """Test runtime_only mode with Gemini dependencies."""
@@ -90,7 +93,8 @@ class TestStrandsFeature:
         feature.before_apply(ctx)
 
         assert "strands-agents[gemini] >= 1.13.0" in feature.python_dependencies
-        assert feature.model_provider_name == "gemini"
+        # model_provider_name is no longer set for Strands (templates moved to centralized location)
+        assert feature.model_provider_name is None
 
 
 class TestCrewAIFeature:

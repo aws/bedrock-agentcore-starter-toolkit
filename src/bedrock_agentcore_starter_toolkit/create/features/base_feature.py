@@ -39,9 +39,8 @@ class Feature(ABC):
             # Only append model provider name if it's set (SDK features have it, IaC features don't)
             # For monorepo, templates are directly in the template_dir_selection folder (no model provider subdirs)
             # For runtime_only, templates are in model provider subdirectories
-            from ..constants import TemplateDirSelection
 
-            if self.model_provider_name and context.template_dir_selection != TemplateDirSelection.MONOREPO:
+            if self.model_provider_name:
                 self.template_dir = self.base_path / self.model_provider_name
             else:
                 self.template_dir = self.base_path
@@ -84,6 +83,26 @@ class Feature(ABC):
             if rendered_content.strip():
                 dest.write_text(rendered_content)
 
+    def _render_model_provider_templates(self, dest_dir: Path, context: ProjectContext) -> None:
+        """Render model provider templates based on SDK and model provider.
+
+        This method renders templates from:
+        create/templates/model_provider/{sdk_provider}/{model_provider}/
+
+        These templates were previously under SDK-specific runtime_only directories,
+        but now apply to both runtime_only and monorepo modes.
+        """
+        # Construct path to model provider templates
+        # e.g., create/templates/model_provider/strands/bedrock/
+        model_provider_base = Path(__file__).parent.parent / "templates" / "model_provider"
+        model_provider_template_dir = (
+            model_provider_base / context.sdk_provider.lower() / context.model_provider.lower()
+        )
+
+        # Only render if the directory exists
+        if model_provider_template_dir.exists():
+            self._render_from_template_src_dir(model_provider_template_dir, dest_dir, context)
+
     def render_dir(self, dest_dir: Path, context: ProjectContext) -> None:
         """Render templates for the variant only (common handled automatically in apply)."""
         # Case 1: global 'common' directory
@@ -92,8 +111,22 @@ class Feature(ABC):
             if self.render_common_dir and global_common_dir.exists():
                 self._render_from_template_src_dir(global_common_dir, dest_dir, context)
 
-        # Case 2: feature-local 'common' directory even with the resolved template_dir
-        local_common_dir = self.template_dir.parent / TemplateDirSelection.COMMON
+        # Case 2: feature-local 'common' directory within the resolved template_dir
+        # e.g., strands/templates/runtime_only/common/
+        local_common_dir = self.template_dir / TemplateDirSelection.COMMON
         if local_common_dir.exists():
             self._render_from_template_src_dir(local_common_dir, dest_dir, context)
-        self._render_from_template_src_dir(self.template_dir, dest_dir, context)
+        else:
+            # If no common directory, render the template_dir directly
+            self._render_from_template_src_dir(self.template_dir, dest_dir, context)
+
+        # Case 3: model_provider templates (SDK-specific, model-specific)
+        # Render model provider templates if both sdk_provider and model_provider are set
+        # Only SDK features (not baseline features) should render model provider templates
+        if (
+            context.sdk_provider
+            and context.model_provider
+            and hasattr(self, "feature_dir_name")
+            and self.feature_dir_name
+        ):
+            self._render_model_provider_templates(dest_dir, context)

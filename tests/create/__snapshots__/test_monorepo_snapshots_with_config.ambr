@@ -36,94 +36,6 @@
       });
       agentCoreStack.addDependency(dockerImageStack);
     ''',
-    'cdk/cdk.json': '''
-      {
-        "app": "npx ts-node --prefer-ts-exts bin/cdk.ts",
-        "watch": {
-          "include": [
-            "**"
-          ],
-          "exclude": [
-            "README.md",
-            "cdk*.json",
-            "**/*.d.ts",
-            "**/*.js",
-            "tsconfig.json",
-            "package*.json",
-            "yarn.lock",
-            "node_modules",
-            "test"
-          ]
-        },
-        "context": {
-          "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
-          "@aws-cdk/core:checkSecretUsage": true,
-          "@aws-cdk/core:target-partitions": [
-            "aws",
-            "aws-cn"
-          ],
-          "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
-          "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
-          "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
-          "@aws-cdk/aws-iam:minimizePolicies": true,
-          "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
-          "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": true,
-          "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
-          "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": true,
-          "@aws-cdk/aws-apigateway:disableCloudWatchRole": true,
-          "@aws-cdk/core:enablePartitionLiterals": true,
-          "@aws-cdk/aws-events:eventsTargetQueueSameAccount": true,
-          "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true,
-          "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": true,
-          "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
-          "@aws-cdk/aws-route53-patters:useCertificate": true,
-          "@aws-cdk/customresources:installLatestAwsSdkDefault": false,
-          "@aws-cdk/aws-rds:databaseProxyUniqueResourceName": true,
-          "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": true,
-          "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": true,
-          "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
-          "@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments": true,
-          "@aws-cdk/aws-redshift:columnId": true,
-          "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": true,
-          "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
-          "@aws-cdk/aws-apigateway:requestValidatorUniqueId": true,
-          "@aws-cdk/aws-kms:aliasNameRef": true,
-          "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
-          "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
-          "@aws-cdk/aws-efs:denyAnonymousAccess": true,
-          "@aws-cdk/aws-opensearchservice:enableOpensearchMultiAzWithStandby": true,
-          "@aws-cdk/aws-lambda-nodejs:useLatestRuntimeVersion": true,
-          "@aws-cdk/aws-efs:mountTargetOrderInsensitiveLogicalId": true,
-          "@aws-cdk/aws-rds:auroraClusterChangeScopeOfInstanceParameterGroupWithEachParameters": true,
-          "@aws-cdk/aws-appsync:useArnForSourceApiAssociationIdentifier": true,
-          "@aws-cdk/aws-rds:preventRenderingDeprecatedCredentials": true,
-          "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForCodeCommitSource": true,
-          "@aws-cdk/aws-cloudwatch-actions:changeLambdaPermissionLogicalIdForLambdaAction": true,
-          "@aws-cdk/aws-codepipeline:crossAccountKeysDefaultValueToFalse": true,
-          "@aws-cdk/aws-codepipeline:defaultPipelineTypeToV2": true,
-          "@aws-cdk/aws-kms:reduceCrossAccountRegionPolicyScope": true,
-          "@aws-cdk/aws-eks:nodegroupNameAttribute": true,
-          "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": true,
-          "@aws-cdk/aws-ecs:removeDefaultDeploymentAlarm": true,
-          "@aws-cdk/custom-resources:logApiResponseDataPropertyTrueDefault": false,
-          "@aws-cdk/aws-s3:keepNotificationInImportedBucket": false,
-          "@aws-cdk/aws-ecs:enableImdsBlockingDeprecatedFeature": false,
-          "@aws-cdk/aws-ecs:disableEcsImdsBlocking": true,
-          "@aws-cdk/aws-ecs:reduceEc2FargateCloudWatchPermissions": true,
-          "@aws-cdk/aws-dynamodb:resourcePolicyPerReplica": true,
-          "@aws-cdk/aws-ec2:ec2SumTImeoutEnabled": true,
-          "@aws-cdk/aws-appsync:appSyncGraphQLAPIScopeLambdaPermission": true,
-          "@aws-cdk/aws-rds:setCorrectValueForDatabaseInstanceReadReplicaInstanceResourceId": true,
-          "@aws-cdk/core:cfnIncludeRejectComplexResourceUpdateCreatePolicyIntrinsics": true,
-          "@aws-cdk/aws-lambda-nodejs:sdkV3ExcludeSmithyPackages": true,
-          "@aws-cdk/aws-stepfunctions-tasks:fixRunEcsTaskPolicy": true,
-          "@aws-cdk/aws-ec2:bastionHostUseAmazonLinux2023ByDefault": true,
-          "@aws-cdk/aws-route53-targets:userPoolDomainNameMethodWithoutCustomResource": true,
-          "@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault": true,
-          "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": true
-        }
-      }
-    ''',
     'cdk/lib': None,
     'cdk/lib/stacks': None,
     'cdk/lib/stacks/agentcore-stack.ts': '''
@@ -461,71 +373,19 @@
           appName: string
       }
     ''',
-    'cdk/package.json': '''
-      {
-        "name": "cdk",
-        "version": "0.1.0",
-        "bin": {
-          "cdk": "bin/cdk.js"
-        },
-        "engines": {
-          "node": ">=18.0.0"
-        },
-        "scripts": {
-          "build": "tsc",
-          "watch": "tsc -w",
-          "test": "jest",
-          "cdk": "cdk",
-          "cdk:deploy": "cdk deploy --all",
-          "cdk:deploy:ci": "cdk deploy --all --require-approval never"
-        },
-        "devDependencies": {
-          "@types/jest": "^29.5.14",
-          "@types/node": "22.7.9",
-          "aws-cdk": "^2.1031.1",
-          "jest": "^29.7.0",
-          "ts-jest": "^29.2.5",
-          "ts-node": "^10.9.2",
-          "typescript": "~5.6.3"
-        },
-        "dependencies": {
-          "aws-cdk-lib": "^2.226.0",
-          "constructs": "^10.4.3"
-        }
-      }
-    ''',
-    'cdk/tsconfig.json': '''
-      {
-        "compilerOptions": {
-          "target": "ES2020",
-          "module": "commonjs",
-          "lib": [
-            "es2020",
-            "dom"
-          ],
-          "declaration": true,
-          "strict": true,
-          "noImplicitAny": true,
-          "strictNullChecks": true,
-          "noImplicitThis": true,
-          "alwaysStrict": true,
-          "noUnusedLocals": false,
-          "noUnusedParameters": false,
-          "noImplicitReturns": true,
-          "noFallthroughCasesInSwitch": false,
-          "inlineSourceMap": true,
-          "inlineSources": true,
-          "experimentalDecorators": true,
-          "strictPropertyInitialization": false,
-          "typeRoots": [
-            "./node_modules/@types"
-          ]
-        },
-        "exclude": [
-          "node_modules",
-          "cdk.out"
-        ]
-      }
+    'cdk/model': None,
+    'cdk/model/load.py': '''
+      from strands.models import BedrockModel
+      
+      
+      def load_model() -> BedrockModel:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          # Uses global inference profile for Claude Sonnet 4.5
+          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
     ''',
     'mcp': None,
     'mcp/lambda': None,
@@ -601,8 +461,9 @@
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
       from .mcp_client.client import get_streamable_http_mcp_client
+      from .model.load import load_model
       
-      model = BedrockModel(model_id="global.anthropic.claude-sonnet-4-20250514-v1:0")
+      model = load_model()
       
       MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
       REGION = os.getenv("AWS_REGION")
@@ -742,6 +603,20 @@
           access_token = _get_access_token()
           return MCPClient(lambda: streamablehttp_client(gateway_url, headers={"Authorization": f"Bearer {access_token}"}))
     ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      from strands.models import BedrockModel
+      
+      
+      def load_model() -> BedrockModel:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          # Uses global inference profile for Claude Sonnet 4.5
+          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+    ''',
   })
 # ---
 # name: test_cdk_snapshots[scenario_1][scenario_1-OpenAIAgents-default settings; stm memory]
@@ -780,94 +655,6 @@
         imageUri: dockerImageStack.imageUri
       });
       agentCoreStack.addDependency(dockerImageStack);
-    ''',
-    'cdk/cdk.json': '''
-      {
-        "app": "npx ts-node --prefer-ts-exts bin/cdk.ts",
-        "watch": {
-          "include": [
-            "**"
-          ],
-          "exclude": [
-            "README.md",
-            "cdk*.json",
-            "**/*.d.ts",
-            "**/*.js",
-            "tsconfig.json",
-            "package*.json",
-            "yarn.lock",
-            "node_modules",
-            "test"
-          ]
-        },
-        "context": {
-          "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
-          "@aws-cdk/core:checkSecretUsage": true,
-          "@aws-cdk/core:target-partitions": [
-            "aws",
-            "aws-cn"
-          ],
-          "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
-          "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
-          "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
-          "@aws-cdk/aws-iam:minimizePolicies": true,
-          "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
-          "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": true,
-          "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
-          "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": true,
-          "@aws-cdk/aws-apigateway:disableCloudWatchRole": true,
-          "@aws-cdk/core:enablePartitionLiterals": true,
-          "@aws-cdk/aws-events:eventsTargetQueueSameAccount": true,
-          "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true,
-          "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": true,
-          "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
-          "@aws-cdk/aws-route53-patters:useCertificate": true,
-          "@aws-cdk/customresources:installLatestAwsSdkDefault": false,
-          "@aws-cdk/aws-rds:databaseProxyUniqueResourceName": true,
-          "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": true,
-          "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": true,
-          "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
-          "@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments": true,
-          "@aws-cdk/aws-redshift:columnId": true,
-          "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": true,
-          "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
-          "@aws-cdk/aws-apigateway:requestValidatorUniqueId": true,
-          "@aws-cdk/aws-kms:aliasNameRef": true,
-          "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
-          "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
-          "@aws-cdk/aws-efs:denyAnonymousAccess": true,
-          "@aws-cdk/aws-opensearchservice:enableOpensearchMultiAzWithStandby": true,
-          "@aws-cdk/aws-lambda-nodejs:useLatestRuntimeVersion": true,
-          "@aws-cdk/aws-efs:mountTargetOrderInsensitiveLogicalId": true,
-          "@aws-cdk/aws-rds:auroraClusterChangeScopeOfInstanceParameterGroupWithEachParameters": true,
-          "@aws-cdk/aws-appsync:useArnForSourceApiAssociationIdentifier": true,
-          "@aws-cdk/aws-rds:preventRenderingDeprecatedCredentials": true,
-          "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForCodeCommitSource": true,
-          "@aws-cdk/aws-cloudwatch-actions:changeLambdaPermissionLogicalIdForLambdaAction": true,
-          "@aws-cdk/aws-codepipeline:crossAccountKeysDefaultValueToFalse": true,
-          "@aws-cdk/aws-codepipeline:defaultPipelineTypeToV2": true,
-          "@aws-cdk/aws-kms:reduceCrossAccountRegionPolicyScope": true,
-          "@aws-cdk/aws-eks:nodegroupNameAttribute": true,
-          "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": true,
-          "@aws-cdk/aws-ecs:removeDefaultDeploymentAlarm": true,
-          "@aws-cdk/custom-resources:logApiResponseDataPropertyTrueDefault": false,
-          "@aws-cdk/aws-s3:keepNotificationInImportedBucket": false,
-          "@aws-cdk/aws-ecs:enableImdsBlockingDeprecatedFeature": false,
-          "@aws-cdk/aws-ecs:disableEcsImdsBlocking": true,
-          "@aws-cdk/aws-ecs:reduceEc2FargateCloudWatchPermissions": true,
-          "@aws-cdk/aws-dynamodb:resourcePolicyPerReplica": true,
-          "@aws-cdk/aws-ec2:ec2SumTImeoutEnabled": true,
-          "@aws-cdk/aws-appsync:appSyncGraphQLAPIScopeLambdaPermission": true,
-          "@aws-cdk/aws-rds:setCorrectValueForDatabaseInstanceReadReplicaInstanceResourceId": true,
-          "@aws-cdk/core:cfnIncludeRejectComplexResourceUpdateCreatePolicyIntrinsics": true,
-          "@aws-cdk/aws-lambda-nodejs:sdkV3ExcludeSmithyPackages": true,
-          "@aws-cdk/aws-stepfunctions-tasks:fixRunEcsTaskPolicy": true,
-          "@aws-cdk/aws-ec2:bastionHostUseAmazonLinux2023ByDefault": true,
-          "@aws-cdk/aws-route53-targets:userPoolDomainNameMethodWithoutCustomResource": true,
-          "@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault": true,
-          "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": true
-        }
-      }
     ''',
     'cdk/lib': None,
     'cdk/lib/stacks': None,
@@ -1204,72 +991,6 @@
       
       export interface BaseStackProps extends cdk.StackProps {
           appName: string
-      }
-    ''',
-    'cdk/package.json': '''
-      {
-        "name": "cdk",
-        "version": "0.1.0",
-        "bin": {
-          "cdk": "bin/cdk.js"
-        },
-        "engines": {
-          "node": ">=18.0.0"
-        },
-        "scripts": {
-          "build": "tsc",
-          "watch": "tsc -w",
-          "test": "jest",
-          "cdk": "cdk",
-          "cdk:deploy": "cdk deploy --all",
-          "cdk:deploy:ci": "cdk deploy --all --require-approval never"
-        },
-        "devDependencies": {
-          "@types/jest": "^29.5.14",
-          "@types/node": "22.7.9",
-          "aws-cdk": "^2.1031.1",
-          "jest": "^29.7.0",
-          "ts-jest": "^29.2.5",
-          "ts-node": "^10.9.2",
-          "typescript": "~5.6.3"
-        },
-        "dependencies": {
-          "aws-cdk-lib": "^2.226.0",
-          "constructs": "^10.4.3"
-        }
-      }
-    ''',
-    'cdk/tsconfig.json': '''
-      {
-        "compilerOptions": {
-          "target": "ES2020",
-          "module": "commonjs",
-          "lib": [
-            "es2020",
-            "dom"
-          ],
-          "declaration": true,
-          "strict": true,
-          "noImplicitAny": true,
-          "strictNullChecks": true,
-          "noImplicitThis": true,
-          "alwaysStrict": true,
-          "noUnusedLocals": false,
-          "noUnusedParameters": false,
-          "noImplicitReturns": true,
-          "noFallthroughCasesInSwitch": false,
-          "inlineSourceMap": true,
-          "inlineSources": true,
-          "experimentalDecorators": true,
-          "strictPropertyInitialization": false,
-          "typeRoots": [
-            "./node_modules/@types"
-          ]
-        },
-        "exclude": [
-          "node_modules",
-          "cdk.out"
-        ]
       }
     ''',
     'mcp': None,
@@ -1533,8 +1254,9 @@
       from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
       from .mcp_client.client import get_streamable_http_mcp_client
+      from .model.load import load_model
       
-      model = BedrockModel(model_id="global.anthropic.claude-sonnet-4-20250514-v1:0")
+      model = load_model()
       
       MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
       REGION = os.getenv("AWS_REGION")
@@ -1674,7 +1396,35 @@
           access_token = _get_access_token()
           return MCPClient(lambda: streamablehttp_client(gateway_url, headers={"Authorization": f"Bearer {access_token}"}))
     ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      from strands.models import BedrockModel
+      
+      
+      def load_model() -> BedrockModel:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          # Uses global inference profile for Claude Sonnet 4.5
+          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+    ''',
     'terraform': None,
+    'terraform/model': None,
+    'terraform/model/load.py': '''
+      from strands.models import BedrockModel
+      
+      
+      def load_model() -> BedrockModel:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          # Uses global inference profile for Claude Sonnet 4.5
+          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+    ''',
   })
 # ---
 # name: test_terraform_snapshots[scenario_1][scenario_1-OpenAIAgents-default settings; stm memory]
