@@ -244,7 +244,7 @@ def deploy(
         hidden=True,
     ),
 ):
-    """Deploy Bedrock AgentCore with three deployment modes.
+    """Deploy Bedrock AgentCore with three deployment modes (formerly 'launch').
 
     🚀 DEFAULT (no flags): Cloud runtime (RECOMMENDED)
        - direct_code_deploy deployment: Direct deploy Python code to runtime
