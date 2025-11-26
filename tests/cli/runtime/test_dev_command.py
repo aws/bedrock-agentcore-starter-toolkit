@@ -216,51 +216,109 @@ class TestGetModulePathFromConfig:
 class TestSetupDevEnvironment:
     """Test _setup_dev_environment function."""
 
-    def test_no_envs_default_port(self):
+    def test_no_envs_default_port(self, tmp_path):
         """Test setup with no custom environment variables and default port."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080):
-            env = _setup_dev_environment(None, None)
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value={}),
+        ):
+            env = _setup_dev_environment(None, None, config_path)
             assert env["LOCAL_DEV"] == "1"
             assert env["PORT"] == "8080"
 
-    def test_custom_port(self):
+    def test_custom_port(self, tmp_path):
         """Test setup with custom port."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=9000):
-            env = _setup_dev_environment(None, 9000)
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=9000),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value={}),
+        ):
+            env = _setup_dev_environment(None, 9000, config_path)
             assert env["PORT"] == "9000"
 
-    def test_port_in_use_fallback(self):
+    def test_port_in_use_fallback(self, tmp_path):
         """Test warning when requested port is in use."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8081),
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command.console.print") as mock_print,
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value={}),
         ):
-            env = _setup_dev_environment(None, 8080)
+            env = _setup_dev_environment(None, 8080, config_path)
             assert env["PORT"] == "8081"
             # Check warning was printed
             mock_print.assert_called()
 
-    def test_custom_env_vars(self):
+    def test_custom_env_vars(self, tmp_path):
         """Test setup with custom environment variables."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080):
-            env = _setup_dev_environment(["API_KEY=secret123", "DEBUG=true"], None)
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value={}),
+        ):
+            env = _setup_dev_environment(["API_KEY=secret123", "DEBUG=true"], None, config_path)
             assert env["API_KEY"] == "secret123"
             assert env["DEBUG"] == "true"
             assert env["LOCAL_DEV"] == "1"
 
-    def test_invalid_env_var_format(self):
+    def test_invalid_env_var_format(self, tmp_path):
         """Test error on invalid environment variable format."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
         with pytest.raises(typer.Exit):
-            _setup_dev_environment(["INVALID_FORMAT"], None)
+            _setup_dev_environment(["INVALID_FORMAT"], None, config_path)
 
-    def test_port_from_env_var_string(self):
+    def test_port_from_env_var_string(self, tmp_path):
         """Test port parsing from environment variable as string."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=9000),
             patch.dict(os.environ, {"PORT": "9000"}),
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value={}),
         ):
-            env = _setup_dev_environment(None, None)
+            env = _setup_dev_environment(None, None, config_path)
             assert env["PORT"] == "9000"
+
+    def test_user_env_vars_override_config_env_vars(self, tmp_path):
+        """Test that user-provided --env values override config file values."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        # Config provides certain env vars
+        config_env_vars = {"AWS_REGION": "us-west-2", "BEDROCK_AGENTCORE_MEMORY_ID": "config-memory-123"}
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value=config_env_vars
+            ),
+        ):
+            # User overrides both values via --env
+            env = _setup_dev_environment(
+                ["AWS_REGION=us-east-1", "BEDROCK_AGENTCORE_MEMORY_ID=user-memory-456"], None, config_path
+            )
+
+            # User values should win
+            assert env["AWS_REGION"] == "us-east-1"
+            assert env["BEDROCK_AGENTCORE_MEMORY_ID"] == "user-memory-456"
+
+    def test_user_env_vars_partial_override(self, tmp_path):
+        """Test that user can override some config values while keeping others."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        config_env_vars = {"AWS_REGION": "us-west-2", "BEDROCK_AGENTCORE_MEMORY_ID": "config-memory-123"}
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._find_available_port", return_value=8080),
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.dev_command._get_env_vars", return_value=config_env_vars
+            ),
+        ):
+            # User only overrides AWS_REGION
+            env = _setup_dev_environment(["AWS_REGION=eu-central-1"], None, config_path)
+
+            # User's region should win, config's memory_id should remain
+            assert env["AWS_REGION"] == "eu-central-1"
+            assert env["BEDROCK_AGENTCORE_MEMORY_ID"] == "config-memory-123"
 
 
 class TestFindAvailablePort:

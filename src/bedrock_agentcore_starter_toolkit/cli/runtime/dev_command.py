@@ -5,12 +5,12 @@ import os
 import socket
 import subprocess  # nosec B404 - subprocess required for running uvicorn dev server
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import typer
 
 from ...utils.runtime.config import load_config, load_config_if_exists
-from ..common import _handle_error, assert_valid_aws_creds_or_exit, console
+from ..common import _handle_error, _handle_warn, assert_valid_aws_creds_or_exit, console
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def dev(
     module_path, agent_name = _get_module_path_and_agent_name(config_path)
 
     # Setup environment and port
-    local_env = _setup_dev_environment(envs, port)
+    local_env = _setup_dev_environment(envs, port, config_path)
     devPort = local_env["PORT"]
 
     console.print("[green]🚀 Starting development server with hot reloading[/green]")
@@ -70,18 +70,7 @@ def dev(
 
 def _get_module_path_and_agent_name(config_path: Path) -> tuple[str, str]:
     """Get module path and agent name, handling missing YAML gracefully."""
-    has_config = config_path.exists()
-    has_default_entrypoint = Path("src/main.py").exists()
-
-    # Fail fast if no project found
-    if not has_config and not has_default_entrypoint:
-        _handle_error(
-            "No agent project found in current directory.\n\n"
-            "Expected either:\n"
-            "  • .bedrock_agentcore.yaml configuration file, or\n"
-            "  • src/main.py entrypoint file\n\n"
-            "Run 'agentcore dev' from your agent project directory."
-        )
+    has_config, has_default_entrypoint = _ensure_config(config_path)
 
     # Try to load config if it exists
     if has_config:
@@ -93,8 +82,8 @@ def _get_module_path_and_agent_name(config_path: Path) -> tuple[str, str]:
                 return module_path, agent_config.name
 
             console.print(
-                "[yellow]⚠️ No agent entrypoint specified in configuration, using default module path: "
-                + "{DEFAULT_MODULE_PATH}[/yellow]"
+                f"[yellow]⚠️ No agent entrypoint specified in configuration, using default module path: "
+                f"{DEFAULT_MODULE_PATH}[/yellow]"
             )
             return DEFAULT_MODULE_PATH, "default"
         except Exception as e:
@@ -108,6 +97,42 @@ def _get_module_path_and_agent_name(config_path: Path) -> tuple[str, str]:
     # Fall back to default - must have default entrypoint here
     console.print(f"[yellow]⚠️ No configuration file found, using default module path: {DEFAULT_MODULE_PATH}[/yellow]")
     return DEFAULT_MODULE_PATH, "default"
+
+
+def _get_env_vars(config_path: Path) -> Dict[str, str]:
+    env_vars = dict()
+    if not config_path.exists():
+        return env_vars
+
+    try:
+        project_config = load_config(config_path, autofill_missing_aws=False)
+        agent_config = project_config.get_agent_config()
+        if agent_config and agent_config.memory and agent_config.memory.memory_id:
+            env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
+        if agent_config and agent_config.aws and agent_config.aws.region:
+            env_vars["AWS_REGION"] = agent_config.aws.region
+    except Exception as e:
+        _handle_warn(f"Failed to load configuration: {e}")
+        return env_vars
+    return env_vars
+
+
+def _ensure_config(config_path: Path) -> Tuple[bool, bool]:
+    """Ensure that project configuration and entrypoint file are defined."""
+    has_config = config_path.exists()
+    has_default_entrypoint = Path("src/main.py").exists()
+
+    # Fail fast if no project found
+    if not has_config and not has_default_entrypoint:
+        _handle_error(
+            "No agent project found in current directory.\n\n"
+            "Expected either:\n"
+            "  • .bedrock_agentcore.yaml configuration file, or\n"
+            "  • src/main.py entrypoint file\n\n"
+            "Run 'agentcore dev' from your agent project directory."
+        )
+
+    return has_config, has_default_entrypoint
 
 
 def _get_module_path_from_config(config_path: Path, agent_config) -> str:
@@ -126,19 +151,27 @@ def _get_module_path_from_config(config_path: Path, agent_config) -> str:
         return f"{entrypoint_path.stem}:app"
 
 
-def _setup_dev_environment(envs: List[str], port: Optional[int]) -> dict:
-    """Parse environment variables and setup development environment with port handling."""
-    env_vars = {}
+def _setup_dev_environment(envs: List[str], port: Optional[int], config_path: Path) -> dict:
+    """Parse environment variables and setup development environment with port handling.
+
+    Environment variable precedence (lowest to highest):
+    1. OS environment variables
+    2. Config file values
+    3. User-provided --env values (highest priority)
+    """
+    # Parse user-provided env vars
+    user_env_vars = {}
     if envs:
         for env_var in envs:
             if "=" not in env_var:
                 _handle_error(f"Invalid environment variable format: {env_var}. Use KEY=VALUE format.")
             key, value = env_var.split("=", 1)
-            env_vars[key] = value
+            user_env_vars[key] = value
 
-    # Prepare environment
+    # Build environment with correct precedence
     local_env = dict(os.environ)
-    local_env.update(env_vars)
+    local_env.update(_get_env_vars(config_path))  # Config values
+    local_env.update(user_env_vars)  # User values override config
     local_env["LOCAL_DEV"] = "1"
 
     requested_port = port or local_env.get("PORT", None)
