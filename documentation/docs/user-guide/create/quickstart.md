@@ -176,11 +176,11 @@ If you wish to further configure your project, first run `agentcore configure`
 
 #### Production Ready Checklist
 
-Before using your generated project in a prodcution environment, consult the following checklist:
+Before using your generated project in a production environment, consult the following checklist:
 
 - [ ] **Security:** Ensure secrets and API keys are properly handled. AgentCore Identity or AWS Secrets Manager are secure managed solutions.
 - [ ] **Build Environment:** Confirm Docker builds are being executed in the desired environment. This template uses local Docker builds by default. Consider AWS CodeBuild.
-- [ ] **Observability:** After deploying, [enable AgentCore observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html#observability-configure-builtin) to allow OTEL span data to be published to AWS CloudWatch.
+- [ ] **Observability:** After deploying, [enable AgentCore observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html#observability-configure-builtin) to allow OpenTelemetry span data to be published to AWS CloudWatch.
 - [ ] **CI/CD:** Build your new project into a CI/CD pipeline to achieve automated builds, rollbacks, and multiple deployment environments. Consider AWS CodePipeline.
 - [ ] **Access Control:** Configure access for clients to call into your AgentCore Runtime. Take advantage of the multiple endpoints (DEFAULT, PROD, DEV) created by this template.
 - [ ] **Testing** Write unit tests in the generated `test/` directory. Implement E2E tests for further coverage.
