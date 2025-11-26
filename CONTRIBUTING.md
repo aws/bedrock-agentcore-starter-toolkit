@@ -164,6 +164,14 @@ uv add requests
 uv add --dev pytest-mock
 ```
 
+### Updating snapshots
+
+`agentcore create` has snapshot tests to keep track of generated outputs. If you make a change that affects the template output, the test will fail.
+
+The expectation is to run `uv run pytest tests/create --snapshot-update`
+
+That will update the snapshot with the new output. The purpose of this system is to see the diff to the templates in commit/PR diff.
+
 ## Code of Conduct
 
 This project adheres to the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct). By participating, you're expected to uphold this code.

@@ -15,8 +15,10 @@ from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...services.xray import enable_transaction_search_if_needed
+from ...utils.runtime.agentcore_identity import _load_api_key_from_env_if_configured
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
+from ...utils.runtime.create_with_iam_eventual_consistency import retry_create_with_eventual_iam_consistency
 from ...utils.runtime.entrypoint import build_entrypoint_array
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
@@ -487,6 +489,25 @@ def _deploy_to_bedrock_agentcore(
 
     bedrock_agentcore_client = BedrockAgentCoreClient(region)
 
+    # Load API key from .env if configured (for cloud deployments)
+    if agent_config.api_key_env_var_name:
+        project_dir = config_path.parent
+        api_key = _load_api_key_from_env_if_configured(agent_config, project_dir)
+
+        if api_key:
+            # Store API key as API Key Credential Provider in AgentCore Identity
+            log.info("Storing API key in AgentCore Identity")
+            api_key_credential_provider_name = bedrock_agentcore_client.create_or_update_api_key_credential_provider(
+                api_key_credential_provider_name=agent_config.api_key_credential_provider_name,
+                api_key=api_key,
+                agent_name=agent_config.name,
+                key_name=agent_config.api_key_env_var_name,
+            )["name"]
+            agent_config.api_key_credential_provider_name = api_key_credential_provider_name
+
+    if agent_config.api_key_credential_provider_name:
+        env_vars["BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME"] = agent_config.api_key_credential_provider_name
+
     # Transform network configuration to AWS API format
     network_config = agent_config.aws.network_configuration.to_aws_dict()
     protocol_config = agent_config.aws.protocol_configuration.to_aws_dict()
@@ -507,60 +528,23 @@ def _deploy_to_bedrock_agentcore(
             "Please check configuration or enable auto-creation."
         )
 
-    # Retry logic for role validation eventual consistency
-    max_retries = 3
-    base_delay = 5  # Start with 2 seconds
-    max_delay = 15  # Max 32 seconds between retries
-
-    for attempt in range(max_retries + 1):
-        try:
-            agent_info = bedrock_agentcore_client.create_or_update_agent(
-                agent_id=agent_config.bedrock_agentcore.agent_id,
-                agent_name=agent_name,
-                execution_role_arn=agent_config.aws.execution_role,
-                deployment_type="container",
-                image_uri=f"{ecr_uri}:latest",
-                network_config=network_config,
-                authorizer_config=agent_config.get_authorizer_configuration(),
-                request_header_config=agent_config.request_header_configuration,
-                protocol_config=protocol_config,
-                env_vars=env_vars,
-                auto_update_on_conflict=auto_update_on_conflict,
-                lifecycle_config=lifecycle_config,
-            )
-            break  # Success! Exit retry loop
-
-        except ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "")
-            error_message = e.response.get("Error", {}).get("Message", "")
-
-            # Check if this is a role validation error
-            is_role_validation_error = (
-                error_code == "ValidationException"
-                and "Role validation failed" in error_message
-                and agent_config.aws.execution_role in error_message
-            )
-
-            if not is_role_validation_error or attempt == max_retries:
-                # Not a role validation error, or we've exhausted retries
-                if is_role_validation_error:
-                    log.error(
-                        "Role validation failed after %d attempts. The execution role may not be ready. Role: %s",
-                        max_retries + 1,
-                        agent_config.aws.execution_role,
-                    )
-                raise e
-
-            # Calculate delay with exponential backoff
-            delay = min(base_delay * (2**attempt), max_delay)
-            log.info(
-                "⏳ Role validation failed (attempt %d/%d), retrying in %ds... Role: %s",
-                attempt + 1,
-                max_retries + 1,
-                delay,
-                agent_config.aws.execution_role,
-            )
-            time.sleep(delay)
+    agent_info = retry_create_with_eventual_iam_consistency(
+        create_function=lambda: bedrock_agentcore_client.create_or_update_agent(
+            agent_id=agent_config.bedrock_agentcore.agent_id,
+            agent_name=agent_name,
+            execution_role_arn=agent_config.aws.execution_role,
+            deployment_type="container",
+            image_uri=f"{ecr_uri}:latest",
+            network_config=network_config,
+            authorizer_config=agent_config.get_authorizer_configuration(),
+            request_header_config=agent_config.request_header_configuration,
+            protocol_config=protocol_config,
+            env_vars=env_vars,
+            auto_update_on_conflict=auto_update_on_conflict,
+            lifecycle_config=lifecycle_config,
+        ),
+        execution_role_arn=agent_config.aws.execution_role,
+    )
 
     # Save deployment info
     agent_id = agent_info["id"]
@@ -1120,7 +1104,6 @@ def _launch_with_direct_code_deploy(
         LaunchResult with deployment details
     """
     import shutil
-    import time
 
     log.info("Launching with direct_code_deploy deployment for agent '%s'", agent_config.name)
 
@@ -1270,6 +1253,28 @@ def _launch_with_direct_code_deploy(
         # Prepare environment variables
         if env_vars is None:
             env_vars = {}
+
+        # Load API key from .env if configured
+        if agent_config.api_key_env_var_name:
+            project_dir = config_path.parent
+            api_key = _load_api_key_from_env_if_configured(agent_config, project_dir)
+
+            if api_key:
+                # Store API key as API Key Credential Provider in AgentCore Identity
+                log.info("Storing API key in AgentCore Identity")
+                api_key_credential_provider_name = (
+                    bedrock_agentcore_client.create_or_update_api_key_credential_provider(
+                        api_key_credential_provider_name=agent_config.api_key_credential_provider_name,
+                        api_key=api_key,
+                        agent_name=agent_config.name,
+                        key_name=agent_config.api_key_env_var_name,
+                    )["name"]
+                )
+                agent_config.api_key_credential_provider_name = api_key_credential_provider_name
+
+        if agent_config.api_key_credential_provider_name:
+            env_vars["BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME"] = agent_config.api_key_credential_provider_name
+
         if agent_config.memory and agent_config.memory.memory_id:
             env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
             env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
@@ -1282,22 +1287,26 @@ def _launch_with_direct_code_deploy(
             log.info("OpenTelemetry instrumentation enabled (aws-opentelemetry-distro detected)")
 
         # Create/update agent with code configuration
-        agent_info = bedrock_agentcore_client.create_or_update_agent(
-            agent_id=agent_config.bedrock_agentcore.agent_id,
-            agent_name=agent_config.name,
+
+        agent_info = retry_create_with_eventual_iam_consistency(
+            create_function=lambda: bedrock_agentcore_client.create_or_update_agent(
+                agent_id=agent_config.bedrock_agentcore.agent_id,
+                agent_name=agent_config.name,
+                execution_role_arn=agent_config.aws.execution_role,
+                deployment_type="direct_code_deploy",
+                code_s3_bucket=bucket_name,
+                code_s3_key=s3_key,
+                runtime_type=agent_config.runtime_type,  # Optional
+                entrypoint_array=entrypoint_array,  # Array format for Runtime API
+                entrypoint_handler=None,  # Not used
+                network_config=agent_config.aws.network_configuration.to_aws_dict(),
+                authorizer_config=agent_config.get_authorizer_configuration(),
+                request_header_config=agent_config.request_header_configuration,
+                protocol_config=agent_config.aws.protocol_configuration.to_aws_dict(),
+                env_vars=env_vars,
+                auto_update_on_conflict=auto_update_on_conflict,
+            ),
             execution_role_arn=agent_config.aws.execution_role,
-            deployment_type="direct_code_deploy",
-            code_s3_bucket=bucket_name,
-            code_s3_key=s3_key,
-            runtime_type=agent_config.runtime_type,  # Optional
-            entrypoint_array=entrypoint_array,  # Array format for Runtime API
-            entrypoint_handler=None,  # Not used
-            network_config=agent_config.aws.network_configuration.to_aws_dict(),
-            authorizer_config=agent_config.get_authorizer_configuration(),
-            request_header_config=agent_config.request_header_configuration,
-            protocol_config=agent_config.aws.protocol_configuration.to_aws_dict(),
-            env_vars=env_vars,
-            auto_update_on_conflict=auto_update_on_conflict,
         )
 
         # Save deployment info

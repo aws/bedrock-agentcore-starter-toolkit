@@ -694,6 +694,64 @@ class BedrockAgentCoreClient:
         self.logger.info("Successfully stopped session: %s", session_id)
         return response
 
+    def _update_api_key_credential_provider(
+        self, api_key_credential_provider_name: str, api_key: str, agent_name: str
+    ) -> Dict[Any, Any]:
+        try:
+            response = self.client.update_api_key_credential_provider(
+                name=api_key_credential_provider_name, apiKey=api_key
+            )
+
+            self.logger.info(
+                "Succesfully updated API Key Credential Provider: %s for agent %s",
+                api_key_credential_provider_name,
+                agent_name,
+            )
+            return response
+        except Exception as e:
+            self.logger.error(
+                "Failed to update API Key Credential Provider '%s' for agent'%s': %s",
+                api_key_credential_provider_name,
+                str(e),
+            )
+            raise
+
+    def _create_api_key_credential_provider(
+        self, api_key_credential_provider_name: str, api_key: str, agent_name: str
+    ) -> Dict[Any, Any]:
+        try:
+            response = self.client.create_api_key_credential_provider(
+                name=api_key_credential_provider_name, apiKey=api_key
+            )
+
+            self.logger.info(
+                "Succesfully create API Key Credential Provider: %s for agent %s",
+                api_key_credential_provider_name,
+                agent_name,
+            )
+            return response
+        except Exception as e:
+            self.logger.error(
+                "Failed to create API Key Credential Provider '%s' for agent'%s': %s",
+                api_key_credential_provider_name,
+                str(e),
+            )
+            raise
+
+    def create_or_update_api_key_credential_provider(
+        self, api_key_credential_provider_name: Optional[str], api_key: str, agent_name: str, key_name: str
+    ) -> Dict[Any, Any]:
+        """Get or Create an API Key Credential provider for an agent."""
+        if api_key_credential_provider_name:
+            return self._update_api_key_credential_provider(api_key_credential_provider_name, api_key, agent_name)
+        api_key_credential_provider_name = f"{agent_name.lower()}_{key_name.lower()}"
+
+        return self._create_api_key_credential_provider(api_key_credential_provider_name, api_key, agent_name)
+
+    def delete_api_key_credential_provider(self, api_key_credential_provider_name: str) -> Dict[Any, Any]:
+        """Delete an API Key Credential provider."""
+        return self.client.delete_api_key_credential_provider(name=api_key_credential_provider_name)
+
 
 class HttpBedrockAgentCoreClient:
     """Bedrock AgentCore client for agent management using HTTP requests with bearer token."""

@@ -10,8 +10,9 @@ from ..cli.gateway.commands import (
 from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
 from ..utils.logging_config import setup_toolkit_logging
+from .create.commands import create_app
+from .create.import_agent.commands import import_agent
 from .identity.commands import identity_app
-from .import_agent.commands import import_agent
 from .runtime.commands import (
     configure_app,
     destroy,
@@ -20,6 +21,7 @@ from .runtime.commands import (
     status,
     stop_session,
 )
+from .runtime.dev_command import dev
 
 app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
 
@@ -30,7 +32,7 @@ setup_toolkit_logging(mode="cli")
 app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("launch")(launch)
-app.command("import-agent")(import_agent)
+app.command("dev")(dev)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
 app.add_typer(identity_app, name="identity")
@@ -47,7 +49,11 @@ app.add_typer(memory_app, name="memory")
 # observability
 app.add_typer(observability_app, name="obs")
 
-# import-agent
+# create
+app.add_typer(create_app, name="create")
+create_app.command("import")(import_agent)
+
+# Alias: agentcore import-agent -> agentcore create import
 app.command("import-agent")(import_agent)
 
 
