@@ -211,7 +211,7 @@ def configure(
 
 
 @requires_aws_creds
-def launch(
+def deploy(
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),

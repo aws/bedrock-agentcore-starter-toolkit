@@ -31,7 +31,7 @@ setup_toolkit_logging(mode="cli")
 # runtime
 app.command("invoke")(invoke)
 app.command("status")(status)
-app.command("launch")(launch)
+app.command("deploy")(deploy)
 app.command("dev")(dev)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
