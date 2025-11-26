@@ -115,7 +115,7 @@ class TestLoadApiKeyFromEnvIfConfigured:
         assert result is None
 
     def test_api_key_configured_no_env_file(self, tmp_path):
-        """Test when api_key_env_var_name is configured but no .env file exists."""
+        """Test when api_key_env_var_name is configured but no .env.local file exists."""
         agent_config = Mock()
         agent_config.api_key_env_var_name = "OPENAI_API_KEY"
 
@@ -124,9 +124,9 @@ class TestLoadApiKeyFromEnvIfConfigured:
         assert result is None
 
     def test_api_key_loaded_successfully(self, tmp_path):
-        """Test successfully loading API key from .env file."""
-        # Create .env file
-        env_file = tmp_path / ".env"
+        """Test successfully loading API key from .env.local file."""
+        # Create .env.local file
+        env_file = tmp_path / ".env.local"
         env_file.write_text("OPENAI_API_KEY=sk-test123456")
 
         agent_config = Mock()
@@ -137,9 +137,9 @@ class TestLoadApiKeyFromEnvIfConfigured:
         assert result == "sk-test123456"
 
     def test_api_key_not_in_env_file(self, tmp_path):
-        """Test when .env file exists but doesn't contain the required key."""
-        # Create .env file without the required key
-        env_file = tmp_path / ".env"
+        """Test when .env.local file exists but doesn't contain the required key."""
+        # Create .env.local file without the required key
+        env_file = tmp_path / ".env.local"
         env_file.write_text("OTHER_KEY=value")
 
         agent_config = Mock()
@@ -150,8 +150,8 @@ class TestLoadApiKeyFromEnvIfConfigured:
         assert result is None
 
     def test_api_key_with_quotes(self, tmp_path):
-        """Test loading API key that has quotes in .env file."""
-        env_file = tmp_path / ".env"
+        """Test loading API key that has quotes in .env.local file."""
+        env_file = tmp_path / ".env.local"
         env_file.write_text('ANTHROPIC_API_KEY="sk-ant-test123"')
 
         agent_config = Mock()
@@ -163,7 +163,7 @@ class TestLoadApiKeyFromEnvIfConfigured:
 
     def test_different_api_key_names(self, tmp_path):
         """Test loading different API key environment variable names."""
-        env_file = tmp_path / ".env"
+        env_file = tmp_path / ".env.local"
         env_file.write_text("CUSTOM_API_KEY=custom-secret\nGEMINI_API_KEY=gemini-secret")
 
         # Test custom key
@@ -178,8 +178,8 @@ class TestLoadApiKeyFromEnvIfConfigured:
         assert result == "gemini-secret"
 
     def test_empty_api_key_value(self, tmp_path):
-        """Test when API key value is empty in .env file."""
-        env_file = tmp_path / ".env"
+        """Test when API key value is empty in .env.local file."""
+        env_file = tmp_path / ".env.local"
         env_file.write_text("OPENAI_API_KEY=")
 
         agent_config = Mock()

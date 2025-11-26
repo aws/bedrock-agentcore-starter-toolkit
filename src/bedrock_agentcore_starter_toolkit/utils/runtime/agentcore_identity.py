@@ -76,7 +76,7 @@ def _load_api_key_from_env_if_configured(
     env_var_name = agent_config.api_key_env_var_name
 
     # Look for .env file in project directory
-    env_file = project_dir / ".env"
+    env_file = project_dir / ".env.local"
 
     if not env_file.exists():
         log.warning(
@@ -89,13 +89,13 @@ def _load_api_key_from_env_if_configured(
         return None
 
     # Parse .env file and get the specific variable
-    log.info("Loading API key from .env file: %s", env_file)
+    log.info("Loading API key from .env.local file: %s", env_file)
     parsed_env = _parse_env_file(env_file)
 
     api_key = parsed_env.get(env_var_name)
 
     if api_key:
-        log.info("Loaded %s from .env file", env_var_name)
+        log.info("Loaded %s from .env.local file", env_var_name)
         return api_key
     else:
         log.warning(
