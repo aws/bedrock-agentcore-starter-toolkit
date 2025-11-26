@@ -117,7 +117,7 @@ browser_tool = AgentCoreBrowser(region="us-west-2")
 agent = Agent(tools=[browser_tool.browser])
 
 # Test the agent with a web search prompt
-prompt = "what are the services offered by Bedrock AgentCore? Use the documentaiton link if needed: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"
+prompt = "what are the services offered by Bedrock AgentCore? Use the documentation link if needed: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"
 print(f"\\nPrompt: {prompt}\\n")
 
 response = agent(prompt)
@@ -680,7 +680,7 @@ This code:
 
 * Creates a managed browser session using AgentCore Browser
 * Connects to the remote Chrome browser using Playwright's Chrome DevTools Protocol (CDP)
-* Navigates to [Agentcore documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html) and prints the page title
+* Navigates to [AgentCore documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html) and prints the page title
 * Keeps the session alive for 2 minutes, allowing you to view it in the AWS Console
 * Properly closes the browser and cleans up resources
 
