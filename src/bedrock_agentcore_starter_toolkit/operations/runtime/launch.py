@@ -798,7 +798,7 @@ def launch_bedrock_agentcore(
         raise RuntimeError(
             "Cannot run locally - no container runtime available\n"
             "💡 Recommendation: Use CodeBuild for cloud deployment\n"
-            "💡 Run 'agentcore launch' (without --local) for CodeBuild deployment\n"
+            "💡 Run 'agentcore deploy' (without --local) for CodeBuild deployment\n"
             "💡 For local runs, please install Docker, Finch, or Podman"
         )
 
@@ -807,7 +807,7 @@ def launch_bedrock_agentcore(
         raise RuntimeError(
             "Cannot build locally - no container runtime available\n"
             "💡 Recommendation: Use CodeBuild for cloud deployment (no Docker needed)\n"
-            "💡 Run 'agentcore launch' (without --local-build) for CodeBuild deployment\n"
+            "💡 Run 'agentcore deploy' (without --local-build) for CodeBuild deployment\n"
             "💡 For local builds, please install Docker, Finch, or Podman"
         )
 
@@ -838,7 +838,7 @@ def launch_bedrock_agentcore(
             raise RuntimeError(
                 f"Build failed: {error_message}\n"
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment"
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment"
             )
         else:
             raise RuntimeError(f"Build failed: {error_message}")

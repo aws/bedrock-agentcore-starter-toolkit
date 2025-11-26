@@ -77,7 +77,7 @@ langgraph" > requirements.txt
 
 # Configure and deploy
 agentcore configure --entrypoint langgraph_agent.py
-agentcore launch
+agentcore deploy
 
 # Test
 agentcore invoke '{"prompt": "Explain LangGraph in one sentence"}'
@@ -152,7 +152,7 @@ crewai-tools" > requirements.txt
 
 # Configure and deploy
 agentcore configure --entrypoint crewai_agent.py
-agentcore launch
+agentcore deploy
 
 # Test
 agentcore invoke '{"prompt": "What are the benefits of using CrewAI?"}'
@@ -215,7 +215,7 @@ def invoke(payload):
 Then set the environment variable during deployment:
 
 ```bash
-agentcore launch --env MY_API_KEY=your-key-here
+agentcore deploy --env MY_API_KEY=your-key-here
 ```
 
 ## Troubleshooting

@@ -49,7 +49,7 @@ def _show_configuration_not_found_panel():
             "No agent configuration found in this directory.\n\n"
             "[bold]Get Started:[/bold]\n"
             "   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
-            "   [cyan]agentcore launch[/cyan]\n"
+            "   [cyan]agentcore deploy[/cyan]\n"
             '   [cyan]agentcore invoke \'{"prompt": "Hello"}\'[/cyan]',
             title="⚠️ Setup Required",
             border_style="bright_blue",
@@ -211,7 +211,7 @@ def configure(
 
 
 @requires_aws_creds
-def launch(
+def deploy(
     agent: Optional[str] = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
@@ -244,7 +244,7 @@ def launch(
         hidden=True,
     ),
 ):
-    """Launch Bedrock AgentCore with three deployment modes.
+    """Deploy Bedrock AgentCore with three deployment modes (formerly 'launch').
 
     🚀 DEFAULT (no flags): Cloud runtime (RECOMMENDED)
        - direct_code_deploy deployment: Direct deploy Python code to runtime
@@ -265,15 +265,15 @@ def launch(
        - Use when you need custom build control but want cloud deployment
 
     MIGRATION GUIDE:
-    - OLD: agentcore launch --code-build  →  NEW: agentcore launch
-    - OLD: agentcore launch --local       →  NEW: agentcore launch --local (unchanged)
-    - NEW: agentcore launch --local-build (build locally + deploy to cloud)
+    - OLD: agentcore launch --code-build  →  NEW: agentcore deploy
+    - OLD: agentcore launch --local       →  NEW: agentcore deploy --local (unchanged)
+    - NEW: agentcore deploy --local-build (build locally + deploy to cloud)
     """
     # Handle deprecated --code-build flag
     if code_build:
         console.print("[yellow]⚠️  DEPRECATION WARNING: --code-build flag is deprecated[/yellow]")
         console.print("[yellow]   CodeBuild is now the default deployment method[/yellow]")
-        console.print("[yellow]   MIGRATION: Simply use 'agentcore launch' (no flags needed)[/yellow]")
+        console.print("[yellow]   MIGRATION: Simply use 'agentcore deploy' (no flags needed)[/yellow]")
         console.print("[yellow]   This flag will be removed in a future version[/yellow]\n")
 
     # Validate mutually exclusive options
@@ -295,8 +295,8 @@ def launch(
             _handle_error(
                 "Error: --local-build is only supported for container deployment type.\n"
                 "For direct_code_deploy deployment, use:\n"
-                "  • 'agentcore launch' (default)\n"
-                "  • 'agentcore launch --local' (local execution)"
+                "  • 'agentcore deploy' (default)\n"
+                "  • 'agentcore deploy --local' (local execution)"
             )
 
         if force_rebuild_deps and deployment_type != "direct_code_deploy":
@@ -345,10 +345,10 @@ def launch(
             # Show deployment options hint for first-time users
             console.print("[dim]💡 Deployment options:[/dim]")
             mode_name = "CodeBuild" if deployment_type == "container" else "Cloud"
-            console.print(f"[dim]   • agentcore launch                → {mode_name} (current)[/dim]")
-            console.print("[dim]   • agentcore launch --local        → Local development[/dim]")
+            console.print(f"[dim]   • agentcore deploy                → {mode_name} (current)[/dim]")
+            console.print("[dim]   • agentcore deploy --local        → Local development[/dim]")
             if deployment_type == "container":
-                console.print("[dim]   • agentcore launch --local-build  → Local build + cloud deploy[/dim]")
+                console.print("[dim]   • agentcore deploy --local-build  → Local build + cloud deploy[/dim]")
             console.print()
 
         # Use the operations module
@@ -803,7 +803,7 @@ def invoke(
             agent_config = None
         _show_invoke_info_panel(agent_display, invoke_result=None, config=agent_config)
         if "not deployed" in str(e):
-            _show_error_response("Agent not deployed - run 'agentcore launch' to deploy")
+            _show_error_response("Agent not deployed - run 'agentcore deploy' to deploy")
         else:
             _show_error_response(f"Invocation failed: {str(e)}")
         raise typer.Exit(1) from e
@@ -879,7 +879,7 @@ def status(
                             f"ECR Repository: [dim]{status_json['config']['ecr_repository']}[/dim]\n\n"
                             f"Your agent is configured but not yet launched.\n\n"
                             f"[bold]Next Steps:[/bold]\n"
-                            f"   [cyan]agentcore launch[/cyan]",
+                            f"   [cyan]agentcore deploy[/cyan]",
                             title=f"Agent Status: {status_json['config']['name']}",
                             border_style="bright_blue",
                         )
@@ -1046,7 +1046,7 @@ def status(
                 f"Error: {str(e)}\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
-                f"   [cyan]agentcore launch[/cyan]",
+                f"   [cyan]agentcore deploy[/cyan]",
                 title="❌ Status Error",
                 border_style="bright_blue",
             )
@@ -1059,7 +1059,7 @@ def status(
                 f"Unexpected error: {str(e)}\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
-                f"   [cyan]agentcore launch[/cyan]",
+                f"   [cyan]agentcore deploy[/cyan]",
                 title="❌ Status Error",
                 border_style="bright_blue",
             )
@@ -1293,7 +1293,7 @@ def destroy(
         if not dry_run and not result.errors:
             console.print("\n[dim]Next steps:[/dim]")
             console.print("  • Run 'agentcore configure --entrypoint <file>' to set up a new agent")
-            console.print("  • Run 'agentcore launch' to deploy to Bedrock AgentCore")
+            console.print("  • Run 'agentcore deploy' to deploy to Bedrock AgentCore")
         elif dry_run:
             console.print("\n[dim]To actually destroy these resources, run:[/dim]")
             destroy_cmd = f"  agentcore destroy{f' --agent {actual_agent_name}' if agent else ''}"
@@ -1305,7 +1305,7 @@ def destroy(
         console.print("[red].bedrock_agentcore.yaml not found[/red]")
         console.print("Run the following commands to get started:")
         console.print("  1. agentcore configure --entrypoint your_agent.py")
-        console.print("  2. agentcore launch")
+        console.print("  2. agentcore deploy")
         console.print('  3. agentcore invoke \'{"message": "Hello"}\'')
         raise typer.Exit(1) from None
     except ValueError as e:

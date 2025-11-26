@@ -220,7 +220,7 @@ class TestStopSessionOperation:
             )
 
         assert "is not deployed" in str(exc_info.value)
-        assert "agentcore launch" in str(exc_info.value)
+        assert "agentcore deploy" in str(exc_info.value)
 
     def test_stop_session_no_session_id_provided_or_tracked(self, mock_boto3_clients, tmp_path):
         """Test stopping session fails when no session ID is provided or tracked."""

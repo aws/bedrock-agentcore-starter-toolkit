@@ -339,7 +339,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch", "--local"], catch_exceptions=False)
+                result = self.runner.invoke(app, ["deploy", "--local"], catch_exceptions=False)
                 # Just check exit code
                 assert result.exit_code == 0 or result.exit_code == 2
                 # Verify the core function was called correctly
@@ -646,7 +646,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch"], catch_exceptions=False)
+                result = self.runner.invoke(app, ["deploy"], catch_exceptions=False)
                 # Just check exit code
                 assert result.exit_code == 0 or result.exit_code == 2
                 # Verify the core function was called correctly
@@ -821,7 +821,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                self.runner.invoke(app, ["launch"])
+                self.runner.invoke(app, ["deploy"])
 
                 # If launch was called and threw exception, _handle_error should be called
                 if mock_launch.called:
@@ -859,7 +859,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                self.runner.invoke(app, ["launch"])
+                self.runner.invoke(app, ["deploy"])
 
                 # If launch was called and threw exception, _handle_error should be called
                 if mock_launch.called:
@@ -898,8 +898,8 @@ agents:
                 result = self.runner.invoke(app, ["invoke", '{"message": "hello"}'])
 
                 assert result.exit_code == 1
-                assert "Agent not deployed - run 'agentcore launch' to deploy" in result.stdout
-                assert "agentcore launch" in result.stdout
+                assert "Agent not deployed - run 'agentcore deploy' to deploy" in result.stdout
+                assert "agentcore deploy" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -1246,7 +1246,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch", "--code-build"])
+                result = self.runner.invoke(app, ["deploy", "--code-build"])
                 # Just check that the deprecation warning appears
                 assert "DEPRECATION WARNING" in result.stdout
                 assert "--code-build flag is deprecated" in result.stdout
@@ -1702,7 +1702,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch", "--local-build"])
+                result = self.runner.invoke(app, ["deploy", "--local-build"])
                 # Test expects failure due to CLI validation
                 assert result.exit_code == 0  # Should work with container deployment
                 assert "Local Build Success" in result.stdout or "agentcore status" in result.stdout
@@ -1753,7 +1753,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch"])
+                result = self.runner.invoke(app, ["deploy"])
                 assert result.exit_code == 0
                 assert "Deployment Success" in result.stdout
                 assert "ARM64 container deployed" in result.stdout
@@ -1777,7 +1777,7 @@ agents:
 
     def test_launch_help_text_updated(self):
         """Test that help text reflects the three simplified launch modes."""
-        result = self.runner.invoke(app, ["launch", "--help"])
+        result = self.runner.invoke(app, ["deploy", "--help"])
         assert result.exit_code == 0
 
         # Check that old flags are no longer in help text
@@ -1804,7 +1804,7 @@ agents:
 
         try:
             # We only verify the exit code here, not the content
-            result = self.runner.invoke(app, ["launch"])
+            result = self.runner.invoke(app, ["deploy"])
             assert result.exit_code == 1
 
             # Skip checking for output text since it's not captured properly
@@ -2334,7 +2334,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch", "--local", "--env", "KEY1=value1", "--env", "KEY2=value2"])
+                result = self.runner.invoke(app, ["deploy", "--local", "--env", "KEY1=value1", "--env", "KEY2=value2"])
                 assert result.exit_code == 0
 
                 # Verify environment variables were parsed correctly
@@ -2413,7 +2413,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch"])
+                result = self.runner.invoke(app, ["deploy"])
                 assert result.exit_code == 0
                 assert "Deployment Success" in result.stdout
                 assert "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123" in result.stdout
@@ -4253,7 +4253,7 @@ agents:
 
                 assert result.exit_code == 0
                 assert "Configured but not deployed" in result.stdout
-                assert "agentcore launch" in result.stdout
+                assert "agentcore deploy" in result.stdout
             finally:
                 os.chdir(original_cwd)
 
@@ -4440,7 +4440,7 @@ agents:
             os.chdir(tmp_path)
 
             try:
-                result = self.runner.invoke(app, ["launch", "--auto-update-on-conflict"])
+                result = self.runner.invoke(app, ["deploy", "--auto-update-on-conflict"])
 
                 assert result.exit_code == 0
 
