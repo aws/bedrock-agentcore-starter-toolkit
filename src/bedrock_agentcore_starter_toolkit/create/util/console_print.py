@@ -14,6 +14,7 @@ def emit_create_completed_message(ctx: ProjectContext):
 
     # Common "Next Steps" styling to match the screenshot
     next_steps_header = "[bold]Next Steps[/bold]"
+    deployment_header = "[bold]Deployment[/bold]"
 
     intro_text = "You're ready to go! Happy building 🚀\n"
 
@@ -39,6 +40,11 @@ def emit_create_completed_message(ctx: ProjectContext):
 
     memory_output_line = f"Memory Name: [cyan]{ctx.memory_name}[/cyan]\n" if ctx.memory_enabled else ""
 
+    optional_cdk_line = (
+        "[cyan]npm run cdk bootstrap[/cyan] - If your AWS environment isn't bootstrapped yet\n"
+        if ctx.iac_provider == IACProvider.CDK
+        else ""
+    )
     next_steps_cmd = (
         "cd cdk && npm install && npm run cdk synth && npm run cdk:deploy"
         if ctx.iac_provider == IACProvider.CDK
@@ -68,6 +74,9 @@ def emit_create_completed_message(ctx: ProjectContext):
         f"[cyan]agentcore dev[/cyan] - Start local development server\n"
         f"Log into AWS with [cyan]aws login[/cyan]\n"
         f'[cyan]agentcore invoke --dev "Hello"[/cyan] - Test your agent locally\n'
+        f"\n"
+        f"{deployment_header}\n"
+        f"{optional_cdk_line}"
         f"[cyan]{next_steps_cmd}[/cyan] - Deploy your project\n"
         f"[cyan]agentcore invoke[/cyan] - Test your deployed agent",
     )

@@ -18,7 +18,10 @@ def ask_text_required(title: str, redact: bool = False) -> str:
 
 def prompt_runtime_or_monorepo(runtime_only_text: str):
     """Prompt user to choose between Runtime or Monorepo project type."""
-    choice = select_one(title="How would you like to start?", options=[runtime_only_text, "A production-ready agent"])
+    choice = select_one(
+        title="How would you like to start?",
+        options=[runtime_only_text, "A production-ready agent defined with Terraform or CDK"],
+    )
     return choice
 
 
