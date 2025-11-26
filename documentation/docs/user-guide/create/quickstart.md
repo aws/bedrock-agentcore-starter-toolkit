@@ -246,7 +246,8 @@ Or, for `production` template, delete stacks and resources using CDK/Terraform d
   * AgentCore Identity in deployed environments
   * `.env.local` fallback in local dev (`LOCAL_DEV=1`)
 
-For the `production` template, it is your responsibility to implement API key handling.
+For the `production` template, it is your responsibility to implement API key handling. Using Bedrock Agentcore Identity
+or AWS Secrets Manager is recommended.
 
 ### MCP Tools
 
@@ -263,13 +264,13 @@ For the `production` template, a custom MCP tool is defined in `mcp/lambda/handl
 ### A2A and MCP Protocols
 
 MCP, and A2A the other two protocols supported by the [AgentCore Runtime Service Contract](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-service-contract.html), are not currently supported
-by thte `create` tool out of the box. Adapting a `create` output for another protocol can also be considered.
+by the `create` tool out of the box. Adapting a `create` output for another protocol can also be considered.
 
 ---
 
 ## Next Steps
 
-* Refine agent logic in `src/main.py`
+* Customize agent logic in `src/main.py`
 * Add additional MCP integrations in `src/mcp_client/`
 * For production template, modify your project to adhere to the production ready checklist.
 * Ensure that `src/model/load.py` has your desired LLM provider configuration.

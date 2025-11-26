@@ -114,7 +114,7 @@ context = "thread"
 parallel = true
 concurrency = ["thread", "multiprocessing"]
 omit = [
-    "src/bedrock_agentcore_starter_toolkit/cli/import_agent/*", # CLI requires user input to test
+    "src/bedrock_agentcore_starter_toolkit/cli/create/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py", # CLI commands require user interaction
     "src/bedrock_agentcore_starter_toolkit/cli/create/commands.py", # CLI commands require user interaction
     "src/bedrock_agentcore_starter_toolkit/cli/create/prompt_util.py", # Interactive prompts require user input
@@ -131,7 +131,7 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 85
+fail_under = 88
 skip_covered = false
 skip_empty = false
 
