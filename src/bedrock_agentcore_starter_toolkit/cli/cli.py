@@ -1,7 +1,5 @@
 """BedrockAgentCore CLI main module."""
 
-import functools
-
 import typer
 
 from ..cli.gateway.commands import (
@@ -60,26 +58,7 @@ app.command("import-agent")(import_agent)
 
 
 # Backward compatibility aliases (deprecated)
-def deprecated_command(new_command: str):
-    """Decorator to add deprecation warning to commands.
-
-    We are currently using this for the `launch` command.
-    """
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            typer.echo(f"⚠️  Warning: This command is deprecated. Use '{new_command}' instead.", err=True)
-            return func(*args, **kwargs)
-
-        # Update docstring to show deprecation in help
-        wrapper.__doc__ = f"⚠️  DEPRECATED: Use '{new_command}' instead.\n\n{func.__doc__ or ''}"
-        return wrapper
-
-    return decorator
-
-
-app.command("launch", hidden=True, deprecated=True)(deprecated_command("agentcore deploy")(deploy))
+app.command("launch", hidden=True)(deprecated_command("agentcore deploy")(deploy))
 
 
 def main():

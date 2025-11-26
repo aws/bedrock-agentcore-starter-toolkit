@@ -28,7 +28,7 @@ class TestBedrockAgentCoreCLI:
             result = self.runner.invoke(app, ["launch"])
 
             # Should show deprecation warning
-            assert "⚠️  Warning: This command is deprecated. Use 'agentcore deploy' instead." in result.stderr
+            assert "⚠️  Warning: This command name has been deprecated. Use 'agentcore deploy' instead" in result.stderr
             # Should attempt to execute (will fail due to missing config, but that's expected)
             assert result.exit_code != 0  # Fails due to missing config
 
