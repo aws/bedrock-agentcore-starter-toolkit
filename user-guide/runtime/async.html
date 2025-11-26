@@ -2704,7 +2704,7 @@ curl<span class="w"> </span>http://localhost:8080/ping
 <h3 id="local-testing-with-agentcore-cli">Local Testing with AgentCore CLI<a class="headerlink" href="#local-testing-with-agentcore-cli" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Configure and test locally</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class="w"> </span>my_async_agent.py
-agentcore<span class="w"> </span>launch<span class="w"> </span>-l
+agentcore<span class="w"> </span>deploy<span class="w"> </span>-l
 
 <span class="c1"># Test in another terminal</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;start processing&quot;}&#39;</span><span class="w"> </span>-l

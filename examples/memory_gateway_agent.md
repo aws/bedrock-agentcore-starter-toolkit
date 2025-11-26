@@ -469,7 +469,7 @@ agentcore configure -e agent_with_gateway.py
 
 # Deploy with short-term memory
 export MEMORY_ID=<your-stm-id>  # Use the STM ID from the setup_memory.py output
-agentcore launch
+agentcore deploy
 ```
 
 AgentCore CLI will handle:
@@ -515,7 +515,7 @@ Now, let's deploy with long-term memory and test cross-session memory:
 ```
 # Update deployment with long-term memory
 export MEMORY_ID=<your-ltm-id>  # Use the LTM ID from setup_memory.py output
-agentcore launch
+agentcore deploy
 
 # Tell agent your preferences in one session
 SESSION1="first-session-12345678901234567890123456"

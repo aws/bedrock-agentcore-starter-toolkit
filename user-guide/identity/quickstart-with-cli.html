@@ -2888,7 +2888,7 @@ boto3
 <ul>
 <li>Creates OAuth credential provider in Identity service</li>
 <li>Saves provider configuration to <code>.bedrock_agentcore.yaml</code></li>
-<li>IAM permissions will be added automatically during <code>launch</code></li>
+<li>IAM permissions will be added automatically during <code>deploy</code></li>
 </ul>
 <h2 id="step-6-create-workload-identity">Step 6: Create Workload Identity<a class="headerlink" href="#step-6-create-workload-identity" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>create-workload-identity<span class="w"> </span><span class="se">\</span>
@@ -2900,7 +2900,7 @@ boto3
 <li>Enables OAuth flows for external service access</li>
 </ul>
 <h2 id="step-7-deploy-agent">Step 7: Deploy Agent<a class="headerlink" href="#step-7-deploy-agent" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy
 </code></pre></div>
 <p><strong>What happens during launch:</strong></p>
 <ul>

@@ -2151,10 +2151,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#launch" class="md-nav__link">
+  <a href="#deploy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Launch
+        Deploy
       
     </span>
   </a>
@@ -2696,10 +2696,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#launch" class="md-nav__link">
+  <a href="#deploy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Launch
+        Deploy
       
     </span>
   </a>
@@ -3346,9 +3346,9 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 <span class="w">  </span>--idle-timeout<span class="w"> </span><span class="m">1800</span><span class="w"> </span><span class="se">\ </span><span class="w">   </span><span class="c1"># 30 minutes idle before termination</span>
 <span class="w">  </span>--max-lifetime<span class="w"> </span><span class="m">7200</span><span class="w">      </span><span class="c1"># 2 hours max regardless of activity</span>
 </code></pre></div>
-<h3 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h3>
+<h3 id="deploy">Deploy<a class="headerlink" href="#deploy" title="Permanent link">&para;</a></h3>
 <p>Deploy agents to AWS or run locally.</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
 </code></pre></div>
 <p>Options:</p>
 <ul>
@@ -3370,19 +3370,19 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 </ul>
 <p><strong>Deployment Modes:</strong></p>
 <div class="highlight"><pre><span></span><code><span class="c1"># CodeBuild (default) - Cloud build, no Docker required</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># Local mode - Build and run locally</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--local
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--local
 
 <span class="c1"># Local build mode - Build locally, deploy to cloud</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--local-build
 </code></pre></div>
 <p><strong>Memory Provisioning:</strong></p>
-<p>During launch, if memory is enabled:</p>
+<p>During deploy, if memory is enabled:</p>
 <ul>
 <li>Memory resources are created and provisioned</li>
-<li>Launch waits for memory to become ACTIVE before proceeding</li>
+<li>Deploy waits for memory to become ACTIVE before proceeding</li>
 <li>STM provisioning: ~30-90 seconds</li>
 <li>LTM provisioning: ~120-180 seconds</li>
 <li>Progress updates displayed during wait</li>
@@ -3631,7 +3631,7 @@ https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xxxxx/.well-known/openid-c
 <ul>
 <li>Creates the credential provider in AgentCore Identity</li>
 <li>Adds provider configuration to <code>.bedrock_agentcore.yaml</code></li>
-<li>IAM permissions added automatically during <code>agentcore launch</code></li>
+<li>IAM permissions added automatically during <code>agentcore deploy</code></li>
 </ul>
 <p><strong>Note:</strong> After creating a provider, you must register the returned <code>callbackUrl</code> in your OAuth provider’s settings (except for Cognito, which is auto-configured with <code>--cognito-pool-id</code>).</p>
 <p><strong>Examples:</strong></p>
@@ -3756,7 +3756,7 @@ agentcore<span class="w"> </span>identity<span class="w"> </span>create-workload
 <span class="w">  </span>--name<span class="w"> </span>my-agent-workload
 
 <span class="c1"># 6. Deploy agent</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># 7. Get bearer token for Runtime auth</span>
 <span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>agentcore<span class="w"> </span>identity<span class="w"> </span>get-cognito-inbound-token<span class="k">)</span>
@@ -4111,19 +4111,19 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>set-default<sp
 </code></pre></div>
 <h3 id="deploy-and-run-agents">Deploy and Run Agents<a class="headerlink" href="#deploy-and-run-agents" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Deploy to AWS (default - uses CodeBuild)</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># Run locally</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--local
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--local
 
 <span class="c1"># Build locally, deploy to cloud</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--local-build
 
-<span class="c1"># Launch with environment variables</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--env<span class="w"> </span><span class="nv">API_KEY</span><span class="o">=</span>abc123<span class="w"> </span>--env<span class="w"> </span><span class="nv">DEBUG</span><span class="o">=</span><span class="nb">true</span>
+<span class="c1"># Deploy with environment variables</span>
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--env<span class="w"> </span><span class="nv">API_KEY</span><span class="o">=</span>abc123<span class="w"> </span>--env<span class="w"> </span><span class="nv">DEBUG</span><span class="o">=</span><span class="nb">true</span>
 
 <span class="c1"># Auto-update if agent exists</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--auto-update-on-conflict
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--auto-update-on-conflict
 </code></pre></div>
 <h3 id="invoke-agents">Invoke Agents<a class="headerlink" href="#invoke-agents" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Basic invocation</span>

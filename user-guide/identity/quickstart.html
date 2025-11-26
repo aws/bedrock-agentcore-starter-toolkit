@@ -2790,7 +2790,7 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>update-user-pool-c
 </code></pre></div>
 <h2 id="step-3-deploy-the-agent-to-agentcore-runtime">Step 3:  Deploy the agent to AgentCore Runtime<a class="headerlink" href="#step-3-deploy-the-agent-to-agentcore-runtime" title="Permanent link">&para;</a></h2>
 <p>We will host this agent on AgentCore Runtime. We can do this easily with the AgentCore SDK we installed earlier.</p>
-<p>From your terminal, run <code>agentcore configure -e agentcoreidentityquickstart.py</code> and <code>agentcore launch</code> . The deployment will work with the defaults set by <code>agentcore configure</code>, but you may customize them. Ensure that you select "No" for the <code>Configure OAuth authorizer instead</code> step. We want to use IAM authorization for this guide.</p>
+<p>From your terminal, run <code>agentcore configure -e agentcoreidentityquickstart.py</code> and <code>agentcore deploy</code> . The deployment will work with the defaults set by <code>agentcore configure</code>, but you may customize them. Ensure that you select "No" for the <code>Configure OAuth authorizer instead</code> step. We want to use IAM authorization for this guide.</p>
 <h3 id="update-the-iam-policy-of-the-agent-to-be-able-to-access-the-token-vault-and-client-secret">Update the IAM policy of the agent to be able to access the token vault, and client secret<a class="headerlink" href="#update-the-iam-policy-of-the-agent-to-be-able-to-access-the-token-vault-and-client-secret" title="Permanent link">&para;</a></h3>
 <p>You will need to update the IAM policy of your agent that was created by or used with <code>agentcore configure</code>. This script will read your agent's configuration YAML and append the appropriate policy. You can copy and paste this script, or save it to a file and execute it.</p>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
@@ -2854,7 +2854,7 @@ rm<span class="w"> </span>agentcore-identity-policy.json
 <p>Your browser should redirect to your configured OAuth2 callback URL, which handles the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/oauth2-authorization-url-session-binding.html">session binding flow</a>. Ensure your OAuth2 callback server provides clear success and error responses to indicate the authorization status.</p>
 <p>Note that if you interrupt an invocation without completing authorization, you may need to request a new URL using a new session ID (<code>--session-id</code> parameter).</p>
 <h3 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h3>
-<p>Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run <code>agentcore launch</code></p>
+<p>Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run <code>agentcore deploy</code></p>
 <h2 id="clean-up">Clean Up<a class="headerlink" href="#clean-up" title="Permanent link">&para;</a></h2>
 <p>After you're done, you can delete the Cognito user pool, Amazon ECR repo, CodeBuild Project, IAM roles for the agent and CodeBuild project, and finally delete the agent, and credential provider.</p>
 <h2 id="security-best-practices">Security Best Practices<a class="headerlink" href="#security-best-practices" title="Permanent link">&para;</a></h2>

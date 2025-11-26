@@ -147,7 +147,7 @@ agentcore configure -e agentcore_starter_strands.py
 Launch your agent to the AgentCore runtime environment:
 
 ```
-agentcore launch
+agentcore deploy
 
 # This performs:
 #   1. Memory resource provisioning (STM + LTM strategies)
@@ -158,7 +158,7 @@ agentcore launch
 #   6. Endpoint activation with trace collection
 ```
 
-**Expected output:** During launch, you'll see memory creation progress with elapsed time indicators. Memory provisioning may take around 2-5 minutes to activate:
+**Expected output:** During Deploy, you'll see memory creation progress with elapsed time indicators. Memory provisioning may take around 2-5 minutes to activate:
 
 ```
 Creating memory resource for agent: agentcore_starter_strands

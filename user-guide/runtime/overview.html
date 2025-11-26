@@ -2677,7 +2677,7 @@
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="c1"># Configure and deploy your agent</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>my_agent.py<span class="w"> </span>--non-interactive
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;Alice&quot;}&#39;</span>
 </code></pre></div>
 <h2 id="what-is-the-agentcore-runtime-sdk">What is the AgentCore Runtime SDK?<a class="headerlink" href="#what-is-the-agentcore-runtime-sdk" title="Permanent link">&para;</a></h2>
@@ -2694,16 +2694,16 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 <h2 id="deployment-modes">Deployment Modes<a class="headerlink" href="#deployment-modes" title="Permanent link">&para;</a></h2>
 <h3 id="direct-code-deploy-deployment-default-recommended">🚀 Direct Code Deploy Deployment (DEFAULT &amp; RECOMMENDED)<a class="headerlink" href="#direct-code-deploy-deployment-default-recommended" title="Permanent link">&para;</a></h3>
 <p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>my_agent.py
-agentcore<span class="w"> </span>launch<span class="w">                    </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
+agentcore<span class="w"> </span>deploy<span class="w">                    </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
 </code></pre></div>
 - <strong>Works everywhere</strong> - SageMaker Notebooks, Cloud9, laptops
 - <strong>Production-ready</strong> - managed Python runtime environment</p>
 <h3 id="local-development">💻 Local Development<a class="headerlink" href="#local-development" title="Permanent link">&para;</a></h3>
-<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local<span class="w">           </span><span class="c1"># Build and run locally</span>
+<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span>--local<span class="w">           </span><span class="c1"># Build and run locally</span>
 </code></pre></div>
 - <strong>Fast iteration</strong> - immediate feedback and debugging</p>
 <h3 id="hybrid-build">🔧 Hybrid Build<a class="headerlink" href="#hybrid-build" title="Permanent link">&para;</a></h3>
-<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build<span class="w">     </span><span class="c1"># Build locally, deploy to cloud</span>
+<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span>--local-build<span class="w">     </span><span class="c1"># Build locally, deploy to cloud</span>
 </code></pre></div>
 - <strong>For complex scenarios</strong> - large apps, system dependencies
 - <strong>Requires:</strong> Docker for local development
@@ -2852,14 +2852,14 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>my_agent.py
 
 <span class="c1"># 2. Develop locally</span>
-agentcore<span class="w"> </span>launch<span class="w"> </span>--local
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--local
 
 <span class="c1"># 3. Test</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Hello&quot;}&#39;</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Remember this&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span><span class="s2">&quot;test&quot;</span>
 
 <span class="c1"># 4. Deploy to cloud</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># 5. Monitor</span>
 agentcore<span class="w"> </span>status

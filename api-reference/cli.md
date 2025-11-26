@@ -116,12 +116,12 @@ agentcore configure --entrypoint agent.py \
   --max-lifetime 7200      # 2 hours max regardless of activity
 ```
 
-### Launch
+### Deploy
 
 Deploy agents to AWS or run locally.
 
 ```
-agentcore launch [OPTIONS]
+agentcore deploy [OPTIONS]
 ```
 
 Options:
@@ -136,21 +136,21 @@ Options:
 
 ```
 # CodeBuild (default) - Cloud build, no Docker required
-agentcore launch
+agentcore deploy
 
 # Local mode - Build and run locally
-agentcore launch --local
+agentcore deploy --local
 
 # Local build mode - Build locally, deploy to cloud
-agentcore launch --local-build
+agentcore deploy --local-build
 ```
 
 **Memory Provisioning:**
 
-During launch, if memory is enabled:
+During deploy, if memory is enabled:
 
 - Memory resources are created and provisioned
-- Launch waits for memory to become ACTIVE before proceeding
+- Deploy waits for memory to become ACTIVE before proceeding
 - STM provisioning: ~30-90 seconds
 - LTM provisioning: ~120-180 seconds
 - Progress updates displayed during wait
@@ -418,7 +418,7 @@ https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xxxxx/.well-known/openid-c
 
 - Creates the credential provider in AgentCore Identity
 - Adds provider configuration to `.bedrock_agentcore.yaml`
-- IAM permissions added automatically during `agentcore launch`
+- IAM permissions added automatically during `agentcore deploy`
 
 **Note:** After creating a provider, you must register the returned `callbackUrl` in your OAuth provider’s settings (except for Cognito, which is auto-configured with `--cognito-pool-id`).
 
@@ -572,7 +572,7 @@ agentcore identity create-workload-identity \
   --name my-agent-workload
 
 # 6. Deploy agent
-agentcore launch
+agentcore deploy
 
 # 7. Get bearer token for Runtime auth
 TOKEN=$(agentcore identity get-cognito-inbound-token)
@@ -891,19 +891,19 @@ agentcore configure set-default my_agent
 
 ```
 # Deploy to AWS (default - uses CodeBuild)
-agentcore launch
+agentcore deploy
 
 # Run locally
-agentcore launch --local
+agentcore deploy --local
 
 # Build locally, deploy to cloud
-agentcore launch --local-build
+agentcore deploy --local-build
 
-# Launch with environment variables
-agentcore launch --env API_KEY=abc123 --env DEBUG=true
+# Deploy with environment variables
+agentcore deploy --env API_KEY=abc123 --env DEBUG=true
 
 # Auto-update if agent exists
-agentcore launch --auto-update-on-conflict
+agentcore deploy --auto-update-on-conflict
 ```
 
 ### Invoke Agents

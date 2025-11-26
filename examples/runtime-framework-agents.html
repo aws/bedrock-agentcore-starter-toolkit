@@ -2677,7 +2677,7 @@
 
 <span class="c1"># Configure and deploy</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>langgraph_agent.py
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># Test</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Explain LangGraph in one sentence&quot;}&#39;</span>
@@ -2740,7 +2740,7 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 
 <span class="c1"># Configure and deploy</span>
 agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>crewai_agent.py
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># Test</span>
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What are the benefits of using CrewAI?&quot;}&#39;</span>
@@ -2806,7 +2806,7 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
     <span class="c1"># Use the API key in your agent logic</span>
 </code></pre></div>
 <p>Then set the environment variable during deployment:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--env<span class="w"> </span><span class="nv">MY_API_KEY</span><span class="o">=</span>your-key-here
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span>--env<span class="w"> </span><span class="nv">MY_API_KEY</span><span class="o">=</span>your-key-here
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="model-access-issues">Model Access Issues<a class="headerlink" href="#model-access-issues" title="Permanent link">&para;</a></h3>

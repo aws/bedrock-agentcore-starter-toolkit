@@ -2972,7 +2972,7 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>-e<span class=
 
 <span class="c1"># Deploy with short-term memory</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">MEMORY_ID</span><span class="o">=</span>&lt;your-stm-id&gt;<span class="w">  </span><span class="c1"># Use the STM ID from the setup_memory.py output</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 </code></pre></div>
 <p>AgentCore CLI will handle:
 1. Creating a container image with your agent code
@@ -3001,7 +3001,7 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 <p>Now, let's deploy with long-term memory and test cross-session memory:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Update deployment with long-term memory</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">MEMORY_ID</span><span class="o">=</span>&lt;your-ltm-id&gt;<span class="w">  </span><span class="c1"># Use the LTM ID from setup_memory.py output</span>
-agentcore<span class="w"> </span>launch
+agentcore<span class="w"> </span>deploy
 
 <span class="c1"># Tell agent your preferences in one session</span>
 <span class="nv">SESSION1</span><span class="o">=</span><span class="s2">&quot;first-session-12345678901234567890123456&quot;</span>

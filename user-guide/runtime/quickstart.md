@@ -135,7 +135,7 @@ agentcore configure -e my_agent.py -r us-east-1
 Host your agent in AgentCore Runtime:
 
 ```
-agentcore launch
+agentcore deploy
 ```
 
 This command:
@@ -146,7 +146,7 @@ This command:
 - Creates memory resources if you configured memory during the setup
 - Configures CloudWatch logging
 
-In the output from `agentcore launch` note the following:
+In the output from `agentcore deploy` note the following:
 
 - The Amazon Resource Name (ARN) of the agent. You need it to invoke the agent with the InvokeAgentRuntime operation.
 - The location of the logs in Amazon CloudWatch Logs
@@ -289,7 +289,7 @@ Choose the right deployment approach for your needs:
 Suitable for most use cases, no Docker required:
 
 ```
-agentcore launch  # Uses CodeBuild for containers, .zip archive for direct deploy
+agentcore deploy  # Uses CodeBuild for containers, .zip archive for direct deploy
 ```
 
 **Local Development**
@@ -297,7 +297,7 @@ agentcore launch  # Uses CodeBuild for containers, .zip archive for direct deplo
 Suitable for development, rapid iteration, debugging:
 
 ```
-agentcore launch --local  # Build and run locally (requires Docker/Finch/Podman)
+agentcore deploy --local  # Build and run locally (requires Docker/Finch/Podman)
 ```
 
 **Hybrid: Local Build + Cloud Runtime**
@@ -305,7 +305,7 @@ agentcore launch --local  # Build and run locally (requires Docker/Finch/Podman)
 Suitable for teams with Docker expertise needing build customization:
 
 ```
-agentcore launch --local-build  # Build locally, deploy to cloud (requires Docker/Finch/Podman)
+agentcore deploy --local-build  # Build locally, deploy to cloud (requires Docker/Finch/Podman)
 ```
 
 > Note: Docker is only required for `--local` and `--local-build` modes. The default mode uses AWS CodeBuild.

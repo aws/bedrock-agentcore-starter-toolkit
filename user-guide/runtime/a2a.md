@@ -227,7 +227,7 @@ agentcore configure -e my_a2a_server.py --protocol A2A
 Deploy your agent:
 
 ```
-agentcore launch
+agentcore deploy
 ```
 
 After deployment, you'll receive an agent runtime ARN that looks like:

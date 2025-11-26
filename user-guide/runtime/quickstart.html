@@ -2710,7 +2710,7 @@ strands-agents
 <p><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">Amazon Bedrock AgentCore Observability</a> helps you trace, debug, and monitor agents that you host in AgentCore Runtime. First enable CloudWatch Transaction Search by following the instructions at <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-configure.html#observability-configure-builtin">Enabling AgentCore runtime observability</a>. To observe your agent, see <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-view.html">View observability data for your Amazon Bedrock AgentCore agents</a>.</p>
 <h2 id="step-6-deploy-to-agentcore-runtime">Step 6: Deploy to AgentCore Runtime<a class="headerlink" href="#step-6-deploy-to-agentcore-runtime" title="Permanent link">&para;</a></h2>
 <p>Host your agent in AgentCore Runtime:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy
 </code></pre></div>
 <p>This command:</p>
 <ul>
@@ -2720,7 +2720,7 @@ strands-agents
 <li>Creates memory resources if you configured memory during the setup</li>
 <li>Configures CloudWatch logging</li>
 </ul>
-<p>In the output from <code>agentcore launch</code> note the following:</p>
+<p>In the output from <code>agentcore deploy</code> note the following:</p>
 <ul>
 <li>The Amazon Resource Name (ARN) of the agent. You need it to invoke the agent with the InvokeAgentRuntime operation.</li>
 <li>The location of the logs in Amazon CloudWatch Logs</li>
@@ -2896,15 +2896,15 @@ Check build logs and permissions:
 <p>Choose the right deployment approach for your needs:</p>
 <p><strong>Default: Direct Code Deploy Deployment (RECOMMENDED)</strong></p>
 <p>Suitable for most use cases, no Docker required:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w">  </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w">  </span><span class="c1"># Uses CodeBuild for containers, .zip archive for direct deploy</span>
 </code></pre></div>
 <p><strong>Local Development</strong></p>
 <p>Suitable for development, rapid iteration, debugging:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local<span class="w">  </span><span class="c1"># Build and run locally (requires Docker/Finch/Podman)</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span>--local<span class="w">  </span><span class="c1"># Build and run locally (requires Docker/Finch/Podman)</span>
 </code></pre></div>
 <p><strong>Hybrid: Local Build + Cloud Runtime</strong></p>
 <p>Suitable for teams with Docker expertise needing build customization:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>launch<span class="w"> </span>--local-build<span class="w">  </span><span class="c1"># Build locally, deploy to cloud (requires Docker/Finch/Podman)</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>deploy<span class="w"> </span>--local-build<span class="w">  </span><span class="c1"># Build locally, deploy to cloud (requires Docker/Finch/Podman)</span>
 </code></pre></div>
 <blockquote>
 <p>Note: Docker is only required for <code>--local</code> and <code>--local-build</code> modes. The default mode uses AWS CodeBuild.</p>
