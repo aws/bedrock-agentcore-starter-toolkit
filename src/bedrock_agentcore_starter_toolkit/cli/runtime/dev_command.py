@@ -30,15 +30,28 @@ def dev(
     module_path, agent_name = _get_module_path_and_agent_name(config_path)
 
     # Setup environment and port
-    local_env = _setup_dev_environment(envs, port, config_path)
+    local_env, port_changed, requested_port_val = _setup_dev_environment(envs, port, config_path)
     devPort = local_env["PORT"]
 
     console.print("[green]🚀 Starting development server with hot reloading[/green]")
     console.print(f"[blue]Agent: {agent_name}[/blue]")
     console.print(f"[blue]Module: {module_path}[/blue]")
+
+    if port_changed:
+        console.print(f"[yellow]⚠️  Port {requested_port_val} is already in use[/yellow]")
+        console.print(f"[green]✓ Using port {devPort} instead[/green]")
+
     console.print(f"[blue]Server will be available at: http://localhost:{devPort}/invocations[/blue]")
+
+    if port_changed:
+        console.print(
+            f'[cyan]💡 Test your agent with: agentcore invoke --dev --port {devPort} "Hello" '
+            "in a new terminal window[/cyan]"
+        )
+    else:
+        console.print('[cyan]💡 Test your agent with: agentcore invoke --dev "Hello" in a new terminal window[/cyan]')
+
     console.print("[green]ℹ️  This terminal window will be used to run the dev server [/green]")
-    console.print('[green]💡 Test your agent with: agentcore invoke --dev "Hello" in a new terminal window[/green]')
     console.print("[yellow]Press Ctrl+C to stop the server[/yellow]\n")
 
     cmd = [
@@ -151,13 +164,16 @@ def _get_module_path_from_config(config_path: Path, agent_config) -> str:
         return f"{entrypoint_path.stem}:app"
 
 
-def _setup_dev_environment(envs: List[str], port: Optional[int], config_path: Path) -> dict:
+def _setup_dev_environment(envs: List[str], port: Optional[int], config_path: Path) -> tuple[dict, bool, int]:
     """Parse environment variables and setup development environment with port handling.
 
     Environment variable precedence (lowest to highest):
     1. OS environment variables
     2. Config file values
     3. User-provided --env values (highest priority)
+
+    Returns:
+        tuple: (environment dict, port_changed bool, requested_port int)
     """
     # Parse user-provided env vars
     user_env_vars = {}
@@ -178,14 +194,12 @@ def _setup_dev_environment(envs: List[str], port: Optional[int], config_path: Pa
     if isinstance(requested_port, str):
         requested_port = int(requested_port)
 
-    # Find available port and warn if user's choice wasn't available
-    actual_port = _find_available_port(requested_port or 8080)
-    if requested_port and requested_port != actual_port:
-        console.print(f"[yellow]⚠️  Port {requested_port} is in use, using port {actual_port} instead[/yellow]")
-        console.print(f"[cyan]Use agentcore invoke --dev --port {actual_port} to invoke your dev server.[/cyan]")
+    default_port = requested_port or 8080
+    actual_port = _find_available_port(default_port)
+    port_changed = actual_port != default_port
 
     local_env["PORT"] = str(actual_port)
-    return local_env
+    return local_env, port_changed, default_port
 
 
 def _find_available_port(start_port: int = 8080) -> int:
