@@ -57,8 +57,8 @@ create_app.command("import")(import_agent)
 app.command("import-agent")(import_agent)
 
 
-# Backward compatibility aliases (deprecated)
-app.command("launch", hidden=True)(deprecated_command("agentcore deploy")(deploy))
+# Backward compatibility aliases
+app.command("launch", hidden=True)(deploy)
 
 
 def main():
