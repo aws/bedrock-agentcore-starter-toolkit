@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import boto3
 import urllib3
 
+from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import (
     API_MODEL_BUCKETS,
     CREATE_OPENAPI_TARGET_INVALID_CREDENTIALS_SHAPE_EXCEPTION_MESSAGE,
@@ -18,7 +19,7 @@ from .constants import (
 from .create_lambda import create_test_lambda
 from .create_role import create_gateway_execution_role
 from .exceptions import GatewaySetupException
-from ..observability.delivery import ObservabilityDeliveryManager
+
 
 class GatewayClient:
     """High-level client for Bedrock AgentCore Gateway operations."""
@@ -71,13 +72,13 @@ class GatewayClient:
         :param enable_semantic_search: optional - whether to enable search tool (defaults to True).
         :param enable_observability: optional - whether to auto-enable CloudWatch logs and traces (defaults to True).
         :return: the created Gateway with observability status
-        
+
         Example:
             client = GatewayClient(region_name='us-east-1')
-            
+
             # Create gateway with observability enabled (default)
             gateway = client.create_mcp_gateway(name="my-gateway")
-            
+
             # Create gateway without observability
             gateway = client.create_mcp_gateway(name="my-gateway", enable_observability=False)
         """
@@ -116,11 +117,11 @@ class GatewayClient:
             resource_name="Gateway",
         )
         self.logger.info("\n✅Gateway is ready")
-        
+
         # Auto-enable observability after gateway is ready
         if enable_observability:
             self._enable_observability_for_gateway(gateway)
-        
+
         return gateway
 
     def create_mcp_gateway_target(
@@ -979,53 +980,48 @@ class GatewayClient:
 
     def _enable_observability_for_gateway(self, gateway: dict) -> None:
         """Internal helper to enable observability for a gateway resource.
-        
+
         Called automatically by create_mcp_gateway when enable_observability=True.
         Failures are logged but don't fail the gateway creation.
         """
-        
-        gateway_id = gateway.get('gatewayId')
-        gateway_arn = gateway.get('gatewayArn')
-        
+        gateway_id = gateway.get("gatewayId")
+        gateway_arn = gateway.get("gatewayArn")
+
         if not gateway_id:
             self.logger.warning("Cannot enable observability: gateway ID not found")
             return
-        
+
         try:
             delivery_manager = ObservabilityDeliveryManager(
                 region_name=self.region,
                 boto3_session=self.session,
             )
-            
+
             result = delivery_manager.enable_observability_for_resource(
                 resource_arn=gateway_arn,
                 resource_id=gateway_id,
-                resource_type='gateway',
+                resource_type="gateway",
                 enable_logs=True,
                 enable_traces=True,
             )
-            
+
             # Store result in gateway dict for caller reference
-            gateway['observability'] = result
-            
-            if result['status'] == 'success':
+            gateway["observability"] = result
+
+            if result["status"] == "success":
                 self.logger.info("✅ Observability enabled for gateway %s", gateway_id)
-                self.logger.info("   Log group: %s", result['log_group'])
+                self.logger.info("   Log group: %s", result["log_group"])
                 self.logger.info("   Traces: Enabled (X-Ray)")
             else:
-                self.logger.warning(
-                    "⚠️ Observability setup warning: %s",
-                    result.get('error')
-                )
-                
+                self.logger.warning("⚠️ Observability setup warning: %s", result.get("error"))
+
         except Exception as e:
             # Don't fail gateway creation if observability setup fails
             self.logger.warning("⚠️ Gateway created but observability setup failed: %s", str(e))
-            gateway['observability'] = {
-                'status': 'error',
-                'error': str(e),
+            gateway["observability"] = {
+                "status": "error",
+                "error": str(e),
             }
-
 
     def enable_observability(
         self,
@@ -1052,11 +1048,10 @@ class GatewayClient:
             client = GatewayClient(region_name='us-east-1')
             result = client.enable_observability(gateway_id='my-gateway-id')
         """
-
         # Construct ARN if not provided
         if not gateway_arn:
-            sts_client = boto3.client('sts', region_name=self.region)
-            account_id = sts_client.get_caller_identity()['Account']
+            sts_client = boto3.client("sts", region_name=self.region)
+            account_id = sts_client.get_caller_identity()["Account"]
             gateway_arn = f"arn:aws:bedrock-agentcore:{self.region}:{account_id}:gateway/{gateway_id}"
 
         try:
@@ -1068,30 +1063,26 @@ class GatewayClient:
             result = delivery_manager.enable_observability_for_resource(
                 resource_arn=gateway_arn,
                 resource_id=gateway_id,
-                resource_type='gateway',
+                resource_type="gateway",
                 enable_logs=enable_logs,
                 enable_traces=enable_traces,
             )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 self.logger.info("✅ Observability enabled for gateway %s", gateway_id)
-                self.logger.info("   Log group: %s", result['log_group'])
+                self.logger.info("   Log group: %s", result["log_group"])
             else:
-                self.logger.warning(
-                    "⚠️ Failed to enable observability: %s",
-                    result.get('error')
-                )
+                self.logger.warning("⚠️ Failed to enable observability: %s", result.get("error"))
 
             return result
 
         except Exception as e:
             self.logger.error("Failed to enable observability for gateway %s: %s", gateway_id, str(e))
             return {
-                'status': 'error',
-                'error': str(e),
-                'gateway_id': gateway_id,
+                "status": "error",
+                "error": str(e),
+                "gateway_id": gateway_id,
             }
-
 
     def disable_observability(
         self,
@@ -1110,7 +1101,6 @@ class GatewayClient:
         Returns:
             Dict with cleanup results
         """
-
         try:
             delivery_manager = ObservabilityDeliveryManager(
                 region_name=self.region,
@@ -1121,20 +1111,17 @@ class GatewayClient:
                 delete_log_group=delete_log_group,
             )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 self.logger.info("✅ Observability disabled for gateway %s", gateway_id)
             else:
-                self.logger.warning(
-                    "⚠️ Partial cleanup: %s",
-                    result.get('errors')
-                )
+                self.logger.warning("⚠️ Partial cleanup: %s", result.get("errors"))
 
             return result
 
         except Exception as e:
             self.logger.error("Failed to disable observability for gateway %s: %s", gateway_id, str(e))
             return {
-                'status': 'error',
-                'error': str(e),
-                'gateway_id': gateway_id,
+                "status": "error",
+                "error": str(e),
+                "gateway_id": gateway_id,
             }

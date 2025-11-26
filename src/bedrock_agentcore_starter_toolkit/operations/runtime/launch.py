@@ -14,7 +14,7 @@ from rich.console import Console
 from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
-from ...services.xray import enable_transaction_search_if_needed, enable_traces_delivery_for_runtime
+from ...services.xray import enable_traces_delivery_for_runtime, enable_transaction_search_if_needed
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.entrypoint import build_entrypoint_array
@@ -24,7 +24,6 @@ from ..identity.helpers import ensure_identity_permissions
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
-from ..observability.delivery import ObservabilityDeliveryManager
 
 # console = Console()
 
@@ -594,10 +593,10 @@ def _deploy_to_bedrock_agentcore(
     # Enable observability components if enabled
     if agent_config.aws.observability.enabled:
         log.info("Observability is enabled, configuring observability components...")
-        
+
         # 1. Enable Transaction Search (existing functionality)
         enable_transaction_search_if_needed(region, account_id)
-        
+
         # 2. Enable X-Ray traces delivery (NEW)
         enable_traces_delivery_for_runtime(
             agent_id=agent_id,

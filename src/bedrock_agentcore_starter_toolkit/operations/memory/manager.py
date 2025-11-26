@@ -11,6 +11,7 @@ from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 from rich.console import Console
 
+from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
 from .models import convert_strategies_to_dicts
 from .models.Memory import Memory
@@ -18,7 +19,6 @@ from .models.MemoryStrategy import MemoryStrategy
 from .models.MemorySummary import MemorySummary
 from .models.strategies import BaseStrategy
 from .strategy_validator import validate_existing_memory_strategies
-from ..observability.delivery import ObservabilityDeliveryManager
 
 logger = logging.getLogger(__name__)
 
@@ -287,14 +287,14 @@ class MemoryManager:
         if memory_id is None:
             memory_id = ""
         logger.info("Created memory %s, waiting for ACTIVE status...", memory_id)
-        
+
         # Wait for memory to become active
         active_memory = self._wait_for_memory_active(memory_id, max_wait, poll_interval)
-        
+
         # Auto-enable observability after memory is active
         if enable_observability and active_memory.id:
             self._enable_observability_for_memory(active_memory)
-        
+
         return active_memory
 
     def create_memory_and_wait(
@@ -332,10 +332,10 @@ class MemoryManager:
             from bedrock_agentcore_starter_toolkit.operations.memory import MemoryManager
 
             manager = MemoryManager(region_name='us-east-1')
-            
+
             # Create memory with observability enabled (default)
             memory = manager.create_memory_and_wait(name="MyMemory")
-            
+
             # Create memory without observability
             memory = manager.create_memory_and_wait(
                 name="MyMemory",
@@ -1075,49 +1075,44 @@ class MemoryManager:
 
     def _enable_observability_for_memory(self, memory: Memory) -> None:
         """Internal helper to enable observability for a memory resource.
-        
+
         Called automatically by create methods when enable_observability=True.
         Failures are logged but don't fail the memory creation.
         """
-        
         try:
             # Get account ID for ARN construction
-            sts_client = boto3.client('sts', region_name=self.region_name)
-            account_id = sts_client.get_caller_identity()['Account']
-            
+            sts_client = boto3.client("sts", region_name=self.region_name)
+            account_id = sts_client.get_caller_identity()["Account"]
+
             # Construct memory ARN if not available
-            memory_arn = getattr(memory, 'arn', None)
+            memory_arn = getattr(memory, "arn", None)
             if not memory_arn:
                 memory_arn = f"arn:aws:bedrock-agentcore:{self.region_name}:{account_id}:memory/{memory.id}"
-            
+
             delivery_manager = ObservabilityDeliveryManager(
                 region_name=self.region_name,
             )
-            
+
             result = delivery_manager.enable_observability_for_resource(
                 resource_arn=memory_arn,
                 resource_id=memory.id,
-                resource_type='memory',
+                resource_type="memory",
                 enable_logs=True,
                 enable_traces=True,
             )
-            
-            if result['status'] == 'success':
+
+            if result["status"] == "success":
                 self.console.print(f"[green]✅ Observability enabled for memory {memory.id}[/green]")
                 self.console.print(f"   Log group: [cyan]{result['log_group']}[/cyan]")
                 self.console.print("   Traces: [cyan]Enabled (X-Ray)[/cyan]")
                 logger.info("Observability enabled for memory %s", memory.id)
             else:
-                self.console.print(
-                    f"[yellow]⚠️ Observability setup warning: {result.get('error')}[/yellow]"
-                )
-                logger.warning("Observability setup warning for memory %s: %s", memory.id, result.get('error'))
-                
+                self.console.print(f"[yellow]⚠️ Observability setup warning: {result.get('error')}[/yellow]")
+                logger.warning("Observability setup warning for memory %s: %s", memory.id, result.get("error"))
+
         except Exception as e:
             # Don't fail memory creation if observability setup fails
-            self.console.print(
-                f"[yellow]⚠️ Memory created but observability setup failed: {e}[/yellow]"
-            )
+            self.console.print(f"[yellow]⚠️ Memory created but observability setup failed: {e}[/yellow]")
             logger.warning("Observability setup failed for memory %s: %s", memory.id, str(e))
 
     def enable_observability(
@@ -1145,11 +1140,10 @@ class MemoryManager:
             manager = MemoryManager(region_name='us-east-1')
             result = manager.enable_observability(memory_id='my-memory-id')
         """
-
         # Construct ARN if not provided
         if not memory_arn:
-            sts_client = boto3.client('sts', region_name=self.region_name)
-            account_id = sts_client.get_caller_identity()['Account']
+            sts_client = boto3.client("sts", region_name=self.region_name)
+            account_id = sts_client.get_caller_identity()["Account"]
             memory_arn = f"arn:aws:bedrock-agentcore:{self.region_name}:{account_id}:memory/{memory_id}"
 
         try:
@@ -1160,29 +1154,26 @@ class MemoryManager:
             result = delivery_manager.enable_observability_for_resource(
                 resource_arn=memory_arn,
                 resource_id=memory_id,
-                resource_type='memory',
+                resource_type="memory",
                 enable_logs=enable_logs,
                 enable_traces=enable_traces,
             )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 self.console.print(f"[green]✅ Observability enabled for memory {memory_id}[/green]")
                 self.console.print(f"   Log group: [cyan]{result['log_group']}[/cyan]")
             else:
-                self.console.print(
-                    f"[yellow]⚠️ Failed to enable observability: {result.get('error')}[/yellow]"
-                )
+                self.console.print(f"[yellow]⚠️ Failed to enable observability: {result.get('error')}[/yellow]")
 
             return result
 
         except Exception as e:
             logger.error("Failed to enable observability for memory %s: %s", memory_id, str(e))
             return {
-                'status': 'error',
-                'error': str(e),
-                'memory_id': memory_id,
+                "status": "error",
+                "error": str(e),
+                "memory_id": memory_id,
             }
-
 
     def disable_observability(
         self,
@@ -1201,7 +1192,6 @@ class MemoryManager:
         Returns:
             Dict with cleanup results
         """
-
         try:
             delivery_manager = ObservabilityDeliveryManager(
                 region_name=self.region_name,
@@ -1212,19 +1202,17 @@ class MemoryManager:
                 delete_log_group=delete_log_group,
             )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 self.console.print(f"[green]✅ Observability disabled for memory {memory_id}[/green]")
             else:
-                self.console.print(
-                    f"[yellow]⚠️ Partial cleanup: {result.get('errors')}[/yellow]"
-                )
+                self.console.print(f"[yellow]⚠️ Partial cleanup: {result.get('errors')}[/yellow]")
 
             return result
 
         except Exception as e:
             logger.error("Failed to disable observability for memory %s: %s", memory_id, str(e))
             return {
-                'status': 'error',
-                'error': str(e),
-                'memory_id': memory_id,
+                "status": "error",
+                "error": str(e),
+                "memory_id": memory_id,
             }

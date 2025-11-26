@@ -10,12 +10,11 @@ To skip integration tests: pytest tests/integration/ -v (they're marked to skip 
 """
 
 import os
-import time
 import uuid
-import pytest
-import boto3
-from botocore.exceptions import ClientError
 
+import boto3
+import pytest
+from botocore.exceptions import ClientError
 
 # Import the module under test
 from bedrock_agentcore_starter_toolkit.operations.observability.delivery import (
@@ -82,32 +81,30 @@ class TestObservabilityDeliveryIntegration:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
             enable_logs=True,
             enable_traces=True,
         )
 
         # The result depends on whether the resource exists
         # We're mainly testing that the code runs without throwing exceptions
-        assert 'status' in result
-        assert result['resource_id'] == test_resource_id
-        assert result['resource_type'] == 'memory'
+        assert "status" in result
+        assert result["resource_id"] == test_resource_id
+        assert result["resource_type"] == "memory"
 
         # Test get status
         status = manager.get_observability_status(resource_id=test_resource_id)
-        assert 'logs' in status
-        assert 'traces' in status
+        assert "logs" in status
+        assert "traces" in status
 
         # Test disable
         disable_result = manager.disable_observability_for_resource(
             resource_id=test_resource_id,
             delete_log_group=True,
         )
-        assert 'status' in disable_result
+        assert "status" in disable_result
 
-    def test_enable_observability_gateway(
-        self, manager, test_resource_id, account_id, region, cleanup_resources
-    ):
+    def test_enable_observability_gateway(self, manager, test_resource_id, account_id, region, cleanup_resources):
         """Test enabling observability for a gateway resource."""
         cleanup_resources.append(test_resource_id)
 
@@ -116,17 +113,15 @@ class TestObservabilityDeliveryIntegration:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='gateway',
+            resource_type="gateway",
             enable_logs=True,
             enable_traces=True,
         )
 
-        assert 'status' in result
-        assert result['resource_type'] == 'gateway'
+        assert "status" in result
+        assert result["resource_type"] == "gateway"
 
-    def test_custom_log_group(
-        self, manager, test_resource_id, account_id, region, cleanup_resources
-    ):
+    def test_custom_log_group(self, manager, test_resource_id, account_id, region, cleanup_resources):
         """Test using a custom log group name."""
         cleanup_resources.append(test_resource_id)
 
@@ -136,22 +131,20 @@ class TestObservabilityDeliveryIntegration:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
             custom_log_group=custom_log_group,
         )
 
-        assert result['log_group'] == custom_log_group
+        assert result["log_group"] == custom_log_group
 
         # Cleanup custom log group
         try:
-            logs_client = boto3.client('logs', region_name=region)
+            logs_client = boto3.client("logs", region_name=region)
             logs_client.delete_log_group(logGroupName=custom_log_group)
         except ClientError:
             pass
 
-    def test_enable_logs_only(
-        self, manager, test_resource_id, account_id, region, cleanup_resources
-    ):
+    def test_enable_logs_only(self, manager, test_resource_id, account_id, region, cleanup_resources):
         """Test enabling only logs (no traces)."""
         cleanup_resources.append(test_resource_id)
 
@@ -160,19 +153,17 @@ class TestObservabilityDeliveryIntegration:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
             enable_logs=True,
             enable_traces=False,
         )
 
         # Verify traces were not set up
-        if result['status'] == 'success':
-            assert result['logs_enabled'] is True
-            assert result['traces_enabled'] is False
+        if result["status"] == "success":
+            assert result["logs_enabled"] is True
+            assert result["traces_enabled"] is False
 
-    def test_enable_traces_only(
-        self, manager, test_resource_id, account_id, region, cleanup_resources
-    ):
+    def test_enable_traces_only(self, manager, test_resource_id, account_id, region, cleanup_resources):
         """Test enabling only traces (no logs)."""
         cleanup_resources.append(test_resource_id)
 
@@ -181,18 +172,16 @@ class TestObservabilityDeliveryIntegration:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
             enable_logs=False,
             enable_traces=True,
         )
 
-        if result['status'] == 'success':
-            assert result['logs_enabled'] is False
-            assert result['traces_enabled'] is True
+        if result["status"] == "success":
+            assert result["logs_enabled"] is False
+            assert result["traces_enabled"] is True
 
-    def test_idempotent_enable(
-        self, manager, test_resource_id, account_id, region, cleanup_resources
-    ):
+    def test_idempotent_enable(self, manager, test_resource_id, account_id, region, cleanup_resources):
         """Test that enabling observability multiple times is idempotent."""
         cleanup_resources.append(test_resource_id)
 
@@ -202,19 +191,19 @@ class TestObservabilityDeliveryIntegration:
         result1 = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
         )
 
         # Enable second time (should not fail)
         result2 = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=test_resource_id,
-            resource_type='memory',
+            resource_type="memory",
         )
 
         # Both should have a status (may be success or error depending on resource)
-        assert 'status' in result1
-        assert 'status' in result2
+        assert "status" in result1
+        assert "status" in result2
 
 
 class TestConvenienceFunctionIntegration:
@@ -241,7 +230,7 @@ class TestConvenienceFunctionIntegration:
                 region=region,
             )
 
-            assert 'status' in result
+            assert "status" in result
 
         finally:
             # Cleanup
@@ -293,14 +282,14 @@ class TestWithRealAgentCoreResources:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=real_memory_id,
-            resource_type='memory',
+            resource_type="memory",
         )
 
         print(f"Result for real memory {real_memory_id}: {result}")
 
-        assert result['status'] == 'success'
-        assert result['logs_enabled'] is True
-        assert result['traces_enabled'] is True
+        assert result["status"] == "success"
+        assert result["logs_enabled"] is True
+        assert result["traces_enabled"] is True
 
     def test_enable_observability_real_gateway(self, real_gateway_id):
         """Test with a real gateway resource."""
@@ -315,11 +304,11 @@ class TestWithRealAgentCoreResources:
         result = manager.enable_observability_for_resource(
             resource_arn=resource_arn,
             resource_id=real_gateway_id,
-            resource_type='gateway',
+            resource_type="gateway",
         )
 
         print(f"Result for real gateway {real_gateway_id}: {result}")
 
-        assert result['status'] == 'success'
-        assert result['logs_enabled'] is True
-        assert result['traces_enabled'] is True
+        assert result["status"] == "success"
+        assert result["logs_enabled"] is True
+        assert result["traces_enabled"] is True
