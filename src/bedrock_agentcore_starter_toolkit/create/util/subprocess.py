@@ -6,6 +6,7 @@ import shutil
 import subprocess  # nosec B404 - subprocess required for running uv venv setup commands
 from pathlib import Path
 
+from ...cli.common import console
 from ..progress.progress_sink import ProgressSink
 from ..types import ProjectContext
 
@@ -22,14 +23,20 @@ def create_and_init_venv(ctx: ProjectContext, sink: ProgressSink) -> None:
         sink.notification("Venv setup skipped because uv not found")
         return
 
-    with sink.step(
-        "Venv dependencies installing",
-        "Venv created and installed",
-        "Venv setup failed. Continuing",
-        swallow_fail=True,
-    ):
-        _run_quiet(["uv", "venv", ".venv"], cwd=project_root)
-        _run_quiet(["uv", "sync"], cwd=project_root)
+    try:
+        with sink.step(
+            "Venv dependencies installing",
+            "Venv created and installed",
+        ):
+            _run_quiet(["uv", "venv", ".venv"], cwd=project_root)
+            _run_quiet(["uv", "sync"], cwd=project_root)
+    except subprocess.CalledProcessError:
+        sink.notification("Venv setup failed. Continuing")
+        console.print(
+            "      • Your project and venv were created successfully but dependency installation failed.\n"
+            "        Run uv sync in the project directory to troubleshoot\n"
+            "        More information: https://docs.astral.sh/uv/concepts/resolution/"
+        )
 
 
 def init_git_project(ctx: ProjectContext, sink: ProgressSink) -> None:
