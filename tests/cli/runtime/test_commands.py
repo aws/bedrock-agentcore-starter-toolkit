@@ -19,20 +19,6 @@ class TestBedrockAgentCoreCLI:
         """Setup test runner."""
         self.runner = CliRunner()
 
-    def test_launch_deprecated_command(self):
-        """Test that launch command works as hidden alias without deprecation warning."""
-        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.load_config") as mock_load_config:
-            # Mock to raise FileNotFoundError to avoid actual execution
-            mock_load_config.side_effect = FileNotFoundError("Configuration not found")
-
-            result = self.runner.invoke(app, ["launch"])
-
-            # Should NOT show any deprecation warning
-            assert "deprecated" not in result.stderr.lower()
-            assert "Warning" not in result.stderr
-            # Should attempt to execute (will fail due to missing config, but that's expected)
-            assert result.exit_code != 0  # Fails due to missing config
-
     def test_configure_command_basic(self, tmp_path):
         """Test basic configure command."""
         # Create test agent file

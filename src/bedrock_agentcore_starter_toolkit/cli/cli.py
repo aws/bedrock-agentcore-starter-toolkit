@@ -32,6 +32,7 @@ setup_toolkit_logging(mode="cli")
 app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("deploy")(deploy)
+app.command("launch", hidden=True)(deploy)
 app.command("dev")(dev)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
@@ -55,10 +56,6 @@ create_app.command("import")(import_agent)
 
 # Alias: agentcore import-agent -> agentcore create import
 app.command("import-agent")(import_agent)
-
-
-# Backward compatibility aliases
-app.command("launch", hidden=True)(deploy)
 
 
 def main():
