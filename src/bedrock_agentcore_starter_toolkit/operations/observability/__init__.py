@@ -1,6 +1,7 @@
 """Observability operations for querying spans, traces, and logs."""
 
 from .client import ObservabilityClient
+from .delivery import ObservabilityDeliveryManager, enable_observability_for_resource
 from .formatters import (
     format_age,
     format_duration_ms,
@@ -16,6 +17,8 @@ from .trace_visualizer import TraceVisualizer
 
 __all__ = [
     "ObservabilityClient",
+    "ObservabilityDeliveryManager",
+    "enable_observability_for_resource",
     "Span",
     "RuntimeLog",
     "TraceData",

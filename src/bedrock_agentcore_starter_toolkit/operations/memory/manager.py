@@ -18,6 +18,7 @@ from .models.MemoryStrategy import MemoryStrategy
 from .models.MemorySummary import MemorySummary
 from .models.strategies import BaseStrategy
 from .strategy_validator import validate_existing_memory_strategies
+from ..observability.delivery import ObservabilityDeliveryManager
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +248,7 @@ class MemoryManager:
         max_wait: int = 300,
         poll_interval: int = 10,
         encryption_key_arn: Optional[str] = None,
+        enable_observability: bool = True,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE.
 
@@ -261,7 +263,8 @@ class MemoryManager:
             memory_execution_role_arn: IAM role ARN for memory execution
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
-            encryption_key_arn: kms key ARN for encryption
+            encryption_key_arn: KMS key ARN for encryption
+            enable_observability: Whether to auto-enable CloudWatch logs and traces (default: True)
 
         Returns:
             Created memory object in ACTIVE status
@@ -284,7 +287,15 @@ class MemoryManager:
         if memory_id is None:
             memory_id = ""
         logger.info("Created memory %s, waiting for ACTIVE status...", memory_id)
-        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+        
+        # Wait for memory to become active
+        active_memory = self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+        
+        # Auto-enable observability after memory is active
+        if enable_observability and active_memory.id:
+            self._enable_observability_for_memory(active_memory)
+        
+        return active_memory
 
     def create_memory_and_wait(
         self,
@@ -296,8 +307,12 @@ class MemoryManager:
         encryption_key_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
+        enable_observability: bool = True,  # NEW PARAMETER - defaults to True
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE - public method.
+
+        By default, CloudWatch observability (logs + traces) is automatically
+        enabled for the memory resource.
 
         Args:
             name: Name for the memory resource
@@ -307,34 +322,24 @@ class MemoryManager:
             memory_execution_role_arn: IAM role ARN for memory execution
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
-            encryption_key_arn: kms key ARN for encryption
+            encryption_key_arn: KMS key ARN for encryption
+            enable_observability: Whether to auto-enable CloudWatch logs and traces (default: True)
 
         Returns:
             Created memory object in ACTIVE status
 
         Example:
-            from bedrock_agentcore_starter_toolkit.operations.memory.models import (
-                SemanticStrategy, CustomSemanticStrategy, ExtractionConfig, ConsolidationConfig
-            )
+            from bedrock_agentcore_starter_toolkit.operations.memory import MemoryManager
 
-            # Create typed strategies
-            semantic = SemanticStrategy(name="MySemanticStrategy")
-            custom = CustomSemanticStrategy(
-                name="MyCustomStrategy",
-                extraction_config=ExtractionConfig(
-                    append_to_prompt="Extract insights",
-                    model_id="anthropic.claude-3-sonnet-20240229-v1:0"
-                ),
-                consolidation_config=ConsolidationConfig(
-                    append_to_prompt="Consolidate insights",
-                    model_id="anthropic.claude-3-haiku-20240307-v1:0"
-                )
-            )
-
-            # Create memory with typed strategies
+            manager = MemoryManager(region_name='us-east-1')
+            
+            # Create memory with observability enabled (default)
+            memory = manager.create_memory_and_wait(name="MyMemory")
+            
+            # Create memory without observability
             memory = manager.create_memory_and_wait(
-                name="TypedMemory",
-                strategies=[semantic, custom]
+                name="MyMemory",
+                enable_observability=False
             )
         """
         # Convert typed strategies to dicts for internal processing
@@ -349,6 +354,7 @@ class MemoryManager:
             encryption_key_arn=encryption_key_arn,
             max_wait=max_wait,
             poll_interval=poll_interval,
+            enable_observability=enable_observability,  # Pass through
         )
 
     def get_or_create_memory(
@@ -1066,3 +1072,159 @@ class MemoryManager:
         namespaces = strategy_config.get("namespaces", [])
         for namespace in namespaces:
             self._validate_namespace(namespace)
+
+    def _enable_observability_for_memory(self, memory: Memory) -> None:
+        """Internal helper to enable observability for a memory resource.
+        
+        Called automatically by create methods when enable_observability=True.
+        Failures are logged but don't fail the memory creation.
+        """
+        
+        try:
+            # Get account ID for ARN construction
+            sts_client = boto3.client('sts', region_name=self.region_name)
+            account_id = sts_client.get_caller_identity()['Account']
+            
+            # Construct memory ARN if not available
+            memory_arn = getattr(memory, 'arn', None)
+            if not memory_arn:
+                memory_arn = f"arn:aws:bedrock-agentcore:{self.region_name}:{account_id}:memory/{memory.id}"
+            
+            delivery_manager = ObservabilityDeliveryManager(
+                region_name=self.region_name,
+            )
+            
+            result = delivery_manager.enable_observability_for_resource(
+                resource_arn=memory_arn,
+                resource_id=memory.id,
+                resource_type='memory',
+                enable_logs=True,
+                enable_traces=True,
+            )
+            
+            if result['status'] == 'success':
+                self.console.print(f"[green]✅ Observability enabled for memory {memory.id}[/green]")
+                self.console.print(f"   Log group: [cyan]{result['log_group']}[/cyan]")
+                self.console.print("   Traces: [cyan]Enabled (X-Ray)[/cyan]")
+                logger.info("Observability enabled for memory %s", memory.id)
+            else:
+                self.console.print(
+                    f"[yellow]⚠️ Observability setup warning: {result.get('error')}[/yellow]"
+                )
+                logger.warning("Observability setup warning for memory %s: %s", memory.id, result.get('error'))
+                
+        except Exception as e:
+            # Don't fail memory creation if observability setup fails
+            self.console.print(
+                f"[yellow]⚠️ Memory created but observability setup failed: {e}[/yellow]"
+            )
+            logger.warning("Observability setup failed for memory %s: %s", memory.id, str(e))
+
+    def enable_observability(
+        self,
+        memory_id: str,
+        memory_arn: Optional[str] = None,
+        enable_logs: bool = True,
+        enable_traces: bool = True,
+    ) -> Dict[str, Any]:
+        """Enable CloudWatch observability for an existing memory resource.
+
+        Use this to manually enable observability on a memory that was created
+        with enable_observability=False or created before this feature.
+
+        Args:
+            memory_id: The memory resource ID
+            memory_arn: Optional memory ARN. If not provided, will be constructed.
+            enable_logs: Whether to enable APPLICATION_LOGS delivery (default: True)
+            enable_traces: Whether to enable TRACES delivery (default: True)
+
+        Returns:
+            Dict with observability configuration results
+
+        Example:
+            manager = MemoryManager(region_name='us-east-1')
+            result = manager.enable_observability(memory_id='my-memory-id')
+        """
+
+        # Construct ARN if not provided
+        if not memory_arn:
+            sts_client = boto3.client('sts', region_name=self.region_name)
+            account_id = sts_client.get_caller_identity()['Account']
+            memory_arn = f"arn:aws:bedrock-agentcore:{self.region_name}:{account_id}:memory/{memory_id}"
+
+        try:
+            delivery_manager = ObservabilityDeliveryManager(
+                region_name=self.region_name,
+            )
+
+            result = delivery_manager.enable_observability_for_resource(
+                resource_arn=memory_arn,
+                resource_id=memory_id,
+                resource_type='memory',
+                enable_logs=enable_logs,
+                enable_traces=enable_traces,
+            )
+
+            if result['status'] == 'success':
+                self.console.print(f"[green]✅ Observability enabled for memory {memory_id}[/green]")
+                self.console.print(f"   Log group: [cyan]{result['log_group']}[/cyan]")
+            else:
+                self.console.print(
+                    f"[yellow]⚠️ Failed to enable observability: {result.get('error')}[/yellow]"
+                )
+
+            return result
+
+        except Exception as e:
+            logger.error("Failed to enable observability for memory %s: %s", memory_id, str(e))
+            return {
+                'status': 'error',
+                'error': str(e),
+                'memory_id': memory_id,
+            }
+
+
+    def disable_observability(
+        self,
+        memory_id: str,
+        delete_log_group: bool = False,
+    ) -> Dict[str, Any]:
+        """Disable CloudWatch observability for a memory resource.
+
+        This removes the delivery configuration but preserves existing logs
+        unless delete_log_group is True.
+
+        Args:
+            memory_id: The memory resource ID
+            delete_log_group: Whether to also delete the log group (default: False)
+
+        Returns:
+            Dict with cleanup results
+        """
+
+        try:
+            delivery_manager = ObservabilityDeliveryManager(
+                region_name=self.region_name,
+            )
+
+            result = delivery_manager.disable_observability_for_resource(
+                resource_id=memory_id,
+                delete_log_group=delete_log_group,
+            )
+
+            if result['status'] == 'success':
+                self.console.print(f"[green]✅ Observability disabled for memory {memory_id}[/green]")
+            else:
+                self.console.print(
+                    f"[yellow]⚠️ Partial cleanup: {result.get('errors')}[/yellow]"
+                )
+
+            return result
+
+        except Exception as e:
+            logger.error("Failed to disable observability for memory %s: %s", memory_id, str(e))
+            return {
+                'status': 'error',
+                'error': str(e),
+                'memory_id': memory_id,
+            }

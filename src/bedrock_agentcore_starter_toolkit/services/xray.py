@@ -5,6 +5,7 @@ import logging
 
 import boto3
 from botocore.exceptions import ClientError
+from ..operations.observability.delivery import ObservabilityDeliveryManager
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,66 @@ def enable_transaction_search_if_needed(region: str, account_id: str) -> bool:
         logger.info("Agent launch will continue without Transaction Search")
         return False  # Don't fail launch
 
+def enable_traces_delivery_for_runtime(
+    agent_id: str,
+    agent_arn: str,
+    region: str,
+    logger=None,
+) -> dict:
+    """Enable CloudWatch TRACES delivery for a Runtime resource.
+    
+    This configures X-Ray traces delivery via CloudWatch delivery API.
+    Called from launch.py after agent deployment when observability is enabled.
+    
+    Note: This is separate from ADOT instrumentation (which captures agent code spans).
+    This enables the AWS service to emit traces about the Runtime itself.
+    
+    Note: Logs are auto-created by AWS for Runtime resources, so this function
+    only enables traces delivery.
+    
+    Args:
+        agent_id: The agent/runtime ID
+        agent_arn: The agent/runtime ARN  
+        region: AWS region
+        logger: Optional logger instance
+        
+    Returns:
+        Dict with traces delivery configuration results
+    """
+    from ..operations.observability.delivery import ObservabilityDeliveryManager
+    
+    log = logger or logging.getLogger(__name__)
+    
+    try:
+        delivery_manager = ObservabilityDeliveryManager(region_name=region)
+        
+        result = delivery_manager.enable_traces_for_runtime(
+            runtime_arn=agent_arn,
+            runtime_id=agent_id,
+        )
+        
+        if result['status'] == 'success':
+            log.info("✅ X-Ray traces delivery enabled for agent %s", agent_id)
+        else:
+            log.warning(
+                "⚠️ Traces delivery setup warning for agent %s: %s",
+                agent_id,
+                result.get('error')
+            )
+        
+        return result
+            
+    except Exception as e:
+        # Don't fail agent deployment if traces delivery setup fails
+        log.warning(
+            "⚠️ Agent deployed but traces delivery setup failed: %s",
+            str(e)
+        )
+        return {
+            'status': 'error',
+            'error': str(e),
+            'agent_id': agent_id,
+        }
 
 def _create_cloudwatch_logs_resource_policy(logs_client, account_id: str, region: str) -> None:
     """Create CloudWatch Logs resource policy for X-Ray access (idempotent)."""
@@ -159,3 +220,4 @@ def _configure_indexing_rule(xray_client) -> None:
             logger.info("X-Ray indexing rule already configured")
         else:
             raise
+

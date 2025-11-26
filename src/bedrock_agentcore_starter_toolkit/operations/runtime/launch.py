@@ -14,7 +14,7 @@ from rich.console import Console
 from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
-from ...services.xray import enable_transaction_search_if_needed
+from ...services.xray import enable_transaction_search_if_needed, enable_traces_delivery_for_runtime
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.entrypoint import build_entrypoint_array
@@ -24,6 +24,7 @@ from ..identity.helpers import ensure_identity_permissions
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
+from ..observability.delivery import ObservabilityDeliveryManager
 
 # console = Console()
 
@@ -435,6 +436,7 @@ def _ensure_memory_for_agent(
                 event_expiry_days=agent_config.memory.event_expiry_days or 30,
                 max_wait=300,  # 5 minutes
                 poll_interval=5,
+                enable_observability=agent_config.aws.observability.enabled,
             )
             log.info("Memory created and active: %s", memory.id)
             # END CHANGE
@@ -589,10 +591,20 @@ def _deploy_to_bedrock_agentcore(
     if agent_config.identity and agent_config.identity.workload:
         log.info("✓ Using workload identity: %s", agent_config.identity.workload.name)
 
-    # Enable Transaction Search if observability is enabled
+    # Enable observability components if enabled
     if agent_config.aws.observability.enabled:
-        log.info("Observability is enabled, configuring Transaction Search...")
+        log.info("Observability is enabled, configuring observability components...")
+        
+        # 1. Enable Transaction Search (existing functionality)
         enable_transaction_search_if_needed(region, account_id)
+        
+        # 2. Enable X-Ray traces delivery (NEW)
+        enable_traces_delivery_for_runtime(
+            agent_id=agent_id,
+            agent_arn=agent_arn,
+            region=region,
+            logger=log,
+        )
 
         # Show GenAI Observability Dashboard URL whenever OTEL is enabled
         console_url = get_genai_observability_url(region)

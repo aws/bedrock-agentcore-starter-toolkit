@@ -70,6 +70,19 @@
       }
     },
     {
+        "Effect": "Allow",
+        "Action": [
+            "logs:CreateLogGroup",
+            "logs:PutDeliverySource",
+            "logs:PutDeliveryDestination",
+            "logs:CreateDelivery",
+            "logs:GetDeliverySource",
+            "logs:DeleteDeliverySource",
+            "logs:DeleteDeliveryDestination"
+        ],
+        "Resource": "*"
+    },
+    {
       "Sid": "BedrockAgentCoreRuntime",
       "Effect": "Allow",
       "Action": [
