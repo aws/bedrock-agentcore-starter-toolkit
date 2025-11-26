@@ -53,6 +53,9 @@ app.add_typer(observability_app, name="obs")
 app.add_typer(create_app, name="create")
 create_app.command("import")(import_agent)
 
+# Alias: agentcore import-agent -> agentcore create import
+app.command("import-agent")(import_agent)
+
 
 def main():
     """Entry point for the CLI application."""
