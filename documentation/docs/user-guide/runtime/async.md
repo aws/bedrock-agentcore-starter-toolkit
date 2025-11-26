@@ -24,37 +24,9 @@ Agent code communicates its processing status using the "/ping" health status:
 
 A session in idle state for 15 minutes gets automatically terminated.
 
-## Three Ways to Manage Async Tasks
+## Two Ways to Manage Async Tasks
 
-### 1. Async Task Decorator (Recommended)
-
-The simplest way to track asynchronous functions. The SDK automatically manages the ping status:
-
-```python
-from bedrock_agentcore import BedrockAgentCoreApp
-
-app = BedrockAgentCoreApp()
-
-@app.async_task
-async def background_work():
-    await asyncio.sleep(10)  # Status becomes "HealthyBusy"
-    return "done"
-
-@app.entrypoint
-async def handler(event):
-    asyncio.create_task(background_work())
-    return {"status": "started"}
-
-if __name__ == "__main__":
-    app.run()
-```
-
-**How it works:**
-- The `@app.async_task` decorator tracks function execution
-- When the function runs, ping status changes to "HealthyBusy"
-- When the function completes, status returns to "Healthy"
-
-### 2. Manual Task Management
+### 1. Manual Task Management
 
 For more control over task tracking, use the API methods directly:
 
@@ -89,7 +61,7 @@ if __name__ == "__main__":
 - `app.complete_async_task(task_id)` - Mark task as complete
 - `app.get_async_task_info()` - Get information about running tasks
 
-### 3. Custom Ping Handler
+### 2. Custom Ping Handler
 
 Override automatic status with custom logic:
 
@@ -178,7 +150,7 @@ The ping status is determined in this priority order:
 
 1. **Forced Status** (debug actions like `force_busy`)
 2. **Custom Handler** (`@app.ping` decorator)
-3. **Automatic** (based on active `@app.async_task` functions)
+3. **Automatic** (based on tracked async tasks via `add_async_task`)
 
 ## Debug and Testing Features
 
