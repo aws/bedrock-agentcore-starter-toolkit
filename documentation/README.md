@@ -9,7 +9,7 @@ This repository contains the documentation for the Bedrock AgentCore SDK, primit
 ### Setup and Installation
 
 ```bash
-uv pip install -r requirements.txt
+uv pip install mkdocs
 ```
 
 ### Building and Previewing

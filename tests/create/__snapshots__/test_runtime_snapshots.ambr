@@ -49,7 +49,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from typing import List
       from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
       
@@ -148,7 +147,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from typing import List
       from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
       
@@ -241,7 +239,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from typing import List
       from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
       
@@ -342,7 +339,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from typing import List
       from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
       
@@ -456,7 +452,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from crewai_tools import MCPServerAdapter
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -569,7 +564,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from crewai_tools import MCPServerAdapter
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -666,7 +660,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from crewai_tools import MCPServerAdapter
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -780,7 +773,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from crewai_tools import MCPServerAdapter
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -910,7 +902,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
       from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
       
@@ -1007,7 +998,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from langchain_mcp_adapters.client import MultiServerMCPClient
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -1111,7 +1101,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from langchain_mcp_adapters.client import MultiServerMCPClient
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -1200,7 +1189,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from langchain_mcp_adapters.client import MultiServerMCPClient
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -1306,7 +1294,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from langchain_mcp_adapters.client import MultiServerMCPClient
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -1432,7 +1419,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from agents.mcp import MCPServerStreamableHttp
       
       # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
@@ -1571,7 +1557,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from mcp.client.streamable_http import streamablehttp_client
       from strands.tools.mcp.mcp_client import MCPClient
       
@@ -1707,7 +1692,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from mcp.client.streamable_http import streamablehttp_client
       from strands.tools.mcp.mcp_client import MCPClient
       
@@ -1829,7 +1813,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from mcp.client.streamable_http import streamablehttp_client
       from strands.tools.mcp.mcp_client import MCPClient
       
@@ -1969,7 +1952,6 @@
     ''',
     'src/mcp_client': None,
     'src/mcp_client/client.py': '''
-      import os
       from mcp.client.streamable_http import streamablehttp_client
       from strands.tools.mcp.mcp_client import MCPClient
       

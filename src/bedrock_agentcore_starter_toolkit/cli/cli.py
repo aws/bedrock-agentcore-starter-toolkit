@@ -55,7 +55,7 @@ app.add_typer(create_app, name="create")
 create_app.command("import")(import_agent)
 
 # Alias: agentcore import-agent -> agentcore create import
-app.command("import-agent")(import_agent)
+app.command("import-agent", hidden=True)(import_agent)
 
 
 def main():
