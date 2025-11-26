@@ -277,6 +277,8 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gemini-2.5-flash"
+      
       def load_model() -> OpenAIChatCompletionClient:
           """
           Get authenticated Gemini model client.
@@ -284,7 +286,7 @@
           and falls back to .env file for local development.
           """
           return OpenAIChatCompletionClient(
-              model="gemini-2.5-flash",
+              model=MODEL_ID,
               api_key=_get_api_key()
           )
     ''',
@@ -376,6 +378,8 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gpt-5.1"
+      
       def load_model() -> OpenAIChatCompletionClient:
           """
           Get authenticated OpenAI model client.
@@ -383,7 +387,7 @@
           and falls back to .env file for local development.
           """
           return OpenAIChatCompletionClient(
-              model="gpt-5.1",
+              model=MODEL_ID,
               api_key=_get_api_key()
           )
     ''',
@@ -586,15 +590,16 @@
     'src/model/load.py': '''
       from crewai import LLM
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+       MODEL_ID = "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> LLM:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return LLM(model="bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return LLM(model=MODEL_ID)
     ''',
   })
 # ---
@@ -697,6 +702,8 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gemini/gemini-2.5-flash"
+      
       def load_model() -> LLM:
           """
           Get authenticated Gemini model client.
@@ -704,7 +711,7 @@
           and falls back to .env file for local development.
           """
           return LLM(
-              model="gemini/gemini-2.5-flash",
+              model=MODEL_ID,
               api_key=_get_api_key()
           )
     ''',
@@ -835,7 +842,7 @@
       from model.load import load_model
       
       # https://google.github.io/adk-docs/agents/models/
-      MODEL_ID = "gemini-2.0-flash"
+      MODEL_ID = "gemini-2.5-flash"
       
       APP_NAME="testProject_Agent"
       USER_ID="user1234"
@@ -851,7 +858,6 @@
       load_model()
       
       # Agent Definition
-      # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
       agent = Agent(
           model=MODEL_ID,
           name="testProject_Agent",
@@ -908,7 +914,7 @@
       from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
       from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
       
-      # deepwiki provides context about public GitHub repositories and requires no authentication
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
       EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
       
       def get_streamable_http_mcp_client() -> McpToolset:
@@ -972,6 +978,9 @@
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
       
+      # Instantiate model
+      llm = load_model()
+      
       @app.entrypoint
       async def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
@@ -980,7 +989,7 @@
           tools = await mcp_client.get_tools()
       
           # Define the agent
-          graph = create_agent(load_model(), tools=tools + [add_numbers])
+          graph = create_agent(llm, tools=tools + [add_numbers])
       
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
@@ -1073,6 +1082,9 @@
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
       
+      # Instantiate model
+      llm = load_model()
+      
       @app.entrypoint
       async def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
@@ -1081,7 +1093,7 @@
           tools = await mcp_client.get_tools()
       
           # Define the agent
-          graph = create_agent(load_model(), tools=tools + [add_numbers])
+          graph = create_agent(llm, tools=tools + [add_numbers])
       
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
@@ -1123,15 +1135,16 @@
     'src/model/load.py': '''
       from langchain_aws import ChatBedrock
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> ChatBedrock:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return ChatBedrock(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return ChatBedrock(model_id=MODEL_ID)
     ''',
   })
 # ---
@@ -1158,6 +1171,9 @@
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
       
+      # Instantiate model
+      llm = load_model()
+      
       @app.entrypoint
       async def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
@@ -1166,7 +1182,7 @@
           tools = await mcp_client.get_tools()
       
           # Define the agent
-          graph = create_agent(load_model(), tools=tools + [add_numbers])
+          graph = create_agent(llm, tools=tools + [add_numbers])
       
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
@@ -1223,6 +1239,8 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gemini-2.5-flash"
+      
       def load_model() -> ChatGoogleGenerativeAI:
           """
           Get authenticated Gemini model client.
@@ -1230,7 +1248,7 @@
           and falls back to .env file for local development.
           """
           return ChatGoogleGenerativeAI(
-              model="gemini-2.5-flash",
+              model=MODEL_ID,
               api_key=_get_api_key()
           )
     ''',
@@ -1259,6 +1277,9 @@
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
       
+      # Instantiate model
+      llm = load_model()
+      
       @app.entrypoint
       async def invoke(payload):
           # assume payload input is structured as { "prompt": "<user input>" }
@@ -1267,7 +1288,7 @@
           tools = await mcp_client.get_tools()
       
           # Define the agent
-          graph = create_agent(load_model(), tools=tools + [add_numbers])
+          graph = create_agent(llm, tools=tools + [add_numbers])
       
           # Process the user prompt
           prompt = payload.get("prompt", "What is Agentic AI?")
@@ -1324,6 +1345,8 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gpt-5.1"
+      
       def load_model() -> ChatOpenAI:
           """
           Get authenticated OpenAI model client.
@@ -1331,7 +1354,7 @@
           and falls back to .env file for local development.
           """
           return ChatOpenAI(
-              model="gpt-5.1",
+              model=MODEL_ID,
               api_key=_get_api_key()
           )
     ''',
@@ -1702,15 +1725,16 @@
     'src/model/load.py': '''
       from strands.models import BedrockModel
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> BedrockModel:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return BedrockModel(model_id=MODEL_ID)
     ''',
   })
 # ---
@@ -1841,13 +1865,15 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gemini-2.5-flash"
+      
       def load_model() -> GeminiModel:
           """
           Get authenticated Gemini model client.
           """
           return GeminiModel(
               client_args={"api_key": _get_api_key()},
-              model_id="gemini-2.5-flash",
+              model_id=MODEL_ID,
           )
     ''',
   })
@@ -1979,13 +2005,15 @@
           else:
               return agentcore_identity_api_key_provider()
       
+      MODEL_ID = "gpt-5.1"
+      
       def load_model() -> OpenAIModel:
           """
           Get authenticated OpenAI model client.
           """
           return OpenAIModel(
               client_args={"api_key": _get_api_key()},
-              model_id="gpt-5.1",
+              model_id=MODEL_ID,
           )
     ''',
   })

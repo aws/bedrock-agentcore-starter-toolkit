@@ -61,7 +61,7 @@ class TestBaselineFeature:
         ]
         assert feature.python_dependencies == expected_deps
 
-    def test_before_apply_adds_dotenv_for_non_bedrock(self, tmp_path):
+    def test_before_apply_does_not_add_dotenv_for_monorepo(self, tmp_path):
         """Test that before_apply adds python-dotenv for non-Bedrock providers."""
         ctx = self._create_context(tmp_path, TemplateDirSelection.MONOREPO, ModelProvider.OpenAI)
         feature = BaselineFeature(ctx)
@@ -70,9 +70,9 @@ class TestBaselineFeature:
         initial_deps = feature.python_dependencies.copy()
         assert "python-dotenv >= 1.2.1" not in initial_deps
 
-        # After before_apply, should have dotenv
+        # After before_apply, should not have dotenv
         feature.before_apply(ctx)
-        assert "python-dotenv >= 1.2.1" in feature.python_dependencies
+        assert "python-dotenv >= 1.2.1" not in feature.python_dependencies
 
     def test_before_apply_no_dotenv_for_bedrock(self, tmp_path):
         """Test that before_apply does not add python-dotenv for Bedrock."""
@@ -88,19 +88,13 @@ class TestBaselineFeature:
         dotenv_count = sum(1 for d in feature.python_dependencies if "python-dotenv" in d)
         assert dotenv_count == 0
 
-    def test_before_apply_adds_dotenv_for_anthropic(self, tmp_path):
+    def test_before_apply_adds_dotenv_for_anthropic_runtime(self, tmp_path):
         """Test that before_apply adds python-dotenv for Anthropic provider."""
-        ctx = self._create_context(tmp_path, TemplateDirSelection.MONOREPO, ModelProvider.Anthropic)
+        ctx = self._create_context(tmp_path, TemplateDirSelection.RUNTIME_ONLY, ModelProvider.Anthropic)
         feature = BaselineFeature(ctx)
-        feature.before_apply(ctx)
-        assert "python-dotenv >= 1.2.1" in feature.python_dependencies
 
-    def test_before_apply_adds_dotenv_for_gemini(self, tmp_path):
-        """Test that before_apply adds python-dotenv for Gemini provider."""
-        ctx = self._create_context(tmp_path, TemplateDirSelection.MONOREPO, ModelProvider.Gemini)
-        feature = BaselineFeature(ctx)
-        feature.before_apply(ctx)
-        assert "python-dotenv >= 1.2.1" in feature.python_dependencies
+        initial_deps = feature.python_dependencies.copy()
+        assert "python-dotenv >= 1.2.1" in initial_deps
 
     def test_template_override_dir_is_set(self, tmp_path):
         """Test that template_override_dir is set correctly."""

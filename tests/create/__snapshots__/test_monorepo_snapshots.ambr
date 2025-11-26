@@ -1612,15 +1612,16 @@
     'src/model/load.py': '''
       from crewai import LLM
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+       MODEL_ID = "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> LLM:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return LLM(model="bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return LLM(model=MODEL_ID)
     ''',
   })
 # ---
@@ -1802,15 +1803,16 @@
     'src/model/load.py': '''
       from crewai import LLM
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+       MODEL_ID = "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> LLM:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return LLM(model="bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return LLM(model=MODEL_ID)
     ''',
     'terraform': None,
   })
@@ -2409,13 +2411,14 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from google.adk.agents import Agent
       from google.adk.runners import Runner
       from google.adk.sessions import InMemorySessionService
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
       from google.genai import types
-      import os
       from .mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
@@ -2435,8 +2438,10 @@
           """Return the sum of two numbers"""
           return a+b
       
+      # Set environment variables for model authentication
+      load_model()
+      
       # Agent Definition
-      # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
       agent = Agent(
           model=MODEL_ID,
           name="testProject_Agent",
@@ -2602,13 +2607,14 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from google.adk.agents import Agent
       from google.adk.runners import Runner
       from google.adk.sessions import InMemorySessionService
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
       from google.genai import types
-      import os
       from .mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
@@ -2628,8 +2634,10 @@
           """Return the sum of two numbers"""
           return a+b
       
+      # Set environment variables for model authentication
+      load_model()
+      
       # Agent Definition
-      # Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
       agent = Agent(
           model=MODEL_ID,
           name="testProject_Agent",
@@ -3322,13 +3330,13 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from langchain_core.messages import HumanMessage
       from langchain.agents import create_agent
-      from langchain_aws import ChatBedrock
       from langchain.tools import tool
       from bedrock_agentcore import BedrockAgentCoreApp
-      import os
       from .mcp_client.client import get_streamable_http_mcp_client as deployed_get_tools
+      from model.load import load_model
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
@@ -3337,12 +3345,8 @@
       else:
           get_tools = deployed_get_tools
       
-      # Uses global inference profile for Claude Sonnet 4.5
-      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-      MODEL_ID="global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-      
-      # Initialize the model client
-      llm = ChatBedrock(model_id=MODEL_ID)
+      # Instantiate model
+      llm = load_model()
       
       # Define a simple function tool
       @tool
@@ -3431,15 +3435,16 @@
     'src/model/load.py': '''
       from langchain_aws import ChatBedrock
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> ChatBedrock:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return ChatBedrock(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return ChatBedrock(model_id=MODEL_ID)
     ''',
   })
 # ---
@@ -3511,13 +3516,13 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from langchain_core.messages import HumanMessage
       from langchain.agents import create_agent
-      from langchain_aws import ChatBedrock
       from langchain.tools import tool
       from bedrock_agentcore import BedrockAgentCoreApp
-      import os
       from .mcp_client.client import get_streamable_http_mcp_client as deployed_get_tools
+      from model.load import load_model
       
       if os.getenv("LOCAL_DEV") == "1":
           # In local dev, instantiate dummy MCP client so the code runs without deploying
@@ -3526,12 +3531,8 @@
       else:
           get_tools = deployed_get_tools
       
-      # Uses global inference profile for Claude Sonnet 4.5
-      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-      MODEL_ID="global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-      
-      # Initialize the model client
-      llm = ChatBedrock(model_id=MODEL_ID)
+      # Instantiate model
+      llm = load_model()
       
       # Define a simple function tool
       @tool
@@ -3620,15 +3621,16 @@
     'src/model/load.py': '''
       from langchain_aws import ChatBedrock
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> ChatBedrock:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return ChatBedrock(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return ChatBedrock(model_id=MODEL_ID)
     ''',
     'terraform': None,
   })
@@ -5185,7 +5187,7 @@
                   REGION
               )
           else:
-              log.warning("MEMORY_ID not set, not initializing memory session manager")
+              log.warning("MEMORY_ID is not set. Skipping memory session manager initialization.")
       
       
           # Create code interpreter
@@ -5289,15 +5291,16 @@
     'src/model/load.py': '''
       from strands.models import BedrockModel
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> BedrockModel:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return BedrockModel(model_id=MODEL_ID)
     ''',
   })
 # ---
@@ -5422,7 +5425,7 @@
                   REGION
               )
           else:
-              log.warning("MEMORY_ID not set, not initializing memory session manager")
+              log.warning("MEMORY_ID is not set. Skipping memory session manager initialization.")
       
       
           # Create code interpreter
@@ -5526,15 +5529,16 @@
     'src/model/load.py': '''
       from strands.models import BedrockModel
       
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
       
       def load_model() -> BedrockModel:
           """
           Get Bedrock model client.
           Uses IAM authentication via the execution role.
           """
-          # Uses global inference profile for Claude Sonnet 4.5
-          # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-          return BedrockModel(model_id="global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+          return BedrockModel(model_id=MODEL_ID)
     ''',
     'terraform': None,
   })
