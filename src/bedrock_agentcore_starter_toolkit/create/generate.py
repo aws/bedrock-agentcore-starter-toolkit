@@ -155,4 +155,5 @@ def _apply_iac_generation(ctx: ProjectContext, agent_config: BedrockAgentCoreAge
         explicit_requirements_file=ctx.output_dir / "pyproject.toml",
         agent_name=ctx.agent_name,
         enable_observability=ctx.observability_enabled,
+        silence_warn=True,
     )

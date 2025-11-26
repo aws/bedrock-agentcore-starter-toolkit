@@ -114,6 +114,7 @@ class ContainerRuntime:
         source_path: Optional[str] = None,
         protocol: Optional[str] = None,
         explicit_requirements_file: Optional[Path] = None,
+        silence_warn=False,
     ) -> Path:
         """Generate Dockerfile from template.
 
@@ -129,18 +130,20 @@ class ContainerRuntime:
             source_path: Optional source code directory (for dependency detection)
             protocol: Optional protocol configuration (HTTP or HTTPS)
             explicit_requirements_file: Optional Path to the requirements_file to override detection logic
+            silence_warn: Boolean to not emit warn messages. Defaults to False
         """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 
         if current_platform != required_platform:
-            _handle_warn(
-                f"Platform mismatch: Current system is '{current_platform}' "
-                f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
-                "Please use default launch command which will do a remote cross-platform build using code build."
-                "For deployment other options and workarounds, see: "
-                "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
-            )
+            if not silence_warn:
+                _handle_warn(
+                    f"Platform mismatch: Current system is '{current_platform}' "
+                    f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
+                    "Please use default launch command which will do a remote cross-platform build using code build."
+                    "For deployment other options and workarounds, see: "
+                    "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
+                )
 
         template_path = Path(__file__).parent / "templates" / "Dockerfile.j2"
 
