@@ -58,7 +58,7 @@ class ObservabilityDeliveryManager:
     """
 
     # Supported resource types and their log group patterns
-    SUPPORTED_RESOURCE_TYPES = {"memory", "gateway", "runtime", "tools", "identity"}
+    SUPPORTED_RESOURCE_TYPES = {"memory", "gateway", "runtime"}
 
     # Resource types where AWS auto-creates log groups
     AUTO_LOG_RESOURCE_TYPES = {"runtime"}
@@ -101,8 +101,8 @@ class ObservabilityDeliveryManager:
     def enable_observability_for_resource(
         self,
         resource_arn: str,
-        resource_id: str,
-        resource_type: str,
+        resource_id: Optional[str] = None,
+        resource_type: Optional[str] = None,
         enable_logs: bool = True,
         enable_traces: bool = True,
         custom_log_group: Optional[str] = None,
@@ -115,8 +115,8 @@ class ObservabilityDeliveryManager:
         Args:
             resource_arn: Full ARN of the AgentCore resource
                 Example: 'arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/my-memory-id'
-            resource_id: Resource identifier (e.g., memory ID, gateway ID)
-            resource_type: Type of resource - one of:
+            resource_id: Optional Resource identifier (e.g., memory ID, gateway ID)
+            resource_type: Optional Type of resource - one of:
                 'memory', 'gateway', 'runtime', 'tools', 'identity'
             enable_logs: Whether to enable APPLICATION_LOGS delivery (default: True)
                 Note: For 'runtime', logs are auto-created by AWS, so this creates
@@ -139,6 +139,20 @@ class ObservabilityDeliveryManager:
         Raises:
             ValueError: If resource_type is not supported
         """
+        # Parse resource_type and resource_id from ARN if not provided
+        # ARN format: arn:aws:bedrock-agentcore:{region}:{account}:{resource_type}/{resource_id}
+        if resource_type is None or resource_id is None:
+            try:
+                resource_part = resource_arn.split(":")[-1]
+                parsed_type, parsed_id = resource_part.split("/", 1)
+                resource_type = resource_type or parsed_type
+                resource_id = resource_id or parsed_id
+            except (IndexError, ValueError) as e:
+                raise ValueError(
+                    f"Could not parse resource_type/resource_id from ARN: {resource_arn}. "
+                    f"Please provide them explicitly. Error: {e}"
+                ) from e
+
         # Validate resource type
         if resource_type not in self.SUPPORTED_RESOURCE_TYPES:
             raise ValueError(
@@ -513,6 +527,72 @@ class ObservabilityDeliveryManager:
             pass
 
         return status
+
+    def enable_for_memory(
+        self,
+        memory_id: str,
+        memory_arn: Optional[str] = None,
+        enable_logs: bool = True,
+        enable_traces: bool = True,
+    ) -> Dict[str, Any]:
+        """Enable observability for a memory resource.
+
+        Convenience method that handles ARN construction if not provided.
+        """
+        if not memory_arn:
+            memory_arn = f"arn:aws:bedrock-agentcore:{self.region}:{self._account_id}:memory/{memory_id}"
+
+        return self.enable_observability_for_resource(
+            resource_arn=memory_arn,
+            resource_id=memory_id,
+            resource_type="memory",
+            enable_logs=enable_logs,
+            enable_traces=enable_traces,
+        )
+
+    def enable_for_gateway(
+        self,
+        gateway_id: str,
+        gateway_arn: Optional[str] = None,
+        enable_logs: bool = True,
+        enable_traces: bool = True,
+    ) -> Dict[str, Any]:
+        """Enable observability for a gateway resource.
+
+        Convenience method that handles ARN construction if not provided.
+        """
+        if not gateway_arn:
+            gateway_arn = f"arn:aws:bedrock-agentcore:{self.region}:{self._account_id}:gateway/{gateway_id}"
+
+        return self.enable_observability_for_resource(
+            resource_arn=gateway_arn,
+            resource_id=gateway_id,
+            resource_type="gateway",
+            enable_logs=enable_logs,
+            enable_traces=enable_traces,
+        )
+
+    def disable_for_memory(
+        self,
+        memory_id: str,
+        delete_log_group: bool = False,
+    ) -> Dict[str, Any]:
+        """Disable observability for a memory resource."""
+        return self.disable_observability_for_resource(
+            resource_id=memory_id,
+            delete_log_group=delete_log_group,
+        )
+
+    def disable_for_gateway(
+        self,
+        gateway_id: str,
+        delete_log_group: bool = False,
+    ) -> Dict[str, Any]:
+        """Disable observability for a gateway resource."""
+        return self.disable_observability_for_resource(
+            resource_id=gateway_id,
+            delete_log_group=delete_log_group,
+        )
 
 
 # Convenience function matching AWS documentation example signature

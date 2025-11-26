@@ -191,7 +191,7 @@ class TestEnableObservabilityForResource:
         }
         mock_manager._logs_client.create_delivery.return_value = {"id": "delivery-123"}
 
-        for resource_type in ["memory", "gateway", "runtime", "tools", "identity"]:
+        for resource_type in ["memory", "gateway", "runtime"]:
             result = mock_manager.enable_observability_for_resource(
                 resource_arn=f"arn:aws:bedrock-agentcore:us-east-1:123456789012:{resource_type}/test",
                 resource_id="test",
@@ -388,3 +388,136 @@ class TestConvenienceFunction:
         assert result["status"] == "success"
         assert result["logs_delivery_id"] == "logs-123"
         assert result["traces_delivery_id"] == "traces-123"
+
+
+class TestArnParsing:
+    """Tests for ARN parsing functionality."""
+
+    @pytest.fixture
+    def mock_manager(self):
+        """Create a mock manager."""
+        with patch("boto3.Session") as mock_session_class:
+            mock_session = MagicMock()
+            mock_session.region_name = "us-east-1"
+            mock_session.client.return_value.get_caller_identity.return_value = {"Account": "123456789012"}
+            mock_session_class.return_value = mock_session
+
+            manager = ObservabilityDeliveryManager(region_name="us-east-1")
+            manager._logs_client = MagicMock()
+            manager._logs_client.create_log_group.return_value = {}
+            manager._logs_client.put_delivery_source.return_value = {"deliverySource": {"name": "test-source"}}
+            manager._logs_client.put_delivery_destination.return_value = {
+                "deliveryDestination": {
+                    "name": "test-dest",
+                    "arn": "arn:aws:logs:us-east-1:123456789012:delivery-destination:test-dest",
+                }
+            }
+            manager._logs_client.create_delivery.return_value = {"id": "delivery-123"}
+
+            return manager
+
+    def test_infer_resource_type_and_id_from_arn(self, mock_manager):
+        """Test that resource_type and resource_id are correctly parsed from ARN."""
+        result = mock_manager.enable_observability_for_resource(
+            resource_arn="arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/my-memory-id",
+            # Note: not passing resource_id or resource_type
+        )
+
+        assert result["status"] == "success"
+        assert result["resource_id"] == "my-memory-id"
+        assert result["resource_type"] == "memory"
+
+    def test_infer_gateway_from_arn(self, mock_manager):
+        """Test parsing gateway ARN."""
+        result = mock_manager.enable_observability_for_resource(
+            resource_arn="arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/gw-12345",
+        )
+
+        assert result["status"] == "success"
+        assert result["resource_id"] == "gw-12345"
+        assert result["resource_type"] == "gateway"
+
+    def test_explicit_params_override_arn(self, mock_manager):
+        """Test that explicit parameters override ARN parsing."""
+        result = mock_manager.enable_observability_for_resource(
+            resource_arn="arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/arn-id",
+            resource_id="explicit-id",
+            resource_type="memory",
+        )
+
+        assert result["status"] == "success"
+        assert result["resource_id"] == "explicit-id"
+
+    def test_invalid_arn_raises_error(self, mock_manager):
+        """Test that invalid ARN raises ValueError."""
+        with pytest.raises(ValueError, match="Could not parse"):
+            mock_manager.enable_observability_for_resource(
+                resource_arn="invalid-arn-format",
+            )
+
+
+class TestConvenienceMethods:
+    """Tests for enable_for_memory, enable_for_gateway convenience methods."""
+
+    @pytest.fixture
+    def mock_manager(self):
+        """Create a mock manager."""
+        with patch("boto3.Session") as mock_session_class:
+            mock_session = MagicMock()
+            mock_session.region_name = "us-east-1"
+            mock_session.client.return_value.get_caller_identity.return_value = {"Account": "123456789012"}
+            mock_session_class.return_value = mock_session
+
+            manager = ObservabilityDeliveryManager(region_name="us-east-1")
+            manager._logs_client = MagicMock()
+            manager._logs_client.create_log_group.return_value = {}
+            manager._logs_client.put_delivery_source.return_value = {"deliverySource": {"name": "test-source"}}
+            manager._logs_client.put_delivery_destination.return_value = {
+                "deliveryDestination": {
+                    "name": "test-dest",
+                    "arn": "arn:aws:logs:us-east-1:123456789012:delivery-destination:test-dest",
+                }
+            }
+            manager._logs_client.create_delivery.return_value = {"id": "delivery-123"}
+
+            return manager
+
+    def test_enable_for_memory(self, mock_manager):
+        """Test enable_for_memory convenience method."""
+        result = mock_manager.enable_for_memory(memory_id="test-memory")
+
+        assert result["status"] == "success"
+        assert result["resource_type"] == "memory"
+
+    def test_enable_for_memory_with_arn(self, mock_manager):
+        """Test enable_for_memory with explicit ARN."""
+        result = mock_manager.enable_for_memory(
+            memory_id="test-memory", memory_arn="arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/test-memory"
+        )
+
+        assert result["status"] == "success"
+
+    def test_enable_for_gateway(self, mock_manager):
+        """Test enable_for_gateway convenience method."""
+        result = mock_manager.enable_for_gateway(gateway_id="test-gateway")
+
+        assert result["status"] == "success"
+        assert result["resource_type"] == "gateway"
+
+    def test_disable_for_memory(self, mock_manager):
+        """Test disable_for_memory convenience method."""
+        mock_manager._logs_client.delete_delivery_source.return_value = {}
+        mock_manager._logs_client.delete_delivery_destination.return_value = {}
+
+        result = mock_manager.disable_for_memory(memory_id="test-memory")
+
+        assert result["status"] == "success"
+
+    def test_disable_for_gateway(self, mock_manager):
+        """Test disable_for_gateway convenience method."""
+        mock_manager._logs_client.delete_delivery_source.return_value = {}
+        mock_manager._logs_client.delete_delivery_destination.return_value = {}
+
+        result = mock_manager.disable_for_gateway(gateway_id="test-gateway")
+
+        assert result["status"] == "success"
