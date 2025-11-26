@@ -1,0 +1,56 @@
+from crewai import Agent, Crew, Task, Process
+from crewai.tools import tool
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from mcp_client.client import get_streamable_http_mcp_client
+from model.load import load_model
+
+# Define a simple function tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Return the sum of two numbers"""
+    return a+b
+
+
+# Import AgentCore Gateway as Streamable HTTP MCP Adapter
+mcp_adapter = get_streamable_http_mcp_client()
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+
+@app.entrypoint
+def invoke(payload):
+    # assume payload input is structured as { "prompt": "<user input>" }
+
+    # Define the Agent, Task and Crew with Tools
+    with mcp_adapter as tools:
+        agent = Agent(
+            role="Question Answering Assistant",
+            goal="Answer the users questions",
+            backstory="Always eager to answer any questions",
+            llm=load_model(),
+            tools=tools + [add_numbers]
+        )
+
+        task = Task(
+            agent=agent,
+            description="Answer the users question: {prompt}",
+            expected_output="An answer to the users question"
+        )
+
+        crew = Crew(
+            agents=[agent],
+            tasks=[task],
+            process=Process.sequential
+        )
+
+        # Process the user prompt
+        prompt = payload.get("prompt", "What is Agentic AI?")
+
+        # Run the agent
+        result = crew.kickoff(inputs={"prompt": prompt})
+
+        # Return result
+        return result.raw
+
+if __name__ == "__main__":
+    app.run()

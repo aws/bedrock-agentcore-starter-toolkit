@@ -5,9 +5,7 @@ import pytest
 from bedrock_agentcore_starter_toolkit.services.ecr import (
     create_ecr_repository,
     deploy_to_ecr,
-    get_account_id,
     get_or_create_ecr_repository,
-    get_region,
     sanitize_ecr_repo_name,
 )
 
@@ -77,22 +75,6 @@ class TestECRService:
 
         with pytest.raises(RuntimeError, match="Failed to push image to ECR"):
             deploy_to_ecr("local-image:latest", "test-repo", "us-west-2", mock_container_runtime)
-
-    def test_get_account_id(self, mock_boto3_clients):
-        """Test AWS account ID retrieval."""
-        account_id = get_account_id()
-        assert account_id == "123456789012"
-        mock_boto3_clients["sts"].get_caller_identity.assert_called_once()
-
-    def test_get_region(self, mock_boto3_clients):
-        """Test AWS region detection."""
-        region = get_region()
-        assert region == "us-west-2"
-
-        # Test default fallback
-        mock_boto3_clients["session"].region_name = None
-        region = get_region()
-        assert region == "us-west-2"  # Default fallback
 
 
 class TestSanitizeECRRepoName:

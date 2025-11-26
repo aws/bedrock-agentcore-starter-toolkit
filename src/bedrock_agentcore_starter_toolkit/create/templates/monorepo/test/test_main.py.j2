@@ -1,0 +1,176 @@
+# import pytest
+# from unittest.mock import Mock, patch, AsyncMock, MagicMock
+# import sys
+# from pathlib import Path
+
+# # Add src to path for imports
+# sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+{%- if sdk_provider == "CrewAI" %}
+# # Mock CrewAI LLM to prevent initialization errors
+# with patch('crewai.LLM', MagicMock()):
+    {%- if model_provider == "Bedrock" %}
+#     # Mock MCP client for CrewAI + Bedrock
+#     mock_mcp_client = Mock()
+#     mock_mcp_client.list_tools_sync.return_value = []
+#     mock_mcp_client.__enter__ = Mock(return_value=[])
+#     mock_mcp_client.__exit__ = Mock(return_value=False)
+#     with patch('mcp_client.client.get_streamable_http_mcp_client', return_value=mock_mcp_client):
+#         from main import app, invoke
+    {%- else %}
+#     from main import app, invoke
+    {%- endif %}
+
+{%- elif model_provider == "Bedrock" and sdk_provider in ["Strands", "LangChain_LangGraph", "AutoGen"] %}
+# # Mock MCP client to prevent Gateway connection attempts
+{%- if sdk_provider == "AutoGen" %}
+# # Mock anthropic module to prevent import errors
+# mock_anthropic = MagicMock()
+# mock_anthropic.types = MagicMock()
+# sys.modules['anthropic'] = mock_anthropic
+# sys.modules['anthropic.types'] = mock_anthropic.types
+# with patch('mcp_client.client.get_streamable_http_mcp_tools', AsyncMock(return_value=[])):
+#     from main import app, main
+{%- else %}
+# mock_mcp_client = Mock()
+{%- if sdk_provider == "LangChain_LangGraph" %}
+# mock_mcp_client.get_tools = AsyncMock(return_value=[])
+{%- else %}
+# mock_mcp_client.list_tools_sync.return_value = []
+{%- endif %}
+# mock_mcp_client.__enter__ = Mock(return_value=mock_mcp_client)
+# mock_mcp_client.__exit__ = Mock(return_value=False)
+# with patch('mcp_client.client.get_streamable_http_mcp_client', return_value=mock_mcp_client):
+#     from main import app, invoke
+{%- endif %}
+{%- else %}
+# # Standard import - no MCP client mocking needed
+{%- if sdk_provider in ["GoogleADK", "OpenAIAgents"] and model_provider != "Bedrock" %}
+# # Mock load_model to prevent API key provider calls during import
+# with patch('model.load.load_model'):
+#     from main import app, agent_invocation
+{%- elif sdk_provider in ["GoogleADK", "OpenAIAgents"] %}
+# from main import app, agent_invocation
+{%- elif sdk_provider == "AutoGen" %}
+# from main import app, main
+{%- else %}
+# from main import app, invoke
+{%- endif %}
+{%- endif %}
+
+# class TestAgent:
+    {%- if sdk_provider == "LangChain_LangGraph" %}
+#     @patch('main.load_model')
+#     @patch('main.create_agent')
+#     @pytest.mark.asyncio
+#     async def test_invoke_with_prompt(self, mock_create_agent, mock_load_model):
+#         """Test invoke function with user prompt"""
+#         mock_graph = Mock()
+#         mock_result = {"messages": [Mock(content="Test response")]}
+#         mock_graph.ainvoke = AsyncMock(return_value=mock_result)
+#         mock_create_agent.return_value = mock_graph
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         result = await invoke(payload)
+
+#         assert result == {"result": "Test response"}
+    {%- elif sdk_provider == "CrewAI" %}
+
+#     @patch('main.Agent')
+#     @patch('main.Task')
+#     @patch('main.Crew')
+#     def test_invoke_with_prompt(self, mock_crew_class, mock_task_class, mock_agent_class):
+#         """Test invoke function with user prompt"""
+#         mock_crew = Mock()
+#         mock_result = Mock()
+#         mock_result.raw = "Test response"
+#         mock_crew.kickoff.return_value = mock_result
+#         mock_crew_class.return_value = mock_crew
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         result = invoke(payload)
+
+#         assert result == "Test response"
+    {%- elif sdk_provider == "OpenAIAgents" %}
+
+#     @patch('main.main')
+#     @pytest.mark.asyncio
+#     async def test_agent_invocation_with_prompt(self, mock_main):
+#         """Test agent_invocation function with user prompt"""
+#         mock_result = Mock()
+#         mock_result.final_output = "Test response"
+#         mock_main.return_value = mock_result
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         context = Mock(session_id="test_session")
+#         result = await agent_invocation(payload, context)
+
+#         assert result == {"result": "Test response"}
+    {%- elif sdk_provider == "AutoGen" %}
+
+#     @patch('main.AssistantAgent')
+#     @pytest.mark.asyncio
+#     async def test_main_with_prompt(self, mock_agent_class):
+#         """Test main function with user prompt"""
+#         mock_agent = Mock()
+#         mock_result = Mock()
+#         mock_result.messages = [Mock(content="Test response")]
+#         mock_agent.run = AsyncMock(return_value=mock_result)
+#         mock_agent_class.return_value = mock_agent
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         result = await main(payload)
+
+#         assert result == {"result": "Test response"}
+    {%- elif sdk_provider == "GoogleADK" %}
+
+#     @patch('main.call_agent_async')
+#     @pytest.mark.asyncio
+#     async def test_agent_invocation_with_prompt(self, mock_call_agent):
+#         """Test agent_invocation function with user prompt"""
+#         mock_call_agent.return_value = "Test response"
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         context = Mock(session_id="test_session")
+#         result = await agent_invocation(payload, context)
+
+#         mock_call_agent.assert_called_once()
+#         assert result == {"result": "Test response"}
+    {%- else %}
+
+#     @patch('main.model')
+#     @patch('main.Agent')
+#     def test_invoke_with_prompt(self, mock_agent_class, mock_model):
+#         """Test invoke function with user prompt"""
+#         mock_agent = Mock()
+#         mock_agent.return_value = "Test response"
+#         mock_agent_class.return_value = mock_agent
+
+#         payload = {"prompt": "Hello, how are you?"}
+#         result = invoke(payload)
+
+#         mock_agent.assert_called_once_with("Hello, how are you?")
+#         assert result == {"response": "Test response"}
+    {%- endif %}
+
+# class TestBedrockAgentCoreApp:
+#     def test_app_initialization(self):
+#         """Test that BedrockAgentCoreApp is properly initialized"""
+#         assert app is not None
+#         assert hasattr(app, 'entrypoint')
+
+#     def test_entrypoint_decorator(self):
+#         """Test that entrypoint function is properly decorated"""
+        {%- if sdk_provider == "OpenAIAgents" or sdk_provider == "GoogleADK" %}
+
+#         assert hasattr(agent_invocation, '__name__')
+#         assert agent_invocation.__name__ == 'agent_invocation'
+        {%- elif sdk_provider == "AutoGen" %}
+
+#         assert hasattr(main, '__name__')
+#         assert main.__name__ == 'main'
+        {%- else %}
+
+#         assert hasattr(invoke, '__name__')
+#         assert invoke.__name__ == 'invoke'
+        {%- endif %}

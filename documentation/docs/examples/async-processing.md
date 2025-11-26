@@ -1,14 +1,14 @@
 # Async Processing
 
-This example demonstrates how to use Bedrock AgentCore's `@async_task` decorator for automatic health status management.
+This example demonstrates how to use Bedrock AgentCore's manual task management for automatic health status tracking during long-running operations.
 
 ## Overview
 
-Bedrock AgentCore provides automatic ping status management based on running async tasks:
+Bedrock AgentCore provides automatic ping status management based on tracked async tasks:
 
 - **Automatic Health Reporting**: Ping status automatically reflects system busyness
-- **Simple Integration**: Just use the `@async_task` decorator
-- **Zero Configuration**: Status tracking works out of the box
+- **Manual Task Tracking**: Use `add_async_task` and `complete_async_task` for explicit control
+- **Flexible Integration**: Works with any async pattern (threading, asyncio, etc.)
 
 ## Key Concepts
 
@@ -20,52 +20,79 @@ Bedrock AgentCore provides automatic ping status management based on running asy
 ```python
 #!/usr/bin/env python3
 """
-Simple agent demonstrating @async_task decorator usage.
+Simple agent demonstrating manual task management with threading.
 """
 
-import asyncio
+import time
+import threading
 from datetime import datetime
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
 app = BedrockAgentCoreApp()
 
-# Long-running task that automatically affects ping status
-@app.async_task
-async def process_data(data_id: str):
-    """Process data asynchronously - status becomes 'HealthyBusy' during execution."""
+def process_data(data_id: str, task_id: int):
+    """Process data synchronously in background thread."""
     print(f"[{datetime.now()}] Processing data: {data_id}")
 
     # Simulate processing work
-    await asyncio.sleep(30)  # Long-running task
+    time.sleep(30)  # Long-running task
 
     print(f"[{datetime.now()}] Completed processing: {data_id}")
+
+    # Mark task as complete
+    app.complete_async_task(task_id)
     return f"Processed {data_id}"
 
-# Another background task
-@app.async_task
-async def cleanup_task():
-    """Cleanup task that also affects ping status."""
+def cleanup_task(task_id: int):
+    """Cleanup task running in background thread."""
     print(f"[{datetime.now()}] Starting cleanup...")
-    await asyncio.sleep(10)
+    time.sleep(10)
     print(f"[{datetime.now()}] Cleanup completed")
+
+    # Mark task as complete
+    app.complete_async_task(task_id)
     return "Cleanup done"
 
 @app.entrypoint
-async def handler(event):
-    """Main handler - starts async tasks."""
+def handler(event):
+    """Main handler - starts background tasks with manual tracking."""
     action = event.get("action", "info")
 
     if action == "process":
         data_id = event.get("data_id", "default_data")
-        # Start the async task (status will become HealthyBusy)
-        await process_data(data_id)
-        return {"message": f"Processing {data_id}", "status": "completed"}
+
+        # Start tracking the task (status becomes HealthyBusy)
+        task_id = app.add_async_task("data_processing", {"data_id": data_id})
+
+        # Start the task in background thread
+        threading.Thread(
+            target=process_data,
+            args=(data_id, task_id),
+            daemon=True
+        ).start()
+
+        return {
+            "message": f"Started processing {data_id}",
+            "task_id": task_id,
+            "status": "processing"
+        }
 
     elif action == "cleanup":
-        # Start cleanup task
-        await cleanup_task()
-        return {"message": "Cleanup completed"}
+        # Start tracking cleanup task
+        task_id = app.add_async_task("cleanup", {})
+
+        # Start cleanup in background thread
+        threading.Thread(
+            target=cleanup_task,
+            args=(task_id,),
+            daemon=True
+        ).start()
+
+        return {
+            "message": "Started cleanup",
+            "task_id": task_id
+        }
 
     elif action == "status":
         # Get current status
@@ -93,11 +120,12 @@ if __name__ == "__main__":
 
 ## How It Works
 
-1. **Decorate async functions** with `@app.async_task`
-2. **Call the functions** normally in your handler
-3. **Status updates automatically**:
-   - `Healthy` when no tasks are running
-   - `HealthyBusy` when any `@async_task` function is executing
+1. **Register the task** with `app.add_async_task(name, metadata)` - Returns a task_id
+2. **Start background work** in a thread, passing the task_id
+3. **Complete the task** with `app.complete_async_task(task_id)` when done
+4. **Status updates automatically**:
+   - `Healthy` when no tracked tasks are running
+   - `HealthyBusy` when any tracked tasks are active
 
 ## Usage Examples
 
@@ -123,9 +151,10 @@ curl -X POST http://localhost:8080/invocations \
 
 ## Key Benefits
 
-1. **Automatic Status Tracking**: No manual ping status management needed
-2. **Cost Control**: Status automatically prevents new work assignment when busy
-3. **Simple to Use**: Just add `@async_task` decorator to long-running functions
-4. **Error Handling**: Status correctly updates even if tasks fail
+1. **Automatic Status Tracking**: Ping status updates automatically based on tracked tasks
+2. **Cost Control**: Status prevents new work assignment when busy
+3. **Flexible Integration**: Works with threading, asyncio, or any background processing
+4. **Explicit Control**: You decide when to start and stop tracking tasks
+5. **Task Metadata**: Associate custom metadata with each task for debugging
 
-This simple pattern provides automatic health monitoring for your BedrockAgentCore applications without any additional configuration.
+This manual task management pattern provides automatic health monitoring with full control over task lifecycle.
