@@ -3009,7 +3009,8 @@ class TestTransactionSearchIntegration:
 
             # Verify GenAI observability dashboard URL was logged
             mock_get_url.assert_called_once_with("us-west-2")
-            mock_log.info.assert_any_call("Observability is enabled, configuring Transaction Search...")
+            # UPDATED: Changed log message to match new implementation
+            mock_log.info.assert_any_call("Observability is enabled, configuring observability components...")
             mock_log.info.assert_any_call("🔍 GenAI Observability Dashboard:")
             mock_log.info.assert_any_call("   %s", "https://console.aws.amazon.com/genai-observability")
 
@@ -3056,7 +3057,8 @@ class TestTransactionSearchIntegration:
 
             # Verify observability logs were NOT emitted
             log_calls = [call.args[0] for call in mock_log.info.call_args_list]
-            assert "Observability is enabled, configuring Transaction Search..." not in log_calls
+            # UPDATED: Changed log message to match new implementation
+            assert "Observability is enabled, configuring observability components..." not in log_calls
             assert "🔍 GenAI Observability Dashboard:" not in log_calls
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
@@ -3154,7 +3156,8 @@ class TestTransactionSearchIntegration:
             mock_enable_transaction_search.assert_called_once_with("us-west-2", "123456789012")
 
             # Verify observability logs were emitted
-            mock_log.info.assert_any_call("Observability is enabled, configuring Transaction Search...")
+            # UPDATED: Changed log message to match new implementation
+            mock_log.info.assert_any_call("Observability is enabled, configuring observability components...")
             mock_log.info.assert_any_call("🔍 GenAI Observability Dashboard:")
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed")
