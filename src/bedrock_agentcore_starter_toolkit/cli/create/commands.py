@@ -267,13 +267,20 @@ def _handle_monorepo_flow(
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
 
     if configure_yaml.exists():
+        _handle_warn("Detected a local .bedrock_agentcore.yaml. Existing settings may be modified")
         configure_schema: BedrockAgentCoreConfigSchema = load_config(configure_yaml)
         if len(configure_schema.agents.keys()) > 1:
             _handle_error("agentcore create does not currently support multi agent configurations.")
 
         agent_config = next(iter(configure_schema.agents.values()))
         if agent_config.deployment_type != "container":
-            _handle_error("agentcore create currently only supports deployment_type: container")
+            _handle_error("agentcore create with a production-ready agent only supports deployment_type: container")
+
+    if agent_config and agent_config.entrypoint != ".":
+        _handle_error(
+            "agentcore create cannot support existing source code from an existing .bedrock_agentcore.yaml"
+            "Check your local .bedrock_agentcore.yaml or try running agentcore create in a different directory"
+        )
 
     # Interactively accept IAC/SDK if not provided
     if not sdk and (not agent_config or agent_config.entrypoint == "."):

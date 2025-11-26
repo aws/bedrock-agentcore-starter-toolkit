@@ -26,7 +26,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     if (
         agent_config.entrypoint != "."
     ):  # create sets entrypoint to . to indicate that source code should be provided by create
-        _handle_error("agentcore create cannot support existing source code with a bedrock_aagentcore.yaml")
+        _handle_error("agentcore create cannot support existing source code with a bedrock_agentcore.yaml")
 
     aws_config: AWSConfig = agent_config.aws
 
