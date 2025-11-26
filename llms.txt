@@ -6,6 +6,8 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 
 ## User Guide
 
+- [Create Agent](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.md)
+- [Local Development](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/dev/quickstart.md)
 - [Runtime Quickstart](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.md)
 - [Agentcore runtime deployment](https://aws.github.io/bedrock-agentcore-starter-toolkit/mcp/agentcore_runtime_deployment.md)
 - [Runtime Overview](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/overview.md): Runtime service overview
