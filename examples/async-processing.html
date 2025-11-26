@@ -2324,13 +2324,13 @@
 
 
 <h1 id="async-processing">Async Processing<a class="headerlink" href="#async-processing" title="Permanent link">&para;</a></h1>
-<p>This example demonstrates how to use Bedrock AgentCore's <code>@async_task</code> decorator for automatic health status management.</p>
+<p>This example demonstrates how to use Bedrock AgentCore's manual task management for automatic health status tracking during long-running operations.</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>Bedrock AgentCore provides automatic ping status management based on running async tasks:</p>
+<p>Bedrock AgentCore provides automatic ping status management based on tracked async tasks:</p>
 <ul>
 <li><strong>Automatic Health Reporting</strong>: Ping status automatically reflects system busyness</li>
-<li><strong>Simple Integration</strong>: Just use the <code>@async_task</code> decorator</li>
-<li><strong>Zero Configuration</strong>: Status tracking works out of the box</li>
+<li><strong>Manual Task Tracking</strong>: Use <code>add_async_task</code> and <code>complete_async_task</code> for explicit control</li>
+<li><strong>Flexible Integration</strong>: Works with any async pattern (threading, asyncio, etc.)</li>
 </ul>
 <h2 id="key-concepts">Key Concepts<a class="headerlink" href="#key-concepts" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2340,52 +2340,79 @@
 <h2 id="simple-agent-example">Simple Agent Example<a class="headerlink" href="#simple-agent-example" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env python3</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Simple agent demonstrating @async_task decorator usage.</span>
+<span class="sd">Simple agent demonstrating manual task management with threading.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
 
-<span class="c1"># Long-running task that automatically affects ping status</span>
-<span class="nd">@app</span><span class="o">.</span><span class="n">async_task</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">data_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process data asynchronously - status becomes &#39;HealthyBusy&#39; during execution.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_data</span><span class="p">(</span><span class="n">data_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">task_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process data synchronously in background thread.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">] Processing data: </span><span class="si">{</span><span class="n">data_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Simulate processing work</span>
-    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>  <span class="c1"># Long-running task</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>  <span class="c1"># Long-running task</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">] Completed processing: </span><span class="si">{</span><span class="n">data_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Mark task as complete</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">complete_async_task</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="n">data_id</span><span class="si">}</span><span class="s2">&quot;</span>
 
-<span class="c1"># Another background task</span>
-<span class="nd">@app</span><span class="o">.</span><span class="n">async_task</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">cleanup_task</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cleanup task that also affects ping status.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cleanup_task</span><span class="p">(</span><span class="n">task_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cleanup task running in background thread.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">] Starting cleanup...&quot;</span><span class="p">)</span>
-    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">] Cleanup completed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Mark task as complete</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">complete_async_task</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">&quot;Cleanup done&quot;</span>
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main handler - starts async tasks.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main handler - starts background tasks with manual tracking.&quot;&quot;&quot;</span>
     <span class="n">action</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;process&quot;</span><span class="p">:</span>
         <span class="n">data_id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_id&quot;</span><span class="p">,</span> <span class="s2">&quot;default_data&quot;</span><span class="p">)</span>
-        <span class="c1"># Start the async task (status will become HealthyBusy)</span>
-        <span class="k">await</span> <span class="n">process_data</span><span class="p">(</span><span class="n">data_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">data_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">}</span>
+
+        <span class="c1"># Start tracking the task (status becomes HealthyBusy)</span>
+        <span class="n">task_id</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">add_async_task</span><span class="p">(</span><span class="s2">&quot;data_processing&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;data_id&quot;</span><span class="p">:</span> <span class="n">data_id</span><span class="p">})</span>
+
+        <span class="c1"># Start the task in background thread</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">process_data</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">data_id</span><span class="p">,</span> <span class="n">task_id</span><span class="p">),</span>
+            <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Started processing </span><span class="si">{</span><span class="n">data_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;processing&quot;</span>
+        <span class="p">}</span>
 
     <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;cleanup&quot;</span><span class="p">:</span>
-        <span class="c1"># Start cleanup task</span>
-        <span class="k">await</span> <span class="n">cleanup_task</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Cleanup completed&quot;</span><span class="p">}</span>
+        <span class="c1"># Start tracking cleanup task</span>
+        <span class="n">task_id</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">add_async_task</span><span class="p">(</span><span class="s2">&quot;cleanup&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="c1"># Start cleanup in background thread</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">cleanup_task</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">task_id</span><span class="p">,),</span>
+            <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Started cleanup&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task_id</span>
+        <span class="p">}</span>
 
     <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span>
         <span class="c1"># Get current status</span>
@@ -2412,11 +2439,12 @@
 </code></pre></div>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Decorate async functions</strong> with <code>@app.async_task</code></li>
-<li><strong>Call the functions</strong> normally in your handler</li>
+<li><strong>Register the task</strong> with <code>app.add_async_task(name, metadata)</code> - Returns a task_id</li>
+<li><strong>Start background work</strong> in a thread, passing the task_id</li>
+<li><strong>Complete the task</strong> with <code>app.complete_async_task(task_id)</code> when done</li>
 <li><strong>Status updates automatically</strong>:</li>
-<li><code>Healthy</code> when no tasks are running</li>
-<li><code>HealthyBusy</code> when any <code>@async_task</code> function is executing</li>
+<li><code>Healthy</code> when no tracked tasks are running</li>
+<li><code>HealthyBusy</code> when any tracked tasks are active</li>
 </ol>
 <h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="c1"># Check current ping status</span>
@@ -2439,12 +2467,13 @@ curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </spa
 </code></pre></div>
 <h2 id="key-benefits">Key Benefits<a class="headerlink" href="#key-benefits" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Automatic Status Tracking</strong>: No manual ping status management needed</li>
-<li><strong>Cost Control</strong>: Status automatically prevents new work assignment when busy</li>
-<li><strong>Simple to Use</strong>: Just add <code>@async_task</code> decorator to long-running functions</li>
-<li><strong>Error Handling</strong>: Status correctly updates even if tasks fail</li>
+<li><strong>Automatic Status Tracking</strong>: Ping status updates automatically based on tracked tasks</li>
+<li><strong>Cost Control</strong>: Status prevents new work assignment when busy</li>
+<li><strong>Flexible Integration</strong>: Works with threading, asyncio, or any background processing</li>
+<li><strong>Explicit Control</strong>: You decide when to start and stop tracking tasks</li>
+<li><strong>Task Metadata</strong>: Associate custom metadata with each task for debugging</li>
 </ol>
-<p>This simple pattern provides automatic health monitoring for your BedrockAgentCore applications without any additional configuration.</p>
+<p>This manual task management pattern provides automatic health monitoring with full control over task lifecycle.</p>
 
 
 

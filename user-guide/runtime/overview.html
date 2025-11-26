@@ -2808,21 +2808,8 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 - Agent status changes to "HealthyBusy" during background processing
 - Returns to "Healthy" when tasks complete
 - Sessions automatically terminate after 15 minutes of inactivity</p>
-<p><strong>Three Processing Approaches:</strong></p>
+<p><strong>Two Processing Approaches:</strong></p>
 <ol>
-<li>
-<p><strong>Async Task Decorator (Recommended)</strong>
-<div class="highlight"><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">async_task</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">background_work</span><span class="p">():</span>
-    <span class="k">await</span> <span class="n">process_data</span><span class="p">()</span>  <span class="c1"># Status becomes &quot;HealthyBusy&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;done&quot;</span>
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">background_work</span><span class="p">())</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;started&quot;</span><span class="p">}</span>
-</code></pre></div></p>
-</li>
 <li>
 <p><strong>Manual Task Management</strong>
 <div class="highlight"><pre><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>

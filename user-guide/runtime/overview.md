@@ -204,21 +204,7 @@ AgentCore Runtime supports asynchronous processing for long-running tasks. Your 
 - Returns to "Healthy" when tasks complete
 - Sessions automatically terminate after 15 minutes of inactivity
 
-**Three Processing Approaches:**
-
-1. **Async Task Decorator (Recommended)**
-
-   ```
-   @app.async_task
-   async def background_work():
-       await process_data()  # Status becomes "HealthyBusy"
-       return "done"
-
-   @app.entrypoint
-   async def handler(event):
-       asyncio.create_task(background_work())
-       return {"status": "started"}
-   ```
+**Two Processing Approaches:**
 
 1. **Manual Task Management**
 

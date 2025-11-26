@@ -695,22 +695,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-ways-to-manage-async-tasks" class="md-nav__link">
+  <a href="#two-ways-to-manage-async-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Ways to Manage Async Tasks
+        Two Ways to Manage Async Tasks
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Three Ways to Manage Async Tasks">
+    <nav class="md-nav" aria-label="Two Ways to Manage Async Tasks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-async-task-decorator-recommended" class="md-nav__link">
+  <a href="#1-manual-task-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Async Task Decorator (Recommended)
+        1. Manual Task Management
       
     </span>
   </a>
@@ -718,21 +718,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-manual-task-management" class="md-nav__link">
+  <a href="#2-custom-ping-handler" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Manual Task Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-custom-ping-handler" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Custom Ping Handler
+        2. Custom Ping Handler
       
     </span>
   </a>
@@ -2409,22 +2398,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-ways-to-manage-async-tasks" class="md-nav__link">
+  <a href="#two-ways-to-manage-async-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Ways to Manage Async Tasks
+        Two Ways to Manage Async Tasks
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Three Ways to Manage Async Tasks">
+    <nav class="md-nav" aria-label="Two Ways to Manage Async Tasks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-async-task-decorator-recommended" class="md-nav__link">
+  <a href="#1-manual-task-management" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Async Task Decorator (Recommended)
+        1. Manual Task Management
       
     </span>
   </a>
@@ -2432,21 +2421,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-manual-task-management" class="md-nav__link">
+  <a href="#2-custom-ping-handler" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Manual Task Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-custom-ping-handler" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Custom Ping Handler
+        2. Custom Ping Handler
       
     </span>
   </a>
@@ -2580,31 +2558,8 @@
 <li><strong>"HealthyBusy"</strong>: Currently processing background tasks</li>
 </ul>
 <p>A session in idle state for 15 minutes gets automatically terminated.</p>
-<h2 id="three-ways-to-manage-async-tasks">Three Ways to Manage Async Tasks<a class="headerlink" href="#three-ways-to-manage-async-tasks" title="Permanent link">&para;</a></h2>
-<h3 id="1-async-task-decorator-recommended">1. Async Task Decorator (Recommended)<a class="headerlink" href="#1-async-task-decorator-recommended" title="Permanent link">&para;</a></h3>
-<p>The simplest way to track asynchronous functions. The SDK automatically manages the ping status:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
-
-<span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">async_task</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">background_work</span><span class="p">():</span>
-    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Status becomes &quot;HealthyBusy&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;done&quot;</span>
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
-<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">background_work</span><span class="p">())</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;started&quot;</span><span class="p">}</span>
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</code></pre></div>
-<p><strong>How it works:</strong>
-- The <code>@app.async_task</code> decorator tracks function execution
-- When the function runs, ping status changes to "HealthyBusy"
-- When the function completes, status returns to "Healthy"</p>
-<h3 id="2-manual-task-management">2. Manual Task Management<a class="headerlink" href="#2-manual-task-management" title="Permanent link">&para;</a></h3>
+<h2 id="two-ways-to-manage-async-tasks">Two Ways to Manage Async Tasks<a class="headerlink" href="#two-ways-to-manage-async-tasks" title="Permanent link">&para;</a></h2>
+<h3 id="1-manual-task-management">1. Manual Task Management<a class="headerlink" href="#1-manual-task-management" title="Permanent link">&para;</a></h3>
 <p>For more control over task tracking, use the API methods directly:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -2634,7 +2589,7 @@
 - <code>app.add_async_task(name, metadata)</code> - Start tracking a task
 - <code>app.complete_async_task(task_id)</code> - Mark task as complete
 - <code>app.get_async_task_info()</code> - Get information about running tasks</p>
-<h3 id="3-custom-ping-handler">3. Custom Ping Handler<a class="headerlink" href="#3-custom-ping-handler" title="Permanent link">&para;</a></h3>
+<h3 id="2-custom-ping-handler">2. Custom Ping Handler<a class="headerlink" href="#2-custom-ping-handler" title="Permanent link">&para;</a></h3>
 <p>Override automatic status with custom logic:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PingStatus</span>
@@ -2713,7 +2668,7 @@
 <ol>
 <li><strong>Forced Status</strong> (debug actions like <code>force_busy</code>)</li>
 <li><strong>Custom Handler</strong> (<code>@app.ping</code> decorator)</li>
-<li><strong>Automatic</strong> (based on active <code>@app.async_task</code> functions)</li>
+<li><strong>Automatic</strong> (based on tracked async tasks via <code>add_async_task</code>)</li>
 </ol>
 <h2 id="debug-and-testing-features">Debug and Testing Features<a class="headerlink" href="#debug-and-testing-features" title="Permanent link">&para;</a></h2>
 <p>Enable debug mode for additional testing capabilities:</p>
