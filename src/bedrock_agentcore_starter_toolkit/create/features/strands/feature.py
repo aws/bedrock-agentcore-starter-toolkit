@@ -14,9 +14,6 @@ class StrandsFeature(Feature):
         """Hook called before template rendering and code generation."""
         base_python_dependencies = ["mcp >= 1.19.0", "strands-agents-tools >= 0.2.16"]
 
-        # Note: model_provider_name is no longer set here as model_provider templates
-        # have been moved to create/templates/model_provider/ and are rendered separately
-
         match context.model_provider:
             case ModelProvider.Bedrock:
                 self.python_dependencies = base_python_dependencies + ["strands-agents >= 1.13.0"]

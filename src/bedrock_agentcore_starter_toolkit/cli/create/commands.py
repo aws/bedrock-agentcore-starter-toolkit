@@ -236,7 +236,7 @@ def _handle_basic_runtime_flow(
             typer.echo(
                 typer.style(
                     f"\n⚠️  Warning: No API key provided for {model_provider}. "
-                    f"Please set {model_provider.upper()}_API_KEY in your .env file later.\n",
+                    f"Please set {model_provider.upper()}_API_KEY in your .env.local file later.\n",
                     fg=typer.colors.YELLOW,
                 ),
                 err=True,
@@ -267,7 +267,7 @@ def _handle_monorepo_flow(
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
 
     if configure_yaml.exists():
-        _handle_warn("Detected a local .bedrock_agentcore.yaml. Existing settings may be modified")
+        _handle_warn("Detected a local .bedrock_agentcore.yaml. agentcore create does not honor all config settings.")
         configure_schema: BedrockAgentCoreConfigSchema = load_config(configure_yaml)
         if len(configure_schema.agents.keys()) > 1:
             _handle_error("agentcore create does not currently support multi agent configurations.")
@@ -283,11 +283,10 @@ def _handle_monorepo_flow(
         )
 
     # Interactively accept IAC/SDK if not provided
-    if not sdk and (not agent_config or agent_config.entrypoint == "."):
+    if not sdk:
         sdk = prompt_sdk_provider()
     if not model_provider:
         model_provider = prompt_model_provider(sdk_provider=sdk)
-
     _assert_sdk_and_model_provider_combination(sdk, model_provider)
 
     if model_provider and model_provider in ModelProvider.REQUIRES_API_KEY:

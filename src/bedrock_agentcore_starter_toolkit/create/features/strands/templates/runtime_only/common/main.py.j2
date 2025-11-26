@@ -44,7 +44,7 @@ async def invoke(payload, context):
             REGION
         )
     else:
-        log.warning("MEMORY_ID not set, not initializing memory session manager")
+        log.warning("MEMORY_ID is not set. Skipping memory session manager initialization.")
 
     {% endif %}
     # Create code interpreter

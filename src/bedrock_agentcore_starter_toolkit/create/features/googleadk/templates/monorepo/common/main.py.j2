@@ -1,10 +1,11 @@
+import os
 from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from google.genai import types
-import os
 from .mcp_client.client import get_streamable_http_mcp_client
+from model.load import load_model
 
 if os.getenv("LOCAL_DEV") == "1":
     # In local dev, instantiate dummy MCP client so the code runs without deploying
@@ -24,8 +25,10 @@ def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a+b
 
+# Set environment variables for model authentication
+load_model()
+
 # Agent Definition
-# Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
 agent = Agent(
     model=MODEL_ID,
     name="{{ agent_name }}",

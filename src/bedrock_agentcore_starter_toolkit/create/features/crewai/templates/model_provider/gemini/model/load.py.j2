@@ -22,6 +22,8 @@ def _get_api_key() -> str:
     raise NotImplementedError("API key retrieval isn't implemented. Complete _get_api_key() in model/load.py.")
 {%- endif %}
 
+MODEL_ID = "gemini/gemini-2.5-flash"
+
 def load_model() -> LLM:
     """
     Get authenticated Gemini model client.
@@ -29,6 +31,6 @@ def load_model() -> LLM:
     and falls back to .env file for local development.
     """
     return LLM(
-        model="gemini/gemini-2.5-flash",
+        model=MODEL_ID,
         api_key=_get_api_key()
     )

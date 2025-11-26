@@ -22,6 +22,8 @@ def _get_api_key() -> str:
     raise NotImplementedError("API key retrieval isn't implemented. Complete _get_api_key() in model/load.py.")
 {%- endif %}
 
+MODEL_ID = "gpt-5.1"
+
 def load_model() -> OpenAIChatCompletionClient:
     """
     Get authenticated OpenAI model client.
@@ -29,6 +31,6 @@ def load_model() -> OpenAIChatCompletionClient:
     and falls back to .env file for local development.
     """
     return OpenAIChatCompletionClient(
-        model="gpt-5.1",
+        model=MODEL_ID,
         api_key=_get_api_key()
     )

@@ -17,6 +17,9 @@ mcp_client = get_streamable_http_mcp_client()
 # Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
 
+# Instantiate model
+llm = load_model()
+
 @app.entrypoint
 async def invoke(payload):
     # assume payload input is structured as { "prompt": "<user input>" }
@@ -25,7 +28,7 @@ async def invoke(payload):
     tools = await mcp_client.get_tools()
 
     # Define the agent
-    graph = create_agent(load_model(), tools=tools + [add_numbers])
+    graph = create_agent(llm, tools=tools + [add_numbers])
 
     # Process the user prompt
     prompt = payload.get("prompt", "What is Agentic AI?")

@@ -7,7 +7,7 @@ from mcp_client.client import get_streamable_http_mcp_client
 from model.load import load_model
 
 # https://google.github.io/adk-docs/agents/models/
-MODEL_ID = "gemini-2.0-flash"
+MODEL_ID = "gemini-2.5-flash"
 
 APP_NAME="{{ agent_name }}"
 USER_ID="user1234"
@@ -23,7 +23,6 @@ mcp_toolset = get_streamable_http_mcp_client()
 load_model()
 
 # Agent Definition
-# Add your GEMINI_API_KEY or GOOGLE_API_KEY to AgentCore Runtime Environment Variables
 agent = Agent(
     model=MODEL_ID,
     name="{{ agent_name }}",

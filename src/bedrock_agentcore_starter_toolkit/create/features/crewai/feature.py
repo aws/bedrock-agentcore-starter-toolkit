@@ -17,9 +17,6 @@ class CrewAIFeature(Feature):
             "mcp>=1.20.0",
         ]
 
-        # Note: model_provider_name is no longer set here as model_provider templates
-        # have been moved to create/templates/model_provider/ and are rendered separately
-
         match context.model_provider:
             case ModelProvider.Bedrock:
                 self.python_dependencies = base_python_dependencies + ["crewai[tools,bedrock]>=1.3.0"]

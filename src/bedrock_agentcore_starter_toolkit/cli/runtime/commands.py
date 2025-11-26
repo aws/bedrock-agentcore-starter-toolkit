@@ -285,10 +285,7 @@ def launch(
     # Load config early to determine deployment type for proper messaging
     project_config = load_config(config_path)
     if project_config.is_agentcore_create_with_iac:
-        _handle_error(
-            "Error: cannot launch a project that has been created by agentcore create with 'production' template. \n"
-            "   Deploy your project via the chosen IaC provider "
-        )
+        _handle_error("This project is configured to deploy via [Terraform | CDK]. No action has been taken.")
     agent_config = project_config.get_agent_config(agent)
     deployment_type = agent_config.deployment_type
 

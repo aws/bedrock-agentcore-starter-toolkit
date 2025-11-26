@@ -18,9 +18,6 @@ class AutogenFeature(Feature):
             "tiktoken",
         ]
 
-        # Note: model_provider_name is no longer set here as model_provider templates
-        # have been moved to create/templates/model_provider/ and are rendered separately
-
         match context.model_provider:
             case ModelProvider.Bedrock:
                 self.python_dependencies = base_python_dependencies + ["autogen-ext[anthropic]>=0.7.5"]

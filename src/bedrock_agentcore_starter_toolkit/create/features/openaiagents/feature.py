@@ -13,9 +13,7 @@ class OpenAIAgentsFeature(Feature):
 
     def before_apply(self, context: ProjectContext) -> None:
         """Hook called before template rendering and code generation."""
-
-        # Note: model_provider_name is no longer set here as model_provider templates
-        # have been moved to create/templates/model_provider/ and are rendered separately
+        pass
 
     def after_apply(self, context: ProjectContext) -> None:
         """Hook called after template rendering and code generation."""

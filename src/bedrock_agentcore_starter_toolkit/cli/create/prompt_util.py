@@ -4,16 +4,7 @@ import random
 
 from ...create.constants import IACProvider, MemoryConfig, ModelProvider, SDKProvider
 from ...create.types import CreateModelProvider, CreateSDKProvider
-from ..cli_ui import ask_text, select_one
-
-
-def ask_text_required(title: str, redact: bool = False) -> str:
-    """Prompt user for required text input, looping until non-empty value is provided."""
-    while True:
-        result = ask_text(title, default=None, redact=redact)
-        if result and result.strip():
-            return result.strip()
-        # Empty input, loop and ask again
+from ..cli_ui import select_one
 
 
 def prompt_runtime_or_monorepo(runtime_only_text: str):
