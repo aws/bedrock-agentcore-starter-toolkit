@@ -24,11 +24,12 @@ class ContainerRuntime:
     DEFAULT_RUNTIME = "auto"
     DEFAULT_PLATFORM = "linux/arm64"
 
-    def __init__(self, runtime_type: Optional[str] = None):
+    def __init__(self, runtime_type: Optional[str] = None, print_logs=True):
         """Initialize container runtime.
 
         Args:
             runtime_type: Runtime type to use, defaults to auto-detection
+            print_logs: Whether to emit prints in __init__
         """
         runtime_type = runtime_type or self.DEFAULT_RUNTIME
         self.available_runtimes = ["finch", "docker", "podman"]
@@ -43,11 +44,12 @@ class ContainerRuntime:
                     break
             else:
                 # Informational message - default CodeBuild deployment works fine
-                console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
-                _print_success(
-                    "Default deployment uses CodeBuild (no container engine needed), "
-                    "For local builds, install Docker, Finch, or Podman"
-                )
+                if print_logs:
+                    console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
+                    _print_success(
+                        "Default deployment uses CodeBuild (no container engine needed), "
+                        "For local builds, install Docker, Finch, or Podman"
+                    )
                 self.runtime = "none"
                 self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
