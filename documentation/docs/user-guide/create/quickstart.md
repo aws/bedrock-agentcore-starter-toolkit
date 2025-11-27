@@ -65,7 +65,7 @@ Run the CLI in interactive mode:
 
 ```bash
 agentcore create
-````
+```
 
 You will be prompted for:
 
@@ -246,7 +246,7 @@ Or, for `production` template, delete stacks and resources using CDK/Terraform d
   * AgentCore Identity in deployed environments
   * `.env.local` fallback in local dev (`LOCAL_DEV=1`)
 
-For the `production` template, it is your responsibility to implement API key handling. Using Bedrock Agentcore Identity
+For the `production` template, it is your responsibility to implement API key handling. Using Bedrock AgentCore Identity
 or AWS Secrets Manager is recommended.
 
 ### MCP Tools

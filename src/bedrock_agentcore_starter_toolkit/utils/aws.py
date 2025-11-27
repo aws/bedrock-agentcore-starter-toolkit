@@ -44,5 +44,5 @@ def ensure_valid_aws_creds() -> tuple[bool, Optional[str]]:
         return False, f"AWS credential validation failed: {e.response['Error'].get('Message', code)}"
 
     except Exception:
-        # Don't block the user — a non-credential error occured
+        # Don't block the user — a non-credential error occurred
         return True, None

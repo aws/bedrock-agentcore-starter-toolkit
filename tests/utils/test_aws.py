@@ -100,6 +100,6 @@ class TestAws:
 
         is_valid, message = ensure_valid_aws_creds()
 
-        # Function spec says: "Don't block the user — a non-credential error occured"
+        # Function spec says: "Don't block the user — a non-credential error occurred"
         assert is_valid is True
         assert message is None
