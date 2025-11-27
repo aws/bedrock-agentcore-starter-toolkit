@@ -213,7 +213,7 @@ agentcore identity create-credential-provider \
 
 - Creates OAuth credential provider in Identity service
 - Saves provider configuration to `.bedrock_agentcore.yaml`
-- IAM permissions will be added automatically during `launch`
+- IAM permissions will be added automatically during `deploy`
 
 ## Step 6: Create Workload Identity
 
@@ -230,7 +230,7 @@ agentcore identity create-workload-identity \
 ## Step 7: Deploy Agent
 
 ```bash
-agentcore launch
+agentcore deploy
 ```
 
 **What happens during launch:**

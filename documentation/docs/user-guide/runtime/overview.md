@@ -20,7 +20,7 @@ if __name__ == "__main__":
 ```bash
 # Configure and deploy your agent
 agentcore configure --entrypoint my_agent.py --non-interactive
-agentcore launch
+agentcore deploy
 agentcore invoke '{"name": "Alice"}'
 ```
 
@@ -45,20 +45,20 @@ The Runtime SDK is a comprehensive Python framework that bridges the gap between
 ### 🚀 Direct Code Deploy Deployment (DEFAULT & RECOMMENDED)
 ```bash
 agentcore configure --entrypoint my_agent.py
-agentcore launch                    # Uses CodeBuild for containers, .zip archive for direct deploy
+agentcore deploy                    # Uses CodeBuild for containers, .zip archive for direct deploy
 ```
 - **Works everywhere** - SageMaker Notebooks, Cloud9, laptops
 - **Production-ready** - managed Python runtime environment
 
 ### 💻 Local Development
 ```bash
-agentcore launch --local           # Build and run locally
+agentcore deploy --local           # Build and run locally
 ```
 - **Fast iteration** - immediate feedback and debugging
 
 ### 🔧 Hybrid Build
 ```bash
-agentcore launch --local-build     # Build locally, deploy to cloud
+agentcore deploy --local-build     # Build locally, deploy to cloud
 ```
 - **For complex scenarios** - large apps, system dependencies
 - **Requires:** Docker for local development
@@ -189,22 +189,9 @@ AgentCore Runtime supports asynchronous processing for long-running tasks. Your 
 - Returns to "Healthy" when tasks complete
 - Sessions automatically terminate after 15 minutes of inactivity
 
-**Three Processing Approaches:**
+**Two Processing Approaches:**
 
-1. **Async Task Decorator (Recommended)**
-```python
-@app.async_task
-async def background_work():
-    await process_data()  # Status becomes "HealthyBusy"
-    return "done"
-
-@app.entrypoint
-async def handler(event):
-    asyncio.create_task(background_work())
-    return {"status": "started"}
-```
-
-2. **Manual Task Management**
+1. **Manual Task Management**
 ```python
 @app.entrypoint
 def handler(event):
@@ -218,7 +205,7 @@ def handler(event):
     return {"task_id": task_id}
 ```
 
-3. **Custom Ping Handler**
+2. **Custom Ping Handler**
 ```python
 @app.ping
 def custom_status():
@@ -251,14 +238,14 @@ if __name__ == "__main__":
 agentcore configure --entrypoint my_agent.py
 
 # 2. Develop locally
-agentcore launch --local
+agentcore deploy --local
 
 # 3. Test
 agentcore invoke '{"prompt": "Hello"}'
 agentcore invoke '{"prompt": "Remember this"}' --session-id "test"
 
 # 4. Deploy to cloud
-agentcore launch
+agentcore deploy
 
 # 5. Monitor
 agentcore status

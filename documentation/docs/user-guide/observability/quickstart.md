@@ -61,10 +61,14 @@ aws xray update-indexing-rule --name "Default" --rule '{"Probabilistic": {"Desir
 
 ### Option 2: Enabling Transaction Search in the CloudWatch console
 
-- Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/.
-- From the navigation pane, under Application Signals, choose Transaction Search.
-- Choose Enable Transaction Search.
-- Select the box to ingest spans as structured logs, and enter a percentage of spans to be indexed. You can index spans at 1% for free and change the percentage later based on your requirements.
+1. Open the [CloudWatch console](https://console.aws.amazon.com/cloudwatch/)
+1. In the navigation pane under **Setup**, choose **Settings**
+1. Select **Account** and choose **X-Ray traces** tab
+1. In the **Transaction Search** section, choose **View settings**
+1. On the page that opens, choose **Edit**
+1. Choose **Enable Transaction Search**
+1. Select **For X-Ray users** and enter the percentage of traces to index. You can index 1% of traces at no cost and adjust this percentage later based on your needs
+1. Choose **Save**. Wait till **Ingest OpenTelemetry spans** shows **Enabled** before sending traces
 
 Let's now proceed to exploring the two ways to configure observability.
 
@@ -75,7 +79,7 @@ AgentCore Runtime-hosted agents are deployed and executed directly within the Ag
 For a complete example please refer to this [notebook](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/06-AgentCore-observability/01-Agentcore-runtime-hosted/runtime_with_strands_and_bedrock_models.ipynb)
 
 
-## Step 0: Setup folder and virtual environment
+### Step 0: Setup folder and virtual environment
 
 Create a new folder for this quickstart, create and initialize a new python virtual environment
 
@@ -164,7 +168,7 @@ launch_result = agentcore_runtime.launch()
 launch_result
 ```
 
-In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automaticcally instruments your agent invocation using Open Telemetry. Now, you can invoke your agent using the command shown below and see the Traces, sessions and metrics on GenAI Obsrvability dashboard on Amazon Cloudwatch.
+In these simple steps you deployed your strands agent on runtime with the Bedrock agentcore starter toolkit that automatically instruments your agent invocation using Open Telemetry. Now, you can invoke your agent using the command shown below and see the Traces, sessions and metrics on GenAI Observability dashboard on Amazon Cloudwatch.
 
 ```python
 invoke_response = agentcore_runtime.invoke({"prompt": "How is the weather now?"})
@@ -271,26 +275,24 @@ Run the session-enabled version following command, complete implementation provi
 opentelemetry-instrument python strands_travel_agent_with_session.py --session-id "user-session-123"
 ```
 
-## AgentCore Observability on GenAI Observability on Amazon CloudWatch
+## AgentCore Observability on Amazon CloudWatch
 
 After implementing observability, you can view the collected data in CloudWatch:
 
-## Bedrock AgentCore Overview on GenAI Observability dashboard
+### Bedrock AgentCore GenAI Observability dashboard
 
-1. Open the [GenAI Observability on CloudWatch console](https://console.aws.amazon.com/cloudwatch/home#gen-ai-observability)
-2. You are able to view the data related to model invocations and agents on Bedrock AgentCore on the dashboard.
-3. In the Bedrock Agentcore tab you are able to see Agents View, Sessions View and Traces View.
-4. Agents View lists all your Agents that are on and not on runtime, you can also click on the agent and view further details like runtime metrics, sessions and traces specific to an agent.
-5. In the Sessions View tab, you can navigate across all the sessions associated with agents.
-6. In the Trace View tab, you can look into the traces and span information for agents. Also explore the trace trajectory and timeline by clicking on a trace.
+1. Open the [Bedrock AgentCore GenAI Observability on CloudWatch console](https://console.aws.amazon.com/cloudwatch/home#gen-ai-observability/agent-core/agents).
+1. The Bedrock AgentCore observability page displays three views: Agents View, Sessions View, and Traces View.
+1. Agents View lists all your agents, including both runtime and non-runtime hosted agents. Click on any agent to view detailed information such as runtime metrics, sessions, and traces specific to that agent.
+1. The Sessions View tab displays all sessions associated with your agents.
+1. The Traces View tab shows trace and span information for agents. Click on a trace to explore its trajectory and timeline.
 
 
 ### View Logs in CloudWatch
 
 1. Open the [CloudWatch console](https://console.aws.amazon.com/cloudwatch/)
-2. In the left navigation pane, expand **Logs** and select **Log groups**
-3. Search for your agent's log group:
-
+1. In the left navigation pane, expand **Logs** and select **Log groups**
+1. Search for your agent's log group:
    - Standard logs (stdout/stderr) Location: `/aws/bedrock-agentcore/runtimes/<agent_id>-<endpoint_name>/[runtime-logs] <UUID>`
    - OTEL structured logs: `/aws/bedrock-agentcore/runtimes/<agent_id>-<endpoint_name>/runtime-logs`
 
@@ -305,8 +307,8 @@ After implementing observability, you can view the collected data in CloudWatch:
 ### View Metrics
 
 1. Open the [CloudWatch console](https://console.aws.amazon.com/cloudwatch/)
-2. Select **Metrics** from the left navigation
-3. Browse to the `bedrock-agentcore` namespace
+1. In the navigation pane under **Metrics**, choose **All metrics**
+3. Under **AWS namespaces**, browse to the **Bedrock-AgentCore** namespace
 4. Explore the available metrics
 
 ## Best Practices

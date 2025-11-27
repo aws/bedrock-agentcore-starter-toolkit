@@ -39,7 +39,7 @@ Refer to https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/c
 2. **Configuration**: Use AgentCore CLI to configure your agent for deployment.
     ```agentcore configure --entrypoint converted_agentcore_file.py --non-interactive```
 3. **Deployment**: Launch your agent to AWS with automatic resource creation.
-    ```agentcore launch```
+    ```agentcore deploy```
 4. **Invocation**: agentcore invoke '{"prompt": "Hello"}' Test your deployed agent using the CLI or API calls
 
 #### Step 4: Troubleshooting & Enhancement

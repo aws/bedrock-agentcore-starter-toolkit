@@ -76,7 +76,7 @@ class ContainerRuntime:
                     "• Finch: https://github.com/runfinch/finch\n"
                     "• Podman: https://podman.io/getting-started/installation\n\n"
                     "Alternative: Use CodeBuild for cloud-based building (no container engine needed):\n"
-                    "  agentcore launch  # Uses CodeBuild (default)"
+                    "  agentcore deploy  # Uses CodeBuild (default)"
                 )
             else:
                 raise ValueError(f"Unsupported runtime: {runtime_type}")
@@ -113,6 +113,8 @@ class ContainerRuntime:
         memory_name: Optional[str] = None,
         source_path: Optional[str] = None,
         protocol: Optional[str] = None,
+        explicit_requirements_file: Optional[Path] = None,
+        silence_warn=False,
     ) -> Path:
         """Generate Dockerfile from template.
 
@@ -127,18 +129,21 @@ class ContainerRuntime:
             memory_name: Optional memory name
             source_path: Optional source code directory (for dependency detection)
             protocol: Optional protocol configuration (HTTP or HTTPS)
+            explicit_requirements_file: Optional Path to the requirements_file to override detection logic
+            silence_warn: Boolean to not emit warn messages. Defaults to False
         """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 
         if current_platform != required_platform:
-            _handle_warn(
-                f"Platform mismatch: Current system is '{current_platform}' "
-                f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
-                "Please use default launch command which will do a remote cross-platform build using code build."
-                "For deployment other options and workarounds, see: "
-                "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
-            )
+            if not silence_warn:
+                _handle_warn(
+                    f"Platform mismatch: Current system is '{current_platform}' "
+                    f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
+                    "Please use default launch command which will do a remote cross-platform build using code build."
+                    "For deployment other options and workarounds, see: "
+                    "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
+                )
 
         template_path = Path(__file__).parent / "templates" / "Dockerfile.j2"
 
@@ -176,6 +181,12 @@ class ContainerRuntime:
             deps = detect_dependencies(source_dir, explicit_file=requirements_file)
         else:
             deps = detect_dependencies(output_dir, explicit_file=requirements_file)
+        if explicit_requirements_file:
+            p = Path(explicit_requirements_file)
+            if not p.exists():
+                raise FileNotFoundError(f"Explicit dependency file not found: {p}")
+            deps.file = p.name
+            deps.install_path = None
 
         # Add logic to avoid duplicate installation
         # Check for pyproject.toml in the appropriate directory
@@ -215,7 +226,7 @@ class ContainerRuntime:
             template_path = Path(__file__).parent / "templates" / "dockerignore.template"
             if template_path.exists():
                 dockerignore_path.write_text(template_path.read_text())
-                log.info("Generated .dockerignore")
+                log.debug("Generated .dockerignore")
 
     def _validate_module_path(self, agent_path: Path, project_root: Path) -> None:
         """Validate that the agent path can be converted to a valid Python module path."""
@@ -282,7 +293,7 @@ class ContainerRuntime:
             return False, [
                 "No container runtime available for local build",
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud",
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment",
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment",
                 "💡 For local builds, please install Docker, Finch, or Podman",
             ]
 
@@ -324,7 +335,7 @@ class ContainerRuntime:
             raise RuntimeError(
                 "No container runtime available for local run\n"
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment\n"
                 "💡 For local runs, please install Docker, Finch, or Podman"
             )
 

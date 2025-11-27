@@ -33,8 +33,14 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly effective agen
 
 Amazon Bedrock AgentCore includes the following modular Services that you can use together or independently:
 
-## 🚀 Amazon Bedrock AgentCore Runtime
+## 🚀 Jump Into AgentCore
+Get started quickly with `agentcore create`.
 
+Pick your favorite Agent SDK framework and model provider like Strands with Amazon Bedrock. You'll get a brand new project ready to be deployed onto AgentCore.
+
+**[Create Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.html)**
+
+## 🛠️ Amazon Bedrock AgentCore Runtime
 AgentCore Runtime is a secure, serverless runtime purpose-built for deploying and scaling dynamic AI agents and tools using any open-source framework including LangGraph, CrewAI, and Strands Agents, any protocol, and any model. Runtime was built to work for agentic workloads with industry-leading extended runtime support, fast cold starts, true session isolation, built-in identity, and support for multi-modal payloads. Developers can focus on innovation while Amazon Bedrock AgentCore Runtime handles infrastructure and security -- accelerating time-to-market
 
 **[Runtime Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-toolkit.html)**

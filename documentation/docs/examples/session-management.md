@@ -47,7 +47,7 @@ app.run()
 ### CLI
 ```bash
 agentcore configure --entrypoint handler.py
-agentcore launch
+agentcore deploy
 
 # Start conversation
 agentcore invoke '{"message": "Hello"}' --session-id conv1

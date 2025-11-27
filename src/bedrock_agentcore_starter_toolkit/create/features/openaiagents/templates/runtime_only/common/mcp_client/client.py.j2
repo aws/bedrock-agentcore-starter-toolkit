@@ -1,0 +1,16 @@
+from agents.mcp import MCPServerStreamableHttp
+
+# ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+
+def get_streamable_http_mcp_client() -> MCPServerStreamableHttp:
+    """
+    Returns an MCP Client compatible with OpenAI Agents SDK
+    """
+    # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"} to params
+    return MCPServerStreamableHttp(
+        name="AgentCore Gateway MCP",
+        params={
+            "url": EXAMPLE_MCP_ENDPOINT,
+        }
+    )

@@ -1,0 +1,2002 @@
+# serializer version: 1
+# name: test_runtime_only_snapshots[autogen-anthropic]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from autogen_agentchat.agents import AssistantAgent
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from autogen_core.tools import FunctionTool
+      from mcp_client.client import get_streamable_http_mcp_tools
+      from model.load import load_model
+      
+      # Define a simple function tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def main(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
+          tools = await get_streamable_http_mcp_tools()
+      
+          # Define an AssistantAgent with the model and tool
+          agent = AssistantAgent(
+              name="testProject_Agent",
+              model_client=load_model(),
+              tools=[add_numbers_function_tool] + tools,
+              system_message="You are a helpful assistant."
+          )
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await agent.run(task=prompt)
+      
+          # Return result
+          return {"result": result.messages[-1].content}
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from typing import List
+      from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
+          """
+          Returns an MCP Client compatible with AutoGen
+          """
+          # to use an MCP server that supports bearer authentication, add headers={ "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = StreamableHttpServerParams(
+              url=EXAMPLE_MCP_ENDPOINT,
+          )
+          return await mcp_server_tools(server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from autogen_ext.models.anthropic import AnthropicChatCompletionClient
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("ANTHROPIC_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> AnthropicChatCompletionClient:
+          """
+          Get authenticated Anthropic model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return AnthropicChatCompletionClient(
+              model="claude-sonnet-4-5-20250929",
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[autogen-bedrock]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from autogen_agentchat.agents import AssistantAgent
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from autogen_core.tools import FunctionTool
+      from mcp_client.client import get_streamable_http_mcp_tools
+      from model.load import load_model
+      
+      # Define a simple function tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def main(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
+          tools = await get_streamable_http_mcp_tools()
+      
+          # Define an AssistantAgent with the model and tool
+          agent = AssistantAgent(
+              name="testProject_Agent",
+              model_client=load_model(),
+              tools=[add_numbers_function_tool] + tools,
+              system_message="You are a helpful assistant."
+          )
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await agent.run(task=prompt)
+      
+          # Return result
+          return {"result": result.messages[-1].content}
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from typing import List
+      from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
+          """
+          Returns an MCP Client compatible with AutoGen
+          """
+          # to use an MCP server that supports bearer authentication, add headers={ "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = StreamableHttpServerParams(
+              url=EXAMPLE_MCP_ENDPOINT,
+          )
+          return await mcp_server_tools(server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from autogen_ext.models.anthropic import AnthropicBedrockChatCompletionClient
+      from autogen_core.models import ModelInfo, ModelFamily
+      
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      
+      def load_model() -> AnthropicBedrockChatCompletionClient:
+          # Initialize the model client
+          return AnthropicBedrockChatCompletionClient(
+              model=MODEL_ID,
+              model_info=ModelInfo(
+                  vision=False,
+                  function_calling=True,
+                  json_output=False,
+                  family=ModelFamily.CLAUDE_4_SONNET,
+                  structured_output=True
+              ),
+              bedrock_info = {"aws_region": os.environ.get("AWS_REGION", "us-east-1")}
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[autogen-gemini]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from autogen_agentchat.agents import AssistantAgent
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from autogen_core.tools import FunctionTool
+      from mcp_client.client import get_streamable_http_mcp_tools
+      from model.load import load_model
+      
+      # Define a simple function tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def main(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
+          tools = await get_streamable_http_mcp_tools()
+      
+          # Define an AssistantAgent with the model and tool
+          agent = AssistantAgent(
+              name="testProject_Agent",
+              model_client=load_model(),
+              tools=[add_numbers_function_tool] + tools,
+              system_message="You are a helpful assistant."
+          )
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await agent.run(task=prompt)
+      
+          # Return result
+          return {"result": result.messages[-1].content}
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from typing import List
+      from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
+          """
+          Returns an MCP Client compatible with AutoGen
+          """
+          # to use an MCP server that supports bearer authentication, add headers={ "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = StreamableHttpServerParams(
+              url=EXAMPLE_MCP_ENDPOINT,
+          )
+          return await mcp_server_tools(server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from autogen_ext.models.openai import OpenAIChatCompletionClient
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("GEMINI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gemini-2.5-flash"
+      
+      def load_model() -> OpenAIChatCompletionClient:
+          """
+          Get authenticated Gemini model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return OpenAIChatCompletionClient(
+              model=MODEL_ID,
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[autogen-openai]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from autogen_agentchat.agents import AssistantAgent
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from autogen_core.tools import FunctionTool
+      from mcp_client.client import get_streamable_http_mcp_tools
+      from model.load import load_model
+      
+      # Define a simple function tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      add_numbers_function_tool = FunctionTool(add_numbers, description="Return the sum of two numbers")
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def main(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Import AgentCore Gateway tools as Streamable HTTP MCP Tools
+          tools = await get_streamable_http_mcp_tools()
+      
+          # Define an AssistantAgent with the model and tool
+          agent = AssistantAgent(
+              name="testProject_Agent",
+              model_client=load_model(),
+              tools=[add_numbers_function_tool] + tools,
+              system_message="You are a helpful assistant."
+          )
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await agent.run(task=prompt)
+      
+          # Return result
+          return {"result": result.messages[-1].content}
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from typing import List
+      from autogen_ext.tools.mcp import StreamableHttpMcpToolAdapter, StreamableHttpServerParams, mcp_server_tools
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      async def get_streamable_http_mcp_tools() -> List[StreamableHttpMcpToolAdapter]:
+          """
+          Returns an MCP Client compatible with AutoGen
+          """
+          # to use an MCP server that supports bearer authentication, add headers={ "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = StreamableHttpServerParams(
+              url=EXAMPLE_MCP_ENDPOINT,
+          )
+          return await mcp_server_tools(server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from autogen_ext.models.openai import OpenAIChatCompletionClient
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("OPENAI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gpt-5.1"
+      
+      def load_model() -> OpenAIChatCompletionClient:
+          """
+          Get authenticated OpenAI model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return OpenAIChatCompletionClient(
+              model=MODEL_ID,
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[crewai-anthropic]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from crewai import Agent, Crew, Task, Process
+      from crewai.tools import tool
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Adapter
+      mcp_adapter = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Define the Agent, Task and Crew with Tools
+          with mcp_adapter as tools:
+              agent = Agent(
+                  role="Question Answering Assistant",
+                  goal="Answer the users questions",
+                  backstory="Always eager to answer any questions",
+                  llm=load_model(),
+                  tools=tools + [add_numbers]
+              )
+      
+              task = Task(
+                  agent=agent,
+                  description="Answer the users question: {prompt}",
+                  expected_output="An answer to the users question"
+              )
+      
+              crew = Crew(
+                  agents=[agent],
+                  tasks=[task],
+                  process=Process.sequential
+              )
+      
+              # Process the user prompt
+              prompt = payload.get("prompt", "What is Agentic AI?")
+      
+              # Run the agent
+              result = crew.kickoff(inputs={"prompt": prompt})
+      
+              # Return result
+              return result.raw
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from crewai_tools import MCPServerAdapter
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPServerAdapter:
+          """
+          Returns an MCP Client compatible with CrewAI SDK
+          """
+          # to use an MCP server that supports bearer authentication, add    "headers": { "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = {
+              "url": EXAMPLE_MCP_ENDPOINT,
+              "transport": "streamable-http",
+          }
+          return MCPServerAdapter(serverparams=server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from crewai import LLM
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("ANTHROPIC_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> LLM:
+          """
+          Get authenticated Anthropic model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return LLM(
+              model="anthropic/claude-sonnet-4-5-20250929",
+              api_key=_get_api_key(),
+              max_tokens=4096  # Required for Anthropic
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[crewai-bedrock]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from crewai import Agent, Crew, Task, Process
+      from crewai.tools import tool
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Adapter
+      mcp_adapter = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Define the Agent, Task and Crew with Tools
+          with mcp_adapter as tools:
+              agent = Agent(
+                  role="Question Answering Assistant",
+                  goal="Answer the users questions",
+                  backstory="Always eager to answer any questions",
+                  llm=load_model(),
+                  tools=tools + [add_numbers]
+              )
+      
+              task = Task(
+                  agent=agent,
+                  description="Answer the users question: {prompt}",
+                  expected_output="An answer to the users question"
+              )
+      
+              crew = Crew(
+                  agents=[agent],
+                  tasks=[task],
+                  process=Process.sequential
+              )
+      
+              # Process the user prompt
+              prompt = payload.get("prompt", "What is Agentic AI?")
+      
+              # Run the agent
+              result = crew.kickoff(inputs={"prompt": prompt})
+      
+              # Return result
+              return result.raw
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from crewai_tools import MCPServerAdapter
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPServerAdapter:
+          """
+          Returns an MCP Client compatible with CrewAI SDK
+          """
+          # to use an MCP server that supports bearer authentication, add    "headers": { "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = {
+              "url": EXAMPLE_MCP_ENDPOINT,
+              "transport": "streamable-http",
+          }
+          return MCPServerAdapter(serverparams=server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      from crewai import LLM
+      
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+       MODEL_ID = "bedrock/global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      
+      def load_model() -> LLM:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          return LLM(model=MODEL_ID)
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[crewai-gemini]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from crewai import Agent, Crew, Task, Process
+      from crewai.tools import tool
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Adapter
+      mcp_adapter = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Define the Agent, Task and Crew with Tools
+          with mcp_adapter as tools:
+              agent = Agent(
+                  role="Question Answering Assistant",
+                  goal="Answer the users questions",
+                  backstory="Always eager to answer any questions",
+                  llm=load_model(),
+                  tools=tools + [add_numbers]
+              )
+      
+              task = Task(
+                  agent=agent,
+                  description="Answer the users question: {prompt}",
+                  expected_output="An answer to the users question"
+              )
+      
+              crew = Crew(
+                  agents=[agent],
+                  tasks=[task],
+                  process=Process.sequential
+              )
+      
+              # Process the user prompt
+              prompt = payload.get("prompt", "What is Agentic AI?")
+      
+              # Run the agent
+              result = crew.kickoff(inputs={"prompt": prompt})
+      
+              # Return result
+              return result.raw
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from crewai_tools import MCPServerAdapter
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPServerAdapter:
+          """
+          Returns an MCP Client compatible with CrewAI SDK
+          """
+          # to use an MCP server that supports bearer authentication, add    "headers": { "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = {
+              "url": EXAMPLE_MCP_ENDPOINT,
+              "transport": "streamable-http",
+          }
+          return MCPServerAdapter(serverparams=server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from crewai import LLM
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("GEMINI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gemini/gemini-2.5-flash"
+      
+      def load_model() -> LLM:
+          """
+          Get authenticated Gemini model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return LLM(
+              model=MODEL_ID,
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[crewai-openai]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from crewai import Agent, Crew, Task, Process
+      from crewai.tools import tool
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Adapter
+      mcp_adapter = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Define the Agent, Task and Crew with Tools
+          with mcp_adapter as tools:
+              agent = Agent(
+                  role="Question Answering Assistant",
+                  goal="Answer the users questions",
+                  backstory="Always eager to answer any questions",
+                  llm=load_model(),
+                  tools=tools + [add_numbers]
+              )
+      
+              task = Task(
+                  agent=agent,
+                  description="Answer the users question: {prompt}",
+                  expected_output="An answer to the users question"
+              )
+      
+              crew = Crew(
+                  agents=[agent],
+                  tasks=[task],
+                  process=Process.sequential
+              )
+      
+              # Process the user prompt
+              prompt = payload.get("prompt", "What is Agentic AI?")
+      
+              # Run the agent
+              result = crew.kickoff(inputs={"prompt": prompt})
+      
+              # Return result
+              return result.raw
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from crewai_tools import MCPServerAdapter
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPServerAdapter:
+          """
+          Returns an MCP Client compatible with CrewAI SDK
+          """
+          # to use an MCP server that supports bearer authentication, add    "headers": { "Authorization": f"Bearer {_get_access_token()}"}
+          server_params = {
+              "url": EXAMPLE_MCP_ENDPOINT,
+              "transport": "streamable-http",
+          }
+          return MCPServerAdapter(serverparams=server_params)
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from crewai import LLM
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("OPENAI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> LLM:
+          """
+          Get authenticated OpenAI model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return LLM(
+              model="openai/gpt-5.1",
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[googleadk-gemini]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from google.adk.agents import Agent
+      from google.adk.runners import Runner
+      from google.adk.sessions import InMemorySessionService
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from google.genai import types
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # https://google.github.io/adk-docs/agents/models/
+      MODEL_ID = "gemini-2.5-flash"
+      
+      APP_NAME="testProject_Agent"
+      USER_ID="user1234"
+      
+      # Define a simple function tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      mcp_toolset = get_streamable_http_mcp_client()
+      
+      # Set environment variables for model authentication
+      load_model()
+      
+      # Agent Definition
+      agent = Agent(
+          model=MODEL_ID,
+          name="testProject_Agent",
+          description="Agent to answer questions",
+          instruction="I can answer your questions using the knowledge I have!",
+          tools=[mcp_toolset, add_numbers]
+      )
+      
+      # Session and Runner
+      async def setup_session_and_runner(user_id, session_id):
+          session_service = InMemorySessionService()
+          session = await session_service.create_session(app_name=APP_NAME, user_id=user_id, session_id=session_id)
+          runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+          return session, runner
+      
+      # Agent Interaction
+      async def call_agent_async(query, user_id, session_id):
+          content = types.Content(role='user', parts=[types.Part(text=query)])
+          session, runner = await setup_session_and_runner(user_id, session_id)
+          events = runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
+      
+          async for event in events:
+              if event.is_final_response():
+                  final_response = event.content.parts[0].text
+      
+          return final_response
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def agent_invocation(payload, context):
+          # assume payload input is structured as { "prompt": "<user input>", "user_id": "<id>", "context": { "session_id": "<id>" } }
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+          session_id = context.session_id or "session_id_1"
+      
+          # Run the agent
+          result = await call_agent_async(prompt, payload.get("user_id",USER_ID), session_id)
+      
+          # Return result
+          return {
+              "result": result
+          }
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+      from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> McpToolset:
+          """
+          Returns an MCP Toolset compatible with Google ADK
+          """
+          # to use an MCP server that supports bearer authentication, add headers={"Authorization": f"Bearer {access_token}"}
+          return McpToolset(
+              connection_params=StreamableHTTPConnectionParams(
+                  url=EXAMPLE_MCP_ENDPOINT,
+              )
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("GEMINI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> None:
+          api_key = _get_api_key()
+          # Use Google AI Studios API Key Authentication.
+          # https://google.github.io/adk-docs/agents/models/#google-ai-studio
+          os.environ["GOOGLE_API_KEY"] = api_key
+          os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "FALSE"
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[langgraph-anthropic]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from langchain_core.messages import HumanMessage
+      from langchain.agents import create_agent
+      from langchain.tools import tool
+      from bedrock_agentcore import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      # Instantiate model
+      llm = load_model()
+      
+      @app.entrypoint
+      async def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Load MCP Tools
+          tools = await mcp_client.get_tools()
+      
+          # Define the agent
+          graph = create_agent(llm, tools=tools + [add_numbers])
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+      
+          # Return result
+          return {
+              "result": result["messages"][-1].content
+          }
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from langchain_mcp_adapters.client import MultiServerMCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+          """
+          Returns an MCP Client for AgentCore Gateway compatible with LangGraph
+          """
+          # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"}
+          return MultiServerMCPClient(
+              {
+                  "example_endpoint": {
+                      "transport": "streamable_http",
+                      "url": EXAMPLE_MCP_ENDPOINT,
+                  }
+              }
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from langchain_anthropic import ChatAnthropic
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("ANTHROPIC_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> ChatAnthropic:
+          """
+          Get authenticated Anthropic model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return ChatAnthropic(
+              model="claude-sonnet-4-5-20250929",
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[langgraph-bedrock]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from langchain_core.messages import HumanMessage
+      from langchain.agents import create_agent
+      from langchain.tools import tool
+      from bedrock_agentcore import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      # Instantiate model
+      llm = load_model()
+      
+      @app.entrypoint
+      async def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Load MCP Tools
+          tools = await mcp_client.get_tools()
+      
+          # Define the agent
+          graph = create_agent(llm, tools=tools + [add_numbers])
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+      
+          # Return result
+          return {
+              "result": result["messages"][-1].content
+          }
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from langchain_mcp_adapters.client import MultiServerMCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+          """
+          Returns an MCP Client for AgentCore Gateway compatible with LangGraph
+          """
+          # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"}
+          return MultiServerMCPClient(
+              {
+                  "example_endpoint": {
+                      "transport": "streamable_http",
+                      "url": EXAMPLE_MCP_ENDPOINT,
+                  }
+              }
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      from langchain_aws import ChatBedrock
+      
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      
+      def load_model() -> ChatBedrock:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          return ChatBedrock(model_id=MODEL_ID)
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[langgraph-gemini]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from langchain_core.messages import HumanMessage
+      from langchain.agents import create_agent
+      from langchain.tools import tool
+      from bedrock_agentcore import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      # Instantiate model
+      llm = load_model()
+      
+      @app.entrypoint
+      async def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Load MCP Tools
+          tools = await mcp_client.get_tools()
+      
+          # Define the agent
+          graph = create_agent(llm, tools=tools + [add_numbers])
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+      
+          # Return result
+          return {
+              "result": result["messages"][-1].content
+          }
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from langchain_mcp_adapters.client import MultiServerMCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+          """
+          Returns an MCP Client for AgentCore Gateway compatible with LangGraph
+          """
+          # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"}
+          return MultiServerMCPClient(
+              {
+                  "example_endpoint": {
+                      "transport": "streamable_http",
+                      "url": EXAMPLE_MCP_ENDPOINT,
+                  }
+              }
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from langchain_google_genai import ChatGoogleGenerativeAI
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("GEMINI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gemini-2.5-flash"
+      
+      def load_model() -> ChatGoogleGenerativeAI:
+          """
+          Get authenticated Gemini model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return ChatGoogleGenerativeAI(
+              model=MODEL_ID,
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[langgraph-openai]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      from langchain_core.messages import HumanMessage
+      from langchain.agents import create_agent
+      from langchain.tools import tool
+      from bedrock_agentcore import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      # Instantiate model
+      llm = load_model()
+      
+      @app.entrypoint
+      async def invoke(payload):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Load MCP Tools
+          tools = await mcp_client.get_tools()
+      
+          # Define the agent
+          graph = create_agent(llm, tools=tools + [add_numbers])
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await graph.ainvoke({"messages": [HumanMessage(content=prompt)]})
+      
+          # Return result
+          return {
+              "result": result["messages"][-1].content
+          }
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from langchain_mcp_adapters.client import MultiServerMCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+          """
+          Returns an MCP Client for AgentCore Gateway compatible with LangGraph
+          """
+          # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"}
+          return MultiServerMCPClient(
+              {
+                  "example_endpoint": {
+                      "transport": "streamable_http",
+                      "url": EXAMPLE_MCP_ENDPOINT,
+                  }
+              }
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from langchain_openai import ChatOpenAI
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("OPENAI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gpt-5.1"
+      
+      def load_model() -> ChatOpenAI:
+          """
+          Get authenticated OpenAI model client.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          return ChatOpenAI(
+              model=MODEL_ID,
+              api_key=_get_api_key()
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[openaiagents-openai]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import logging
+      import sys
+      from agents import Agent, Runner, function_tool
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      
+      # Set up logging
+      logging.basicConfig(
+          level=logging.INFO,
+          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+          handlers=[
+              logging.StreamHandler(sys.stdout)
+          ]
+      )
+      
+      logger = logging.getLogger(__name__)
+      
+      # Set environment variables for model authentication
+      load_model()
+      
+      # Define a simple function tool
+      @function_tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      mcp_server = get_streamable_http_mcp_client()
+      
+      # Define an Agent with tools
+      async def main(query):
+          try:
+              async with mcp_server as server:
+                  # Currently defaults to GPT-4.1
+                  # https://openai.github.io/openai-agents-python/models/
+                  agent = Agent(
+                      name="testProject_Agent",
+                      mcp_servers=[server],
+                      tools=[add_numbers]
+                  )
+                  result = await Runner.run(agent, query)
+                  return result
+          except Exception as e:
+              logger.error(f"Error during agent execution: {e}", exc_info=True)
+              raise e
+      
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      
+      @app.entrypoint
+      async def agent_invocation(payload, context):
+          # assume payload input is structured as { "prompt": "<user input>" }
+      
+          # Process the user prompt
+          prompt = payload.get("prompt", "What is Agentic AI?")
+      
+          # Run the agent
+          result = await main(prompt)
+      
+          # Return result
+          return {"result": result.final_output}
+      
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from agents.mcp import MCPServerStreamableHttp
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPServerStreamableHttp:
+          """
+          Returns an MCP Client compatible with OpenAI Agents SDK
+          """
+          # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"} to params
+          return MCPServerStreamableHttp(
+              name="AgentCore Gateway MCP",
+              params={
+                  "url": EXAMPLE_MCP_ENDPOINT,
+              }
+          )
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from bedrock_agentcore.identity.auth import requires_api_key
+      from dotenv import load_dotenv
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("OPENAI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> None:
+          """
+          Set up OpenAI API key authentication.
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          Sets the OPENAI_API_KEY environment variable for the OpenAI Agents SDK.
+          """
+          api_key = _get_api_key()
+          os.environ["OPENAI_API_KEY"] = api_key if api_key else ""
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[strands-anthropic]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from strands import Agent, tool
+      from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      import logging
+      
+      log = logging.getLogger(__name__)
+      
+      app = BedrockAgentCoreApp()
+      
+      REGION = os.getenv("AWS_REGION")
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      @app.entrypoint
+      async def invoke(payload, context):
+          session_id = getattr(context, 'session_id', 'default')
+          
+          # Create code interpreter
+          code_interpreter = AgentCoreCodeInterpreter(
+              region=REGION,
+              session_name=session_id,
+              auto_create=True,
+              persist_sessions=True
+          )
+      
+          with mcp_client as client:
+              # Get MCP Tools
+              tools = client.list_tools_sync()
+      
+              # Create agent
+              agent = Agent(
+                  model=load_model(),
+                  system_prompt="""
+                      You are a helpful assistant with code execution capabilities. Use tools when appropriate.
+                  """,
+                  tools=[code_interpreter.code_interpreter, add_numbers] + tools
+              )
+      
+              # Execute and format response
+              stream = agent.stream_async(payload.get("prompt"))
+      
+              async for event in stream:
+                  # Handle Text parts of the response
+                  if "data" in event and isinstance(event["data"], str):
+                      yield event["data"]
+      
+                  # Implement additional handling for other events
+                  # if "toolUse" in event:
+                  #   # Process toolUse
+      
+                  # Handle end of stream
+                  # if "result" in event:
+                  #    yield(format_response(event["result"]))
+      
+      def format_response(result) -> str:
+          """Extract code from metrics and format with LLM response."""
+          parts = []
+      
+          # Extract executed code from metrics
+          try:
+              tool_metrics = result.metrics.tool_metrics.get('code_interpreter')
+              if tool_metrics and hasattr(tool_metrics, 'tool'):
+                  action = tool_metrics.tool['input']['code_interpreter_input']['action']
+                  if 'code' in action:
+                      parts.append(f"## Executed Code:\n```{action.get('language', 'python')}\n{action['code']}\n```\n---\n")
+          except (AttributeError, KeyError):
+              pass  # No code to extract
+      
+          # Add LLM response
+          parts.append(f"## 📊 Result:\n{str(result)}")
+          return "\n".join(parts)
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from mcp.client.streamable_http import streamablehttp_client
+      from strands.tools.mcp.mcp_client import MCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPClient:
+          """
+          Returns an MCP Client compatible with Strands
+          """
+          # to use an MCP server that supports bearer authentication, add headers={"Authorization": f"Bearer {access_token}"}
+          return MCPClient(lambda: streamablehttp_client(EXAMPLE_MCP_ENDPOINT))
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from strands.models.anthropic import AnthropicModel
+      from dotenv import load_dotenv
+      from bedrock_agentcore.identity.auth import requires_api_key
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """Provide API key"""
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("ANTHROPIC_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      def load_model() -> AnthropicModel:
+          """
+          Get authenticated Anthropic model client.
+          """
+          return AnthropicModel(
+              client_args={"api_key": _get_api_key()},
+              model_id="claude-sonnet-4-5-20250929",
+              max_tokens=5000
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[strands-bedrock]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from strands import Agent, tool
+      from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      import logging
+      
+      log = logging.getLogger(__name__)
+      
+      app = BedrockAgentCoreApp()
+      
+      REGION = os.getenv("AWS_REGION")
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      @app.entrypoint
+      async def invoke(payload, context):
+          session_id = getattr(context, 'session_id', 'default')
+          
+          # Create code interpreter
+          code_interpreter = AgentCoreCodeInterpreter(
+              region=REGION,
+              session_name=session_id,
+              auto_create=True,
+              persist_sessions=True
+          )
+      
+          with mcp_client as client:
+              # Get MCP Tools
+              tools = client.list_tools_sync()
+      
+              # Create agent
+              agent = Agent(
+                  model=load_model(),
+                  system_prompt="""
+                      You are a helpful assistant with code execution capabilities. Use tools when appropriate.
+                  """,
+                  tools=[code_interpreter.code_interpreter, add_numbers] + tools
+              )
+      
+              # Execute and format response
+              stream = agent.stream_async(payload.get("prompt"))
+      
+              async for event in stream:
+                  # Handle Text parts of the response
+                  if "data" in event and isinstance(event["data"], str):
+                      yield event["data"]
+      
+                  # Implement additional handling for other events
+                  # if "toolUse" in event:
+                  #   # Process toolUse
+      
+                  # Handle end of stream
+                  # if "result" in event:
+                  #    yield(format_response(event["result"]))
+      
+      def format_response(result) -> str:
+          """Extract code from metrics and format with LLM response."""
+          parts = []
+      
+          # Extract executed code from metrics
+          try:
+              tool_metrics = result.metrics.tool_metrics.get('code_interpreter')
+              if tool_metrics and hasattr(tool_metrics, 'tool'):
+                  action = tool_metrics.tool['input']['code_interpreter_input']['action']
+                  if 'code' in action:
+                      parts.append(f"## Executed Code:\n```{action.get('language', 'python')}\n{action['code']}\n```\n---\n")
+          except (AttributeError, KeyError):
+              pass  # No code to extract
+      
+          # Add LLM response
+          parts.append(f"## 📊 Result:\n{str(result)}")
+          return "\n".join(parts)
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from mcp.client.streamable_http import streamablehttp_client
+      from strands.tools.mcp.mcp_client import MCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPClient:
+          """
+          Returns an MCP Client compatible with Strands
+          """
+          # to use an MCP server that supports bearer authentication, add headers={"Authorization": f"Bearer {access_token}"}
+          return MCPClient(lambda: streamablehttp_client(EXAMPLE_MCP_ENDPOINT))
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      from strands.models import BedrockModel
+      
+      # Uses global inference profile for Claude Sonnet 4.5
+      # https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
+      MODEL_ID = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      
+      def load_model() -> BedrockModel:
+          """
+          Get Bedrock model client.
+          Uses IAM authentication via the execution role.
+          """
+          return BedrockModel(model_id=MODEL_ID)
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[strands-gemini]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from strands import Agent, tool
+      from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      import logging
+      
+      log = logging.getLogger(__name__)
+      
+      app = BedrockAgentCoreApp()
+      
+      REGION = os.getenv("AWS_REGION")
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      @app.entrypoint
+      async def invoke(payload, context):
+          session_id = getattr(context, 'session_id', 'default')
+          
+          # Create code interpreter
+          code_interpreter = AgentCoreCodeInterpreter(
+              region=REGION,
+              session_name=session_id,
+              auto_create=True,
+              persist_sessions=True
+          )
+      
+          with mcp_client as client:
+              # Get MCP Tools
+              tools = client.list_tools_sync()
+      
+              # Create agent
+              agent = Agent(
+                  model=load_model(),
+                  system_prompt="""
+                      You are a helpful assistant with code execution capabilities. Use tools when appropriate.
+                  """,
+                  tools=[code_interpreter.code_interpreter, add_numbers] + tools
+              )
+      
+              # Execute and format response
+              stream = agent.stream_async(payload.get("prompt"))
+      
+              async for event in stream:
+                  # Handle Text parts of the response
+                  if "data" in event and isinstance(event["data"], str):
+                      yield event["data"]
+      
+                  # Implement additional handling for other events
+                  # if "toolUse" in event:
+                  #   # Process toolUse
+      
+                  # Handle end of stream
+                  # if "result" in event:
+                  #    yield(format_response(event["result"]))
+      
+      def format_response(result) -> str:
+          """Extract code from metrics and format with LLM response."""
+          parts = []
+      
+          # Extract executed code from metrics
+          try:
+              tool_metrics = result.metrics.tool_metrics.get('code_interpreter')
+              if tool_metrics and hasattr(tool_metrics, 'tool'):
+                  action = tool_metrics.tool['input']['code_interpreter_input']['action']
+                  if 'code' in action:
+                      parts.append(f"## Executed Code:\n```{action.get('language', 'python')}\n{action['code']}\n```\n---\n")
+          except (AttributeError, KeyError):
+              pass  # No code to extract
+      
+          # Add LLM response
+          parts.append(f"## 📊 Result:\n{str(result)}")
+          return "\n".join(parts)
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from mcp.client.streamable_http import streamablehttp_client
+      from strands.tools.mcp.mcp_client import MCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPClient:
+          """
+          Returns an MCP Client compatible with Strands
+          """
+          # to use an MCP server that supports bearer authentication, add headers={"Authorization": f"Bearer {access_token}"}
+          return MCPClient(lambda: streamablehttp_client(EXAMPLE_MCP_ENDPOINT))
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from strands.models.gemini import GeminiModel
+      from dotenv import load_dotenv
+      from bedrock_agentcore.identity.auth import requires_api_key
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("GEMINI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gemini-2.5-flash"
+      
+      def load_model() -> GeminiModel:
+          """
+          Get authenticated Gemini model client.
+          """
+          return GeminiModel(
+              client_args={"api_key": _get_api_key()},
+              model_id=MODEL_ID,
+          )
+    ''',
+  })
+# ---
+# name: test_runtime_only_snapshots[strands-openai]
+  dict({
+    'src': None,
+    'src/main.py': '''
+      import os
+      from strands import Agent, tool
+      from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+      from bedrock_agentcore.runtime import BedrockAgentCoreApp
+      from mcp_client.client import get_streamable_http_mcp_client
+      from model.load import load_model
+      import logging
+      
+      log = logging.getLogger(__name__)
+      
+      app = BedrockAgentCoreApp()
+      
+      REGION = os.getenv("AWS_REGION")
+      
+      # Import AgentCore Gateway as Streamable HTTP MCP Client
+      mcp_client = get_streamable_http_mcp_client()
+      
+      # Define a simple function tool
+      @tool
+      def add_numbers(a: int, b: int) -> int:
+          """Return the sum of two numbers"""
+          return a+b
+      
+      @app.entrypoint
+      async def invoke(payload, context):
+          session_id = getattr(context, 'session_id', 'default')
+          
+          # Create code interpreter
+          code_interpreter = AgentCoreCodeInterpreter(
+              region=REGION,
+              session_name=session_id,
+              auto_create=True,
+              persist_sessions=True
+          )
+      
+          with mcp_client as client:
+              # Get MCP Tools
+              tools = client.list_tools_sync()
+      
+              # Create agent
+              agent = Agent(
+                  model=load_model(),
+                  system_prompt="""
+                      You are a helpful assistant with code execution capabilities. Use tools when appropriate.
+                  """,
+                  tools=[code_interpreter.code_interpreter, add_numbers] + tools
+              )
+      
+              # Execute and format response
+              stream = agent.stream_async(payload.get("prompt"))
+      
+              async for event in stream:
+                  # Handle Text parts of the response
+                  if "data" in event and isinstance(event["data"], str):
+                      yield event["data"]
+      
+                  # Implement additional handling for other events
+                  # if "toolUse" in event:
+                  #   # Process toolUse
+      
+                  # Handle end of stream
+                  # if "result" in event:
+                  #    yield(format_response(event["result"]))
+      
+      def format_response(result) -> str:
+          """Extract code from metrics and format with LLM response."""
+          parts = []
+      
+          # Extract executed code from metrics
+          try:
+              tool_metrics = result.metrics.tool_metrics.get('code_interpreter')
+              if tool_metrics and hasattr(tool_metrics, 'tool'):
+                  action = tool_metrics.tool['input']['code_interpreter_input']['action']
+                  if 'code' in action:
+                      parts.append(f"## Executed Code:\n```{action.get('language', 'python')}\n{action['code']}\n```\n---\n")
+          except (AttributeError, KeyError):
+              pass  # No code to extract
+      
+          # Add LLM response
+          parts.append(f"## 📊 Result:\n{str(result)}")
+          return "\n".join(parts)
+      
+      if __name__ == "__main__":
+          app.run()
+    ''',
+    'src/mcp_client': None,
+    'src/mcp_client/client.py': '''
+      from mcp.client.streamable_http import streamablehttp_client
+      from strands.tools.mcp.mcp_client import MCPClient
+      
+      # ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+      EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+      
+      def get_streamable_http_mcp_client() -> MCPClient:
+          """
+          Returns an MCP Client compatible with Strands
+          """
+          # to use an MCP server that supports bearer authentication, add headers={"Authorization": f"Bearer {access_token}"}
+          return MCPClient(lambda: streamablehttp_client(EXAMPLE_MCP_ENDPOINT))
+    ''',
+    'src/model': None,
+    'src/model/load.py': '''
+      import os
+      from strands.models.openai import OpenAIModel
+      from dotenv import load_dotenv
+      from bedrock_agentcore.identity.auth import requires_api_key
+      
+      @requires_api_key(provider_name=os.getenv("BEDROCK_AGENTCORE_MODEL_PROVIDER_API_KEY_NAME", ""))
+      def agentcore_identity_api_key_provider(api_key: str) -> str:
+          return api_key
+      
+      def _get_api_key() -> str:
+          """
+          Uses AgentCore Identity for API key management in deployed environments,
+          and falls back to .env file for local development.
+          """
+          if os.getenv("LOCAL_DEV") == "1":
+              load_dotenv(".env.local")
+              return os.getenv("OPENAI_API_KEY")
+          else:
+              return agentcore_identity_api_key_provider()
+      
+      MODEL_ID = "gpt-5.1"
+      
+      def load_model() -> OpenAIModel:
+          """
+          Get authenticated OpenAI model client.
+          """
+          return OpenAIModel(
+              client_args={"api_key": _get_api_key()},
+              model_id=MODEL_ID,
+          )
+    ''',
+  })
+# ---

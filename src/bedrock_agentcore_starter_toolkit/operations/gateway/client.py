@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import boto3
 import urllib3
 
+from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import (
     API_MODEL_BUCKETS,
     CREATE_OPENAPI_TARGET_INVALID_CREDENTIALS_SHAPE_EXCEPTION_MESSAGE,
@@ -58,14 +59,28 @@ class GatewayClient:
         role_arn=None,
         authorizer_config=None,
         enable_semantic_search=True,
+        enable_observability: bool = True,
     ) -> dict:
-        """Creates an MCP Gateway.
+        """Creates an MCP Gateway with optional observability.
+
+        By default, CloudWatch observability (logs + traces) is automatically
+        enabled for the gateway resource.
 
         :param name: optional - the name of the gateway (defaults to TestGateway).
         :param role_arn: optional - the role arn to use (creates one if none provided).
         :param authorizer_config: optional - the authorizer config (will create one if none provided).
         :param enable_semantic_search: optional - whether to enable search tool (defaults to True).
-        :return: the created Gateway
+        :param enable_observability: optional - whether to auto-enable CloudWatch logs and traces (defaults to True).
+        :return: the created Gateway with observability status
+
+        Example:
+            client = GatewayClient(region_name='us-east-1')
+
+            # Create gateway with observability enabled (default)
+            gateway = client.create_mcp_gateway(name="my-gateway")
+
+            # Create gateway without observability
+            gateway = client.create_mcp_gateway(name="my-gateway", enable_observability=False)
         """
         if not name:
             name = f"TestGateway{GatewayClient.generate_random_id()}"
@@ -102,6 +117,11 @@ class GatewayClient:
             resource_name="Gateway",
         )
         self.logger.info("\n✅Gateway is ready")
+
+        # Auto-enable observability after gateway is ready
+        if enable_observability:
+            self._enable_observability_for_gateway(gateway)
+
         return gateway
 
     def create_mcp_gateway_target(
@@ -957,3 +977,65 @@ class GatewayClient:
                 raise GatewaySetupException(f"Failed to get test token: {e}") from e
             except Exception as e:
                 raise GatewaySetupException(f"Failed to get test token: {e}") from e
+
+    def _enable_observability_for_gateway(self, gateway: dict) -> None:
+        """Called during creation - failures don't fail the creation."""
+        gateway_id = gateway.get("gatewayId")
+        gateway_arn = gateway.get("gatewayArn")
+
+        if not gateway_id:
+            self.logger.warning("Cannot enable observability: gateway ID not found")
+            return
+
+        try:
+            result = self.enable_observability(gateway_id=gateway_id, gateway_arn=gateway_arn)
+            gateway["observability"] = result
+        except Exception as e:
+            self.logger.warning("⚠️ Observability setup failed: %s", str(e))
+            gateway["observability"] = {"status": "error", "error": str(e)}
+
+    def enable_observability(
+        self,
+        gateway_id: str,
+        gateway_arn: Optional[str] = None,
+        enable_logs: bool = True,
+        enable_traces: bool = True,
+    ) -> Dict[str, Any]:
+        """Enable CloudWatch observability for an existing gateway resource."""
+        delivery_manager = ObservabilityDeliveryManager(
+            region_name=self.region,
+            boto3_session=self.session,
+        )
+        result = delivery_manager.enable_for_gateway(
+            gateway_id=gateway_id,
+            gateway_arn=gateway_arn,
+            enable_logs=enable_logs,
+            enable_traces=enable_traces,
+        )
+
+        if result["status"] == "success":
+            self.logger.info("✅ Observability enabled for gateway %s", gateway_id)
+            self.logger.info("   Log group: %s", result["log_group"])
+        else:
+            self.logger.warning("⚠️ Failed to enable observability: %s", result.get("error"))
+
+        return result
+
+    def disable_observability(
+        self,
+        gateway_id: str,
+        delete_log_group: bool = False,
+    ) -> Dict[str, Any]:
+        """Disable CloudWatch observability for a gateway resource."""
+        delivery_manager = ObservabilityDeliveryManager(region_name=self.region)
+        result = delivery_manager.disable_for_gateway(
+            gateway_id=gateway_id,
+            delete_log_group=delete_log_group,
+        )
+
+        if result["status"] == "success":
+            self.logger.info("✅ Observability disabled for gateway %s", gateway_id)
+        else:
+            self.logger.warning("⚠️ Partial cleanup: %s", result.get("errors"))
+
+        return result

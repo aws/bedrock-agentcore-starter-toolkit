@@ -17,7 +17,7 @@ from ...operations.identity.helpers import (
     get_cognito_m2m_token,
     update_cognito_callback_urls,
 )
-from ...services.ecr import get_region
+from ...utils.aws import get_region
 from ...utils.runtime.config import load_config, save_config
 from ..common import _handle_error, _handle_warn, _print_success, console
 
@@ -132,7 +132,7 @@ us-west-2_xxx/.well-known/openid-configuration \
                 f"[bold]Next Steps:[/bold]\n"
                 f"   1. Ensure callback URL is registered with your IdP\n"
                 f"   2. Create/update workload identity with your app's callback URLs\n"
-                f"   3. [cyan]agentcore launch[/cyan]  # Permissions auto-added",
+                f"   3. [cyan]agentcore deploy[/cyan]  # Permissions auto-added",
                 title="✅ Success",
                 border_style="green",
             )

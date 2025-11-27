@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
 We will host this agent on AgentCore Runtime. We can do this easily with the AgentCore SDK we installed earlier.
 
-From your terminal, run `agentcore configure -e agentcoreidentityquickstart.py` and `agentcore launch` . The deployment will work with the defaults set by `agentcore configure`, but you may customize them. Ensure that you select "No" for the `Configure OAuth authorizer instead` step. We want to use IAM authorization for this guide.
+From your terminal, run `agentcore configure -e agentcoreidentityquickstart.py` and `agentcore deploy` . The deployment will work with the defaults set by `agentcore configure`, but you may customize them. Ensure that you select "No" for the `Configure OAuth authorizer instead` step. We want to use IAM authorization for this guide.
 
 ### Update the IAM policy of the agent to be able to access the token vault, and client secret
 
@@ -376,7 +376,7 @@ Note that if you interrupt an invocation without completing authorization, you m
 
 ### Debugging
 
-Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run `agentcore launch`
+Should you encounter any errors or unexpected behaviors, the output of the agent is captured in CloudWatch logs. A log tailing command is provided after you run `agentcore deploy`
 
 ## Clean Up
 

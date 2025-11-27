@@ -363,6 +363,7 @@ class TestRequestHeaderConfigurationSchema:
             entrypoint="test.py",
             aws=AWSConfig(
                 region="us-west-2",
+                account="123456789012",
                 network_configuration=NetworkConfiguration(),
                 observability=ObservabilityConfig(),
             ),

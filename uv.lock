@@ -137,7 +137,7 @@ wheels = [
 
 [[package]]
 name = "bedrock-agentcore-starter-toolkit"
-version = "0.1.34"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "autopep8" },
@@ -184,6 +184,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "strands-agents" },
+    { name = "syrupy" },
     { name = "wheel" },
 ]
 
@@ -233,6 +234,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "ruff", specifier = ">=0.12.0" },
     { name = "strands-agents", specifier = ">=0.1.8" },
+    { name = "syrupy", specifier = ">=5.0.0" },
     { name = "wheel", specifier = ">=0.45.1" },
 ]
 
@@ -2379,6 +2381,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/de/a0c3d1244912c260638f0f925e190e493ccea37ecaea9bbad7c14413b803/super_collections-0.6.2.tar.gz", hash = "sha256:0c8d8abacd9fad2c7c1c715f036c29f5db213f8cac65f24d45ecba12b4da187a", size = 31315, upload-time = "2025-09-30T00:37:08.067Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/17/43/47c7cf84b3bd74a8631b02d47db356656bb8dff6f2e61a4c749963814d0d/super_collections-0.6.2-py3-none-any.whl", hash = "sha256:291b74d26299e9051d69ad9d89e61b07b6646f86a57a2f5ab3063d206eee9c56", size = 16173, upload-time = "2025-09-30T00:37:07.104Z" },
+]
+
+[[package]]
+name = "syrupy"
+version = "5.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c1/90/1a442d21527009d4b40f37fe50b606ebb68a6407142c2b5cc508c34b696b/syrupy-5.0.0.tar.gz", hash = "sha256:3282fe963fa5d4d3e47231b16d1d4d0f4523705e8199eeb99a22a1bc9f5942f2", size = 48881, upload-time = "2025-09-28T21:15:12.783Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/9a/6c68aad2ccfce6e2eeebbf5bb709d0240592eb51ff142ec4c8fbf3c2460a/syrupy-5.0.0-py3-none-any.whl", hash = "sha256:c848e1a980ca52a28715cd2d2b4d434db424699c05653bd1158fb31cf56e9546", size = 49087, upload-time = "2025-09-28T21:15:11.639Z" },
 ]
 
 [[package]]

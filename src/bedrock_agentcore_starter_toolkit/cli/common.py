@@ -1,12 +1,35 @@
 """Common utilities for BedrockAgentCore CLI."""
 
+import functools
 from typing import NoReturn, Optional
 
 import typer
 from prompt_toolkit import prompt
 from rich.console import Console
 
+from ..utils.aws import ensure_valid_aws_creds
+
 console = Console()
+
+
+def requires_aws_creds(func):
+    """Decorator for Typer commands that require valid AWS credentials."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        assert_valid_aws_creds_or_exit()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def assert_valid_aws_creds_or_exit(failure_message=None):
+    """Make a dummy STS call; clean Typer UX for failure."""
+    from .cli_ui import show_invalid_aws_creds  # lazy import to avoid circularity
+
+    ok, msg = ensure_valid_aws_creds()
+    if not show_invalid_aws_creds(ok, msg, failure_message):
+        raise typer.Exit(code=1)
 
 
 def _handle_error(message: str, exception: Optional[Exception] = None) -> NoReturn:

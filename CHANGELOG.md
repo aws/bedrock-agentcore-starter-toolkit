@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0] - 2025-11-27
+
+### Changes
+
+- nit: spellcheck changes (#375) (ab82659)
+- fix: remove unused imports; fix documentation pages (#374) (b6628a7)
+- feat: change 'launch' command to 'deploy' command with backwards compatibility (#370) (4d66714)
+- Update readme copy (#373) (7e7f089)
+- Auto-enable CloudWatch observability  (#372) (f46e8e8)
+- feat: implement agentcore create command. Related updates are made to… (#364) (ec1ce0f)
+- docs: update async processing documentation to use manual task management (#371) (e47a5a0)
+- feat: add multi-platform ARM64 support for dependency packaging (9932a85)
+- update transaction search enablement instructions (#367) (b802d79)
+- chore(doc): add memory and gateway to cli documentation (#363) (06c3282)
+- feat: Add comprehensive observability CLI for agent telemetry (#360) (86c2390)
+- chore: bump version to 0.1.34 (#355) (76dda3a)
+
 ## [0.1.34] - 2025-11-19
 
 ### Changes
