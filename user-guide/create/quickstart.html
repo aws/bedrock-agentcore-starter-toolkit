@@ -573,6 +573,73 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 1: Create a New Project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-run-agentcore-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: Run agentcore create
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-inspect-the-generated-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Inspect the Generated Project
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Inspect the Generated Project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Template
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-template-iac-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Template (IaC + Runtime)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-local-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Local Development
+      
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -588,7 +655,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basic-template" class="md-nav__link">
+  <a href="#basic-template_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Basic template
@@ -2532,6 +2599,73 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 1: Create a New Project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-run-agentcore-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: Run agentcore create
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-inspect-the-generated-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Inspect the Generated Project
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Inspect the Generated Project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Template
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-template-iac-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Template (IaC + Runtime)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-local-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Local Development
+      
+    </span>
+  </a>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2547,7 +2681,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basic-template" class="md-nav__link">
+  <a href="#basic-template_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Basic template
@@ -2766,83 +2900,75 @@ using the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide
 <hr />
 <h2 id="step-1-create-a-new-project">Step 1: Create a New Project<a class="headerlink" href="#step-1-create-a-new-project" title="Permanent link">&para;</a></h2>
 <p>Run the CLI in interactive mode:</p>
-<p><div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>create
-<span class="sb">````</span>
-
-You<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>prompted<span class="w"> </span><span class="k">for</span>:
-
-*<span class="w"> </span>Project<span class="w"> </span>name
-*<span class="w"> </span>Agent<span class="w"> </span>SDK<span class="w"> </span><span class="o">(</span>AutoGen,<span class="w"> </span>CrewAI,<span class="w"> </span>LangGraph,<span class="w"> </span>Strands,<span class="w"> </span>etc.<span class="o">)</span>
-*<span class="w"> </span>Template<span class="w"> </span><span class="o">(</span><span class="sb">`</span>basic<span class="sb">`</span><span class="w"> </span>or<span class="w"> </span><span class="sb">`</span>production<span class="sb">`</span><span class="o">)</span>
-*<span class="w"> </span>IaC<span class="w"> </span>provider<span class="w"> </span><span class="o">(</span>CDK<span class="w"> </span>or<span class="w"> </span>Terraform,<span class="w"> </span><span class="k">if</span><span class="w"> </span>applicable<span class="o">)</span>
-*<span class="w"> </span>Model<span class="w"> </span>provider
-*<span class="w"> </span>Whether<span class="w"> </span>to<span class="w"> </span>include<span class="w"> </span>MCP<span class="w"> </span>integration
-*<span class="w"> </span>Whether<span class="w"> </span>to<span class="w"> </span>include<span class="w"> </span>memory
-*<span class="w"> </span>Whether<span class="w"> </span>to<span class="w"> </span>load<span class="w"> </span>defaults<span class="w"> </span>from<span class="w"> </span><span class="sb">`</span>.bedrock_agentcore.yaml<span class="sb">`</span>
-
-<span class="c1">### Optional: Run agentcore create</span>
-
-For<span class="w"> </span><span class="sb">`</span>production<span class="sb">`</span><span class="w"> </span>templates<span class="w"> </span>you<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>prompted<span class="w"> </span>whether<span class="w"> </span>to<span class="w"> </span>run<span class="w"> </span>agentcore<span class="w"> </span>create<span class="w"> </span>first.
-This<span class="w"> </span>lets<span class="w"> </span>you<span class="w"> </span>predefine<span class="w"> </span>authorization,<span class="w"> </span>headers,<span class="w"> </span>memory<span class="w"> </span>configuration,<span class="w"> </span>and<span class="w"> </span>agent<span class="w"> </span>details.
-
----
-
-<span class="c1">## Step 2: Inspect the Generated Project</span>
-
-Your<span class="w"> </span>output<span class="w"> </span>layout<span class="w"> </span>depends<span class="w"> </span>on<span class="w"> </span>the<span class="w"> </span>selected<span class="w"> </span>template.
-
-<span class="c1">### Basic Template</span>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>create
 </code></pre></div>
-my_project/
+<p>You will be prompted for:</p>
+<ul>
+<li>Project name</li>
+<li>Agent SDK (AutoGen, CrewAI, LangGraph, Strands, etc.)</li>
+<li>Template (<code>basic</code> or <code>production</code>)</li>
+<li>IaC provider (CDK or Terraform, if applicable)</li>
+<li>Model provider</li>
+<li>Whether to include MCP integration</li>
+<li>Whether to include memory</li>
+<li>Whether to load defaults from <code>.bedrock_agentcore.yaml</code></li>
+</ul>
+<h3 id="optional-run-agentcore-create">Optional: Run agentcore create<a class="headerlink" href="#optional-run-agentcore-create" title="Permanent link">&para;</a></h3>
+<p>For <code>production</code> templates you will be prompted whether to run agentcore create first.
+This lets you predefine authorization, headers, memory configuration, and agent details.</p>
+<hr />
+<h2 id="step-2-inspect-the-generated-project">Step 2: Inspect the Generated Project<a class="headerlink" href="#step-2-inspect-the-generated-project" title="Permanent link">&para;</a></h2>
+<p>Your output layout depends on the selected template.</p>
+<h3 id="basic-template">Basic Template<a class="headerlink" href="#basic-template" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>my_project/
   src/
     main.py
     model/
     mcp_client/
   .bedrock_agentcore.yaml
   README.md
-<div class="highlight"><pre><span></span><code>Includes:
-
-* Entrypoint (`main.py`) for local or direct runtime hosting
-* Model loader
-* Optional MCP tools
-* Function tools depending on selected SDK
-
----
-
-### Production Template (IaC + Runtime)
 </code></pre></div>
-my_project/
+<p>Includes:</p>
+<ul>
+<li>Entrypoint (<code>main.py</code>) for local or direct runtime hosting</li>
+<li>Model loader</li>
+<li>Optional MCP tools</li>
+<li>Function tools depending on selected SDK</li>
+</ul>
+<hr />
+<h3 id="production-template-iac-runtime">Production Template (IaC + Runtime)<a class="headerlink" href="#production-template-iac-runtime" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>my_project/
   src/
   mcp/
     lambda/handler.py
   cdk/      OR     terraform/
   .bedrock_agentcore.yaml
   README.md
-<div class="highlight"><pre><span></span><code>Includes:
-
-* Agent runtime code
-* Gateway Lambda used as an MCP target
-* Full IaC modeling:
-
-  * Runtime + endpoints
-  * Gateway (MCP)
-  * Cognito OAuth2
-  * Memory
-  * Network + environment variables
-  * Container packaging config
-
----
-
-## Step 3: Local Development
-
-Create and activate a virtual environment:
-
-```bash
-cd src
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-cd ..
-</code></pre></div></p>
+</code></pre></div>
+<p>Includes:</p>
+<ul>
+<li>Agent runtime code</li>
+<li>Gateway Lambda used as an MCP target</li>
+<li>
+<p>Full IaC modeling:</p>
+</li>
+<li>
+<p>Runtime + endpoints</p>
+</li>
+<li>Gateway (MCP)</li>
+<li>Cognito OAuth2</li>
+<li>Memory</li>
+<li>Network + environment variables</li>
+<li>Container packaging config</li>
+</ul>
+<hr />
+<h2 id="step-3-local-development">Step 3: Local Development<a class="headerlink" href="#step-3-local-development" title="Permanent link">&para;</a></h2>
+<p>Create and activate a virtual environment:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>src
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">   </span><span class="c1"># Windows: .venv\Scripts\activate</span>
+<span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
 <p>Start the local dev server:</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>dev
 </code></pre></div>
@@ -2852,7 +2978,7 @@ cd ..
 <p>Hot reload is enabled automatically.</p>
 <hr />
 <h2 id="step-4-deploy">Step 4: Deploy<a class="headerlink" href="#step-4-deploy" title="Permanent link">&para;</a></h2>
-<h3 id="basic-template">Basic template<a class="headerlink" href="#basic-template" title="Permanent link">&para;</a></h3>
+<h3 id="basic-template_1">Basic template<a class="headerlink" href="#basic-template_1" title="Permanent link">&para;</a></h3>
 <p>Deploy the basic template with <code>agentcore launch</code>.</p>
 <p>If you wish to further configure your project, first run <code>agentcore configure</code></p>
 <h3 id="production-template">Production Template<a class="headerlink" href="#production-template" title="Permanent link">&para;</a></h3>
@@ -2907,7 +3033,7 @@ terraform apply
 </li>
 <li><code>.env.local</code> fallback in local dev (<code>LOCAL_DEV=1</code>)</li>
 </ul>
-<p>For the <code>production</code> template, it is your responsibility to implement API key handling. Using Bedrock Agentcore Identity
+<p>For the <code>production</code> template, it is your responsibility to implement API key handling. Using Bedrock AgentCore Identity
 or AWS Secrets Manager is recommended.</p>
 <h3 id="mcp-tools">MCP Tools<a class="headerlink" href="#mcp-tools" title="Permanent link">&para;</a></h3>
 <p>Generator output will provide the correct MCP adapter for your selected SDK, such as:</p>

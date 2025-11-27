@@ -11,7 +11,7 @@ ______________________________________________________________________
 The development server provides:
 
 - **Hot Reloading** - Automatically detects code changes and restarts the server
-- **Local Testing** - Test your agent locally before deploying to Bedrock Agentcore
+- **Local Testing** - Test your agent locally before deploying to Bedrock AgentCore
 - **Environment Configuration** - Inject environment variables for testing different configurations
 
 The dev server runs your agent using the [Bedrock AgentCore SDK](https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/src/bedrock_agentcore/runtime/app.py) ASGI application, just like it runs in production on AgentCore Runtime.

@@ -89,15 +89,13 @@ Your output layout depends on the selected template.
 ### Basic Template
 
 ```
-
 my_project/
-src/
-main.py
-model/
-mcp_client/
-.bedrock_agentcore.yaml
-README.md
-
+  src/
+    main.py
+    model/
+    mcp_client/
+  .bedrock_agentcore.yaml
+  README.md
 ```
 
 Includes:
@@ -112,31 +110,26 @@ ______________________________________________________________________
 ### Production Template (IaC + Runtime)
 
 ```
-
 my_project/
-src/
-mcp/
-lambda/handler.py
-cdk/ OR terraform/
-.bedrock_agentcore.yaml
-README.md
-
+  src/
+  mcp/
+    lambda/handler.py
+  cdk/      OR     terraform/
+  .bedrock_agentcore.yaml
+  README.md
 ```
 
 Includes:
 
 - Agent runtime code
-
 - Gateway Lambda used as an MCP target
-
 - Full IaC modeling:
-
-  - Runtime + endpoints
-  - Gateway (MCP)
-  - Cognito OAuth2
-  - Memory
-  - Network + environment variables
-  - Container packaging config
+- Runtime + endpoints
+- Gateway (MCP)
+- Cognito OAuth2
+- Memory
+- Network + environment variables
+- Container packaging config
 
 ______________________________________________________________________
 
@@ -144,7 +137,7 @@ ______________________________________________________________________
 
 Create and activate a virtual environment:
 
-```bash
+```
 cd src
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
@@ -248,7 +241,7 @@ ______________________________________________________________________
 - AgentCore Identity in deployed environments
 - `.env.local` fallback in local dev (`LOCAL_DEV=1`)
 
-For the `production` template, it is your responsibility to implement API key handling. Using Bedrock Agentcore Identity or AWS Secrets Manager is recommended.
+For the `production` template, it is your responsibility to implement API key handling. Using Bedrock AgentCore Identity or AWS Secrets Manager is recommended.
 
 ### MCP Tools
 

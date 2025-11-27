@@ -3013,7 +3013,7 @@ python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </
 <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">browser_tool</span><span class="o">.</span><span class="n">browser</span><span class="p">])</span>
 
 <span class="c1"># Test the agent with a web search prompt</span>
-<span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;what are the services offered by Bedrock AgentCore? Use the documentaiton link if needed: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html&quot;</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="s2">&quot;what are the services offered by Bedrock AgentCore? Use the documentation link if needed: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html&quot;</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nPrompt: </span><span class="si">{</span><span class="n">prompt</span><span class="si">}</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
 
 <span class="n">response</span> <span class="o">=</span> <span class="n">agent</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
@@ -3498,7 +3498,7 @@ python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </
 <ul>
 <li>Creates a managed browser session using AgentCore Browser</li>
 <li>Connects to the remote Chrome browser using Playwright's Chrome DevTools Protocol (CDP)</li>
-<li>Navigates to <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html">Agentcore documentation</a> and prints the page title</li>
+<li>Navigates to <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html">AgentCore documentation</a> and prints the page title</li>
 <li>Keeps the session alive for 2 minutes, allowing you to view it in the AWS Console</li>
 <li>Properly closes the browser and cleans up resources</li>
 </ul>
