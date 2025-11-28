@@ -2077,11 +2077,8 @@ agents:
             mock_prompt.assert_any_call("Enter OAuth discovery URL", "")
             mock_prompt.assert_any_call("Enter allowed OAuth client IDs (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "")
-            mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "existing_scope1")
-            mock_prompt.assert_any_call(
-                "Enter allowed OAuth custom claims (comma-separated)",
-                '{"inboundTokenClaimName": "cognito:groups","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}',
-            )
+            mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "")
+            mock_prompt.assert_any_call("Enter allowed OAuth custom claims (comma-separated)", "")
 
             expected_config = {
                 "customJWTAuthorizer": {
