@@ -167,25 +167,6 @@ class ConfigurationManager:
         """Configure OAuth settings and return config dict."""
         console.print("\n📋 [cyan]OAuth Configuration[/cyan]")
 
-        # Get existing OAuth values
-        existing_discovery_url = ""
-        existing_client_ids = ""
-        existing_audience = ""
-        existing_allowed_scopes = ""
-        existing_custom_claims = ""
-
-        if (
-            self.existing_config
-            and self.existing_config.authorizer_configuration
-            and "customJWTAuthorizer" in self.existing_config.authorizer_configuration
-        ):
-            jwt_config = self.existing_config.authorizer_configuration["customJWTAuthorizer"]
-            existing_discovery_url = jwt_config.get("discoveryUrl", "")
-            existing_client_ids = ",".join(jwt_config.get("allowedClients", []))
-            existing_audience = ",".join(jwt_config.get("allowedAudience", []))
-            existing_allowed_scopes = ",".join(jwt_config.get("allowedScopes", []))
-            existing_custom_claims = ",".join(jwt_config.get("customClaims", []))
-
         # Prompt for discovery URL
         default_discovery_url = os.getenv("BEDROCK_AGENTCORE_DISCOVERY_URL", "")
         discovery_url = _prompt_with_default("Enter OAuth discovery URL", default_discovery_url)
@@ -200,12 +181,12 @@ class ConfigurationManager:
         default_audience = os.getenv("BEDROCK_AGENTCORE_AUDIENCE", "")
         audience_input = _prompt_with_default("Enter allowed OAuth audience (comma-separated)", default_audience)
         # Prompt for allowed scopes
-        default_allowed_scopes = existing_allowed_scopes or os.getenv("BEDROCK_AGENTCORE_ALLOWED_SCOPES", "")
+        default_allowed_scopes = os.getenv("BEDROCK_AGENTCORE_ALLOWED_SCOPES", "")
         allowed_scopes_input = _prompt_with_default(
             "Enter allowed OAuth allowed scopes (comma-separated)", default_allowed_scopes
         )
         # Prompt for custom claims
-        default_custom_claims = existing_custom_claims or os.getenv("BEDROCK_AGENTCORE_CUSTOM_CLAIMS", "")
+        default_custom_claims = os.getenv("BEDROCK_AGENTCORE_CUSTOM_CLAIMS", "")
         custom_claims_input = _prompt_with_default(
             "Enter allowed OAuth custom claims (comma-separated)", default_custom_claims
         )
