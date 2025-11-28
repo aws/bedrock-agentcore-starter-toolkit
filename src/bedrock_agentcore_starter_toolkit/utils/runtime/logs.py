@@ -4,6 +4,22 @@ from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 
+def get_agent_runtime_log_group(agent_id: str, endpoint_name: Optional[str] = None) -> str:
+    """Get the CloudWatch log group name for agent runtime logs.
+
+    This is used by observability and evaluation features to reference agent logs.
+
+    Args:
+        agent_id: The agent ID
+        endpoint_name: The endpoint name (defaults to "DEFAULT")
+
+    Returns:
+        CloudWatch log group name (e.g., "/aws/bedrock-agentcore/runtimes/agent-123-DEFAULT")
+    """
+    endpoint_name = endpoint_name or "DEFAULT"
+    return f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}"
+
+
 def get_genai_observability_url(region: str) -> str:
     """Get GenAI Observability Dashboard console URL.
 

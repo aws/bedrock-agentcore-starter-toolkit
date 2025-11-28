@@ -70,6 +70,11 @@ AgentCore Observability helps developers trace, debug, and monitor agent perform
 
 **[Observability Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html)**
 
+## 🎯 Amazon Bedrock AgentCore Evaluation
+AgentCore Evaluation enables developers to assess and improve agent quality through built-in and custom evaluators. With support for on-demand evaluation and continuous monitoring via online evaluation, developers can measure agent performance metrics like helpfulness, correctness, and goal success rates. Evaluation integrates seamlessly with observability to provide actionable insights for maintaining and improving agent quality at scale.
+
+**[Evaluation Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/evaluation/quickstart.html)**
+
 ## 🔐 Amazon Bedrock AgentCore Identity
 AgentCore Identity provides a secure, scalable agent identity and access management capability accelerating AI agent development. It is compatible with existing identity providers, eliminating needs for user migration or rebuilding authentication flows. AgentCore Identity's helps to minimize consent fatigue with a secure token vault and allows you to build streamlined AI agent experiences. Just-enough access and secure permission delegation allow agents to securely access AWS resources and third-party tools and services.
 
@@ -102,3 +107,9 @@ pip install bedrock-agentcore-starter-toolkit
 - **License:** Apache 2.0 - see [LICENSE.txt](LICENSE.txt)
 - **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Security:** Report vulnerabilities via [SECURITY.md](SECURITY.md)
+
+---
+
+## 📌 TODO
+
+- [ ] **Update Resource Links**: Review and update all Quick Start links to ensure consistency. Some services link to AWS documentation (`docs.aws.amazon.com`) while others link to GitHub Pages (`aws.github.io/bedrock-agentcore-starter-toolkit`). Standardize link destinations and verify all URLs are correct.
