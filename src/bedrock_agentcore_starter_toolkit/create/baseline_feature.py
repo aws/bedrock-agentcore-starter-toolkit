@@ -30,6 +30,7 @@ class BaselineFeature(Feature):
                     "python-dotenv >= 1.2.1",
                     "pytest >= 7.0.0",
                     "pytest-asyncio >= 0.21.0",
+                    "aws-opentelemetry-distro >= 0.10.0",
                 ]
         super().__init__()
 
