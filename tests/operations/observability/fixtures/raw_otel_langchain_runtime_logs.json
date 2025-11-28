@@ -1,0 +1,724 @@
+[
+  {
+    "timestamp": "2025-11-18 00:26:54.850",
+    "raw_otel_json": {
+      "timestamp": "2025-11-18T00:26:54.849Z",
+      "level": "INFO",
+      "message": "Invocation completed successfully (2.991s)",
+      "logger": "bedrock_agentcore.app",
+      "requestId": "53620642-1664-46c0-bed7-6682c286634d",
+      "sessionId": "383c4a9d-5682-4186-a125-e226f9f6c141"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.849",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "bedrock_agentcore.app"
+      },
+      "timeUnixNano": 1763425614849719552,
+      "observedTimeUnixNano": 1763425614849877531,
+      "severityNumber": 9,
+      "severityText": "INFO",
+      "body": "Invocation completed successfully (2.991s)",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py",
+        "code.function.name": "_handle_invocation",
+        "otelTraceID": "691bbd4b51c1a4c319aa2bf92068c474",
+        "otelSpanID": "2be7614b3627c50a",
+        "code.line.number": 366,
+        "otelServiceName": "agent_lg.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "2be7614b3627c50a"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.849",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425614849091299,
+      "observedTimeUnixNano": 1763425619147764241,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "input": {
+          "messages": [
+            {
+              "content": "Hello, find everything about me from my memory ",
+              "role": "unknown"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "2d60a188d4c50d72"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.849",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425614849100657,
+      "observedTimeUnixNano": 1763425619147876302,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"I apologize, but I do not have any pre-existing personal memory about you. As an AI assistant, I start each conversation without any prior knowledge about the specific individual I'm talking to. Each interaction begins fresh, and I can only know what you choose to share with me during our conversation.\\n\\nIf you'd like to tell me about yourself, I'm happy to listen and engage in conversation. But I cannot magically retrieve personal information that hasn't been shared. Is there something specific you'd like to discuss or share about yourself?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"749a7175-f570-4fd0-a083-73581ff39f54\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:54 GMT\", \"content-type\": \"application/json\", \"content-length\": \"864\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"749a7175-f570-4fd0-a083-73581ff39f54\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [2974]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--8353fe58-e2ff-4415-bd59-c0fe4bfbb230-0\", \"usage_metadata\": {\"input_tokens\": 338, \"output_tokens\": 113, \"total_tokens\": 451, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": [\"graph:step:1\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello, find everything about me from my memory \", \"type\": \"human\", \"id\": \"8a4722e3-3b31-4f7e-86bb-4cf13e704426\"}}]}, \"tags\": [\"graph:step:1\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:5afe8b51-7fd4-135f-0071-01862bda44ae\"}, \"kwargs\": {\"name\": \"chatbot\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "acb1bd1133b1a5f4"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.849",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425614849485500,
+      "observedTimeUnixNano": 1763425619147954297,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello, find everything about me from my memory \", \"type\": \"human\", \"id\": \"8a4722e3-3b31-4f7e-86bb-4cf13e704426\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"I apologize, but I do not have any pre-existing personal memory about you. As an AI assistant, I start each conversation without any prior knowledge about the specific individual I'm talking to. Each interaction begins fresh, and I can only know what you choose to share with me during our conversation.\\n\\nIf you'd like to tell me about yourself, I'm happy to listen and engage in conversation. But I cannot magically retrieve personal information that hasn't been shared. Is there something specific you'd like to discuss or share about yourself?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"749a7175-f570-4fd0-a083-73581ff39f54\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:54 GMT\", \"content-type\": \"application/json\", \"content-length\": \"864\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"749a7175-f570-4fd0-a083-73581ff39f54\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [2974]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--8353fe58-e2ff-4415-bd59-c0fe4bfbb230-0\", \"usage_metadata\": {\"input_tokens\": 338, \"output_tokens\": 113, \"total_tokens\": 451, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": []}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"role\": \"user\", \"content\": \"Hello, find everything about me from my memory \"}]}, \"tags\": [], \"metadata\": {}, \"kwargs\": {\"name\": \"LangGraph\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "2b40665f73244608"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.848",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425614848981777,
+      "observedTimeUnixNano": 1763425619147622546,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": \"__end__\", \"kwargs\": {\"tags\": [\"seq:step:3\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello, find everything about me from my memory \", \"type\": \"human\", \"id\": \"8a4722e3-3b31-4f7e-86bb-4cf13e704426\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"I apologize, but I do not have any pre-existing personal memory about you. As an AI assistant, I start each conversation without any prior knowledge about the specific individual I'm talking to. Each interaction begins fresh, and I can only know what you choose to share with me during our conversation.\\n\\nIf you'd like to tell me about yourself, I'm happy to listen and engage in conversation. But I cannot magically retrieve personal information that hasn't been shared. Is there something specific you'd like to discuss or share about yourself?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"749a7175-f570-4fd0-a083-73581ff39f54\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:54 GMT\", \"content-type\": \"application/json\", \"content-length\": \"864\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"749a7175-f570-4fd0-a083-73581ff39f54\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [2974]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--8353fe58-e2ff-4415-bd59-c0fe4bfbb230-0\", \"usage_metadata\": {\"input_tokens\": 338, \"output_tokens\": 113, \"total_tokens\": 451, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"tags\": [\"seq:step:3\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:5afe8b51-7fd4-135f-0071-01862bda44ae\"}, \"kwargs\": {\"name\": \"tools_condition\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "b9e0f31f6ee98043"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:54.843",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763425614843612633,
+      "observedTimeUnixNano": 1763425614843631047,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "message": {
+          "content": [
+            {
+              "text": "I apologize, but I do not have any pre-existing personal memory about you. As an AI assistant, I start each conversation without any prior knowledge about the specific individual I'm talking to. Each interaction begins fresh, and I can only know what you choose to share with me during our conversation.\n\nIf you'd like to tell me about yourself, I'm happy to listen and engage in conversation. But I cannot magically retrieve personal information that hasn't been shared. Is there something specific you'd like to discuss or share about yourself?"
+            }
+          ],
+          "role": "assistant"
+        },
+        "index": 0,
+        "finish_reason": "end_turn"
+      },
+      "attributes": {
+        "event.name": "gen_ai.choice",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "81a4cbb3de6b19d4"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:51.860",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763425611860971050,
+      "observedTimeUnixNano": 1763425611860987219,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "Hello, find everything about me from my memory "
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.user.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691bbd4b51c1a4c319aa2bf92068c474",
+      "spanId": "81a4cbb3de6b19d4"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.082",
+    "raw_otel_json": {
+      "timestamp": "2025-11-18T00:26:15.082Z",
+      "level": "INFO",
+      "message": "Invocation completed successfully (1.452s)",
+      "logger": "bedrock_agentcore.app",
+      "requestId": "2a58eb8e-8ef9-4272-b07f-e14cb959180f",
+      "sessionId": "383c4a9d-5682-4186-a125-e226f9f6c141"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "bedrock_agentcore.app"
+      },
+      "timeUnixNano": 1763425575081934848,
+      "observedTimeUnixNano": 1763425575082191699,
+      "severityNumber": 9,
+      "severityText": "INFO",
+      "body": "Invocation completed successfully (1.452s)",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py",
+        "code.function.name": "_handle_invocation",
+        "otelTraceID": "691bbd2521293a552b6cbb5c30547369",
+        "otelSpanID": "210222bc35044dc2",
+        "code.line.number": 366,
+        "otelServiceName": "agent_lg.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "210222bc35044dc2"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425575081055313,
+      "observedTimeUnixNano": 1763425579147194968,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": \"__end__\", \"kwargs\": {\"tags\": [\"seq:step:3\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello\", \"type\": \"human\", \"id\": \"18470264-c7ac-49f9-851a-e9edbdd74f5e\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Hello! How can I help you today? I'm ready to assist you with calculations, answer questions, or help you with any task you might have in mind.\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"b5234099-74c7-402a-852d-ad439f9d04f9\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:15 GMT\", \"content-type\": \"application/json\", \"content-length\": \"458\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"b5234099-74c7-402a-852d-ad439f9d04f9\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [1396]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--4c37d671-b367-4d0d-b2ce-762e98451216-0\", \"usage_metadata\": {\"input_tokens\": 329, \"output_tokens\": 36, \"total_tokens\": 365, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"tags\": [\"seq:step:3\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:8bf084cd-7f1a-c8c2-1ad5-d9bb1439b00b\"}, \"kwargs\": {\"name\": \"tools_condition\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "bb016043015e96eb"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425575081194275,
+      "observedTimeUnixNano": 1763425579147342190,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "input": {
+          "messages": [
+            {
+              "content": "Hello",
+              "role": "unknown"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "d6c7c71148aae2af"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425575081203762,
+      "observedTimeUnixNano": 1763425579147450135,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Hello! How can I help you today? I'm ready to assist you with calculations, answer questions, or help you with any task you might have in mind.\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"b5234099-74c7-402a-852d-ad439f9d04f9\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:15 GMT\", \"content-type\": \"application/json\", \"content-length\": \"458\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"b5234099-74c7-402a-852d-ad439f9d04f9\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [1396]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--4c37d671-b367-4d0d-b2ce-762e98451216-0\", \"usage_metadata\": {\"input_tokens\": 329, \"output_tokens\": 36, \"total_tokens\": 365, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": [\"graph:step:1\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello\", \"type\": \"human\", \"id\": \"18470264-c7ac-49f9-851a-e9edbdd74f5e\"}}]}, \"tags\": [\"graph:step:1\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:8bf084cd-7f1a-c8c2-1ad5-d9bb1439b00b\"}, \"kwargs\": {\"name\": \"chatbot\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "79139f7039af51af"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763425575081689826,
+      "observedTimeUnixNano": 1763425579147552597,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"Hello\", \"type\": \"human\", \"id\": \"18470264-c7ac-49f9-851a-e9edbdd74f5e\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Hello! How can I help you today? I'm ready to assist you with calculations, answer questions, or help you with any task you might have in mind.\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"b5234099-74c7-402a-852d-ad439f9d04f9\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Tue, 18 Nov 2025 00:26:15 GMT\", \"content-type\": \"application/json\", \"content-length\": \"458\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"b5234099-74c7-402a-852d-ad439f9d04f9\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [1396]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--4c37d671-b367-4d0d-b2ce-762e98451216-0\", \"usage_metadata\": {\"input_tokens\": 329, \"output_tokens\": 36, \"total_tokens\": 365, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": []}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]}, \"tags\": [], \"metadata\": {}, \"kwargs\": {\"name\": \"LangGraph\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "80fb189279f4f32f"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:15.075",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763425575075113584,
+      "observedTimeUnixNano": 1763425575075132464,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "message": {
+          "content": [
+            {
+              "text": "Hello! How can I help you today? I'm ready to assist you with calculations, answer questions, or help you with any task you might have in mind."
+            }
+          ],
+          "role": "assistant"
+        },
+        "index": 0,
+        "finish_reason": "end_turn"
+      },
+      "attributes": {
+        "event.name": "gen_ai.choice",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "1033f5b78d782885"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 00:26:13.634",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763425573634935852,
+      "observedTimeUnixNano": 1763425573634952591,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "Hello"
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.user.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691bbd2521293a552b6cbb5c30547369",
+      "spanId": "1033f5b78d782885"
+    }
+  }
+]

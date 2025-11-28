@@ -9,13 +9,16 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
+from rich.console import Console
 
+from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import MemoryStatus, MemoryStrategyStatus, OverrideType, StrategyType
 from .models import convert_strategies_to_dicts
 from .models.Memory import Memory
 from .models.MemoryStrategy import MemoryStrategy
 from .models.MemorySummary import MemorySummary
 from .models.strategies import BaseStrategy
+from .strategy_validator import validate_existing_memory_strategies
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ class MemoryManager:
         region_name: Optional[str] = None,
         boto3_session: Optional[boto3.Session] = None,
         boto_client_config: Optional[BotocoreConfig] = None,
+        console: Optional[Console] = None,
     ):
         """Initialize MemoryManager with AWS region.
 
@@ -41,12 +45,14 @@ class MemoryManager:
                           parameter is also specified, validation will ensure they match.
             boto_client_config: Optional boto3 client configuration. If provided, will be
                               merged with default configuration including user agent.
+            console: Optional Rich console instance for output (creates new if not provided)
 
         Raises:
             ValueError: If region_name parameter conflicts with boto3_session region.
         """
         session = boto3_session or boto3.Session()
         session_region = session.region_name
+        self.console = console or Console()
 
         # Validate region consistency if both are provided
         if region_name and boto3_session and session_region and region_name != session_region:
@@ -68,7 +74,8 @@ class MemoryManager:
         else:
             client_config = BotocoreConfig(user_agent_extra="bedrock-agentcore-starter-toolkit")
 
-        self.region_name = region_name
+        # Use provided region or fall back to session region
+        self.region_name = region_name or session_region
         self._control_plane_client = session.client(
             "bedrock-agentcore-control", region_name=self.region_name, config=client_config
         )
@@ -80,14 +87,13 @@ class MemoryManager:
             "update_memory",
             "delete_memory",
         }
-        logger.info("✅ MemoryManager initialized for region: %s", region_name)
+        logger.info("✅ MemoryManager initialized for region: %s", self.region_name)
 
     def __getattr__(self, name: str):
         """Dynamically forward method calls to the appropriate boto3 client.
 
         This method enables access to all control_plane boto3 client methods without explicitly
-        defining them. Methods are looked up in the following order:
-        _control_plane_client (bedrock-agentcore-control) - for control plane operations
+        defining them.
 
         Args:
             name: The method name being accessed
@@ -116,7 +122,7 @@ class MemoryManager:
             f"'{self.__class__.__name__}' object has no attribute '{name}'. "
             f"Method not found on control_plane_client. "
             f"Available methods can be found in the boto3 documentation for "
-            f"'bedrock-agentcore-control' services."
+            f"'bedrock-agentcore-control' service."
         )
 
     def _validate_namespace(self, namespace: str) -> bool:
@@ -242,6 +248,7 @@ class MemoryManager:
         max_wait: int = 300,
         poll_interval: int = 10,
         encryption_key_arn: Optional[str] = None,
+        enable_observability: bool = True,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE.
 
@@ -256,7 +263,8 @@ class MemoryManager:
             memory_execution_role_arn: IAM role ARN for memory execution
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
-            encryption_key_arn: kms key ARN for encryption
+            encryption_key_arn: KMS key ARN for encryption
+            enable_observability: Whether to auto-enable CloudWatch logs and traces (default: True)
 
         Returns:
             Created memory object in ACTIVE status
@@ -280,31 +288,14 @@ class MemoryManager:
             memory_id = ""
         logger.info("Created memory %s, waiting for ACTIVE status...", memory_id)
 
-        start_time = time.time()
-        while time.time() - start_time < max_wait:
-            elapsed = int(time.time() - start_time)
+        # Wait for memory to become active
+        active_memory = self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
-            try:
-                status = self.get_memory_status(memory_id)
+        # Auto-enable observability after memory is active
+        if enable_observability and active_memory.id:
+            self._enable_observability_for_memory(active_memory)
 
-                if status == MemoryStatus.ACTIVE.value:
-                    logger.info("Memory %s is now ACTIVE (took %d seconds)", memory_id, elapsed)
-                    return memory
-                elif status == MemoryStatus.FAILED.value:
-                    # Get failure reason if available
-                    response = self._control_plane_client.get_memory(memoryId=memory_id)
-                    failure_reason = response["memory"].get("failureReason", "Unknown")
-                    raise RuntimeError("Memory creation failed: %s" % failure_reason)
-                else:
-                    logger.debug("Memory status: %s (%d seconds elapsed)", status, elapsed)
-
-            except ClientError as e:
-                logger.error("Error checking memory status: %s", e)
-                raise
-
-            time.sleep(poll_interval)
-
-        raise TimeoutError(f"Memory {memory_id} did not become ACTIVE within {max_wait} seconds")
+        return active_memory
 
     def create_memory_and_wait(
         self,
@@ -316,8 +307,12 @@ class MemoryManager:
         encryption_key_arn: Optional[str] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
+        enable_observability: bool = True,  # NEW PARAMETER - defaults to True
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE - public method.
+
+        By default, CloudWatch observability (logs + traces) is automatically
+        enabled for the memory resource.
 
         Args:
             name: Name for the memory resource
@@ -327,34 +322,24 @@ class MemoryManager:
             memory_execution_role_arn: IAM role ARN for memory execution
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
-            encryption_key_arn: kms key ARN for encryption
+            encryption_key_arn: KMS key ARN for encryption
+            enable_observability: Whether to auto-enable CloudWatch logs and traces (default: True)
 
         Returns:
             Created memory object in ACTIVE status
 
         Example:
-            from bedrock_agentcore_starter_toolkit.operations.memory.models import (
-                SemanticStrategy, CustomSemanticStrategy, ExtractionConfig, ConsolidationConfig
-            )
+            from bedrock_agentcore_starter_toolkit.operations.memory import MemoryManager
 
-            # Create typed strategies
-            semantic = SemanticStrategy(name="MySemanticStrategy")
-            custom = CustomSemanticStrategy(
-                name="MyCustomStrategy",
-                extraction_config=ExtractionConfig(
-                    append_to_prompt="Extract insights",
-                    model_id="anthropic.claude-3-sonnet-20240229-v1:0"
-                ),
-                consolidation_config=ConsolidationConfig(
-                    append_to_prompt="Consolidate insights",
-                    model_id="anthropic.claude-3-haiku-20240307-v1:0"
-                )
-            )
+            manager = MemoryManager(region_name='us-east-1')
 
-            # Create memory with typed strategies
+            # Create memory with observability enabled (default)
+            memory = manager.create_memory_and_wait(name="MyMemory")
+
+            # Create memory without observability
             memory = manager.create_memory_and_wait(
-                name="TypedMemory",
-                strategies=[semantic, custom]
+                name="MyMemory",
+                enable_observability=False
             )
         """
         # Convert typed strategies to dicts for internal processing
@@ -369,6 +354,7 @@ class MemoryManager:
             encryption_key_arn=encryption_key_arn,
             max_wait=max_wait,
             poll_interval=poll_interval,
+            enable_observability=enable_observability,  # Pass through
         )
 
     def get_or_create_memory(
@@ -384,7 +370,7 @@ class MemoryManager:
 
         Args:
             name: Memory name
-            strategies: List of typed strategy objects or dictionary configurations
+            strategies: Optional List of typed strategy objects or dictionary configurations
             description: Optional description
             event_expiry_days: How long to retain events (default: 90 days)
             memory_execution_role_arn: IAM role ARN for memory execution
@@ -392,6 +378,9 @@ class MemoryManager:
 
         Returns:
             Memory object, either newly created or existing
+
+        Raises:
+            ValueError: If strategies are provided but existing memory has different strategies
 
         Example:
             from bedrock_agentcore_starter_toolkit.operations.memory.models import SemanticStrategy
@@ -424,6 +413,13 @@ class MemoryManager:
             else:
                 logger.info("Memory already exists. Using existing memory ID: %s", memory_summary.id)
                 memory = self.get_memory(memory_summary.id)
+
+                # Validate strategies if provided using deep comparison
+                if strategies is not None:
+                    existing_strategies = memory.get("strategies", memory.get("memoryStrategies", []))
+                    memory_name = memory.get("name")
+                    validate_existing_memory_strategies(existing_strategies, strategies, memory_name)
+
             return memory
         except ClientError as e:
             # Failed to create memory
@@ -440,7 +436,7 @@ class MemoryManager:
         logger.info("🔎 Retrieving memory resource with ID: %s...", memory_id)
         try:
             response = self._control_plane_client.get_memory(memoryId=memory_id).get("memory", {})
-            logger.info("  ✅ Found memory: %s", memory_id)
+            logger.info("  Found memory: %s", memory_id)
             return Memory(response)
         except ClientError as e:
             logger.error("  ❌ Error retrieving memory: %s", e)
@@ -997,6 +993,8 @@ class MemoryManager:
         )
 
         start_time = time.time()
+        last_status_print = 0
+        status_print_interval = 10  # Print status every 10 seconds
 
         while time.time() - start_time < max_wait:
             elapsed = int(time.time() - start_time)
@@ -1018,13 +1016,18 @@ class MemoryManager:
                     self._check_strategies_terminal_state(strategies)
                 )
 
-                # Log current status
-                logger.debug(
-                    "Memory status: %s, Strategy statuses: %s (%d seconds elapsed)",
-                    memory_status,
-                    strategy_statuses,
-                    elapsed,
-                )
+                # Print status update every 10 seconds
+                if elapsed - last_status_print >= status_print_interval:
+                    if strategies:
+                        active_count = len([s for s in strategy_statuses if s == "ACTIVE"])
+                        self.console.log(
+                            f"   ⏳ Memory: {memory_status}, "
+                            f"Strategies: {active_count}/{len(strategies)} active "
+                            f"({elapsed}s elapsed)"
+                        )
+                    else:
+                        self.console.log(f"   ⏳ Memory: {memory_status} ({elapsed}s elapsed)")
+                    last_status_print = elapsed
 
                 # Check if memory is ACTIVE and all strategies are in terminal states
                 if memory_status == MemoryStatus.ACTIVE.value and all_strategies_terminal:
@@ -1037,6 +1040,7 @@ class MemoryManager:
                         memory_id,
                         elapsed,
                     )
+                    self.console.log(f"   ✅ Memory is ACTIVE (took {elapsed}s)")
                     return Memory(memory)
 
                 # Wait before next check
@@ -1068,3 +1072,54 @@ class MemoryManager:
         namespaces = strategy_config.get("namespaces", [])
         for namespace in namespaces:
             self._validate_namespace(namespace)
+
+    def _enable_observability_for_memory(self, memory: Memory) -> None:
+        """Called during creation - failures don't fail the creation."""
+        try:
+            self.enable_observability(memory_id=memory.id, memory_arn=getattr(memory, "arn", None))
+        except Exception as e:
+            self.console.print(f"[yellow]⚠️ Observability setup failed: {e}[/yellow]")
+            logger.warning("Observability setup failed for memory %s: %s", memory.id, str(e))
+
+    def enable_observability(
+        self,
+        memory_id: str,
+        memory_arn: Optional[str] = None,
+        enable_logs: bool = True,
+        enable_traces: bool = True,
+    ) -> Dict[str, Any]:
+        """Enable CloudWatch observability for an existing memory resource."""
+        delivery_manager = ObservabilityDeliveryManager(region_name=self.region_name)
+        result = delivery_manager.enable_for_memory(
+            memory_id=memory_id,
+            memory_arn=memory_arn,
+            enable_logs=enable_logs,
+            enable_traces=enable_traces,
+        )
+
+        if result["status"] == "success":
+            self.console.print(f"[green]✅ Observability enabled for memory {memory_id}[/green]")
+            self.console.print(f"   Log group: [cyan]{result['log_group']}[/cyan]")
+        else:
+            self.console.print(f"[yellow]⚠️ Failed to enable observability: {result.get('error')}[/yellow]")
+
+        return result
+
+    def disable_observability(
+        self,
+        memory_id: str,
+        delete_log_group: bool = False,
+    ) -> Dict[str, Any]:
+        """Disable CloudWatch observability for a memory resource."""
+        delivery_manager = ObservabilityDeliveryManager(region_name=self.region_name)
+        result = delivery_manager.disable_for_memory(
+            memory_id=memory_id,
+            delete_log_group=delete_log_group,
+        )
+
+        if result["status"] == "success":
+            self.console.print(f"[green]✅ Observability disabled for memory {memory_id}[/green]")
+        else:
+            self.console.print(f"[yellow]⚠️ Partial cleanup: {result.get('errors')}[/yellow]")
+
+        return result

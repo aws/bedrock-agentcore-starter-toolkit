@@ -1,10 +1,21 @@
 """Shared test fixtures for Bedrock AgentCore Starter Toolkit tests."""
 
+import time
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 from bedrock_agentcore import BedrockAgentCoreApp
+
+from bedrock_agentcore_starter_toolkit.create.types import ProjectContext
+from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+    AWSConfig,
+    BedrockAgentCoreAgentSchema,
+    MemoryConfig,
+    NetworkConfiguration,
+    ObservabilityConfig,
+    ProtocolConfiguration,
+)
 
 
 @pytest.fixture
@@ -30,9 +41,21 @@ def mock_boto3_clients(monkeypatch):
     mock_ecr.describe_repositories.return_value = {
         "repositories": [{"repositoryUri": "123456789012.dkr.ecr.us-west-2.amazonaws.com/existing-repo"}]
     }
-    # Mock exceptions
+
+    # Mock exceptions - create proper exception classes
+    class RepositoryAlreadyExistsException(Exception):
+        """Mock exception for repository already exists."""
+
+        pass
+
+    class RepositoryNotFoundException(Exception):
+        """Mock exception for repository not found."""
+
+        pass
+
     mock_ecr.exceptions = Mock()
-    mock_ecr.exceptions.RepositoryAlreadyExistsException = Exception
+    mock_ecr.exceptions.RepositoryAlreadyExistsException = RepositoryAlreadyExistsException
+    mock_ecr.exceptions.RepositoryNotFoundException = RepositoryNotFoundException
 
     # Mock BedrockAgentCore client
     mock_bedrock_agentcore = Mock()
@@ -107,6 +130,12 @@ def mock_bedrock_agentcore_app():
     return app
 
 
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    """Globally disable sleep in all tests for execution time."""
+    monkeypatch.setattr(time, "sleep", lambda *_: None)
+
+
 @pytest.fixture
 def mock_container_runtime(monkeypatch):
     """Mock container runtime operations."""
@@ -134,3 +163,93 @@ def mock_container_runtime(monkeypatch):
     monkeypatch.setattr("bedrock_agentcore_starter_toolkit.utils.runtime.container.ContainerRuntime", mock_constructor)
 
     return mock_runtime
+
+
+@pytest.fixture
+def sample_project_context(tmp_path):
+    """Returns a ProjectContext with typical values for testing."""
+    output_dir = tmp_path / "test-project"
+    src_dir = output_dir / "src"
+
+    return ProjectContext(
+        name="test-project",
+        output_dir=output_dir,
+        src_dir=src_dir,
+        entrypoint_path=src_dir / "main.py",
+        sdk_provider="Strands",
+        iac_provider="CDK",
+        model_provider="Bedrock",
+        template_dir_selection="default",
+        runtime_protocol="HTTP",
+        deployment_type="container",
+        python_dependencies=[],
+        iac_dir=None,
+        agent_name="test_agent",
+        memory_enabled=False,
+        memory_name=None,
+        memory_event_expiry_days=30,
+        memory_is_long_term=False,
+        custom_authorizer_enabled=False,
+        custom_authorizer_url=None,
+        custom_authorizer_allowed_clients=None,
+        custom_authorizer_allowed_audience=None,
+        vpc_enabled=False,
+        vpc_subnets=None,
+        vpc_security_groups=None,
+        request_header_allowlist=None,
+        observability_enabled=True,
+    )
+
+
+@pytest.fixture
+def sample_agent_config():
+    """Returns a BedrockAgentCoreAgentSchema with typical values for testing."""
+    return BedrockAgentCoreAgentSchema(
+        name="test-agent",
+        entrypoint="src/main.py",
+        source_path=".",
+        deployment_type="container",
+        aws=AWSConfig(
+            region="us-west-2",
+            account="123456789012",
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            network_configuration=NetworkConfiguration(network_mode="PUBLIC"),
+            observability=ObservabilityConfig(enabled=True),
+            protocol_configuration=ProtocolConfiguration(server_protocol="HTTP"),
+        ),
+        memory=MemoryConfig(
+            mode="NO_MEMORY",
+            event_expiry_days=30,
+        ),
+        authorizer_configuration=None,
+        request_header_configuration=None,
+    )
+
+
+@pytest.fixture
+def temp_source_structure(tmp_path):
+    """Creates a temporary source directory structure for copying tests."""
+    # Create source files
+    (tmp_path / "main.py").write_text("# main file")
+    (tmp_path / "utils.py").write_text("# utils file")
+    (tmp_path / ".dockerignore").write_text("*.pyc\n__pycache__/")
+
+    # Create subdirectory
+    subdir = tmp_path / "lib"
+    subdir.mkdir()
+    (subdir / "helper.py").write_text("# helper file")
+
+    # Create reserved directory (should be skipped)
+    reserved = tmp_path / ".bedrock_agentcore"
+    reserved.mkdir()
+    (reserved / "config.yaml").write_text("# config")
+
+    # Create reserved file (should be skipped)
+    (tmp_path / ".bedrock_agentcore.yaml").write_text("# reserved")
+
+    # Create .bedrock_agentcore/agent_name/Dockerfile
+    agent_dir = reserved / "test-agent"
+    agent_dir.mkdir()
+    (agent_dir / "Dockerfile").write_text("FROM python:3.11")
+
+    return tmp_path

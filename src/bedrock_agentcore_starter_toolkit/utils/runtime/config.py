@@ -5,7 +5,10 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from pydantic import ValidationError
 
+from ...operations.runtime.exceptions import RuntimeToolkitException
+from ...utils.aws import get_account_id, get_region
 from .schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 
 log = logging.getLogger(__name__)
@@ -43,8 +46,31 @@ def _transform_legacy_to_multi_agent(data: dict) -> BedrockAgentCoreConfigSchema
     return BedrockAgentCoreConfigSchema(default_agent=agent_config.name, agents={agent_config.name: agent_config})
 
 
-def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
-    """Load config with automatic legacy format transformation."""
+def _migrate_deployment_type(config: BedrockAgentCoreConfigSchema) -> None:
+    """Migrate deployment_type for existing configurations.
+
+    Auto-detects deployment type based on existing configuration:
+    - If ECR repository or CodeBuild project exists → container
+    - Otherwise → direct_code_deploy (new default)
+
+    Also sets default runtime_type if missing for direct_code_deploy deployments.
+    """
+    for agent in config.agents.values():
+        # Skip if deployment_type is already explicitly set to something other than default
+        # The field default is "direct_code_deploy", so we need to check if it was explicitly set
+        # Since Pydantic sets defaults, we infer based on other fields
+
+        # If ECR or CodeBuild is configured, this is a container deployment
+        if agent.aws.ecr_repository or agent.codebuild.project_name:
+            if agent.deployment_type == "direct_code_deploy":  # Was using default
+                log.info("Migrating agent '%s' to container deployment (detected ECR/CodeBuild)", agent.name)
+                agent.deployment_type = "container"
+
+        # runtime_type is optional for direct_code_deploy deployments (will default to PYTHON_3_11 in service layer)
+
+
+def load_config(config_path: Path, autofill_missing_aws=True) -> BedrockAgentCoreConfigSchema:
+    """Load config with automatic legacy format transformation and migration."""
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
 
@@ -55,11 +81,49 @@ def load_config(config_path: Path) -> BedrockAgentCoreConfigSchema:
     if _is_legacy_format(data):
         return _transform_legacy_to_multi_agent(data)
 
+    # Add backwards compatibility for missing deployment_type field and handle missing aws account/region
+    if "agents" in data:
+        for agent_name, agent_data in data["agents"].items():
+            # If aws details haven't been set, fetch them
+            if autofill_missing_aws:
+                aws_data = agent_data["aws"]
+                if "account" in aws_data:
+                    aws_data["account"] = aws_data["account"] or get_account_id()
+                if "region" in aws_data:
+                    aws_data["region"] = aws_data["region"] or get_region()
+
+            # Default to container for backwards compatibility with existing agents
+            if "deployment_type" not in agent_data:
+                agent_data["deployment_type"] = "container"
+                log.info("Using default deployment_type='container' for existing agent '%s'", agent_name)
+
     # New format
     try:
-        return BedrockAgentCoreConfigSchema.model_validate(data)
+        config = BedrockAgentCoreConfigSchema.model_validate(data)
+
+        # Migrate deployment_type for existing configurations
+        _migrate_deployment_type(config)
+
+        return config
+    except ValidationError as e:
+        # Convert Pydantic errors to user-friendly messages
+        friendly_errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error["loc"])
+            msg = error["msg"]
+            # Make common errors more user-friendly
+            if "Source path does not exist" in msg:
+                friendly_errors.append(f"{field}: {msg} (check if the directory exists)")
+            elif "field required" in msg:
+                friendly_errors.append(f"{field}: This field is required")
+            elif "Input should be" in msg:
+                friendly_errors.append(f"{field}: {msg}")
+            else:
+                friendly_errors.append(f"{field}: {msg}")
+
+        raise RuntimeToolkitException("Configuration validation failed:\n• " + "\n• ".join(friendly_errors)) from e
     except Exception as e:
-        raise ValueError(f"Invalid configuration format: {e}") from e
+        raise RuntimeToolkitException(f"Invalid configuration format: {e}") from e
 
 
 def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
@@ -69,22 +133,33 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
         config: BedrockAgentCoreConfigSchema instance to save
         config_path: Path to save configuration file
     """
+    create_project = config.is_agentcore_create_with_iac
     with open(config_path, "w") as f:
-        yaml.dump(config.model_dump(), f, default_flow_style=False, sort_keys=False)
+        yaml.dump(
+            config.model_dump(
+                exclude_none=create_project,
+                exclude_unset=create_project,
+                exclude={"is_agentcore_create_with_iac"},
+            ),
+            f,
+            default_flow_style=False,
+            sort_keys=False,
+        )
 
 
-def load_config_if_exists(config_path: Path) -> Optional[BedrockAgentCoreConfigSchema]:
+def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> Optional[BedrockAgentCoreConfigSchema]:
     """Load configuration if file exists, otherwise return None.
 
     Args:
         config_path: Path to configuration file
+        autofill_missing_aws: default true. Uses boto to fill in None aws details
 
     Returns:
         BedrockAgentCoreConfigSchema instance or None if file doesn't exist
     """
     if not config_path.exists():
         return None
-    return load_config(config_path)
+    return load_config(config_path, autofill_missing_aws)
 
 
 def merge_agent_config(
@@ -127,3 +202,26 @@ def merge_agent_config(
     config.default_agent = agent_name
 
     return config
+
+
+def get_agentcore_directory(project_root: Path, agent_name: str, source_path: Optional[str] = None) -> Path:
+    """Get the agentcore directory for an agent's build artifacts.
+
+    Args:
+        project_root: Project root directory (typically Path.cwd())
+        agent_name: Name of the agent
+        source_path: Optional source path configuration
+
+    Returns:
+        Path to agentcore directory:
+        - If source_path provided: {project_root}/.bedrock_agentcore/{agent_name}/
+        - Otherwise: {project_root}/ (legacy single-agent behavior)
+    """
+    if source_path:
+        # Multi-agent support: use .bedrock_agentcore/{agent_name}/ for artifact isolation
+        agentcore_dir = project_root / ".bedrock_agentcore" / agent_name
+        agentcore_dir.mkdir(parents=True, exist_ok=True)
+        return agentcore_dir
+    else:
+        # Legacy single-agent: artifacts at project root
+        return project_root

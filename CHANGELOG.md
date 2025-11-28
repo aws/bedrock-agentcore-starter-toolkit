@@ -1,5 +1,223 @@
 # Changelog
 
+## [0.2.0] - 2025-11-27
+
+### Changes
+
+- nit: spellcheck changes (#375) (ab82659)
+- fix: remove unused imports; fix documentation pages (#374) (b6628a7)
+- feat: change 'launch' command to 'deploy' command with backwards compatibility (#370) (4d66714)
+- Update readme copy (#373) (7e7f089)
+- Auto-enable CloudWatch observability  (#372) (f46e8e8)
+- feat: implement agentcore create command. Related updates are made to… (#364) (ec1ce0f)
+- docs: update async processing documentation to use manual task management (#371) (e47a5a0)
+- feat: add multi-platform ARM64 support for dependency packaging (9932a85)
+- update transaction search enablement instructions (#367) (b802d79)
+- chore(doc): add memory and gateway to cli documentation (#363) (06c3282)
+- feat: Add comprehensive observability CLI for agent telemetry (#360) (86c2390)
+- chore: bump version to 0.1.34 (#355) (76dda3a)
+
+## [0.1.34] - 2025-11-19
+
+### Changes
+
+- docs: add identity CLI quickstart and fix claude SDK path (#353) (1415eb3)
+- feat: Add Memory/Gateway CLI support (#338) (70c4dee)
+- feat: add Identity CLI commands for managing OAuth authentication and external service access (#332) (1dcc546)
+- Add AWS Marketplace subscription permissions to execution role (#349) (0707685)
+- chore: bump version to 0.1.33 (#347) (bc978cc)
+
+## [0.1.33] - 2025-11-15
+
+### Changes
+
+- Update aws-opentelemetry-distro version in Dockerfile (#346) (d878ff8)
+- chore: bump version to 0.1.32 (#335) (65e7ff2)
+
+## [0.1.32] - 2025-11-06
+
+### Changes
+
+- Minor bug fix: Plumb --region command through into ConfigurationManager (#333) (8c2aee5)
+- fix: Remove ExpectedBucketOwner parameter from create_bucket method (0c57292)
+- ci: add Python version matrix testing to PRs (#329) (9714c81)
+- chore: bump version to 0.1.31 (#328) (120639b)
+
+## [0.1.31] - 2025-11-04
+
+### Changes
+
+- fix: Use itertools.cycle for time.time() mock to fix Python 3.12 compatibility (#327) (b180c33)
+- chore: bump version to 0.1.30 (#326) (00778cd)
+- feat: Add user-agent header 'agentcore-st/{version}' to runtime invocations (#325) (cdd5189)
+- chore: bump version to 0.1.29 (#324) (faf2108)
+- Update Direct Code Deploy message to clarify Python-only support (#323) (44b9b7a)
+- fix: Multiple UI/UX improvements (#321) (47e25b2)
+- docs: Remove duplicate --non-interactive option in CLI reference (#319) (f0a33a9)
+- feat: Add code_zip deployment to the starter toolkit (#317) (3de907a)
+- Update the Identity user guide with the latest OAuth2 3LO callback guidance (#292) (b989aab)
+- chore: bump version to 0.1.28 (#315) (d4b6b37)
+
+## [0.1.30] - 2025-11-04
+
+### Changes
+
+- feat: Add user-agent header 'agentcore-st/{version}' to runtime invocations (#325) (cdd5189)
+- chore: bump version to 0.1.29 (#324) (faf2108)
+- Update Direct Code Deploy message to clarify Python-only support (#323) (44b9b7a)
+- fix: Multiple UI/UX improvements (#321) (47e25b2)
+- docs: Remove duplicate --non-interactive option in CLI reference (#319) (f0a33a9)
+- feat: Add code_zip deployment to the starter toolkit (#317) (3de907a)
+- Update the Identity user guide with the latest OAuth2 3LO callback guidance (#292) (b989aab)
+- chore: bump version to 0.1.28 (#315) (d4b6b37)
+
+## [0.1.29] - 2025-11-04
+
+### Changes
+
+- Update Direct Code Deploy message to clarify Python-only support (#323) (44b9b7a)
+- fix: Multiple UI/UX improvements (#321) (47e25b2)
+- docs: Remove duplicate --non-interactive option in CLI reference (#319) (f0a33a9)
+- feat: Add code_zip deployment to the starter toolkit (#317) (3de907a)
+- Update the Identity user guide with the latest OAuth2 3LO callback guidance (#292) (b989aab)
+- chore: bump version to 0.1.28 (#315) (d4b6b37)
+
+## [0.1.28] - 2025-10-31
+
+### Changes
+
+- fix: prevent incorrect entrypoint inference when multiple candidates exist (#313) (c011ebf)
+- docs: update quickstart example for agentcore-strands CI integration (#311) (ba056fb)
+- fix: correct workflow output reference for external PR tests (#307) (a6d0bc1)
+- chore: bump version to 0.1.27 (#309) (a501bcf)
+
+## [0.1.27] - 2025-10-29
+
+### Changes
+
+- feat: Add destroy() method to Runtime notebook interface with comprehensive tests (#305) (c158d9c)
+- Chore/workflow improvements (#301) (196500a)
+- feat: Add VPC networking support for AgentCore Runtime (#294) (787f2c6)
+- docs: update quickstart links to AWS documentation. test: fix memory test and improve commands coverage (#303) (d07fa8d)
+- feat: add skip memory option in interactive configure flow (#298) (f9455bf)
+- feat: Add runtime session lifecycle management with stop-session command (#287) (fb82e37)
+- feat: adding strongly typed Self Managed strategy model (#300) (4806fe2)
+- added ref to install jq (#296) (9855cb7)
+- docs: update latest docs/samples from sampes repo (#297) (f61191a)
+- docs: Add a2a and vpc documentation on agentcore (#288) (d76fcc1)
+- chore: bump version to 0.1.26 (#291) (9dcf58e)
+
+## [0.1.26] - 2025-10-17
+
+### Changes
+
+- Add direct dependency on Starlette as it is used in the OAuth2 callback local server (#290) (288e443)
+- Implement 3LO Server on localhost:8081 to handle generating OAuth2 tokens (#282) (f2d33a5)
+- fix(deps): restrict pydantic to versions below 2.41.3 (#280) (ec7880e)
+- docs: enhance quickstart guides with improved structure and troubleshooting (#279) (19203e9)
+- chore: bump version to 0.1.25 (#278) (57f1d40)
+
+## [0.1.25] - 2025-10-13
+
+### Changes
+
+- docs: remove preview verbiage following Bedrock AgentCore GA release (#277) (232f172)
+- chore: Add InvokeAgentRuntimeForUser permissions (#275) (9c8a50e)
+- chore: bump version to 0.1.24 (#276) (316fc02)
+
+## [0.1.24] - 2025-10-13
+
+### Changes
+
+- chore: remove workload access permissions from runtime execution policy (#274) (0f5ca36)
+- docs: Add non-admin user permissions to quickstart (#271) (4599529)
+- chore: bump version to 0.1.23 (#272) (598b292)
+
+## [0.1.23] - 2025-10-11
+
+### Changes
+
+- feat: Improve multi-agent entrypoint handling (#270) (bf24fca)
+- improve memory lifecycle management  (#253) (500d4f4)
+- Update agentcore-quickstart-example.md (#269) (4b659b8)
+- docs: streamline quickstart guide language and formatting (#268) (a269d39)
+- docs: improve quickstart prerequisites and region handling (#266) (c1644df)
+- chore: bump version to 0.1.22 (#263) (77bf849)
+
+## [0.1.22] - 2025-10-09
+
+### Changes
+
+- Enhanced configuration management with source_path support and improved build workflow (#262) (949abae)
+- feat: add request_header support for runtime config (#260) (e811f4f)
+- fix: add non-interactive flag to integration tests (#261) (c99b5ee)
+- Support vpc (#221) (8a9c3b4)
+- chore: bump version to 0.1.21 (#259) (3e787bd)
+
+## [0.1.21] - 2025-10-08
+
+### Changes
+
+- add a2a protocol notebook support (#258) (e656d63)
+- Release v0.1.20 (#257) (1de8828)
+
+## [0.1.20] - 2025-10-08
+
+### Changes
+
+- feat: Add A2A protocol support to AgentCore Runtime toolkit (#255) (84c9456)
+- Fix documentation examples display (#254) (c699e4c)
+- docs: improvements to quickstart (#247) (3ee881b)
+
+## [0.1.19] - 2025-10-03
+
+### Changes
+
+- updates gateway created lambda to python 3.13 (#196) (c5e5642)
+- Add explicit user creation config for Cognito pools (#218) (432898e)
+- Labs (#245) (579d086)
+- chore: bump version to 0.1.18 (#246) (c8d6c29)
+
+## [0.1.18] - 2025-10-02
+
+### Changes
+
+- fix: add non_interactive parameter for notebooks and fix code style issues (#244) (03953bb)
+- chore: bump version to 0.1.17 (#243) (99945c7)
+
+## [0.1.17] - 2025-10-01
+
+### Changes
+
+- chore: sync main with PyPI version 0.1.16 (#242) (c414fe5)
+- fix: initialize ConfigurationManager with non_interactive flag (#240) (3b92653)
+- Add cleanup section and fix documentation links (#239) (cba1169)
+
+## [0.1.16] - 2025-10-01
+
+### Changes
+
+- Update memory quickstart by @mikewrighton in #234
+- chore: make doc titles more meaningful by @theumbrella1 in #229
+- fix: don't fail validation for empty namespaces by @jona62 in #235
+
+## [0.1.15] - 2025-10-01
+
+### Changes
+
+- Fixed test stability issues (#232) (ad5625d)
+- chore: Add README for MemoryManager (#231) (b9fa36d)
+- feat: Add automatic memory provisioning to Bedrock AgentCore CLI (#204) (d58b61c)
+- Add required permission to retrieve OAuth2 Credential Provider client secret (#228) (6721d12)
+- feat: Add validation to check to get_or_create_memory to provide a truly idempotent experience (#227) (29bab2e)
+- fix: allow optional strategies on create memory (#225) (db5f2e0)
+- Update Identity quickstart guide with a few corrections (#222) (6ea350f)
+- feature: typed strategies and encryption_key_arn support on create_memory (#219) (7c726ce)
+- Update quickstart with working example (#217) (1246704)
+- feat: Add boto3.session to MemoryManager constructor (#211) (a838187)
+- fix: Install mkdocs-llmstxt in deploy-docs act (#215) (80581c2)
+- Release v0.1.14 (#214) (2d98f61)
+
 ## [0.1.14] - 2025-09-25
 
 ### Changes

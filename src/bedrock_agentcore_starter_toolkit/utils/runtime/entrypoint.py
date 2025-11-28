@@ -1,10 +1,11 @@
 """Bedrock AgentCore utility functions for parsing and importing Bedrock AgentCore applications."""
 
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -67,32 +68,47 @@ def detect_dependencies(package_dir: Path, explicit_file: Optional[str] = None) 
     if explicit_file:
         return _handle_explicit_file(package_dir, explicit_file)
 
-    # Check for requirements.txt first (prioritized for notebook workflows)
-    requirements_path = package_dir / "requirements.txt"
-    if requirements_path.exists():
-        return DependencyInfo(
-            file="requirements.txt", type="requirements", resolved_path=str(requirements_path.resolve())
-        )
+    project_root = Path.cwd().resolve()
+    package_dir = package_dir.resolve()
 
-    # Check for pyproject.toml
-    pyproject_path = package_dir / "pyproject.toml"
-    if pyproject_path.exists():
-        return DependencyInfo(
-            file="pyproject.toml",
-            type="pyproject",
-            resolved_path=str(pyproject_path.resolve()),
-            install_path=".",  # Install from current directory
-        )
+    # Priority 1: Check entrypoint directory first (agent-specific requirements)
+    for filename in ["requirements.txt", "pyproject.toml"]:
+        file_path = package_dir / filename
+        if file_path.exists():
+            try:
+                relative_path = file_path.relative_to(project_root)
+                file_type = "requirements" if filename.endswith(".txt") else "pyproject"
+                install_path = "." if file_type == "pyproject" and len(relative_path.parts) == 1 else None
+                return DependencyInfo(
+                    file=relative_path.as_posix(),
+                    type=file_type,
+                    resolved_path=str(file_path),
+                    install_path=install_path,
+                )
+            except ValueError:
+                continue  # Skip files outside project root
+
+    # Priority 2: Check project root (shared requirements for multi-agent projects)
+    for filename in ["requirements.txt", "pyproject.toml"]:
+        file_path = project_root / filename
+        if file_path.exists():
+            file_type = "requirements" if filename.endswith(".txt") else "pyproject"
+            install_path = "." if file_type == "pyproject" else None
+            return DependencyInfo(
+                file=filename, type=file_type, resolved_path=str(file_path), install_path=install_path
+            )
 
     return DependencyInfo(file=None, type="notfound")
 
 
 def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyInfo:
     """Handle explicitly provided dependency file."""
+    project_root = Path.cwd().resolve()
+
     # Handle both absolute and relative paths
     explicit_path = Path(explicit_file)
     if not explicit_path.is_absolute():
-        explicit_path = package_dir / explicit_path
+        explicit_path = project_root / explicit_path
 
     # Resolve the path to handle .. and . components
     explicit_path = explicit_path.resolve()
@@ -102,10 +118,10 @@ def _handle_explicit_file(package_dir: Path, explicit_file: str) -> DependencyIn
 
     # Ensure file is within project directory for Docker context
     try:
-        relative_path = explicit_path.relative_to(package_dir.resolve())
+        relative_path = explicit_path.relative_to(project_root)
     except ValueError:
         raise ValueError(
-            f"Requirements file must be within project directory. File: {explicit_path}, Project: {package_dir}"
+            f"Requirements file must be within project directory. File: {explicit_path}, Project: {project_root}"
         ) from None
 
     # Determine type and install path
@@ -160,3 +176,86 @@ def validate_requirements_file(build_dir: Path, requirements_file: str) -> Depen
 def get_python_version() -> str:
     """Get Python version for Docker image."""
     return f"{sys.version_info.major}.{sys.version_info.minor}"
+
+
+@dataclass
+class RuntimeEntrypointInfo:
+    """Runtime entrypoint information for codeConfiguration API."""
+
+    file_path: Path  # Absolute path to entrypoint file
+    module_name: str  # Python module name (e.g., "agent" or "src.agent")
+    handler_name: str  # Handler function name (e.g., "app")
+
+
+def parse_entrypoint_for_runtime(entrypoint: str, source_dir: Optional[Path] = None) -> RuntimeEntrypointInfo:
+    """Parse entrypoint for Runtime codeConfiguration API.
+
+    Supported formats:
+        "agent.py" → module="agent", handler="app" (default)
+        "agent.py:handler" → module="agent", handler="handler"
+        "src/agent.py:my_app" → module="src.agent", handler="my_app"
+
+    Args:
+        entrypoint: Entrypoint specification
+        source_dir: Source directory for relative path resolution
+
+    Returns:
+        RuntimeEntrypointInfo with module and handler
+
+    Raises:
+        ValueError: If entrypoint format is invalid or file doesn't exist
+    """
+    # Split on ":" to separate file and handler
+    if ":" in entrypoint:
+        file_part, handler = entrypoint.split(":", 1)
+    else:
+        file_part = entrypoint
+        handler = "app"  # Default handler name
+
+    # Parse file path
+    file_path = Path(file_part)
+
+    # Resolve to absolute path
+    if not file_path.is_absolute():
+        if source_dir:
+            file_path = source_dir / file_path
+        file_path = file_path.resolve()
+
+    if not file_path.exists():
+        raise ValueError(f"Entrypoint file not found: {file_path}")
+
+    # Convert file path to module name
+    # Example: "src/agent.py" → "src.agent"
+    if source_dir:
+        try:
+            relative = file_path.relative_to(source_dir.resolve())
+        except ValueError:
+            # File is not under source_dir, use just the filename
+            relative = file_path
+    else:
+        relative = file_path
+
+    # Convert to module name: remove .py and replace path separators with dots
+    module = str(relative.with_suffix("")).replace(os.sep, ".")
+
+    log.info("Parsed entrypoint: module=%s, handler=%s", module, handler)
+
+    return RuntimeEntrypointInfo(file_path=file_path, module_name=module, handler_name=handler)
+
+
+def build_entrypoint_array(entrypoint_path: str, has_otel_distro: bool, observability_enabled: bool) -> List[str]:
+    """Build entrypoint array for Runtime codeConfiguration API.
+
+    Args:
+        entrypoint_path: Path to entrypoint file (e.g., "agent.py")
+        has_otel_distro: Whether aws-opentelemetry-distro is installed
+        observability_enabled: Whether observability is enabled in config
+
+    Returns:
+        List of entrypoint arguments for Runtime API
+        - With OpenTelemetry: ["opentelemetry-instrument", "agent.py"]
+        - Without: ["agent.py"]
+    """
+    if has_otel_distro and observability_enabled:
+        return ["opentelemetry-instrument", entrypoint_path]
+    return [entrypoint_path]

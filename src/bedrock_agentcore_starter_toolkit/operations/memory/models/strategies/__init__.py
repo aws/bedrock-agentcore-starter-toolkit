@@ -31,7 +31,7 @@ Example:
 """
 
 from .base import BaseStrategy, ConsolidationConfig, ExtractionConfig, StrategyType
-from .custom import CustomSemanticStrategy
+from .custom import CustomSemanticStrategy, CustomSummaryStrategy, CustomUserPreferenceStrategy
 from .semantic import SemanticStrategy
 from .summary import SummaryStrategy
 from .user_preference import UserPreferenceStrategy
@@ -47,4 +47,6 @@ __all__ = [
     "SummaryStrategy",
     "UserPreferenceStrategy",
     "CustomSemanticStrategy",
+    "CustomSummaryStrategy",
+    "CustomUserPreferenceStrategy",
 ]

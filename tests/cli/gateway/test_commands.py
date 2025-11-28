@@ -281,3 +281,55 @@ class TestBedrockAgentCoreGatewayCLI:
             # Should fail due to JSON parsing error
             assert result.exit_code != 0
             assert "json" in result.stdout.lower() or isinstance(result.exception, json.JSONDecodeError)
+
+    def test_list_mcp_gateways_command_parameters(self):
+        """Test list-mcp-gateways command parameter parsing."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.list_gateways.return_value = {"status": "success"}
+
+            result = self.runner.invoke(
+                gateway_app, ["list-mcp-gateways", "--region", "us-west-2", "--max-results", "10"]
+            )
+
+            assert result.exit_code == 0
+            mock_client.assert_called_once_with(region_name="us-west-2")
+            mock_client.return_value.list_gateways.assert_called_once_with(name=None, max_results=10)
+
+    def test_get_mcp_gateway_command_flag_parsing(self):
+        """Test get-mcp-gateway command uses updated --id and --arn flags."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.get_gateway.return_value = {"status": "success"}
+
+            # Test --id flag
+            result = self.runner.invoke(gateway_app, ["get-mcp-gateway", "--id", "test-123"])
+            assert result.exit_code == 0
+            mock_client.return_value.get_gateway.assert_called_with(
+                gateway_identifier="test-123", name=None, gateway_arn=None
+            )
+
+    def test_delete_mcp_gateway_command_flag_parsing(self):
+        """Test delete-mcp-gateway command uses updated --arn flag."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.delete_gateway.return_value = {"status": "success"}
+
+            arn = "arn:aws:bedrock-agentcore:us-west-2:123:gateway/test"
+            result = self.runner.invoke(gateway_app, ["delete-mcp-gateway", "--arn", arn])
+
+            assert result.exit_code == 0
+            mock_client.return_value.delete_gateway.assert_called_with(
+                gateway_identifier=None, name=None, gateway_arn=arn, skip_resource_in_use=False
+            )
+
+    def test_delete_mcp_gateway_target_command_parameter_parsing(self):
+        """Test delete-mcp-gateway-target command parses gateway and target parameters correctly."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.delete_gateway_target.return_value = {"status": "success"}
+
+            result = self.runner.invoke(
+                gateway_app, ["delete-mcp-gateway-target", "--id", "gateway-123", "--target-id", "target-456"]
+            )
+
+            assert result.exit_code == 0
+            mock_client.return_value.delete_gateway_target.assert_called_with(
+                gateway_identifier="gateway-123", name=None, gateway_arn=None, target_id="target-456", target_name=None
+            )

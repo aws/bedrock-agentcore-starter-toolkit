@@ -27,7 +27,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -74,7 +77,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -103,7 +109,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -128,7 +137,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -141,7 +153,7 @@ class TestInvokeBedrockAgentCore:
         bearer_token = "test-bearer-token-123"
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "http client response"}
@@ -153,9 +165,10 @@ class TestInvokeBedrockAgentCore:
             mock_http_client_class.assert_called_once_with("us-west-2")
             mock_http_client.invoke_endpoint.assert_called_once_with(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-                payload='{"message": "Hello with bearer token"}',  # Payload is converted to JSON string
+                payload='{"message": "Hello with bearer token"}',
                 session_id=result.session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=None,
             )
 
@@ -170,7 +183,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -184,7 +200,7 @@ class TestInvokeBedrockAgentCore:
         custom_session_id = "custom-session-789"
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "success"}
@@ -198,9 +214,10 @@ class TestInvokeBedrockAgentCore:
             assert result.session_id == custom_session_id
             mock_http_client.invoke_endpoint.assert_called_once_with(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id",
-                payload='{"message": "Hello"}',  # Payload is converted to JSON string
+                payload='{"message": "Hello"}',
                 session_id=custom_session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=None,
             )
 
@@ -212,7 +229,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -224,7 +244,7 @@ class TestInvokeBedrockAgentCore:
         payload = {"message": "Hello without bearer token"}
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             result = invoke_bedrock_agentcore(config_path, payload)
 
@@ -243,7 +263,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "existing-workload-456"},
@@ -258,13 +281,17 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
             mock_identity_client = Mock()
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "test-workload-token-123"
+            }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
             }
             mock_identity_client_class.return_value = mock_identity_client
 
@@ -289,7 +316,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke_endpoint was called correctly
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello local mode!"}', "test-workload-token-123", None
+                result.session_id,
+                '{"message": "Hello local mode!"}',
+                "test-workload-token-123",
+                "http://localhost:8081/oauth2/callback",
+                None,
             )
 
             # Verify result
@@ -305,7 +336,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-east-1", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-east-1",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "test-workload-789"},
@@ -322,13 +356,17 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
             mock_identity_client = Mock()
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "workload-token-with-user-context"
+            }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
             }
             mock_identity_client_class.return_value = mock_identity_client
 
@@ -355,7 +393,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client invoke was called with workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Hello with bearer token"}', "workload-token-with-user-context", None
+                result.session_id,
+                '{"message": "Hello with bearer token"}',
+                "workload-token-with-user-context",
+                "http://localhost:8081/oauth2/callback",
+                None,
             )
 
             # Verify result
@@ -369,7 +411,10 @@ class TestInvokeBedrockAgentCore:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             # No oauth_configuration - should trigger workload creation
@@ -384,13 +429,17 @@ class TestInvokeBedrockAgentCore:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
             mock_identity_client = Mock()
             mock_identity_client.create_workload_identity.return_value = {"name": "auto-created-workload-123"}
             mock_identity_client.get_workload_access_token.return_value = {"workloadAccessToken": "new-workload-token"}
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
+            }
             mock_identity_client_class.return_value = mock_identity_client
 
             # Mock LocalBedrockAgentCoreClient
@@ -411,7 +460,11 @@ class TestInvokeBedrockAgentCore:
 
             # Verify local client was called with the new workload token
             mock_local_client.invoke_endpoint.assert_called_once_with(
-                result.session_id, '{"message": "Test workload creation"}', "new-workload-token", None
+                result.session_id,
+                '{"message": "Test workload creation"}',
+                "new-workload-token",
+                "http://localhost:8081/oauth2/callback",
+                None,
             )
 
             # Verify config was updated with the new workload name
@@ -419,7 +472,7 @@ class TestInvokeBedrockAgentCore:
 
             updated_config = load_config(config_path)
             updated_agent = updated_config.get_agent_config("test-agent")
-            assert updated_agent.oauth_configuration == {"workload_name": "auto-created-workload-123"}
+            assert updated_agent.oauth_configuration == {"workload_name": "auto-created-workload-123", "userId": None}
 
             # Verify result
             assert result.response == {"response": "workload creation test"}
@@ -438,7 +491,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "existing-workload-123"},
@@ -466,7 +522,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             # No oauth_configuration
@@ -500,7 +559,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -545,7 +607,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -562,7 +627,7 @@ class TestGetWorkloadName:
         }
 
         with patch(
-            "bedrock_agentcore_starter_toolkit.services.runtime.HttpBedrockAgentCoreClient"
+            "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.HttpBedrockAgentCoreClient"
         ) as mock_http_client_class:
             mock_http_client = Mock()
             mock_http_client.invoke_endpoint.return_value = {"response": "http client response with headers"}
@@ -579,6 +644,7 @@ class TestGetWorkloadName:
                 payload='{"message": "Hello with headers and bearer token"}',
                 session_id=result.session_id,
                 bearer_token=bearer_token,
+                user_id=None,
                 custom_headers=custom_headers,
             )
 
@@ -593,7 +659,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
             oauth_configuration={"workload_name": "test-workload-456"},
@@ -612,13 +681,17 @@ class TestGetWorkloadName:
                 "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.IdentityClient"
             ) as mock_identity_client_class,
             patch(
-                "bedrock_agentcore_starter_toolkit.services.runtime.LocalBedrockAgentCoreClient"
+                "bedrock_agentcore_starter_toolkit.operations.runtime.invoke.LocalBedrockAgentCoreClient"
             ) as mock_local_client_class,
         ):
             # Mock IdentityClient
             mock_identity_client = Mock()
             mock_identity_client.get_workload_access_token.return_value = {
                 "workloadAccessToken": "test-workload-token-456"
+            }
+            mock_identity_client.get_workload_identity.return_value = {
+                "name": "test-workload-identity",
+                "allowedResourceOauth2ReturnUrls": [],
             }
             mock_identity_client_class.return_value = mock_identity_client
 
@@ -636,6 +709,7 @@ class TestGetWorkloadName:
                 result.session_id,
                 '{"message": "Hello local mode with headers"}',
                 "test-workload-token-456",
+                "http://localhost:8081/oauth2/callback",
                 custom_headers,
             )
 
@@ -650,7 +724,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -685,7 +762,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -719,7 +799,10 @@ class TestGetWorkloadName:
             name="test-agent",
             entrypoint="test.py",
             aws=AWSConfig(
-                region="us-west-2", network_configuration=NetworkConfiguration(), observability=ObservabilityConfig()
+                region="us-west-2",
+                account="123456789012",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
             ),
             bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
                 agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
@@ -752,3 +835,185 @@ class TestGetWorkloadName:
         )
         assert call_args[1]["payload"] == '{"message": "Hello with headers and session"}'
         assert call_args[1]["qualifier"] == "DEFAULT"
+
+    def test_invoke_sync_with_streaming(self, mock_boto3_clients, tmp_path):
+        """Test sync invocation with streaming response (covers lines 40-76)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock streaming response
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.return_value = {
+            "response": [{"chunk": {"text": "Part 1 "}}, {"chunk": {"text": "Part 2"}}, {"data": "final response"}]
+        }
+
+        result = invoke_bedrock_agentcore(config_path, {"message": "Test streaming"})
+
+        assert result.response is not None
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.assert_called_once()
+
+    def test_invoke_with_invalid_json_response(self, mock_boto3_clients, tmp_path):
+        """Test handling of invalid JSON in response (covers line 122)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Return response that might contain invalid JSON
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.return_value = {
+            "response": [{"data": "{invalid json"}]
+        }
+
+        result = invoke_bedrock_agentcore(config_path, {"message": "Test invalid json"})
+
+        # Should handle gracefully
+        assert result.response is not None
+
+    def test_invoke_api_exception(self, mock_boto3_clients, tmp_path):
+        """Test API exception handling (covers line 127)."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        # Mock API error
+        mock_boto3_clients["bedrock_agentcore"].invoke_agent_runtime.side_effect = Exception("API Error")
+
+        with pytest.raises(Exception, match="API Error"):
+            invoke_bedrock_agentcore(config_path, {"message": "Test error"})
+
+    def test_invoke_memory_import_error(self, mock_boto3_clients, tmp_path):
+        """Test invoke when MemoryManager import fails (covers lines 68-70)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+                agent_arn="arn:aws:bedrock_agentcore:us-west-2:123456789012:agent-runtime/test-agent-id"
+            ),
+            memory=MemoryConfig(
+                mode="STM_AND_LTM",
+                memory_id="mem-12345",
+                first_invoke_memory_check_done=False,
+            ),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch.dict("sys.modules", {"bedrock_agentcore_starter_toolkit.operations.memory.manager": None}):
+            # Should continue despite import error
+            result = invoke_bedrock_agentcore(config_path, {"message": "test"})
+            assert result is not None
+
+
+class TestUpdateWorkloadIdentityWithCallbackUrl:
+    def test_update_workload_identity_callback_url_already_exists(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_oauth2_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {
+            "allowedResourceOauth2ReturnUrls": ["http://localhost:8081/oauth2/callback", "https://example.com/callback"]
+        }
+
+        _update_workload_identity_with_oauth2_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_not_called()
+
+    def test_update_workload_identity_callback_url_new(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_oauth2_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {
+            "allowedResourceOauth2ReturnUrls": ["https://example.com/callback"]
+        }
+
+        _update_workload_identity_with_oauth2_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload",
+            allowed_resource_oauth_2_return_urls=[
+                "https://example.com/callback",
+                "http://localhost:8081/oauth2/callback",
+            ],
+        )
+
+    def test_update_workload_identity_callback_url_empty_list(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_oauth2_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {"allowedResourceOauth2ReturnUrls": []}
+
+        _update_workload_identity_with_oauth2_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/oauth2/callback"]
+        )
+
+    def test_update_workload_identity_callback_url_missing_from_response(self):
+        from bedrock_agentcore_starter_toolkit.operations.runtime.invoke import (
+            _update_workload_identity_with_oauth2_callback_url,
+        )
+
+        mock_identity_client = Mock()
+        mock_identity_client.get_workload_identity.return_value = {}
+
+        _update_workload_identity_with_oauth2_callback_url(
+            mock_identity_client, "test-workload", "http://localhost:8081/oauth2/callback"
+        )
+
+        mock_identity_client.get_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity_client.update_workload_identity.assert_called_once_with(
+            name="test-workload", allowed_resource_oauth_2_return_urls=["http://localhost:8081/oauth2/callback"]
+        )

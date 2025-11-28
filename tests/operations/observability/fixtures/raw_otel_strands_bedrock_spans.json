@@ -1,0 +1,3063 @@
+[
+  {
+    "timestamp": "2025-11-17 23:58:37.517",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.starlette",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "44349ec6bd7b02e3",
+      "parentSpanId": "4faebad135adfdaa",
+      "flags": 768,
+      "name": "POST /invocations",
+      "kind": "SERVER",
+      "startTimeUnixNano": 1763423912171758991,
+      "endTimeUnixNano": 1763423917517663228,
+      "durationNano": 5345904237,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "net.peer.port": 39310,
+        "telemetry.extended": "true",
+        "http.target": "/invocations",
+        "http.flavor": "1.1",
+        "http.url": "http://127.0.0.1:8080/invocations",
+        "net.peer.ip": "127.0.0.1",
+        "http.host": "127.0.0.1:8080",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "http.status_code": 200,
+        "aws.local.operation": "POST /invocations",
+        "aws.span.kind": "SERVER",
+        "http.server_name": "cell01.us-east-1.prod.arp.kepler-analytics.aws.dev",
+        "net.host.port": 8080,
+        "http.route": "/invocations",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.method": "POST",
+        "http.response.status_code": 200,
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "http.scheme": "http"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.481",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "75d7e5e947e5af53",
+      "parentSpanId": "44349ec6bd7b02e3",
+      "flags": 256,
+      "name": "invoke_agent Strands Agents",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423912631438514,
+      "endTimeUnixNano": 1763423917481578954,
+      "durationNano": 4850140440,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21245,
+        "gen_ai.usage.output_tokens": 56,
+        "gen_ai.usage.cache_write_input_tokens": 0,
+        "gen_ai.agent.name": "Strands Agents",
+        "gen_ai.usage.total_tokens": 21301,
+        "gen_ai.usage.completion_tokens": 56,
+        "gen_ai.event.start_time": "2025-11-17T23:58:32.631458+00:00",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.event.end_time": "2025-11-17T23:58:37.481541+00:00",
+        "gen_ai.usage.input_tokens": 21245,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "gen_ai.agent.tools": "[\"code_interpreter\"]",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.481",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "6662eafac4b167c2",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423917343855053,
+      "endTimeUnixNano": 1763423917481424212,
+      "durationNano": 137569159,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "09f4fc93-4b8d-421d-9add-bd376fd5620a",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.343",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "688b56db3770b24a",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423917273441082,
+      "endTimeUnixNano": 1763423917343244715,
+      "durationNano": 69803633,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "bf13b394-7a59-467b-8d27-cf7e185a5090",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.237",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "37bd34142ec1d718",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "execute_event_loop_cycle",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423913423530947,
+      "endTimeUnixNano": 1763423917237052048,
+      "durationNano": 3813521101,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.event.end_time": "2025-11-17T23:58:37.237026+00:00",
+        "event_loop.cycle_id": "e0c96004-d55f-4fce-b209-277139f904f0",
+        "gen_ai.event.start_time": "2025-11-17T23:58:33.423548+00:00",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "aws.local.environment": "bedrock-agentcore:default"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.236",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "40fd2dac8bcc18c1",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423917095535163,
+      "endTimeUnixNano": 1763423917236667845,
+      "durationNano": 141132682,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "46f30ea7-5a4e-441c-9154-509daa5afd01",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.094",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "6b0999c95bef1954",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423917042227120,
+      "endTimeUnixNano": 1763423917094974487,
+      "durationNano": 52747367,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "0c5ac242-93b6-4bd3-9401-423ba72032f4",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:37.041",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "74cbe3e916615a41",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423916909262807,
+      "endTimeUnixNano": 1763423917041902986,
+      "durationNano": 132640179,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "bd14e187-98f2-4653-bb04-0bf495fe6f2b",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:36.868",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "b1247625aa94dc7e",
+      "parentSpanId": "37bd34142ec1d718",
+      "flags": 256,
+      "name": "chat",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423913425199055,
+      "endTimeUnixNano": 1763423916868311433,
+      "durationNano": 3443112378,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21245,
+        "gen_ai.usage.output_tokens": 56,
+        "gen_ai.server.request.duration": 3397,
+        "gen_ai.usage.total_tokens": 21301,
+        "gen_ai.usage.completion_tokens": 56,
+        "gen_ai.event.start_time": "2025-11-17T23:58:33.425210+00:00",
+        "gen_ai.server.time_to_first_token": 2657,
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.event.end_time": "2025-11-17T23:58:36.868268+00:00",
+        "gen_ai.usage.input_tokens": 21245,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:36.867",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "06df90d70f7db03f",
+      "parentSpanId": "b1247625aa94dc7e",
+      "flags": 256,
+      "name": "chat us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423913427332330,
+      "endTimeUnixNano": 1763423916867689495,
+      "durationNano": 3440357165,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "rpc.service": "Bedrock Runtime",
+        "aws.remote.resource.identifier": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ConverseStream",
+        "server.address": "bedrock-runtime.us-east-1.amazonaws.com",
+        "aws.request_id": "f701acc1-eff6-46a0-8a13-afd88f14c494",
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ConverseStream",
+        "gen_ai.response.finish_reasons": [
+          "end_turn"
+        ],
+        "server.port": 443,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "http.response.status_code": 200,
+        "gen_ai.system": "aws.bedrock",
+        "telemetry.extended": "true",
+        "gen_ai.usage.output_tokens": 56,
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockRuntime",
+        "http.status_code": 200,
+        "aws.region": "us-east-1",
+        "aws.remote.resource.type": "AWS::Bedrock::Model",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.usage.input_tokens": 21245,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:33.423",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "3e7c4673ff187dbc",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423913236320165,
+      "endTimeUnixNano": 1763423913423224318,
+      "durationNano": 186904153,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "b807d594-7dd3-4fbc-a337-44b7d5c52aea",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:33.236",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "92b50bd44e9a1775",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912976179510,
+      "endTimeUnixNano": 1763423913236046018,
+      "durationNano": 259866508,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "54cb099d-088f-48a7-879f-89c7218c8bfa",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.975",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "9072f2d5620a71c3",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912840685788,
+      "endTimeUnixNano": 1763423912975918856,
+      "durationNano": 135233068,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "14bf4b4e-df1a-4da6-89d3-97f98264bbaf",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.840",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "dd21e609bf0aa735",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912776875194,
+      "endTimeUnixNano": 1763423912840098076,
+      "durationNano": 63222882,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "7d53b48d-e458-4932-96bf-92522b18e556",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.776",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "8d22f02b70cccce0",
+      "parentSpanId": "75d7e5e947e5af53",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912631808522,
+      "endTimeUnixNano": 1763423912776548164,
+      "durationNano": 144739642,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "a82e23b8-9b5e-4825-8a1b-b51a4982a6fc",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.624",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "45cab1f40a9ccc62",
+      "parentSpanId": "44349ec6bd7b02e3",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912445976300,
+      "endTimeUnixNano": 1763423912624432738,
+      "durationNano": 178456438,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "ff3cb52a-f542-406a-8908-b7b27d732d0a",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.445",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "5f38ae935b401145",
+      "parentSpanId": "44349ec6bd7b02e3",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912373956803,
+      "endTimeUnixNano": 1763423912445456514,
+      "durationNano": 71499711,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "a92c7495-ab95-4555-b6e7-25c29c5272db",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:32.322",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb6a875f4b80435ad36816864e7c2",
+      "spanId": "bb44a12e2b2a25fd",
+      "parentSpanId": "44349ec6bd7b02e3",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423912235513760,
+      "endTimeUnixNano": 1763423912322770305,
+      "durationNano": 87256545,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "aebe0efc-add5-4c8f-a7b7-4b0b1ca3b2a2",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.663",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.starlette",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "67cd4e5f4d461392",
+      "parentSpanId": "9f58021ec2a03d82",
+      "flags": 768,
+      "name": "POST /invocations",
+      "kind": "SERVER",
+      "startTimeUnixNano": 1763423893011146257,
+      "endTimeUnixNano": 1763423897663440445,
+      "durationNano": 4652294188,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "net.peer.port": 55774,
+        "telemetry.extended": "true",
+        "http.target": "/invocations",
+        "http.flavor": "1.1",
+        "http.url": "http://127.0.0.1:8080/invocations",
+        "net.peer.ip": "127.0.0.1",
+        "http.host": "127.0.0.1:8080",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "http.status_code": 200,
+        "aws.local.operation": "POST /invocations",
+        "aws.span.kind": "SERVER",
+        "http.server_name": "cell01.us-east-1.prod.arp.kepler-analytics.aws.dev",
+        "net.host.port": 8080,
+        "http.route": "/invocations",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.method": "POST",
+        "http.response.status_code": 200,
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "http.scheme": "http"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.616",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "2d4e75b773730842",
+      "parentSpanId": "67cd4e5f4d461392",
+      "flags": 256,
+      "name": "invoke_agent Strands Agents",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423893511324807,
+      "endTimeUnixNano": 1763423897616022523,
+      "durationNano": 4104697716,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21209,
+        "gen_ai.usage.output_tokens": 32,
+        "gen_ai.usage.cache_write_input_tokens": 0,
+        "gen_ai.agent.name": "Strands Agents",
+        "gen_ai.usage.total_tokens": 21241,
+        "gen_ai.usage.completion_tokens": 32,
+        "gen_ai.event.start_time": "2025-11-17T23:58:13.511344+00:00",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.event.end_time": "2025-11-17T23:58:17.615985+00:00",
+        "gen_ai.usage.input_tokens": 21209,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "gen_ai.agent.tools": "[\"code_interpreter\"]",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.615",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "4e1c8f6a54cc1e72",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423897468115798,
+      "endTimeUnixNano": 1763423897615878501,
+      "durationNano": 147762703,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "bd0367dc-271f-4809-ae47-41e4c738e32e",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.467",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "c5b30dd10d91319a",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423897391271196,
+      "endTimeUnixNano": 1763423897467591817,
+      "durationNano": 76320621,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "b023b9a6-1ade-48d9-94ee-38dc9d65bb85",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.351",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "8c95e7ab82870ce2",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423897226274497,
+      "endTimeUnixNano": 1763423897351237599,
+      "durationNano": 124963102,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "f090556c-f54e-4eae-8b08-2a2b1d9a80fc",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.351",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "0c45c719b48f63ba",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "execute_event_loop_cycle",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423894212514746,
+      "endTimeUnixNano": 1763423897351653162,
+      "durationNano": 3139138416,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.event.end_time": "2025-11-17T23:58:17.351628+00:00",
+        "event_loop.cycle_id": "6b78e737-2759-4e50-9d79-86bd88d48efb",
+        "gen_ai.event.start_time": "2025-11-17T23:58:14.212532+00:00",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "aws.local.environment": "bedrock-agentcore:default"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.225",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "21e5d8655a7af105",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423897181725599,
+      "endTimeUnixNano": 1763423897225758510,
+      "durationNano": 44032911,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "c506da43-95c9-4500-9733-31b5462a31e3",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.181",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "8e0dbe388b19526f",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423897086918872,
+      "endTimeUnixNano": 1763423897181466155,
+      "durationNano": 94547283,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "e259aacc-5aec-48cf-98b4-6bde07bc111e",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.049",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "63d0497daf1eaff1",
+      "parentSpanId": "9d56fdc40731cc24",
+      "flags": 256,
+      "name": "chat us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423894216211842,
+      "endTimeUnixNano": 1763423897049215827,
+      "durationNano": 2833003985,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "rpc.service": "Bedrock Runtime",
+        "aws.remote.resource.identifier": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ConverseStream",
+        "server.address": "bedrock-runtime.us-east-1.amazonaws.com",
+        "aws.request_id": "ee9dee1d-d167-4c21-85f8-fe0c9ab0c3e5",
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ConverseStream",
+        "gen_ai.response.finish_reasons": [
+          "end_turn"
+        ],
+        "server.port": 443,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "http.response.status_code": 200,
+        "gen_ai.system": "aws.bedrock",
+        "telemetry.extended": "true",
+        "gen_ai.usage.output_tokens": 32,
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockRuntime",
+        "http.status_code": 200,
+        "aws.region": "us-east-1",
+        "aws.remote.resource.type": "AWS::Bedrock::Model",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.usage.input_tokens": 21209,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:17.049",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "9d56fdc40731cc24",
+      "parentSpanId": "0c45c719b48f63ba",
+      "flags": 256,
+      "name": "chat",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423894214053852,
+      "endTimeUnixNano": 1763423897049701343,
+      "durationNano": 2835647491,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21209,
+        "gen_ai.usage.output_tokens": 32,
+        "gen_ai.server.request.duration": 2789,
+        "gen_ai.usage.total_tokens": 21241,
+        "gen_ai.usage.completion_tokens": 32,
+        "gen_ai.event.start_time": "2025-11-17T23:58:14.214064+00:00",
+        "gen_ai.server.time_to_first_token": 2430,
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.event.end_time": "2025-11-17T23:58:17.049657+00:00",
+        "gen_ai.usage.input_tokens": 21209,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:14.212",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "148b7b2c6a54f141",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423894018619829,
+      "endTimeUnixNano": 1763423894212238915,
+      "durationNano": 193619086,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "853062d3-56fa-40fa-8e55-47695d36f495",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:14.018",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "d859028612191368",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893849432436,
+      "endTimeUnixNano": 1763423894018365880,
+      "durationNano": 168933444,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "2bb1a11a-f93e-4215-a8d6-c6f95c8c109c",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.849",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "f74841ab300c5adb",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893717475504,
+      "endTimeUnixNano": 1763423893849196583,
+      "durationNano": 131721079,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "21dbc91c-da21-4a52-9742-85422ee3297d",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.716",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "e71f2692aa55b664",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893656389311,
+      "endTimeUnixNano": 1763423893716934198,
+      "durationNano": 60544887,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "433b554f-981b-439d-a8fb-feebf2f8246c",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.656",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "c01a8b574d872bbd",
+      "parentSpanId": "2d4e75b773730842",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893511689222,
+      "endTimeUnixNano": 1763423893656090088,
+      "durationNano": 144400866,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "41b7400d-7ee4-45b5-a24d-1df120cbb5cb",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.504",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "da2f87dbf10f553a",
+      "parentSpanId": "67cd4e5f4d461392",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893400567316,
+      "endTimeUnixNano": 1763423893504559991,
+      "durationNano": 103992675,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "a0699d89-2dc4-48ef-98c0-3dc43969755b",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.400",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "7f7a187699a4c9fe",
+      "parentSpanId": "67cd4e5f4d461392",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893265226995,
+      "endTimeUnixNano": 1763423893400102561,
+      "durationNano": 134875566,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "335d6e2c-5d8b-4f75-a124-25c2ecd02a9e",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:58:13.152",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb69408ef53c72315fae60a6ae06e",
+      "spanId": "537601e365ce44af",
+      "parentSpanId": "67cd4e5f4d461392",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423893074023717,
+      "endTimeUnixNano": 1763423893152686088,
+      "durationNano": 78662371,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "6cce23ad-6d48-4ea9-aa50-fbeb7e727374",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.809",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.starlette",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "5f563e10e1063186",
+      "parentSpanId": "3b67e4f6ed7d5fab",
+      "flags": 768,
+      "name": "POST /invocations",
+      "kind": "SERVER",
+      "startTimeUnixNano": 1763423844518251458,
+      "endTimeUnixNano": 1763423850809723038,
+      "durationNano": 6291471580,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "net.peer.port": 36596,
+        "telemetry.extended": "true",
+        "http.target": "/invocations",
+        "http.flavor": "1.1",
+        "http.url": "http://127.0.0.1:8080/invocations",
+        "net.peer.ip": "127.0.0.1",
+        "http.host": "127.0.0.1:8080",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "http.status_code": 200,
+        "aws.local.operation": "POST /invocations",
+        "aws.span.kind": "SERVER",
+        "http.server_name": "cell01.us-east-1.prod.arp.kepler-analytics.aws.dev",
+        "net.host.port": 8080,
+        "http.route": "/invocations",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.method": "POST",
+        "http.response.status_code": 200,
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "http.scheme": "http"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.762",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "b0881d1023e19e21",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423850616765707,
+      "endTimeUnixNano": 1763423850762231681,
+      "durationNano": 145465974,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "657a67ed-4c2b-4a9f-a9fa-be4a45ab00ff",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.762",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "cb4b3ddc4668266a",
+      "parentSpanId": "5f563e10e1063186",
+      "flags": 256,
+      "name": "invoke_agent Strands Agents",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423845047869562,
+      "endTimeUnixNano": 1763423850762376959,
+      "durationNano": 5714507397,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21114,
+        "gen_ai.usage.output_tokens": 91,
+        "gen_ai.usage.cache_write_input_tokens": 0,
+        "gen_ai.agent.name": "Strands Agents",
+        "gen_ai.usage.total_tokens": 21205,
+        "gen_ai.usage.completion_tokens": 91,
+        "gen_ai.event.start_time": "2025-11-17T23:57:25.047888+00:00",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.event.end_time": "2025-11-17T23:57:30.762340+00:00",
+        "gen_ai.usage.input_tokens": 21114,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "gen_ai.agent.tools": "[\"code_interpreter\"]",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.616",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "dd83fbd59101e296",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423850533499474,
+      "endTimeUnixNano": 1763423850616211974,
+      "durationNano": 82712500,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "9d72aa6e-e6ae-4f93-9ea6-95046b1af755",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.494",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "2b8d903d4269bb8e",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "execute_event_loop_cycle",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423845876915570,
+      "endTimeUnixNano": 1763423850494212174,
+      "durationNano": 4617296604,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.event.end_time": "2025-11-17T23:57:30.494186+00:00",
+        "event_loop.cycle_id": "9161fdd3-b9dd-420d-89c4-64c2ffaaf346",
+        "gen_ai.event.start_time": "2025-11-17T23:57:25.876934+00:00",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "aws.local.environment": "bedrock-agentcore:default"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.493",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "e04b0349a75ab44b",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423850345017362,
+      "endTimeUnixNano": 1763423850493761682,
+      "durationNano": 148744320,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "8b9ccd66-61ea-4fd5-a700-6f00f8c10c58",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.344",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "827f5dda39962075",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423850297963620,
+      "endTimeUnixNano": 1763423850344494225,
+      "durationNano": 46530605,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "2d548206-9f5a-4a47-9435-ca4ffdbb55a8",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.297",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "84c22f7d7e2fc5be",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423850168361969,
+      "endTimeUnixNano": 1763423850297688397,
+      "durationNano": 129326428,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "9dbb04ab-dff2-4561-906f-219f545f533c",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.113",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer",
+        "version": ""
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "eecfb0bef9f2b58d",
+      "parentSpanId": "2b8d903d4269bb8e",
+      "flags": 256,
+      "name": "chat",
+      "kind": "INTERNAL",
+      "startTimeUnixNano": 1763423845878453657,
+      "endTimeUnixNano": 1763423850113171301,
+      "durationNano": 4234717644,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "gen_ai.usage.prompt_tokens": 21114,
+        "gen_ai.usage.output_tokens": 91,
+        "gen_ai.server.request.duration": 4181,
+        "gen_ai.usage.total_tokens": 21205,
+        "gen_ai.usage.completion_tokens": 91,
+        "gen_ai.event.start_time": "2025-11-17T23:57:25.878464+00:00",
+        "gen_ai.server.time_to_first_token": 2783,
+        "aws.local.environment": "bedrock-agentcore:default",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.event.end_time": "2025-11-17T23:57:30.113134+00:00",
+        "gen_ai.usage.input_tokens": 21114,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "PlatformType": "AWS::BedrockAgentCore",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713",
+        "gen_ai.system": "strands-agents"
+      },
+      "status": {
+        "code": "OK"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:30.112",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "8c25e6a863686d74",
+      "parentSpanId": "eecfb0bef9f2b58d",
+      "flags": 256,
+      "name": "chat us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423845883076298,
+      "endTimeUnixNano": 1763423850112728452,
+      "durationNano": 4229652154,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "rpc.service": "Bedrock Runtime",
+        "aws.remote.resource.identifier": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ConverseStream",
+        "server.address": "bedrock-runtime.us-east-1.amazonaws.com",
+        "aws.request_id": "02025d84-9814-402f-b079-fa643f8fbfc3",
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ConverseStream",
+        "gen_ai.response.finish_reasons": [
+          "end_turn"
+        ],
+        "server.port": 443,
+        "gen_ai.request.model": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "http.response.status_code": 200,
+        "gen_ai.system": "aws.bedrock",
+        "telemetry.extended": "true",
+        "gen_ai.usage.output_tokens": 91,
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockRuntime",
+        "http.status_code": 200,
+        "aws.region": "us-east-1",
+        "aws.remote.resource.type": "AWS::Bedrock::Model",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.usage.input_tokens": 21114,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:25.876",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "754c7e11135fb3c3",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423845666758797,
+      "endTimeUnixNano": 1763423845876437996,
+      "durationNano": 209679199,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "5b65ec02-5541-48d8-885c-8cc2cab9acb9",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:25.666",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "bf83aa59379831d1",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.RetrieveMemoryRecords",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423845433760555,
+      "endTimeUnixNano": 1763423845666493420,
+      "durationNano": 232732865,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "RetrieveMemoryRecords",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "5ece9a29-1267-46ea-b4a9-417476df85ea",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "RetrieveMemoryRecords",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:25.433",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "47325a6f238de3aa",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.CreateEvent",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423845292901566,
+      "endTimeUnixNano": 1763423845433520996,
+      "durationNano": 140619430,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "CreateEvent",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "e6a5ca80-aa33-4014-b17d-690a553b015e",
+        "http.status_code": 201,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "CreateEvent",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 201,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  },
+  {
+    "timestamp": "2025-11-17 23:57:25.292",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "test_eval_1.DEFAULT",
+          "service.name": "test_eval_1.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test_eval_1-Ux9OE986P4/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/test_eval_1-Ux9OE986P4-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore",
+        "version": "0.54b1"
+      },
+      "traceId": "691bb664386ff51a6e07acb05320a88f",
+      "spanId": "afd304147f7a9f1e",
+      "parentSpanId": "cb4b3ddc4668266a",
+      "flags": 256,
+      "name": "Bedrock AgentCore.ListEvents",
+      "kind": "CLIENT",
+      "startTimeUnixNano": 1763423845225899250,
+      "endTimeUnixNano": 1763423845292399897,
+      "durationNano": 66500647,
+      "attributes": {
+        "aws.local.service": "test_eval_1.DEFAULT",
+        "telemetry.extended": "true",
+        "rpc.service": "Bedrock AgentCore",
+        "rpc.system": "aws-api",
+        "aws.remote.service": "AWS::BedrockAgentCore",
+        "aws.local.environment": "bedrock-agentcore:default",
+        "aws.remote.operation": "ListEvents",
+        "server.address": "bedrock-agentcore.us-east-1.amazonaws.com",
+        "aws.request_id": "3b9f5794-90be-4ce0-8be5-ed33cbf1b27d",
+        "http.status_code": 200,
+        "aws.local.operation": "UnmappedOperation",
+        "aws.span.kind": "CLIENT",
+        "aws.region": "us-east-1",
+        "aws.auth.region": "us-east-1",
+        "rpc.method": "ListEvents",
+        "server.port": 443,
+        "retry_attempts": 0,
+        "PlatformType": "AWS::BedrockAgentCore",
+        "http.response.status_code": 200,
+        "aws.auth.account.access_key": "ASIA2UC3CYLEZ4QN7R24",
+        "session.id": "cc8a8e69-8bed-4e5f-9a06-9a58550fd713"
+      },
+      "status": {
+        "code": "UNSET"
+      }
+    }
+  }
+]

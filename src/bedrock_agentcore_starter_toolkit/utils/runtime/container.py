@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from jinja2 import Template
+from rich.console import Console
 
-from ...cli.common import _handle_warn
+from ...cli.common import _handle_warn, _print_success
 from .entrypoint import detect_dependencies, get_python_version
+
+console = Console()
 
 log = logging.getLogger(__name__)
 
@@ -40,11 +43,10 @@ class ContainerRuntime:
                     break
             else:
                 # Informational message - default CodeBuild deployment works fine
-                _handle_warn(
-                    "ℹ️  No container engine found (Docker/Finch/Podman not installed)\n"
-                    "✅ Default deployment uses CodeBuild (no container engine needed)\n"
-                    "💡 Run 'agentcore launch' for cloud-based building and deployment\n"
-                    "💡 For local builds, install Docker, Finch, or Podman"
+                console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
+                _print_success(
+                    "Default deployment uses CodeBuild (no container engine needed), "
+                    "For local builds, install Docker, Finch, or Podman"
                 )
                 self.runtime = "none"
                 self.has_local_runtime = False
@@ -55,10 +57,9 @@ class ContainerRuntime:
             else:
                 # Convert hard error to warning - suggest CodeBuild instead
                 _handle_warn(
-                    f"⚠️  {runtime_type.capitalize()} is not installed\n"
-                    "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                    "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
-                    f"💡 For local builds, please install {runtime_type.capitalize()}"
+                    f"{runtime_type.capitalize()} is not installed\n"
+                    "Recommendation: Use CodeBuild for building containers in the cloud\n"
+                    f"For local builds, please install {runtime_type.capitalize()}"
                 )
                 self.runtime = "none"
                 self.has_local_runtime = False
@@ -75,7 +76,7 @@ class ContainerRuntime:
                     "• Finch: https://github.com/runfinch/finch\n"
                     "• Podman: https://podman.io/getting-started/installation\n\n"
                     "Alternative: Use CodeBuild for cloud-based building (no container engine needed):\n"
-                    "  agentcore launch  # Uses CodeBuild (default)"
+                    "  agentcore deploy  # Uses CodeBuild (default)"
                 )
             else:
                 raise ValueError(f"Unsupported runtime: {runtime_type}")
@@ -108,18 +109,41 @@ class ContainerRuntime:
         aws_region: Optional[str] = None,
         enable_observability: bool = True,
         requirements_file: Optional[str] = None,
+        memory_id: Optional[str] = None,
+        memory_name: Optional[str] = None,
+        source_path: Optional[str] = None,
+        protocol: Optional[str] = None,
+        explicit_requirements_file: Optional[Path] = None,
+        silence_warn=False,
     ) -> Path:
-        """Generate Dockerfile from template."""
+        """Generate Dockerfile from template.
+
+        Args:
+            agent_path: Path to agent entrypoint file
+            output_dir: Output directory for Dockerfile (project root)
+            agent_name: Name of the agent
+            aws_region: AWS region
+            enable_observability: Whether to enable observability
+            requirements_file: Optional explicit requirements file path
+            memory_id: Optional memory ID
+            memory_name: Optional memory name
+            source_path: Optional source code directory (for dependency detection)
+            protocol: Optional protocol configuration (HTTP or HTTPS)
+            explicit_requirements_file: Optional Path to the requirements_file to override detection logic
+            silence_warn: Boolean to not emit warn messages. Defaults to False
+        """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 
         if current_platform != required_platform:
-            _handle_warn(
-                f"[WARNING] Platform mismatch: Current system is '{current_platform}' "
-                f"but Bedrock AgentCore requires '{required_platform}'.\n"
-                "For deployment options and workarounds, see: "
-                "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
-            )
+            if not silence_warn:
+                _handle_warn(
+                    f"Platform mismatch: Current system is '{current_platform}' "
+                    f"but Bedrock AgentCore requires '{required_platform}', so local builds won't work.\n"
+                    "Please use default launch command which will do a remote cross-platform build using code build."
+                    "For deployment other options and workarounds, see: "
+                    "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
+                )
 
         template_path = Path(__file__).parent / "templates" / "Dockerfile.j2"
 
@@ -130,23 +154,45 @@ class ContainerRuntime:
         with open(template_path) as f:
             template = Template(f.read())
 
+        # Calculate build context root first (needed for validation)
+        # If source_path provided: module path relative to source_path (Docker build context)
+        # Otherwise: module path relative to project root
+        build_context_root = Path(source_path) if source_path else output_dir
         # Generate .dockerignore if it doesn't exist
-        self._ensure_dockerignore(output_dir)
+        self._ensure_dockerignore(build_context_root)
 
-        # Validate module path before generating Dockerfile
-        self._validate_module_path(agent_path, output_dir)
+        # Validate module path against build context root
+        self._validate_module_path(agent_path, build_context_root)
 
-        # Calculate module path relative to project root
-        agent_module_path = self._get_module_path(agent_path, output_dir)
+        # Calculate module path relative to Docker build context
+        agent_module_path = self._get_module_path(agent_path, build_context_root)
 
         wheelhouse_dir = output_dir / "wheelhouse"
 
-        # Detect dependencies using the new DependencyInfo class
-        deps = detect_dependencies(output_dir, explicit_file=requirements_file)
+        # Detect dependencies:
+        # - If source_path provided: check source_path only
+        # - Otherwise: check project root (output_dir)
+        # - If explicit requirements_file provided: use that regardless
+        if source_path and not requirements_file:
+            source_dir = Path(source_path)
+            deps = detect_dependencies(source_dir, explicit_file=None)
+        if source_path:
+            source_dir = Path(source_path)
+            deps = detect_dependencies(source_dir, explicit_file=requirements_file)
+        else:
+            deps = detect_dependencies(output_dir, explicit_file=requirements_file)
+        if explicit_requirements_file:
+            p = Path(explicit_requirements_file)
+            if not p.exists():
+                raise FileNotFoundError(f"Explicit dependency file not found: {p}")
+            deps.file = p.name
+            deps.install_path = None
 
         # Add logic to avoid duplicate installation
+        # Check for pyproject.toml in the appropriate directory
         has_current_package = False
-        if (output_dir / "pyproject.toml").exists():
+        check_dir = Path(source_path) if source_path else output_dir
+        if (check_dir / "pyproject.toml").exists():
             # Only install current package if deps isn't already pointing to it
             if not (deps.found and deps.is_root_package):
                 has_current_package = True
@@ -164,6 +210,9 @@ class ContainerRuntime:
             "aws_region": aws_region,
             "system_packages": [],
             "observability_enabled": enable_observability,
+            "memory_id": memory_id,
+            "memory_name": memory_name,
+            "protocol": protocol or "HTTP",
         }
 
         dockerfile_path = output_dir / "Dockerfile"
@@ -177,12 +226,13 @@ class ContainerRuntime:
             template_path = Path(__file__).parent / "templates" / "dockerignore.template"
             if template_path.exists():
                 dockerignore_path.write_text(template_path.read_text())
-                log.info("Generated .dockerignore")
+                log.debug("Generated .dockerignore")
 
     def _validate_module_path(self, agent_path: Path, project_root: Path) -> None:
         """Validate that the agent path can be converted to a valid Python module path."""
         try:
             agent_path = agent_path.resolve()
+            project_root = project_root.resolve()
             relative_path = agent_path.relative_to(project_root)
             for part in relative_path.parts[:-1]:  # Check all directory parts
                 if "-" in part:
@@ -200,6 +250,7 @@ class ContainerRuntime:
         """Get the Python module path for the agent file."""
         try:
             agent_path = agent_path.resolve()
+            project_root = project_root.resolve()
             # Get relative path from project root
             relative_path = agent_path.relative_to(project_root)
             # Convert to module path (e.g., src/agents/my_agent.py -> src.agents.my_agent)
@@ -223,27 +274,52 @@ class ContainerRuntime:
         arch = arch_map.get(machine, machine)
         return f"linux/{arch}"
 
-    def build(self, dockerfile_dir: Path, tag: str, platform: Optional[str] = None) -> Tuple[bool, List[str]]:
-        """Build container image."""
+    def build(
+        self,
+        build_context: Path,
+        tag: str,
+        dockerfile_path: Optional[Path] = None,
+        platform: Optional[str] = None,
+    ) -> Tuple[bool, List[str]]:
+        """Build container image.
+
+        Args:
+            build_context: Directory to use as build context
+            tag: Tag for the built image
+            dockerfile_path: Optional path to Dockerfile (if not in build_context)
+            platform: Optional platform override
+        """
         if not self.has_local_runtime:
             return False, [
                 "No container runtime available for local build",
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud",
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment",
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment",
                 "💡 For local builds, please install Docker, Finch, or Podman",
             ]
 
-        if not dockerfile_dir.exists():
-            return False, [f"Directory not found: {dockerfile_dir}"]
+        if not build_context.exists():
+            return False, [f"Build context directory not found: {build_context}"]
 
-        dockerfile_path = dockerfile_dir / "Dockerfile"
-        if not dockerfile_path.exists():
-            return False, [f"Dockerfile not found in {dockerfile_dir}"]
+        # Determine Dockerfile location
+        if dockerfile_path:
+            # Use provided Dockerfile path
+            if not dockerfile_path.exists():
+                return False, [f"Dockerfile not found: {dockerfile_path}"]
+        else:
+            # Look for Dockerfile in build context
+            dockerfile_path = build_context / "Dockerfile"
+            if not dockerfile_path.exists():
+                return False, [f"Dockerfile not found in {build_context}"]
 
         cmd = [self.runtime, "build", "-t", tag]
+
+        # Use -f flag if Dockerfile is not in the build context
+        if dockerfile_path.parent != build_context:
+            cmd.extend(["-f", str(dockerfile_path)])
+
         build_platform = platform or self.DEFAULT_PLATFORM
         cmd.extend(["--platform", build_platform])
-        cmd.append(str(dockerfile_dir))
+        cmd.append(str(build_context))
 
         return self._execute_command(cmd)
 
@@ -259,7 +335,7 @@ class ContainerRuntime:
             raise RuntimeError(
                 "No container runtime available for local run\n"
                 "💡 Recommendation: Use CodeBuild for building containers in the cloud\n"
-                "💡 Run 'agentcore launch' (default) for CodeBuild deployment\n"
+                "💡 Run 'agentcore deploy' (default) for CodeBuild deployment\n"
                 "💡 For local runs, please install Docker, Finch, or Podman"
             )
 

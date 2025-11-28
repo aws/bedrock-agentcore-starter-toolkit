@@ -1,0 +1,56 @@
+default_agent: bootstrap_agent
+agents:
+  bootstrap_agent:
+    name: bootstrap_agent
+    entrypoint: .
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: docker
+    source_path: .
+    aws:
+      execution_role: null
+      execution_role_auto_create: true
+      account: '111122223333'
+      region: us-east-1
+      ecr_repository: null
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: null
+      agent_arn: null
+      agent_session_id: null
+    codebuild:
+      project_name: null
+      execution_role: null
+      source_bucket: null
+    memory:
+      mode: STM_AND_LTM
+      memory_id: null
+      memory_arn: null
+      memory_name: bootstrap_agent_memory
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    authorizer_configuration:
+      customJWTAuthorizer:
+        discoveryUrl: https://aws.dev
+        allowedClients:
+        - '12345'
+        - '6789'
+    request_header_configuration:
+      requestHeaderAllowlist:
+      - x-amzn-bedrock
+      - x-amzn-agentcore
+    oauth_configuration: null

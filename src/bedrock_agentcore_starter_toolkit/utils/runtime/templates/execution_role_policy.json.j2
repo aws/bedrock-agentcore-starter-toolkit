@@ -70,10 +70,24 @@
       }
     },
     {
+        "Effect": "Allow",
+        "Action": [
+            "logs:CreateLogGroup",
+            "logs:PutDeliverySource",
+            "logs:PutDeliveryDestination",
+            "logs:CreateDelivery",
+            "logs:GetDeliverySource",
+            "logs:DeleteDeliverySource",
+            "logs:DeleteDeliveryDestination"
+        ],
+        "Resource": "*"
+    },
+    {
       "Sid": "BedrockAgentCoreRuntime",
       "Effect": "Allow",
       "Action": [
-        "bedrock-agentcore:InvokeAgentRuntime"
+        "bedrock-agentcore:InvokeAgentRuntime",
+        "bedrock-agentcore:InvokeAgentRuntimeForUser"
       ],
       "Resource": [
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
@@ -117,7 +131,18 @@
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/apikeycredentialprovider/*",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
+      ]
+    },
+    {
+      "Sid": "BedrockAgentCoreIdentityGetCredentialProviderClientSecret",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/oauth2/*",
+        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/apikey/*"
       ]
     },
     {
@@ -134,19 +159,6 @@
       ]
     },
     {
-      "Sid": "BedrockAgentCoreIdentityGetWorkloadAccessToken",
-      "Effect": "Allow",
-      "Action": [
-        "bedrock-agentcore:GetWorkloadAccessToken",
-        "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-        "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
-      ],
-      "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
-      ]
-    },
-    {
       "Sid": "BedrockModelInvocation",
       "Effect": "Allow",
       "Action": [
@@ -156,7 +168,54 @@
       ],
       "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/*",
         "arn:aws:bedrock:{{ region }}:{{ account_id }}:*"
+      ]
+    },
+    {
+      "Sid": "MarketplaceSubscribeOnFirstCall",
+      "Effect": "Allow",
+      "Action": [
+        "aws-marketplace:ViewSubscriptions",
+        "aws-marketplace:Subscribe"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:CalledViaLast": "bedrock.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "BedrockAgentCoreCodeInterpreter",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateCodeInterpreter",
+        "bedrock-agentcore:StartCodeInterpreterSession",
+        "bedrock-agentcore:InvokeCodeInterpreter",
+        "bedrock-agentcore:StopCodeInterpreterSession",
+        "bedrock-agentcore:DeleteCodeInterpreter",
+        "bedrock-agentcore:ListCodeInterpreters",
+        "bedrock-agentcore:GetCodeInterpreter",
+        "bedrock-agentcore:GetCodeInterpreterSession",
+        "bedrock-agentcore:ListCodeInterpreterSessions"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:{{ region }}:aws:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter/*",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter-custom/*"
+      ]
+    },
+    {
+      "Sid": "BedrockAgentCoreIdentity",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateWorkloadIdentity",
+        "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
       ]
     }
   ]

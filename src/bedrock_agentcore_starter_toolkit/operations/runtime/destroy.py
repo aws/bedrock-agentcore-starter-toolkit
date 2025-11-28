@@ -7,9 +7,11 @@ from typing import Optional
 import boto3
 from botocore.exceptions import ClientError
 
+from ...operations.memory.manager import MemoryManager
 from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
+from .exceptions import RuntimeToolkitException
 from .models import DestroyResult
 
 log = logging.getLogger(__name__)
@@ -71,19 +73,45 @@ def destroy_bedrock_agentcore(
         # 2. Destroy Bedrock AgentCore agent
         _destroy_agentcore_agent(session, agent_config, result, dry_run)
 
-        # 3. Remove ECR images and optionally the repository
-        _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
+        # 3. Remove ECR images and optionally the repository (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_ecr_images(session, agent_config, result, dry_run, delete_ecr_repo)
 
-        # 4. Remove CodeBuild project
-        _destroy_codebuild_project(session, agent_config, result, dry_run)
+        # 4. Remove CodeBuild project (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_codebuild_project(session, agent_config, result, dry_run)
+        else:
+            log.info("Skipping CodeBuild cleanup for direct_code_deploy deployment")
 
-        # 5. Remove CodeBuild IAM Role
-        _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
+        # 4.5. Remove S3 deployment artifacts
+        _destroy_s3_artifacts(session, agent_config, result, dry_run)
 
-        # 6. Remove IAM execution role (if not used by other agents)
+        # 5. Remove memory resource
+        if agent_config.memory and agent_config.memory.memory_id and agent_config.memory.mode != "NO_MEMORY":
+            if agent_config.memory.was_created_by_toolkit:
+                # Memory was created by toolkit during configure/launch - delete it
+                _destroy_memory(session, agent_config, result, dry_run)
+                if not dry_run:
+                    log.info("Deleted memory (was created by toolkit): %s", agent_config.memory.memory_id)
+            else:
+                # Memory was pre-existing - preserve it
+                result.warnings.append(f"Memory {agent_config.memory.memory_id} preserved (was pre-existing)")
+                log.info("Preserving pre-existing memory: %s", agent_config.memory.memory_id)
+
+        # 6. Remove CodeBuild IAM Role (only for container deployments)
+        if agent_config.deployment_type == "container":
+            _destroy_codebuild_iam_role(session, agent_config, result, dry_run)
+        else:
+            log.info("Skipping CodeBuild IAM role cleanup for direct_code_deploy deployment")
+
+        # 7. Remove IAM execution role (if not used by other agents)
         _destroy_iam_role(session, project_config, agent_config, result, dry_run)
 
-        # 7. Clean up configuration
+        # 8. Destroy API Key Credential Provider created by agentcore create
+        if agent_config.api_key_credential_provider_name:
+            _destroy_api_key_credential_provider(session, agent_config, result, dry_run)
+
+        # 9. Clean up configuration
         if not dry_run and not result.errors:
             _cleanup_agent_config(config_path, project_config, agent_config.name, result)
 
@@ -98,7 +126,7 @@ def destroy_bedrock_agentcore(
 
     except Exception as e:
         log.error("Destroy operation failed: %s", str(e))
-        raise RuntimeError(f"Destroy operation failed: {e}") from e
+        raise RuntimeToolkitException(f"Destroy operation failed: {e}") from e
 
 
 def _destroy_agentcore_endpoint(
@@ -125,10 +153,9 @@ def _destroy_agentcore_endpoint(
             endpoint_name = endpoint_response.get("name", "DEFAULT")
             endpoint_arn = endpoint_response.get("agentRuntimeEndpointArn")
 
-            # Special case: DEFAULT endpoint cannot be explicitly deleted
+            # DEFAULT endpoint is automatically deleted when agent is deleted
             if endpoint_name == "DEFAULT":
-                result.warnings.append("DEFAULT endpoint cannot be explicitly deleted, skipping")
-                log.info("Skipping deletion of DEFAULT endpoint")
+                log.info("DEFAULT endpoint will be automatically deleted with agent")
                 return
 
             if dry_run:
@@ -142,7 +169,13 @@ def _destroy_agentcore_endpoint(
                     result.resources_removed.append(f"AgentCore endpoint: {endpoint_arn}")
                     log.info("Deleted AgentCore endpoint: %s", endpoint_arn)
                 except ClientError as delete_error:
-                    if delete_error.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
+                    error_code = delete_error.response["Error"]["Code"]
+
+                    # Handle ConflictException for DEFAULT endpoint gracefully
+                    if error_code == "ConflictException":
+                        log.info("DEFAULT endpoint will be automatically deleted with agent")
+                        return
+                    elif error_code not in ["ResourceNotFoundException", "NotFound"]:
                         result.errors.append(f"Failed to delete endpoint {endpoint_arn}: {delete_error}")
                         log.error("Failed to delete endpoint: %s", delete_error)
                     else:
@@ -160,6 +193,54 @@ def _destroy_agentcore_endpoint(
     except Exception as e:
         result.warnings.append(f"Error during endpoint destruction: {e}")
         log.warning("Error during endpoint destruction: %s", e)
+
+
+def _destroy_api_key_credential_provider(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Destroy Bedrock AgentCore Identity API Key Credential Provider."""
+    if not agent_config.api_key_credential_provider_name:
+        return
+
+    try:
+        client = BedrockAgentCoreClient(agent_config.aws.region)
+
+        if dry_run:
+            result.resources_removed.append(
+                f"AgentCore Identity API Key Credential Provider: {agent_config.api_key_credential_provider_name} "
+                f"(DRY RUN)"
+            )
+            return
+
+        try:
+            client.delete_api_key_credential_provider(agent_config.api_key_credential_provider_name)
+            result.resources_removed.append(
+                f"AgentCore Identity API Key Credential Provider: {agent_config.api_key_credential_provider_name}"
+            )
+            log.info(
+                "AgentCore Identity API Key Credential Provider: %s", agent_config.api_key_credential_provider_name
+            )
+        except ClientError as delete_error:
+            error_code = delete_error.response["Error"]["Code"]
+            if error_code not in ["ResourceNotFoundException", "NotFound"]:
+                result.errors.append(
+                    f"Failed to delete Identity API Key Credential Provider "
+                    f"{agent_config.api_key_credential_provider_name}: {delete_error}"
+                )
+                log.error(
+                    "Failed to delete AgentCore Identity API Key Credential Provider: %s",
+                    agent_config.api_key_credential_provider_name,
+                )
+            else:
+                result.warnings.append(
+                    "AgentCore Identity API Key Credential Provider not found or already deleted during deletion"
+                )
+    except Exception as e:
+        result.warnings.append(f"Error during AgentCore Identity API Key Credential Provider destruction: {e}")
+        log.warning("Error during AgentCore Identity API Key Credential Provider destruction: %s", e)
 
 
 def _destroy_agentcore_agent(
@@ -364,7 +445,9 @@ def _destroy_codebuild_project(
     """Remove CodeBuild project for this agent."""
     try:
         codebuild_client = session.client("codebuild", region_name=agent_config.aws.region)
-        project_name = f"bedrock-agentcore-{agent_config.name}-builder"
+        from ...services.ecr import sanitize_ecr_repo_name
+
+        project_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_config.name)}-builder"
 
         if dry_run:
             result.resources_removed.append(f"CodeBuild project: {project_name} (DRY RUN)")
@@ -384,6 +467,92 @@ def _destroy_codebuild_project(
     except Exception as e:
         result.warnings.append(f"Error during CodeBuild cleanup: {e}")
         log.warning("Error during CodeBuild cleanup: %s", e)
+
+
+def _destroy_s3_artifacts(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Remove S3 deployment artifacts (both direct_code_deploy and container artifacts)."""
+    try:
+        s3_client = session.client("s3", region_name=agent_config.aws.region)
+
+        # Get bucket name from either CodeBuild config or AWS config (for direct_code_deploy)
+        bucket = None
+        if agent_config.codebuild and agent_config.codebuild.source_bucket:
+            bucket = agent_config.codebuild.source_bucket
+        elif agent_config.aws.s3_path:
+            # Extract bucket from s3://bucket-name format
+            bucket = agent_config.aws.s3_path.replace("s3://", "").split("/")[0]
+
+        if not bucket:
+            # No bucket configured, nothing to clean up
+            return
+        agent_name = agent_config.name
+        account_id = agent_config.aws.account
+
+        # Always try to delete both artifact types (idempotent - no error if not found)
+        # User might have switched between deployment types
+        artifacts_to_delete = [
+            f"{agent_name}/deployment.zip",  # direct_code_deploy artifact
+            f"{agent_name}/source.zip",  # container artifact
+        ]
+
+        for s3_key in artifacts_to_delete:
+            if dry_run:
+                result.resources_removed.append(f"S3 artifact: s3://{bucket}/{s3_key} (DRY RUN)")
+            else:
+                try:
+                    s3_client.delete_object(Bucket=bucket, Key=s3_key, ExpectedBucketOwner=account_id)
+                    result.resources_removed.append(f"S3 artifact: s3://{bucket}/{s3_key}")
+                    log.info("Deleted S3 artifact: %s", s3_key)
+                except ClientError as e:
+                    # NoSuchKey is expected if artifact doesn't exist - silently skip
+                    if e.response["Error"]["Code"] not in ["NoSuchKey", "NoSuchBucket"]:
+                        result.warnings.append(f"Failed to delete S3 artifact {s3_key}: {e}")
+                        log.warning("Failed to delete S3 artifact %s: %s", s3_key, e)
+
+    except Exception as e:
+        result.warnings.append(f"Error during S3 artifact cleanup: {e}")
+        log.warning("Error during S3 artifact cleanup: %s", e)
+
+
+def _destroy_memory(
+    session: boto3.Session,
+    agent_config: BedrockAgentCoreAgentSchema,
+    result: DestroyResult,
+    dry_run: bool,
+) -> None:
+    """Remove memory resource for this agent."""
+    if not agent_config.memory or not agent_config.memory.memory_id:
+        result.warnings.append("No memory configured, skipping memory cleanup")
+        return
+
+    try:
+        memory_manager = MemoryManager(region_name=agent_config.aws.region)
+        memory_id = agent_config.memory.memory_id
+
+        if dry_run:
+            result.resources_removed.append(f"Memory: {memory_id} (DRY RUN)")
+            return
+
+        try:
+            # Use the manager's delete method which handles the deletion properly
+            memory_manager.delete_memory(memory_id=memory_id)
+            result.resources_removed.append(f"Memory: {memory_id}")
+            log.info("Deleted memory: %s", memory_id)
+        except ClientError as e:
+            if e.response["Error"]["Code"] not in ["ResourceNotFoundException", "NotFound"]:
+                result.warnings.append(f"Failed to delete memory {memory_id}: {e}")
+                log.warning("Failed to delete memory: %s", e)
+            else:
+                result.warnings.append(f"Memory {memory_id} not found (may have been deleted already)")
+
+    except Exception as e:
+        result.warnings.append(f"Error during memory cleanup: {e}")
+        log.warning("Error during memory cleanup: %s", e)
 
 
 def _destroy_codebuild_iam_role(

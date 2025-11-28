@@ -1,28 +1,183 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class NetworkModeConfig(BaseModel):
+    """Network mode configuration for VPC deployments."""
+
+    security_groups: List[str] = Field(default_factory=list, description="List of security group IDs")
+    subnets: List[str] = Field(default_factory=list, description="List of subnet IDs")
+
+
+class MemoryConfig(BaseModel):
+    """Memory configuration for BedrockAgentCore."""
+
+    mode: Literal["STM_ONLY", "STM_AND_LTM", "NO_MEMORY"] = Field(
+        default="NO_MEMORY", description="Memory mode - opt-in feature"
+    )
+    memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
+    memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
+    memory_name: Optional[str] = Field(default=None, description="Memory name")
+    event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
+    first_invoke_memory_check_done: bool = Field(
+        default=False, description="Whether first invoke memory check has been performed"
+    )
+    was_created_by_toolkit: bool = Field(
+        default=False, description="Whether memory was created by toolkit (vs reused existing)"
+    )
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if memory is enabled."""
+        return self.mode != "NO_MEMORY"
+
+    @property
+    def has_ltm(self) -> bool:
+        """Check if LTM is enabled."""
+        return self.mode == "STM_AND_LTM"
+
+
+class CredentialProviderInfo(BaseModel):
+    """Information about a credential provider."""
+
+    name: str = Field(..., description="Credential provider name")
+    arn: str = Field(..., description="Credential provider ARN")
+    type: str = Field(..., description="Provider type (cognito, github, google, salesforce, custom-oauth2)")
+    callback_url: str = Field(default="", description="AgentCore callback URL for OAuth 3LO")
+
+
+class WorkloadIdentityInfo(BaseModel):
+    """Information about workload identity."""
+
+    name: str = Field(..., description="Workload identity name")
+    arn: str = Field(..., description="Workload identity ARN")
+    return_urls: List[str] = Field(
+        default_factory=list,
+        description="Application return URLs where AgentCore redirects users for session binding verification",
+    )
+
+
+class IdentityConfig(BaseModel):
+    """Identity service configuration for outbound authentication."""
+
+    credential_providers: List[CredentialProviderInfo] = Field(
+        default_factory=list, description="List of configured credential providers"
+    )
+    workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
+
+    @property
+    def is_enabled(self) -> bool:
+        """Check if Identity is enabled (has providers configured)."""
+        return len(self.credential_providers) > 0
+
+    @property
+    def provider_names(self) -> List[str]:
+        """Get list of provider names."""
+        return [p.name for p in self.credential_providers]
 
 
 class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
     network_mode: str = Field(default="PUBLIC", description="Network mode for deployment")
+    network_mode_config: Optional[NetworkModeConfig] = Field(
+        default=None, description="Network mode configuration (required for VPC mode)"
+    )
+
+    @field_validator("network_mode")
+    @classmethod
+    def validate_network_mode(cls, v: str) -> str:
+        """Validate network mode and ensure VPC config is provided when needed."""
+        valid_modes = ["PUBLIC", "VPC"]
+        if v not in valid_modes:
+            raise ValueError(f"Invalid network_mode: {v}. Must be one of {valid_modes}")
+        return v
+
+    @field_validator("network_mode_config")
+    @classmethod
+    def validate_network_mode_config(cls, v: Optional[NetworkModeConfig], info) -> Optional[NetworkModeConfig]:
+        """Validate that network_mode_config is provided when network_mode is VPC."""
+        if info.data.get("network_mode") == "VPC" and v is None:
+            raise ValueError("network_mode_config is required when network_mode is VPC")
+        return v
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
-        return {"networkMode": self.network_mode}
+        result = {"networkMode": self.network_mode}
+
+        if self.network_mode_config:
+            result["networkModeConfig"] = {
+                "securityGroups": self.network_mode_config.security_groups,
+                "subnets": self.network_mode_config.subnets,
+            }
+
+        return result
 
 
 class ProtocolConfiguration(BaseModel):
     """Protocol configuration for BedrockAgentCore deployment."""
 
-    server_protocol: str = Field(default="HTTP", description="Server protocol for deployment, either HTTP or MCP")
+    server_protocol: str = Field(
+        default="HTTP", description="Server protocol for deployment, either HTTP or MCP or A2A"
+    )
+
+    @field_validator("server_protocol")
+    @classmethod
+    def validate_protocol(cls, v: str) -> str:
+        """Validate protocol is one of the supported types."""
+        allowed = ["HTTP", "MCP", "A2A"]
+        if v.upper() not in allowed:
+            raise ValueError(f"Protocol must be one of {allowed}, got: {v}")
+        return v.upper()
 
     def to_aws_dict(self) -> dict:
         """Convert to AWS API format with camelCase keys."""
         return {"serverProtocol": self.server_protocol}
+
+
+class LifecycleConfiguration(BaseModel):
+    """Lifecycle configuration for runtime sessions."""
+
+    idle_runtime_session_timeout: Optional[int] = Field(
+        default=None,
+        description="Timeout in seconds for idle runtime sessions (60-28800)",
+        ge=60,
+        le=28800,
+    )
+    max_lifetime: Optional[int] = Field(
+        default=None, description="Maximum lifetime for the instance in seconds (60-28800)", ge=60, le=28800
+    )
+
+    @field_validator("max_lifetime")
+    @classmethod
+    def validate_lifecycle_relationship(cls, v: Optional[int], info) -> Optional[int]:
+        """Validate that max_lifetime >= idle_timeout if both are set."""
+        if v is None:
+            return v
+
+        idle = info.data.get("idle_runtime_session_timeout")
+        if idle is not None and v < idle:
+            raise ValueError(
+                f"max_lifetime ({v}s) must be greater than or equal to idle_runtime_session_timeout ({idle}s)"
+            )
+        return v
+
+    def to_aws_dict(self) -> dict:
+        """Convert to AWS API format with camelCase keys."""
+        result = {}
+        if self.idle_runtime_session_timeout is not None:
+            result["idleRuntimeSessionTimeout"] = self.idle_runtime_session_timeout
+        if self.max_lifetime is not None:
+            result["maxLifetime"] = self.max_lifetime
+        return result
+
+    @property
+    def has_custom_settings(self) -> bool:
+        """Check if any custom lifecycle settings are configured."""
+        return self.idle_runtime_session_timeout is not None or self.max_lifetime is not None
 
 
 class ObservabilityConfig(BaseModel):
@@ -40,9 +195,12 @@ class AWSConfig(BaseModel):
     region: Optional[str] = Field(default=None, description="AWS region")
     ecr_repository: Optional[str] = Field(default=None, description="ECR repository URI")
     ecr_auto_create: bool = Field(default=False, description="Whether to auto-create ECR repository")
+    s3_path: Optional[str] = Field(default=None, description="S3 URI for code deployment")
+    s3_auto_create: bool = Field(default=False, description="Whether to auto-create S3 bucket")
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
+    lifecycle_configuration: LifecycleConfiguration = Field(default_factory=LifecycleConfiguration)
 
     @field_validator("account")
     @classmethod
@@ -74,15 +232,36 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     """Type-safe schema for BedrockAgentCore configuration."""
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
-    entrypoint: str = Field(..., description="Entrypoint file path")
-    platform: str = Field(default="linux/amd64", description="Target platform")
-    container_runtime: str = Field(default="docker", description="Container runtime to use")
+    entrypoint: str = Field(..., description="Entrypoint file path (e.g., 'agent.py' or 'agent.py:handler')")
+    deployment_type: Literal["container", "direct_code_deploy"] = Field(
+        default="container", description="Deployment artifact type: container (Docker) or direct_code_deploy"
+    )
+    runtime_type: Optional[str] = Field(
+        default=None, description="Managed runtime version for direct_code_deploy (e.g., 'PYTHON_3_10', 'PYTHON_3_11')"
+    )
+    platform: str = Field(default="linux/amd64", description="Target platform (for container deployments)")
+    container_runtime: Optional[str] = Field(
+        default=None, description="Container runtime to use (for container deployments)"
+    )
+    source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
+    memory: MemoryConfig = Field(default_factory=MemoryConfig)
+    identity: IdentityConfig = Field(default_factory=IdentityConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
+    api_key_env_var_name: Optional[str] = Field(
+        default=None,
+        description="Environment variable name for API key (e.g., 'OPENAI_API_KEY' for non-Bedrock providers)",
+    )
+    api_key_credential_provider_name: Optional[str] = Field(
+        default=None, description="Name of the API Key Credential Provider created in AgentCore Identity"
+    )
+    is_generated_by_agentcore_create: Optional[bool] = Field(
+        default=False, description="True if the agent is created with agentcore create"
+    )
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
@@ -114,6 +293,8 @@ class BedrockAgentCoreAgentSchema(BaseModel):
             if not self.aws.account:
                 errors.append("Missing 'aws.account' for cloud deployment")
 
+            # Code zip specific validation (runtime_type is optional, will default to PYTHON_3_11)
+
         return errors
 
 
@@ -124,6 +305,9 @@ class BedrockAgentCoreConfigSchema(BaseModel):
     """
 
     default_agent: Optional[str] = Field(default=None, description="Default agent name for operations")
+    is_agentcore_create_with_iac: Optional[bool] = Field(
+        default=False
+    )  # will only be provided by projects created from agentcore create
     agents: Dict[str, BedrockAgentCoreAgentSchema] = Field(
         default_factory=dict, description="Named agent configurations"
     )

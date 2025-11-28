@@ -1,0 +1,894 @@
+[
+  {
+    "timestamp": "2025-11-20 06:22:17.373",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619737373346448,
+      "observedTimeUnixNano": 1763619737373361809,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "calculate currentv time in difefrent formats using code interoprter  "
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.user.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "b480f86e7a557277"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.069",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619739069023318,
+      "observedTimeUnixNano": 1763619739069041976,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "message": {
+          "tool_calls": [
+            {
+              "type": "function",
+              "id": "tooluse_8JNfu7pISWq3NaUcG5cVOQ",
+              "function": {
+                "name": "calculator",
+                "arguments": {
+                  "expression": "1"
+                }
+              }
+            }
+          ],
+          "role": "assistant"
+        },
+        "index": 0,
+        "finish_reason": "tool_use"
+      },
+      "attributes": {
+        "event.name": "gen_ai.choice",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "b480f86e7a557277"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.075",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619739075169107,
+      "observedTimeUnixNano": 1763619741914907898,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": \"tools\", \"kwargs\": {\"tags\": [\"seq:step:3\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}]}, \"tags\": [\"seq:step:3\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:717fcce7-e644-96d3-1fe5-3374248d941e\"}, \"kwargs\": {\"name\": \"tools_condition\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "8bb61cd4d5d99a20"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.075",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619739075337011,
+      "observedTimeUnixNano": 1763619741915051769,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "input": {
+          "messages": [
+            {
+              "content": "calculate currentv time in difefrent formats using code interoprter  ",
+              "role": "unknown"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "3009ff40a27fef4a"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.075",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619739075347029,
+      "observedTimeUnixNano": 1763619741915161899,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": [\"graph:step:1\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}]}, \"tags\": [\"graph:step:1\"], \"metadata\": {\"langgraph_step\": 1, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:717fcce7-e644-96d3-1fe5-3374248d941e\"}, \"kwargs\": {\"name\": \"chatbot\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "5bf99cdd8346d3f7"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.078",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619739078663220,
+      "observedTimeUnixNano": 1763619741915232573,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"output\": {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"ToolMessage\"], \"kwargs\": {\"content\": \"1\", \"type\": \"tool\", \"name\": \"calculator\", \"tool_call_id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"status\": \"success\"}}, \"kwargs\": {\"tags\": [\"seq:step:1\"], \"color\": \"green\", \"name\": \"calculator\"}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"input_str\": \"{'expression': '1'}\", \"tags\": [\"seq:step:1\"], \"metadata\": {\"langgraph_step\": 2, \"langgraph_node\": \"tools\", \"langgraph_triggers\": [\"branch:to:tools\"], \"langgraph_path\": [\"__pregel_pull\", \"tools\"], \"langgraph_checkpoint_ns\": \"tools:469b4516-8f12-427f-739a-d3132abdbfe2\", \"checkpoint_ns\": \"tools:469b4516-8f12-427f-739a-d3132abdbfe2\"}, \"inputs\": {\"expression\": \"1\"}, \"kwargs\": {\"color\": \"green\", \"name\": null}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "68a26f181f94af84"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.078",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619739078941668,
+      "observedTimeUnixNano": 1763619741915293792,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"ToolMessage\"], \"kwargs\": {\"content\": \"1\", \"type\": \"tool\", \"name\": \"calculator\", \"tool_call_id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"status\": \"success\"}}]}, \"kwargs\": {\"tags\": [\"graph:step:2\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}]}, \"tags\": [\"graph:step:2\"], \"metadata\": {\"langgraph_step\": 2, \"langgraph_node\": \"tools\", \"langgraph_triggers\": [\"branch:to:tools\"], \"langgraph_path\": [\"__pregel_pull\", \"tools\"], \"langgraph_checkpoint_ns\": \"tools:469b4516-8f12-427f-739a-d3132abdbfe2\"}, \"kwargs\": {\"name\": \"tools\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "0bbfc5213cea0130"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.080",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619739080967208,
+      "observedTimeUnixNano": 1763619739080982027,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "calculate currentv time in difefrent formats using code interoprter  "
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.user.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "45db936e8d0b3f1d"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619739081008025,
+      "observedTimeUnixNano": 1763619739081015849,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:"
+          },
+          {
+            "toolUse": {
+              "name": "calculator",
+              "toolUseId": "tooluse_8JNfu7pISWq3NaUcG5cVOQ",
+              "input": {
+                "expression": "1"
+              }
+            }
+          }
+        ],
+        "tool_calls": [
+          {
+            "type": "function",
+            "id": "tooluse_8JNfu7pISWq3NaUcG5cVOQ",
+            "function": {
+              "name": "calculator",
+              "arguments": {
+                "expression": "1"
+              }
+            }
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.assistant.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "45db936e8d0b3f1d"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619739081026824,
+      "observedTimeUnixNano": 1763619739081033633,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "text": "1"
+          }
+        ],
+        "id": "tooluse_8JNfu7pISWq3NaUcG5cVOQ"
+      },
+      "attributes": {
+        "event.name": "gen_ai.tool.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "45db936e8d0b3f1d"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:19.081",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619739081040732,
+      "observedTimeUnixNano": 1763619739081047194,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "content": [
+          {
+            "toolResult": {
+              "toolUseId": "tooluse_8JNfu7pISWq3NaUcG5cVOQ",
+              "content": [
+                {
+                  "text": "1"
+                }
+              ],
+              "status": "success"
+            }
+          }
+        ]
+      },
+      "attributes": {
+        "event.name": "gen_ai.user.message",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "45db936e8d0b3f1d"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.738",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.botocore.bedrock-runtime",
+        "schemaUrl": "https://opentelemetry.io/schemas/1.30.0"
+      },
+      "timeUnixNano": 1763619746738720231,
+      "observedTimeUnixNano": 1763619746738739177,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "message": {
+          "content": [
+            {
+              "text": "Here's a comprehensive Python script to show current time in multiple formats:\n\n```python\nfrom datetime import datetime\nimport pytz\n\n# Get current time\ncurrent_time = datetime.now()\n\n# Different time formats\nformats = {\n    \"Standard 12-hour\": current_time.strftime(\"%I:%M %p\"),\n    \"24-hour\": current_time.strftime(\"%H:%M\"),\n    \"Full Date and Time\": current_time.strftime(\"%Y-%m-%d %H:%M:%S\"),\n    \"Day, Date, Time\": current_time.strftime(\"%A, %B %d, %Y %I:%M %p\"),\n    \"ISO Format\": current_time.isoformat(),\n    \"Unix Timestamp\": current_time.timestamp()\n}\n\n# Timezone variations\ntimezones = {\n    \"UTC\": datetime.now(pytz.UTC).strftime(\"%Y-%m-%d %H:%M:%S %Z\"),\n    \"New York\": datetime.now(pytz.timezone('America/New_York')).strftime(\"%Y-%m-%d %H:%M:%S %Z\"),\n    \"Tokyo\": datetime.now(pytz.timezone('Asia/Tokyo')).strftime(\"%Y-%m-%d %H:%M:%S %Z\"),\n    \"London\": datetime.now(pytz.timezone('Europe/London')).strftime(\"%Y-%m-%d %H:%M:%S %Z\")\n}\n\n# Print results\nprint(\"Time Formats:\")\nfor name, time_format in formats.items():\n    print(f\"{name}: {time_format}\")\n\nprint(\"\\nTimezone Times:\")\nfor zone, time_str in timezones.items():\n    print(f\"{zone}: {time_str}\")\n```\n\nThis script demonstrates:\n1. Standard time formats (12-hour, 24-hour)\n2. Full date and time representations\n3. ISO format\n4. Unix timestamp\n5. Times in different global timezones\n\nNote: The actual times will vary based on when the code is run. Would you like me to elaborate on any of these time formats or explain the code in more detail?"
+            }
+          ],
+          "role": "assistant"
+        },
+        "index": 0,
+        "finish_reason": "end_turn"
+      },
+      "attributes": {
+        "event.name": "gen_ai.choice",
+        "gen_ai.system": "aws.bedrock"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "45db936e8d0b3f1d"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.744",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619746744190857,
+      "observedTimeUnixNano": 1763619746914539980,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": \"__end__\", \"kwargs\": {\"tags\": [\"seq:step:3\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"ToolMessage\"], \"kwargs\": {\"content\": \"1\", \"type\": \"tool\", \"name\": \"calculator\", \"id\": \"4c63130a-5c3f-440c-bef0-d899211cb289\", \"tool_call_id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"status\": \"success\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Here's a comprehensive Python script to show current time in multiple formats:\\n\\n```python\\nfrom datetime import datetime\\nimport pytz\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Different time formats\\nformats = {\\n    \\\"Standard 12-hour\\\": current_time.strftime(\\\"%I:%M %p\\\"),\\n    \\\"24-hour\\\": current_time.strftime(\\\"%H:%M\\\"),\\n    \\\"Full Date and Time\\\": current_time.strftime(\\\"%Y-%m-%d %H:%M:%S\\\"),\\n    \\\"Day, Date, Time\\\": current_time.strftime(\\\"%A, %B %d, %Y %I:%M %p\\\"),\\n    \\\"ISO Format\\\": current_time.isoformat(),\\n    \\\"Unix Timestamp\\\": current_time.timestamp()\\n}\\n\\n# Timezone variations\\ntimezones = {\\n    \\\"UTC\\\": datetime.now(pytz.UTC).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"New York\\\": datetime.now(pytz.timezone('America/New_York')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"Tokyo\\\": datetime.now(pytz.timezone('Asia/Tokyo')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"London\\\": datetime.now(pytz.timezone('Europe/London')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\")\\n}\\n\\n# Print results\\nprint(\\\"Time Formats:\\\")\\nfor name, time_format in formats.items():\\n    print(f\\\"{name}: {time_format}\\\")\\n\\nprint(\\\"\\\\nTimezone Times:\\\")\\nfor zone, time_str in timezones.items():\\n    print(f\\\"{zone}: {time_str}\\\")\\n```\\n\\nThis script demonstrates:\\n1. Standard time formats (12-hour, 24-hour)\\n2. Full date and time representations\\n3. ISO format\\n4. Unix timestamp\\n5. Times in different global timezones\\n\\nNote: The actual times will vary based on when the code is run. Would you like me to elaborate on any of these time formats or explain the code in more detail?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:26 GMT\", \"content-type\": \"application/json\", \"content-length\": \"1916\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [7650]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--3cfdbd2a-805f-4a6a-9d6d-b8ccfcffb4e0-0\", \"usage_metadata\": {\"input_tokens\": 438, \"output_tokens\": 494, \"total_tokens\": 932, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"tags\": [\"seq:step:3\"], \"metadata\": {\"langgraph_step\": 3, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:b2a89b0a-b4f0-f0f1-ba9b-f645fa7385b8\"}, \"kwargs\": {\"name\": \"tools_condition\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "76e1c0dd9f2f9a7e"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.744",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619746744301102,
+      "observedTimeUnixNano": 1763619746914685624,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "input": {
+          "messages": [
+            {
+              "content": "calculate currentv time in difefrent formats using code interoprter  ",
+              "role": "unknown"
+            },
+            {
+              "content": "[{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}]",
+              "role": "unknown"
+            },
+            {
+              "content": "1",
+              "role": "unknown"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "4b5ba8307bfd92f0"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.744",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619746744309969,
+      "observedTimeUnixNano": 1763619746914801033,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Here's a comprehensive Python script to show current time in multiple formats:\\n\\n```python\\nfrom datetime import datetime\\nimport pytz\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Different time formats\\nformats = {\\n    \\\"Standard 12-hour\\\": current_time.strftime(\\\"%I:%M %p\\\"),\\n    \\\"24-hour\\\": current_time.strftime(\\\"%H:%M\\\"),\\n    \\\"Full Date and Time\\\": current_time.strftime(\\\"%Y-%m-%d %H:%M:%S\\\"),\\n    \\\"Day, Date, Time\\\": current_time.strftime(\\\"%A, %B %d, %Y %I:%M %p\\\"),\\n    \\\"ISO Format\\\": current_time.isoformat(),\\n    \\\"Unix Timestamp\\\": current_time.timestamp()\\n}\\n\\n# Timezone variations\\ntimezones = {\\n    \\\"UTC\\\": datetime.now(pytz.UTC).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"New York\\\": datetime.now(pytz.timezone('America/New_York')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"Tokyo\\\": datetime.now(pytz.timezone('Asia/Tokyo')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"London\\\": datetime.now(pytz.timezone('Europe/London')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\")\\n}\\n\\n# Print results\\nprint(\\\"Time Formats:\\\")\\nfor name, time_format in formats.items():\\n    print(f\\\"{name}: {time_format}\\\")\\n\\nprint(\\\"\\\\nTimezone Times:\\\")\\nfor zone, time_str in timezones.items():\\n    print(f\\\"{zone}: {time_str}\\\")\\n```\\n\\nThis script demonstrates:\\n1. Standard time formats (12-hour, 24-hour)\\n2. Full date and time representations\\n3. ISO format\\n4. Unix timestamp\\n5. Times in different global timezones\\n\\nNote: The actual times will vary based on when the code is run. Would you like me to elaborate on any of these time formats or explain the code in more detail?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:26 GMT\", \"content-type\": \"application/json\", \"content-length\": \"1916\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [7650]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--3cfdbd2a-805f-4a6a-9d6d-b8ccfcffb4e0-0\", \"usage_metadata\": {\"input_tokens\": 438, \"output_tokens\": 494, \"total_tokens\": 932, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": [\"graph:step:3\"]}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"ToolMessage\"], \"kwargs\": {\"content\": \"1\", \"type\": \"tool\", \"name\": \"calculator\", \"id\": \"4c63130a-5c3f-440c-bef0-d899211cb289\", \"tool_call_id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"status\": \"success\"}}]}, \"tags\": [\"graph:step:3\"], \"metadata\": {\"langgraph_step\": 3, \"langgraph_node\": \"chatbot\", \"langgraph_triggers\": [\"branch:to:chatbot\"], \"langgraph_path\": [\"__pregel_pull\", \"chatbot\"], \"langgraph_checkpoint_ns\": \"chatbot:b2a89b0a-b4f0-f0f1-ba9b-f645fa7385b8\"}, \"kwargs\": {\"name\": \"chatbot\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "1580e6058af6b0a0"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.744",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.langchain"
+      },
+      "timeUnixNano": 1763619746744787102,
+      "observedTimeUnixNano": 1763619746914868759,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": "{\"outputs\": {\"messages\": [{\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"HumanMessage\"], \"kwargs\": {\"content\": \"calculate currentv time in difefrent formats using code interoprter  \", \"type\": \"human\", \"id\": \"7fe7ed9a-c4fa-4a02-b8b2-a95cefdc5289\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": [{\"type\": \"text\", \"text\": \"I'll help you calculate the current time in different formats using code. Since we have a calculator tool available, I'll demonstrate various time formatting approaches:\"}, {\"type\": \"tool_use\", \"name\": \"calculator\", \"input\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\"}], \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:19 GMT\", \"content-type\": \"application/json\", \"content-length\": \"608\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"6b2db41d-85a7-4f8c-a08d-86bfea7604cb\"}, \"RetryAttempts\": 0}, \"stopReason\": \"tool_use\", \"metrics\": {\"latencyMs\": [1652]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--d6d324a8-c92c-43f5-a66f-b9e2550ae90f-0\", \"tool_calls\": [{\"name\": \"calculator\", \"args\": {\"expression\": \"1\"}, \"id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"type\": \"tool_call\"}], \"usage_metadata\": {\"input_tokens\": 344, \"output_tokens\": 82, \"total_tokens\": 426, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"invalid_tool_calls\": []}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"ToolMessage\"], \"kwargs\": {\"content\": \"1\", \"type\": \"tool\", \"name\": \"calculator\", \"id\": \"4c63130a-5c3f-440c-bef0-d899211cb289\", \"tool_call_id\": \"tooluse_8JNfu7pISWq3NaUcG5cVOQ\", \"status\": \"success\"}}, {\"lc\": 1, \"type\": \"constructor\", \"id\": [\"langchain\", \"schema\", \"messages\", \"AIMessage\"], \"kwargs\": {\"content\": \"Here's a comprehensive Python script to show current time in multiple formats:\\n\\n```python\\nfrom datetime import datetime\\nimport pytz\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Different time formats\\nformats = {\\n    \\\"Standard 12-hour\\\": current_time.strftime(\\\"%I:%M %p\\\"),\\n    \\\"24-hour\\\": current_time.strftime(\\\"%H:%M\\\"),\\n    \\\"Full Date and Time\\\": current_time.strftime(\\\"%Y-%m-%d %H:%M:%S\\\"),\\n    \\\"Day, Date, Time\\\": current_time.strftime(\\\"%A, %B %d, %Y %I:%M %p\\\"),\\n    \\\"ISO Format\\\": current_time.isoformat(),\\n    \\\"Unix Timestamp\\\": current_time.timestamp()\\n}\\n\\n# Timezone variations\\ntimezones = {\\n    \\\"UTC\\\": datetime.now(pytz.UTC).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"New York\\\": datetime.now(pytz.timezone('America/New_York')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"Tokyo\\\": datetime.now(pytz.timezone('Asia/Tokyo')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\"),\\n    \\\"London\\\": datetime.now(pytz.timezone('Europe/London')).strftime(\\\"%Y-%m-%d %H:%M:%S %Z\\\")\\n}\\n\\n# Print results\\nprint(\\\"Time Formats:\\\")\\nfor name, time_format in formats.items():\\n    print(f\\\"{name}: {time_format}\\\")\\n\\nprint(\\\"\\\\nTimezone Times:\\\")\\nfor zone, time_str in timezones.items():\\n    print(f\\\"{zone}: {time_str}\\\")\\n```\\n\\nThis script demonstrates:\\n1. Standard time formats (12-hour, 24-hour)\\n2. Full date and time representations\\n3. ISO format\\n4. Unix timestamp\\n5. Times in different global timezones\\n\\nNote: The actual times will vary based on when the code is run. Would you like me to elaborate on any of these time formats or explain the code in more detail?\", \"response_metadata\": {\"ResponseMetadata\": {\"RequestId\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\", \"HTTPStatusCode\": 200, \"HTTPHeaders\": {\"date\": \"Thu, 20 Nov 2025 06:22:26 GMT\", \"content-type\": \"application/json\", \"content-length\": \"1916\", \"connection\": \"keep-alive\", \"x-amzn-requestid\": \"ecadb9e1-9ab5-4aec-b123-67f8b633701c\"}, \"RetryAttempts\": 0}, \"stopReason\": \"end_turn\", \"metrics\": {\"latencyMs\": [7650]}, \"model_provider\": \"bedrock_converse\", \"model_name\": \"us.anthropic.claude-3-5-haiku-20241022-v1:0\"}, \"type\": \"ai\", \"id\": \"lc_run--3cfdbd2a-805f-4a6a-9d6d-b8ccfcffb4e0-0\", \"usage_metadata\": {\"input_tokens\": 438, \"output_tokens\": 494, \"total_tokens\": 932, \"input_token_details\": {\"cache_creation\": 0, \"cache_read\": 0}}, \"tool_calls\": [], \"invalid_tool_calls\": []}}]}, \"kwargs\": {\"tags\": []}}",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "{\"inputs\": {\"messages\": [{\"role\": \"user\", \"content\": \"calculate currentv time in difefrent formats using code interoprter  \"}]}, \"tags\": [], \"metadata\": {}, \"kwargs\": {\"name\": \"LangGraph\"}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "opentelemetry.instrumentation.langchain",
+        "session.id": "383c4a9d-5682-4186-a125-e226f9f6c141"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "8c89edc749955e60"
+    }
+  },
+  {
+    "timestamp": "2025-11-20 06:22:26.745",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent_lg.DEFAULT",
+          "service.name": "agent_lg.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:730335462089:runtime/agent_lg-EVQuBO6Q0n/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent_lg-EVQuBO6Q0n-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "bedrock_agentcore.app"
+      },
+      "timeUnixNano": 1763619746745008640,
+      "observedTimeUnixNano": 1763619746745300844,
+      "severityNumber": 9,
+      "severityText": "INFO",
+      "body": "Invocation completed successfully (9.377s)",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py",
+        "code.function.name": "_handle_invocation",
+        "otelTraceID": "691eb3981d03a56943bfe83732bf8aca",
+        "otelSpanID": "658330d6735bfe7b",
+        "code.line.number": 366,
+        "otelServiceName": "agent_lg.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691eb3981d03a56943bfe83732bf8aca",
+      "spanId": "658330d6735bfe7b"
+    }
+  }
+]

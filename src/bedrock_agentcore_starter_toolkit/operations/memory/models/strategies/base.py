@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
-    from .custom import CustomSemanticStrategy
+    from .custom import CustomSemanticStrategy, CustomSummaryStrategy, CustomUserPreferenceStrategy
+    from .self_managed import SelfManagedStrategy
     from .semantic import SemanticStrategy
     from .summary import SummaryStrategy
     from .user_preference import UserPreferenceStrategy
@@ -70,6 +71,9 @@ StrategyType = Union[
     "SemanticStrategy",
     "SummaryStrategy",
     "CustomSemanticStrategy",
+    "CustomSummaryStrategy",
+    "CustomUserPreferenceStrategy",
     "UserPreferenceStrategy",
+    "SelfManagedStrategy",
     Dict[str, Any],  # Backward compatibility with dict-based strategies
 ]

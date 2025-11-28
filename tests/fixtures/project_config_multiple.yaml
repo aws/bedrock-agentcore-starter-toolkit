@@ -34,7 +34,13 @@ agents:
       ecr_repository: arn:aws:ecr:us-west-2:123456789012:repository/code-assistant
       ecr_auto_create: false
       network_configuration:
-        network_mode: PRIVATE
+        network_mode: VPC
+        network_mode_config:
+          subnet_ids:
+            - subnet-12345678
+            - subnet-87654321
+          security_group_ids:
+            - sg-12345678
       observability:
         enabled: false
     bedrock_agentcore:

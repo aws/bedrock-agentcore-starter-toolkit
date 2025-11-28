@@ -7,8 +7,15 @@ from typing import Any, Optional
 
 from bedrock_agentcore.services.identity import IdentityClient
 
-from ...services.runtime import BedrockAgentCoreClient, generate_session_id
+from ...operations.identity.oauth2_callback_server import WORKLOAD_USER_ID, BedrockAgentCoreIdentity3loCallback
+from ...services.runtime import (
+    BedrockAgentCoreClient,
+    HttpBedrockAgentCoreClient,
+    LocalBedrockAgentCoreClient,
+    generate_session_id,
+)
 from ...utils.runtime.config import load_config, save_config
+from ...utils.runtime.create import resolve_create_with_iac_project_config
 from ...utils.runtime.schema import BedrockAgentCoreConfigSchema
 from .models import InvokeResult
 
@@ -28,7 +35,10 @@ def invoke_bedrock_agentcore(
     """Invoke deployed Bedrock AgentCore endpoint."""
     # Load project configuration
     project_config = load_config(config_path)
+    if project_config.is_agentcore_create_with_iac:
+        project_config = resolve_create_with_iac_project_config(config_path)
     agent_config = project_config.get_agent_config(agent_name)
+
     # Log which agent is being invoked
     mode = "locally" if local_mode else "via cloud endpoint"
     log.debug("Invoking BedrockAgentCore agent '%s' %s", agent_config.name, mode)
@@ -59,17 +69,24 @@ def invoke_bedrock_agentcore(
         payload_str = str(payload)
 
     if local_mode:
-        from ...services.runtime import LocalBedrockAgentCoreClient
-
         identity_client = IdentityClient(region)
         workload_name = _get_workload_name(project_config, config_path, agent_config.name, identity_client)
         workload_access_token = identity_client.get_workload_access_token(
             workload_name=workload_name, user_token=bearer_token, user_id=user_id
         )["workloadAccessToken"]
 
-        # TODO: store and read port config of local running container
+        agent_config.oauth_configuration[WORKLOAD_USER_ID] = user_id
+        save_config(project_config, config_path)
+
+        oauth2_callback_url = BedrockAgentCoreIdentity3loCallback.get_oauth2_callback_endpoint()
+        _update_workload_identity_with_oauth2_callback_url(
+            identity_client, workload_name=workload_name, oauth2_callback_url=oauth2_callback_url
+        )
+
         client = LocalBedrockAgentCoreClient("http://127.0.0.1:8080")
-        response = client.invoke_endpoint(session_id, payload_str, workload_access_token, custom_headers)
+        response = client.invoke_endpoint(
+            session_id, payload_str, workload_access_token, oauth2_callback_url, custom_headers
+        )
 
     else:
         if not agent_arn:
@@ -77,11 +94,10 @@ def invoke_bedrock_agentcore(
 
         # Invoke endpoint using appropriate client
         if bearer_token:
-            if user_id:
-                log.warning("Both bearer token and user id are specified, ignoring user id")
-
             # Use HTTP client with bearer token
-            from ...services.runtime import HttpBedrockAgentCoreClient
+            # JWT auth mode: Runtime extracts user identity from JWT's 'sub' claim
+            # DO NOT send user_id header with JWT - it's for SIGV4 auth only
+            log.info("Using JWT authentication")
 
             client = HttpBedrockAgentCoreClient(region)
             response = client.invoke_endpoint(
@@ -89,10 +105,11 @@ def invoke_bedrock_agentcore(
                 payload=payload_str,
                 session_id=session_id,
                 bearer_token=bearer_token,
+                user_id=None,  # Don't send user_id with JWT auth
                 custom_headers=custom_headers,
             )
         else:
-            # Use existing boto3 client
+            # Use existing boto3 client (SIGV4 auth)
             bedrock_agentcore_client = BedrockAgentCoreClient(region)
             response = bedrock_agentcore_client.invoke_endpoint(
                 agent_arn=agent_arn,
@@ -106,6 +123,24 @@ def invoke_bedrock_agentcore(
         response=response,
         session_id=session_id,
         agent_arn=agent_arn,
+    )
+
+
+def _update_workload_identity_with_oauth2_callback_url(
+    identity_client: IdentityClient,
+    workload_name: str,
+    oauth2_callback_url: str,
+) -> None:
+    workload_identity = identity_client.get_workload_identity(name=workload_name)
+    allowed_resource_oauth_2_return_urls = workload_identity.get("allowedResourceOauth2ReturnUrls") or []
+    if oauth2_callback_url in allowed_resource_oauth_2_return_urls:
+        return
+
+    log.info("Updating workload %s with callback url %s", workload_name, oauth2_callback_url)
+
+    identity_client.update_workload_identity(
+        name=workload_name,
+        allowed_resource_oauth_2_return_urls=[*allowed_resource_oauth_2_return_urls, oauth2_callback_url],
     )
 
 

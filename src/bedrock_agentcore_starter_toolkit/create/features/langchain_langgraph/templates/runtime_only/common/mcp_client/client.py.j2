@@ -1,0 +1,18 @@
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+# ExaAI provides information about code through web searches, crawling and code context searches through their platform. Requires no authentication
+EXAMPLE_MCP_ENDPOINT = "https://mcp.exa.ai/mcp"
+
+def get_streamable_http_mcp_client() -> MultiServerMCPClient:
+    """
+    Returns an MCP Client for AgentCore Gateway compatible with LangGraph
+    """
+    # to use an MCP server that supports bearer authentication, add "headers": {"Authorization": f"Bearer {access_token}"}
+    return MultiServerMCPClient(
+        {
+            "example_endpoint": {
+                "transport": "streamable_http",
+                "url": EXAMPLE_MCP_ENDPOINT,
+            }
+        }
+    )

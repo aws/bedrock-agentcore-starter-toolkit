@@ -1,0 +1,811 @@
+[
+  {
+    "timestamp": "2025-11-18 07:43:54.057",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "bedrock_agentcore.app"
+      },
+      "timeUnixNano": 1763451834057015808,
+      "observedTimeUnixNano": 1763451834057290230,
+      "severityNumber": 9,
+      "severityText": "INFO",
+      "body": "Invocation completed successfully (16.847s)",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py",
+        "code.function.name": "_handle_invocation",
+        "otelTraceID": "691c23a8636a7e4512dfd580708d030e",
+        "otelSpanID": "e2a36d975676155e",
+        "code.line.number": 366,
+        "otelServiceName": "agent.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "e2a36d975676155e"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:54.057",
+    "raw_otel_json": {
+      "timestamp": "2025-11-18T07:43:54.057Z",
+      "level": "INFO",
+      "message": "Invocation completed successfully (16.847s)",
+      "logger": "bedrock_agentcore.app",
+      "requestId": "d42556b3-d415-4d87-88c8-62d44370b561",
+      "sessionId": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:54.020",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451834020735638,
+      "observedTimeUnixNano": 1763451834021011739,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "message": "It looks like I'm currently unable to execute the code due to a permissions issue with the code interpreter. However, I can guide you through how you can calculate the current time in different formats using Python on your local machine.\n\nHere's a Python script that does exactly that:\n\n```python\nfrom datetime import datetime\n\n# Get current time\ncurrent_time = datetime.now()\n\n# Format 1: Default string representation\nformat1 = str(current_time)\n\n# Format 2: ISO 8601 format\nformat2 = current_time.isoformat()\n\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\n\n# Format 4: Unix timestamp\nformat4 = current_time.timestamp()\n\nprint(\"Default Format:\", format1)\nprint(\"ISO 8601 Format:\", format2)\nprint(\"Custom Format:\", format3)\nprint(\"Unix Timestamp:\", format4)\n```\n\nYou can run this script on your local Python environment to see the current time formatted in different ways. If you have any questions or need further assistance, feel free to ask!\n",
+                "finish_reason": "end_turn"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "You are a helpful assistant with code execution capabilities. Use tools when appropriate.\nResponse format when using code:\n1. Brief explanation of your approach\n2. Code block showing the executed code\n3. Results and analysis\n",
+              "role": "system"
+            },
+            {
+              "content": {
+                "content": "[{\"text\": \"calculate currentv time in difefrent formats using code interoprter  \"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "ea481874619414c2"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:53.719",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451833719560249,
+      "observedTimeUnixNano": 1763451833719905913,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"toolUse\": {\"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\", \"name\": \"code_interpreter\", \"input\": {\"code_interpreter_input\": {\"action\": {\"type\": \"executeCode\", \"code\": \"from datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\n(format1, format2, format3, format4)\", \"language\": \"python\"}}}}}]"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"calculate currentv time in difefrent formats using code interoprter  \"}]"
+              },
+              "role": "user"
+            },
+            {
+              "content": {
+                "content": "[{\"toolResult\": {\"status\": \"error\", \"content\": [{\"text\": \"Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6': An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action\"}], \"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\"}}]"
+              },
+              "role": "tool"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "75eb1e1715a1d2aa"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:53.326",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451833326291143,
+      "observedTimeUnixNano": 1763451833326585995,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"toolUse\": {\"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\", \"name\": \"code_interpreter\", \"input\": {\"code_interpreter_input\": {\"action\": {\"type\": \"executeCode\", \"code\": \"from datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\n(format1, format2, format3, format4)\", \"language\": \"python\"}}}}}]"
+              },
+              "role": "assistant"
+            },
+            {
+              "content": {
+                "message": "[{\"text\": \"It looks like I'm currently unable to execute the code due to a permissions issue with the code interpreter. However, I can guide you through how you can calculate the current time in different formats using Python on your local machine.\\n\\nHere's a Python script that does exactly that:\\n\\n```python\\nfrom datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\nprint(\\\"Default Format:\\\", format1)\\nprint(\\\"ISO 8601 Format:\\\", format2)\\nprint(\\\"Custom Format:\\\", format3)\\nprint(\\\"Unix Timestamp:\\\", format4)\\n```\\n\\nYou can run this script on your local Python environment to see the current time formatted in different ways. If you have any questions or need further assistance, feel free to ask!\"}]",
+                "finish_reason": "end_turn"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"calculate currentv time in difefrent formats using code interoprter  \"}]"
+              },
+              "role": "user"
+            },
+            {
+              "content": {
+                "content": "[{\"toolResult\": {\"status\": \"error\", \"content\": [{\"text\": \"Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6': An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action\"}], \"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\"}}]"
+              },
+              "role": "tool"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "91a6c92e88830c9b"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:45.432",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451825432979799,
+      "observedTimeUnixNano": 1763451825433321241,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"Hello! How can I assist you today?\"}]"
+              },
+              "role": "assistant"
+            },
+            {
+              "content": {
+                "message": "[{\"toolUse\": {\"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\", \"name\": \"code_interpreter\", \"input\": {\"code_interpreter_input\": {\"action\": {\"type\": \"executeCode\", \"code\": \"from datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\n(format1, format2, format3, format4)\", \"language\": \"python\"}}}}}]",
+                "tool.result": "[{\"toolResult\": {\"status\": \"error\", \"content\": [{\"text\": \"Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6': An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action\"}], \"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\"}}]"
+              },
+              "role": "assistant"
+            },
+            {
+              "content": "[{\"toolResult\": {\"status\": \"error\", \"content\": [{\"text\": \"Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6': An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action\"}], \"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\"}}]",
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"calculate currentv time in difefrent formats using code interoprter  \"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "681e3fecf93e4655"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:45.041",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451825041518448,
+      "observedTimeUnixNano": 1763451825041944156,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "message": "[{\"text\": \"Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6': An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action\"}]",
+                "id": "call_eN3a7WGJmTdoFqw1h1LubkFq"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "{\"code_interpreter_input\": {\"action\": {\"type\": \"executeCode\", \"code\": \"from datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\n(format1, format2, format3, format4)\", \"language\": \"python\"}}}",
+                "role": "tool",
+                "id": "call_eN3a7WGJmTdoFqw1h1LubkFq"
+              },
+              "role": "tool"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "e4b33b81b25786c2"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:45.040",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands_tools.code_interpreter.agent_core_code_interpreter"
+      },
+      "timeUnixNano": 1763451825040199168,
+      "observedTimeUnixNano": 1763451825040272053,
+      "severityNumber": 17,
+      "severityText": "ERROR",
+      "body": "Failed to initialize session 'cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6' with identifier: aws.codeinterpreter.v1. Error: An error occurred (AccessDeniedException) when calling the StartCodeInterpreterSession operation: User: arn:aws:sts::123456789012:assumed-role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-d4f0bc5a29/BedrockAgentCore-26c9bf4f-5cd0-4ba6-9955-07630149af72 is not authorized to perform: bedrock-agentcore:StartCodeInterpreterSession on resource: arn:aws:bedrock-agentcore:us-east-1:aws:code-interpreter/aws.codeinterpreter.v1 because no identity-based policy allows the bedrock-agentcore:StartCodeInterpreterSession action",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/strands_tools/code_interpreter/agent_core_code_interpreter.py",
+        "code.function.name": "init_session",
+        "otelTraceID": "691c23a8636a7e4512dfd580708d030e",
+        "otelSpanID": "e4b33b81b25786c2",
+        "code.line.number": 190,
+        "otelServiceName": "agent.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "e4b33b81b25786c2"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:44.553",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763451824553602139,
+      "observedTimeUnixNano": 1763451824553893714,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"Hello! How can I assist you today?\"}]"
+              },
+              "role": "assistant"
+            },
+            {
+              "content": {
+                "message": "[{\"toolUse\": {\"toolUseId\": \"call_eN3a7WGJmTdoFqw1h1LubkFq\", \"name\": \"code_interpreter\", \"input\": {\"code_interpreter_input\": {\"action\": {\"type\": \"executeCode\", \"code\": \"from datetime import datetime\\n\\n# Get current time\\ncurrent_time = datetime.now()\\n\\n# Format 1: Default string representation\\nformat1 = str(current_time)\\n\\n# Format 2: ISO 8601 format\\nformat2 = current_time.isoformat()\\n\\n# Format 3: Custom format (e.g., 'Day, Month Date Year Hour:Minute:Second')\\nformat3 = current_time.strftime('%A, %B %d %Y %H:%M:%S')\\n\\n# Format 4: Unix timestamp\\nformat4 = current_time.timestamp()\\n\\n(format1, format2, format3, format4)\", \"language\": \"python\"}}}}}]",
+                "finish_reason": "tool_use"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"calculate currentv time in difefrent formats using code interoprter  \"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "7b4aae121b8f0604"
+    }
+  },
+  {
+    "timestamp": "2025-11-18 07:43:37.444",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.instrumentor"
+      },
+      "timeUnixNano": 1763451817444391680,
+      "observedTimeUnixNano": 1763451817444583754,
+      "severityNumber": 13,
+      "severityText": "WARN",
+      "body": "Attempting to instrument while already instrumented",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/opentelemetry/instrumentation/instrumentor.py",
+        "code.function.name": "instrument",
+        "otelTraceID": "691c23a8636a7e4512dfd580708d030e",
+        "otelSpanID": "e2a36d975676155e",
+        "code.line.number": 103,
+        "otelServiceName": "agent.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691c23a8636a7e4512dfd580708d030e",
+      "spanId": "e2a36d975676155e"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:16.622",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "bedrock_agentcore.app"
+      },
+      "timeUnixNano": 1763392516622609408,
+      "observedTimeUnixNano": 1763392516622902560,
+      "severityNumber": 9,
+      "severityText": "INFO",
+      "body": "Invocation completed successfully (3.481s)",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py",
+        "code.function.name": "_handle_invocation",
+        "otelTraceID": "691b3bf85af1dfe32dc6b67e3a3144d1",
+        "otelSpanID": "e8d56a5269b3b77f",
+        "code.line.number": 366,
+        "otelServiceName": "agent.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691b3bf85af1dfe32dc6b67e3a3144d1",
+      "spanId": "e8d56a5269b3b77f"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:16.622",
+    "raw_otel_json": {
+      "timestamp": "2025-11-17T15:15:16.622Z",
+      "level": "INFO",
+      "message": "Invocation completed successfully (3.481s)",
+      "logger": "bedrock_agentcore.app",
+      "requestId": "2169b0c6-b041-47e4-9d9c-3a7839ff30be",
+      "sessionId": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:16.584",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763392516584740930,
+      "observedTimeUnixNano": 1763392516585074449,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "message": "Hello! How can I assist you today?\n",
+                "finish_reason": "end_turn"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": "You are a helpful assistant with code execution capabilities. Use tools when appropriate.\nResponse format when using code:\n1. Brief explanation of your approach\n2. Code block showing the executed code\n3. Results and analysis\n",
+              "role": "system"
+            },
+            {
+              "content": {
+                "content": "[{\"text\": \"Hello\"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691b3bf85af1dfe32dc6b67e3a3144d1",
+      "spanId": "bca8952d74e876a5"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:16.335",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763392516335795196,
+      "observedTimeUnixNano": 1763392516336122443,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"Hello\"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691b3bf85af1dfe32dc6b67e3a3144d1",
+      "spanId": "c83a31d1a61ff49b"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:15.931",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "strands.telemetry.tracer"
+      },
+      "timeUnixNano": 1763392515931938495,
+      "observedTimeUnixNano": 1763392515932932718,
+      "severityNumber": 9,
+      "severityText": "",
+      "body": {
+        "output": {
+          "messages": [
+            {
+              "content": {
+                "message": "[{\"text\": \"Hello! How can I assist you today?\"}]",
+                "finish_reason": "end_turn"
+              },
+              "role": "assistant"
+            }
+          ]
+        },
+        "input": {
+          "messages": [
+            {
+              "content": {
+                "content": "[{\"text\": \"Hello\"}]"
+              },
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "attributes": {
+        "event.name": "strands.telemetry.tracer",
+        "session.id": "cfd84bec-fec8-47a5-8a28-73b9aa5ee6c6"
+      },
+      "flags": 1,
+      "traceId": "691b3bf85af1dfe32dc6b67e3a3144d1",
+      "spanId": "baee2b838880cd42"
+    }
+  },
+  {
+    "timestamp": "2025-11-17 15:15:13.525",
+    "raw_otel_json": {
+      "resource": {
+        "attributes": {
+          "deployment.environment.name": "bedrock-agentcore:default",
+          "aws.local.service": "agent.DEFAULT",
+          "service.name": "agent.DEFAULT",
+          "cloud.region": "us-east-1",
+          "aws.log.stream.names": "otel-rt-logs",
+          "telemetry.sdk.name": "opentelemetry",
+          "aws.service.type": "gen_ai_agent",
+          "telemetry.sdk.language": "python",
+          "cloud.provider": "aws",
+          "cloud.resource_id": "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/agent-ABCDE12345/runtime-endpoint/DEFAULT:DEFAULT",
+          "aws.log.group.names": "/aws/bedrock-agentcore/runtimes/agent-ABCDE12345-DEFAULT",
+          "telemetry.sdk.version": "1.33.1",
+          "cloud.platform": "aws_bedrock_agentcore",
+          "telemetry.auto.version": "0.12.2-aws"
+        }
+      },
+      "scope": {
+        "name": "opentelemetry.instrumentation.instrumentor"
+      },
+      "timeUnixNano": 1763392513525510656,
+      "observedTimeUnixNano": 1763392513525604090,
+      "severityNumber": 13,
+      "severityText": "WARN",
+      "body": "Attempting to instrument while already instrumented",
+      "attributes": {
+        "otelTraceSampled": true,
+        "code.file.path": "/usr/local/lib/python3.10/site-packages/opentelemetry/instrumentation/instrumentor.py",
+        "code.function.name": "instrument",
+        "otelTraceID": "691b3bf85af1dfe32dc6b67e3a3144d1",
+        "otelSpanID": "e8d56a5269b3b77f",
+        "code.line.number": 103,
+        "otelServiceName": "agent.DEFAULT"
+      },
+      "flags": 1,
+      "traceId": "691b3bf85af1dfe32dc6b67e3a3144d1",
+      "spanId": "e8d56a5269b3b77f"
+    }
+  }
+]

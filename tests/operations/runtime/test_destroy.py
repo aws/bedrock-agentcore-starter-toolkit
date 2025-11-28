@@ -6,6 +6,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.runtime.destroy import destroy_bedrock_agentcore
+from bedrock_agentcore_starter_toolkit.operations.runtime.exceptions import RuntimeToolkitException
 from bedrock_agentcore_starter_toolkit.operations.runtime.models import DestroyResult
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
@@ -95,6 +96,54 @@ def create_undeployed_config(tmp_path, agent_name="test-agent"):
     return config_path
 
 
+def create_test_config_with_memory(
+    tmp_path,
+    agent_name="test-agent",
+    memory_id="mem_123456",
+    memory_arn="arn:aws:bedrock-memory:us-west-2:123456789012:memory/mem_123456",
+    enable_ltm=False,
+    mode="STM_AND_LTM",
+    was_created_by_toolkit=True,
+):
+    """Create a test configuration with memory info."""
+    from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig
+
+    config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+    agent_config = BedrockAgentCoreAgentSchema(
+        name=agent_name,
+        entrypoint="test_agent.py",
+        container_runtime="docker",
+        aws=AWSConfig(
+            region="us-west-2",
+            account="123456789012",
+            execution_role="arn:aws:iam::123456789012:role/test-role",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent",
+            network_configuration=NetworkConfiguration(),
+            observability=ObservabilityConfig(),
+        ),
+        bedrock_agentcore=BedrockAgentCoreDeploymentInfo(
+            agent_id="test-agent-id",
+            agent_arn="arn:aws:bedrock:us-west-2:123456789012:agent-runtime/test-agent-id",
+        ),
+        memory=MemoryConfig(
+            enabled=True,
+            enable_ltm=enable_ltm,
+            memory_id=memory_id,
+            memory_arn=memory_arn,
+            memory_name=f"{agent_name}_memory",
+            event_expiry_days=30,
+            mode=mode,
+            was_created_by_toolkit=was_created_by_toolkit,
+        ),
+    )
+
+    project_config = BedrockAgentCoreConfigSchema(default_agent=agent_name, agents={agent_name: agent_config})
+
+    save_config(project_config, config_path)
+    return config_path
+
+
 class TestDestroyBedrockAgentCore:
     """Test destroy_bedrock_agentcore function."""
 
@@ -102,14 +151,14 @@ class TestDestroyBedrockAgentCore:
         """Test destroy with nonexistent configuration file."""
         config_path = tmp_path / "nonexistent.yaml"
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeToolkitException):
             destroy_bedrock_agentcore(config_path)
 
     def test_destroy_nonexistent_agent(self, tmp_path):
         """Test destroy with nonexistent agent."""
         config_path = create_test_config(tmp_path)
 
-        with pytest.raises(RuntimeError, match="Agent 'nonexistent' not found"):
+        with pytest.raises(RuntimeToolkitException, match="Agent 'nonexistent' not found"):
             destroy_bedrock_agentcore(config_path, agent_name="nonexistent")
 
     def test_destroy_undeployed_agent(self, tmp_path):
@@ -141,9 +190,14 @@ class TestDestroyBedrockAgentCore:
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.destroy.BedrockAgentCoreClient")
     @patch("boto3.Session")
-    def test_destroy_success(self, mock_session, mock_client_class, tmp_path):
-        """Test successful destroy operation."""
-        config_path = create_test_config(tmp_path)
+    def test_destroy_with_memory_cleanup(self, mock_session, mock_client_class, tmp_path):
+        """Test destroy operation includes memory cleanup."""
+        # Create config with memory that was created by toolkit
+        config_path = create_test_config_with_memory(
+            tmp_path,
+            mode="STM_AND_LTM",  # Ensure mode is not NO_MEMORY
+            was_created_by_toolkit=True,  # Ensure this is set
+        )
 
         # Mock AWS clients
         mock_session_instance = MagicMock()
@@ -164,33 +218,32 @@ class TestDestroyBedrockAgentCore:
             "bedrock-agentcore-control": mock_control_client,
         }[service]
 
-        # Mock successful API calls
-        mock_agentcore_client.list_agent_runtime_endpoints.return_value = {
-            "agentRuntimeEndpointSummaries": [
-                {"agentRuntimeEndpointArn": "arn:aws:bedrock:us-west-2:123456789012:agent-runtime-endpoint/test"}
-            ]
-        }
-        mock_ecr_client.list_images.return_value = {"imageDetails": [{"imageTag": "latest"}]}
-        mock_ecr_client.batch_delete_image.return_value = {"imageIds": [{"imageTag": "latest"}], "failures": []}
-        mock_codebuild_client.delete_project.return_value = {}
-        mock_iam_client.list_attached_role_policies.return_value = {"AttachedPolicies": []}
-        mock_iam_client.list_role_policies.return_value = {"PolicyNames": []}
-        mock_iam_client.delete_role.return_value = {}
+        # Mock memory manager
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.destroy.MemoryManager"
+        ) as mock_memory_manager_class:
+            mock_memory_manager = MagicMock()
+            mock_memory_manager_class.return_value = mock_memory_manager
 
-        result = destroy_bedrock_agentcore(config_path, dry_run=False)
+            # Mock successful operations
+            mock_agentcore_client.get_agent_runtime_endpoint.side_effect = ClientError(
+                {"Error": {"Code": "ResourceNotFoundException", "Message": "Not found"}}, "GetAgentRuntimeEndpoint"
+            )
+            mock_ecr_client.list_images.return_value = {"imageIds": []}
+            mock_codebuild_client.delete_project.return_value = {}
+            mock_iam_client.list_attached_role_policies.return_value = {"AttachedPolicies": []}
+            mock_iam_client.list_role_policies.return_value = {"PolicyNames": []}
+            mock_iam_client.delete_role.return_value = {}
+            mock_memory_manager.delete_memory.return_value = {}
 
-        assert isinstance(result, DestroyResult)
-        assert result.agent_name == "test-agent"
-        assert result.dry_run is False
-        assert len(result.resources_removed) > 0
-        assert len(result.errors) == 0
+            result = destroy_bedrock_agentcore(config_path, dry_run=False)
 
-        # Verify AWS API calls were made
-        mock_agentcore_client.delete_agent_runtime_endpoint.assert_called()
-        mock_control_client.delete_agent_runtime.assert_called()
-        # ECR batch_delete_image might not be called if no images need deletion
-        # mock_ecr_client.batch_delete_image.assert_called()
-        mock_codebuild_client.delete_project.assert_called()
+            # Verify memory deletion was called
+            mock_memory_manager_class.assert_called_once_with(region_name="us-west-2")
+            mock_memory_manager.delete_memory.assert_called_once_with(memory_id="mem_123456")
+
+            # Verify memory was included in resources removed
+            assert any("Memory: mem_123456" in r for r in result.resources_removed)
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.destroy.BedrockAgentCoreClient")
     @patch("boto3.Session")
@@ -393,9 +446,8 @@ class TestDestroyBedrockAgentCore:
 
         assert isinstance(result, DestroyResult)
 
-        # Verify DEFAULT endpoint skip warning is present
-        default_warnings = [w for w in result.warnings if "DEFAULT endpoint cannot be explicitly deleted" in w]
-        assert len(default_warnings) > 0, "Expected warning about DEFAULT endpoint skip"
+        # Verify DEFAULT endpoint was skipped (no delete call)
+        mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
 
         # Verify that delete_agent_runtime_endpoint was NOT called for DEFAULT
         mock_agentcore_client.delete_agent_runtime_endpoint.assert_not_called()
@@ -1175,7 +1227,7 @@ class TestDestroyBedrockAgentCore:
             # Simulate unexpected exception during session creation
             mock_session.side_effect = Exception("AWS credentials error")
 
-            with pytest.raises(RuntimeError, match="Destroy operation failed: AWS credentials error"):
+            with pytest.raises(RuntimeToolkitException, match="Destroy operation failed: AWS credentials error"):
                 destroy_bedrock_agentcore(config_path, dry_run=False)
 
     @patch("bedrock_agentcore_starter_toolkit.operations.runtime.destroy.BedrockAgentCoreClient")
@@ -1279,7 +1331,9 @@ class TestDestroyBedrockAgentCore:
         """Test destroy operation when agent is not found in config."""
         config_path = create_test_config(tmp_path)
 
-        with pytest.raises(RuntimeError, match="Destroy operation failed: Agent 'nonexistent-agent' not found"):
+        with pytest.raises(
+            RuntimeToolkitException, match="Destroy operation failed: Agent 'nonexistent-agent' not found"
+        ):
             destroy_bedrock_agentcore(config_path, agent_name="nonexistent-agent", dry_run=False)
 
     def test_destroy_get_agent_config_returns_none(self, tmp_path):
@@ -1297,7 +1351,7 @@ class TestDestroyBedrockAgentCore:
             mock_load.return_value = mock_project_config
 
             with pytest.raises(
-                RuntimeError, match="Destroy operation failed: Agent 'test-agent' not found in configuration"
+                RuntimeToolkitException, match="Destroy operation failed: Agent 'test-agent' not found in configuration"
             ):
                 destroy_bedrock_agentcore(config_path, agent_name="test-agent", dry_run=False)
 

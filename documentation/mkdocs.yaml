@@ -1,7 +1,7 @@
 site_name: Amazon Bedrock AgentCore
 site_description: Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents
 site_dir: site
-site_url: ""
+site_url: "https://aws.github.io/bedrock-agentcore-starter-toolkit"
 use_directory_urls: false
 
 repo_url: https://github.com/aws/bedrock-agentcore-starter-toolkit
@@ -71,32 +71,44 @@ extra_javascript:
 nav:
   - User Guide:
     - Welcome: index.md
+    - Create Agent: "user-guide/create/quickstart.md"
+    - Local Development: "user-guide/dev/quickstart.md"
     - Runtime:
-      - Quickstart: user-guide/runtime/quickstart.md
-      - Overview: user-guide/runtime/overview.md
-      - Permissions: user-guide/runtime/permissions.md
-      - Async Processing: user-guide/runtime/async.md
-      - Notebook: user-guide/runtime/notebook.md
+      - Runtime Quickstart: user-guide/runtime/quickstart.md
+      - Runtime Overview: user-guide/runtime/overview.md
+      - Runtime Permissions: user-guide/runtime/permissions.md
+      - Runtime Async Processing: user-guide/runtime/async.md
+      - Runtime Notebook: user-guide/runtime/notebook.md
+      - Runtime A2A Server Deployment: user-guide/runtime/a2a.md
     - Gateway:
-      - Quickstart: user-guide/gateway/quickstart.md
+      - Gateway Quickstart: user-guide/gateway/quickstart.md
     - Memory:
-      - Quickstart: user-guide/memory/quickstart.md
+      - Memory Quickstart: user-guide/memory/quickstart.md
     - Identity:
-      - Quickstart: user-guide/identity/quickstart.md
+      - Identity Quickstart: user-guide/identity/quickstart.md
+      - Identity CLI Quickstart: user-guide/identity/quickstart-with-cli.md
     - Built-in Tools:
       - Quickstart Browser Tool: user-guide/builtin-tools/quickstart-browser.md
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
+    - Security:
+      - VPC Interface Endpoints: user-guide/security/vpc-interface-endpoints.md
+      - AgentCore VPC Configuration: user-guide/security/agentcore-vpc.md
+      - VPC Condition Keys: user-guide/security/security-vpc-condition.md
     - Observability:
-      - Quickstart: user-guide/observability/quickstart.md
+      - Observability Quickstart: user-guide/observability/quickstart.md
     - Import Agent:
-      - Quickstart: user-guide/import-agent/quickstart.md
-      - Overview: user-guide/import-agent/overview.md
-      - Configuration: user-guide/import-agent/configuration.md
+      - Import Agent Quickstart: user-guide/import-agent/quickstart.md
+      - Import Agent Overview: user-guide/import-agent/overview.md
+      - Import Agent Configuration: user-guide/import-agent/configuration.md
   - Examples:
     - Overview: examples/README.md
+    - Runtime Transform and Deploy Quickstart: examples/agentcore-quickstart-example.md
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
+    - Memory Gateway Agent: examples/memory_gateway_agent.md
+    - Runtime Framework Agents: examples/runtime-framework-agents.md
+    - Semantic Search: examples/semantic_search.md
   - Contribute ❤️: https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md
   - API Reference:
     - Bedrock AgentCore SDK:
@@ -116,6 +128,7 @@ plugins:
   - search
   - privacy
   - macros
+  - include-markdown
   - mike:
       alias_type: symlink
       canonical_version: latest
@@ -128,19 +141,30 @@ plugins:
             show_root_heading: true
             show_source: true
   - llmstxt:
+      files:
+        - inputs:
+            - "**/*.md"
+          output: "llms.txt"
       markdown_description: "Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI agents securely, at scale. It offers infrastructure purpose-built for dynamic agent workloads, powerful tools to enhance agents, and essential controls for real-world deployment. AgentCore services can be used together or independently and work with any framework including CrewAI, LangGraph, LlamaIndex, and Strands Agents, as well as any foundation model in or outside of Amazon Bedrock, giving you ultimate flexibility."
       sections:
         "User Guide":
-          - "mcp/agentcore_runtime_deployment.md"  # replace with user-guide/runtime/quickstart.md
+          - "user-guide/create/quickstart.md"
+          - "user-guide/dev/quickstart.md"
+          - "user-guide/runtime/quickstart.md"
+          - "mcp/agentcore_runtime_deployment.md"
           - "user-guide/runtime/overview.md": "Runtime service overview"
           - "user-guide/runtime/permissions.md": "Runtime permissions guide"
           - "user-guide/runtime/async.md": "Runtime async processing"
           - "user-guide/runtime/notebook.md": "Runtime notebook integration"
+          - "user-guide/runtime/a2a.md": "A2A server deployment guide"
           - "user-guide/gateway/quickstart.md": "Gateway quickstart guide"
           - "user-guide/memory/quickstart.md": "Memory quickstart guide"
           - "user-guide/identity/quickstart.md": "Identity quickstart guide"
           - "user-guide/builtin-tools/quickstart-browser.md": "Browser tool quickstart"
           - "user-guide/builtin-tools/quickstart-code-interpreter.md": "Code interpreter quickstart"
+          - "user-guide/security/vpc-interface-endpoints.md": "VPC interface endpoints configuration"
+          - "user-guide/security/agentcore-vpc.md": "AgentCore VPC configuration guide"
+          - "user-guide/security/security-vpc-condition.md": "VPC condition keys for IAM policies"
           - "user-guide/observability/quickstart.md": "Observability quickstart guide"
           - "user-guide/import-agent/quickstart.md": "Import agent quickstart"
           - "user-guide/import-agent/overview.md": "Import agent overview"
