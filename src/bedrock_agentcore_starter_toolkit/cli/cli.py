@@ -52,10 +52,10 @@ app.command("launch", hidden=True)(deploy)
 app.command("import-agent", hidden=True)(import_agent)
 
 
-def main():
+def main():  # pragma: no cover
     """Entry point for the CLI application."""
     app()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
