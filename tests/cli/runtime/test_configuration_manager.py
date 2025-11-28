@@ -489,7 +489,7 @@ class TestConfigurationManager:
                 "client1,client2",  # client IDs
                 "api://default",  # audience
                 "scope1",  # allowed scopes
-                "{\"inboundTokenClaimName\": \"newCustomClaimName1\",\"inboundTokenClaimValueType\": \"STRING_ARRAY\",\"authorizingClaimMatchValue\": {\"claimMatchValue\": {\"matchValueStringList\": [\"INVALID_GROUP_NAME\"]},\"claimMatchOperator\": \"CONTAINS_ANY\"}}"
+                '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}',  # noqa: E501
             ]
 
             result = config_manager._configure_oauth()
@@ -500,7 +500,9 @@ class TestConfigurationManager:
                     "allowedClients": ["client1", "client2"],
                     "allowedAudience": ["api://default"],
                     "allowedScopes": ["scope1"],
-                    "customClaims": ["{\"inboundTokenClaimName\": \"newCustomClaimName1\",\"inboundTokenClaimValueType\": \"STRING_ARRAY\",\"authorizingClaimMatchValue\": {\"claimMatchValue\": {\"matchValueStringList\": [\"INVALID_GROUP_NAME\"]},\"claimMatchOperator\": \"CONTAINS_ANY\"}}"],
+                    "customClaims": [
+                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'  # noqa: E501
+                    ],
                 }
             }
             assert result == expected
