@@ -99,6 +99,8 @@ class ConfigurationManager:
         existing_discovery_url = ""
         existing_client_ids = ""
         existing_audience = ""
+        existing_allowed_scopes = ""
+        existing_custom_claims = ""
 
         if (
             self.existing_config
@@ -109,6 +111,8 @@ class ConfigurationManager:
             existing_discovery_url = jwt_config.get("discoveryUrl", "")
             existing_client_ids = ",".join(jwt_config.get("allowedClients", []))
             existing_audience = ",".join(jwt_config.get("allowedAudience", []))
+            existing_allowed_scopes = ",".join(jwt_config.get("allowedScopes", []))
+            existing_custom_claims = ",".join(jwt_config.get("customClaims", []))
 
         # Prompt for discovery URL
         default_discovery_url = existing_discovery_url or os.getenv("BEDROCK_AGENTCORE_DISCOVERY_URL", "")
@@ -123,13 +127,29 @@ class ConfigurationManager:
         # Prompt for audience
         default_audience = existing_audience or os.getenv("BEDROCK_AGENTCORE_AUDIENCE", "")
         audience_input = _prompt_with_default("Enter allowed OAuth audience (comma-separated)", default_audience)
+        # Prompt for allowed scopes
+        default_allowed_scopes = existing_allowed_scopes or os.getenv("BEDROCK_AGENTCORE_ALLOWED_SCOPES", "")
+        allowed_scopes_input = _prompt_with_default(
+            "Enter allowed OAuth allowed scopes (comma-separated)", default_allowed_scopes
+        )
+        # Prompt for custom claims
+        default_custom_claims = existing_custom_claims or os.getenv("BEDROCK_AGENTCORE_CUSTOM_CLAIMS", "")
+        custom_claims_input = _prompt_with_default(
+            "Enter allowed OAuth custom claims (comma-separated)", default_custom_claims
+        )
 
-        if not client_ids_input and not audience_input:
-            _handle_error("At least one client ID or one audience is required for OAuth configuration")
+        if not client_ids_input and not audience_input and not allowed_scopes_input and not custom_claims_input:
+            _handle_error(
+                "At least one client ID, one audience, one allowed scope, or one custom claims is required for OAuth configuration"  # noqa: E501
+            )
 
         # Parse and return config
         client_ids = [cid.strip() for cid in client_ids_input.split(",") if cid.strip()]
         audience = [aud.strip() for aud in audience_input.split(", ") if aud.strip()]
+        scopes = [scope.strip() for scope in allowed_scopes_input.split(", ") if scope.strip()]
+        custom_claims = [
+            custom_claim.strip() for custom_claim in custom_claims_input.split(", ") if custom_claim.strip()
+        ]
 
         config: Dict = {
             "customJWTAuthorizer": {
@@ -142,6 +162,12 @@ class ConfigurationManager:
 
         if audience:
             config["customJWTAuthorizer"]["allowedAudience"] = audience
+
+        if scopes:
+            config["customJWTAuthorizer"]["allowedScopes"] = scopes
+
+        if custom_claims:
+            config["customJWTAuthorizer"]["customClaims"] = custom_claims
 
         _print_success("OAuth authorizer configuration created")
         return config

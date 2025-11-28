@@ -1,3 +1,5 @@
+# pylint: disable=consider-using-f-string, line-too-long
+# ruff: noqa: E501
 """Tests for Bedrock AgentCore CLI functionality."""
 
 import json
@@ -1710,6 +1712,8 @@ agents:
                 "https://example.com/.well-known/openid_configuration",  # discovery URL
                 "client1,client2,client3",  # client IDs
                 "aud1, aud2",  # audience (note the space after comma)
+                "scope1, scope2",  # allowed scopes
+                '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}',
             ]
 
             result = config_manager._configure_oauth()
@@ -1719,6 +1723,10 @@ agents:
                     "discoveryUrl": "https://example.com/.well-known/openid_configuration",
                     "allowedClients": ["client1", "client2", "client3"],
                     "allowedAudience": ["aud1", "aud2"],
+                    "allowedScopes": ["scope1", "scope2"],
+                    "customClaims": [
+                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                    ],
                 }
             }
 
@@ -1726,6 +1734,8 @@ agents:
             mock_prompt.assert_any_call("Enter OAuth discovery URL", "")
             mock_prompt.assert_any_call("Enter allowed OAuth client IDs (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "")
+            mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "")
+            mock_prompt.assert_any_call("Enter allowed OAuth custom claims (comma-separated)", "")
             mock_success.assert_called_once_with("OAuth authorizer configuration created")
 
     def test_configure_oauth_with_existing_values(self, tmp_path):
@@ -1740,6 +1750,10 @@ agents:
                 "discoveryUrl": "https://existing.com/.well-known/openid_configuration",
                 "allowedClients": ["existing_client1", "existing_client2"],
                 "allowedAudience": ["existing_aud1"],
+                "allowedScopes": ["existing_scope1"],
+                "customClaims": [
+                    '{"inboundTokenClaimName": "cognito:groups","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                ],
             }
         }
         mock_project_config.get_agent_config.return_value = mock_agent_config
@@ -1759,6 +1773,8 @@ agents:
                 "https://new.com/.well-known/openid_configuration",  # new discovery URL
                 "new_client1,new_client2",  # new client IDs
                 "new_aud1",  # new audience
+                "new_scope1",  # new allowed scope
+                '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}',
             ]
 
             result = config_manager._configure_oauth()
@@ -1771,12 +1787,21 @@ agents:
                 "Enter allowed OAuth client IDs (comma-separated)", "existing_client1,existing_client2"
             )
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "existing_aud1")
+            mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "existing_scope1")
+            mock_prompt.assert_any_call(
+                "Enter allowed OAuth custom claims (comma-separated)",
+                '{"inboundTokenClaimName": "cognito:groups","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}',
+            )
 
             expected_config = {
                 "customJWTAuthorizer": {
                     "discoveryUrl": "https://new.com/.well-known/openid_configuration",
                     "allowedClients": ["new_client1", "new_client2"],
                     "allowedAudience": ["new_aud1"],
+                    "allowedScopes": ["new_scope1"],
+                    "customClaims": [
+                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                    ],
                 }
             }
 
@@ -1812,7 +1837,7 @@ agents:
             mock_error.assert_called_once_with("OAuth discovery URL is required")
 
     def test_configure_oauth_no_client_or_audience_error(self, tmp_path):
-        """Test _configure_oauth raises error when neither client IDs nor audience provided."""
+        """Test _configure_oauth raises error when neither client IDs, audience, allowed scopes, nor custom claims provided."""
         from bedrock_agentcore_starter_toolkit.cli.runtime.commands import ConfigurationManager
 
         with patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists", return_value=None):
@@ -1828,11 +1853,13 @@ agents:
                 "https://example.com/.well-known/openid_configuration",  # discovery URL
                 "",  # empty client IDs
                 "",  # empty audience
+                "",  # empty scopes
+                "",  # empty custom claims
             ]
 
             config_manager._configure_oauth()
             mock_error.assert_called_once_with(
-                "At least one client ID or one audience is required for OAuth configuration"
+                "At least one client ID, one audience, one allowed scope, or one custom claims is required for OAuth configuration"
             )
 
     def test_configure_list_agents_success(self, tmp_path):
