@@ -601,9 +601,6 @@
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
       from .mcp_client.client import get_streamable_http_mcp_client
       from .model.load import load_model
-      import logging
-      
-      log = logging.getLogger(__name__)
       
       MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
       REGION = os.getenv("AWS_REGION")
@@ -625,6 +622,7 @@
       
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
+      log = app.logger
       
       @app.entrypoint
       async def invoke(payload, context):
@@ -1357,11 +1355,9 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from agents import Agent, Runner, function_tool
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
-      import logging
-      import sys
-      import os
       from mcp_client.client import get_streamable_http_mcp_client
       from model.load import load_model
       
@@ -1372,17 +1368,6 @@
           # Import AgentCore Gateway as Streamable HTTP MCP Server
           mcp_server = get_streamable_http_mcp_client()
       
-      # Set up logging
-      logging.basicConfig(
-          level=logging.DEBUG,
-          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-          handlers=[
-              logging.StreamHandler(sys.stdout)
-          ]
-      )
-      
-      logger = logging.getLogger(__name__)
-      
       # Set environment variables for model authentication
       load_model()
       
@@ -1392,6 +1377,9 @@
           """Return the sum of two numbers"""
           return a+b
       
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      logger = app.logger
       
       # Define an Agent with tools
       async def main(query):
@@ -1410,9 +1398,6 @@
           except Exception as e:
               logger.error(f"Error during agent execution: {e}", exc_info=True)
               raise e
-      
-      # Integrate with Bedrock AgentCore
-      app = BedrockAgentCoreApp()
       
       @app.entrypoint
       async def agent_invocation(payload, context):
@@ -1572,9 +1557,6 @@
       from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
       from .mcp_client.client import get_streamable_http_mcp_client
       from .model.load import load_model
-      import logging
-      
-      log = logging.getLogger(__name__)
       
       MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
       REGION = os.getenv("AWS_REGION")
@@ -1596,6 +1578,7 @@
       
       # Integrate with Bedrock AgentCore
       app = BedrockAgentCoreApp()
+      log = app.logger
       
       @app.entrypoint
       async def invoke(payload, context):
@@ -1803,11 +1786,9 @@
     ''',
     'src': None,
     'src/main.py': '''
+      import os
       from agents import Agent, Runner, function_tool
       from bedrock_agentcore.runtime import BedrockAgentCoreApp
-      import logging
-      import sys
-      import os
       from mcp_client.client import get_streamable_http_mcp_client
       from model.load import load_model
       
@@ -1818,17 +1799,6 @@
           # Import AgentCore Gateway as Streamable HTTP MCP Server
           mcp_server = get_streamable_http_mcp_client()
       
-      # Set up logging
-      logging.basicConfig(
-          level=logging.DEBUG,
-          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-          handlers=[
-              logging.StreamHandler(sys.stdout)
-          ]
-      )
-      
-      logger = logging.getLogger(__name__)
-      
       # Set environment variables for model authentication
       load_model()
       
@@ -1838,6 +1808,9 @@
           """Return the sum of two numbers"""
           return a+b
       
+      # Integrate with Bedrock AgentCore
+      app = BedrockAgentCoreApp()
+      logger = app.logger
       
       # Define an Agent with tools
       async def main(query):
@@ -1856,9 +1829,6 @@
           except Exception as e:
               logger.error(f"Error during agent execution: {e}", exc_info=True)
               raise e
-      
-      # Integrate with Bedrock AgentCore
-      app = BedrockAgentCoreApp()
       
       @app.entrypoint
       async def agent_invocation(payload, context):

@@ -1,20 +1,7 @@
-import logging
-import sys
 from agents import Agent, Runner, function_tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from mcp_client.client import get_streamable_http_mcp_client
 from model.load import load_model
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-
-logger = logging.getLogger(__name__)
 
 # Set environment variables for model authentication
 load_model()
@@ -26,6 +13,10 @@ def add_numbers(a: int, b: int) -> int:
     return a+b
 
 mcp_server = get_streamable_http_mcp_client()
+
+# Integrate with Bedrock AgentCore
+app = BedrockAgentCoreApp()
+logger = app.logger
 
 # Define an Agent with tools
 async def main(query):
@@ -43,9 +34,6 @@ async def main(query):
     except Exception as e:
         logger.error(f"Error during agent execution: {e}", exc_info=True)
         raise e
-
-# Integrate with Bedrock AgentCore
-app = BedrockAgentCoreApp()
 
 @app.entrypoint
 async def agent_invocation(payload, context):
