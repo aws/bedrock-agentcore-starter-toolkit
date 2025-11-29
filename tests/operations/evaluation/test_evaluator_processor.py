@@ -21,6 +21,9 @@ from bedrock_agentcore_starter_toolkit.operations.evaluation.evaluator_processor
     validate_evaluator_config,
 )
 
+# Apply mock_boto3_clients fixture to prevent real AWS calls
+pytestmark = pytest.mark.usefixtures("mock_boto3_clients")
+
 # =============================================================================
 # Test Data Fixtures
 # =============================================================================

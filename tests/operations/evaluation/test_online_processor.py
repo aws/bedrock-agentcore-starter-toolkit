@@ -13,6 +13,9 @@ from bedrock_agentcore_starter_toolkit.operations.evaluation.online_processor im
     update_online_evaluation_config,
 )
 
+# Apply mock_boto3_clients fixture to prevent real AWS calls
+pytestmark = pytest.mark.usefixtures("mock_boto3_clients")
+
 # =============================================================================
 # create_online_evaluation_config Tests
 # =============================================================================

@@ -13,6 +13,9 @@ from bedrock_agentcore_starter_toolkit.operations.evaluation.data_plane_client i
     EvaluationDataPlaneClient,
 )
 
+# Apply mock_boto3_clients fixture to prevent real AWS calls
+pytestmark = pytest.mark.usefixtures("mock_boto3_clients")
+
 # =============================================================================
 # Test Data Fixtures
 # =============================================================================
@@ -313,7 +316,7 @@ class TestErrorHandling:
         client = EvaluationDataPlaneClient(region_name="us-west-2", boto_client=mock_boto_client)
 
         # Should propagate as-is or wrapped
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Unexpected error"):
             client.evaluate(evaluator_id="Builtin.Helpfulness", session_spans=sample_spans)
 
 
