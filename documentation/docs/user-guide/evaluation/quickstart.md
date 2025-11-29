@@ -4,6 +4,8 @@ This tutorial shows you how to use the Amazon Bedrock AgentCore starter toolkit 
 
 The evaluation CLI provides commands to assess agent quality using built-in evaluators (like helpfulness and goal success) or create custom evaluators for your specific needs.
 
+**📚 For comprehensive details, see the [AgentCore Evaluation Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html)**
+
 ## Prerequisites
 
 Before you start, make sure you have:
@@ -260,17 +262,6 @@ Description: Production evaluation for my agent
 2. Navigate to **GenAI Observability** → **Bedrock AgentCore**
 3. Select your agent and endpoint
 4. View the **Evaluations** tab for detailed results
-
-### Query Logs
-
-Use CloudWatch Logs Insights to query evaluation results:
-
-```sql
-fields @timestamp, evaluatorId, score, label
-| filter evaluatorId = "Builtin.Helpfulness"
-| sort @timestamp desc
-| limit 100
-```
 
 ## Alternative: Without Configuration File
 
