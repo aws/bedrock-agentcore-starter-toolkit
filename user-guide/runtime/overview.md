@@ -182,6 +182,70 @@ agentcore invoke '{"prompt": "Hello, remember this conversation"}' --session-id 
 agentcore invoke '{"prompt": "What did I say earlier?"}' --session-id "conversation-123"
 ```
 
+## Middleware and Request Access
+
+The SDK exposes the underlying Starlette request object via `context.request`, enabling middleware to pass data to handlers.
+
+### Using Middleware
+
+```
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from bedrock_agentcore import BedrockAgentCoreApp
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        auth = request.headers.get('Authorization', '')
+        if auth.startswith('Bearer '):
+            request.state.user_id = 'user_123'
+            request.state.authenticated = True
+        else:
+            request.state.authenticated = False
+        return await call_next(request)
+
+app = BedrockAgentCoreApp(
+    middleware=[Middleware(AuthMiddleware)]
+)
+
+@app.entrypoint
+def my_agent(payload, context):
+    # Access middleware data via context.request.state
+    if not context.request.state.authenticated:
+        return {"error": "Unauthorized"}
+
+    user_id = context.request.state.user_id
+    return {"result": f"Hello {user_id}!"}
+```
+
+### Common Middleware Patterns
+
+**Request Timing:**
+
+```
+class TimingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request.state.start_time = time.time()
+        return await call_next(request)
+
+@app.entrypoint
+def handler(payload, context):
+    start = context.request.state.start_time
+    # ... your logic
+    return {"duration": time.time() - start}
+```
+
+**Custom Header Parsing:**
+
+```
+class HeaderParserMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request.state.tenant_id = request.headers.get('X-Tenant-ID')
+        request.state.api_version = request.headers.get('X-API-Version', 'v1')
+        return await call_next(request)
+```
+
+This follows standard Starlette middleware patterns, so existing Starlette middleware can be used directly.
+
 ## Authentication & Authorization
 
 The SDK integrates with AgentCore's identity services providing automatic AWS credential validation (IAM SigV4) by default or JWT Bearer tokens for OAuth-compatible authentication:

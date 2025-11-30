@@ -800,6 +800,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#middleware-and-request-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Middleware and Request Access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Middleware and Request Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Middleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-middleware-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Middleware Patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#authentication-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2620,6 +2659,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#middleware-and-request-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Middleware and Request Access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Middleware and Request Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Middleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-middleware-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Middleware Patterns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#authentication-authorization" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2851,6 +2929,57 @@ agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">
 
 agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;What did I say earlier?&quot;}&#39;</span><span class="w"> </span>--session-id<span class="w"> </span><span class="s2">&quot;conversation-123&quot;</span>
 </code></pre></div>
+<h2 id="middleware-and-request-access">Middleware and Request Access<a class="headerlink" href="#middleware-and-request-access" title="Permanent link">&para;</a></h2>
+<p>The SDK exposes the underlying Starlette request object via <code>context.request</code>, enabling middleware to pass data to handlers.</p>
+<h3 id="using-middleware">Using Middleware<a class="headerlink" href="#using-middleware" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">starlette.middleware</span><span class="w"> </span><span class="kn">import</span> <span class="n">Middleware</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">starlette.middleware.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseHTTPMiddleware</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AuthMiddleware</span><span class="p">(</span><span class="n">BaseHTTPMiddleware</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+        <span class="n">auth</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">auth</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Bearer &#39;</span><span class="p">):</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="s1">&#39;user_123&#39;</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">authenticated</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">authenticated</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">(</span>
+    <span class="n">middleware</span><span class="o">=</span><span class="p">[</span><span class="n">Middleware</span><span class="p">(</span><span class="n">AuthMiddleware</span><span class="p">)]</span>
+<span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_agent</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="c1"># Access middleware data via context.request.state</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">context</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">authenticated</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Unauthorized&quot;</span><span class="p">}</span>
+
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">user_id</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">}</span>
+</code></pre></div>
+<h3 id="common-middleware-patterns">Common Middleware Patterns<a class="headerlink" href="#common-middleware-patterns" title="Permanent link">&para;</a></h3>
+<p><strong>Request Timing:</strong>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">TimingMiddleware</span><span class="p">(</span><span class="n">BaseHTTPMiddleware</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">start_time</span>
+    <span class="c1"># ... your logic</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Custom Header Parsing:</strong>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">HeaderParserMiddleware</span><span class="p">(</span><span class="n">BaseHTTPMiddleware</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">call_next</span><span class="p">):</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tenant_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;X-Tenant-ID&#39;</span><span class="p">)</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">api_version</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;X-API-Version&#39;</span><span class="p">,</span> <span class="s1">&#39;v1&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">call_next</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</code></pre></div></p>
+<p>This follows standard Starlette middleware patterns, so existing Starlette middleware can be used directly.</p>
 <h2 id="authentication-authorization">Authentication &amp; Authorization<a class="headerlink" href="#authentication-authorization" title="Permanent link">&para;</a></h2>
 <p>The SDK integrates with AgentCore's identity services providing automatic AWS credential validation (IAM SigV4) by default or JWT Bearer tokens for OAuth-compatible authentication:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Configure JWT authorization using AgentCore CLI</span>

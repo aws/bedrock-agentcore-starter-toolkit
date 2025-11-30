@@ -263,12 +263,16 @@ class BedrockAgentCoreApp(Starlette):
             # Get the headers from context to pass to RequestContext
             req_headers = BedrockAgentCoreContext.get_request_headers()
 
-            return RequestContext(session_id=session_id, request_headers=req_headers)
+            return RequestContext(
+                session_id=session_id,
+                request_headers=req_headers,
+                request=request,  # Pass through the Starlette request object
+            )
         except Exception as e:
             self.logger.warning("Failed to build request context: %s: %s", type(e).__name__, e)
             request_id = str(uuid.uuid4())
             BedrockAgentCoreContext.set_request_context(request_id, None)
-            return RequestContext(session_id=None)
+            return RequestContext(session_id=None, request=None)
 
     def _takes_context(self, handler: Callable) -> bool:
         try:
@@ -1143,4 +1147,23 @@ class RequestContext(BaseModel):
 
     session_id: Optional[str] = Field(None)
     request_headers: Optional[Dict[str, str]] = Field(None)
+    request: Optional[Any] = Field(None, description="The underlying Starlette request object")
+
+    class Config:
+        """Allow non-serializable types like Starlette Request."""
+
+        arbitrary_types_allowed = True
+```
+
+#### `Config`
+
+Allow non-serializable types like Starlette Request.
+
+Source code in `bedrock_agentcore/runtime/context.py`
+
+```
+class Config:
+    """Allow non-serializable types like Starlette Request."""
+
+    arbitrary_types_allowed = True
 ```
