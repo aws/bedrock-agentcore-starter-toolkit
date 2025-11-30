@@ -78,7 +78,7 @@ class PolicyClient:
 
         try:
             response = self.client.create_policy_engine(**request)
-            self.logger.info("✓ Created Policy Engine: %s", response["policyEngineArn"])
+            self.logger.info("✓ Policy Engine creation initiated: %s", response["policyEngineArn"])
             return response
         except Exception as e:
             raise PolicySetupException(f"Failed to create policy engine: {e}") from e
@@ -221,7 +221,7 @@ class PolicyClient:
 
         try:
             response = self.client.update_policy_engine(**request)
-            self.logger.info("✓ Updated Policy Engine: %s", response["policyEngineArn"])
+            self.logger.info("✓ Policy Engine update initiated: %s", response["policyEngineArn"])
             return response
         except self.client.exceptions.ResourceNotFoundException as e:
             raise PolicyEngineNotFoundException(f"Policy engine not found: {policy_engine_id}") from e
@@ -315,7 +315,7 @@ class PolicyClient:
 
         try:
             response = self.client.create_policy(**request)
-            self.logger.info("✓ Created Policy: %s", response["policyArn"])
+            self.logger.info("✓ Policy creation initiated: %s", response["policyArn"])
             return response
         except self.client.exceptions.ResourceNotFoundException as e:
             raise PolicyEngineNotFoundException(f"Policy engine not found: {policy_engine_id}") from e
@@ -489,7 +489,7 @@ class PolicyClient:
 
         try:
             response = self.client.update_policy(**request)
-            self.logger.info("✓ Updated Policy: %s", response["policyArn"])
+            self.logger.info("✓ Policy update initiated: %s", response["policyArn"])
             return response
         except self.client.exceptions.ResourceNotFoundException as e:
             raise PolicyNotFoundException(f"Policy not found: {policy_id}") from e
@@ -591,7 +591,7 @@ class PolicyClient:
 
         try:
             response = self.client.start_policy_generation(**request)
-            self.logger.info("✓ Started Policy Generation: %s", response["policyGenerationArn"])
+            self.logger.info("✓ Policy Generation initiated: %s", response["policyGenerationArn"])
             return response
         except self.client.exceptions.ResourceNotFoundException as e:
             raise PolicyEngineNotFoundException(f"Policy engine not found: {policy_engine_id}") from e

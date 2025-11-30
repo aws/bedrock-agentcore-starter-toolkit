@@ -18,7 +18,6 @@ Before starting, make sure you have the following:
 - **AWS Account** with credentials configured
 - **Python 3.10+** installed
 - **IAM permissions** for creating roles, Lambda functions, Policy Engines, and using Amazon Bedrock AgentCore
-- **Model Access** – Enable Anthropic's Claude Sonnet 3.7 in the Amazon Bedrock console
 
 ## Step 1: Setup and Install
 
@@ -36,7 +35,6 @@ Then install the dependencies:
 ```bash
 pip install boto3
 pip install bedrock-agentcore-starter-toolkit
-pip install strands-agents
 pip install requests
 ```
 
@@ -408,7 +406,6 @@ Through this tutorial, you've created:
 
 | Issue | Solution |
 |-------|----------|
-| "Model not enabled" | Enable Claude Sonnet 3.7 in Bedrock console → Model access |
 | "AccessDeniedException" | Check IAM permissions for `bedrock-agentcore:*` |
 | Gateway not responding | Wait 30-60 seconds after creation for DNS propagation |
 | OAuth token expired | Tokens expire after 1 hour, script gets new one automatically |

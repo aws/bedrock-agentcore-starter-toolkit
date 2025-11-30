@@ -27,9 +27,10 @@ def create_policy_engine(
         name=name,
         description=description,
     )
-    console.print("[green]✓ Policy engine created successfully![/green]")
+    console.print("[green]✓ Policy engine creation initiated![/green]")
     console.print(f"[bold]Engine ID:[/bold] {response.get('policyEngineId', 'N/A')}")
     console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
+    console.print("[dim]Use 'get-policy-engine' to check when status becomes ACTIVE[/dim]")
     console.print(f"[bold]Name:[/bold] {response.get('name', 'N/A')}")
     if response.get("policyEngineArn"):
         console.print(f"[bold]ARN:[/bold] [dim]{response['policyEngineArn']}[/dim]")
@@ -68,7 +69,7 @@ def update_policy_engine(
         policy_engine_id=policy_engine_id,
         description=description,
     )
-    console.print("[green]✓ Policy engine updated successfully![/green]")
+    console.print("[green]✓ Policy engine update initiated![/green]")
     console.print(f"[bold]Engine ID:[/bold] {response.get('policyEngineId', 'N/A')}")
     console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
     if response.get("updatedAt"):
@@ -121,7 +122,7 @@ def delete_policy_engine(
     """Delete a policy engine."""
     client = PolicyClient(region_name=region)
     response = client.delete_policy_engine(policy_engine_id)
-    console.print("[green]✓ Policy engine deleted successfully![/green]")
+    console.print("[green]✓ Policy engine deletion initiated![/green]")
     console.print(f"[bold]Engine ID:[/bold] {policy_engine_id}")
     if response.get("status"):
         console.print(f"[bold]Status:[/bold] {response['status']}")
@@ -163,10 +164,11 @@ def create_policy(
         description=description,
         validation_mode=validation_mode,
     )
-    console.print("[green]✓ Policy created successfully![/green]")
+    console.print("[green]✓ Policy creation initiated![/green]")
     console.print(f"[bold]Policy ID:[/bold] {response.get('policyId', 'N/A')}")
     console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
     console.print(f"[bold]Name:[/bold] {response.get('name', 'N/A')}")
+    console.print("[dim]Use 'get-policy' to check when status becomes ACTIVE[/dim]")
     if response.get("policyArn"):
         console.print(f"[bold]ARN:[/bold] [dim]{response['policyArn']}[/dim]")
 
@@ -224,7 +226,7 @@ def update_policy(
         description=description,
         validation_mode=validation_mode,
     )
-    console.print("[green]✓ Policy updated successfully![/green]")
+    console.print("[green]✓ Policy update initiated![/green]")
     console.print(f"[bold]Policy ID:[/bold] {response.get('policyId', 'N/A')}")
     console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
     if response.get("updatedAt"):
@@ -285,7 +287,7 @@ def delete_policy(
     """Delete a policy."""
     client = PolicyClient(region_name=region)
     response = client.delete_policy(policy_engine_id, policy_id)
-    console.print("[green]✓ Policy deleted successfully![/green]")
+    console.print("[green]✓ Policy deletion initiated![/green]")
     console.print(f"[bold]Policy ID:[/bold] {policy_id}")
     if response.get("status"):
         console.print(f"[bold]Status:[/bold] {response['status']}")
@@ -327,10 +329,11 @@ def start_policy_generation(
         resource=resource,
         content=content_obj,
     )
-    console.print("[green]✓ Policy generation started successfully![/green]")
+    console.print("[green]✓ Policy generation initiated![/green]")
     console.print(f"[bold]Generation ID:[/bold] {response.get('policyGenerationId', 'N/A')}")
     console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
     console.print(f"[bold]Name:[/bold] {response.get('name', 'N/A')}")
+    console.print("[dim]Use 'get-policy-generation' to check progress[/dim]")
     if response.get("policyGenerationArn"):
         console.print(f"[bold]ARN:[/bold] [dim]{response['policyGenerationArn']}[/dim]")
 
@@ -365,29 +368,15 @@ def get_policy_generation_assets(
     next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
     """Get policy generation assets (generated policies)."""
-    from rich.table import Table
-
     client = PolicyClient(region_name=region)
     response = client.list_policy_generation_assets(policy_engine_id, generation_id, max_results, next_token)
 
-    assets = response.get("assets", [])
+    # Filter out ResponseMetadata to show only relevant data
+    filtered_response = {"policyGenerationAssets": response.get("policyGenerationAssets", [])}
+    if "nextToken" in response:
+        filtered_response["nextToken"] = response["nextToken"]
 
-    if not assets:
-        console.print("[yellow]No generation assets found.[/yellow]")
-        return
-
-    table = Table(title=f"Policy Generation Assets ({len(assets)})")
-    table.add_column("Asset ID", style="cyan")
-    table.add_column("Type", style="green")
-    table.add_column("Status", style="yellow")
-
-    for asset in assets:
-        table.add_row(asset.get("assetId", "N/A"), asset.get("type", "N/A"), asset.get("status", "N/A"))
-
-    console.print(table)
-
-    if response.get("nextToken"):
-        console.print(f"\n[dim]Next token:[/dim] {response['nextToken']}")
+    console.print(json.dumps(filtered_response, indent=2, default=str))
 
 
 @policy_app.command("list-policy-generations")

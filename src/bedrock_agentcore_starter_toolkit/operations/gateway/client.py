@@ -922,46 +922,54 @@ class GatewayClient:
         except Exception as e:
             raise GatewaySetupException(f"Failed to create Cognito resources: {e}") from e
 
-    def update_gateway_policy_engine(
+    def update_gateway(
         self,
         gateway_identifier: str,
-        policy_engine_arn: str,
-        mode: str = "ENFORCE",
+        description: Optional[str] = None,
+        policy_engine_config: Optional[Dict] = None,
     ) -> dict:
-        """Attach or update policy engine configuration for a gateway.
+        """Update gateway configuration.
+
+        Note: Gateway names cannot be updated after creation (AWS API limitation).
 
         :param gateway_identifier: Gateway ID or ARN to update
-        :param policy_engine_arn: ARN of the policy engine to attach
-        :param mode: Enforcement mode - "LOG_ONLY" (monitoring) or "ENFORCE" (access control)
+        :param description: New gateway description
+        :param policy_engine_config: Policy engine configuration dict with 'arn' and 'mode' keys
         :return: Updated gateway details
         """
         # Resolve gateway ID from identifier or ARN
         resolved_id = gateway_identifier.split("/")[-1] if "/" in gateway_identifier else gateway_identifier
 
-        self.logger.info("Attaching policy engine to gateway %s", resolved_id)
-        self.logger.info("  Policy Engine ARN: %s", policy_engine_arn)
-        self.logger.info("  Mode: %s", mode)
+        self.logger.info("Updating gateway %s", resolved_id)
 
         try:
             # Get current gateway configuration
             gateway = self.client.get_gateway(gatewayIdentifier=resolved_id)
 
-            # Build update request with policy engine configuration
+            # Build update request with required fields
             update_request = {
                 "gatewayIdentifier": resolved_id,
-                "name": gateway["name"],
+                "name": gateway["name"],  # Name cannot be changed (AWS API limitation)
                 "roleArn": gateway["roleArn"],
                 "protocolType": gateway["protocolType"],
                 "authorizerType": gateway["authorizerType"],
-                "policyEngineConfiguration": {
-                    "arn": policy_engine_arn,
-                    "mode": mode,
-                },
             }
 
-            # Include optional fields if present
-            if "description" in gateway:
+            # Add description if provided, otherwise preserve existing
+            if description is not None:
+                update_request["description"] = description
+            elif "description" in gateway:
                 update_request["description"] = gateway["description"]
+
+            # Add policy engine config if provided
+            if policy_engine_config is not None:
+                update_request["policyEngineConfiguration"] = policy_engine_config
+                self.logger.info("  Policy Engine ARN: %s", policy_engine_config.get("arn"))
+                self.logger.info("  Mode: %s", policy_engine_config.get("mode"))
+            elif "policyEngineConfiguration" in gateway:
+                update_request["policyEngineConfiguration"] = gateway["policyEngineConfiguration"]
+
+            # Include optional fields if present in current gateway
             if "authorizerConfiguration" in gateway:
                 update_request["authorizerConfiguration"] = gateway["authorizerConfiguration"]
             if "protocolConfiguration" in gateway:
@@ -979,7 +987,7 @@ class GatewayClient:
             self.logger.debug("Updating gateway with params: %s", json.dumps(update_request, indent=2))
             updated_gateway = self.client.update_gateway(**update_request)
 
-            self.logger.info("✓ Policy engine attached successfully")
+            self.logger.info("✓ Gateway update initiated")
             self.logger.info("  Waiting for gateway to be ready...")
 
             # Wait for gateway to be ready after update
@@ -993,8 +1001,32 @@ class GatewayClient:
             return updated_gateway
 
         except Exception as e:
-            self.logger.error("Failed to attach policy engine: %s", str(e))
-            raise GatewaySetupException(f"Failed to attach policy engine: {e}") from e
+            self.logger.error("Failed to update gateway: %s", str(e))
+            raise GatewaySetupException(f"Failed to update gateway: {e}") from e
+
+    def update_gateway_policy_engine(
+        self,
+        gateway_identifier: str,
+        policy_engine_arn: str,
+        mode: str = "ENFORCE",
+    ) -> dict:
+        """Attach or update policy engine configuration for a gateway.
+
+        Convenience method that calls update_gateway internally.
+
+        :param gateway_identifier: Gateway ID or ARN to update
+        :param policy_engine_arn: ARN of the policy engine to attach
+        :param mode: Enforcement mode - "LOG_ONLY" (monitoring) or "ENFORCE" (access control)
+        :return: Updated gateway details
+        """
+        self.logger.info("Attaching policy engine to gateway")
+        return self.update_gateway(
+            gateway_identifier=gateway_identifier,
+            policy_engine_config={
+                "arn": policy_engine_arn,
+                "mode": mode,
+            },
+        )
 
     def get_access_token_for_cognito(self, client_info: Dict[str, Any]) -> str:
         """Get OAuth token using client credentials flow.

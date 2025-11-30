@@ -333,3 +333,120 @@ class TestBedrockAgentCoreGatewayCLI:
             mock_client.return_value.delete_gateway_target.assert_called_with(
                 gateway_identifier="gateway-123", name=None, gateway_arn=None, target_id="target-456", target_name=None
             )
+
+    def test_update_gateway_command_basic(self):
+        """Test basic update-gateway command with policy engine."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.update_gateway.return_value = {
+                "gatewayId": "test-gateway-123",
+                "status": "READY",
+                "policyEngineConfiguration": {"arn": "arn:aws:policy-engine", "mode": "ENFORCE"},
+            }
+
+            result = self.runner.invoke(
+                gateway_app,
+                [
+                    "update-gateway",
+                    "--id",
+                    "test-gateway-123",
+                    "--policy-engine-arn",
+                    "arn:aws:policy-engine",
+                    "--policy-engine-mode",
+                    "ENFORCE",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_client.return_value.update_gateway.assert_called_with(
+                gateway_identifier="test-gateway-123",
+                description=None,
+                policy_engine_config={"arn": "arn:aws:policy-engine", "mode": "ENFORCE"},
+            )
+
+    def test_update_gateway_command_all_parameters(self):
+        """Test update-gateway command with description and policy engine."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.update_gateway.return_value = {"status": "success"}
+
+            result = self.runner.invoke(
+                gateway_app,
+                [
+                    "update-gateway",
+                    "--id",
+                    "gateway-123",
+                    "--description",
+                    "New description",
+                    "--policy-engine-arn",
+                    "arn:aws:policy-engine",
+                    "--policy-engine-mode",
+                    "LOG_ONLY",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_client.return_value.update_gateway.assert_called_with(
+                gateway_identifier="gateway-123",
+                description="New description",
+                policy_engine_config={"arn": "arn:aws:policy-engine", "mode": "LOG_ONLY"},
+            )
+
+    def test_update_gateway_policy_engine_command_basic(self):
+        """Test basic update-gateway-policy-engine command."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.update_gateway_policy_engine.return_value = {
+                "gatewayId": "test-gateway-123",
+                "status": "READY",
+                "policyEngineConfiguration": {"arn": "arn:aws:policy-engine", "mode": "ENFORCE"},
+            }
+
+            result = self.runner.invoke(
+                gateway_app,
+                [
+                    "update-gateway-policy-engine",
+                    "--id",
+                    "test-gateway-123",
+                    "--policy-engine-arn",
+                    "arn:aws:policy-engine",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_client.return_value.update_gateway_policy_engine.assert_called_with(
+                gateway_identifier="test-gateway-123",
+                policy_engine_arn="arn:aws:policy-engine",
+                mode="ENFORCE",  # default
+            )
+
+    def test_update_gateway_policy_engine_command_with_mode(self):
+        """Test update-gateway-policy-engine command with LOG_ONLY mode."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            mock_client.return_value.update_gateway_policy_engine.return_value = {"status": "success"}
+
+            result = self.runner.invoke(
+                gateway_app,
+                [
+                    "update-gateway-policy-engine",
+                    "--id",
+                    "gateway-123",
+                    "--policy-engine-arn",
+                    "arn:aws:policy-engine",
+                    "--mode",
+                    "LOG_ONLY",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_client.return_value.update_gateway_policy_engine.assert_called_with(
+                gateway_identifier="gateway-123",
+                policy_engine_arn="arn:aws:policy-engine",
+                mode="LOG_ONLY",
+            )
+
+    def test_update_gateway_command_no_identifier_error(self):
+        """Test update-gateway command fails without gateway identifier."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.gateway.commands.GatewayClient") as mock_client:
+            result = self.runner.invoke(gateway_app, ["update-gateway", "--description", "New description"])
+
+            assert result.exit_code == 1
+            # Should not call update_gateway
+            mock_client.return_value.update_gateway.assert_not_called()

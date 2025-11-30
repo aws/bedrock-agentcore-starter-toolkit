@@ -47,7 +47,7 @@ def test_create_policy_engine_basic(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "Policy engine created successfully" in result.output
+    assert "Policy engine creation initiated" in result.output
     assert "testEngine-123" in result.output
     mock_policy_client.create_policy_engine.assert_called_once_with(name="TestEngine", description="Test policy engine")
 
@@ -59,7 +59,7 @@ def test_create_policy_engine_defaults(mock_policy_client):
     result = runner.invoke(policy_app, ["create-policy-engine", "--name", "DefaultEngine"])
 
     assert result.exit_code == 0
-    assert "Policy engine created successfully" in result.output
+    assert "Policy engine creation initiated" in result.output
 
 
 def test_get_policy_engine(mock_policy_client):
@@ -94,7 +94,7 @@ def test_update_policy_engine(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "Policy engine updated successfully" in result.output
+    assert "Policy engine update initiated" in result.output
     assert "2024-01-15T10:30:00Z" in result.output  # Verify updatedAt is displayed
     mock_policy_client.update_policy_engine.assert_called_once_with(
         policy_engine_id="engine-123", description="Updated description"
@@ -150,7 +150,7 @@ def test_delete_policy_engine(mock_policy_client):
     result = runner.invoke(policy_app, ["delete-policy-engine", "--engine-id", "engine-123"])
 
     assert result.exit_code == 0
-    assert "Policy engine deleted successfully" in result.output
+    assert "Policy engine deletion initiated" in result.output
     assert "engine-123" in result.output
     mock_policy_client.delete_policy_engine.assert_called_once_with("engine-123")
 
@@ -194,7 +194,7 @@ def test_create_policy_basic(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "Policy created successfully" in result.output
+    assert "Policy creation initiated" in result.output
     assert "policy-123" in result.output
     call_args = mock_policy_client.create_policy.call_args[1]
     assert call_args["policy_engine_id"] == "engine-123"
@@ -312,7 +312,7 @@ def test_update_policy(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "Policy updated successfully" in result.output
+    assert "Policy update initiated" in result.output
     call_args = mock_policy_client.update_policy.call_args[1]
     assert call_args["definition"] == definition
 
@@ -404,7 +404,7 @@ def test_delete_policy(mock_policy_client):
     result = runner.invoke(policy_app, ["delete-policy", "--engine-id", "engine-123", "--policy-id", "policy-123"])
 
     assert result.exit_code == 0
-    assert "Policy deleted successfully" in result.output
+    assert "Policy deletion initiated" in result.output
     assert "policy-123" in result.output
     mock_policy_client.delete_policy.assert_called_once_with("engine-123", "policy-123")
 
@@ -447,7 +447,7 @@ def test_start_policy_generation(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "Policy generation started successfully" in result.output
+    assert "Policy generation initiated" in result.output
     assert "gen-123" in result.output
     call_args = mock_policy_client.start_policy_generation.call_args[1]
     assert call_args["policy_engine_id"] == "engine-123"
@@ -503,42 +503,52 @@ def test_get_policy_generation(mock_policy_client):
 
 def test_list_policy_generation_assets(mock_policy_client):
     """Test list-policy-generation-assets command."""
-    mock_policy_client.list_policy_generation_assets.return_value = {
-        "assets": [
+    mock_response = {
+        "policyGenerationAssets": [
             {"assetId": "asset-1", "type": "POLICY", "status": "CREATED"},
             {"assetId": "asset-2", "type": "POLICY", "status": "CREATED"},
-        ]
+        ],
+        "ResponseMetadata": {"RequestId": "test-request-id"},
     }
+    mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
         policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
-    assert "Policy Generation Assets" in result.output
-    assert "asset-1" in result.output
-    assert "asset-2" in result.output
+    # Verify JSON output contains filtered response (no ResponseMetadata)
+    output_json = json.loads(result.output)
+    assert "ResponseMetadata" not in output_json
+    assert "policyGenerationAssets" in output_json
+    assert len(output_json["policyGenerationAssets"]) == 2
     mock_policy_client.list_policy_generation_assets.assert_called_once_with("engine-123", "gen-123", None, None)
 
 
 def test_list_policy_generation_assets_empty(mock_policy_client):
     """Test list-policy-generation-assets with no results."""
-    mock_policy_client.list_policy_generation_assets.return_value = {"assets": []}
+    mock_response = {"policyGenerationAssets": [], "ResponseMetadata": {"RequestId": "test-request-id"}}
+    mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
         policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
-    assert "No generation assets found" in result.output
+    # Verify JSON output (filtered, no ResponseMetadata)
+    output_json = json.loads(result.output)
+    assert "ResponseMetadata" not in output_json
+    assert len(output_json["policyGenerationAssets"]) == 0
 
 
 def test_list_policy_generation_assets_with_pagination(mock_policy_client):
     """Test list-policy-generation-assets with pagination."""
-    mock_policy_client.list_policy_generation_assets.return_value = {
-        "assets": [{"assetId": "asset-1", "type": "POLICY", "status": "CREATED"}],
+    mock_response = {
+        "policyGenerationAssets": [{"assetId": "asset-1", "type": "POLICY", "status": "CREATED"}],
         "nextToken": "next-token",
+        "ResponseMetadata": {"RequestId": "test-request-id"},
     }
+    mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
         policy_app,
@@ -554,7 +564,11 @@ def test_list_policy_generation_assets_with_pagination(mock_policy_client):
     )
 
     assert result.exit_code == 0
-    assert "next-token" in result.output
+    # Verify JSON output includes nextToken but not ResponseMetadata
+    output_json = json.loads(result.output)
+    assert "ResponseMetadata" not in output_json
+    assert output_json["nextToken"] == "next-token"
+    assert len(output_json["policyGenerationAssets"]) == 1
     mock_policy_client.list_policy_generation_assets.assert_called_once_with("engine-123", "gen-123", 10, None)
 
 
@@ -712,23 +726,28 @@ def test_update_policy_with_updated_at(mock_policy_client):
 
 
 def test_list_policy_generation_assets_with_data(mock_policy_client):
-    """Test list-policy-generation-assets displays asset table correctly."""
-    mock_policy_client.list_policy_generation_assets.return_value = {
-        "assets": [
+    """Test list-policy-generation-assets displays JSON correctly."""
+    mock_response = {
+        "policyGenerationAssets": [
             {"assetId": "asset-1", "type": "POLICY", "status": "CREATED"},
             {"assetId": "asset-2", "type": "SCHEMA", "status": "CREATED"},
-        ]
+        ],
+        "ResponseMetadata": {"RequestId": "test-request-id"},
     }
+    mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
         policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
-    assert "asset-1" in result.output
-    assert "asset-2" in result.output
-    assert "POLICY" in result.output
-    assert "SCHEMA" in result.output
+    # Verify JSON output structure (filtered, no ResponseMetadata)
+    output_json = json.loads(result.output)
+    assert "ResponseMetadata" not in output_json
+    assert output_json["policyGenerationAssets"][0]["assetId"] == "asset-1"
+    assert output_json["policyGenerationAssets"][0]["type"] == "POLICY"
+    assert output_json["policyGenerationAssets"][1]["assetId"] == "asset-2"
+    assert output_json["policyGenerationAssets"][1]["type"] == "SCHEMA"
 
 
 # ==================== Region Option Consistency Tests ====================
@@ -748,7 +767,7 @@ def test_all_commands_accept_region_option(mock_policy_client):
     mock_policy_client.start_policy_generation.return_value = {"policyGenerationId": "gen-123"}
     mock_policy_client.get_policy_generation.return_value = {"policyGenerationId": "gen-123"}
     mock_policy_client.list_policy_generations.return_value = {"policyGenerations": []}
-    mock_policy_client.list_policy_generation_assets.return_value = {"assets": []}
+    mock_policy_client.list_policy_generation_assets.return_value = {"policyGenerationAssets": []}
 
     definition = json.dumps({"cedar": {"statement": "permit(principal, action, resource);"}})
 
