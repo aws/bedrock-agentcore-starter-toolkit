@@ -39,10 +39,13 @@ def policy_client(mock_boto_client, mock_session):
 class TestPolicyClientInit:
     """Test PolicyClient initialization."""
 
-    def test_client_init_with_default_region(self, mock_boto_client, mock_session):
+    @patch("bedrock_agentcore_starter_toolkit.operations.policy.client.get_region")
+    def test_client_init_with_default_region(self, mock_get_region, mock_boto_client, mock_session):
         """Test client initialization with default region."""
+        mock_get_region.return_value = "us-west-2"
         client = PolicyClient()
 
+        mock_get_region.assert_called_once()
         mock_boto_client.assert_called_with("bedrock-agentcore-control", region_name="us-west-2")
         assert client.region == "us-west-2"
 

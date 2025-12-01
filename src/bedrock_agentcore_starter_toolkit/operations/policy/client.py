@@ -6,10 +6,10 @@ from typing import Any, Dict, Optional
 
 import boto3
 
+from ...utils.aws import get_region
 from .constants import (
     DEFAULT_MAX_ATTEMPTS,
     DEFAULT_POLL_DELAY,
-    DEFAULT_REGION,
     PolicyEngineStatus,
     PolicyStatus,
 )
@@ -32,9 +32,9 @@ class PolicyClient:
         """Initialize the Policy client.
 
         Args:
-            region_name: AWS region name (defaults to us-east-1)
+            region_name: AWS region name (defaults to AWS config or us-west-2)
         """
-        self.region = region_name or DEFAULT_REGION
+        self.region = region_name or get_region()
         self.client = boto3.client("bedrock-agentcore-control", region_name=self.region)
         self.session = boto3.Session(region_name=self.region)
 

@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import boto3
 import urllib3
 
+from ...utils.aws import extract_id_from_arn
 from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import (
     API_MODEL_BUCKETS,
@@ -220,7 +221,7 @@ class GatewayClient:
         iam = boto3.client("iam")
 
         account_id = sts.get_caller_identity()["Account"]
-        role_name = role_arn.split("/")[-1]
+        role_name = extract_id_from_arn(role_arn)
 
         # Update trust policy
         trust_policy = {
@@ -283,9 +284,9 @@ class GatewayClient:
 
         # Resolve gateway ID from different input types
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             # Look up gateway ID by name
             resolved_id = self._get_gateway_id_by_name(name)
@@ -360,9 +361,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -480,9 +481,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -519,9 +520,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -578,9 +579,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -938,7 +939,7 @@ class GatewayClient:
         :return: Updated gateway details
         """
         # Resolve gateway ID from identifier or ARN
-        resolved_id = gateway_identifier.split("/")[-1] if "/" in gateway_identifier else gateway_identifier
+        resolved_id = extract_id_from_arn(gateway_identifier)
 
         self.logger.info("Updating gateway %s", resolved_id)
 
@@ -970,18 +971,16 @@ class GatewayClient:
                 update_request["policyEngineConfiguration"] = gateway["policyEngineConfiguration"]
 
             # Include optional fields if present in current gateway
-            if "authorizerConfiguration" in gateway:
-                update_request["authorizerConfiguration"] = gateway["authorizerConfiguration"]
-            if "protocolConfiguration" in gateway:
-                update_request["protocolConfiguration"] = gateway["protocolConfiguration"]
-            if "kmsKeyArn" in gateway:
-                update_request["kmsKeyArn"] = gateway["kmsKeyArn"]
-            if "customTransformConfiguration" in gateway:
-                update_request["customTransformConfiguration"] = gateway["customTransformConfiguration"]
-            if "interceptorConfigurations" in gateway:
-                update_request["interceptorConfigurations"] = gateway["interceptorConfigurations"]
-            if "exceptionLevel" in gateway:
-                update_request["exceptionLevel"] = gateway["exceptionLevel"]
+            for field in [
+                "authorizerConfiguration",
+                "protocolConfiguration",
+                "kmsKeyArn",
+                "customTransformConfiguration",
+                "interceptorConfigurations",
+                "exceptionLevel",
+            ]:
+                if field in gateway:
+                    update_request[field] = gateway[field]
 
             # Update the gateway
             self.logger.debug("Updating gateway with params: %s", json.dumps(update_request, indent=2))

@@ -2,9 +2,6 @@
 
 from enum import Enum
 
-# Default region for Policy operations
-DEFAULT_REGION = "us-west-2"
-
 # Pagination defaults
 DEFAULT_MAX_RESULTS = 10
 MAX_RESULTS_LIMIT = 100

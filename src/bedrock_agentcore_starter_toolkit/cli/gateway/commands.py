@@ -329,44 +329,5 @@ def update_gateway(
     console.print(result)
 
 
-@gateway_app.command(name="update-gateway-policy-engine")
-def update_gateway_policy_engine(
-    region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID to update"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN to update"),
-    policy_engine_arn: str = typer.Option(..., "--policy-engine-arn", help="Policy engine ARN to attach (required)"),
-    mode: str = typer.Option("ENFORCE", "--mode", help="Enforcement mode: LOG_ONLY or ENFORCE (default: ENFORCE)"),
-) -> None:
-    """Attach or update policy engine configuration for a gateway.
-
-    You can specify the gateway by ID or ARN.
-
-    :param region: optional - region to use (defaults to us-west-2).
-    :param gateway_identifier: optional - the gateway ID to update.
-    :param gateway_arn: optional - the gateway ARN to update.
-    :param policy_engine_arn: required - policy engine ARN to attach.
-    :param mode: optional - enforcement mode (LOG_ONLY or ENFORCE, default: ENFORCE).
-    :return:
-    """
-    client = GatewayClient(region_name=region)
-
-    # Resolve gateway identifier
-    resolved_id = None
-    if gateway_identifier:
-        resolved_id = gateway_identifier
-    elif gateway_arn:
-        resolved_id = gateway_arn
-    else:
-        console.print("[red]Error:[/red] gateway_identifier or gateway_arn required")
-        raise typer.Exit(1)
-
-    result = client.update_gateway_policy_engine(
-        gateway_identifier=resolved_id,
-        policy_engine_arn=policy_engine_arn,
-        mode=mode,
-    )
-    console.print(result)
-
-
 if __name__ == "__main__":
     gateway_app()
