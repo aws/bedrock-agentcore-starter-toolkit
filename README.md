@@ -76,7 +76,7 @@ AgentCore Identity provides a secure, scalable agent identity and access managem
 **[Identity Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started-cognito.html)**
 
 ## 🛡️ Amazon Bedrock AgentCore Policy
-Policy in AgentCore gives you real time, deterministic control over agent's actions through AgentCore Gateway, ensuring agents stay within defined boundaries and business rules without slowing them down. Easy express fine-grained rules using natural language description or author them directly using Cedar - AWS's open-source policy language - giving you complete control on who can perform what actions under what conditions.
+Policy in AgentCore gives you real time, deterministic control over agent's actions through AgentCore Gateway, ensuring agents stay within defined boundaries and business rules without slowing them down. Easily express fine-grained rules using natural language description or author them directly using Cedar - AWS's open-source policy language - giving you complete control over who can perform which actions under what conditions.
 
 **[Policy Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html)**
 

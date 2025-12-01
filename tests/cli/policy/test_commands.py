@@ -71,7 +71,7 @@ def test_get_policy_engine(mock_policy_client):
         "description": "Test description",
     }
 
-    result = runner.invoke(policy_app, ["get-policy-engine", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["get-policy-engine", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "Policy Engine Details" in result.output
@@ -90,7 +90,7 @@ def test_update_policy_engine(mock_policy_client):
 
     result = runner.invoke(
         policy_app,
-        ["update-policy-engine", "--engine-id", "engine-123", "--description", "Updated description"],
+        ["update-policy-engine", "--policy-engine-id", "engine-123", "--description", "Updated description"],
     )
 
     assert result.exit_code == 0
@@ -147,7 +147,7 @@ def test_delete_policy_engine(mock_policy_client):
     """Test delete-policy-engine command."""
     mock_policy_client.delete_policy_engine.return_value = {"status": "DELETING"}
 
-    result = runner.invoke(policy_app, ["delete-policy-engine", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["delete-policy-engine", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "Policy engine deletion initiated" in result.output
@@ -159,7 +159,7 @@ def test_policy_engine_api_error(mock_policy_client):
     """Test error handling when API call fails."""
     mock_policy_client.get_policy_engine.side_effect = Exception("API Error")
 
-    result = runner.invoke(policy_app, ["get-policy-engine", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["get-policy-engine", "--policy-engine-id", "engine-123"])
 
     # Command should fail but not crash
     assert result.exit_code != 0
@@ -184,7 +184,7 @@ def test_create_policy_basic(mock_policy_client):
         policy_app,
         [
             "create-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "TestPolicy",
@@ -212,7 +212,7 @@ def test_create_policy_with_validation_mode(mock_policy_client):
         policy_app,
         [
             "create-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "TestPolicy",
@@ -238,7 +238,7 @@ def test_create_policy_with_description(mock_policy_client):
         policy_app,
         [
             "create-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "TestPolicy",
@@ -260,7 +260,7 @@ def test_create_policy_invalid_json(mock_policy_client):
         policy_app,
         [
             "create-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "TestPolicy",
@@ -283,7 +283,7 @@ def test_get_policy(mock_policy_client):
         "definition": {"cedar": {"statement": "permit(principal, action, resource);"}},
     }
 
-    result = runner.invoke(policy_app, ["get-policy", "--engine-id", "engine-123", "--policy-id", "policy-123"])
+    result = runner.invoke(policy_app, ["get-policy", "--policy-engine-id", "engine-123", "--policy-id", "policy-123"])
 
     assert result.exit_code == 0
     assert "Policy Details" in result.output
@@ -302,7 +302,7 @@ def test_update_policy(mock_policy_client):
         policy_app,
         [
             "update-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--policy-id",
             "policy-123",
@@ -323,7 +323,7 @@ def test_update_policy_invalid_json(mock_policy_client):
         policy_app,
         [
             "update-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--policy-id",
             "policy-123",
@@ -345,7 +345,7 @@ def test_list_policies(mock_policy_client):
         ]
     }
 
-    result = runner.invoke(policy_app, ["list-policies", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["list-policies", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "Policies" in result.output
@@ -357,7 +357,7 @@ def test_list_policies_empty(mock_policy_client):
     """Test list-policies with no results."""
     mock_policy_client.list_policies.return_value = {"policies": []}
 
-    result = runner.invoke(policy_app, ["list-policies", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["list-policies", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "No policies found" in result.output
@@ -370,7 +370,7 @@ def test_list_policies_with_resource_scope(mock_policy_client):
     resource_arn = "arn:aws:bedrock-agentcore:us-east-1:123:gateway/my-gateway"
     result = runner.invoke(
         policy_app,
-        ["list-policies", "--engine-id", "engine-123", "--target-resource-scope", resource_arn],
+        ["list-policies", "--policy-engine-id", "engine-123", "--target-resource-scope", resource_arn],
     )
 
     assert result.exit_code == 0
@@ -387,7 +387,7 @@ def test_list_policies_with_pagination(mock_policy_client):
 
     result = runner.invoke(
         policy_app,
-        ["list-policies", "--engine-id", "engine-123", "--max-results", "5", "--next-token", "token123"],
+        ["list-policies", "--policy-engine-id", "engine-123", "--max-results", "5", "--next-token", "token123"],
     )
 
     assert result.exit_code == 0
@@ -401,7 +401,10 @@ def test_delete_policy(mock_policy_client):
     """Test delete-policy command."""
     mock_policy_client.delete_policy.return_value = {"status": "DELETING"}
 
-    result = runner.invoke(policy_app, ["delete-policy", "--engine-id", "engine-123", "--policy-id", "policy-123"])
+    result = runner.invoke(
+        policy_app,
+        ["delete-policy", "--policy-engine-id", "engine-123", "--policy-id", "policy-123"],
+    )
 
     assert result.exit_code == 0
     assert "Policy deletion initiated" in result.output
@@ -413,7 +416,7 @@ def test_policy_api_error(mock_policy_client):
     """Test error handling when policy API call fails."""
     mock_policy_client.get_policy.side_effect = Exception("API Error")
 
-    result = runner.invoke(policy_app, ["get-policy", "--engine-id", "engine-123", "--policy-id", "policy-123"])
+    result = runner.invoke(policy_app, ["get-policy", "--policy-engine-id", "engine-123", "--policy-id", "policy-123"])
 
     assert result.exit_code != 0
 
@@ -435,7 +438,7 @@ def test_start_policy_generation(mock_policy_client):
         policy_app,
         [
             "start-policy-generation",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "test-generation",
@@ -467,7 +470,7 @@ def test_start_policy_generation_with_region(mock_policy_client):
         policy_app,
         [
             "start-policy-generation",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "test-gen",
@@ -492,7 +495,7 @@ def test_get_policy_generation(mock_policy_client):
     }
 
     result = runner.invoke(
-        policy_app, ["get-policy-generation", "--engine-id", "engine-123", "--generation-id", "gen-123"]
+        policy_app, ["get-policy-generation", "--policy-engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
@@ -513,7 +516,7 @@ def test_list_policy_generation_assets(mock_policy_client):
     mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
-        policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
+        policy_app, ["list-policy-generation-assets", "--policy-engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
@@ -531,7 +534,7 @@ def test_list_policy_generation_assets_empty(mock_policy_client):
     mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
-        policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
+        policy_app, ["list-policy-generation-assets", "--policy-engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
@@ -554,7 +557,7 @@ def test_list_policy_generation_assets_with_pagination(mock_policy_client):
         policy_app,
         [
             "list-policy-generation-assets",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--generation-id",
             "gen-123",
@@ -581,7 +584,7 @@ def test_list_policy_generations(mock_policy_client):
         ]
     }
 
-    result = runner.invoke(policy_app, ["list-policy-generations", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["list-policy-generations", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "Policy Generations" in result.output
@@ -593,7 +596,7 @@ def test_list_policy_generations_empty(mock_policy_client):
     """Test list-policy-generations with no results."""
     mock_policy_client.list_policy_generations.return_value = {"policyGenerations": []}
 
-    result = runner.invoke(policy_app, ["list-policy-generations", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["list-policy-generations", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "No policy generations found" in result.output
@@ -608,7 +611,15 @@ def test_list_policy_generations_with_pagination(mock_policy_client):
 
     result = runner.invoke(
         policy_app,
-        ["list-policy-generations", "--engine-id", "engine-123", "--max-results", "5", "--next-token", "token123"],
+        [
+            "list-policy-generations",
+            "--policy-engine-id",
+            "engine-123",
+            "--max-results",
+            "5",
+            "--next-token",
+            "token123",
+        ],
     )
 
     assert result.exit_code == 0
@@ -623,7 +634,7 @@ def test_policy_generation_api_error(mock_policy_client):
     mock_policy_client.get_policy_generation.side_effect = Exception("API Error")
 
     result = runner.invoke(
-        policy_app, ["get-policy-generation", "--engine-id", "engine-123", "--generation-id", "gen-123"]
+        policy_app, ["get-policy-generation", "--policy-engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code != 0
@@ -662,7 +673,7 @@ def test_get_policy_engine_with_all_timestamps(mock_policy_client):
         "updatedAt": "2024-01-02T00:00:00Z",
     }
 
-    result = runner.invoke(policy_app, ["get-policy-engine", "--engine-id", "engine-123"])
+    result = runner.invoke(policy_app, ["get-policy-engine", "--policy-engine-id", "engine-123"])
 
     assert result.exit_code == 0
     assert "2024-01-01T00:00:00Z" in result.output
@@ -685,7 +696,7 @@ def test_create_policy_with_arn(mock_policy_client):
         policy_app,
         [
             "create-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--name",
             "TestPolicy",
@@ -712,7 +723,7 @@ def test_update_policy_with_updated_at(mock_policy_client):
         policy_app,
         [
             "update-policy",
-            "--engine-id",
+            "--policy-engine-id",
             "engine-123",
             "--policy-id",
             "policy-123",
@@ -737,7 +748,7 @@ def test_list_policy_generation_assets_with_data(mock_policy_client):
     mock_policy_client.list_policy_generation_assets.return_value = mock_response
 
     result = runner.invoke(
-        policy_app, ["list-policy-generation-assets", "--engine-id", "engine-123", "--generation-id", "gen-123"]
+        policy_app, ["list-policy-generation-assets", "--policy-engine-id", "engine-123", "--generation-id", "gen-123"]
     )
 
     assert result.exit_code == 0
@@ -773,17 +784,29 @@ def test_all_commands_accept_region_option(mock_policy_client):
 
     commands_with_region = [
         (["create-policy-engine", "--name", "test", "--region", "us-west-2"]),
-        (["get-policy-engine", "--engine-id", "e1", "--region", "us-west-2"]),
+        (["get-policy-engine", "--policy-engine-id", "e1", "--region", "us-west-2"]),
         (["list-policy-engines", "--region", "us-west-2"]),
-        (["delete-policy-engine", "--engine-id", "e1", "--region", "us-west-2"]),
-        (["create-policy", "--engine-id", "e1", "--name", "p1", "--definition", definition, "--region", "us-west-2"]),
-        (["get-policy", "--engine-id", "e1", "--policy-id", "p1", "--region", "us-west-2"]),
-        (["list-policies", "--engine-id", "e1", "--region", "us-west-2"]),
-        (["delete-policy", "--engine-id", "e1", "--policy-id", "p1", "--region", "us-west-2"]),
+        (["delete-policy-engine", "--policy-engine-id", "e1", "--region", "us-west-2"]),
+        (
+            [
+                "create-policy",
+                "--policy-engine-id",
+                "e1",
+                "--name",
+                "p1",
+                "--definition",
+                definition,
+                "--region",
+                "us-west-2",
+            ]
+        ),
+        (["get-policy", "--policy-engine-id", "e1", "--policy-id", "p1", "--region", "us-west-2"]),
+        (["list-policies", "--policy-engine-id", "e1", "--region", "us-west-2"]),
+        (["delete-policy", "--policy-engine-id", "e1", "--policy-id", "p1", "--region", "us-west-2"]),
         (
             [
                 "start-policy-generation",
-                "--engine-id",
+                "--policy-engine-id",
                 "e1",
                 "--name",
                 "g1",
@@ -795,9 +818,29 @@ def test_all_commands_accept_region_option(mock_policy_client):
                 "us-west-2",
             ]
         ),
-        (["get-policy-generation", "--engine-id", "e1", "--generation-id", "g1", "--region", "us-west-2"]),
-        (["list-policy-generations", "--engine-id", "e1", "--region", "us-west-2"]),
-        (["list-policy-generation-assets", "--engine-id", "e1", "--generation-id", "g1", "--region", "us-west-2"]),
+        (
+            [
+                "get-policy-generation",
+                "--policy-engine-id",
+                "e1",
+                "--generation-id",
+                "g1",
+                "--region",
+                "us-west-2",
+            ]
+        ),
+        (["list-policy-generations", "--policy-engine-id", "e1", "--region", "us-west-2"]),
+        (
+            [
+                "list-policy-generation-assets",
+                "--policy-engine-id",
+                "e1",
+                "--generation-id",
+                "g1",
+                "--region",
+                "us-west-2",
+            ]
+        ),
     ]
 
     for command_args in commands_with_region:

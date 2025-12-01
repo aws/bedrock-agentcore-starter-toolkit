@@ -310,7 +310,7 @@ def update_gateway(
     elif gateway_arn:
         resolved_id = gateway_arn
     else:
-        console.print({"status": "error", "message": "gateway_identifier or gateway_arn required"})
+        console.print("[red]Error:[/red] gateway_identifier or gateway_arn required")
         raise typer.Exit(1)
 
     # Build policy engine config if provided
@@ -357,7 +357,7 @@ def update_gateway_policy_engine(
     elif gateway_arn:
         resolved_id = gateway_arn
     else:
-        console.print({"status": "error", "message": "gateway_identifier or gateway_arn required"})
+        console.print("[red]Error:[/red] gateway_identifier or gateway_arn required")
         raise typer.Exit(1)
 
     result = client.update_gateway_policy_engine(

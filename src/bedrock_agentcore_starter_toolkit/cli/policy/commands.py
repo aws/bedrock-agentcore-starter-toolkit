@@ -38,7 +38,7 @@ def create_policy_engine(
 
 @policy_app.command("get-policy-engine")
 def get_policy_engine(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Get policy engine details."""
@@ -59,7 +59,7 @@ def get_policy_engine(
 
 @policy_app.command("update-policy-engine")
 def update_policy_engine(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="Updated description"),
 ) -> None:
@@ -116,7 +116,7 @@ def list_policy_engines(
 
 @policy_app.command("delete-policy-engine")
 def delete_policy_engine(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Delete a policy engine."""
@@ -133,7 +133,7 @@ def delete_policy_engine(
 
 @policy_app.command("create-policy")
 def create_policy(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     name: str = typer.Option(..., "--name", "-n", help="Policy name"),
     definition: str = typer.Option(
         ...,
@@ -175,7 +175,7 @@ def create_policy(
 
 @policy_app.command("get-policy")
 def get_policy(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
@@ -200,7 +200,7 @@ def get_policy(
 
 @policy_app.command("update-policy")
 def update_policy(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
     definition: str = typer.Option(..., "--definition", "-def", help="Updated policy definition JSON"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
@@ -235,7 +235,7 @@ def update_policy(
 
 @policy_app.command("list-policies")
 def list_policies(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     target_resource_scope: Optional[str] = typer.Option(None, "--target-resource-scope", help="Filter by resource ARN"),
     max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
@@ -280,7 +280,7 @@ def list_policies(
 
 @policy_app.command("delete-policy")
 def delete_policy(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
@@ -298,9 +298,9 @@ def delete_policy(
 
 @policy_app.command("start-policy-generation")
 def start_policy_generation(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     name: str = typer.Option(..., "--name", "-n", help="Generation name"),
-    resource_arn: str = typer.Option(..., "--resource-arn", help="Resource ARN for policy generation"),
+    resource_arn: str = typer.Option(..., "--resource-arn", help="Gateway ARN that the generated policies will target"),
     content: str = typer.Option(
         ...,
         "--content",
@@ -313,7 +313,7 @@ def start_policy_generation(
 
     Example:
         agentcore policy start-generation \\
-            --engine-id "testPolicyEngine-abc123" \\
+            --policy-engine-id "testPolicyEngine-abc123" \\
             --name "refund-policy-generation" \\
             --resource-arn "arn:aws:bedrock-agentcore:us-east-1:123456789:gateway/my-gateway" \\
             --content "Allow refunds under $1000"
@@ -340,7 +340,7 @@ def start_policy_generation(
 
 @policy_app.command("get-policy-generation")
 def get_policy_generation(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Generation ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
@@ -361,7 +361,7 @@ def get_policy_generation(
 
 @policy_app.command("list-policy-generation-assets")
 def get_policy_generation_assets(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Generation ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
@@ -381,7 +381,7 @@ def get_policy_generation_assets(
 
 @policy_app.command("list-policy-generations")
 def list_policy_generations(
-    policy_engine_id: str = typer.Option(..., "--engine-id", "-e", help="Policy engine ID"),
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
     next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),

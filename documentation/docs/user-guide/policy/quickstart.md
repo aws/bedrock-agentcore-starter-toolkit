@@ -155,7 +155,7 @@ def lambda_handler(event, context):
     print("Step 5: Creating Policy Engine...")
     engine = policy_client.create_or_get_policy_engine(
         name="RefundPolicyEngine",
-        description="Policy engine for refund governance"
+        description="Policy engine to regulate refund operations"
     )
     print(f"✓ Policy Engine: {engine['policyEngineId']}\n")
 

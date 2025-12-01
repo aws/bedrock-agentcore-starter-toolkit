@@ -1000,7 +1000,7 @@ Options:
 ```bash
 agentcore policy create-policy-engine \
   --name "RefundPolicyEngine" \
-  --description "Policy engine for refund governance"
+  --description "Policy engine to regulate refund operations"
 ```
 
 ### Get Policy Engine
@@ -1013,13 +1013,13 @@ agentcore policy get-policy-engine [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
 **Example:**
 
 ```bash
-agentcore policy get-policy-engine --engine-id "testPolicyEngine-abc123"
+agentcore policy get-policy-engine --policy-engine-id "testPolicyEngine-abc123"
 ```
 
 ### Update Policy Engine
@@ -1032,7 +1032,7 @@ agentcore policy update-policy-engine [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 - `--description, -d TEXT`: Updated description (optional)
 
@@ -1040,7 +1040,7 @@ Options:
 
 ```bash
 agentcore policy update-policy-engine \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --description "Updated policy engine description"
 ```
 
@@ -1074,13 +1074,13 @@ agentcore policy delete-policy-engine [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
 **Example:**
 
 ```bash
-agentcore policy delete-policy-engine --engine-id "testPolicyEngine-abc123"
+agentcore policy delete-policy-engine --policy-engine-id "testPolicyEngine-abc123"
 ```
 
 ### Create Policy
@@ -1093,7 +1093,7 @@ agentcore policy create-policy [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--name, -n TEXT`: Policy name (required)
 - `--definition, -def TEXT`: Policy definition JSON (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
@@ -1102,7 +1102,7 @@ Options:
 
 **Policy Definition Format:**
 
-The definition must be a JSON string containing Cedar policy statements. Cedar policies require resource constraints - wildcards are not allowed:
+The definition must be a JSON string containing Cedar policy statements. Cedar policies require resource constraints and do not support glob-style wildcards:
 
 ```json
 {
@@ -1114,18 +1114,45 @@ The definition must be a JSON string containing Cedar policy statements. Cedar p
 
 **Resource Constraints:**
 
-Cedar policies must constrain resources. Valid patterns:
+Cedar policies must specify a specific Gateway ARN:
 
 - **Specific Gateway:** `resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:region:account:gateway/id"`
-- **Any Gateway (type check):** Use `when { resource is AgentCore::Gateway }`
 
-❌ **Invalid:** `permit(principal, action, resource);` - Wildcard resources are not allowed
+❌ **Invalid:** `permit(principal, action, resource);` - Unconstrained wildcard resources are not allowed
+
+**Important Note on Numeric Comparisons:**
+
+When using numeric comparisons in Cedar conditions, the JSON Schema type matters:
+
+- **`"type": "integer"`** (maps to Cedar Long) → Use direct comparison operators: `<`, `>`, `<=`, `>=`, `==`
+  ```cedar
+  context.input.amount < 1000
+  ```
+
+- **`"type": "number"`** (maps to Cedar Decimal) → Use comparison methods: `.lessThan()`, `.greaterThan()`, `.lessThanOrEqual()`, `.greaterThanOrEqual()`
+  ```cedar
+  context.input.amount.lessThan(decimal("1000.00"))
+  ```
+
+For simplicity, use `"type": "integer"` for whole number amounts (like dollar amounts) to enable direct comparison operators.
+
+**Tip: Use `.contains()` for Multiple Value Checks:**
+
+Instead of chaining multiple OR conditions, use `.contains()` with a set:
+
+```cedar
+// ❌ Verbose
+context.input.region == "US" || context.input.region == "CA" || context.input.region == "UK"
+
+// ✅ Cleaner
+["US", "CA", "UK"].contains(context.input.region)
+```
 
 **Example:**
 
 ```bash
 agentcore policy create-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund_limit_policy" \
   --description "Allow refunds under \$1000" \
   --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 1000 };"}}'
@@ -1141,7 +1168,7 @@ agentcore policy get-policy [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--policy-id, -p TEXT`: Policy ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
@@ -1149,7 +1176,7 @@ Options:
 
 ```bash
 agentcore policy get-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789"
 ```
 
@@ -1163,7 +1190,7 @@ agentcore policy update-policy [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--policy-id, -p TEXT`: Policy ID (required)
 - `--definition, -def TEXT`: Updated policy definition JSON (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
@@ -1174,10 +1201,10 @@ Options:
 
 ```bash
 agentcore policy update-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
-  --definition '{"cedar":{"statement":"permit(principal, action, resource) when { resource is AgentCore::Gateway && context.input.amount < 500 };"}}' \
-  --description "Updated to \$500 limit with type constraint"
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTool__process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --description "Updated to \$500 limit"
 ```
 
 ### List Policies
@@ -1190,7 +1217,7 @@ agentcore policy list-policies [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 - `--target-resource-scope TEXT`: Filter by resource ARN (optional)
 - `--max-results INTEGER`: Maximum number of results (optional)
@@ -1200,11 +1227,11 @@ Options:
 
 ```bash
 # List all policies
-agentcore policy list-policies --engine-id "testPolicyEngine-abc123"
+agentcore policy list-policies --policy-engine-id "testPolicyEngine-abc123"
 
 # Filter by resource
 agentcore policy list-policies \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --target-resource-scope "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway"
 ```
 
@@ -1218,7 +1245,7 @@ agentcore policy delete-policy [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--policy-id, -p TEXT`: Policy ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
@@ -1226,7 +1253,7 @@ Options:
 
 ```bash
 agentcore policy delete-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789"
 ```
 
@@ -1240,9 +1267,9 @@ agentcore policy start-policy-generation [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--name, -n TEXT`: Generation name (required)
-- `--resource-arn TEXT`: Resource ARN for policy generation (required)
+- `--resource-arn TEXT`: Gateway ARN that the generated policies will target (required)
 - `--content, -c TEXT`: Natural language policy description (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
@@ -1250,7 +1277,7 @@ Options:
 
 ```bash
 agentcore policy start-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund-policy-generation" \
   --resource-arn "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway" \
   --content "Allow refunds under \$1000"
@@ -1266,7 +1293,7 @@ agentcore policy get-policy-generation [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--generation-id, -g TEXT`: Generation ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
@@ -1274,7 +1301,7 @@ Options:
 
 ```bash
 agentcore policy get-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-abc123"
 ```
 
@@ -1288,7 +1315,7 @@ agentcore policy list-policy-generation-assets [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--generation-id, -g TEXT`: Generation ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 - `--max-results INTEGER`: Maximum number of results (optional)
@@ -1298,7 +1325,7 @@ Options:
 
 ```bash
 agentcore policy list-policy-generation-assets \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-abc123"
 ```
 
@@ -1312,7 +1339,7 @@ agentcore policy list-policy-generations [OPTIONS]
 
 Options:
 
-- `--engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 - `--max-results INTEGER`: Maximum number of results (optional)
 - `--next-token TEXT`: Token for pagination (optional)
@@ -1321,7 +1348,7 @@ Options:
 
 ```bash
 agentcore policy list-policy-generations \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --max-results 20
 ```
 
@@ -1506,7 +1533,7 @@ agentcore memory delete my_memory_abc123 --wait
 # Create a policy engine
 agentcore policy create-policy-engine \
   --name "RefundPolicyEngine" \
-  --description "Policy engine for refund governance" \
+  --description "Policy engine to regulate refund operations" \
   --region us-west-2
 
 # List all policy engines
@@ -1514,12 +1541,12 @@ agentcore policy list-policy-engines --region us-west-2
 
 # Get policy engine details
 agentcore policy get-policy-engine \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --region us-west-2
 
 # Create a Cedar policy
 agentcore policy create-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund_limit_policy" \
   --description "Allow refunds under $1000" \
   --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 1000 };"}}' \
@@ -1527,26 +1554,26 @@ agentcore policy create-policy \
 
 # List policies in engine
 agentcore policy list-policies \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --region us-west-2
 
 # Get policy details
 agentcore policy get-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
   --region us-west-2
 
 # Update policy with new limit
 agentcore policy update-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
-  --definition '{"cedar":{"statement":"permit(principal, action, resource) when { resource is AgentCore::Gateway && context.input.amount < 500 };"}}' \
-  --description "Updated to $500 limit with type constraint" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTool__process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --description "Updated to $500 limit" \
   --region us-west-2
 
 # Generate policy from natural language
 agentcore policy start-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund-policy-generation" \
   --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway" \
   --content "Allow refunds for amounts less than $1000" \
@@ -1554,30 +1581,30 @@ agentcore policy start-policy-generation \
 
 # Check generation status
 agentcore policy get-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-abc123" \
   --region us-west-2
 
 # List generated policy assets
 agentcore policy list-policy-generation-assets \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-abc123" \
   --region us-west-2
 
 # List all policy generations
 agentcore policy list-policy-generations \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --region us-west-2
 
 # Delete a policy
 agentcore policy delete-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
   --region us-west-2
 
 # Delete policy engine
 agentcore policy delete-policy-engine \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --region us-west-2
 ```
 
@@ -1606,7 +1633,7 @@ agentcore policy create-policy-engine \
 
 # 4. Generate policy from natural language
 agentcore policy start-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund-policy-gen" \
   --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123" \
   --content "Allow refunds under \$1000" \
@@ -1614,19 +1641,19 @@ agentcore policy start-policy-generation \
 
 # 5. Wait and check generation (poll until COMPLETE)
 agentcore policy get-policy-generation \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-xyz789" \
   --region us-west-2
 
 # 6. Review generated policies
 agentcore policy list-policy-generation-assets \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --generation-id "gen-xyz789" \
   --region us-west-2
 
 # 7. Create policy from generated asset (or use your own)
 agentcore policy create-policy \
-  --engine-id "testPolicyEngine-abc123" \
+  --policy-engine-id "testPolicyEngine-abc123" \
   --name "refund_limit_policy" \
   --description "Allow refunds under \$1000" \
   --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123\") when { context.input.amount < 1000 };"}}' \

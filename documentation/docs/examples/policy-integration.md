@@ -78,7 +78,7 @@ lambda_config = {
                 "type": "object",
                 "properties": {
                     "orderId": {"type": "string"},
-                    "amount": {"type": "number"},
+                    "amount": {"type": "integer"},
                     "reason": {"type": "string"}
                 },
                 "required": ["orderId", "amount"]
@@ -114,7 +114,7 @@ lambda_target = gateway_client.create_mcp_gateway_target(
                         "type": "object",
                         "properties": {
                             "orderId": {"type": "string"},
-                            "amount": {"type": "number"},
+                            "amount": {"type": "integer"},
                             "reason": {"type": "string"}
                         },
                         "required": ["orderId", "amount"]
@@ -264,9 +264,7 @@ permit(
 )
 when {
   context.input has region &&
-  (context.input.region == "US" ||
-   context.input.region == "CA" ||
-   context.input.region == "UK")
+  ["US", "CA", "UK"].contains(context.input.region)
 };
 """
 ```
@@ -285,8 +283,7 @@ permit(
 )
 when {
   principal.hasTag("role") &&
-  (principal.getTag("role") == "manager" ||
-   principal.getTag("role") == "director") &&
+  ["manager", "director"].contains(principal.getTag("role")) &&
   context.input.amount > 100000
 };
 """
@@ -505,8 +502,8 @@ when {
 resource is AgentCore::Gateway,
 action == AgentCore::Action::"SpecificTool"
 
-# ✅ Correct: Specific ARN with specific action
-resource == AgentCore::Gateway::"arn:aws:...",
+# ✅ Correct: Specific Gateway ARN with specific action
+resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:region:account:gateway/id",
 action == AgentCore::Action::"SpecificTool"
 ```
 
