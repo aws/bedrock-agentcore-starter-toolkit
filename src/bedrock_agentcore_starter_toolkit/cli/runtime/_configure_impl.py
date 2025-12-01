@@ -22,7 +22,7 @@ from .configuration_manager import ConfigurationManager
 
 def configure_impl(
     *,
-    create=False,
+    create_iac=False,
     entrypoint=None,
     agent_name=None,
     execution_role=None,
@@ -49,6 +49,14 @@ def configure_impl(
 ):
     # Create configuration manager early for consistent prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+
+    # fail if config already exists while running agentcore configure
+    if not create_iac and config_path.exists():
+        _handle_error(
+            "Error: A configuration already exists in this directory. "
+            "To reconfigure, delete .bedrock_agentcore.yaml and run agentcore configure again."
+        )
+
     config_manager = ConfigurationManager(config_path, non_interactive)
 
     # fail running config on an iac created project
@@ -127,8 +135,8 @@ def configure_impl(
 
     console.print("[cyan]Configuring Bedrock AgentCore...[/cyan]")
 
-    # create mode configuration is only passed by CLI
-    create_mode_enabled = create
+    # create_iac mode configuration is only passed by CLI
+    create_mode_enabled = create_iac
 
     # Existing agent created via create flow
     is_agentcore_create_agent = (

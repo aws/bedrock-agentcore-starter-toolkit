@@ -299,7 +299,7 @@ def _handle_monorepo_flow(
 
     if not configure_yaml.exists() and not non_interactive_flag:
         if prompt_configure() == "Yes":
-            configure_impl(create=True)
+            configure_impl(create_iac=True)
             _pause_and_new_line_on_finish(sleep_override=1.0)
             # load new config in
             agent_config = load_config(configure_yaml)
