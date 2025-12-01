@@ -1,5 +1,6 @@
 """Configuration management for BedrockAgentCore runtime."""
 
+import json
 import os
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -188,7 +189,7 @@ class ConfigurationManager:
         # Prompt for custom claims
         default_custom_claims = os.getenv("BEDROCK_AGENTCORE_CUSTOM_CLAIMS", "")
         custom_claims_input = _prompt_with_default(
-            "Enter allowed OAuth custom claims (comma-separated)", default_custom_claims
+            "Enter allowed OAuth custom claims as JSON string (comma-separated)", default_custom_claims
         )
 
         if not client_ids_input and not audience_input and not allowed_scopes_input and not custom_claims_input:
@@ -201,7 +202,7 @@ class ConfigurationManager:
         audience = [aud.strip() for aud in audience_input.split(", ") if aud.strip()]
         scopes = [scope.strip() for scope in allowed_scopes_input.split(", ") if scope.strip()]
         custom_claims = [
-            custom_claim.strip() for custom_claim in custom_claims_input.split(", ") if custom_claim.strip()
+            json.loads(custom_claim.strip()) for custom_claim in custom_claims_input.split(", ") if custom_claim.strip()
         ]
 
         config: Dict = {

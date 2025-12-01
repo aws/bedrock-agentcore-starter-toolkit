@@ -501,7 +501,14 @@ class TestConfigurationManager:
                     "allowedAudience": ["api://default"],
                     "allowedScopes": ["scope1"],
                     "customClaims": [
-                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'  # noqa: E501
+                        {
+                            "inboundTokenClaimName": "newCustomClaimName1",
+                            "inboundTokenClaimValueType": "STRING_ARRAY",
+                            "authorizingClaimMatchValue": {
+                                "claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},  # noqa: E501
+                                "claimMatchOperator": "CONTAINS_ANY",
+                            },
+                        }
                     ],
                 }
             }
