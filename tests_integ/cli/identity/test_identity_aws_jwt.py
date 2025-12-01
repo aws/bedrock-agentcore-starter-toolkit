@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -100,7 +99,7 @@ class TestIdentityAwsJwt(BaseCLIRuntimeTest):
         original_dir = os.getcwd()
         try:
             os.chdir(tmp_path)
-            
+
             # Create a simple agent file for configure
             agent_file = tmp_path / "agent.py"
             agent_file.write_text("""
@@ -115,13 +114,13 @@ async def invoke(payload, context):
 if __name__ == "__main__":
     app.run()
 """)
-            
+
             # Create requirements.txt file
             requirements_file = tmp_path / "requirements.txt"
             requirements_file.write_text("""bedrock-agentcore
 boto3
 """)
-            
+
             from prompt_toolkit.application import create_app_session
             from prompt_toolkit.input import create_pipe_input
             from typer.testing import CliRunner
@@ -132,7 +131,7 @@ boto3
             self.setup()
             command_invocations = self.get_command_invocations()
 
-            for idx, command_invocation in enumerate(command_invocations):
+            for _idx, command_invocation in enumerate(command_invocations):
                 command = command_invocation.command
                 input_data = command_invocation.user_input
                 validator = command_invocation.validator
@@ -180,7 +179,7 @@ boto3
         assert "AWS JWT Federation Configured" in output or "Success" in output
         assert self.audience in output
         assert "ES384" in output
-        
+
         # Extract issuer URL for later validation
         if "Issuer URL:" in output:
             # Parse issuer URL from output
@@ -224,6 +223,7 @@ boto3
         assert config_path.exists(), "Config file not found"
 
         from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
         project_config = load_config(config_path)
         agent_config = project_config.get_agent_config()
 
