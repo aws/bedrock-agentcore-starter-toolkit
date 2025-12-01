@@ -99,6 +99,8 @@ nav:
       - VPC Condition Keys: user-guide/security/security-vpc-condition.md
     - Observability:
       - Observability Quickstart: user-guide/observability/quickstart.md
+    - Evaluation:
+      - Evaluation Quickstart: user-guide/evaluation/quickstart.md
     - Import Agent:
       - Import Agent Quickstart: user-guide/import-agent/quickstart.md
       - Import Agent Overview: user-guide/import-agent/overview.md

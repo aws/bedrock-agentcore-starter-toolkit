@@ -86,6 +86,11 @@ DEFAULT_RUNTIME_ENDPOINT = os.getenv("AGENTCORE_RUNTIME_ENDPOINT", "DEFAULT")
 DEFAULT_RUNTIME_SUFFIX = DEFAULT_RUNTIME_ENDPOINT
 
 
+# Evaluation Configuration
+DEFAULT_MAX_EVALUATION_ITEMS = int(os.getenv("AGENTCORE_MAX_EVAL_ITEMS", "1000"))
+MAX_SPAN_IDS_IN_CONTEXT = int(os.getenv("AGENTCORE_MAX_SPAN_IDS", "20"))
+
+
 # Truncation Configuration
 class TruncationConfig:
     """Configuration for content truncation in display."""
