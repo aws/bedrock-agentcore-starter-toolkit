@@ -947,29 +947,7 @@ Options:
 
 - `--policy-engine-mode TEXT`: Policy engine mode (LOG_ONLY or ENFORCE)
 
-**Note:** You can specify the gateway by ID or ARN.
-
-### Update Gateway Policy Engine
-
-Attach or update policy engine configuration for a gateway. This is a convenience command for policy engine updates.
-
-```bash
-agentcore gateway update-gateway-policy-engine [OPTIONS]
-```
-
-Options:
-
-- `--region TEXT`: AWS region to use (defaults to us-west-2)
-
-- `--id TEXT`: Gateway ID to update
-
-- `--arn TEXT`: Gateway ARN to update
-
-- `--policy-engine-arn TEXT`: Policy engine ARN to attach (required)
-
-- `--mode TEXT`: Enforcement mode - LOG_ONLY or ENFORCE (default: ENFORCE)
-
-**Note:** You can specify the gateway by ID or ARN.
+**Note:** You can specify the gateway by ID or ARN. To attach or update a policy engine, use the `--policy-engine-arn` and `--policy-engine-mode` options with the `update-gateway` command.
 
 ## Policy Commands
 

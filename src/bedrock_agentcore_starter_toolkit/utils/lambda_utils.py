@@ -3,11 +3,12 @@
 import io
 import json
 import logging
-import time
 import zipfile
 from typing import Optional
 
 from boto3 import Session
+
+from .runtime.create_with_iam_eventual_consistency import retry_create_with_eventual_iam_consistency
 
 
 def create_lambda_function(
@@ -69,24 +70,27 @@ def create_lambda_function(
         role_arn = role_response["Role"]["Arn"]
         logger.info("✓ Created Lambda execution role: %s", role_arn)
 
-        # Wait for role to propagate
-        time.sleep(10)
-
     except iam.exceptions.EntityAlreadyExistsException:
         role = iam.get_role(RoleName=role_name)
         role_arn = role["Role"]["Arn"]
         logger.info("✓ Lambda execution role already exists: %s", role_arn)
 
-    # Create Lambda function
+    # Create Lambda function with retry for IAM eventual consistency
     try:
-        response = lambda_client.create_function(
-            FunctionName=function_name,
-            Runtime=runtime,
-            Role=role_arn,
-            Handler=handler,
-            Code={"ZipFile": zip_buffer.read()},
-            Description=description or f"Lambda function for {function_name}",
-        )
+
+        def create_lambda_fn():
+            # Reset buffer position for retries
+            zip_buffer.seek(0)
+            return lambda_client.create_function(
+                FunctionName=function_name,
+                Runtime=runtime,
+                Role=role_arn,
+                Handler=handler,
+                Code={"ZipFile": zip_buffer.read()},
+                Description=description or f"Lambda function for {function_name}",
+            )
+
+        response = retry_create_with_eventual_iam_consistency(create_lambda_fn, role_arn)
 
         lambda_arn = response["FunctionArn"]
         logger.info("✓ Created Lambda function: %s", lambda_arn)

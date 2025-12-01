@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 
 from ...operations.gateway import GatewayClient
-from ..common import console
+from ..common import _handle_error, console
 
 # Create a Typer app for gateway commands
 gateway_app = typer.Typer(help="Manage Bedrock AgentCore Gateways")
@@ -310,8 +310,7 @@ def update_gateway(
     elif gateway_arn:
         resolved_id = gateway_arn
     else:
-        console.print("[red]Error:[/red] gateway_identifier or gateway_arn required")
-        raise typer.Exit(1)
+        _handle_error("gateway_identifier or gateway_arn required")
 
     # Build policy engine config if provided
     policy_engine_config = None
