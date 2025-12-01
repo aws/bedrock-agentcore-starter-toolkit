@@ -84,6 +84,9 @@ nav:
       - Gateway Quickstart: user-guide/gateway/quickstart.md
     - Memory:
       - Memory Quickstart: user-guide/memory/quickstart.md
+    - Policy:
+      - Policy Quickstart: user-guide/policy/quickstart.md
+      - Policy Overview: user-guide/policy/overview.md
     - Identity:
       - Identity Quickstart: user-guide/identity/quickstart.md
       - Identity CLI Quickstart: user-guide/identity/quickstart-with-cli.md
@@ -108,6 +111,7 @@ nav:
     - Session Management: examples/session-management.md
     - Async Processing: examples/async-processing.md
     - Gateway Integration: examples/gateway-integration.md
+    - Policy Integration: examples/policy-integration.md
     - Memory Gateway Agent: examples/memory_gateway_agent.md
     - Runtime Framework Agents: examples/runtime-framework-agents.md
     - Semantic Search: examples/semantic_search.md
@@ -161,6 +165,8 @@ plugins:
           - "user-guide/runtime/a2a.md": "A2A server deployment guide"
           - "user-guide/gateway/quickstart.md": "Gateway quickstart guide"
           - "user-guide/memory/quickstart.md": "Memory quickstart guide"
+          - "user-guide/policy/quickstart.md": "Policy quickstart guide"
+          - "user-guide/policy/overview.md": "Policy service overview"
           - "user-guide/identity/quickstart.md": "Identity quickstart guide"
           - "user-guide/builtin-tools/quickstart-browser.md": "Browser tool quickstart"
           - "user-guide/builtin-tools/quickstart-code-interpreter.md": "Code interpreter quickstart"

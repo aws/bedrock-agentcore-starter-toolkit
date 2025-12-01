@@ -11,6 +11,9 @@ from ...operations.gateway.constants import (
     LAMBDA_FUNCTION_CODE,
     LAMBDA_TRUST_POLICY,
 )
+from ...utils.runtime.create_with_iam_eventual_consistency import (
+    retry_create_with_eventual_iam_consistency,
+)
 
 
 def create_test_lambda(session: Session, logger: logging.Logger, gateway_role_arn: str) -> str:
@@ -45,25 +48,24 @@ def create_test_lambda(session: Session, logger: logging.Logger, gateway_role_ar
         role_arn = role_response["Role"]["Arn"]
         logger.info("✓ Created Lambda execution role: %s", role_arn)
 
-        # Wait a bit for role to propagate
-        import time
-
-        time.sleep(10)
-
     except iam.exceptions.EntityAlreadyExistsException:
         role = iam.get_role(RoleName=role_name)
         role_arn = role["Role"]["Arn"]
 
-    # Create Lambda function
+    # Create Lambda function with retry for IAM eventual consistency
     try:
-        response = lambda_client.create_function(
-            FunctionName=function_name,
-            Runtime="python3.13",
-            Role=role_arn,
-            Handler="lambda_function.lambda_handler",
-            Code={"ZipFile": zip_buffer.read()},
-            Description="Test Lambda for AgentCore Gateway",
-        )
+
+        def create_lambda_fn():
+            return lambda_client.create_function(
+                FunctionName=function_name,
+                Runtime="python3.13",
+                Role=role_arn,
+                Handler="lambda_function.lambda_handler",
+                Code={"ZipFile": zip_buffer.read()},
+                Description="Test Lambda for AgentCore Gateway",
+            )
+
+        response = retry_create_with_eventual_iam_consistency(create_lambda_fn, role_arn)
 
         lambda_arn = response["FunctionArn"]
         logger.info("✓ Created Lambda function: %s", lambda_arn)

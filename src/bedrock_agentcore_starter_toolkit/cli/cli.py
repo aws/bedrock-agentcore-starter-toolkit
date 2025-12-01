@@ -10,6 +10,7 @@ from ..cli.gateway.commands import (
 )
 from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
+from ..cli.policy.commands import policy_app
 from ..utils.logging_config import setup_toolkit_logging
 from .create.commands import create_app
 from .create.import_agent.commands import import_agent
@@ -51,6 +52,8 @@ app.add_typer(memory_app, name="memory")
 # observability
 app.add_typer(observability_app, name="obs")
 
+# policy
+app.add_typer(policy_app, name="policy")
 # evaluation
 app.add_typer(evaluation_app, name="eval")
 
