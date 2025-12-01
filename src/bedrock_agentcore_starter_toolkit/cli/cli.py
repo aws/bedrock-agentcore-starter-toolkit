@@ -2,6 +2,7 @@
 
 import typer
 
+from ..cli.evaluation.commands import evaluation_app
 from ..cli.gateway.commands import (
     create_mcp_gateway,
     create_mcp_gateway_target,
@@ -49,6 +50,9 @@ app.add_typer(memory_app, name="memory")
 
 # observability
 app.add_typer(observability_app, name="obs")
+
+# evaluation
+app.add_typer(evaluation_app, name="eval")
 
 # create
 app.add_typer(create_app, name="create")
