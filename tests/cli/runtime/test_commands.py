@@ -2019,7 +2019,14 @@ agents:
                     "allowedAudience": ["aud1", "aud2"],
                     "allowedScopes": ["scope1", "scope2"],
                     "customClaims": [
-                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                        {
+                            "inboundTokenClaimName": "newCustomClaimName1",
+                            "inboundTokenClaimValueType": "STRING_ARRAY",
+                            "authorizingClaimMatchValue": {
+                                "claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},
+                                "claimMatchOperator": "CONTAINS_ANY",
+                            },
+                        }
                     ],
                 }
             }
@@ -2029,7 +2036,7 @@ agents:
             mock_prompt.assert_any_call("Enter allowed OAuth client IDs (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "")
-            mock_prompt.assert_any_call("Enter allowed OAuth custom claims (comma-separated)", "")
+            mock_prompt.assert_any_call("Enter allowed OAuth custom claims as JSON string (comma-separated)", "")
             mock_success.assert_called_once_with("OAuth authorizer configuration created")
 
     def test_configure_oauth_with_existing_values(self, tmp_path):
@@ -2046,7 +2053,14 @@ agents:
                 "allowedAudience": ["existing_aud1"],
                 "allowedScopes": ["existing_scope1"],
                 "customClaims": [
-                    '{"inboundTokenClaimName": "cognito:groups","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                    {
+                        "inboundTokenClaimName": "cognito:groups",
+                        "inboundTokenClaimValueType": "STRING_ARRAY",
+                        "authorizingClaimMatchValue": {
+                            "claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},
+                            "claimMatchOperator": "CONTAINS_ANY",
+                        },
+                    }
                 ],
             }
         }
@@ -2078,7 +2092,7 @@ agents:
             mock_prompt.assert_any_call("Enter allowed OAuth client IDs (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth audience (comma-separated)", "")
             mock_prompt.assert_any_call("Enter allowed OAuth allowed scopes (comma-separated)", "")
-            mock_prompt.assert_any_call("Enter allowed OAuth custom claims (comma-separated)", "")
+            mock_prompt.assert_any_call("Enter allowed OAuth custom claims as JSON string (comma-separated)", "")
 
             expected_config = {
                 "customJWTAuthorizer": {
@@ -2087,7 +2101,14 @@ agents:
                     "allowedAudience": ["new_aud1"],
                     "allowedScopes": ["new_scope1"],
                     "customClaims": [
-                        '{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}'
+                        {
+                            "inboundTokenClaimName": "newCustomClaimName1",
+                            "inboundTokenClaimValueType": "STRING_ARRAY",
+                            "authorizingClaimMatchValue": {
+                                "claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},
+                                "claimMatchOperator": "CONTAINS_ANY",
+                            },
+                        }
                     ],
                 }
             }
