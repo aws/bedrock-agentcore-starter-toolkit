@@ -5,7 +5,7 @@ import secrets
 import string
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import boto3
 from botocore.exceptions import ClientError
@@ -353,6 +353,161 @@ def ensure_identity_permissions(role_arn: str, provider_arns: list, region: str,
 
     except Exception as e:
         logger.error("Failed to update IAM permissions: %s", str(e))
+        raise
+
+
+def setup_aws_jwt_federation(region: str, logger=None) -> Tuple[bool, str]:
+    """Enable AWS IAM Outbound Federation and return the issuer URL.
+
+    This is idempotent - if already enabled, just returns the issuer URL.
+
+    Args:
+        region: AWS region
+        logger: Optional logger instance
+
+    Returns:
+        Tuple of (was_newly_enabled: bool, issuer_url: str)
+
+    Raises:
+        Exception: If enablement fails
+    """
+    import logging
+
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    iam_client = boto3.client("iam", region_name=region)
+
+    # First, check if already enabled
+    try:
+        response = iam_client.get_outbound_web_identity_federation_info()
+        issuer_url = response.get("IssuerIdentifier", "")
+        enabled = response.get("JwtVendingEnabled", False)
+
+        if enabled and issuer_url:
+            logger.info("AWS JWT federation already enabled. Issuer URL: %s", issuer_url)
+            return (False, issuer_url)
+
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "")
+        if error_code not in [
+            "OutboundWebIdentityFederationDisabledException",
+            "OutboundWebIdentityFederationDisabled",
+            "NoSuchEntity",
+            "InvalidAction",
+            "FeatureDisabled",
+        ]:
+            raise
+        # Not enabled yet, proceed to enable
+        logger.info("AWS JWT federation not yet enabled, enabling now...")
+
+    # Enable the feature
+    try:
+        response = iam_client.enable_outbound_web_identity_federation()
+        issuer_url = response.get("IssuerIdentifier", "")
+        logger.info("✓ AWS JWT federation enabled. Issuer URL: %s", issuer_url)
+        return (True, issuer_url)
+
+    except ClientError as e:
+        if "already enabled" in str(e).lower():
+            # Race condition - another process enabled it
+            response = iam_client.get_outbound_web_identity_federation_info()
+            return (False, response.get("IssuerIdentifier", ""))
+        raise
+
+
+def get_aws_jwt_federation_info(region: str) -> Optional[Dict[str, str]]:
+    """Get AWS JWT federation info if enabled.
+
+    Args:
+        region: AWS region
+
+    Returns:
+        Dict with 'issuer_url' and 'status', or None if not enabled
+    """
+    iam_client = boto3.client("iam", region_name=region)
+
+    try:
+        response = iam_client.get_outbound_web_identity_federation_info()
+        return {
+            "issuer_url": response.get("IssuerIdentifier", ""),
+            "enabled": response.get("JwtVendingEnabled", False),
+        }
+    except Exception:
+        return None
+
+
+def ensure_aws_jwt_permissions(
+    role_arn: str,
+    audiences: List[str],
+    region: str,
+    account_id: str,
+    signing_algorithm: str = "ES384",
+    max_duration_seconds: int = 3600,
+    logger=None,
+) -> None:
+    """Ensure execution role has STS:GetWebIdentityToken permissions.
+
+    Adds an inline policy for AWS JWT federation. Does NOT add secretsmanager
+    permissions since AWS JWT doesn't use secrets.
+
+    Args:
+        role_arn: Execution role ARN to update
+        audiences: List of allowed audiences for the IAM condition
+        region: AWS region
+        account_id: AWS account ID
+        signing_algorithm: Required signing algorithm (ES384 or RS256)
+        max_duration_seconds: Maximum token duration to allow
+        logger: Optional logger instance
+    """
+    import logging
+
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    if not audiences:
+        logger.warning("No audiences configured for AWS JWT, skipping permission setup")
+        return
+
+    iam = boto3.client("iam", region_name=region)
+    role_name = role_arn.split("/")[-1]
+
+    try:
+        # Build policy for STS:GetWebIdentityToken
+        policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AllowGetWebIdentityToken",
+                    "Effect": "Allow",
+                    "Action": "sts:GetWebIdentityToken",
+                    "Resource": "*",
+                    "Condition": {
+                        "ForAnyValue:StringEquals": {"sts:IdentityTokenAudience": audiences},
+                        "NumericLessThanEquals": {"sts:DurationSeconds": max_duration_seconds},
+                        "StringEquals": {"sts:SigningAlgorithm": signing_algorithm},
+                    },
+                },
+                {
+                    "Sid": "AllowTagGetWebIdentityToken",
+                    "Effect": "Allow",
+                    "Action": "sts:TagGetWebIdentityToken",
+                    "Resource": "*",
+                    "Condition": {"ForAnyValue:StringEquals": {"sts:IdentityTokenAudience": audiences}},
+                },
+            ],
+        }
+
+        # Put inline policy
+        policy_name = "AgentCoreAwsJwtAccess"
+        iam.put_role_policy(RoleName=role_name, PolicyName=policy_name, PolicyDocument=json.dumps(policy_document))
+
+        logger.info("✓ Added AWS JWT permissions to role: %s", role_name)
+        logger.info("  Allowed audiences: %s", audiences)
+        logger.info("  Signing algorithm: %s", signing_algorithm)
+
+    except Exception as e:
+        logger.error("Failed to add AWS JWT permissions: %s", str(e))
         raise
 
 
