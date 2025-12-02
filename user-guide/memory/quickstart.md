@@ -2,6 +2,8 @@
 
 Amazon Bedrock AgentCore Memory lets you create and manage memory resources that store conversation context for your AI agents. This section guides you through installing dependencies and implementing both short-term and long-term memory features.
 
+**📚 For more information and detail beyond this quickstart, see the [AgentCore Memory Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html)**
+
 The steps are as follows
 
 1. Create a memory resource containing a semantic strategy

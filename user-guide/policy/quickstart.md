@@ -2,6 +2,8 @@
 
 Amazon Bedrock AgentCore Policy enables you to define and enforce fine-grained authorization policies for your AI agents using the Cedar policy language. This guide walks you through creating a Gateway with Policy Engine enforcement to govern agent tool calls.
 
+**📚 For more information and detail beyond this quickstart, see the [AgentCore Policy Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html)**
+
 ## Overview
 
 AgentCore Policy provides:
