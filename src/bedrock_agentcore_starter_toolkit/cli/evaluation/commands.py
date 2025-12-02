@@ -19,6 +19,7 @@ from ...operations.evaluation.formatters import (
     save_json_output,
 )
 from ...operations.evaluation.on_demand_processor import EvaluationProcessor
+from ...utils.aws import ensure_valid_aws_creds
 from ...utils.runtime.config import load_config_if_exists
 from ..common import console
 
@@ -232,6 +233,12 @@ def list_evaluators(
         # List more evaluators
         agentcore eval evaluator list --max-results 100
     """
+    # Validate AWS credentials
+    valid, error_msg = ensure_valid_aws_creds()
+    if not valid:
+        console.print(f"[red]Error:[/red] {error_msg}")
+        raise typer.Exit(1)
+
     try:
         # Get region and client
         agent_config = _get_agent_config_from_file()
