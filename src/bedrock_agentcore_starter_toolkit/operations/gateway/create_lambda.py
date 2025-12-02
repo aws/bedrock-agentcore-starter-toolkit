@@ -56,6 +56,8 @@ def create_test_lambda(session: Session, logger: logging.Logger, gateway_role_ar
     try:
 
         def create_lambda_fn():
+            # Reset buffer position for retries
+            zip_buffer.seek(0)
             return lambda_client.create_function(
                 FunctionName=function_name,
                 Runtime="python3.13",
