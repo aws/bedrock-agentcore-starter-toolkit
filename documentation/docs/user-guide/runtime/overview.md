@@ -237,7 +237,7 @@ The SDK integrates with AgentCore's identity services providing automatic AWS cr
 ```bash
 # Configure JWT authorization using AgentCore CLI
 agentcore configure --entrypoint my_agent.py \
-  --authorizer-config '{"customJWTAuthorizer": {"discoveryUrl": "https://cognito-idp.region.amazonaws.com/pool/.well-known/openid-configuration", "allowedClients": ["your-client-id"]}}'
+  --authorizer-config '{"customJWTAuthorizer": {"discoveryUrl": "https://cognito-idp.region.amazonaws.com/pool/.well-known/openid-configuration", "allowedClients": ["your-client-id"], "allowedScopes": ["your-scope-1 your-scope 2"], "customClaims": [{"inboundTokenClaimName": "newCustomClaimName1","inboundTokenClaimValueType": "STRING_ARRAY","authorizingClaimMatchValue": {"claimMatchValue": {"matchValueStringList": ["INVALID_GROUP_NAME"]},"claimMatchOperator": "CONTAINS_ANY"}}]}}'
 ```
 
 ## Asynchronous Processing

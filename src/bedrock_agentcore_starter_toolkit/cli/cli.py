@@ -2,6 +2,7 @@
 
 import typer
 
+from ..cli.evaluation.commands import evaluation_app
 from ..cli.gateway.commands import (
     create_mcp_gateway,
     create_mcp_gateway_target,
@@ -9,6 +10,7 @@ from ..cli.gateway.commands import (
 )
 from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
+from ..cli.policy.commands import policy_app
 from ..utils.logging_config import setup_toolkit_logging
 from .create.commands import create, create_app
 from .create.import_agent.commands import import_agent
@@ -44,6 +46,8 @@ app.add_typer(identity_app, name="identity")
 app.add_typer(gateway_app, name="gateway")
 app.add_typer(memory_app, name="memory")
 app.add_typer(observability_app, name="obs")
+app.add_typer(policy_app, name="policy")
+app.add_typer(evaluation_app, name="eval")
 app.command("create_mcp_gateway")(create_mcp_gateway)
 app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 

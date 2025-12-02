@@ -197,6 +197,178 @@ class TestGatewayClient:
         with pytest.raises(ValueError):
             gateway_client.create_mcp_gateway(name="test-error", role_arn="arn:aws:iam::123:role/Test")
 
+    @patch("time.sleep")
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_gateway_without_policy_config(
+        self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client
+    ):
+        """Test creating gateway without policy config maintains backward compatibility"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["client1"], "discoveryUrl": "https://discovery.url"}
+            },
+            "client_info": {},
+        }
+
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "gateway-123",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:123:gateway/gateway-123",
+            "gatewayUrl": "https://gateway-123.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "arn:aws:iam::123:role/TestRole",
+        }
+
+        mock_bedrock.get_gateway.return_value = {"status": "READY"}
+
+        # Create gateway without policy_engine_config
+        gateway_client.create_mcp_gateway(name="test-gateway", role_arn="arn:aws:iam::123:role/TestRole")
+
+        # Verify create_gateway was called
+        assert mock_bedrock.create_gateway.called
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        # Verify policyEngineConfiguration is NOT in the request
+        assert "policyEngineConfiguration" not in call_args
+
+    @patch("time.sleep")
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_gateway_with_policy_config_enforce(
+        self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client
+    ):
+        """Test creating gateway with policy engine config in ENFORCE mode"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["client1"], "discoveryUrl": "https://discovery.url"}
+            },
+            "client_info": {},
+        }
+
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "gateway-123",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:123:gateway/gateway-123",
+            "gatewayUrl": "https://gateway-123.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "arn:aws:iam::123:role/TestRole",
+        }
+
+        mock_bedrock.get_gateway.return_value = {"status": "READY"}
+
+        # Create gateway with policy_engine_config
+        policy_config = {
+            "arn": "arn:aws:bedrock-agentcore:us-west-2:123:policy-engine/test-engine",
+            "mode": "ENFORCE",
+        }
+
+        gateway_client.create_mcp_gateway(
+            name="test-gateway", role_arn="arn:aws:iam::123:role/TestRole", policy_engine_config=policy_config
+        )
+
+        # Verify create_gateway was called with policy config
+        assert mock_bedrock.create_gateway.called
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        # Verify policyEngineConfiguration is in the request
+        assert "policyEngineConfiguration" in call_args
+        assert call_args["policyEngineConfiguration"] == policy_config
+        assert call_args["policyEngineConfiguration"]["mode"] == "ENFORCE"
+
+    @patch("time.sleep")
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_gateway_with_policy_config_log_only(
+        self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client
+    ):
+        """Test creating gateway with policy engine config in LOG_ONLY mode"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["client1"], "discoveryUrl": "https://discovery.url"}
+            },
+            "client_info": {},
+        }
+
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "gateway-456",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:123:gateway/gateway-456",
+            "gatewayUrl": "https://gateway-456.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "arn:aws:iam::123:role/TestRole",
+        }
+
+        mock_bedrock.get_gateway.return_value = {"status": "READY"}
+
+        # Create gateway with LOG_ONLY mode
+        policy_config = {
+            "arn": "arn:aws:bedrock-agentcore:us-west-2:123:policy-engine/monitoring-engine",
+            "mode": "LOG_ONLY",
+        }
+
+        gateway_client.create_mcp_gateway(
+            name="test-gateway-log", role_arn="arn:aws:iam::123:role/TestRole", policy_engine_config=policy_config
+        )
+
+        # Verify create_gateway was called with LOG_ONLY mode
+        assert mock_bedrock.create_gateway.called
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        assert "policyEngineConfiguration" in call_args
+        assert call_args["policyEngineConfiguration"]["mode"] == "LOG_ONLY"
+
+    @patch("time.sleep")
+    @patch("bedrock_agentcore_starter_toolkit.operations.gateway.GatewayClient.create_oauth_authorizer_with_cognito")
+    def test_create_gateway_policy_config_structure(
+        self, mock_create_oauth_authorizer_with_cognito, mock_sleep, gateway_client
+    ):
+        """Test that policy config structure is correctly passed to API"""
+        mock_bedrock = Mock()
+        gateway_client.client = mock_bedrock
+        mock_create_oauth_authorizer_with_cognito.return_value = {
+            "authorizer_config": {
+                "customJWTAuthorizer": {"allowedClients": ["client1"], "discoveryUrl": "https://discovery.url"}
+            },
+            "client_info": {},
+        }
+
+        mock_bedrock.create_gateway.return_value = {
+            "gatewayId": "gateway-789",
+            "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:123:gateway/gateway-789",
+            "gatewayUrl": "https://gateway-789.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+            "status": "READY",
+            "roleArn": "arn:aws:iam::123:role/TestRole",
+        }
+
+        mock_bedrock.get_gateway.return_value = {"status": "READY"}
+
+        # Test with complete policy config structure
+        policy_config = {
+            "arn": "arn:aws:bedrock-agentcore:us-west-2:123456789:policy-engine/complete-engine",
+            "mode": "ENFORCE",
+        }
+
+        gateway_client.create_mcp_gateway(
+            name="test-complete", role_arn="arn:aws:iam::123:role/TestRole", policy_engine_config=policy_config
+        )
+
+        # Verify the exact structure passed to API
+        call_args = mock_bedrock.create_gateway.call_args[1]
+
+        # Check that the policy config is passed as-is
+        assert call_args["policyEngineConfiguration"] == policy_config
+
+        # Verify both required fields are present
+        assert "arn" in call_args["policyEngineConfiguration"]
+        assert "mode" in call_args["policyEngineConfiguration"]
+
+        # Verify ARN format
+        assert call_args["policyEngineConfiguration"]["arn"].startswith("arn:aws:bedrock-agentcore:")
+
+        # Verify mode is valid
+        assert call_args["policyEngineConfiguration"]["mode"] in ["ENFORCE", "LOG_ONLY"]
+
     def test_delete_gateway_with_targets_check(self, gateway_client):
         """Test delete_gateway checks for targets before deletion"""
         mock_bedrock = Mock()

@@ -1,5 +1,6 @@
 """Configuration management for BedrockAgentCore runtime."""
 
+import json
 import os
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -180,13 +181,29 @@ class ConfigurationManager:
         # Prompt for audience
         default_audience = os.getenv("BEDROCK_AGENTCORE_AUDIENCE", "")
         audience_input = _prompt_with_default("Enter allowed OAuth audience (comma-separated)", default_audience)
+        # Prompt for allowed scopes
+        default_allowed_scopes = os.getenv("BEDROCK_AGENTCORE_ALLOWED_SCOPES", "")
+        allowed_scopes_input = _prompt_with_default(
+            "Enter allowed OAuth allowed scopes (comma-separated)", default_allowed_scopes
+        )
+        # Prompt for custom claims
+        default_custom_claims = os.getenv("BEDROCK_AGENTCORE_CUSTOM_CLAIMS", "")
+        custom_claims_input = _prompt_with_default(
+            "Enter allowed OAuth custom claims as JSON string (comma-separated)", default_custom_claims
+        )
 
-        if not client_ids_input and not audience_input:
-            _handle_error("At least one client ID or one audience is required for OAuth configuration")
+        if not client_ids_input and not audience_input and not allowed_scopes_input and not custom_claims_input:
+            _handle_error(
+                "At least one client ID, one audience, one allowed scope, or one custom claims is required for OAuth configuration"  # noqa: E501
+            )
 
         # Parse and return config
         client_ids = [cid.strip() for cid in client_ids_input.split(",") if cid.strip()]
         audience = [aud.strip() for aud in audience_input.split(", ") if aud.strip()]
+        scopes = [scope.strip() for scope in allowed_scopes_input.split(", ") if scope.strip()]
+        custom_claims = [
+            json.loads(custom_claim.strip()) for custom_claim in custom_claims_input.split(", ") if custom_claim.strip()
+        ]
 
         config: Dict = {
             "customJWTAuthorizer": {
@@ -199,6 +216,12 @@ class ConfigurationManager:
 
         if audience:
             config["customJWTAuthorizer"]["allowedAudience"] = audience
+
+        if scopes:
+            config["customJWTAuthorizer"]["allowedScopes"] = scopes
+
+        if custom_claims:
+            config["customJWTAuthorizer"]["customClaims"] = custom_claims
 
         _print_success("OAuth authorizer configuration created")
         return config

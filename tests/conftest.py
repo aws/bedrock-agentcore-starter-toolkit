@@ -20,7 +20,11 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
 
 @pytest.fixture
 def mock_boto3_clients(monkeypatch):
-    """Mock AWS clients (STS, ECR, BedrockAgentCore)."""
+    """Mock AWS clients (STS, ECR, BedrockAgentCore).
+
+    Apply this fixture to test modules using pytestmark:
+        pytestmark = pytest.mark.usefixtures("mock_boto3_clients")
+    """
     # Mock STS client
     mock_sts = Mock()
     mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}

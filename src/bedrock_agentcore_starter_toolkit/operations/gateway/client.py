@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import boto3
 import urllib3
 
+from ...utils.aws import extract_id_from_arn
 from ..observability.delivery import ObservabilityDeliveryManager
 from .constants import (
     API_MODEL_BUCKETS,
@@ -60,6 +61,7 @@ class GatewayClient:
         authorizer_config=None,
         enable_semantic_search=True,
         enable_observability: bool = True,
+        policy_engine_config=None,
     ) -> dict:
         """Creates an MCP Gateway with optional observability.
 
@@ -71,6 +73,8 @@ class GatewayClient:
         :param authorizer_config: optional - the authorizer config (will create one if none provided).
         :param enable_semantic_search: optional - whether to enable search tool (defaults to True).
         :param enable_observability: optional - whether to auto-enable CloudWatch logs and traces (defaults to True).
+        :param policy_engine_config: optional - policy engine configuration dict with 'arn' and 'mode' keys.
+            Example: {"arn": "policy-engine-arn", "mode": "ENFORCE"}
         :return: the created Gateway with observability status
 
         Example:
@@ -103,6 +107,9 @@ class GatewayClient:
         }
         if enable_semantic_search:
             create_request["protocolConfiguration"] = {"mcp": {"searchType": "SEMANTIC"}}
+        if policy_engine_config:
+            create_request["policyEngineConfiguration"] = policy_engine_config
+            self.logger.info("Policy engine configuration will be attached at creation")
         self.logger.info("Creating Gateway")
         self.logger.debug("Creating gateway with params: %s", json.dumps(create_request, indent=2))
         gateway = self.client.create_gateway(**create_request)
@@ -214,7 +221,7 @@ class GatewayClient:
         iam = boto3.client("iam")
 
         account_id = sts.get_caller_identity()["Account"]
-        role_name = role_arn.split("/")[-1]
+        role_name = extract_id_from_arn(role_arn)
 
         # Update trust policy
         trust_policy = {
@@ -277,9 +284,9 @@ class GatewayClient:
 
         # Resolve gateway ID from different input types
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             # Look up gateway ID by name
             resolved_id = self._get_gateway_id_by_name(name)
@@ -354,9 +361,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -474,9 +481,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -513,9 +520,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -572,9 +579,9 @@ class GatewayClient:
 
         # Resolve gateway ID
         if gateway_identifier:
-            resolved_id = gateway_identifier.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_identifier)
         elif gateway_arn:
-            resolved_id = gateway_arn.split("/")[-1]
+            resolved_id = extract_id_from_arn(gateway_arn)
         elif name:
             resolved_id = self._get_gateway_id_by_name(name)
             if not resolved_id:
@@ -769,7 +776,8 @@ class GatewayClient:
         while True:
             response = method(**identifiers)
             status = response.get("status", "UNKNOWN")
-            if not status == "CREATING":
+            # Wait for both CREATING and UPDATING states to complete
+            if status not in ("CREATING", "UPDATING"):
                 break
             time.sleep(delay)
             attempts += 1
@@ -914,6 +922,110 @@ class GatewayClient:
 
         except Exception as e:
             raise GatewaySetupException(f"Failed to create Cognito resources: {e}") from e
+
+    def update_gateway(
+        self,
+        gateway_identifier: str,
+        description: Optional[str] = None,
+        policy_engine_config: Optional[Dict] = None,
+    ) -> dict:
+        """Update gateway configuration.
+
+        Note: Gateway names cannot be updated after creation (AWS API limitation).
+
+        :param gateway_identifier: Gateway ID or ARN to update
+        :param description: New gateway description
+        :param policy_engine_config: Policy engine configuration dict with 'arn' and 'mode' keys
+        :return: Updated gateway details
+        """
+        # Resolve gateway ID from identifier or ARN
+        resolved_id = extract_id_from_arn(gateway_identifier)
+
+        self.logger.info("Updating gateway %s", resolved_id)
+
+        try:
+            # Get current gateway configuration
+            gateway = self.client.get_gateway(gatewayIdentifier=resolved_id)
+
+            # Build update request with required fields
+            update_request = {
+                "gatewayIdentifier": resolved_id,
+                "name": gateway["name"],  # Name cannot be changed (AWS API limitation)
+                "roleArn": gateway["roleArn"],
+                "protocolType": gateway["protocolType"],
+                "authorizerType": gateway["authorizerType"],
+            }
+
+            # Add description if provided, otherwise preserve existing
+            if description is not None:
+                update_request["description"] = description
+            elif "description" in gateway:
+                update_request["description"] = gateway["description"]
+
+            # Add policy engine config if provided
+            if policy_engine_config is not None:
+                update_request["policyEngineConfiguration"] = policy_engine_config
+                self.logger.info("  Policy Engine ARN: %s", policy_engine_config.get("arn"))
+                self.logger.info("  Mode: %s", policy_engine_config.get("mode"))
+            elif "policyEngineConfiguration" in gateway:
+                update_request["policyEngineConfiguration"] = gateway["policyEngineConfiguration"]
+
+            # Include optional fields if present in current gateway
+            for field in [
+                "authorizerConfiguration",
+                "protocolConfiguration",
+                "kmsKeyArn",
+                "customTransformConfiguration",
+                "interceptorConfigurations",
+                "exceptionLevel",
+            ]:
+                if field in gateway:
+                    update_request[field] = gateway[field]
+
+            # Update the gateway
+            self.logger.debug("Updating gateway with params: %s", json.dumps(update_request, indent=2))
+            updated_gateway = self.client.update_gateway(**update_request)
+
+            self.logger.info("✓ Gateway update initiated")
+            self.logger.info("  Waiting for gateway to be ready...")
+
+            # Wait for gateway to be ready after update
+            self.__wait_for_ready(
+                method=self.client.get_gateway,
+                identifiers={"gatewayIdentifier": resolved_id},
+                resource_name="Gateway",
+            )
+
+            self.logger.info("✓ Gateway update complete")
+            return updated_gateway
+
+        except Exception as e:
+            self.logger.error("Failed to update gateway: %s", str(e))
+            raise GatewaySetupException(f"Failed to update gateway: {e}") from e
+
+    def update_gateway_policy_engine(
+        self,
+        gateway_identifier: str,
+        policy_engine_arn: str,
+        mode: str = "ENFORCE",
+    ) -> dict:
+        """Attach or update policy engine configuration for a gateway.
+
+        Convenience method that calls update_gateway internally.
+
+        :param gateway_identifier: Gateway ID or ARN to update
+        :param policy_engine_arn: ARN of the policy engine to attach
+        :param mode: Enforcement mode - "LOG_ONLY" (monitoring) or "ENFORCE" (access control)
+        :return: Updated gateway details
+        """
+        self.logger.info("Attaching policy engine to gateway")
+        return self.update_gateway(
+            gateway_identifier=gateway_identifier,
+            policy_engine_config={
+                "arn": policy_engine_arn,
+                "mode": mode,
+            },
+        )
 
     def get_access_token_for_cognito(self, client_info: Dict[str, Any]) -> str:
         """Get OAuth token using client credentials flow.

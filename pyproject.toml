@@ -47,8 +47,8 @@ dependencies = [
     "openapi-spec-validator>=0.7.2",
     "py-openapi-schema-to-json-schema>=0.0.3",
     "starlette>=0.46.2",
-    "boto3>=1.40.65",
-    "botocore>=1.40.65",
+    "boto3>=1.42.1",
+    "botocore>=1.42.1",
 ]
 
 [project.scripts]
@@ -117,6 +117,7 @@ omit = [
     "src/bedrock_agentcore_starter_toolkit/cli/create/import_agent/*", # CLI requires user input to test
     "src/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py", # CLI commands require user interaction
     "src/bedrock_agentcore_starter_toolkit/cli/create/commands.py", # CLI commands require user interaction
+    "src/bedrock_agentcore_starter_toolkit/cli/evaluation/commands.py", # CLI commands require user interaction
     "src/bedrock_agentcore_starter_toolkit/cli/create/prompt_util.py", # Interactive prompts require user input
     "src/bedrock_agentcore_starter_toolkit/services/import_agent/utils.py", # Utils are not tested directly
     "src/bedrock_agentcore_starter_toolkit/operations/runtime/exceptions.py", # Simple exception classes
@@ -127,6 +128,7 @@ omit = [
     "cli/runtime/dev_command.py", # Local Server Command, requires interaction
     "src/bedrock_agentcore_starter_toolkit/utils/runtime/logs.py", # Simple logging utilities
     "src/bedrock_agentcore_starter_toolkit/operations/observability/trace_visualizer.py", # Visualization/UI presentation logic
+    "src/bedrock_agentcore_starter_toolkit/operations/evaluation/formatters.py", # Display/UI code only
 ]
 
 [tool.coverage.report]
