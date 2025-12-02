@@ -1,6 +1,7 @@
 """Helper functions for Identity service operations."""
 
 import json
+import logging
 import secrets
 import string
 import time
@@ -356,7 +357,7 @@ def ensure_identity_permissions(role_arn: str, provider_arns: list, region: str,
         raise
 
 
-def setup_aws_jwt_federation(region: str, logger=None) -> Tuple[bool, str]:
+def setup_aws_jwt_federation(region: str, logger: Optional[logging.Logger] = None) -> Tuple[bool, str]:
     """Enable AWS IAM Outbound Federation and return the issuer URL.
 
     This is idempotent - if already enabled, just returns the issuer URL.
@@ -369,10 +370,8 @@ def setup_aws_jwt_federation(region: str, logger=None) -> Tuple[bool, str]:
         Tuple of (was_newly_enabled: bool, issuer_url: str)
 
     Raises:
-        Exception: If enablement fails
+        ClientError: If enablement fails for unexpected reasons
     """
-    import logging
-
     if logger is None:
         logger = logging.getLogger(__name__)
 
@@ -385,46 +384,56 @@ def setup_aws_jwt_federation(region: str, logger=None) -> Tuple[bool, str]:
         enabled = response.get("JwtVendingEnabled", False)
 
         if enabled and issuer_url:
-            logger.info("AWS JWT federation already enabled. Issuer URL: %s", issuer_url)
+            logger.info("AWS IAM JWT federation already enabled. Issuer URL: %s", issuer_url)
             return (False, issuer_url)
 
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "")
-        if error_code not in [
+        # Handle both the exception class name and error code variants
+        if error_code in [
+            "FeatureDisabledException",
+            "FeatureDisabled",
             "OutboundWebIdentityFederationDisabledException",
             "OutboundWebIdentityFederationDisabled",
-            "NoSuchEntity",
-            "InvalidAction",
-            "FeatureDisabled",
         ]:
+            # Not enabled yet, proceed to enable
+            logger.info("AWS IAM JWT federation not yet enabled, enabling now...")
+        elif error_code in ["NoSuchEntity", "InvalidAction"]:
+            # API might not exist or other issue, try enabling anyway
+            logger.info("Could not check federation status, attempting to enable...")
+        else:
             raise
-        # Not enabled yet, proceed to enable
-        logger.info("AWS JWT federation not yet enabled, enabling now...")
 
     # Enable the feature
     try:
         response = iam_client.enable_outbound_web_identity_federation()
         issuer_url = response.get("IssuerIdentifier", "")
-        logger.info("✓ AWS JWT federation enabled. Issuer URL: %s", issuer_url)
+        logger.info("✓ AWS IAM JWT federation enabled. Issuer URL: %s", issuer_url)
         return (True, issuer_url)
 
     except ClientError as e:
-        if "already enabled" in str(e).lower():
-            # Race condition - another process enabled it
+        error_code = e.response.get("Error", {}).get("Code", "")
+        # Check if already enabled (race condition or concurrent call)
+        if error_code in ["FeatureEnabledException", "FeatureEnabled"]:
+            logger.info("AWS IAM JWT federation was already enabled (concurrent enable)")
             response = iam_client.get_outbound_web_identity_federation_info()
             return (False, response.get("IssuerIdentifier", ""))
         raise
 
 
-def get_aws_jwt_federation_info(region: str) -> Optional[Dict[str, str]]:
-    """Get AWS JWT federation info if enabled.
+def get_aws_jwt_federation_info(region: str, logger: Optional[logging.Logger] = None) -> Optional[Dict[str, Any]]:
+    """Get AWS IAM JWT federation info if enabled.
 
     Args:
         region: AWS region
+        logger: Optional logger instance
 
     Returns:
-        Dict with 'issuer_url' and 'status', or None if not enabled
+        Dict with 'issuer_url' and 'enabled', or None if not enabled/error
     """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
     iam_client = boto3.client("iam", region_name=region)
 
     try:
@@ -433,7 +442,12 @@ def get_aws_jwt_federation_info(region: str) -> Optional[Dict[str, str]]:
             "issuer_url": response.get("IssuerIdentifier", ""),
             "enabled": response.get("JwtVendingEnabled", False),
         }
-    except Exception:
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "")
+        logger.debug("Failed to get AWS IAM JWT federation info (error_code=%s): %s", error_code, str(e))
+        return None
+    except Exception as e:
+        logger.debug("Failed to get AWS IAM JWT federation info: %s", str(e))
         return None
 
 
@@ -444,12 +458,12 @@ def ensure_aws_jwt_permissions(
     account_id: str,
     signing_algorithm: str = "ES384",
     max_duration_seconds: int = 3600,
-    logger=None,
+    logger: Optional[logging.Logger] = None,
 ) -> None:
     """Ensure execution role has STS:GetWebIdentityToken permissions.
 
-    Adds an inline policy for AWS JWT federation. Does NOT add secretsmanager
-    permissions since AWS JWT doesn't use secrets.
+    Adds an inline policy for AWS IAM JWT federation. Does NOT add secretsmanager
+    permissions since AWS IAM JWT doesn't use secrets.
 
     Args:
         role_arn: Execution role ARN to update
@@ -460,13 +474,11 @@ def ensure_aws_jwt_permissions(
         max_duration_seconds: Maximum token duration to allow
         logger: Optional logger instance
     """
-    import logging
-
     if logger is None:
         logger = logging.getLogger(__name__)
 
     if not audiences:
-        logger.warning("No audiences configured for AWS JWT, skipping permission setup")
+        logger.warning("No audiences configured for AWS IAM JWT, skipping permission setup")
         return
 
     iam = boto3.client("iam", region_name=region)
@@ -502,12 +514,12 @@ def ensure_aws_jwt_permissions(
         policy_name = "AgentCoreAwsJwtAccess"
         iam.put_role_policy(RoleName=role_name, PolicyName=policy_name, PolicyDocument=json.dumps(policy_document))
 
-        logger.info("✓ Added AWS JWT permissions to role: %s", role_name)
+        logger.info("✓ Added AWS IAM JWT permissions to role: %s", role_name)
         logger.info("  Allowed audiences: %s", audiences)
         logger.info("  Signing algorithm: %s", signing_algorithm)
 
     except Exception as e:
-        logger.error("Failed to add AWS JWT permissions: %s", str(e))
+        logger.error("Failed to add AWS IAM JWT permissions: %s", str(e))
         raise
 
 

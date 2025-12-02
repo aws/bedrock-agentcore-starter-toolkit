@@ -225,24 +225,24 @@ def _ensure_aws_jwt_permissions(
     account_id: str,
     console: Optional[Console] = None,
 ) -> None:
-    """Add AWS JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
+    """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
     # Check if AWS JWT is configured
     if not agent_config.identity or not agent_config.identity.aws_jwt:
-        log.info("No AWS JWT configuration found, skipping AWS JWT permissions")
+        log.info("No AWS IAM JWT configuration found, skipping AWS JWT permissions")
         return
 
     aws_jwt_config = agent_config.identity.aws_jwt
 
     if not aws_jwt_config.enabled or not aws_jwt_config.audiences:
-        log.info("AWS JWT not enabled or no audiences configured, skipping AWS JWT permissions")
+        log.info("AWS IAM JWT not enabled or no audiences configured, skipping AWS JWT permissions")
         return
 
     if not agent_config.aws.execution_role:
-        log.warning("No execution role configured, cannot add AWS JWT permissions")
+        log.warning("No execution role configured, cannot add AWS IAM JWT permissions")
         return
 
     log.info(
-        "Adding AWS JWT permissions for %d audience(s)...",
+        "Adding AWS IAM JWT permissions for %d audience(s)...",
         len(aws_jwt_config.audiences),
     )
 
@@ -257,16 +257,16 @@ def _ensure_aws_jwt_permissions(
             logger=log,
         )
 
-        log.info("✅ AWS JWT permissions configured for role")
+        log.info("✅ AWS IAM JWT permissions configured for role")
         log.info("   - STS:GetWebIdentityToken")
         log.info("   - Audiences: %s", ", ".join(aws_jwt_config.audiences))
 
         if console:
-            console.print("✅ AWS JWT permissions added automatically")
+            console.print("✅ AWS IAM JWT permissions added automatically")
             console.print(f"   Audiences: {', '.join(aws_jwt_config.audiences)}")
 
     except Exception as e:
-        log.error("Failed to add AWS JWT permissions: %s", str(e))
+        log.error("Failed to add AWS IAM JWT permissions: %s", str(e))
         log.warning("You may need to manually add STS:GetWebIdentityToken permissions to your execution role")
 
 
@@ -938,7 +938,12 @@ def launch_bedrock_agentcore(
 
         # Still add Identity permissions to execution role (for backward compatibility)
         _ensure_identity_permissions(agent_config, region, account_id, console)
-        _ensure_aws_jwt_permissions(agent_config, region, account_id, console)
+        _ensure_aws_jwt_permissions(
+            agent_config=agent_config,
+            region=region,
+            account_id=account_id,
+            console=console,
+        )
 
     # Step 3: Push to ECR
     log.info("Uploading to ECR...")
@@ -1026,7 +1031,7 @@ def _execute_codebuild_workflow(
                 _ensure_identity_permissions(agent_config, region, account_id, None)
 
             if agent_config.identity and agent_config.identity.has_aws_jwt:
-                log.info("🔍 DEBUG: Adding AWS JWT permissions in CodeBuild flow...")
+                log.info("🔍 DEBUG: Adding AWS IAM JWT permissions in CodeBuild flow...")
                 _ensure_aws_jwt_permissions(agent_config, region, account_id, None)
 
         # Prepare CodeBuild

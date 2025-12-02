@@ -1130,9 +1130,9 @@ class TestSetupAwsJwtFederation:
                 },
             ]
 
-            # Enable call raises "already enabled" error
+            # Enable call raises "already enabled" error - use FeatureEnabled code
             mock_iam.enable_outbound_web_identity_federation.side_effect = ClientError(
-                {"Error": {"Code": "ServiceException", "Message": "Federation already enabled"}},
+                {"Error": {"Code": "FeatureEnabled", "Message": "Federation already enabled"}},
                 "EnableOutboundWebIdentityFederation",
             )
 

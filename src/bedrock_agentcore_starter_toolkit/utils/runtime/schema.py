@@ -61,9 +61,9 @@ class WorkloadIdentityInfo(BaseModel):
 
 
 class AwsJwtConfig(BaseModel):
-    """AWS JWT federation configuration for outbound authentication without secrets."""
+    """AWS IAM JWT federation configuration for outbound authentication without secrets."""
 
-    enabled: bool = Field(default=False, description="Whether AWS JWT federation is enabled for this account")
+    enabled: bool = Field(default=False, description="Whether AWS IAM JWT federation is enabled for this account")
     audiences: List[str] = Field(
         default_factory=list, description="List of allowed audiences for STS:GetWebIdentityToken IAM policy"
     )
@@ -96,7 +96,7 @@ class IdentityConfig(BaseModel):
     )
     workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
     aws_jwt: AwsJwtConfig = Field(
-        default_factory=AwsJwtConfig, description="AWS JWT federation configuration (no secrets required)"
+        default_factory=AwsJwtConfig, description="AWS IAM JWT federation configuration (no secrets required)"
     )
 
     @property
@@ -111,7 +111,7 @@ class IdentityConfig(BaseModel):
 
     @property
     def has_aws_jwt(self) -> bool:
-        """Check if AWS JWT federation is enabled."""
+        """Check if AWS IAM JWT federation is enabled."""
         return self.aws_jwt.enabled and len(self.aws_jwt.audiences) > 0
 
     @property

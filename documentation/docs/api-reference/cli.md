@@ -412,7 +412,7 @@ agentcore identity setup-aws-jwt --audience https://api.example.com --duration 6
 │ Next Steps:                                                      │
 │ 1. Configure your external service to trust this issuer URL      │
 │ 2. Run agentcore launch to deploy (IAM permissions auto-added)   │
-│ 3. Use @requires_access_token(auth_flow='AWS_JWT', ...) in agent │
+│ 3. Use @requires_iam_access_token(audience=[...]) in your agent  │
 ╰─────────────────────────────────────────────────────────────────╯
 ```
 
@@ -448,7 +448,6 @@ agentcore identity list-aws-jwt
 │                     │ https://api2.example.com                   │
 ╰─────────────────────┴────────────────────────────────────────────╯
 ```
-
 
 ### Setup Cognito
 
@@ -701,17 +700,16 @@ agentcore invoke '{"prompt": "Call the external API"}'
 ```python
 from strands import Agent, tool
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
-from bedrock_agentcore.identity.auth import requires_access_token
+from bedrock_agentcore.identity.auth import requires_iam_access_token
 
 app = BedrockAgentCoreApp()
 
 @tool
-@requires_access_token(
-    auth_flow="AWS_JWT",
+@requires_iam_access_token(
     audience=["https://api.example.com"],
 )
 def call_external_api(query: str, *, access_token: str) -> str:
-    """Call external API with AWS JWT authentication."""
+    """Call external API with AWS IAM JWT authentication."""
     import requests
     response = requests.get(
         "https://api.example.com/data",

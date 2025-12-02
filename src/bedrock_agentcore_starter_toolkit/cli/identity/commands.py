@@ -410,7 +410,9 @@ def list_credential_providers():
     try:
         config_path = Path.cwd() / ".bedrock_agentcore.yaml"
         if not config_path.exists():
-            console.print("[yellow]No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]")
+            console.print(
+                "[yellow]Warning: No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]"
+            )
             raise typer.Exit(1)
 
         project_config = load_config(config_path)
@@ -717,14 +719,17 @@ def setup_aws_jwt(
         ..., "--audience", "-a", help="Audience URL for the JWT (the external service that will validate the token)"
     ),
     signing_algorithm: str = typer.Option(
-        "ES384", "--signing-algorithm", "-s", help="Signing algorithm: ES384 (recommended) or RS256"
+        "ES384",
+        "--signing-algorithm",
+        "-s",
+        help="Signing algorithm: ES384 (default) or RS256",  # FIXED: "recommended" -> "default"
     ),
     duration_seconds: int = typer.Option(300, "--duration", "-d", help="Default token duration in seconds (60-3600)"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
-    """Set up AWS JWT federation for M2M authentication without secrets.
+    """Set up AWS IAM JWT federation for M2M authentication without secrets.
 
-    AWS JWT federation allows your agent to obtain signed JWTs from AWS STS
+    AWS IAM JWT federation allows your agent to obtain signed JWTs from AWS STS
     that can be used to authenticate with external services. Unlike OAuth,
     this requires NO client secrets - the JWT is signed by AWS.
 
@@ -736,7 +741,7 @@ def setup_aws_jwt(
     Run multiple times with different --audience values to add more audiences.
 
     Examples:
-        # Set up AWS JWT for an external API
+        # Set up AWS IAM JWT for an external API
         agentcore identity setup-aws-jwt --audience https://api.example.com
 
         # Add another audience (idempotent)
@@ -756,7 +761,7 @@ def setup_aws_jwt(
         console.print("[red]Error: --duration must be between 60 and 3600 seconds[/red]")
         raise typer.Exit(1)
 
-    # Determine region
+    # Determine region - FIXED: throw exception instead of defaulting to us-west-2
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     if not region:
         if config_path.exists():
@@ -769,9 +774,17 @@ def setup_aws_jwt(
             import boto3
 
             session = boto3.Session()
-            region = session.region_name or "us-west-2"
+            region = session.region_name
 
-    console.print(f"\n[bold]Setting up AWS JWT federation in region:[/bold] {region}\n")
+        if not region:
+            console.print(
+                "[red]Error: No AWS region configured.[/red]\n"
+                "Please specify --region or configure your AWS CLI default region:\n"
+                "  aws configure set region us-west-2"
+            )
+            raise typer.Exit(1)
+
+    console.print(f"\n[bold]Setting up AWS IAM JWT federation in region:[/bold] {region}\n")
 
     try:
         # Step 1: Enable federation (idempotent)
@@ -779,9 +792,9 @@ def setup_aws_jwt(
         was_newly_enabled, issuer_url = setup_aws_jwt_federation(region)
 
         if was_newly_enabled:
-            console.print("[green]✓ AWS JWT federation enabled for your account[/green]")
+            console.print("[green]✓ AWS IAM JWT federation enabled for your account[/green]")
         else:
-            console.print("[green]✓ AWS JWT federation already enabled[/green]")
+            console.print("[green]✓ AWS IAM JWT federation already enabled[/green]")
 
         # Step 2: Update config
         if not config_path.exists():
@@ -829,7 +842,7 @@ def setup_aws_jwt(
         console.print()
         console.print(
             Panel(
-                f"[bold]AWS JWT Federation Configured[/bold]\n\n"
+                f"[bold]AWS IAM JWT Federation Configured[/bold]\n\n"
                 f"Issuer URL: [cyan]{issuer_url}[/cyan]\n"
                 f"Audiences: [cyan]{', '.join(aws_jwt_config.audiences)}[/cyan]\n"
                 f"Algorithm: [cyan]{aws_jwt_config.signing_algorithm}[/cyan]\n"
@@ -837,7 +850,7 @@ def setup_aws_jwt(
                 f"[bold]Next Steps:[/bold]\n"
                 f"1. Configure your external service to trust this issuer URL\n"
                 f"2. Run [cyan]agentcore launch[/cyan] to deploy (IAM permissions auto-added)\n"
-                f"3. Use [cyan]@requires_access_token(auth_flow='AWS_JWT', audience=[...])[/cyan] in your agent",
+                f"3. Use [cyan]@requires_iam_access_token(audience=[...])[/cyan] in your agent",
                 title="✅ Success",
                 border_style="green",
             )
@@ -854,17 +867,17 @@ def setup_aws_jwt(
         console.print()
 
     except Exception as e:
-        _handle_error(f"Failed to set up AWS JWT federation: {str(e)}", e)
+        _handle_error(f"Failed to set up AWS IAM JWT federation: {str(e)}", e)
 
 
 @identity_app.command("list-aws-jwt")
 def list_aws_jwt():
-    """List AWS JWT federation configuration."""
+    """List AWS IAM JWT federation configuration."""
     from pathlib import Path
 
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     if not config_path.exists():
-        console.print("[yellow]No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]")
+        console.print("[yellow]Warning: No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]")
         raise typer.Exit(1)
 
     project_config = load_config(config_path)
@@ -875,17 +888,17 @@ def list_aws_jwt():
         raise typer.Exit(0)
 
     if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.identity.aws_jwt:
-        console.print("[yellow]No AWS JWT configuration found.[/yellow]")
+        console.print("[yellow]No AWS IAM JWT configuration found.[/yellow]")
         console.print("Run [cyan]agentcore identity setup-aws-jwt --audience <url>[/cyan] to configure.")
         raise typer.Exit(0)
 
     aws_jwt = agent_config.identity.aws_jwt
 
     if not aws_jwt.enabled:
-        console.print("[yellow]AWS JWT federation is not enabled.[/yellow]")
+        console.print("[yellow]AWS IAM JWT federation is not enabled.[/yellow]")
         raise typer.Exit(0)
 
-    table = Table(title="AWS JWT Federation Configuration")
+    table = Table(title="AWS IAM JWT Federation Configuration")
     table.add_column("Property", style="cyan")
     table.add_column("Value", style="white")
 

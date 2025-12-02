@@ -194,7 +194,7 @@ boto3
         logger.info(output)
 
         assert result.exit_code == 0, f"List AWS JWT failed: {output}"
-        assert "AWS JWT Federation Configuration" in output
+        assert "AWS IAM JWT Federation Configuration" in output
         assert "Yes" in output  # Enabled
         assert "ES384" in output
         assert "300" in output
