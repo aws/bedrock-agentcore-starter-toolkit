@@ -72,7 +72,7 @@ def setup_gateway():
         # NOTE: if you are using your own role make sure it has a trust policy that trusts bedrock-agentcore.amazonaws.com
         role_arn=None,
         # the OAuth authorization server details. If you are providing your own authorization server,
-        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "discoveryUrl": "<INSERT DISCOVERY URL">}}
+        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "allowedScopes": ["<INSERT ALLOWED SCOPES>"], "customClaims": [<{INSERT CUSTOM CLAIMS}>], "discoveryUrl": "<INSERT DISCOVERY URL">}}
         authorizer_config=cognito_response["authorizer_config"],
         # enable semantic search
         enable_semantic_search=True,
@@ -187,7 +187,7 @@ def setup_gateway():
         # NOTE: if you are using your own role make sure it has a trust policy that trusts bedrock-agentcore.amazonaws.com
         role_arn=None,
         # the OAuth authorization server details. If you are providing your own authorization server,
-        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "discoveryUrl": "<INSERT DISCOVERY URL">}}
+        # then pass an input of the following form: {"customJWTAuthorizer": {"allowedClients": ["<INSERT CLIENT ID>"], "allowedScopes": ["<INSERT ALLOWED SCOPES>"], "customClaims": [<{INSERT CUSTOM CLAIMS}>], "discoveryUrl": "<INSERT DISCOVERY URL">}}
         authorizer_config=cognito_response["authorizer_config"],
         # enable semantic search
         enable_semantic_search=True,
@@ -1084,6 +1084,8 @@ create_gw_request = {
         "customJWTAuthorizer": { # required the custom JWT authorizer setup
             "allowedAudience": [], # optional
             "allowedClients": [], # optional
+            "allowedScopes": [], # optional
+            "customClaims": [], # optional
             "discoveryUrl": "string" # required - the URL of the authorization server
         },
     },
@@ -1104,6 +1106,8 @@ example_create_gw_request = {
     "authorizerConfiguration":  {
         "customJWTAuthorizer": {
             "discoveryUrl": "<INSERT DISCOVERY URL e.g. https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration>",
+            "allowedScopes": ["<INSERT ALLOWED SCOPES>"],
+            "customClaims": ["{<INSERT CUSTOM CLAIMS>}"],
             "allowedClients": ["<INSERT CLIENT ID>"]
         }
     }
@@ -1139,6 +1143,8 @@ update_gw_request = {
         "customJWTAuthorizer": { # required the custom JWT authorizer setup
             "allowedAudience": [], # optional
             "allowedClients": [], # optional
+            "allowedScopes": [], # optional
+            "customClaims": [], # optional
             "discoveryUrl": "string" # required - the URL of the authorization server
         },
     },
@@ -1159,6 +1165,8 @@ example_update_gw_request = {
     "authorizerConfiguration":  {
         "customJWTAuthorizer": {
             "discoveryUrl": "<INSERT DISCOVERY URL e.g. https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration>",
+            "allowedScopes": ["<INSERT ALLOWED SCOPES>"],
+            "customClaims": ["{<INSERT CUSTOM CLAIMS>}"],
             "allowedClients": ["<INSERT CLIENT ID>"]
         }
     }

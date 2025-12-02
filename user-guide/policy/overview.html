@@ -10,25 +10,29 @@
     
     
     
-      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudfomation-deploy-with-mcp-tool-bash-script.html">
+      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/policy/overview.html">
     
     
+      <link rel="prev" href="quickstart.html">
     
     
-    <link rel="icon" href="../../../.." sizes="any">
-    <link rel="icon" href="../../../../assets/images/favicon.png" type="image/svg+xml">
+      <link rel="next" href="../identity/quickstart.html">
+    
+    
+    <link rel="icon" href="../.." sizes="any">
+    <link rel="icon" href="../../assets/images/favicon.png" type="image/svg+xml">
     <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
 
     
       
-        <title>Cloudfomation deploy with mcp tool bash script - Amazon Bedrock AgentCore</title>
+        <title>Policy Overview - Amazon Bedrock AgentCore</title>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
       
         
-        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -42,16 +46,16 @@
         
         
         
-        <link rel="stylesheet" href="../../../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
-      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -75,6 +79,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#policy-overview" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -91,7 +100,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../../.." title="Amazon Bedrock AgentCore" class="md-header__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+    <a href="../.." title="Amazon Bedrock AgentCore" class="md-header__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -111,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cloudfomation deploy with mcp tool bash script
+              Policy Overview
             
           </span>
         </div>
@@ -214,11 +223,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../../../index.html" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../index.html" class="md-tabs__link">
           
   
   
@@ -238,7 +249,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../index.html" class="md-tabs__link">
+        <a href="../../examples/index.html" class="md-tabs__link">
           
   
   
@@ -284,7 +295,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../../api-reference/runtime.html" class="md-tabs__link">
+        <a href="../../api-reference/runtime.html" class="md-tabs__link">
           
   
   
@@ -327,7 +338,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../../.." title="Amazon Bedrock AgentCore" class="md-nav__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+    <a href="../.." title="Amazon Bedrock AgentCore" class="md-nav__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -354,26 +365,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
             
   
   
@@ -391,7 +407,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -409,7 +425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../index.html" class="md-nav__link">
+      <a href="../../index.html" class="md-nav__link">
         
   
   
@@ -437,7 +453,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/create/quickstart.html" class="md-nav__link">
+      <a href="../create/quickstart.html" class="md-nav__link">
         
   
   
@@ -465,7 +481,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/dev/quickstart.html" class="md-nav__link">
+      <a href="../dev/quickstart.html" class="md-nav__link">
         
   
   
@@ -499,17 +515,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
         
           
-          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="">
             
   
   
@@ -545,7 +564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/quickstart.html" class="md-nav__link">
+      <a href="../runtime/quickstart.html" class="md-nav__link">
         
   
   
@@ -573,7 +592,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/overview.html" class="md-nav__link">
+      <a href="../runtime/overview.html" class="md-nav__link">
         
   
   
@@ -601,7 +620,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/permissions.html" class="md-nav__link">
+      <a href="../runtime/permissions.html" class="md-nav__link">
         
   
   
@@ -629,7 +648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/async.html" class="md-nav__link">
+      <a href="../runtime/async.html" class="md-nav__link">
         
   
   
@@ -657,7 +676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/notebook.html" class="md-nav__link">
+      <a href="../runtime/notebook.html" class="md-nav__link">
         
   
   
@@ -685,7 +704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/runtime/a2a.html" class="md-nav__link">
+      <a href="../runtime/a2a.html" class="md-nav__link">
         
   
   
@@ -727,17 +746,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_5" >
         
           
-          <label class="md-nav__link" for="__nav_1_5" id="__nav_1_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_5" id="__nav_1_5_label" tabindex="">
             
   
   
@@ -773,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/gateway/quickstart.html" class="md-nav__link">
+      <a href="../gateway/quickstart.html" class="md-nav__link">
         
   
   
@@ -815,17 +837,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
         
           
-          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="">
             
   
   
@@ -861,7 +886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/memory/quickstart.html" class="md-nav__link">
+      <a href="../memory/quickstart.html" class="md-nav__link">
         
   
   
@@ -894,26 +919,31 @@
                 
   
   
+    
   
   
+  
     
     
     
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
         
           
-          <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="">
             
   
   
@@ -931,7 +961,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -949,7 +979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/policy/quickstart.html" class="md-nav__link">
+      <a href="quickstart.html" class="md-nav__link">
         
   
   
@@ -974,10 +1004,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../../../user-guide/policy/overview.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="overview.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -993,6 +1050,305 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Benefits
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Benefits">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fine-grained-control-over-agent-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fine-grained Control Over Agent Actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deterministic-enforcement-with-strong-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic Enforcement with Strong Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-accessible-authoring-with-organization-wide-consistency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple, Accessible Authoring with Organization-wide Consistency
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gateway
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cedar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cedar-policy-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar Policy Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorization-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-enforcement-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Enforcement Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#natural-language-policy-authoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Policy Authoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-request-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Request Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cedar-authorization-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Cedar Authorization Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-policy-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Policy Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cedar-language-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar Language Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#current-implementation-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Implementation Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1019,17 +1375,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
         
           
-          <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="">
             
   
   
@@ -1065,7 +1424,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/identity/quickstart.html" class="md-nav__link">
+      <a href="../identity/quickstart.html" class="md-nav__link">
         
   
   
@@ -1093,7 +1452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/identity/quickstart-with-cli.html" class="md-nav__link">
+      <a href="../identity/quickstart-with-cli.html" class="md-nav__link">
         
   
   
@@ -1135,17 +1494,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
         
           
-          <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="">
             
   
   
@@ -1181,7 +1543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/builtin-tools/quickstart-browser.html" class="md-nav__link">
+      <a href="../builtin-tools/quickstart-browser.html" class="md-nav__link">
         
   
   
@@ -1209,7 +1571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/builtin-tools/quickstart-code-interpreter.html" class="md-nav__link">
+      <a href="../builtin-tools/quickstart-code-interpreter.html" class="md-nav__link">
         
   
   
@@ -1251,17 +1613,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
         
           
-          <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="">
             
   
   
@@ -1297,7 +1662,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/security/vpc-interface-endpoints.html" class="md-nav__link">
+      <a href="../security/vpc-interface-endpoints.html" class="md-nav__link">
         
   
   
@@ -1325,7 +1690,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/security/agentcore-vpc.html" class="md-nav__link">
+      <a href="../security/agentcore-vpc.html" class="md-nav__link">
         
   
   
@@ -1353,7 +1718,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/security/security-vpc-condition.html" class="md-nav__link">
+      <a href="../security/security-vpc-condition.html" class="md-nav__link">
         
   
   
@@ -1395,17 +1760,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_11" >
         
           
-          <label class="md-nav__link" for="__nav_1_11" id="__nav_1_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_11" id="__nav_1_11_label" tabindex="">
             
   
   
@@ -1441,7 +1809,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/observability/quickstart.html" class="md-nav__link">
+      <a href="../observability/quickstart.html" class="md-nav__link">
         
   
   
@@ -1483,17 +1851,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_12" >
         
           
-          <label class="md-nav__link" for="__nav_1_12" id="__nav_1_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_12" id="__nav_1_12_label" tabindex="">
             
   
   
@@ -1529,7 +1900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/evaluation/quickstart.html" class="md-nav__link">
+      <a href="../evaluation/quickstart.html" class="md-nav__link">
         
   
   
@@ -1571,17 +1942,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_13" >
         
           
-          <label class="md-nav__link" for="__nav_1_13" id="__nav_1_13_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1_13" id="__nav_1_13_label" tabindex="">
             
   
   
@@ -1617,7 +1991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/import-agent/quickstart.html" class="md-nav__link">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
         
   
   
@@ -1645,7 +2019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/import-agent/overview.html" class="md-nav__link">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -1673,7 +2047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../user-guide/import-agent/configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -1768,7 +2142,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../index.html" class="md-nav__link">
+      <a href="../../examples/index.html" class="md-nav__link">
         
   
   
@@ -1796,7 +2170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../agentcore-quickstart-example.html" class="md-nav__link">
+      <a href="../../examples/agentcore-quickstart-example.html" class="md-nav__link">
         
   
   
@@ -1824,7 +2198,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../session-management.html" class="md-nav__link">
+      <a href="../../examples/session-management.html" class="md-nav__link">
         
   
   
@@ -1852,7 +2226,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../async-processing.html" class="md-nav__link">
+      <a href="../../examples/async-processing.html" class="md-nav__link">
         
   
   
@@ -1880,7 +2254,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../gateway-integration.html" class="md-nav__link">
+      <a href="../../examples/gateway-integration.html" class="md-nav__link">
         
   
   
@@ -1908,7 +2282,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../policy-integration.html" class="md-nav__link">
+      <a href="../../examples/policy-integration.html" class="md-nav__link">
         
   
   
@@ -1936,7 +2310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../memory_gateway_agent.html" class="md-nav__link">
+      <a href="../../examples/memory_gateway_agent.html" class="md-nav__link">
         
   
   
@@ -1964,7 +2338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../runtime-framework-agents.html" class="md-nav__link">
+      <a href="../../examples/runtime-framework-agents.html" class="md-nav__link">
         
   
   
@@ -1992,7 +2366,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../semantic_search.html" class="md-nav__link">
+      <a href="../../examples/semantic_search.html" class="md-nav__link">
         
   
   
@@ -2158,7 +2532,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../api-reference/runtime.html" class="md-nav__link">
+      <a href="../../api-reference/runtime.html" class="md-nav__link">
         
   
   
@@ -2186,7 +2560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../api-reference/identity.html" class="md-nav__link">
+      <a href="../../api-reference/identity.html" class="md-nav__link">
         
   
   
@@ -2214,7 +2588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../api-reference/memory.html" class="md-nav__link">
+      <a href="../../api-reference/memory.html" class="md-nav__link">
         
   
   
@@ -2242,7 +2616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../api-reference/tools.html" class="md-nav__link">
+      <a href="../../api-reference/tools.html" class="md-nav__link">
         
   
   
@@ -2330,7 +2704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../api-reference/cli.html" class="md-nav__link">
+      <a href="../../api-reference/cli.html" class="md-nav__link">
         
   
   
@@ -2385,6 +2759,293 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Benefits
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Benefits">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fine-grained-control-over-agent-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fine-grained Control Over Agent Actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deterministic-enforcement-with-strong-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic Enforcement with Strong Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-accessible-authoring-with-organization-wide-consistency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple, Accessible Authoring with Organization-wide Consistency
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gateway
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cedar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cedar-policy-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar Policy Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorization-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-enforcement-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Enforcement Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#natural-language-policy-authoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Policy Authoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-request-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Request Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cedar-authorization-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Cedar Authorization Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-policy-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Policy Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cedar-language-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cedar Language Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#current-implementation-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Implementation Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -2404,79 +3065,167 @@
   
 
 
-  <h1>Cloudfomation deploy with mcp tool bash script</h1>
-
-<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
-<span class="c1"># Streamlined deployment script for MCP Server on AgentCore Runtime</span>
-
-<span class="nb">set</span><span class="w"> </span>-e
-
-<span class="nv">STACK_NAME</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">1</span><span class="k">:-</span><span class="nv">mcp</span><span class="p">-server-demo</span><span class="si">}</span><span class="s2">&quot;</span>
-<span class="nv">REGION</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">2</span><span class="k">:-</span><span class="nv">us</span><span class="p">-west-2</span><span class="si">}</span><span class="s2">&quot;</span>
-
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;MCP Server Deployment Script&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Stack Name: </span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Region: </span><span class="nv">$REGION</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-
-<span class="c1"># Deploy CloudFormation stack</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📦 Deploying CloudFormation stack...&quot;</span>
-aws<span class="w"> </span>cloudformation<span class="w"> </span>create-stack<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--stack-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--template-body<span class="w"> </span>file://mcp-server-template.yaml<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--capabilities<span class="w"> </span>CAPABILITY_NAMED_IAM<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$REGION</span><span class="s2">&quot;</span>
-
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;✓ Stack creation initiated&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-
-<span class="c1"># Wait for stack to complete</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;⏳ Waiting for stack to complete (this takes ~10-15 minutes)...&quot;</span>
-aws<span class="w"> </span>cloudformation<span class="w"> </span><span class="nb">wait</span><span class="w"> </span>stack-create-complete<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--stack-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$REGION</span><span class="s2">&quot;</span>
-
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;✓ Stack deployment complete!&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-
-<span class="c1"># Get stack outputs</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;📋 Retrieving stack outputs...&quot;</span>
-<span class="nv">CLIENT_ID</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--stack-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`CognitoUserPoolClientId`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$REGION</span><span class="s2">&quot;</span><span class="k">)</span>
-
-<span class="nv">AGENT_ARN</span><span class="o">=</span><span class="k">$(</span>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--stack-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--query<span class="w"> </span><span class="s1">&#39;Stacks[0].Outputs[?OutputKey==`MCPServerRuntimeArn`].OutputValue&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output<span class="w"> </span>text<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$REGION</span><span class="s2">&quot;</span><span class="k">)</span>
-
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;✅ Deployment Complete!&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Stack Name: </span><span class="nv">$STACK_NAME</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Region: </span><span class="nv">$REGION</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Client ID: </span><span class="nv">$CLIENT_ID</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Agent ARN: </span><span class="nv">$AGENT_ARN</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Test Credentials:&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  Username: testuser&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  Password: MyPassword123!&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Next Steps:&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;==========================================&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Test your MCP server:&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  ./test.sh </span><span class="nv">$STACK_NAME</span><span class="s2"> </span><span class="nv">$REGION</span><span class="s2">&quot;</span>
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-</code></pre></div>
+<h1 id="policy-overview">Policy Overview<a class="headerlink" href="#policy-overview" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Policy in Amazon Bedrock AgentCore enables developers to define and enforce security controls for AI agent interactions with tools by creating a protective boundary around agent operations. AI agents can dynamically adapt to solve complex problems - from processing customer inquiries to automating workflows across multiple tools and systems. However, this flexibility introduces new security challenges, as agents may inadvertently misinterpret business rules or act outside their intended authority.</p>
+<p>With Policy in Amazon Bedrock AgentCore, you can:</p>
+<ul>
+<li>Create policy engines to store authorization rules</li>
+<li>Write policies using Cedar language (AWS's open-source authorization language)</li>
+<li>Associate policy engines with AgentCore Gateways</li>
+<li>Automatically intercept and evaluate all agent tool calls</li>
+<li>Enforce fine-grained access controls based on user identity and tool parameters</li>
+</ul>
+<p>AgentCore Policy intercepts all agent traffic through AgentCore Gateways and evaluates each request against defined policies in the policy engine before allowing tool access.</p>
+<h2 id="key-benefits">Key Benefits<a class="headerlink" href="#key-benefits" title="Permanent link">&para;</a></h2>
+<h3 id="fine-grained-control-over-agent-actions">Fine-grained Control Over Agent Actions<a class="headerlink" href="#fine-grained-control-over-agent-actions" title="Permanent link">&para;</a></h3>
+<p>Define what actions an agent is allowed to perform - including which tools it can call and the precise conditions under which those actions are permitted. Control access based on:</p>
+<ul>
+<li>User identity and roles</li>
+<li>OAuth scopes and claims</li>
+<li>Tool input parameters (amounts, regions, types)</li>
+<li>Complex combinations of conditions</li>
+</ul>
+<h3 id="deterministic-enforcement-with-strong-guarantees">Deterministic Enforcement with Strong Guarantees<a class="headerlink" href="#deterministic-enforcement-with-strong-guarantees" title="Permanent link">&para;</a></h3>
+<p>Every agent action through AgentCore Gateway is intercepted and evaluated at the boundary outside of the agent's code - ensuring consistent, deterministic enforcement that remains reliable regardless of how the agent is implemented.</p>
+<h3 id="simple-accessible-authoring-with-organization-wide-consistency">Simple, Accessible Authoring with Organization-wide Consistency<a class="headerlink" href="#simple-accessible-authoring-with-organization-wide-consistency" title="Permanent link">&para;</a></h3>
+<p>Write policies using natural language prompts or directly in Cedar, making it easy for builders with varying degrees of expertise to define rules for their agents. Teams can set boundaries once and have them applied consistently across all agents and tools, with every enforcement decision logged through CloudWatch metrics and logs for audit and validation.</p>
+<h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Policy Enforcement</strong> - Intercepts and evaluates all agent requests against defined policies before allowing tool access</li>
+<li><strong>Access Controls</strong> - Enables fine-grained permissions based on user identity and tool input parameters</li>
+<li><strong>Policy Authoring</strong> - Provides Cedar policy language support for writing clear, validated policies. Policies can also be authored in natural language using English prompts which are translated into Cedar policies and validated</li>
+<li><strong>Policy Monitoring</strong> - Offers CloudWatch integration for monitoring policy evaluations and decisions</li>
+<li><strong>Infrastructure Integration</strong> - Integrates with VPC security groups and other AWS security infrastructure</li>
+<li><strong>Audit Logging</strong> - Maintains detailed logs of policy decisions for compliance and troubleshooting</li>
+</ul>
+<h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="gateway">Gateway<a class="headerlink" href="#gateway" title="Permanent link">&para;</a></h3>
+<p>An AgentCore Gateway provides an endpoint to connect to MCP servers and convert APIs and Lambda functions to MCP-compatible tools, providing a single access point for an agent to interact with its tools. A Gateway can have multiple targets, each representing a different tool or set of tools.</p>
+<h3 id="policy-engine">Policy Engine<a class="headerlink" href="#policy-engine" title="Permanent link">&para;</a></h3>
+<p>The policy engine is the component of Policy in AgentCore that stores and evaluates Cedar policies. When you create policies, they apply to every gateway associated with the engine, as long as the policy scope matches the request. For every tool invocation, the policy engine evaluates all applicable policies against the request to determine whether to allow or deny access.</p>
+<h3 id="cedar">Cedar<a class="headerlink" href="#cedar" title="Permanent link">&para;</a></h3>
+<p><a href="https://docs.cedarpolicy.com/">Cedar</a> is an open-source policy language developed by AWS for writing and enforcing authorization policies. Cedar policies are:</p>
+<ul>
+<li><strong>Human-readable</strong> - Clear syntax that developers can understand</li>
+<li><strong>Analyzable</strong> - Automated reasoning can detect policy issues</li>
+<li><strong>Validated</strong> - Policies are checked against schemas at creation time</li>
+</ul>
+<p>Policy in AgentCore uses Cedar to provide precise, verifiable access control for gateway tools.</p>
+<h3 id="cedar-policy-structure">Cedar Policy Structure<a class="headerlink" href="#cedar-policy-structure" title="Permanent link">&para;</a></h3>
+<p>A Cedar policy is a declarative statement that permits or forbids access to gateway tools. Each policy specifies:</p>
+<ul>
+<li><strong>Who</strong> (principal) - The user or entity making the request</li>
+<li><strong>What</strong> (action) - The operation being requested (tool invocation)</li>
+<li><strong>Which</strong> (resource) - The target gateway</li>
+<li><strong>When</strong> (conditions) - Additional logic that must be satisfied</li>
+</ul>
+<p>Example policy:
+<div class="highlight"><pre><span></span><code>permit(
+  principal is AgentCore::OAuthUser,
+  action == AgentCore::Action::&quot;RefundTool__process_refund&quot;,
+  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/refund-gateway&quot;
+)
+when {
+  principal.hasTag(&quot;username&quot;) &amp;&amp;
+  principal.getTag(&quot;username&quot;) == &quot;refund-agent&quot; &amp;&amp;
+  context.input.amount &lt; 500
+};
+</code></pre></div></p>
+<p>This policy allows the user "refund-agent" to process refunds only when the amount is less than $500.</p>
+<h3 id="authorization-semantics">Authorization Semantics<a class="headerlink" href="#authorization-semantics" title="Permanent link">&para;</a></h3>
+<p>Cedar uses a <strong>forbid-overrides-permit</strong> evaluation model:</p>
+<ol>
+<li><strong>Default Deny</strong> - All actions are denied by default. If no policies match a request, Cedar returns DENY</li>
+<li><strong>Forbid Wins</strong> - If any forbid policy matches, the result is DENY, even if permit policies also match</li>
+<li><strong>At Least One Permit Required</strong> - If at least one permit policy matches and no forbid policies do, the result is ALLOW</li>
+</ol>
+<h3 id="policy-enforcement-modes">Policy Enforcement Modes<a class="headerlink" href="#policy-enforcement-modes" title="Permanent link">&para;</a></h3>
+<p>Policy engines support two enforcement modes:</p>
+<ul>
+<li><strong>LOG_ONLY</strong> - Evaluates and logs policy decisions without enforcing them (useful for testing)</li>
+<li><strong>ENFORCE</strong> - Evaluates and enforces decisions by allowing or denying agent operations</li>
+</ul>
+<h3 id="natural-language-policy-authoring">Natural Language Policy Authoring<a class="headerlink" href="#natural-language-policy-authoring" title="Permanent link">&para;</a></h3>
+<p>Policy in Amazon Bedrock AgentCore provides the capability to author policies using natural language by allowing developers to describe rules in plain English instead of writing formal policy code in Cedar. The service:</p>
+<ul>
+<li>Interprets what the user intends</li>
+<li>Generates candidate Cedar policies</li>
+<li>Validates them against the tool schema</li>
+<li>Uses automated reasoning to check safety conditions</li>
+<li>Identifies overly permissive, overly restrictive, or invalid policies</li>
+</ul>
+<p>This ensures you catch issues before enforcing policies.</p>
+<h2 id="authorization-flow">Authorization Flow<a class="headerlink" href="#authorization-flow" title="Permanent link">&para;</a></h2>
+<p>Understanding how authorization information flows through the system:</p>
+<h3 id="1-request-processing">1. Request Processing<a class="headerlink" href="#1-request-processing" title="Permanent link">&para;</a></h3>
+<p>AgentCore Gateway processes two key pieces of information:</p>
+<p><strong>JWT Token</strong> - OAuth claims about the user:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;sub&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user-123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refund-agent&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;scope&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;refund:write admin:read&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>MCP Tool Call</strong> - The actual tool invocation:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jsonrpc&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tools/call&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RefundTool__process_refund&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;orderId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;amount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">450</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h3 id="2-cedar-authorization-request">2. Cedar Authorization Request<a class="headerlink" href="#2-cedar-authorization-request" title="Permanent link">&para;</a></h3>
+<p>The Gateway constructs a Cedar authorization request:</p>
+<ul>
+<li><strong>Principal</strong>: <code>AgentCore::OAuthUser::"user-123"</code> (from JWT sub claim)</li>
+<li><strong>Action</strong>: <code>AgentCore::Action::"RefundTool__process_refund"</code> (from tool name)</li>
+<li><strong>Resource</strong>: <code>AgentCore::Gateway::"arn:aws:..."</code> (the Gateway instance)</li>
+<li><strong>Context</strong>: <code>{"input": {"orderId": "12345", "amount": 450}}</code> (tool arguments)</li>
+<li><strong>Tags</strong>: JWT claims stored as tags on the OAuthUser entity</li>
+</ul>
+<h3 id="3-policy-evaluation">3. Policy Evaluation<a class="headerlink" href="#3-policy-evaluation" title="Permanent link">&para;</a></h3>
+<p>Cedar evaluates all policies against the request:</p>
+<ul>
+<li>✓ Principal check: Is the principal an OAuthUser?</li>
+<li>✓ Action check: Is the action RefundTool__process_refund?</li>
+<li>✓ Resource check: Is the resource the refund gateway?</li>
+<li>✓ Condition checks: Does username = "refund-agent"? Is amount &lt; 500?</li>
+</ul>
+<p>Result: <strong>ALLOW</strong> or <strong>DENY</strong></p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<h3 id="cedar-language-limitations">Cedar Language Limitations<a class="headerlink" href="#cedar-language-limitations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No floating-point numbers (use Decimal for fractional values, limited to 4 decimal places)</li>
+<li>No regular expressions (pattern matching limited to <code>like</code> operator with <code>*</code> wildcards)</li>
+</ul>
+<h3 id="current-implementation-limitations">Current Implementation Limitations<a class="headerlink" href="#current-implementation-limitations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No date/time support for date and time comparisons</li>
+<li>Custom claims in natural language policy authoring must be provided in the prompt</li>
+<li>Limited decimal precision (4 decimal places)</li>
+<li>Cedar schema size limited to 200 KB</li>
+<li>Maximum 1000 policies per engine</li>
+<li>Maximum 1000 policy engines per account</li>
+</ul>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="quickstart.html">Policy Quickstart</a> - Get started with your first policy</li>
+<li><a href="../../examples/policy-integration.html">Policy Integration Examples</a> - See real-world policy patterns</li>
+<li><a href="https://docs.cedarpolicy.com/">Cedar Documentation</a> - Learn more about the Cedar language</li>
+</ul>
+<h2 id="additional-resources">Additional Resources<a class="headerlink" href="#additional-resources" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html">AWS Developer Guide - Policy in AgentCore</a></li>
+<li><a href="https://www.cedarpolicy.com/">Cedar Policy Language</a></li>
+<li><a href="../gateway/quickstart.html">Gateway Integration Guide</a></li>
+</ul>
 
 
 
@@ -2547,12 +3296,12 @@ aws<span class="w"> </span>cloudformation<span class="w"> </span><span class="nb
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
-        <script src="../../../../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+        <script src="../../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
       
     
   </body>

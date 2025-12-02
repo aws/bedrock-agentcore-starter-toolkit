@@ -1,0 +1,3899 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    
+      <meta name="description" content="Documentation for Amazon Bedrock AgentCore, primitives for building and running AI agents">
+    
+    
+    
+      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/policy-integration.html">
+    
+    
+      <link rel="prev" href="gateway-integration.html">
+    
+    
+      <link rel="next" href="memory_gateway_agent.html">
+    
+    
+    <link rel="icon" href=".." sizes="any">
+    <link rel="icon" href="../assets/images/favicon.png" type="image/svg+xml">
+    <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+
+    
+      
+        <title>Policy Integration - Amazon Bedrock AgentCore</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        
+        <link rel="stylesheet" href="../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#policy-integration-examples" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Amazon Bedrock AgentCore" class="md-header__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Amazon Bedrock AgentCore
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Policy Integration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../index.html" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="index.html" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contribute ❤️
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api-reference/runtime.html" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Amazon Bedrock AgentCore" class="md-nav__button md-logo" aria-label="Amazon Bedrock AgentCore" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Amazon Bedrock AgentCore
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/create/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Create Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/dev/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Runtime
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/permissions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/async.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Async Processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/notebook.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Notebook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/runtime/a2a.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime A2A Server Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_5" id="__nav_1_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gateway
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/gateway/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Memory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/memory/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_7" id="__nav_1_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/policy/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/policy/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_8" id="__nav_1_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Identity
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/identity/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/identity/quickstart-with-cli.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity CLI Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_9" id="__nav_1_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/builtin-tools/quickstart-browser.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart Browser Tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/builtin-tools/quickstart-code-interpreter.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart Code Interpreter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_10" id="__nav_1_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/security/vpc-interface-endpoints.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VPC Interface Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/security/agentcore-vpc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AgentCore VPC Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/security/security-vpc-condition.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VPC Condition Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_11" id="__nav_1_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Observability
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/observability/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_12" id="__nav_1_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Evaluation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/evaluation/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_13" id="__nav_1_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Import Agent
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/import-agent/configuration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="agentcore-quickstart-example.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Transform and Deploy Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="session-management.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Session Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="async-processing.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Async Processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="gateway-integration.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="policy-integration.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#complete-example-refund-processing-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Example: Refund Processing System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complete Example: Refund Processing System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-cedar-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Create Cedar Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-create-gateway-with-policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Gateway with Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-test-the-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Test the Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-policy-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Policy Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Policy Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#amount-based-restrictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amount-Based Restrictions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-tier-based-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Tier-Based Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regional-restrictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regional Restrictions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#role-based-access-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role-Based Access Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-field-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Field Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emergency-shutdown-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Emergency Shutdown Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Emergency Shutdown Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disable-all-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disable All Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-specific-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disable Specific Tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#block-specific-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block Specific User
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#natural-language-policy-authoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Policy Authoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Natural Language Policy Authoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-policy-authoring-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Policy Authoring Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#natural-language-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-debugging-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Debugging Policies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing and Debugging Policies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_only-mode-for-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LOG_ONLY Mode for Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Pitfalls and Solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls and Solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-1-invalid-generation-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 1: Invalid Generation Name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-2-forgetting-default-deny" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 2: Forgetting Default Deny
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-3-vague-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 3: Vague Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-4-missing-tag-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 4: Missing Tag Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-5-incorrect-resource-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 5: Incorrect Resource Scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#policy-management-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Management Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Policy Management Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#version-control-your-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Control Your Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#organize-policies-by-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Organize Policies by Purpose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-before-deploying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Before Deploying
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="memory_gateway_agent.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory Gateway Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="runtime-framework-agents.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime Framework Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="semantic_search.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Search
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/aws/bedrock-agentcore-sdk-python/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribute ❤️
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock AgentCore SDK
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock AgentCore SDK
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/runtime.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/identity.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Identity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/memory.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/tools.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock AgentCore Starter Toolkit
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock AgentCore Starter Toolkit
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/cli.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AgentCore CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#complete-example-refund-processing-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Example: Refund Processing System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complete Example: Refund Processing System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-cedar-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Create Cedar Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-create-gateway-with-policy-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Create Gateway with Policy Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-test-the-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Test the Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-policy-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Policy Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Policy Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#amount-based-restrictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amount-Based Restrictions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-tier-based-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Tier-Based Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regional-restrictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regional Restrictions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#role-based-access-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role-Based Access Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-field-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Field Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emergency-shutdown-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Emergency Shutdown Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Emergency Shutdown Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disable-all-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disable All Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable-specific-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disable Specific Tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#block-specific-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block Specific User
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#natural-language-policy-authoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Policy Authoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Natural Language Policy Authoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-policy-authoring-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Policy Authoring Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#natural-language-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Natural Language Examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-debugging-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Debugging Policies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing and Debugging Policies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_only-mode-for-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LOG_ONLY Mode for Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Pitfalls and Solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls and Solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-1-invalid-generation-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 1: Invalid Generation Name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-2-forgetting-default-deny" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 2: Forgetting Default Deny
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-3-vague-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 3: Vague Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-4-missing-tag-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 4: Missing Tag Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pitfall-5-incorrect-resource-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pitfall 5: Incorrect Resource Scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#policy-management-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Management Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Policy Management Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#version-control-your-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Control Your Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#organize-policies-by-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Organize Policies by Purpose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-before-deploying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Before Deploying
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="policy-integration-examples">Policy Integration Examples<a class="headerlink" href="#policy-integration-examples" title="Permanent link">&para;</a></h1>
+<p>This guide demonstrates practical patterns for integrating Policy with AgentCore Gateway, including complete working examples, common policy patterns, and best practices.</p>
+<h2 id="complete-example-refund-processing-system">Complete Example: Refund Processing System<a class="headerlink" href="#complete-example-refund-processing-system" title="Permanent link">&para;</a></h2>
+<p>This end-to-end example shows how to create a policy-protected refund processing system.</p>
+<p><strong>Important: Action Name Format</strong></p>
+<p>Action names in Cedar policies use the format <code>TargetName___tool_name</code> with <strong>three underscores</strong> (<code>___</code>):
+- Format: <code>AgentCore::Action::"&lt;TargetName&gt;___&lt;tool_name&gt;"</code>
+- Example: <code>AgentCore::Action::"RefundTarget___process_refund"</code>
+- The target name from your gateway and the tool name are separated by triple underscores</p>
+<h3 id="step-1-create-policy-engine">Step 1: Create Policy Engine<a class="headerlink" href="#step-1-create-policy-engine" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore_starter_toolkit.operations.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolicyClient</span>
+
+<span class="c1"># Initialize the policy client</span>
+<span class="n">policy_client</span> <span class="o">=</span> <span class="n">PolicyClient</span><span class="p">(</span><span class="n">region_name</span><span class="o">=</span><span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
+
+<span class="c1"># Create a policy engine</span>
+<span class="n">policy_engine</span> <span class="o">=</span> <span class="n">policy_client</span><span class="o">.</span><span class="n">create_or_get_policy_engine</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;RefundPolicyEngine&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Policy engine for refund processing authorization&#39;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Policy Engine ARN: </span><span class="si">{</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineArn&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="step-2-create-cedar-policies">Step 2: Create Cedar Policies<a class="headerlink" href="#step-2-create-cedar-policies" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Policy 1: Allow refund-agent to process refunds under $500</span>
+<span class="n">refund_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;RefundTarget___process_refund&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/refund-gateway&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;username&quot;) &amp;&amp;</span>
+<span class="s2">  principal.getTag(&quot;username&quot;) == &quot;refund-agent&quot; &amp;&amp;</span>
+<span class="s2">  context.input.amount &lt; 500</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">policy_client</span><span class="o">.</span><span class="n">create_policy</span><span class="p">(</span>
+    <span class="n">policy_engine_id</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;RefundUnder500Policy&#39;</span><span class="p">,</span>
+    <span class="n">definition</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cedar&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;statement&#39;</span><span class="p">:</span> <span class="n">refund_policy</span><span class="p">}},</span>
+    <span class="n">validation_mode</span><span class="o">=</span><span class="s1">&#39;FAIL_ON_ANY_FINDINGS&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Policy 2: Emergency shutdown - forbid all refunds</span>
+<span class="n">emergency_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(</span>
+<span class="s2">  principal,</span>
+<span class="s2">  action == AgentCore::Action::&quot;RefundTarget___process_refund&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/refund-gateway&quot;</span>
+<span class="s2">);</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># Note: This policy is created but can be enabled/disabled as needed</span>
+</code></pre></div>
+<h3 id="step-3-create-gateway-with-policy-engine">Step 3: Create Gateway with Policy Engine<a class="headerlink" href="#step-3-create-gateway-with-policy-engine" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore_starter_toolkit.operations.gateway.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatewayClient</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="n">gateway_client</span> <span class="o">=</span> <span class="n">GatewayClient</span><span class="p">(</span><span class="n">region_name</span><span class="o">=</span><span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
+
+<span class="c1"># Define Lambda refund tool</span>
+<span class="n">lambda_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;arn&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:lambda:us-west-2:123456789012:function:RefundProcessor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tools&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;process_refund&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Process customer refund&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;inputSchema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;orderId&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                    <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">},</span>
+                    <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;orderId&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1"># Create Gateway with OAuth and Policy Engine</span>
+<span class="n">cognito</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_oauth_authorizer_with_cognito</span><span class="p">(</span><span class="s2">&quot;refund-processor&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create the Gateway</span>
+<span class="n">gateway</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_mcp_gateway</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;refund-gateway&quot;</span><span class="p">,</span>
+    <span class="n">role_arn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Auto-creates IAM role</span>
+    <span class="n">authorizer_config</span><span class="o">=</span><span class="n">cognito</span><span class="p">[</span><span class="s1">&#39;authorizer_config&#39;</span><span class="p">],</span>
+    <span class="n">enable_semantic_search</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="c1"># Add Lambda target</span>
+<span class="n">lambda_target</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_mcp_gateway_target</span><span class="p">(</span>
+    <span class="n">gateway</span><span class="o">=</span><span class="n">gateway</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RefundTool&quot;</span><span class="p">,</span>
+    <span class="n">target_type</span><span class="o">=</span><span class="s2">&quot;lambda&quot;</span><span class="p">,</span>
+    <span class="n">target_payload</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;lambdaArn&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:lambda:us-west-2:123456789012:function:RefundProcessor&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;toolSchema&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;inlinePayload&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;process_refund&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Process customer refund&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;inputSchema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;orderId&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+                            <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">},</span>
+                            <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;orderId&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">]</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+
+<span class="c1"># Attach Policy Engine to Gateway</span>
+<span class="n">gateway_client</span><span class="o">.</span><span class="n">update_gateway_policy_engine</span><span class="p">(</span>
+    <span class="n">gateway_identifier</span><span class="o">=</span><span class="n">gateway</span><span class="p">[</span><span class="s2">&quot;gatewayId&quot;</span><span class="p">],</span>
+    <span class="n">policy_engine_arn</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineArn&#39;</span><span class="p">],</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;ENFORCE&quot;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gateway URL: </span><span class="si">{</span><span class="n">gateway</span><span class="p">[</span><span class="s1">&#39;gatewayUrl&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="step-4-test-the-policy">Step 4: Test the Policy<a class="headerlink" href="#step-4-test-the-policy" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">httpx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_refund_policy</span><span class="p">():</span>
+    <span class="c1"># Get OAuth token (from Cognito)</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">get_access_token_for_cognito</span><span class="p">(</span><span class="n">cognito</span><span class="p">[</span><span class="s1">&#39;client_info&#39;</span><span class="p">])</span>
+
+    <span class="n">gateway_url</span> <span class="o">=</span> <span class="n">gateway</span><span class="p">[</span><span class="s1">&#39;gatewayUrl&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Test 1: Valid refund (under $500)</span>
+    <span class="n">response1</span> <span class="o">=</span> <span class="k">await</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">gateway_url</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+        <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/call&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;RefundTool__process_refund&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;orderId&quot;</span><span class="p">:</span> <span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">450</span><span class="p">,</span>
+                    <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Defective product&quot;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test 1 (amount=450): </span><span class="si">{</span><span class="n">response1</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should ALLOW</span>
+
+    <span class="c1"># Test 2: Invalid refund (over $500)</span>
+    <span class="n">response2</span> <span class="o">=</span> <span class="k">await</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+        <span class="n">gateway_url</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+        <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/call&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;RefundTool__process_refund&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;orderId&quot;</span><span class="p">:</span> <span class="s2">&quot;12346&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">750</span><span class="p">,</span>
+                    <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Defective product&quot;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test 2 (amount=750): </span><span class="si">{</span><span class="n">response2</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should DENY</span>
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">test_refund_policy</span><span class="p">())</span>
+</code></pre></div>
+<h2 id="common-policy-patterns">Common Policy Patterns<a class="headerlink" href="#common-policy-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="amount-based-restrictions">Amount-Based Restrictions<a class="headerlink" href="#amount-based-restrictions" title="Permanent link">&para;</a></h3>
+<p>Limit operations based on monetary amounts:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Natural language</span>
+<span class="n">nl_policy</span> <span class="o">=</span> <span class="s2">&quot;Allow users with scope payment:process to transfer funds when the amount is less than $10,000&quot;</span>
+
+<span class="c1"># Converts to Cedar</span>
+<span class="n">cedar_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;PaymentTarget___transfer_funds&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;scope&quot;) &amp;&amp;</span>
+<span class="s2">  principal.getTag(&quot;scope&quot;) like &quot;*payment:process*&quot; &amp;&amp;</span>
+<span class="s2">  context.input.amount &lt; 10000</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="user-tier-based-access">User Tier-Based Access<a class="headerlink" href="#user-tier-based-access" title="Permanent link">&para;</a></h3>
+<p>Different limits for different user tiers:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Premium users: transfers up to $50,000</span>
+<span class="n">premium_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;PaymentTarget___transfer_funds&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;tier&quot;) &amp;&amp;</span>
+<span class="s2">  principal.getTag(&quot;tier&quot;) == &quot;premium&quot; &amp;&amp;</span>
+<span class="s2">  context.input.amount &lt; 50000</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># Standard users: transfers up to $10,000</span>
+<span class="n">standard_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;PaymentTarget___transfer_funds&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;tier&quot;) &amp;&amp;</span>
+<span class="s2">  principal.getTag(&quot;tier&quot;) == &quot;standard&quot; &amp;&amp;</span>
+<span class="s2">  context.input.amount &lt; 10000</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="regional-restrictions">Regional Restrictions<a class="headerlink" href="#regional-restrictions" title="Permanent link">&para;</a></h3>
+<p>Restrict operations to specific regions:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Allow only for US, CA, UK regions</span>
+<span class="n">regional_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;ShippingTarget___calculate_rate&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/shipping&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  context.input has region &amp;&amp;</span>
+<span class="s2">  [&quot;US&quot;, &quot;CA&quot;, &quot;UK&quot;].contains(context.input.region)</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="role-based-access-control">Role-Based Access Control<a class="headerlink" href="#role-based-access-control" title="Permanent link">&para;</a></h3>
+<p>Control access based on user roles:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Allow managers to approve high-value decisions</span>
+<span class="n">manager_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;DecisionTarget___approve_decision&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/decision&quot;</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;role&quot;) &amp;&amp;</span>
+<span class="s2">  [&quot;manager&quot;, &quot;director&quot;].contains(principal.getTag(&quot;role&quot;)) &amp;&amp;</span>
+<span class="s2">  context.input.amount &gt; 100000</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="required-field-validation">Required Field Validation<a class="headerlink" href="#required-field-validation" title="Permanent link">&para;</a></h3>
+<p>Enforce that optional parameters are provided:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Require description for all claims</span>
+<span class="n">required_description_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action == AgentCore::Action::&quot;InsuranceTarget___file_claim&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/insurance&quot;</span>
+<span class="s2">)</span>
+<span class="s2">unless {</span>
+<span class="s2">  context.input has description</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="emergency-shutdown-patterns">Emergency Shutdown Patterns<a class="headerlink" href="#emergency-shutdown-patterns" title="Permanent link">&para;</a></h3>
+<h4 id="disable-all-tools">Disable All Tools<a class="headerlink" href="#disable-all-tools" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">emergency_shutdown</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(</span>
+<span class="s2">  principal,</span>
+<span class="s2">  action,</span>
+<span class="s2">  resource</span>
+<span class="s2">);</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="disable-specific-tool">Disable Specific Tool<a class="headerlink" href="#disable-specific-tool" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">disable_tool</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(</span>
+<span class="s2">  principal,</span>
+<span class="s2">  action == AgentCore::Action::&quot;PaymentTarget___transfer_funds&quot;,</span>
+<span class="s2">  resource == AgentCore::Gateway::&quot;arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment&quot;</span>
+<span class="s2">);</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="block-specific-user">Block Specific User<a class="headerlink" href="#block-specific-user" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">block_user</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(</span>
+<span class="s2">  principal is AgentCore::OAuthUser,</span>
+<span class="s2">  action,</span>
+<span class="s2">  resource</span>
+<span class="s2">)</span>
+<span class="s2">when {</span>
+<span class="s2">  principal.hasTag(&quot;username&quot;) &amp;&amp;</span>
+<span class="s2">  principal.getTag(&quot;username&quot;) == &quot;suspended-user&quot;</span>
+<span class="s2">};</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="natural-language-policy-authoring">Natural Language Policy Authoring<a class="headerlink" href="#natural-language-policy-authoring" title="Permanent link">&para;</a></h2>
+<h3 id="using-the-policy-authoring-service">Using the Policy Authoring Service<a class="headerlink" href="#using-the-policy-authoring-service" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Generate Cedar policy from natural language (automatic polling &amp; fetching)</span>
+<span class="c1"># Note: name must match pattern ^[A-Za-z][A-Za-z0-9_]*$ (use underscores, not hyphens)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">policy_client</span><span class="o">.</span><span class="n">generate_policy</span><span class="p">(</span>
+    <span class="n">policy_engine_id</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;refund_policy&#39;</span><span class="p">,</span>  <span class="c1"># Use underscores, not hyphens</span>
+    <span class="n">resource</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;arn&#39;</span><span class="p">:</span> <span class="n">gateway</span><span class="p">[</span><span class="s1">&#39;gatewayArn&#39;</span><span class="p">]},</span>
+    <span class="n">content</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;rawText&#39;</span><span class="p">:</span> <span class="s1">&#39;Allow refunds for amounts less than $500&#39;</span><span class="p">},</span>
+    <span class="n">fetch_assets</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Automatically fetches generated policies</span>
+<span class="p">)</span>
+
+<span class="c1"># Display generated Cedar policies</span>
+<span class="k">for</span> <span class="n">policy_asset</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;generatedPolicies&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+    <span class="n">cedar_statement</span> <span class="o">=</span> <span class="n">policy_asset</span><span class="p">[</span><span class="s1">&#39;definition&#39;</span><span class="p">][</span><span class="s1">&#39;cedar&#39;</span><span class="p">][</span><span class="s1">&#39;statement&#39;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated Cedar Policy:</span><span class="se">\n</span><span class="si">{</span><span class="n">cedar_statement</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="natural-language-examples">Natural Language Examples<a class="headerlink" href="#natural-language-examples" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example 1: Simple amount restriction</span>
+<span class="n">nl1</span> <span class="o">=</span> <span class="s2">&quot;Allow users to process payments when the amount is less than $1000&quot;</span>
+
+<span class="c1"># Example 2: Role and amount combined</span>
+<span class="n">nl2</span> <span class="o">=</span> <span class="s2">&quot;Allow users with role manager to approve expenses when the amount exceeds $5000&quot;</span>
+
+<span class="c1"># Example 3: Regional restrictions</span>
+<span class="n">nl3</span> <span class="o">=</span> <span class="s2">&quot;Allow all users to ship packages when the destination country is US, CA, or UK&quot;</span>
+
+<span class="c1"># Example 4: Required fields</span>
+<span class="n">nl4</span> <span class="o">=</span> <span class="s2">&quot;Block users from filing claims unless a description and priority are provided&quot;</span>
+
+<span class="c1"># Example 5: Scope-based</span>
+<span class="n">nl5</span> <span class="o">=</span> <span class="s2">&quot;Allow users with scope admin:write to update user profiles when the account is verified&quot;</span>
+</code></pre></div>
+<p><strong>Important:</strong> When using <code>generate_policy()</code> or <code>start_policy_generation</code>, the <code>name</code> parameter must follow these rules:
+- Only letters, numbers, and underscores allowed
+- Must start with a letter
+- No hyphens, dots, or special characters
+- Pattern: <code>^[A-Za-z][A-Za-z0-9_]*$</code></p>
+<h2 id="testing-and-debugging-policies">Testing and Debugging Policies<a class="headerlink" href="#testing-and-debugging-policies" title="Permanent link">&para;</a></h2>
+<h3 id="log_only-mode-for-testing">LOG_ONLY Mode for Testing<a class="headerlink" href="#log_only-mode-for-testing" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create gateway in LOG_ONLY mode for testing</span>
+<span class="n">test_cognito</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_oauth_authorizer_with_cognito</span><span class="p">(</span><span class="s2">&quot;test-gateway&quot;</span><span class="p">)</span>
+<span class="n">test_gateway</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_mcp_gateway</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test-gateway&quot;</span><span class="p">,</span>
+    <span class="n">role_arn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">authorizer_config</span><span class="o">=</span><span class="n">test_cognito</span><span class="p">[</span><span class="s1">&#39;authorizer_config&#39;</span><span class="p">],</span>
+    <span class="n">enable_semantic_search</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="c1"># Add your Lambda target</span>
+<span class="n">test_target</span> <span class="o">=</span> <span class="n">gateway_client</span><span class="o">.</span><span class="n">create_mcp_gateway_target</span><span class="p">(</span>
+    <span class="n">gateway</span><span class="o">=</span><span class="n">test_gateway</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;TestTarget&quot;</span><span class="p">,</span>
+    <span class="n">target_type</span><span class="o">=</span><span class="s2">&quot;lambda&quot;</span><span class="p">,</span>
+    <span class="n">target_payload</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;lambdaArn&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:lambda:us-west-2:123456789012:function:TestFunction&quot;</span><span class="p">},</span>
+    <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+
+<span class="c1"># Attach Policy Engine in LOG_ONLY mode</span>
+<span class="n">gateway_client</span><span class="o">.</span><span class="n">update_gateway_policy_engine</span><span class="p">(</span>
+    <span class="n">gateway_identifier</span><span class="o">=</span><span class="n">test_gateway</span><span class="p">[</span><span class="s2">&quot;gatewayId&quot;</span><span class="p">],</span>
+    <span class="n">policy_engine_arn</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineArn&#39;</span><span class="p">],</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;LOG_ONLY&quot;</span>  <span class="c1"># Test without enforcing</span>
+<span class="p">)</span>
+
+<span class="c1"># All requests will be allowed, but policy decisions are logged</span>
+</code></pre></div>
+<h3 id="policy-validation">Policy Validation<a class="headerlink" href="#policy-validation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Policies are automatically validated on creation</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">policy_client</span><span class="o">.</span><span class="n">create_policy</span><span class="p">(</span>
+        <span class="n">policy_engine_id</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">],</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;TestPolicy&#39;</span><span class="p">,</span>
+        <span class="n">definition</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cedar&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;statement&#39;</span><span class="p">:</span> <span class="n">invalid_cedar</span><span class="p">}},</span>
+        <span class="n">validation_mode</span><span class="o">=</span><span class="s1">&#39;FAIL_ON_ANY_FINDINGS&#39;</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Fix the policy and try again</span>
+</code></pre></div>
+<h2 id="common-pitfalls-and-solutions">Common Pitfalls and Solutions<a class="headerlink" href="#common-pitfalls-and-solutions" title="Permanent link">&para;</a></h2>
+<h3 id="pitfall-1-invalid-generation-name">Pitfall 1: Invalid Generation Name<a class="headerlink" href="#pitfall-1-invalid-generation-name" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Using hyphens or special characters in policy generation names</p>
+<p><strong>Solution</strong>: Use only letters, numbers, and underscores; must start with a letter</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ❌ Wrong: Contains hyphens</span>
+<span class="n">policy_client</span><span class="o">.</span><span class="n">generate_policy</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;refund-policy-v1&#39;</span><span class="p">,</span>  <span class="c1"># ValidationException</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+
+<span class="c1"># ✅ Correct: Uses underscores</span>
+<span class="n">policy_client</span><span class="o">.</span><span class="n">generate_policy</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;refund_policy_v1&#39;</span><span class="p">,</span>
+    <span class="o">...</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="pitfall-2-forgetting-default-deny">Pitfall 2: Forgetting Default Deny<a class="headerlink" href="#pitfall-2-forgetting-default-deny" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Expecting actions to be allowed without a permit policy</p>
+<p><strong>Solution</strong>: Always create explicit permit policies for allowed actions</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ❌ Wrong: No permit policy, everything denied</span>
+<span class="n">forbid_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">forbid(principal, action, resource)</span>
+<span class="s2">when { context.input.amount &gt; 1000 };</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># ✅ Correct: Explicit permit for valid cases</span>
+<span class="n">permit_policy</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">permit(principal, action, resource)</span>
+<span class="s2">when { context.input.amount &lt;= 1000 };</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="pitfall-3-vague-conditions">Pitfall 3: Vague Conditions<a class="headerlink" href="#pitfall-3-vague-conditions" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Using subjective terms in conditions</p>
+<p><strong>Solution</strong>: Use precise, testable conditions</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ❌ Wrong: Vague term &quot;reasonable&quot;</span>
+<span class="s2">&quot;Allow transfers when the amount is reasonable&quot;</span>
+
+<span class="c1"># ✅ Correct: Specific threshold</span>
+<span class="s2">&quot;Allow transfers when the amount is less than $10,000&quot;</span>
+</code></pre></div>
+<h3 id="pitfall-4-missing-tag-checks">Pitfall 4: Missing Tag Checks<a class="headerlink" href="#pitfall-4-missing-tag-checks" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Accessing tags without checking if they exist</p>
+<p><strong>Solution</strong>: Always use <code>hasTag()</code> before <code>getTag()</code></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ❌ Wrong: May fail if tag doesn&#39;t exist</span>
+<span class="n">when</span> <span class="p">{</span> <span class="n">principal</span><span class="o">.</span><span class="n">getTag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;admin&quot;</span> <span class="p">}</span>
+
+<span class="c1"># ✅ Correct: Check existence first</span>
+<span class="n">when</span> <span class="p">{</span>
+  <span class="n">principal</span><span class="o">.</span><span class="n">hasTag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+  <span class="n">principal</span><span class="o">.</span><span class="n">getTag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;admin&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="pitfall-5-incorrect-resource-scope">Pitfall 5: Incorrect Resource Scope<a class="headerlink" href="#pitfall-5-incorrect-resource-scope" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Using type check with specific actions</p>
+<p><strong>Solution</strong>: Use specific Gateway ARN when specifying tools</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ❌ Wrong: Type check with specific action</span>
+<span class="n">resource</span> <span class="ow">is</span> <span class="n">AgentCore</span><span class="p">::</span><span class="n">Gateway</span><span class="p">,</span>
+<span class="n">action</span> <span class="o">==</span> <span class="n">AgentCore</span><span class="p">::</span><span class="n">Action</span><span class="p">::</span><span class="s2">&quot;SpecificTarget___specific_tool&quot;</span>
+
+<span class="c1"># ✅ Correct: Specific Gateway ARN with specific action</span>
+<span class="n">resource</span> <span class="o">==</span> <span class="n">AgentCore</span><span class="p">::</span><span class="n">Gateway</span><span class="p">::</span><span class="s2">&quot;arn:aws:bedrock-agentcore:region:account:gateway/id&quot;</span><span class="p">,</span>
+<span class="n">action</span> <span class="o">==</span> <span class="n">AgentCore</span><span class="p">::</span><span class="n">Action</span><span class="p">::</span><span class="s2">&quot;SpecificTarget___specific_tool&quot;</span>
+</code></pre></div>
+<h2 id="policy-management-best-practices">Policy Management Best Practices<a class="headerlink" href="#policy-management-best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="version-control-your-policies">Version Control Your Policies<a class="headerlink" href="#version-control-your-policies" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Store policies in version control</span>
+<span class="n">policy_definitions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;refund_under_500&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="s1">&#39;1.0.0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cedar&#39;</span><span class="p">:</span> <span class="n">refund_policy</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Allow refunds under $500&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;emergency_shutdown&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="s1">&#39;1.0.0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cedar&#39;</span><span class="p">:</span> <span class="n">emergency_policy</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Emergency refund shutdown&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># Deploy from version control</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">policy_definitions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">policy_client</span><span class="o">.</span><span class="n">create_or_get_policy</span><span class="p">(</span>
+        <span class="n">policy_engine_id</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">],</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">definition</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cedar&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;statement&#39;</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;cedar&#39;</span><span class="p">]}},</span>
+        <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (v</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="p">)</span>
+</code></pre></div>
+<h3 id="organize-policies-by-purpose">Organize Policies by Purpose<a class="headerlink" href="#organize-policies-by-purpose" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Group policies by functionality</span>
+<span class="n">policies</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;authentication&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># Identity-based policies</span>
+    <span class="s1">&#39;authorization&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>    <span class="c1"># Role/permission-based policies</span>
+    <span class="s1">&#39;business_rules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>   <span class="c1"># Amount limits, regional restrictions</span>
+    <span class="s1">&#39;emergency&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>         <span class="c1"># Shutdown and incident response</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="test-before-deploying">Test Before Deploying<a class="headerlink" href="#test-before-deploying" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Create test gateway with LOG_ONLY</span>
+<span class="c1"># 2. Run test suite</span>
+<span class="c1"># 3. Review CloudWatch logs</span>
+<span class="c1"># 4. Switch to ENFORCE mode</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_policy_suite</span><span class="p">(</span><span class="n">gateway_url</span><span class="p">,</span> <span class="n">test_cases</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run comprehensive policy tests&quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">test_cases</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">call_gateway_tool</span><span class="p">(</span>
+            <span class="n">gateway_url</span><span class="p">,</span>
+            <span class="n">test</span><span class="p">[</span><span class="s1">&#39;token&#39;</span><span class="p">],</span>
+            <span class="n">test</span><span class="p">[</span><span class="s1">&#39;tool&#39;</span><span class="p">],</span>
+            <span class="n">test</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="n">test</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;expected&#39;</span><span class="p">:</span> <span class="n">test</span><span class="p">[</span><span class="s1">&#39;expected&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;actual&#39;</span><span class="p">:</span> <span class="s1">&#39;ALLOW&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isError&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;DENY&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="p">(</span><span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;isError&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="s1">&#39;expected&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ALLOW&#39;</span><span class="p">)</span>
+        <span class="p">})</span>
+    <span class="k">return</span> <span class="n">results</span>
+</code></pre></div>
+<h2 id="cleanup">Cleanup<a class="headerlink" href="#cleanup" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Delete policies</span>
+<span class="k">for</span> <span class="n">policy</span> <span class="ow">in</span> <span class="n">policy_client</span><span class="o">.</span><span class="n">list_policies</span><span class="p">(</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">]):</span>
+    <span class="n">policy_client</span><span class="o">.</span><span class="n">delete_policy</span><span class="p">(</span>
+        <span class="n">policy_engine_id</span><span class="o">=</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">],</span>
+        <span class="n">policy_id</span><span class="o">=</span><span class="n">policy</span><span class="p">[</span><span class="s1">&#39;policyId&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+<span class="c1"># Delete policy engine (must be detached from gateways first)</span>
+<span class="n">policy_client</span><span class="o">.</span><span class="n">delete_policy_engine</span><span class="p">(</span><span class="n">policy_engine</span><span class="p">[</span><span class="s1">&#39;policyEngineId&#39;</span><span class="p">])</span>
+</code></pre></div>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../user-guide/policy/overview.html">Policy Overview</a> - Understand Policy concepts</li>
+<li><a href="../user-guide/policy/quickstart.html">Policy Quickstart</a> - Get started quickly</li>
+<li><a href="https://docs.cedarpolicy.com/">Cedar Documentation</a> - Learn Cedar language</li>
+<li><a href="gateway-integration.html">Gateway Integration</a> - More Gateway examples</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+        <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

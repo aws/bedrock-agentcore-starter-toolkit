@@ -10,13 +10,13 @@
     
     
     
-      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/import-agent/quickstart.html">
+      <link rel="canonical" href="https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/evaluation/quickstart.html">
     
     
-      <link rel="prev" href="../evaluation/quickstart.html">
+      <link rel="prev" href="../observability/quickstart.html">
     
     
-      <link rel="next" href="overview.html">
+      <link rel="next" href="../import-agent/quickstart.html">
     
     
     <link rel="icon" href="../.." sizes="any">
@@ -25,7 +25,7 @@
 
     
       
-        <title>Import Agent Quickstart - Amazon Bedrock AgentCore</title>
+        <title>Evaluation Quickstart - Amazon Bedrock AgentCore</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#import-agent-quick-start" class="md-skip">
+        <a href="#evaluation-quickstart-evaluate-your-agent" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Import Agent Quickstart
+              Evaluation Quickstart
             
           </span>
         </div>
@@ -1514,97 +1514,6 @@
                 
   
   
-  
-  
-    
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_12" >
-        
-          
-          <label class="md-nav__link" for="__nav_1_12" id="__nav_1_12_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Evaluation
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1_12">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Evaluation
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../evaluation/quickstart.html" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Evaluation Quickstart
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1626,17 +1535,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_13" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_12" checked>
         
           
-          <label class="md-nav__link" for="__nav_1_13" id="__nav_1_13_label" tabindex="">
+          <label class="md-nav__link" for="__nav_1_12" id="__nav_1_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Import Agent
+    Evaluation
   
 
     
@@ -1647,12 +1556,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_13_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_1_13">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1_12">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Import Agent
+    Evaluation
   
 
           </label>
@@ -1681,7 +1590,7 @@
   <span class="md-ellipsis">
     
   
-    Import Agent Quickstart
+    Evaluation Quickstart
   
 
     
@@ -1699,7 +1608,7 @@
   <span class="md-ellipsis">
     
   
-    Import Agent Quickstart
+    Evaluation Quickstart
   
 
     
@@ -1738,22 +1647,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#step-1-install-the-toolkit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage
+        Step 1: Install the Toolkit
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-list-available-evaluators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: List Available Evaluators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-run-your-first-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Run Your First Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: Run Your First Evaluation">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
+  <a href="#multiple-evaluators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interactive Mode (Recommended)
+        Multiple Evaluators
       
     </span>
   </a>
@@ -1761,10 +1692,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
+  <a href="#save-results" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Command Line Mode
+        Save Results
       
     </span>
   </a>
@@ -1777,22 +1708,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
+  <a href="#step-4-set-up-continuous-monitoring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step-by-Step Walkthrough
+        Step 4: Set Up Continuous Monitoring
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-monitor-evaluation-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Monitor Evaluation Results
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5: Monitor Evaluation Results">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
+  <a href="#view-your-configurations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Launch the Import Utility
+        View Your Configurations
       
     </span>
   </a>
@@ -1800,10 +1742,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
+  <a href="#get-configuration-details" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Configure AWS Region
+        Get Configuration Details
       
     </span>
   </a>
@@ -1811,43 +1753,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
+  <a href="#view-results-in-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Select Your Agent
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Choose Agent Alias
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5. Select Target Platform
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Deployment Options
+        View Results in CloudWatch
       
     </span>
   </a>
@@ -1860,33 +1769,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
+  <a href="#alternative-without-configuration-file" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Output
+        Alternative: Without Configuration File
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Testing Your Agent
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
+    <nav class="md-nav" aria-label="Alternative: Without Configuration File">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
+  <a href="#run-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Local Testing
+        Run Evaluation
       
     </span>
   </a>
@@ -1894,60 +1792,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
+  <a href="#create-online-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AgentCore Runtime Testing
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Common Options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enable Debug Mode
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Disable Specific Primitives
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Output Directory
+        Create Online Evaluation
       
     </span>
   </a>
@@ -1968,11 +1816,108 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-custom-evaluators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create Custom Evaluators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-online-evaluation-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update Online Evaluation Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-agent-specified-or-agent-id-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No agent specified" or Agent ID not found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-session-id-provided" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No session ID provided"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-spans-found-for-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No spans found for session"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validationexception-config-name-must-match-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "ValidationException: config name must match pattern"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -1985,8 +1930,91 @@
   
   
   
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_13" id="__nav_1_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Import Agent
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="overview.html" class="md-nav__link">
+      <a href="../import-agent/quickstart.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Agent Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../import-agent/overview.html" class="md-nav__link">
         
   
   
@@ -2014,7 +2042,7 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration.html" class="md-nav__link">
+      <a href="../import-agent/configuration.html" class="md-nav__link">
         
   
   
@@ -2747,22 +2775,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#step-1-install-the-toolkit" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage
+        Step 1: Install the Toolkit
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-list-available-evaluators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: List Available Evaluators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-run-your-first-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Run Your First Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: Run Your First Evaluation">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#interactive-mode-recommended" class="md-nav__link">
+  <a href="#multiple-evaluators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interactive Mode (Recommended)
+        Multiple Evaluators
       
     </span>
   </a>
@@ -2770,10 +2820,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-line-mode" class="md-nav__link">
+  <a href="#save-results" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Command Line Mode
+        Save Results
       
     </span>
   </a>
@@ -2786,22 +2836,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-by-step-walkthrough" class="md-nav__link">
+  <a href="#step-4-set-up-continuous-monitoring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Step-by-Step Walkthrough
+        Step 4: Set Up Continuous Monitoring
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step-by-Step Walkthrough">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-monitor-evaluation-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Monitor Evaluation Results
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 5: Monitor Evaluation Results">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-launch-the-import-utility" class="md-nav__link">
+  <a href="#view-your-configurations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Launch the Import Utility
+        View Your Configurations
       
     </span>
   </a>
@@ -2809,10 +2870,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-configure-aws-region" class="md-nav__link">
+  <a href="#get-configuration-details" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Configure AWS Region
+        Get Configuration Details
       
     </span>
   </a>
@@ -2820,43 +2881,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-select-your-agent" class="md-nav__link">
+  <a href="#view-results-in-cloudwatch" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Select Your Agent
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-choose-agent-alias" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Choose Agent Alias
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-select-target-platform" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5. Select Target Platform
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-deployment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Deployment Options
+        View Results in CloudWatch
       
     </span>
   </a>
@@ -2869,33 +2897,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-output" class="md-nav__link">
+  <a href="#alternative-without-configuration-file" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Output
+        Alternative: Without Configuration File
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing-your-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Testing Your Agent
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Testing Your Agent">
+    <nav class="md-nav" aria-label="Alternative: Without Configuration File">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#local-testing" class="md-nav__link">
+  <a href="#run-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Local Testing
+        Run Evaluation
       
     </span>
   </a>
@@ -2903,60 +2920,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#agentcore-runtime-testing" class="md-nav__link">
+  <a href="#create-online-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AgentCore Runtime Testing
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Common Options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enable Debug Mode
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disable-specific-primitives" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Disable Specific Primitives
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-output-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Output Directory
+        Create Online Evaluation
       
     </span>
   </a>
@@ -2976,6 +2943,95 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-custom-evaluators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create Custom Evaluators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-online-evaluation-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Update Online Evaluation Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-agent-specified-or-agent-id-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No agent specified" or Agent ID not found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-session-id-provided" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No session ID provided"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-spans-found-for-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "No spans found for session"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validationexception-config-name-must-match-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "ValidationException: config name must match pattern"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2999,111 +3055,372 @@
   
 
 
-<h1 id="import-agent-quick-start">Import Agent Quick Start<a class="headerlink" href="#import-agent-quick-start" title="Permanent link">&para;</a></h1>
-<p>Get started with importing your Bedrock Agent to AgentCore in just a few minutes.</p>
+<h1 id="evaluation-quickstart-evaluate-your-agent">Evaluation Quickstart: Evaluate Your Agent! 🎯<a class="headerlink" href="#evaluation-quickstart-evaluate-your-agent" title="Permanent link">&para;</a></h1>
+<p>This tutorial shows you how to use the Amazon Bedrock AgentCore starter toolkit CLI to evaluate your deployed agent's performance. You'll learn how to run on-demand evaluations and set up continuous monitoring with online evaluation.</p>
+<p>The evaluation CLI provides commands to assess agent quality using built-in evaluators (like helpfulness and goal success) or create custom evaluators for your specific needs.</p>
+<p><strong>📚 For comprehensive details, see the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html">AgentCore Evaluation Documentation</a></strong></p>
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<p>Before you start, make sure you have:</p>
 <ul>
-<li>AWS credentials configured with access to Bedrock Agents</li>
-<li>Use <code>ada</code> or <code>aws configure</code> to ensure that your credentials are available for the utility to assume.</li>
-<li>Bedrock AgentCore Starter Toolkit installed</li>
-<li>An existing Amazon Bedrock Agent</li>
+<li><strong>Deployed Agent with Observability</strong>: This quickstart assumes you already have an agent deployed with observability enabled and at least one completed session. If you don't have this set up yet:</li>
+<li>Deploy an agent: Follow the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-getting-started.html">AgentCore Runtime Getting Started Guide</a></li>
+<li>Enable observability: Follow the <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html">AgentCore Observability Guide</a></li>
+<li>Run at least one agent interaction to generate session data</li>
+<li><strong>AWS Credentials Configured</strong>: See <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html">Configuration and credential file settings in the AWS CLI</a>.</li>
+<li><strong>Python 3.10+</strong> installed</li>
 </ul>
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<h3 id="interactive-mode-recommended">Interactive Mode (Recommended)<a class="headerlink" href="#interactive-mode-recommended" title="Permanent link">&para;</a></h3>
-<p>The simplest way to get started is with interactive mode:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+<h2 id="step-1-install-the-toolkit">Step 1: Install the Toolkit<a class="headerlink" href="#step-1-install-the-toolkit" title="Permanent link">&para;</a></h2>
+<p>Install the AgentCore starter toolkit:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>bedrock-agentcore-starter-toolkit
 </code></pre></div>
-<p>The utility will guide you through:</p>
+<p>Verify installation:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>--help
+</code></pre></div>
+<p><strong>Success:</strong> You should see the evaluation command options.</p>
+<h2 id="step-2-list-available-evaluators">Step 2: List Available Evaluators<a class="headerlink" href="#step-2-list-available-evaluators" title="Permanent link">&para;</a></h2>
+<p>View all available built-in and custom evaluators:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>evaluator<span class="w"> </span>list
+</code></pre></div>
+<p><strong>Success:</strong> You should see a table of evaluators:</p>
+<div class="highlight"><pre><span></span><code>Built-in Evaluators (13)
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+┃ ID                            ┃ Name           ┃ Level      ┃ Description    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
+│ Builtin.GoalSuccessRate       │ Builtin.GoalS… │ SESSION    │ Task           │
+│                               │                │            │ Completion     │
+│                               │                │            │ Metric.        │
+│                               │                │            │ Evaluates      │
+│                               │                │            │ whether the    │
+│                               │                │            │ conversation   │
+│                               │                │            │ successfully   │
+│                               │                │            │ meets the      │
+│                               │                │            │ user&#39;s goals   │
+│ Builtin.Helpfulness           │ Builtin.Helpf… │ TRACE      │ Response       │
+│                               │                │            │ Quality        │
+│                               │                │            │ Metric.        │
+│                               │                │            │ Evaluates from │
+│                               │                │            │ user&#39;s         │
+│                               │                │            │ perspective    │
+│                               │                │            │ how useful and │
+│                               │                │            │ valuable the   │
+│                               │                │            │ agent&#39;s        │
+│                               │                │            │ response is    │
+│ Builtin.Correctness           │ Builtin.Corre… │ TRACE      │ Response       │
+│                               │                │            │ Quality        │
+│                               │                │            │ Metric.        │
+│                               │                │            │ Evaluates      │
+│                               │                │            │ whether the    │
+│                               │                │            │ information in │
+│                               │                │            │ the agent&#39;s    │
+│                               │                │            │ response is    │
+│                               │                │            │ factually      │
+│                               │                │            │ accurate       │
+...
+
+Total: 13 builtin evaluators
+</code></pre></div>
+<p><strong>Understanding Evaluator Levels:</strong>
+- <strong>SESSION</strong>: Evaluates entire conversation (e.g., goal completion)
+- <strong>TRACE</strong>: Evaluates individual responses (e.g., helpfulness, correctness)
+- <strong>TOOL_CALL</strong>: Evaluates tool selection and parameters</p>
+<h2 id="step-3-run-your-first-evaluation">Step 3: Run Your First Evaluation<a class="headerlink" href="#step-3-run-your-first-evaluation" title="Permanent link">&para;</a></h2>
+<p>Run an on-demand evaluation on your agent:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
+</code></pre></div>
+<p>This automatically uses the agent ID and session ID from your <code>.bedrock_agentcore.yaml</code> configuration file.</p>
+<blockquote>
+<p><strong>Note:</strong> You'll see "Using session from config: <session-id>" confirming that the session ID was loaded from your configuration file.</p>
+</blockquote>
+<p><strong>Success:</strong> You should see evaluation results:</p>
+<div class="highlight"><pre><span></span><code>Using session from config: 383c4a9d-5682-4186-a125-e226f9f6c141
+
+Evaluating session: 383c4a9d-5682-4186-a125-e226f9f6c141
+Mode: All traces (most recent 1000 spans)
+Evaluators: Builtin.Helpfulness
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ Evaluation Results                                                           │
+│ Session: 383c4a9d-5682-4186-a125-e226f9f6c141                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+✓ Successful Evaluations
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Evaluator: Builtin.Helpfulness                                              │
+│                                                                              │
+│  Score: 0.83                                                                 │
+│  Label: Very Helpful                                                         │
+│                                                                              │
+│  Explanation:                                                                │
+│  The assistant&#39;s response effectively addresses the user&#39;s request by        │
+│  providing comprehensive analysis...                                         │
+│                                                                              │
+│  Token Usage:                                                                │
+│    - Input: 927                                                              │
+│    - Output: 233                                                             │
+│    - Total: 1,160                                                            │
+│                                                                              │
+│  Evaluated:                                                                  │
+│    - Session: 383c4a9d-5682-4186-a125-e226f9f6c141                           │
+│    - Trace: 6929ecf956ccc60c19c9a548698ae116                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+</code></pre></div>
+<h3 id="multiple-evaluators">Multiple Evaluators<a class="headerlink" href="#multiple-evaluators" title="Permanent link">&para;</a></h3>
+<p>Evaluate with multiple evaluators simultaneously:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.GoalSuccessRate&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Correctness&quot;</span>
+</code></pre></div>
+<h3 id="save-results">Save Results<a class="headerlink" href="#save-results" title="Permanent link">&para;</a></h3>
+<p>Export evaluation results to JSON:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>results.json
+</code></pre></div>
+<p>This creates two files:
+- <code>results.json</code> - Evaluation scores and explanations
+- <code>results_input.json</code> - Input data used for evaluation</p>
+<h2 id="step-4-set-up-continuous-monitoring">Step 4: Set Up Continuous Monitoring<a class="headerlink" href="#step-4-set-up-continuous-monitoring" title="Permanent link">&para;</a></h2>
+<p>Enable automatic evaluation of live agent traffic with online evaluation:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>production_eval_config<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--sampling-rate<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.GoalSuccessRate&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--description<span class="w"> </span><span class="s2">&quot;Production evaluation for my agent&quot;</span>
+</code></pre></div>
+<blockquote>
+<p>Note: The agent ID is automatically detected from your <code>.bedrock_agentcore.yaml</code> configuration file. To explicitly specify an agent, add <code>--agent-id &lt;your-agent-id&gt;</code>.</p>
+</blockquote>
+<p><strong>Parameters:</strong>
+- <code>--sampling-rate</code>: Percentage of interactions to evaluate (0.01-100). Start with 1-5% for production.
+- <code>--evaluator</code>: Evaluator IDs (specify multiple times)</p>
+<p><strong>Success:</strong> You should see:</p>
+<div class="highlight"><pre><span></span><code>Creating online evaluation config: production_eval_config
+Agent ID: agent_lg-EVQuBO6Q0n
+Region: us-east-1
+Sampling Rate: 1.0%
+Evaluators: [&#39;Builtin.GoalSuccessRate&#39;, &#39;Builtin.Helpfulness&#39;]
+Endpoint: DEFAULT
+
+✓ Online evaluation config created successfully!
+
+Config ID: production_eval_config-2HeyEjChSQ
+Config Name: production_eval_config
+Status: CREATING
+Execution Role: arn:aws:iam::730335462089:role/AgentCoreEvalsSDK-us-east-1-4b7eba641e
+Output Log Group: /aws/bedrock-agentcore/evaluations/results/production_eval_config-2HeyEjChSQ
+</code></pre></div>
+<p><strong>Notes:</strong>
+- If an IAM execution role doesn't exist, it will be auto-created
+- The config starts in <code>CREATING</code> status and transitions to <code>ACTIVE</code> within a few seconds
+- <strong>Save the Config ID</strong> - you'll need it to manage this configuration</p>
+<h2 id="step-5-monitor-evaluation-results">Step 5: Monitor Evaluation Results<a class="headerlink" href="#step-5-monitor-evaluation-results" title="Permanent link">&para;</a></h2>
+<h3 id="view-your-configurations">View Your Configurations<a class="headerlink" href="#view-your-configurations" title="Permanent link">&para;</a></h3>
+<p>List all online evaluation configurations:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>list
+</code></pre></div>
+<p>You should see a table showing your configurations:</p>
+<div class="highlight"><pre><span></span><code>Found 2 online evaluation config(s)
+
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+┃ Config Name      ┃ Config ID        ┃ Status ┃ Execution ┃ Created           ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+│ production_eval… │ production_eval… │ ACTIVE │ ENABLED   │ 2025-11-28        │
+│                  │                  │        │           │ 10:47:56.055000-… │
+└──────────────────┴──────────────────┴────────┴───────────┴───────────────────┘
+</code></pre></div>
+<h3 id="get-configuration-details">Get Configuration Details<a class="headerlink" href="#get-configuration-details" title="Permanent link">&para;</a></h3>
+<p>View details about a specific configuration:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>get<span class="w"> </span>--config-id<span class="w"> </span>production_eval_config-2HeyEjChSQ
+</code></pre></div>
+<p>You should see detailed configuration information:</p>
+<div class="highlight"><pre><span></span><code>Config Name: production_eval_config
+Config ID: production_eval_config-2HeyEjChSQ
+Status: ACTIVE
+Execution Status: ENABLED
+Sampling Rate: 1.0%
+Evaluators: Builtin.GoalSuccessRate, Builtin.Helpfulness
+Execution Role: arn:aws:iam::730335462089:role/AgentCoreEvalsSDK-us-east-1-4b7eba641e
+
+Output Log Group: /aws/bedrock-agentcore/evaluations/results/production_eval_config-2HeyEjChSQ
+
+Description: Production evaluation for my agent
+</code></pre></div>
+<blockquote>
+<p>Replace <code>production_eval_config-2HeyEjChSQ</code> with your configuration ID from Step 4.</p>
+</blockquote>
+<h3 id="view-results-in-cloudwatch">View Results in CloudWatch<a class="headerlink" href="#view-results-in-cloudwatch" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Agent Selection</strong>: Choose your Bedrock Agent and alias</li>
-<li><strong>Target Platform</strong>: Select LangChain/LangGraph or Strands</li>
-<li><strong>AgentCore Primitives</strong>: Configure Memory, Code Interpreter, Observability</li>
-<li><strong>Deployment Options</strong>: Deploy to AgentCore Runtime or run locally</li>
+<li>Open the <a href="https://console.aws.amazon.com/cloudwatch/">CloudWatch Console</a></li>
+<li>Navigate to <strong>GenAI Observability</strong> → <strong>Bedrock AgentCore</strong></li>
+<li>Select your agent and endpoint</li>
+<li>View the <strong>Evaluations</strong> tab for detailed results</li>
 </ol>
-<h3 id="command-line-mode">Command Line Mode<a class="headerlink" href="#command-line-mode" title="Permanent link">&para;</a></h3>
-<p>For automation or when you know your parameters:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--region<span class="w"> </span>us-east-1<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-id<span class="w"> </span>ABCD1234<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--agent-alias-id<span class="w"> </span>TSTALIASID<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--target-platform<span class="w"> </span>strands<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-dir<span class="w"> </span>./my-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--deploy-runtime<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--run-option<span class="w"> </span>runtime
+<h2 id="alternative-without-configuration-file">Alternative: Without Configuration File<a class="headerlink" href="#alternative-without-configuration-file" title="Permanent link">&para;</a></h2>
+<p>If you don't have a <code>.bedrock_agentcore.yaml</code> configuration file (or want to evaluate a different agent/session), you can explicitly specify the agent ID and session ID:</p>
+<h3 id="run-evaluation">Run Evaluation<a class="headerlink" href="#run-evaluation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-id<span class="w"> </span>agent_myagent-ABC123xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session-id<span class="w"> </span>550e8400-e29b-41d4-a716-446655440000<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
 </code></pre></div>
-<h2 id="step-by-step-walkthrough">Step-by-Step Walkthrough<a class="headerlink" href="#step-by-step-walkthrough" title="Permanent link">&para;</a></h2>
-<h3 id="1-launch-the-import-utility">1. Launch the Import Utility<a class="headerlink" href="#1-launch-the-import-utility" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent
+<blockquote>
+<p>Replace <code>agent_myagent-ABC123xyz</code> with your agent ID and <code>550e8400-e29b-41d4-a716-446655440000</code> with your session ID.</p>
+</blockquote>
+<h3 id="create-online-evaluation">Create Online Evaluation<a class="headerlink" href="#create-online-evaluation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>production_eval_config<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-id<span class="w"> </span>agent_myagent-ABC123xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--sampling-rate<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.GoalSuccessRate&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
 </code></pre></div>
-<h3 id="2-configure-aws-region">2. Configure AWS Region<a class="headerlink" href="#2-configure-aws-region" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select AWS Region: us-east-1
-</code></pre></div>
-<h3 id="3-select-your-agent">3. Select Your Agent<a class="headerlink" href="#3-select-your-agent" title="Permanent link">&para;</a></h3>
-<p>The utility will list your available Bedrock Agents in the selected region:</p>
-<div class="highlight"><pre><span></span><code>? Select Bedrock Agent:
-  &gt; my-customer-service-agent (ID: ABCD1234)
-    my-research-agent (ID: EFGH5678)
-    my-code-assistant (ID: IJKL9012)
-</code></pre></div>
-<h3 id="4-choose-agent-alias">4. Choose Agent Alias<a class="headerlink" href="#4-choose-agent-alias" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Select Agent Alias:
-  &gt; TSTALIASID (Test)
-    PRODALIASID (Production)
-</code></pre></div>
-<h3 id="5-select-target-platform">5. Select Target Platform<a class="headerlink" href="#5-select-target-platform" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Choose target platform:
-  &gt; strands (1.0.x)
-    langchain (0.3.x) + langgraph (0.5.x)
-</code></pre></div>
-<h3 id="7-deployment-options">7. Deployment Options<a class="headerlink" href="#7-deployment-options" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>? Deploy to AgentCore Runtime? [y/N]: Y
-? How would you like to run the agent?
-  &gt; Run on AgentCore Runtime
-    Install dependencies and run locally
-    Don&#39;t run now
-</code></pre></div>
-<h2 id="generated-output">Generated Output<a class="headerlink" href="#generated-output" title="Permanent link">&para;</a></h2>
-<p>After completion, you'll find:</p>
-<div class="highlight"><pre><span></span><code>./output/
-├── strands_agent.py          # Your converted agent
-├── requirements.txt          # Dependencies
-├── .agentcore-config.yaml   # Deployment configuration
-└── README.md                # Generated documentation
-</code></pre></div>
-<h2 id="testing-your-agent">Testing Your Agent<a class="headerlink" href="#testing-your-agent" title="Permanent link">&para;</a></h2>
-<h3 id="local-testing">Local Testing<a class="headerlink" href="#local-testing" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-python<span class="w"> </span>strands_agent.py
-</code></pre></div>
-<h3 id="agentcore-runtime-testing">AgentCore Runtime Testing<a class="headerlink" href="#agentcore-runtime-testing" title="Permanent link">&para;</a></h3>
-<p>If deployed to runtime:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>./output
-agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s2">&quot;Hello, test message&quot;</span>
-</code></pre></div>
-<h2 id="common-options">Common Options<a class="headerlink" href="#common-options" title="Permanent link">&para;</a></h2>
-<h3 id="enable-debug-mode">Enable Debug Mode<a class="headerlink" href="#enable-debug-mode" title="Permanent link">&para;</a></h3>
-<p>Get detailed logging in the output agent:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--debug
-</code></pre></div>
-<h3 id="disable-specific-primitives">Disable Specific Primitives<a class="headerlink" href="#disable-specific-primitives" title="Permanent link">&para;</a></h3>
-<p>Skip certain AgentCore features:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-memory<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--disable-code-interpreter
-</code></pre></div>
-<h3 id="custom-output-directory">Custom Output Directory<a class="headerlink" href="#custom-output-directory" title="Permanent link">&para;</a></h3>
-<p>Specify where to generate files:</p>
-<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>import-agent<span class="w"> </span>--output-dir<span class="w"> </span>./my-custom-agent
-</code></pre></div>
+<p>This approach is useful when:
+- You deployed your agent outside of AgentCore Runtime
+- You want to evaluate a specific session (not the latest)
+- You're evaluating multiple agents and need to switch between them</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Review Generated Code</strong>: Examine the converted agent implementation</li>
-<li><strong>Test Functionality</strong>: Verify your agent works as expected</li>
-<li><strong>Customize Integration</strong>: Add custom AgentCore primitive configurations</li>
-<li><strong>Production Deployment</strong>: Deploy to AgentCore Runtime for production usage</li>
-</ul>
-<p>For detailed configuration options, see the <a href="configuration.html">Configuration Reference</a>.</p>
+<h3 id="create-custom-evaluators">Create Custom Evaluators<a class="headerlink" href="#create-custom-evaluators" title="Permanent link">&para;</a></h3>
+<p>Create domain-specific evaluators for your use case. First, create a configuration file <code>evaluator-config.json</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;llmAsAJudge&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;modelConfig&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;bedrockEvaluatorModelConfig&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;modelId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;global.anthropic.claude-sonnet-4-5-20250929-v1:0&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;inferenceConfig&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;maxTokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;temperature&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;ratingScale&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;numerical&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Poor&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Response is unhelpful or incorrect&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Adequate&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Response is partially helpful&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Excellent&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Response is highly helpful and accurate&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;instructions&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Evaluate the assistant&#39;s response for helpfulness and accuracy. Context: {context}. Target to evaluate: {assistant_turn}&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Then create the evaluator:</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>evaluator<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;my_custom_evaluator&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>evaluator-config.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--level<span class="w"> </span>TRACE<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--description<span class="w"> </span><span class="s2">&quot;Custom evaluator for my use case&quot;</span>
+</code></pre></div>
+<h3 id="update-online-evaluation-configuration">Update Online Evaluation Configuration<a class="headerlink" href="#update-online-evaluation-configuration" title="Permanent link">&para;</a></h3>
+<p>Modify existing online evaluation configurations to adjust sampling rates, evaluators, or status:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Change sampling rate</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>update<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config-id<span class="w"> </span>production_eval_config-2HeyEjChSQ<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--sampling-rate<span class="w"> </span><span class="m">5</span>.0
+
+<span class="c1"># Disable temporarily</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>update<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config-id<span class="w"> </span>production_eval_config-2HeyEjChSQ<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--status<span class="w"> </span>DISABLED
+
+<span class="c1"># Update evaluators</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>update<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config-id<span class="w"> </span>production_eval_config-2HeyEjChSQ<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Correctness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Faithfulness&quot;</span>
+</code></pre></div>
+<blockquote>
+<p>Replace <code>production_eval_config-2HeyEjChSQ</code> with your configuration ID from Step 4.</p>
+</blockquote>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="no-agent-specified-or-agent-id-not-found">"No agent specified" or Agent ID not found<a class="headerlink" href="#no-agent-specified-or-agent-id-not-found" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Agent ID cannot be loaded from configuration file.</p>
+<p><strong>Solution</strong>: You can specify the agent ID explicitly:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Find your agent ID from deployment</span>
+agentcore<span class="w"> </span>status
+
+<span class="c1"># Or specify it directly</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-id<span class="w"> </span>agent_myagent-ABC123xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
+</code></pre></div>
+<p>For online evaluation:
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>online<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>my_eval_config<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--agent-id<span class="w"> </span>agent_myagent-ABC123xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
+</code></pre></div></p>
+<h3 id="no-session-id-provided">"No session ID provided"<a class="headerlink" href="#no-session-id-provided" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Session ID cannot be loaded from configuration file.</p>
+<p><strong>Solution</strong>: Find and specify a session ID explicitly:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># List recent sessions using observability</span>
+agentcore<span class="w"> </span>obs<span class="w"> </span>list
+
+<span class="c1"># This will show output like:</span>
+<span class="c1"># Session ID: 550e8400-e29b-41d4-a716-446655440000</span>
+<span class="c1"># Trace Count: 5</span>
+<span class="c1"># Start Time: 2024-11-28 10:30:00</span>
+
+<span class="c1"># Use a session ID from the list</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session-id<span class="w"> </span>550e8400-e29b-41d4-a716-446655440000<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
+</code></pre></div>
+<h3 id="no-spans-found-for-session">"No spans found for session"<a class="headerlink" href="#no-spans-found-for-session" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: The session ID exists in config but no observability data is available.</p>
+<p><strong>Common Causes</strong>:
+- Session is older than 7 days (default lookback period)
+- Session hasn't completed yet
+- Observability was not enabled when the session ran
+- <strong>CloudWatch logs haven't populated yet</strong> (2-5 minute delay after agent invocation)</p>
+<blockquote>
+<p><strong>Note</strong>: By default, the CLI looks back 7 days for session data. If your session is older, use <code>--days</code> to extend the lookback period (observability data is retained for up to 30 days).</p>
+</blockquote>
+<p><strong>Solution</strong>: Run a new agent interaction to generate fresh session data:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Step 1: Invoke your agent to create a new session</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span>--input<span class="w"> </span><span class="s2">&quot;Tell me about AWS&quot;</span>
+
+<span class="c1"># Step 2: Wait 2-5 minutes for CloudWatch logs to populate</span>
+<span class="c1"># CloudWatch ingestion has a delay before logs become available</span>
+
+<span class="c1"># Step 3: Run evaluation after waiting</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span>
+</code></pre></div>
+<p><strong>Important</strong>: There is typically a <strong>2-5 minute delay</strong> between invoking your agent and when the observability data becomes available in CloudWatch for evaluation. If you get "No spans found", wait a few minutes and try again.</p>
+<p><strong>For older sessions (8-30 days old)</strong>, extend the lookback period:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Evaluate a session from 14 days ago</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--days<span class="w"> </span><span class="m">14</span>
+
+<span class="c1"># Or with explicit session ID</span>
+agentcore<span class="w"> </span><span class="nb">eval</span><span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session-id<span class="w"> </span>&lt;your-old-session-id&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluator<span class="w"> </span><span class="s2">&quot;Builtin.Helpfulness&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--days<span class="w"> </span><span class="m">30</span>
+</code></pre></div>
+<p>Verify an older session exists before evaluating:
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>obs<span class="w"> </span>list<span class="w"> </span>--session-id<span class="w"> </span>&lt;your-session-id&gt;<span class="w"> </span>--days<span class="w"> </span><span class="m">30</span>
+</code></pre></div></p>
+<h3 id="validationexception-config-name-must-match-pattern">"ValidationException: config name must match pattern"<a class="headerlink" href="#validationexception-config-name-must-match-pattern" title="Permanent link">&para;</a></h3>
+<p><strong>Solution</strong>: Use underscores instead of hyphens in configuration names (e.g., <code>my_config</code> not <code>my-config</code>).</p>
 
 
 
