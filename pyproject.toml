@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "bedrock-agentcore>=1.0.3",
+    "bedrock-agentcore>=1.1.0",
     "docstring_parser>=0.15,<1.0",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",

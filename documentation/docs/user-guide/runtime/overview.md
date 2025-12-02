@@ -26,19 +26,23 @@ agentcore invoke '{"name": "Alice"}'
 
 ## What is the AgentCore Runtime SDK?
 
-The Runtime SDK is a comprehensive Python framework that bridges the gap between your AI agent code and Amazon Bedrock AgentCore's managed infrastructure. It provides HTTP service wrapper, decorator-based programming, session management, authentication integration, streaming support, async task management, and complete local development tools.
+The Runtime SDK is a comprehensive Python framework that bridges the gap between your AI agent code and Amazon Bedrock AgentCore's managed infrastructure. It provides HTTP service wrapper, decorator-based programming, session management, authentication integration, streaming support, WebSocket bi-directional streaming, async task management, and complete local development tools.
 
 ## Core Components
 
 **BedrockAgentCoreApp** - HTTP service wrapper with:
 - `/invocations` endpoint for agent logic
 - `/ping` endpoint for health checks
+- `/ws` endpoint for WebSocket connections
 - Built-in logging, error handling, and session management
+
 
 **Key Decorators:**
 - `@app.entrypoint` - Define your agent's main logic
+- `@app.websocket` - Define WebSocket handler for bi-directional streaming
 - `@app.ping` - Custom health checks
 - `@app.async_task` - Background processing
+
 
 ## Deployment Modes
 
@@ -111,6 +115,65 @@ if __name__ == "__main__":
 - **Generator Support**: Both sync and async generators supported
 - **Real-time Processing**: Immediate response chunks as they're available
 
+
+### WebSocket Bi-Directional Streaming Agents
+
+WebSocket agents enable persistent, bi-directional communication where agents can listen and respond simultaneously while handling interruptions and context changes mid-conversation. This is ideal for voice agents and interactive chat applications.
+
+**Basic WebSocket Agent:**
+```python
+from bedrock_agentcore import BedrockAgentCoreApp
+
+app = BedrockAgentCoreApp()
+
+@app.websocket
+async def websocket_handler(websocket, context):
+    """Bi-directional WebSocket handler."""
+    await websocket.accept()
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+
+            # Echo back with session context
+            await websocket.send_json({
+                "echo": data,
+                "session": context.session_id
+            })
+
+            # Exit on close command
+            if data.get("action") == "close":
+                break
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        await websocket.close()
+
+if __name__ == "__main__":
+    app.run()
+```
+
+**Key WebSocket Characteristics:**
+- **Port**: WebSocket agents run on port 8080
+- **Path**: WebSocket endpoints are mounted at `/ws`
+- **Protocol**: Persistent WebSocket connections for real-time streaming
+- **Authentication**: Supports SigV4 headers, SigV4 query parameters, and OAuth 2.0
+
+**Understanding the WebSocket Decorator:**
+- `@app.websocket` - Registers handler at the `/ws` path on port 8080
+- `websocket` parameter - Starlette WebSocket object for send/receive operations
+- `context` parameter - Same `RequestContext` with `session_id` for conversation state
+
+**When to Use WebSocket vs HTTP Streaming:**
+| Use Case | Recommended Protocol |
+|----------|---------------------|
+| Interactive voice agents | WebSocket |
+| Chat with interruption support | WebSocket |
+| Real-time collaboration | WebSocket |
+| Simple request-response | HTTP |
+| One-way streaming responses | HTTP SSE |
+
+
 ### Framework Integration
 The SDK works seamlessly with popular AI frameworks:
 
@@ -166,6 +229,31 @@ agentcore invoke '{"prompt": "Hello, remember this conversation"}' --session-id 
 
 agentcore invoke '{"prompt": "What did I say earlier?"}' --session-id "conversation-123"
 ```
+
+
+### WebSocket Session Management
+
+For WebSocket connections, session state is maintained throughout the connection lifetime. The `context.session_id` is automatically available in your WebSocket handler:
+
+```python
+@app.websocket
+async def session_aware_websocket(websocket, context):
+    """WebSocket with session awareness"""
+    await websocket.accept()
+
+    # Session ID available throughout connection
+    session_id = context.session_id
+
+    while True:
+        data = await websocket.receive_json()
+        await websocket.send_json({
+            "response": f"Session {session_id} received: {data}",
+            "session_id": session_id
+        })
+```
+
+**Tip:** Use UUIDs or unique identifiers for session IDs to avoid collisions between different users or conversations.
+
 
 ## Middleware and Request Access
 
@@ -284,6 +372,118 @@ def custom_status():
 
 See the [Async Processing Guide](async.md) for detailed examples and testing strategies.
 
+
+## Invoking WebSocket Agents
+
+After deploying a WebSocket agent, you can connect to it programmatically using the `AgentRuntimeClient`. There is currently no CLI support for WebSocket connections.
+
+### Client Connection Methods
+
+The SDK provides three authentication methods for WebSocket connections:
+
+**1. SigV4 Signed Headers (AWS Credentials):**
+```python
+from bedrock_agentcore.runtime import AgentRuntimeClient
+import websockets
+import asyncio
+import os
+
+async def main():
+    runtime_arn = os.getenv('AGENT_ARN')
+    if not runtime_arn:
+        raise ValueError("AGENT_ARN environment variable is required")
+
+    # Initialize client
+    client = AgentRuntimeClient(region="us-west-2")
+
+    # Generate WebSocket connection with SigV4 authentication
+    ws_url, headers = client.generate_ws_connection(
+        runtime_arn=runtime_arn
+    )
+
+    # Connect using any WebSocket library
+    async with websockets.connect(ws_url, extra_headers=headers) as ws:
+        await ws.send('{"inputText": "Hello!"}')
+        response = await ws.recv()
+        print(f"Received: {response}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**2. Presigned URL (Frontend/Browser Compatible):**
+```python
+from bedrock_agentcore.runtime import AgentRuntimeClient
+import os
+
+runtime_arn = os.getenv('AGENT_ARN')
+client = AgentRuntimeClient(region="us-west-2")
+
+# Generate presigned URL (max 300 seconds expiry)
+presigned_url = client.generate_presigned_url(
+    runtime_arn=runtime_arn,
+    expires=300  # 5 minutes
+)
+
+# Share with frontend - JavaScript: new WebSocket(presigned_url)
+print(presigned_url)
+```
+
+**3. OAuth Bearer Token:**
+```python
+from bedrock_agentcore.runtime import AgentRuntimeClient
+import websockets
+import asyncio
+import os
+
+async def main():
+    runtime_arn = os.getenv('AGENT_ARN')
+    bearer_token = os.getenv('BEARER_TOKEN')
+
+    client = AgentRuntimeClient(region="us-west-2")
+
+    # Generate WebSocket connection with OAuth
+    ws_url, headers = client.generate_ws_connection_oauth(
+        runtime_arn=runtime_arn,
+        bearer_token=bearer_token
+    )
+
+    async with websockets.connect(ws_url, extra_headers=headers) as ws:
+        await ws.send('{"inputText": "Hello!"}')
+        response = await ws.recv()
+        print(f"Received: {response}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Testing WebSocket Agents Locally
+
+For local development, test your WebSocket agent with a simple client:
+
+```bash
+# Terminal 1: Start your agent
+python websocket_echo_agent.py
+```
+
+```python
+# Terminal 2: Test client
+import asyncio
+import websockets
+
+async def test_websocket():
+    uri = "ws://localhost:8080/ws"
+
+    async with websockets.connect(uri) as websocket:
+        await websocket.send('{"message": "Hello!"}')
+        response = await websocket.recv()
+        print(f"Received: {response}")
+
+if __name__ == "__main__":
+    asyncio.run(test_websocket())
+```
+
+
 ## Local Development
 
 ### Debug Mode
@@ -312,5 +512,33 @@ agentcore deploy
 # 5. Monitor
 agentcore status
 ```
+
+## WebSocket Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Port conflicts | WebSocket agents must run on port 8080 |
+| Connection upgrade failures | Verify agent handles WebSocket upgrade at `/ws` |
+| Authentication mismatch | Ensure client uses same auth method (OAuth or SigV4) as configured |
+| Message format errors | Check that client sends properly formatted JSON messages |
+
+### WebSocket Close Codes
+
+| Code | Meaning |
+|------|---------|
+| 1000 | Normal closure |
+| 1001 | Going away (server shutdown) |
+| 1002 | Protocol error |
+| 1011 | Server error |
+
+### Security Considerations
+
+- **Authentication**: All WebSocket connections require SigV4 or OAuth 2.0
+- **Session Isolation**: Each connection runs in isolated execution environments
+- **Transport Security**: All connections use WSS (WebSocket Secure) over HTTPS
+- **Access Control**: IAM policies control WebSocket connection permissions
+
 
 The AgentCore Runtime SDK provides everything needed to build, test, and deploy production-ready AI agents with minimal setup and maximum flexibility.
