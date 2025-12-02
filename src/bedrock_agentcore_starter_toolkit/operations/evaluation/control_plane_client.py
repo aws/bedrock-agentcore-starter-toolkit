@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional
 
 import boto3
 
+from bedrock_agentcore_starter_toolkit.services.runtime import BedrockAgentCoreClient
+
 from ...utils.endpoints import get_control_plane_endpoint
 from ...utils.runtime.logs import get_agent_runtime_log_group
 from .create_role import get_or_create_evaluation_execution_role
@@ -52,6 +54,9 @@ class EvaluationControlPlaneClient:
         # Get account ID for role creation
         sts = boto3.client("sts")
         self.account_id = sts.get_caller_identity()["Account"]
+
+        # Initialize runtime client
+        self.runtime_client = BedrockAgentCoreClient(region=self.region)
 
         if boto_client:
             self.client = boto_client
@@ -207,6 +212,10 @@ class EvaluationControlPlaneClient:
         """
         logger.info("Creating online evaluation config: %s for agent: %s", config_name, agent_id)
 
+        # Validate execution role parameters
+        if not execution_role and not auto_create_execution_role:
+            raise ValueError("execution_role is required when auto_create_execution_role is False")
+
         # Auto-create execution role if needed
         if auto_create_execution_role and not execution_role:
             logger.info("Auto-creating execution role for config: %s", config_name)
@@ -229,6 +238,10 @@ class EvaluationControlPlaneClient:
         # Online evaluation monitors the runtime log group where agent traces are written
         log_group_names = [runtime_log_group]
 
+        # Get agent name from runtime client
+        runtime_response = self.runtime_client.get_agent_runtime(agent_id=agent_id)
+        agent_name = runtime_response["agentRuntimeName"]
+
         logger.debug("Using log group: %s for agent: %s", runtime_log_group, agent_id)
 
         # Build API request with proper structure per API model
@@ -236,7 +249,7 @@ class EvaluationControlPlaneClient:
             "onlineEvaluationConfigName": config_name,
             "rule": {"samplingConfig": {"samplingPercentage": sampling_rate}},
             "dataSourceConfig": {
-                "cloudWatchLogs": {"logGroupNames": log_group_names, "serviceNames": ["bedrock-agentcore"]}
+                "cloudWatchLogs": {"logGroupNames": log_group_names, "serviceNames": [f"{agent_name}.{agent_endpoint}"]}
             },
             "evaluators": [{"evaluatorId": evaluator_id} for evaluator_id in evaluator_list],
             "evaluationExecutionRoleArn": execution_role,
