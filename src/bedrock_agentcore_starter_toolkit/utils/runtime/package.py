@@ -217,7 +217,7 @@ class CodeZipPackager:
             log.info("✓ Deployment package ready: %.2f MB", size_mb)
 
             if size_mb > 250:
-                log.warning("⚠️  Package size (%.2f MB) exceeds 250MB limit. Consider reducing dependencies.", size_mb)
+                raise Exception(f"Package size ({size_mb:.2f} MB) exceeds 250MB limit. Consider reducing dependencies.")
 
             # Check if aws-opentelemetry-distro is present for instrumentation
             has_otel_distro = self._check_otel_distro(requirements_file)
