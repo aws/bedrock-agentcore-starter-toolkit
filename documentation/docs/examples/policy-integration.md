@@ -6,6 +6,13 @@ This guide demonstrates practical patterns for integrating Policy with AgentCore
 
 This end-to-end example shows how to create a policy-protected refund processing system.
 
+**Important: Action Name Format**
+
+Action names in Cedar policies use the format `TargetName___tool_name` with **three underscores** (`___`):
+- Format: `AgentCore::Action::"<TargetName>___<tool_name>"`
+- Example: `AgentCore::Action::"RefundTarget___process_refund"`
+- The target name from your gateway and the tool name are separated by triple underscores
+
 ### Step 1: Create Policy Engine
 
 ```python
@@ -30,7 +37,7 @@ print(f"Policy Engine ARN: {policy_engine['policyEngineArn']}")
 refund_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"RefundTool__process_refund",
+  action == AgentCore::Action::"RefundTarget___process_refund",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/refund-gateway"
 )
 when {
@@ -51,7 +58,7 @@ policy_client.create_policy(
 emergency_policy = """
 forbid(
   principal,
-  action == AgentCore::Action::"RefundTool__process_refund",
+  action == AgentCore::Action::"RefundTarget___process_refund",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/refund-gateway"
 );
 """
@@ -205,7 +212,7 @@ nl_policy = "Allow users with scope payment:process to transfer funds when the a
 cedar_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"PaymentAPI__transfer_funds",
+  action == AgentCore::Action::"PaymentTarget___transfer_funds",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment"
 )
 when {
@@ -225,7 +232,7 @@ Different limits for different user tiers:
 premium_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"PaymentAPI__transfer_funds",
+  action == AgentCore::Action::"PaymentTarget___transfer_funds",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment"
 )
 when {
@@ -239,7 +246,7 @@ when {
 standard_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"PaymentAPI__transfer_funds",
+  action == AgentCore::Action::"PaymentTarget___transfer_funds",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment"
 )
 when {
@@ -259,7 +266,7 @@ Restrict operations to specific regions:
 regional_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"ShippingAPI__calculate_rate",
+  action == AgentCore::Action::"ShippingTarget___calculate_rate",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/shipping"
 )
 when {
@@ -278,7 +285,7 @@ Control access based on user roles:
 manager_policy = """
 permit(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"DecisionAPI__approve_decision",
+  action == AgentCore::Action::"DecisionTarget___approve_decision",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/decision"
 )
 when {
@@ -298,7 +305,7 @@ Enforce that optional parameters are provided:
 required_description_policy = """
 forbid(
   principal is AgentCore::OAuthUser,
-  action == AgentCore::Action::"InsuranceAPI__file_claim",
+  action == AgentCore::Action::"InsuranceTarget___file_claim",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/insurance"
 )
 unless {
@@ -327,7 +334,7 @@ forbid(
 disable_tool = """
 forbid(
   principal,
-  action == AgentCore::Action::"PaymentAPI__transfer_funds",
+  action == AgentCore::Action::"PaymentTarget___transfer_funds",
   resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/payment"
 );
 """
@@ -355,9 +362,10 @@ when {
 
 ```python
 # Generate Cedar policy from natural language (automatic polling & fetching)
+# Note: name must match pattern ^[A-Za-z][A-Za-z0-9_]*$ (use underscores, not hyphens)
 result = policy_client.generate_policy(
     policy_engine_id=policy_engine['policyEngineId'],
-    name='refund-policy',
+    name='refund_policy',  # Use underscores, not hyphens
     resource={'arn': gateway['gatewayArn']},
     content={'rawText': 'Allow refunds for amounts less than $500'},
     fetch_assets=True  # Automatically fetches generated policies
@@ -387,6 +395,12 @@ nl4 = "Block users from filing claims unless a description and priority are prov
 # Example 5: Scope-based
 nl5 = "Allow users with scope admin:write to update user profiles when the account is verified"
 ```
+
+**Important:** When using `generate_policy()` or `start_policy_generation`, the `name` parameter must follow these rules:
+- Only letters, numbers, and underscores allowed
+- Must start with a letter
+- No hyphens, dots, or special characters
+- Pattern: `^[A-Za-z][A-Za-z0-9_]*$`
 
 ## Testing and Debugging Policies
 
@@ -440,7 +454,27 @@ except Exception as e:
 
 ## Common Pitfalls and Solutions
 
-### Pitfall 1: Forgetting Default Deny
+### Pitfall 1: Invalid Generation Name
+
+**Problem**: Using hyphens or special characters in policy generation names
+
+**Solution**: Use only letters, numbers, and underscores; must start with a letter
+
+```python
+# ❌ Wrong: Contains hyphens
+policy_client.generate_policy(
+    name='refund-policy-v1',  # ValidationException
+    ...
+)
+
+# ✅ Correct: Uses underscores
+policy_client.generate_policy(
+    name='refund_policy_v1',
+    ...
+)
+```
+
+### Pitfall 2: Forgetting Default Deny
 
 **Problem**: Expecting actions to be allowed without a permit policy
 
@@ -460,7 +494,7 @@ when { context.input.amount <= 1000 };
 """
 ```
 
-### Pitfall 2: Vague Conditions
+### Pitfall 3: Vague Conditions
 
 **Problem**: Using subjective terms in conditions
 
@@ -474,7 +508,7 @@ when { context.input.amount <= 1000 };
 "Allow transfers when the amount is less than $10,000"
 ```
 
-### Pitfall 3: Missing Tag Checks
+### Pitfall 4: Missing Tag Checks
 
 **Problem**: Accessing tags without checking if they exist
 
@@ -491,7 +525,7 @@ when {
 }
 ```
 
-### Pitfall 4: Incorrect Resource Scope
+### Pitfall 5: Incorrect Resource Scope
 
 **Problem**: Using type check with specific actions
 
@@ -500,11 +534,11 @@ when {
 ```python
 # ❌ Wrong: Type check with specific action
 resource is AgentCore::Gateway,
-action == AgentCore::Action::"SpecificTool"
+action == AgentCore::Action::"SpecificTarget___specific_tool"
 
 # ✅ Correct: Specific Gateway ARN with specific action
 resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:region:account:gateway/id",
-action == AgentCore::Action::"SpecificTool"
+action == AgentCore::Action::"SpecificTarget___specific_tool"
 ```
 
 ## Policy Management Best Practices

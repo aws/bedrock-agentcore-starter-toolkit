@@ -360,14 +360,14 @@ def get_policy_generation(
 
 
 @policy_app.command("list-policy-generation-assets")
-def get_policy_generation_assets(
+def list_policy_generation_assets(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Generation ID"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
     next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
-    """Get policy generation assets (generated policies)."""
+    """List policy generation assets (generated policies)."""
     client = PolicyClient(region_name=region)
     response = client.list_policy_generation_assets(policy_engine_id, generation_id, max_results, next_token)
 
