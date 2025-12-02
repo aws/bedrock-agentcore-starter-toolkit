@@ -55,6 +55,7 @@ app.command("create_mcp_gateway_target")(create_mcp_gateway_target)
 app.command("launch", hidden=True)(deploy)
 app.command("import-agent", hidden=True)(import_agent)
 
+
 def main():  # pragma: no cover
     """Entry point for the CLI application."""
     app()
