@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1] - 2025-12-02
+
+### Changes
+
+- fix: catch the expired creds exception and throw it using the method in utils (#388) (9826b08)
+- re:Invent 2025 Feature Launch: AgentCore Policy Engine, Evals and Identity Custom Claims (#387) (70e3078)
+- fix: Fail early if deployment package size exceeds 250MB (#386) (916f81d)
+- fix: agent_config.name bug when running configure after create with production template mode (#384) (824316c)
+- docs: update middleware integration in Runtime Overview (#381) (48968f4)
+- fix: add missing basic template README. Also fix erroneous print statment in IAC path (#377) (63970da)
+- feat: CLI UX improvements (#380) (da80cf5)
+- chore: bump version to 0.2.0 (#376) (31a37ff)
+
 ## [0.2.0] - 2025-11-27
 
 ### Changes
