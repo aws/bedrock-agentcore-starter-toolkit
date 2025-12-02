@@ -100,8 +100,8 @@ class TestInitialization:
         assert client.region == "us-west-2"
         assert client.endpoint_url is not None  # Should have default endpoint
         assert client.account_id == "123456789012"
-        # Should be called twice: once for STS, once for control plane
-        assert mock_boto3_client.call_count == 2
+        # Should be called twice: once for STS, twice for control plane, once for iam
+        assert mock_boto3_client.call_count == 4
 
     @patch("boto3.client")
     def test_init_with_custom_endpoint(self, mock_boto3_client):
