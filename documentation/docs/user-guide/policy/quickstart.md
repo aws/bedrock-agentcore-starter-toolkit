@@ -462,4 +462,4 @@ python cleanup_policy.py
 
 ## CLI Reference
 
-For advanced operations using the AgentCore CLI, including policy generation from natural language and detailed policy management, see the [Policy CLI Reference](cli-reference.md).
+For advanced operations using the AgentCore CLI, including policy generation from natural language and detailed policy management, see the [Policy CLI Reference](../../api-reference/cli.md#policy-commands).

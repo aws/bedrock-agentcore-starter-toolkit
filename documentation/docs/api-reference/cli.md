@@ -1090,6 +1090,13 @@ The definition must be a JSON string containing Cedar policy statements. Cedar p
 }
 ```
 
+**Action Name Format:**
+
+Action names follow the pattern `TargetName___tool_name` (triple underscore):
+- Format: `AgentCore::Action::"<TargetName>___<tool_name>"`
+- Example: `AgentCore::Action::"RefundTarget___process_refund"`
+- The target name and tool name are separated by **three underscores** (`___`)
+
 **Resource Constraints:**
 
 Cedar policies must specify a specific Gateway ARN:
@@ -1181,7 +1188,7 @@ Options:
 agentcore policy update-policy \
   --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
-  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTool__process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
   --description "Updated to \$500 limit"
 ```
 
@@ -1237,6 +1244,8 @@ agentcore policy delete-policy \
 
 ### Start Policy Generation
 
+Policy generation requires a policy engine and gateway. Create the engine first to manage policies, then generate Cedar statements from natural language that target your gateway resource.
+
 Generate Cedar policies from natural language descriptions.
 
 ```bash
@@ -1246,20 +1255,99 @@ agentcore policy start-policy-generation [OPTIONS]
 Options:
 
 - `--policy-engine-id, -e TEXT`: Policy engine ID (required)
-- `--name, -n TEXT`: Generation name (required)
+- `--name, -n TEXT`: Generation name (required) - Must match pattern `^[A-Za-z][A-Za-z0-9_]*$` (letters, numbers, underscores only; must start with a letter)
 - `--resource-arn TEXT`: Gateway ARN that the generated policies will target (required)
 - `--content, -c TEXT`: Natural language policy description (required)
 - `--region, -r TEXT`: AWS region (defaults to us-east-1)
 
+**Note:** Policy generation typically completes within 30 seconds.
+
+**Name Validation:**
+- ✅ Valid: `refund_policy`, `MyPolicy123`, `policy_v1`
+- ❌ Invalid: `refund-policy` (hyphens not allowed), `123policy` (must start with letter), `my.policy` (dots not allowed)
+
+**Workflow:**
+
+After starting generation, poll the generation status until complete, then list the generated policy assets.
+
 **Example:**
 
 ```bash
+# 0. Create policy engine (one-time setup)
+agentcore policy create-policy-engine \
+  --name "RefundPolicyEngine" \
+  --region us-west-2
+
+# 1. Start policy generation (note: use underscores, not hyphens in name)
 agentcore policy start-policy-generation \
-  --policy-engine-id "testPolicyEngine-abc123" \
-  --name "refund-policy-generation" \
-  --resource-arn "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway" \
-  --content "Allow refunds under \$1000"
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --name "refund_limit_gen" \
+  --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/gw-abc123" \
+  --content "Allow refunds under $1000" \
+  --region us-west-2
 ```
+
+Output:
+```
+✓ Policy generation initiated!
+Generation ID: refund_limit_gen-x9y8z7w6v5
+Status: GENERATING
+Name: refund_limit_gen
+Use 'get-policy-generation' to check progress
+ARN: arn:aws:bedrock-agentcore:us-west-2:123456789012:policy-engine/RefundEngine-a1b2c3d4e5/policy-generation/refund-limit-gen-x9y8z7w6v5
+```
+
+```bash
+# 2. Poll generation status (repeat until status is GENERATED)
+agentcore policy get-policy-generation \
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --generation-id "refund_limit_gen-x9y8z7w6v5" \
+  --region us-west-2
+```
+
+Output when complete:
+```
+Policy Generation Details:
+Generation ID: refund_limit_gen-x9y8z7w6v5
+Name: refund_limit_gen
+Status: GENERATED
+ARN: arn:aws:bedrock-agentcore:us-west-2:123456789012:policy-engine/RefundEngine-a1b2c3d4e5/policy-generation/refund-limit-gen-x9y8z7w6v5
+Created: 2025-03-15T10:30:00Z
+Updated: 2025-03-15T10:30:22Z
+```
+
+```bash
+# 3. List generated policy assets
+agentcore policy list-policy-generation-assets \
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --generation-id "refund_limit_gen-x9y8z7w6v5" \
+  --region us-west-2
+```
+
+Output:
+```json
+{
+  "policyGenerationAssets": [
+    {
+      "policyGenerationAssetId": "asset-m1n2o3p4q5",
+      "definition": {
+        "cedar": {
+          "statement": "permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/gw-abc123\") when { context.input.amount < 1000 };"
+        }
+      },
+      "rawTextFragment": "Allow refunds under $1000",
+      "findings": [
+        {
+          "type": "VALID",
+          "description": "Policy is syntactically valid"
+        }
+      ]
+    }
+  ]
+}
+```
+
+You can now create a policy using the generated Cedar statement from the `definition.cedar.statement` field.
 
 ### Get Policy Generation
 
@@ -1545,14 +1633,14 @@ agentcore policy get-policy \
 agentcore policy update-policy \
   --policy-engine-id "testPolicyEngine-abc123" \
   --policy-id "policy-xyz789" \
-  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTool__process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
   --description "Updated to $500 limit" \
   --region us-west-2
 
-# Generate policy from natural language
+# Generate policy from natural language (use underscores in name)
 agentcore policy start-policy-generation \
   --policy-engine-id "testPolicyEngine-abc123" \
-  --name "refund-policy-generation" \
+  --name "refund_policy_generation" \
   --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway" \
   --content "Allow refunds for amounts less than $1000" \
   --region us-west-2
@@ -1612,21 +1700,21 @@ agentcore policy create-policy-engine \
 # 4. Generate policy from natural language
 agentcore policy start-policy-generation \
   --policy-engine-id "testPolicyEngine-abc123" \
-  --name "refund-policy-gen" \
+  --name "refund_policy_gen" \
   --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123" \
   --content "Allow refunds under \$1000" \
   --region us-west-2
 
-# 5. Wait and check generation (poll until COMPLETE)
+# 5. Wait and check generation (poll until GENERATED, typically ~20-30 seconds)
 agentcore policy get-policy-generation \
   --policy-engine-id "testPolicyEngine-abc123" \
-  --generation-id "gen-xyz789" \
+  --generation-id "refund_policy_gen-xyz789" \
   --region us-west-2
 
 # 6. Review generated policies
 agentcore policy list-policy-generation-assets \
   --policy-engine-id "testPolicyEngine-abc123" \
-  --generation-id "gen-xyz789" \
+  --generation-id "refund_policy_gen-xyz789" \
   --region us-west-2
 
 # 7. Create policy from generated asset (or use your own)
