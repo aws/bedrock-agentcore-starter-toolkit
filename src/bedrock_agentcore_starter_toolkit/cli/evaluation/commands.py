@@ -425,77 +425,15 @@ def create_evaluator(
         raise typer.Exit(1) from e
 
 
-def _interactive_update_evaluator(client: EvaluationControlPlaneClient, evaluator_id: str) -> tuple:
-    """Interactive mode to update a custom evaluator.
-
-    Returns:
-        Tuple of (description, new_instructions) - either can be None if not changed
-    """
-    console.print("\n[bold cyan]Interactive Evaluator Update[/bold cyan]")
-    console.print(f"[dim]Updating evaluator: {evaluator_id}[/dim]\n")
-
-    # Fetch current evaluator details
-    with console.status(f"[cyan]Fetching evaluator {evaluator_id}...[/cyan]"):
-        details = evaluator_processor.get_evaluator(client, evaluator_id)
-
-    # Check if builtin
-    if evaluator_processor.is_builtin_evaluator(evaluator_id):
-        console.print("[red]Error:[/red] Built-in evaluators cannot be updated")
-        console.print("[dim]Use 'agentcore eval evaluator create' to duplicate it instead[/dim]")
-        raise typer.Exit(1)
-
-    # Display current details
-    console.print("[bold]Current Configuration:[/bold]")
-    console.print(f"  Name: {details.get('evaluatorName', 'N/A')}")
-    console.print(f"  Level: {details.get('level', 'N/A')}")
-
-    # Show full description and instructions
-    current_desc = details.get("description", "")
-    if current_desc:
-        console.print(f"\n[bold]Description:[/bold]\n{current_desc}")
-
-    llm_config = details.get("evaluatorConfig", {}).get("llmAsAJudge", {})
-    current_instructions = llm_config.get("instructions", "")
-    if current_instructions:
-        console.print(f"\n[bold]Instructions:[/bold]\n{current_instructions}\n")
-
-    # Interactive prompts
-    console.print("[bold cyan]Update Fields (press Enter to keep current value)[/bold cyan]\n")
-
-    # Description
-    new_description = typer.prompt("Description", default=current_desc)
-    description_changed = new_description != current_desc
-
-    # Instructions
-    edit_instructions = typer.confirm("Update instructions?", default=False)
-    new_instructions = None
-
-    if edit_instructions:
-        instructions_input = typer.prompt("New instructions", default=current_instructions, show_default=False)
-        if instructions_input and instructions_input.strip() and instructions_input != current_instructions:
-            new_instructions = instructions_input.strip()
-
-    return (new_description if description_changed else None), new_instructions
-
-
 @evaluator_app.command("update")
 def update_evaluator(
-    evaluator_id: Optional[str] = typer.Option(
-        None, "--evaluator-id", help="Evaluator ID to update (optional for interactive mode)"
-    ),
+    evaluator_id: str = typer.Option(..., "--evaluator-id", help="Evaluator ID to update"),
     description: Optional[str] = typer.Option(None, "--description", help="New description"),
     config: Optional[str] = typer.Option(None, "--config", help="Path to new config JSON file"),
 ):
     r"""Update a custom evaluator.
 
-    Interactive mode:
-        # Select from list
-        agentcore eval evaluator update
-
-        # Update specific evaluator interactively
-        agentcore eval evaluator update --evaluator-id my-evaluator-abc123
-
-    Non-interactive mode:
+    Examples:
         # Update description
         agentcore eval evaluator update --evaluator-id my-evaluator-abc123 \
           --description "Updated description"
@@ -510,79 +448,26 @@ def update_evaluator(
           --config new-config.json
     """
     try:
-        # Get region from config or use default
+        if description is None and config is None:
+            console.print("[red]Error:[/red] At least one of --description or --config is required")
+            raise typer.Exit(1)
+
         agent_config = _get_agent_config_from_file()
         region = agent_config.get("region", "us-east-1") if agent_config else "us-east-1"
 
         client = EvaluationControlPlaneClient(region_name=region)
 
-        # Determine mode
-        has_update_flags = description is not None or config is not None
-
-        if evaluator_id and has_update_flags:
-            # Non-interactive mode: evaluator_id + flags provided
-            config_to_update = None
-            if config:
-                config_path = Path(config)
-                if not config_path.exists():
-                    console.print(f"[red]Error:[/red] Config file not found: {config}")
-                    raise typer.Exit(1)
-                with open(config_path) as f:
-                    config_to_update = json.load(f)
-
-            # Perform update directly
-            description_to_update = description
-            new_instructions = None
-
-        elif evaluator_id and not has_update_flags:
-            # Interactive mode with specific evaluator_id
-            description_to_update, new_instructions = _interactive_update_evaluator(client, evaluator_id)
-
-        else:
-            # Interactive mode: select from list
-            console.print("\n[bold cyan]Select Custom Evaluator to Update[/bold cyan]\n")
-
-            with console.status("[cyan]Fetching evaluators...[/cyan]"):
-                response = evaluator_processor.list_evaluators(client, max_results=100)
-
-            custom_evaluators = evaluator_processor.filter_custom_evaluators(response.get("evaluators", []))
-
-            if not custom_evaluators:
-                console.print("[yellow]No custom evaluators found to update.[/yellow]")
-                return
-
-            # Display custom evaluators
-            for idx, ev in enumerate(custom_evaluators, 1):
-                name = ev.get("evaluatorName", ev.get("evaluatorId", "Unknown"))
-                level = ev.get("level", "N/A")
-                desc = ev.get("description", "")
-                desc_preview = (desc[:60] + "...") if len(desc) > 60 else desc
-                console.print(f"  {idx}. [cyan]{name}[/cyan] ({level}) - {desc_preview}")
-
-            console.print()
-            selection = typer.prompt("Select evaluator number to update", type=int)
-
-            if selection < 1 or selection > len(custom_evaluators):
-                console.print("[red]Error:[/red] Invalid selection")
+        config_to_update = None
+        if config:
+            config_path = Path(config)
+            if not config_path.exists():
+                console.print(f"[red]Error:[/red] Config file not found: {config}")
                 raise typer.Exit(1)
+            with open(config_path) as f:
+                config_to_update = json.load(f)
 
-            selected_evaluator = custom_evaluators[selection - 1]
-            evaluator_id = selected_evaluator.get("evaluatorId", "")
-
-            # Interactive update
-            description_to_update, new_instructions = _interactive_update_evaluator(client, evaluator_id)
-
-        # Perform update if there are changes
         with console.status(f"[cyan]Updating evaluator {evaluator_id}...[/cyan]"):
-            # Handle instructions update separately
-            if new_instructions:
-                response = evaluator_processor.update_evaluator_instructions(client, evaluator_id, new_instructions)
-
-            # Update description/config if provided
-            if description_to_update or config_to_update:
-                response = evaluator_processor.update_evaluator(
-                    client, evaluator_id, description_to_update, config_to_update
-                )
+            response = evaluator_processor.update_evaluator(client, evaluator_id, description, config_to_update)
 
         console.print("\n[green]✓[/green] Evaluator updated successfully!")
         if "updatedAt" in response:
