@@ -815,7 +815,7 @@ def setup_aws_jwt(
             agent_config.identity = IdentityConfig()
 
         # Initialize aws_jwt config if needed
-        if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.aws_jwt:
+        if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
             from ...utils.runtime.schema import AwsJwtConfig
 
             agent_config.aws_jwt = AwsJwtConfig()
@@ -887,7 +887,7 @@ def list_aws_jwt():
         console.print("[yellow]No Identity configuration found.[/yellow]")
         raise typer.Exit(0)
 
-    if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.aws_jwt:
+    if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
         console.print("[yellow]No AWS IAM JWT configuration found.[/yellow]")
         console.print("Run [cyan]agentcore identity setup-aws-jwt --audience <url>[/cyan] to configure.")
         raise typer.Exit(0)

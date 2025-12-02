@@ -229,12 +229,12 @@ boto3
 
         # Verify AWS JWT config
         assert agent_config.identity is not None
-        assert agent_config.identity.aws_jwt is not None
-        assert agent_config.identity.aws_jwt.enabled is True
-        assert self.audience in agent_config.identity.aws_jwt.audiences
-        assert "https://api2.example.com" in agent_config.identity.aws_jwt.audiences
-        assert agent_config.identity.aws_jwt.signing_algorithm == "ES384"
-        assert agent_config.identity.aws_jwt.duration_seconds == 300
+        assert agent_config.aws_jwt is not None
+        assert agent_config.aws_jwt.enabled is True
+        assert self.audience in agent_config.aws_jwt.audiences
+        assert "https://api2.example.com" in agent_config.aws_jwt.audiences
+        assert agent_config.aws_jwt.signing_algorithm == "ES384"
+        assert agent_config.aws_jwt.duration_seconds == 300
 
         logger.info("✅ Config file validation passed")
 

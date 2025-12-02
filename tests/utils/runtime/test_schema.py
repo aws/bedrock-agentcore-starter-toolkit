@@ -434,28 +434,7 @@ class TestAwsJwtConfig:
 
 
 class TestIdentityConfigAwsJwt:
-    """Test IdentityConfig with AWS JWT configuration."""
-
-    def test_identity_config_default_aws_jwt(self):
-        """Test IdentityConfig has default AwsJwtConfig."""
-        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import IdentityConfig
-
-        config = IdentityConfig()
-
-        assert config.aws_jwt is not None
-        assert config.aws_jwt.enabled is False
-        assert config.aws_jwt.audiences == []
-
-    def test_identity_config_is_enabled_with_aws_jwt(self):
-        """Test is_enabled property with AWS JWT only."""
-        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig, IdentityConfig
-
-        config = IdentityConfig()
-        config.aws_jwt = AwsJwtConfig(enabled=True, audiences=["https://api.example.com"])
-
-        assert config.is_enabled is True
-        assert config.has_aws_jwt is True
-        assert config.has_oauth_providers is False
+    """Test IdentityConfig - aws_jwt is now at agent level, not identity level."""
 
     def test_identity_config_is_enabled_with_oauth_only(self):
         """Test is_enabled property with OAuth providers only."""
@@ -476,30 +455,6 @@ class TestIdentityConfigAwsJwt:
 
         assert config.is_enabled is True
         assert config.has_oauth_providers is True
-        assert config.has_aws_jwt is False
-
-    def test_identity_config_is_enabled_with_both(self):
-        """Test is_enabled property with both OAuth and AWS JWT."""
-        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
-            AwsJwtConfig,
-            CredentialProviderInfo,
-            IdentityConfig,
-        )
-
-        config = IdentityConfig()
-        config.credential_providers = [
-            CredentialProviderInfo(
-                name="TestProvider",
-                arn="arn:aws:identity:us-west-2:123456789012:provider/TestProvider",
-                type="cognito",
-                callback_url="https://example.com/callback",
-            )
-        ]
-        config.aws_jwt = AwsJwtConfig(enabled=True, audiences=["https://api.example.com"])
-
-        assert config.is_enabled is True
-        assert config.has_oauth_providers is True
-        assert config.has_aws_jwt is True
 
     def test_identity_config_is_not_enabled(self):
         """Test is_enabled property when nothing is configured."""
@@ -509,26 +464,6 @@ class TestIdentityConfigAwsJwt:
 
         assert config.is_enabled is False
         assert config.has_oauth_providers is False
-        assert config.has_aws_jwt is False
-
-    def test_identity_config_has_aws_jwt_requires_audiences(self):
-        """Test has_aws_jwt requires both enabled and audiences."""
-        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig, IdentityConfig
-
-        # Enabled but no audiences
-        config1 = IdentityConfig()
-        config1.aws_jwt = AwsJwtConfig(enabled=True, audiences=[])
-        assert config1.has_aws_jwt is False
-
-        # Not enabled but has audiences (shouldn't happen normally)
-        config2 = IdentityConfig()
-        config2.aws_jwt = AwsJwtConfig(enabled=False, audiences=["https://api.example.com"])
-        assert config2.has_aws_jwt is False
-
-        # Enabled with audiences
-        config3 = IdentityConfig()
-        config3.aws_jwt = AwsJwtConfig(enabled=True, audiences=["https://api.example.com"])
-        assert config3.has_aws_jwt is True
 
     def test_identity_config_provider_names(self):
         """Test provider_names property."""
@@ -554,3 +489,49 @@ class TestIdentityConfigAwsJwt:
         ]
 
         assert config.provider_names == ["Provider1", "Provider2"]
+
+
+class TestAwsJwtConfigAtAgentLevel:
+    """Test AwsJwtConfig at agent schema level (moved from IdentityConfig)."""
+
+    def test_agent_schema_has_aws_jwt(self):
+        """Test that aws_jwt is at agent level."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            AWSConfig,
+            AwsJwtConfig,
+            BedrockAgentCoreAgentSchema,
+            BedrockAgentCoreDeploymentInfo,
+            NetworkConfiguration,
+        )
+
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+            aws=AWSConfig(network_configuration=NetworkConfiguration()),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            aws_jwt=AwsJwtConfig(enabled=True, audiences=["https://api.example.com"]),
+        )
+
+        assert agent.aws_jwt is not None
+        assert agent.aws_jwt.enabled is True
+        assert agent.aws_jwt.audiences == ["https://api.example.com"]
+
+    def test_agent_schema_default_aws_jwt(self):
+        """Test default aws_jwt config at agent level."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            AWSConfig,
+            BedrockAgentCoreAgentSchema,
+            BedrockAgentCoreDeploymentInfo,
+            NetworkConfiguration,
+        )
+
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+            aws=AWSConfig(network_configuration=NetworkConfiguration()),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+
+        assert agent.aws_jwt is not None
+        assert agent.aws_jwt.enabled is False
+        assert agent.aws_jwt.audiences == []

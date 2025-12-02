@@ -227,15 +227,11 @@ def _ensure_aws_jwt_permissions(
 ) -> None:
     """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
     # Check if AWS JWT is configured
-    if not agent_config.identity or not agent_config.aws_jwt:
+    if not agent_config.aws_jwt or not agent_config.aws_jwt.enabled or not agent_config.aws_jwt.audiences:
         log.info("No AWS IAM JWT configuration found, skipping AWS JWT permissions")
         return
 
     aws_jwt_config = agent_config.aws_jwt
-
-    if not aws_jwt_config.enabled or not aws_jwt_config.audiences:
-        log.info("AWS IAM JWT not enabled or no audiences configured, skipping AWS JWT permissions")
-        return
 
     if not agent_config.aws.execution_role:
         log.warning("No execution role configured, cannot add AWS IAM JWT permissions")
@@ -1030,7 +1026,7 @@ def _execute_codebuild_workflow(
                 log.info("🔍 DEBUG: Adding Identity permissions in CodeBuild flow...")
                 _ensure_identity_permissions(agent_config, region, account_id, None)
 
-            if agent_config.identity and agent_config.identity.has_aws_jwt:
+            if agent_config.aws_jwt and agent_config.aws_jwt.enabled and agent_config.aws_jwt.audiences:
                 log.info("🔍 DEBUG: Adding AWS IAM JWT permissions in CodeBuild flow...")
                 _ensure_aws_jwt_permissions(agent_config, region, account_id, None)
 
