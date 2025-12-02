@@ -227,11 +227,11 @@ def _ensure_aws_jwt_permissions(
 ) -> None:
     """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
     # Check if AWS JWT is configured
-    if not agent_config.identity or not agent_config.identity.aws_jwt:
+    if not agent_config.identity or not agent_config.aws_jwt:
         log.info("No AWS IAM JWT configuration found, skipping AWS JWT permissions")
         return
 
-    aws_jwt_config = agent_config.identity.aws_jwt
+    aws_jwt_config = agent_config.aws_jwt
 
     if not aws_jwt_config.enabled or not aws_jwt_config.audiences:
         log.info("AWS IAM JWT not enabled or no audiences configured, skipping AWS JWT permissions")

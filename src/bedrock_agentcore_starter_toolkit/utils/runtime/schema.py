@@ -95,9 +95,6 @@ class IdentityConfig(BaseModel):
         default_factory=list, description="List of configured OAuth2 credential providers"
     )
     workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
-    aws_jwt: AwsJwtConfig = Field(
-        default_factory=AwsJwtConfig, description="AWS IAM JWT federation configuration (no secrets required)"
-    )
 
     @property
     def is_enabled(self) -> bool:
@@ -108,11 +105,6 @@ class IdentityConfig(BaseModel):
     def has_oauth_providers(self) -> bool:
         """Check if OAuth credential providers are configured."""
         return len(self.credential_providers) > 0
-
-    @property
-    def has_aws_jwt(self) -> bool:
-        """Check if AWS IAM JWT federation is enabled."""
-        return self.aws_jwt.enabled and len(self.aws_jwt.audiences) > 0
 
     @property
     def provider_names(self) -> List[str]:
@@ -290,6 +282,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     identity: IdentityConfig = Field(default_factory=IdentityConfig)
+    aws_jwt: AwsJwtConfig = Field(default_factory=AwsJwtConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")

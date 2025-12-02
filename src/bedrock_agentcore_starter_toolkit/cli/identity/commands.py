@@ -722,7 +722,7 @@ def setup_aws_jwt(
         "ES384",
         "--signing-algorithm",
         "-s",
-        help="Signing algorithm: ES384 (default) or RS256",  # FIXED: "recommended" -> "default"
+        help="Signing algorithm: ES384 (default) or RS256",
     ),
     duration_seconds: int = typer.Option(300, "--duration", "-d", help="Default token duration in seconds (60-3600)"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
@@ -815,13 +815,13 @@ def setup_aws_jwt(
             agent_config.identity = IdentityConfig()
 
         # Initialize aws_jwt config if needed
-        if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.identity.aws_jwt:
+        if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.aws_jwt:
             from ...utils.runtime.schema import AwsJwtConfig
 
-            agent_config.identity.aws_jwt = AwsJwtConfig()
+            agent_config.aws_jwt = AwsJwtConfig()
 
         # Update AWS JWT config
-        aws_jwt_config = agent_config.identity.aws_jwt
+        aws_jwt_config = agent_config.aws_jwt
         aws_jwt_config.enabled = True
         aws_jwt_config.issuer_url = issuer_url
         aws_jwt_config.signing_algorithm = signing_algorithm.upper()
@@ -887,12 +887,12 @@ def list_aws_jwt():
         console.print("[yellow]No Identity configuration found.[/yellow]")
         raise typer.Exit(0)
 
-    if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.identity.aws_jwt:
+    if not hasattr(agent_config.identity, "aws_jwt") or not agent_config.aws_jwt:
         console.print("[yellow]No AWS IAM JWT configuration found.[/yellow]")
         console.print("Run [cyan]agentcore identity setup-aws-jwt --audience <url>[/cyan] to configure.")
         raise typer.Exit(0)
 
-    aws_jwt = agent_config.identity.aws_jwt
+    aws_jwt = agent_config.aws_jwt
 
     if not aws_jwt.enabled:
         console.print("[yellow]AWS IAM JWT federation is not enabled.[/yellow]")
