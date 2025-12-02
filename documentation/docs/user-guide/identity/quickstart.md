@@ -2,6 +2,8 @@
 
 Amazon Bedrock AgentCore Identity provides a secure way to manage identities for your AI agents and enable authenticated access to external services. This guide will help you get started with implementing identity features in your agent applications.
 
+**📚 For more information and detail beyond this quickstart, see the [AgentCore Identity Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity.html)**
+
 ## Prerequisites
 
 Before you begin, ensure you have:
