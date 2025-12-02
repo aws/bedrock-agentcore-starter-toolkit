@@ -183,6 +183,7 @@ def configure(
     if ctx.invoked_subcommand is not None:
         return
     configure_impl(
+        create_iac=False,
         create=create,
         entrypoint=entrypoint,
         agent_name=agent_name,
