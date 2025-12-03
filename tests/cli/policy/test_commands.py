@@ -14,7 +14,10 @@ runner = CliRunner()
 @pytest.fixture
 def mock_policy_client():
     """Fixture to create a mocked PolicyClient."""
-    with patch("bedrock_agentcore_starter_toolkit.cli.policy.commands.PolicyClient") as mock_client_class:
+    with (
+        patch("bedrock_agentcore_starter_toolkit.cli.policy.commands.PolicyClient") as mock_client_class,
+        patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+    ):
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         yield mock_client
