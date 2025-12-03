@@ -6943,7 +6943,7 @@ class MemorySessionManager:
             logger.info("     ✅ Found %d relevant long-term records.", len(records))
             return [MemoryRecord(record) for record in records]
         except ClientError as e:
-            logger.info("     ❌ Error querying long-term memory", e)
+            logger.info("     ❌ Error querying long-term memory: %s", e)
             raise
 
     def list_long_term_memory_records(
@@ -8374,6 +8374,6 @@ def search_long_term_memories(
         logger.info("     ✅ Found %d relevant long-term records.", len(records))
         return [MemoryRecord(record) for record in records]
     except ClientError as e:
-        logger.info("     ❌ Error querying long-term memory", e)
+        logger.info("     ❌ Error querying long-term memory: %s", e)
         raise
 ```
