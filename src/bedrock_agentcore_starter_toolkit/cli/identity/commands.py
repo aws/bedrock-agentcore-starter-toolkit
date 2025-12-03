@@ -20,6 +20,7 @@ from ...operations.identity.helpers import (
 )
 from ...utils.aws import get_region
 from ...utils.runtime.config import load_config, save_config
+from ...utils.runtime.schema import AwsJwtConfig, CredentialProviderInfo, IdentityConfig, WorkloadIdentityInfo
 from ..common import _handle_error, _handle_warn, _print_success, console
 
 # Identity CLI app
@@ -531,12 +532,7 @@ def _save_provider_config(name: str, arn: str, provider_type: str, callback_url:
 
         # Initialize identity config if not present
         if not hasattr(agent_config, "identity") or not agent_config.identity:
-            from ...utils.runtime.schema import IdentityConfig
-
             agent_config.identity = IdentityConfig()
-
-        # Add provider
-        from ...utils.runtime.schema import CredentialProviderInfo
 
         agent_config.identity.credential_providers.append(
             CredentialProviderInfo(name=name, arn=arn, type=provider_type, callback_url=callback_url)
@@ -558,12 +554,7 @@ def _save_workload_config(name: str, arn: str, return_urls: List[str]):
 
         # Initialize identity config if not present
         if not hasattr(agent_config, "identity") or not agent_config.identity:
-            from ...utils.runtime.schema import IdentityConfig
-
             agent_config.identity = IdentityConfig()
-
-        # Set workload info
-        from ...utils.runtime.schema import WorkloadIdentityInfo
 
         agent_config.identity.workload = WorkloadIdentityInfo(name=name, arn=arn, return_urls=return_urls)
 
@@ -808,16 +799,8 @@ def setup_aws_jwt(
         project_config = load_config(config_path)
         agent_config = project_config.get_agent_config()
 
-        # Initialize identity config if needed
-        if not hasattr(agent_config, "identity") or not agent_config.identity:
-            from ...utils.runtime.schema import IdentityConfig
-
-            agent_config.identity = IdentityConfig()
-
         # Initialize aws_jwt config if needed
         if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
-            from ...utils.runtime.schema import AwsJwtConfig
-
             agent_config.aws_jwt = AwsJwtConfig()
 
         # Update AWS JWT config
@@ -882,10 +865,6 @@ def list_aws_jwt():
 
     project_config = load_config(config_path)
     agent_config = project_config.get_agent_config()
-
-    if not hasattr(agent_config, "identity") or not agent_config.identity:
-        console.print("[yellow]No Identity configuration found.[/yellow]")
-        raise typer.Exit(0)
 
     if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
         console.print("[yellow]No AWS IAM JWT configuration found.[/yellow]")

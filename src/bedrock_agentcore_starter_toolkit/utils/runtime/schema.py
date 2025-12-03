@@ -98,7 +98,7 @@ class IdentityConfig(BaseModel):
 
     @property
     def is_enabled(self) -> bool:
-        """Check if Identity is enabled (has OAuth providers or AWS JWT configured)."""
+        """Check if Identity is enabled (has OAuth providers)."""
         return len(self.credential_providers) > 0
 
     @property
