@@ -60,22 +60,55 @@ class WorkloadIdentityInfo(BaseModel):
     )
 
 
+class AwsJwtConfig(BaseModel):
+    """AWS IAM JWT federation configuration for outbound authentication without secrets."""
+
+    enabled: bool = Field(default=False, description="Whether AWS IAM JWT federation is enabled for this account")
+    audiences: List[str] = Field(
+        default_factory=list, description="List of allowed audiences for STS:GetWebIdentityToken IAM policy"
+    )
+    signing_algorithm: str = Field(default="ES384", description="Default signing algorithm (ES384 or RS256)")
+    issuer_url: Optional[str] = Field(
+        default=None, description="Account's AWS STS issuer URL (populated after enabling federation)"
+    )
+    duration_seconds: int = Field(
+        default=300,
+        description="Default token duration in seconds (60-3600)",
+        ge=60,
+        le=3600,
+    )
+
+    @field_validator("signing_algorithm")
+    @classmethod
+    def validate_signing_algorithm(cls, v: str) -> str:
+        """Validate signing algorithm is supported."""
+        valid_algorithms = ["ES384", "RS256"]
+        if v.upper() not in valid_algorithms:
+            raise ValueError(f"Invalid signing_algorithm: {v}. Must be one of {valid_algorithms}")
+        return v.upper()
+
+
 class IdentityConfig(BaseModel):
     """Identity service configuration for outbound authentication."""
 
     credential_providers: List[CredentialProviderInfo] = Field(
-        default_factory=list, description="List of configured credential providers"
+        default_factory=list, description="List of configured OAuth2 credential providers"
     )
     workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
 
     @property
     def is_enabled(self) -> bool:
-        """Check if Identity is enabled (has providers configured)."""
+        """Check if Identity is enabled (has OAuth providers)."""
+        return len(self.credential_providers) > 0
+
+    @property
+    def has_oauth_providers(self) -> bool:
+        """Check if OAuth credential providers are configured."""
         return len(self.credential_providers) > 0
 
     @property
     def provider_names(self) -> List[str]:
-        """Get list of provider names."""
+        """Get list of OAuth provider names."""
         return [p.name for p in self.credential_providers]
 
 
@@ -249,6 +282,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     identity: IdentityConfig = Field(default_factory=IdentityConfig)
+    aws_jwt: AwsJwtConfig = Field(default_factory=AwsJwtConfig)
     authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
     request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
     oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")

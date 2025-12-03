@@ -1059,3 +1059,329 @@ class TestGetCognitoM2MToken:
 
             # Verify default region was used
             mock_boto3.assert_called_once_with("cognito-idp", region_name="us-west-2")
+
+
+class TestSetupAwsJwtFederation:
+    """Test setup_aws_jwt_federation function."""
+
+    def test_setup_federation_newly_enabled(self):
+        """Test enabling AWS JWT federation for the first time."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import setup_aws_jwt_federation
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            # First call to get_outbound_web_identity_federation_info raises (not enabled)
+            mock_iam.get_outbound_web_identity_federation_info.side_effect = ClientError(
+                {"Error": {"Code": "OutboundWebIdentityFederationDisabledException", "Message": "Not enabled"}},
+                "GetOutboundWebIdentityFederationInfo",
+            )
+
+            # Enable call returns issuer URL
+            mock_iam.enable_outbound_web_identity_federation.return_value = {
+                "IssuerIdentifier": "https://sts.us-west-2.amazonaws.com"
+            }
+
+            was_newly_enabled, issuer_url = setup_aws_jwt_federation("us-west-2")
+
+            assert was_newly_enabled is True
+            assert issuer_url == "https://sts.us-west-2.amazonaws.com"
+            mock_iam.enable_outbound_web_identity_federation.assert_called_once()
+
+    def test_setup_federation_already_enabled(self):
+        """Test when AWS JWT federation is already enabled."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import setup_aws_jwt_federation
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            # Already enabled
+            mock_iam.get_outbound_web_identity_federation_info.return_value = {
+                "IssuerIdentifier": "https://sts.us-west-2.amazonaws.com",
+                "JwtVendingEnabled": True,
+            }
+
+            was_newly_enabled, issuer_url = setup_aws_jwt_federation("us-west-2")
+
+            assert was_newly_enabled is False
+            assert issuer_url == "https://sts.us-west-2.amazonaws.com"
+            mock_iam.enable_outbound_web_identity_federation.assert_not_called()
+
+    def test_setup_federation_race_condition(self):
+        """Test handling race condition when another process enables federation."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import setup_aws_jwt_federation
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            # First check says not enabled
+            mock_iam.get_outbound_web_identity_federation_info.side_effect = [
+                ClientError(
+                    {"Error": {"Code": "FeatureDisabled", "Message": "Not enabled"}},
+                    "GetOutboundWebIdentityFederationInfo",
+                ),
+                # Second call (after race condition) returns enabled
+                {
+                    "IssuerIdentifier": "https://sts.us-west-2.amazonaws.com",
+                    "JwtVendingEnabled": True,
+                },
+            ]
+
+            # Enable call raises "already enabled" error - use FeatureEnabled code
+            mock_iam.enable_outbound_web_identity_federation.side_effect = ClientError(
+                {"Error": {"Code": "FeatureEnabled", "Message": "Federation already enabled"}},
+                "EnableOutboundWebIdentityFederation",
+            )
+
+            was_newly_enabled, issuer_url = setup_aws_jwt_federation("us-west-2")
+
+            assert was_newly_enabled is False
+            assert issuer_url == "https://sts.us-west-2.amazonaws.com"
+
+    def test_setup_federation_with_logger(self):
+        """Test setup_aws_jwt_federation with custom logger."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import setup_aws_jwt_federation
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+            mock_logger = Mock()
+
+            mock_iam.get_outbound_web_identity_federation_info.return_value = {
+                "IssuerIdentifier": "https://sts.us-west-2.amazonaws.com",
+                "JwtVendingEnabled": True,
+            }
+
+            setup_aws_jwt_federation("us-west-2", logger=mock_logger)
+
+            mock_logger.info.assert_called()
+
+
+class TestGetAwsJwtFederationInfo:
+    """Test get_aws_jwt_federation_info function."""
+
+    def test_get_federation_info_enabled(self):
+        """Test getting federation info when enabled."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import get_aws_jwt_federation_info
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            mock_iam.get_outbound_web_identity_federation_info.return_value = {
+                "IssuerIdentifier": "https://sts.us-west-2.amazonaws.com",
+                "JwtVendingEnabled": True,
+            }
+
+            result = get_aws_jwt_federation_info("us-west-2")
+
+            assert result is not None
+            assert result["issuer_url"] == "https://sts.us-west-2.amazonaws.com"
+            assert result["enabled"] is True
+
+    def test_get_federation_info_disabled(self):
+        """Test getting federation info when disabled."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import get_aws_jwt_federation_info
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            mock_iam.get_outbound_web_identity_federation_info.side_effect = ClientError(
+                {"Error": {"Code": "OutboundWebIdentityFederationDisabledException", "Message": "Not enabled"}},
+                "GetOutboundWebIdentityFederationInfo",
+            )
+
+            result = get_aws_jwt_federation_info("us-west-2")
+
+            assert result is None
+
+    def test_get_federation_info_error(self):
+        """Test getting federation info when API fails."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import get_aws_jwt_federation_info
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            mock_iam.get_outbound_web_identity_federation_info.side_effect = Exception("API Error")
+
+            result = get_aws_jwt_federation_info("us-west-2")
+
+            assert result is None
+
+
+class TestEnsureAwsJwtPermissions:
+    """Test ensure_aws_jwt_permissions function."""
+
+    def test_ensure_permissions_success(self):
+        """Test successfully adding AWS JWT permissions to IAM role."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            role_arn = "arn:aws:iam::123456789012:role/AgentCoreRole"
+            audiences = ["https://api1.example.com", "https://api2.example.com"]
+
+            ensure_aws_jwt_permissions(
+                role_arn=role_arn,
+                audiences=audiences,
+                region="us-west-2",
+                account_id="123456789012",
+                signing_algorithm="ES384",
+                max_duration_seconds=3600,
+            )
+
+            # Verify put_role_policy was called
+            mock_iam.put_role_policy.assert_called_once()
+            call_args = mock_iam.put_role_policy.call_args[1]
+
+            assert call_args["RoleName"] == "AgentCoreRole"
+            assert call_args["PolicyName"] == "AgentCoreAwsJwtAccess"
+
+            # Verify policy document
+            policy_doc = json.loads(call_args["PolicyDocument"])
+
+            # Check GetWebIdentityToken statement
+            get_token_stmt = next(s for s in policy_doc["Statement"] if s["Sid"] == "AllowGetWebIdentityToken")
+            assert get_token_stmt["Action"] == "sts:GetWebIdentityToken"
+            assert get_token_stmt["Resource"] == "*"
+            assert audiences == get_token_stmt["Condition"]["ForAnyValue:StringEquals"]["sts:IdentityTokenAudience"]
+            assert get_token_stmt["Condition"]["StringEquals"]["sts:SigningAlgorithm"] == "ES384"
+            assert get_token_stmt["Condition"]["NumericLessThanEquals"]["sts:DurationSeconds"] == 3600
+
+            # Check TagGetWebIdentityToken statement
+            tag_stmt = next(s for s in policy_doc["Statement"] if s["Sid"] == "AllowTagGetWebIdentityToken")
+            assert tag_stmt["Action"] == "sts:TagGetWebIdentityToken"
+
+    def test_ensure_permissions_empty_audiences(self):
+        """Test that empty audiences list skips permission setup."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+            mock_logger = Mock()
+
+            ensure_aws_jwt_permissions(
+                role_arn="arn:aws:iam::123456789012:role/AgentCoreRole",
+                audiences=[],  # Empty
+                region="us-west-2",
+                account_id="123456789012",
+                logger=mock_logger,
+            )
+
+            # Should not call put_role_policy
+            mock_iam.put_role_policy.assert_not_called()
+            mock_logger.warning.assert_called()
+
+    def test_ensure_permissions_with_rs256(self):
+        """Test permissions setup with RS256 algorithm."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            ensure_aws_jwt_permissions(
+                role_arn="arn:aws:iam::123456789012:role/AgentCoreRole",
+                audiences=["https://api.example.com"],
+                region="us-west-2",
+                account_id="123456789012",
+                signing_algorithm="RS256",
+            )
+
+            call_args = mock_iam.put_role_policy.call_args[1]
+            policy_doc = json.loads(call_args["PolicyDocument"])
+
+            get_token_stmt = next(s for s in policy_doc["Statement"] if s["Sid"] == "AllowGetWebIdentityToken")
+            assert get_token_stmt["Condition"]["StringEquals"]["sts:SigningAlgorithm"] == "RS256"
+
+    def test_ensure_permissions_with_logger(self):
+        """Test permissions setup with custom logger."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+            mock_logger = Mock()
+
+            ensure_aws_jwt_permissions(
+                role_arn="arn:aws:iam::123456789012:role/AgentCoreRole",
+                audiences=["https://api.example.com"],
+                region="us-west-2",
+                account_id="123456789012",
+                logger=mock_logger,
+            )
+
+            # Verify logger was used
+            assert mock_logger.info.call_count >= 1
+
+    def test_ensure_permissions_failure(self):
+        """Test error handling when IAM update fails."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_iam.put_role_policy.side_effect = ClientError(
+                {"Error": {"Code": "NoSuchEntity", "Message": "Role not found"}}, "PutRolePolicy"
+            )
+            mock_boto3.return_value = mock_iam
+
+            with pytest.raises(ClientError):
+                ensure_aws_jwt_permissions(
+                    role_arn="arn:aws:iam::123456789012:role/NonExistentRole",
+                    audiences=["https://api.example.com"],
+                    region="us-west-2",
+                    account_id="123456789012",
+                )
+
+    def test_ensure_permissions_single_audience(self):
+        """Test permissions setup with a single audience."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            ensure_aws_jwt_permissions(
+                role_arn="arn:aws:iam::123456789012:role/AgentCoreRole",
+                audiences=["https://single-api.example.com"],
+                region="us-west-2",
+                account_id="123456789012",
+            )
+
+            call_args = mock_iam.put_role_policy.call_args[1]
+            policy_doc = json.loads(call_args["PolicyDocument"])
+
+            get_token_stmt = next(s for s in policy_doc["Statement"] if s["Sid"] == "AllowGetWebIdentityToken")
+            assert get_token_stmt["Condition"]["ForAnyValue:StringEquals"]["sts:IdentityTokenAudience"] == [
+                "https://single-api.example.com"
+            ]
+
+    def test_ensure_permissions_custom_max_duration(self):
+        """Test permissions setup with custom max duration."""
+        from bedrock_agentcore_starter_toolkit.operations.identity.helpers import ensure_aws_jwt_permissions
+
+        with patch("bedrock_agentcore_starter_toolkit.operations.identity.helpers.boto3.client") as mock_boto3:
+            mock_iam = Mock()
+            mock_boto3.return_value = mock_iam
+
+            ensure_aws_jwt_permissions(
+                role_arn="arn:aws:iam::123456789012:role/AgentCoreRole",
+                audiences=["https://api.example.com"],
+                region="us-west-2",
+                account_id="123456789012",
+                max_duration_seconds=900,  # 15 minutes
+            )
+
+            call_args = mock_iam.put_role_policy.call_args[1]
+            policy_doc = json.loads(call_args["PolicyDocument"])
+
+            get_token_stmt = next(s for s in policy_doc["Statement"] if s["Sid"] == "AllowGetWebIdentityToken")
+            assert get_token_stmt["Condition"]["NumericLessThanEquals"]["sts:DurationSeconds"] == 900

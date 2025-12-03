@@ -22,7 +22,7 @@ from ...utils.runtime.create_with_iam_eventual_consistency import retry_create_w
 from ...utils.runtime.entrypoint import build_entrypoint_array
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
-from ..identity.helpers import ensure_identity_permissions
+from ..identity.helpers import ensure_aws_jwt_permissions, ensure_identity_permissions
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
@@ -217,6 +217,53 @@ def _ensure_identity_permissions(
     except Exception as e:
         log.error("Failed to add Identity permissions: %s", str(e))
         log.warning("You may need to manually add Identity permissions to your execution role")
+
+
+def _ensure_aws_jwt_permissions(
+    agent_config: BedrockAgentCoreAgentSchema,
+    region: str,
+    account_id: str,
+    console: Optional[Console] = None,
+) -> None:
+    """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
+    # Check if AWS JWT is configured
+    if not agent_config.aws_jwt or not agent_config.aws_jwt.enabled or not agent_config.aws_jwt.audiences:
+        log.info("No AWS IAM JWT configuration found, skipping AWS JWT permissions")
+        return
+
+    aws_jwt_config = agent_config.aws_jwt
+
+    if not agent_config.aws.execution_role:
+        log.warning("No execution role configured, cannot add AWS IAM JWT permissions")
+        return
+
+    log.info(
+        "Adding AWS IAM JWT permissions for %d audience(s)...",
+        len(aws_jwt_config.audiences),
+    )
+
+    try:
+        ensure_aws_jwt_permissions(
+            role_arn=agent_config.aws.execution_role,
+            audiences=aws_jwt_config.audiences,
+            region=region,
+            account_id=account_id,
+            signing_algorithm=aws_jwt_config.signing_algorithm,
+            max_duration_seconds=aws_jwt_config.duration_seconds,
+            logger=log,
+        )
+
+        log.info("✅ AWS IAM JWT permissions configured for role")
+        log.info("   - STS:GetWebIdentityToken")
+        log.info("   - Audiences: %s", ", ".join(aws_jwt_config.audiences))
+
+        if console:
+            console.print("✅ AWS IAM JWT permissions added automatically")
+            console.print(f"   Audiences: {', '.join(aws_jwt_config.audiences)}")
+
+    except Exception as e:
+        log.error("Failed to add AWS IAM JWT permissions: %s", str(e))
+        log.warning("You may need to manually add STS:GetWebIdentityToken permissions to your execution role")
 
 
 def _validate_execution_role(role_arn: str, session: boto3.Session) -> bool:
@@ -887,6 +934,12 @@ def launch_bedrock_agentcore(
 
         # Still add Identity permissions to execution role (for backward compatibility)
         _ensure_identity_permissions(agent_config, region, account_id, console)
+        _ensure_aws_jwt_permissions(
+            agent_config=agent_config,
+            region=region,
+            account_id=account_id,
+            console=console,
+        )
 
     # Step 3: Push to ECR
     log.info("Uploading to ECR...")
@@ -972,6 +1025,10 @@ def _execute_codebuild_workflow(
             if agent_config.identity and agent_config.identity.is_enabled:
                 log.info("🔍 DEBUG: Adding Identity permissions in CodeBuild flow...")
                 _ensure_identity_permissions(agent_config, region, account_id, None)
+
+            if agent_config.aws_jwt and agent_config.aws_jwt.enabled and agent_config.aws_jwt.audiences:
+                log.info("🔍 DEBUG: Adding AWS IAM JWT permissions in CodeBuild flow...")
+                _ensure_aws_jwt_permissions(agent_config, region, account_id, None)
 
         # Prepare CodeBuild
         log.info("Preparing CodeBuild project and uploading source...")

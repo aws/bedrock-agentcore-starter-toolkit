@@ -217,6 +217,12 @@
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
       ]
+    },
+    {
+      "Sid": "AwsJwtFederation",
+      "Effect": "Allow",
+      "Action": "sts:GetWebIdentityToken",
+      "Resource": "*"
     }
   ]
 }

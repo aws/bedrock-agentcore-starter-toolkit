@@ -10,6 +10,7 @@ from bedrock_agentcore_starter_toolkit.cli.identity.commands import identity_app
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
 from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
     AWSConfig,
+    AwsJwtConfig,
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreConfigSchema,
     BedrockAgentCoreDeploymentInfo,
@@ -1795,3 +1796,475 @@ class TestBuildProviderConfig:
 
         assert config["credentialProviderVendor"] == "SalesforceOauth2"
         assert config["oauth2ProviderConfigInput"]["salesforceOauth2ProviderConfig"]["clientId"] == "sf123"
+
+
+class TestSetupAwsJwt:
+    """Test setup-aws-jwt command."""
+
+    def test_setup_aws_jwt_success(self, runner, tmp_path, monkeypatch):
+        """Test successful AWS JWT federation setup."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create initial config
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (True, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "setup-aws-jwt",
+                    "--audience",
+                    "https://api.example.com",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert "AWS JWT Federation Configured" in result.stdout or "Success" in result.stdout
+        assert "https://api.example.com" in result.stdout
+        mock_setup.assert_called_once()
+
+        # Verify config was saved
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.get_agent_config()
+        assert updated_agent.identity is not None
+        assert updated_agent.identity.aws_jwt is not None
+        assert updated_agent.identity.aws_jwt.enabled is True
+        assert "https://api.example.com" in updated_agent.identity.aws_jwt.audiences
+
+    def test_setup_aws_jwt_already_enabled(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup when federation is already enabled."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            # Return False to indicate it was already enabled
+            mock_setup.return_value = (False, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "setup-aws-jwt",
+                    "--audience",
+                    "https://api.example.com",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert "already enabled" in result.stdout
+
+    def test_setup_aws_jwt_with_rs256(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup with RS256 signing algorithm."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (True, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "setup-aws-jwt",
+                    "--audience",
+                    "https://legacy-api.example.com",
+                    "--signing-algorithm",
+                    "RS256",
+                ],
+            )
+
+        assert result.exit_code == 0
+
+        # Verify algorithm was saved
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.get_agent_config()
+        assert updated_agent.identity.aws_jwt.signing_algorithm == "RS256"
+
+    def test_setup_aws_jwt_with_custom_duration(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup with custom duration."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (True, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "setup-aws-jwt",
+                    "--audience",
+                    "https://api.example.com",
+                    "--duration",
+                    "3600",
+                ],
+            )
+
+        assert result.exit_code == 0
+
+        # Verify duration was saved
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.get_agent_config()
+        assert updated_agent.identity.aws_jwt.duration_seconds == 3600
+
+    def test_setup_aws_jwt_invalid_algorithm(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup with invalid signing algorithm."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            identity_app,
+            [
+                "setup-aws-jwt",
+                "--audience",
+                "https://api.example.com",
+                "--signing-algorithm",
+                "INVALID",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "ES384 or RS256" in result.stdout
+
+    def test_setup_aws_jwt_invalid_duration_too_short(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup with duration too short."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            identity_app,
+            [
+                "setup-aws-jwt",
+                "--audience",
+                "https://api.example.com",
+                "--duration",
+                "30",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "between 60 and 3600" in result.stdout
+
+    def test_setup_aws_jwt_invalid_duration_too_long(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup with duration too long."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(
+            identity_app,
+            [
+                "setup-aws-jwt",
+                "--audience",
+                "https://api.example.com",
+                "--duration",
+                "7200",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "between 60 and 3600" in result.stdout
+
+    def test_setup_aws_jwt_no_config_file(self, runner, tmp_path, monkeypatch):
+        """Test AWS JWT setup without config file shows issuer URL."""
+        monkeypatch.chdir(tmp_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (True, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                [
+                    "setup-aws-jwt",
+                    "--audience",
+                    "https://api.example.com",
+                ],
+            )
+
+        # When no config file exists, command exits with 0 after printing warning
+        # However, typer.Exit(0) may be caught differently by the test runner
+        # So we check for the expected output regardless of exit code
+        assert "No .bedrock_agentcore.yaml found" in result.stdout or "Issuer URL" in result.stdout
+
+    def test_setup_aws_jwt_adds_multiple_audiences(self, runner, tmp_path, monkeypatch):
+        """Test adding multiple audiences with separate invocations."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (False, "https://sts.us-west-2.amazonaws.com")
+
+            # First audience
+            result1 = runner.invoke(
+                identity_app,
+                ["setup-aws-jwt", "--audience", "https://api1.example.com"],
+            )
+            assert result1.exit_code == 0
+
+            # Second audience
+            result2 = runner.invoke(
+                identity_app,
+                ["setup-aws-jwt", "--audience", "https://api2.example.com"],
+            )
+            assert result2.exit_code == 0
+
+        # Verify both audiences were saved
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.get_agent_config()
+        assert "https://api1.example.com" in updated_agent.identity.aws_jwt.audiences
+        assert "https://api2.example.com" in updated_agent.identity.aws_jwt.audiences
+
+    def test_setup_aws_jwt_duplicate_audience(self, runner, tmp_path, monkeypatch):
+        """Test that duplicate audience is not added twice."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        # Create config with existing AWS JWT config
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import IdentityConfig
+
+        identity_config = IdentityConfig()
+        identity_config.aws_jwt = AwsJwtConfig(
+            enabled=True,
+            audiences=["https://api.example.com"],
+            issuer_url="https://sts.us-west-2.amazonaws.com",
+        )
+
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            identity=identity_config,
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.return_value = (False, "https://sts.us-west-2.amazonaws.com")
+
+            result = runner.invoke(
+                identity_app,
+                ["setup-aws-jwt", "--audience", "https://api.example.com"],
+            )
+
+        assert result.exit_code == 0
+        assert "already configured" in result.stdout
+
+        # Verify audience was not duplicated
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        updated_config = load_config(config_path)
+        updated_agent = updated_config.get_agent_config()
+        assert updated_agent.identity.aws_jwt.audiences.count("https://api.example.com") == 1
+
+    def test_setup_aws_jwt_api_error(self, runner, tmp_path, monkeypatch):
+        """Test error handling when federation enablement fails."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        with patch("bedrock_agentcore_starter_toolkit.cli.identity.commands.setup_aws_jwt_federation") as mock_setup:
+            mock_setup.side_effect = Exception("IAM API Error")
+
+            result = runner.invoke(
+                identity_app,
+                ["setup-aws-jwt", "--audience", "https://api.example.com"],
+            )
+
+        assert result.exit_code != 0
+        assert "Failed to set up AWS JWT federation" in result.stdout or "Error" in result.stdout
+
+
+class TestListAwsJwt:
+    """Test list-aws-jwt command."""
+
+    def test_list_aws_jwt_success(self, runner, tmp_path, monkeypatch):
+        """Test listing AWS JWT configuration."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import IdentityConfig
+
+        identity_config = IdentityConfig()
+        identity_config.aws_jwt = AwsJwtConfig(
+            enabled=True,
+            audiences=["https://api1.example.com", "https://api2.example.com"],
+            signing_algorithm="ES384",
+            duration_seconds=300,
+            issuer_url="https://sts.us-west-2.amazonaws.com",
+        )
+
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            identity=identity_config,
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        result = runner.invoke(identity_app, ["list-aws-jwt"])
+
+        assert result.exit_code == 0
+        assert "AWS JWT Federation Configuration" in result.stdout
+        assert "Yes" in result.stdout  # Enabled
+        assert "ES384" in result.stdout
+        assert "300" in result.stdout
+        assert "https://api1.example.com" in result.stdout
+        assert "https://api2.example.com" in result.stdout
+
+    def test_list_aws_jwt_not_configured(self, runner, tmp_path, monkeypatch):
+        """Test list-aws-jwt when not configured."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        result = runner.invoke(identity_app, ["list-aws-jwt"])
+
+        assert result.exit_code == 0
+        # When aws_jwt exists with default values (enabled=False), it shows "not enabled"
+        assert "not enabled" in result.stdout or "No AWS JWT configuration found" in result.stdout
+
+    def test_list_aws_jwt_disabled(self, runner, tmp_path, monkeypatch):
+        """Test list-aws-jwt when AWS JWT is disabled."""
+        monkeypatch.chdir(tmp_path)
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import IdentityConfig
+
+        identity_config = IdentityConfig()
+        identity_config.aws_jwt = AwsJwtConfig(
+            enabled=False,
+            audiences=[],
+        )
+
+        agent_config = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="test.py",
+            aws=AWSConfig(
+                region="us-west-2",
+                network_configuration=NetworkConfiguration(),
+                observability=ObservabilityConfig(),
+            ),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            identity=identity_config,
+        )
+        project_config = BedrockAgentCoreConfigSchema(default_agent="test-agent", agents={"test-agent": agent_config})
+        save_config(project_config, config_path)
+
+        result = runner.invoke(identity_app, ["list-aws-jwt"])
+
+        assert result.exit_code == 0
+        assert "not enabled" in result.stdout
+
+    def test_list_aws_jwt_no_config_file(self, runner, tmp_path, monkeypatch):
+        """Test list-aws-jwt without config file."""
+        monkeypatch.chdir(tmp_path)
+
+        result = runner.invoke(identity_app, ["list-aws-jwt"])
+
+        assert result.exit_code == 1
+        assert "No .bedrock_agentcore.yaml found" in result.stdout

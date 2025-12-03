@@ -15,10 +15,12 @@ from ...operations.identity.helpers import (
     IdentityCognitoManager,
     get_cognito_access_token,
     get_cognito_m2m_token,
+    setup_aws_jwt_federation,
     update_cognito_callback_urls,
 )
 from ...utils.aws import get_region
 from ...utils.runtime.config import load_config, save_config
+from ...utils.runtime.schema import AwsJwtConfig, CredentialProviderInfo, IdentityConfig, WorkloadIdentityInfo
 from ..common import _handle_error, _handle_warn, _print_success, console
 
 # Identity CLI app
@@ -409,7 +411,9 @@ def list_credential_providers():
     try:
         config_path = Path.cwd() / ".bedrock_agentcore.yaml"
         if not config_path.exists():
-            console.print("[yellow]No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]")
+            console.print(
+                "[yellow]Warning: No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]"
+            )
             raise typer.Exit(1)
 
         project_config = load_config(config_path)
@@ -528,12 +532,7 @@ def _save_provider_config(name: str, arn: str, provider_type: str, callback_url:
 
         # Initialize identity config if not present
         if not hasattr(agent_config, "identity") or not agent_config.identity:
-            from ...utils.runtime.schema import IdentityConfig
-
             agent_config.identity = IdentityConfig()
-
-        # Add provider
-        from ...utils.runtime.schema import CredentialProviderInfo
 
         agent_config.identity.credential_providers.append(
             CredentialProviderInfo(name=name, arn=arn, type=provider_type, callback_url=callback_url)
@@ -555,12 +554,7 @@ def _save_workload_config(name: str, arn: str, return_urls: List[str]):
 
         # Initialize identity config if not present
         if not hasattr(agent_config, "identity") or not agent_config.identity:
-            from ...utils.runtime.schema import IdentityConfig
-
             agent_config.identity = IdentityConfig()
-
-        # Set workload info
-        from ...utils.runtime.schema import WorkloadIdentityInfo
 
         agent_config.identity.workload = WorkloadIdentityInfo(name=name, arn=arn, return_urls=return_urls)
 
@@ -708,6 +702,192 @@ def setup_cognito(
     syntax = Syntax(load_cmd, "bash", theme="monokai", line_numbers=False)
     console.print(syntax)
     console.print()
+
+
+@identity_app.command("setup-aws-jwt")
+def setup_aws_jwt(
+    audience: str = typer.Option(
+        ..., "--audience", "-a", help="Audience URL for the JWT (the external service that will validate the token)"
+    ),
+    signing_algorithm: str = typer.Option(
+        "ES384",
+        "--signing-algorithm",
+        "-s",
+        help="Signing algorithm: ES384 (default) or RS256",
+    ),
+    duration_seconds: int = typer.Option(300, "--duration", "-d", help="Default token duration in seconds (60-3600)"),
+    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+):
+    """Set up AWS IAM JWT federation for M2M authentication without secrets.
+
+    AWS IAM JWT federation allows your agent to obtain signed JWTs from AWS STS
+    that can be used to authenticate with external services. Unlike OAuth,
+    this requires NO client secrets - the JWT is signed by AWS.
+
+    This command:
+    1. Enables AWS IAM Outbound Web Identity Federation (if not already enabled)
+    2. Stores the audience configuration for IAM policy generation
+    3. Displays the issuer URL to configure in your external service
+
+    Run multiple times with different --audience values to add more audiences.
+
+    Examples:
+        # Set up AWS IAM JWT for an external API
+        agentcore identity setup-aws-jwt --audience https://api.example.com
+
+        # Add another audience (idempotent)
+        agentcore identity setup-aws-jwt --audience https://api2.example.com
+
+        # Use RS256 algorithm for compatibility
+        agentcore identity setup-aws-jwt --audience https://legacy-api.example.com --signing-algorithm RS256
+    """
+    from pathlib import Path
+
+    # Validate inputs
+    if signing_algorithm.upper() not in ["ES384", "RS256"]:
+        console.print("[red]Error: --signing-algorithm must be ES384 or RS256[/red]")
+        raise typer.Exit(1)
+
+    if not (60 <= duration_seconds <= 3600):
+        console.print("[red]Error: --duration must be between 60 and 3600 seconds[/red]")
+        raise typer.Exit(1)
+
+    # Determine region - FIXED: throw exception instead of defaulting to us-west-2
+    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+    if not region:
+        if config_path.exists():
+            project_config = load_config(config_path)
+            if project_config.agents:
+                first_agent = list(project_config.agents.values())[0]
+                region = first_agent.aws.region
+
+        if not region:
+            import boto3
+
+            session = boto3.Session()
+            region = session.region_name
+
+        if not region:
+            console.print(
+                "[red]Error: No AWS region configured.[/red]\n"
+                "Please specify --region or configure your AWS CLI default region:\n"
+                "  aws configure set region us-west-2"
+            )
+            raise typer.Exit(1)
+
+    console.print(f"\n[bold]Setting up AWS IAM JWT federation in region:[/bold] {region}\n")
+
+    try:
+        # Step 1: Enable federation (idempotent)
+        console.print("[cyan]Checking/enabling AWS IAM Outbound Web Identity Federation...[/cyan]")
+        was_newly_enabled, issuer_url = setup_aws_jwt_federation(region)
+
+        if was_newly_enabled:
+            console.print("[green]✓ AWS IAM JWT federation enabled for your account[/green]")
+        else:
+            console.print("[green]✓ AWS IAM JWT federation already enabled[/green]")
+
+        # Step 2: Update config
+        if not config_path.exists():
+            console.print(
+                "[yellow]Warning: No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]"
+            )
+            console.print(f"\n[bold]Issuer URL:[/bold] {issuer_url}")
+            console.print("[dim]Configure this URL as a trusted identity provider in your external service.[/dim]")
+            raise typer.Exit(0)
+
+        project_config = load_config(config_path)
+        agent_config = project_config.get_agent_config()
+
+        # Initialize aws_jwt config if needed
+        if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
+            agent_config.aws_jwt = AwsJwtConfig()
+
+        # Update AWS JWT config
+        aws_jwt_config = agent_config.aws_jwt
+        aws_jwt_config.enabled = True
+        aws_jwt_config.issuer_url = issuer_url
+        aws_jwt_config.signing_algorithm = signing_algorithm.upper()
+        aws_jwt_config.duration_seconds = duration_seconds
+
+        # Add audience if not already present
+        if audience not in aws_jwt_config.audiences:
+            aws_jwt_config.audiences.append(audience)
+            console.print(f"[green]✓ Added audience: {audience}[/green]")
+        else:
+            console.print(f"[yellow]Audience already configured: {audience}[/yellow]")
+
+        # Save config
+        project_config.agents[agent_config.name] = agent_config
+        save_config(project_config, config_path)
+
+        # Display success
+        console.print()
+        console.print(
+            Panel(
+                f"[bold]AWS IAM JWT Federation Configured[/bold]\n\n"
+                f"Issuer URL: [cyan]{issuer_url}[/cyan]\n"
+                f"Audiences: [cyan]{', '.join(aws_jwt_config.audiences)}[/cyan]\n"
+                f"Algorithm: [cyan]{aws_jwt_config.signing_algorithm}[/cyan]\n"
+                f"Duration: [cyan]{aws_jwt_config.duration_seconds}s[/cyan]\n\n"
+                f"[bold]Next Steps:[/bold]\n"
+                f"1. Configure your external service to trust this issuer URL\n"
+                f"2. Run [cyan]agentcore launch[/cyan] to deploy (IAM permissions auto-added)\n"
+                f"3. Use [cyan]@requires_iam_access_token(audience=[...])[/cyan] in your agent",
+                title="✅ Success",
+                border_style="green",
+            )
+        )
+
+        # Show external service configuration guidance
+        console.print()
+        console.print("[bold yellow]⚠️  External Service Configuration Required[/bold yellow]")
+        console.print()
+        console.print("Your external service must be configured to:")
+        console.print(f"  1. Trust issuer: [cyan]{issuer_url}[/cyan]")
+        console.print(f"  2. Validate audience: [cyan]{audience}[/cyan]")
+        console.print(f"  3. Fetch JWKS from: [cyan]{issuer_url}/.well-known/jwks.json[/cyan]")
+        console.print()
+
+    except Exception as e:
+        _handle_error(f"Failed to set up AWS IAM JWT federation: {str(e)}", e)
+
+
+@identity_app.command("list-aws-jwt")
+def list_aws_jwt():
+    """List AWS IAM JWT federation configuration."""
+    from pathlib import Path
+
+    config_path = Path.cwd() / ".bedrock_agentcore.yaml"
+    if not config_path.exists():
+        console.print("[yellow]Warning: No .bedrock_agentcore.yaml found. Run 'agentcore configure' first.[/yellow]")
+        raise typer.Exit(1)
+
+    project_config = load_config(config_path)
+    agent_config = project_config.get_agent_config()
+
+    if not hasattr(agent_config, "aws_jwt") or not agent_config.aws_jwt:
+        console.print("[yellow]No AWS IAM JWT configuration found.[/yellow]")
+        console.print("Run [cyan]agentcore identity setup-aws-jwt --audience <url>[/cyan] to configure.")
+        raise typer.Exit(0)
+
+    aws_jwt = agent_config.aws_jwt
+
+    if not aws_jwt.enabled:
+        console.print("[yellow]AWS IAM JWT federation is not enabled.[/yellow]")
+        raise typer.Exit(0)
+
+    table = Table(title="AWS IAM JWT Federation Configuration")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="white")
+
+    table.add_row("Enabled", "✅ Yes" if aws_jwt.enabled else "❌ No")
+    table.add_row("Issuer URL", aws_jwt.issuer_url or "N/A")
+    table.add_row("Signing Algorithm", aws_jwt.signing_algorithm)
+    table.add_row("Duration (seconds)", str(aws_jwt.duration_seconds))
+    table.add_row("Audiences", "\n".join(aws_jwt.audiences) if aws_jwt.audiences else "None")
+
+    console.print(table)
 
 
 @identity_app.command("cleanup")

@@ -350,7 +350,104 @@ Options:
 
 ## Identity Commands
 
-Manage AgentCore Identity resources for OAuth authentication and external service access.
+Manage AgentCore Identity resources for authentication with external services.
+
+AgentCore supports two authentication methods for agents to access external services:
+
+| Method | Use Case | Secrets Required |
+|--------|----------|------------------|
+| **OAuth 2.0** | User-delegated access (USER_FEDERATION) or M2M with OAuth providers | Yes (client secret) |
+| **AWS JWT** | M2M with services that accept OIDC tokens | No |
+
+### Setup AWS JWT
+
+Enable AWS IAM Outbound Web Identity Federation for secretless M2M authentication.
+
+```bash
+agentcore identity setup-aws-jwt [OPTIONS]
+```
+
+Options:
+
+- `--audience, -a TEXT`: Audience URL for the JWT - the external service that will validate the token (required)
+- `--signing-algorithm, -s TEXT`: Signing algorithm: ES384 (recommended) or RS256 (default: ES384)
+- `--duration, -d INTEGER`: Default token duration in seconds, 60-3600 (default: 300)
+- `--region, -r TEXT`: AWS region (defaults to configured region)
+
+**What it does:**
+
+1. Enables AWS IAM Outbound Web Identity Federation for your account (one-time, idempotent)
+2. Stores the audience configuration in `.bedrock_agentcore.yaml`
+3. Returns the issuer URL to configure in your external service
+
+**Examples:**
+
+```bash
+# Set up AWS JWT for an external API
+agentcore identity setup-aws-jwt --audience https://api.example.com
+
+# Add another audience (run command again)
+agentcore identity setup-aws-jwt --audience https://api2.example.com
+
+# Use RS256 algorithm for compatibility with legacy services
+agentcore identity setup-aws-jwt --audience https://legacy-api.example.com --signing-algorithm RS256
+
+# Custom token duration (10 minutes)
+agentcore identity setup-aws-jwt --audience https://api.example.com --duration 600
+```
+
+**Output:**
+
+```
+╭─────────────────────────────────────────────────────────────────╮
+│ ✅ Success                                                       │
+│                                                                  │
+│ AWS JWT Federation Configured                                    │
+│                                                                  │
+│ Issuer URL: https://abc123-def456.tokens.sts.global.api.aws     │
+│ Audiences: https://api.example.com                               │
+│ Algorithm: ES384                                                 │
+│ Duration: 300s                                                   │
+│                                                                  │
+│ Next Steps:                                                      │
+│ 1. Configure your external service to trust this issuer URL      │
+│ 2. Run agentcore launch to deploy (IAM permissions auto-added)   │
+│ 3. Use @requires_iam_access_token(audience=[...]) in your agent  │
+╰─────────────────────────────────────────────────────────────────╯
+```
+
+**External Service Configuration:**
+
+After running this command, configure your external service to:
+
+1. Trust the issuer URL displayed in the output
+2. Validate the audience claim matches your configured audience
+3. Fetch the JWKS from `{issuer_url}/.well-known/jwks.json`
+
+### List AWS JWT
+
+Display the current AWS JWT federation configuration.
+
+```bash
+agentcore identity list-aws-jwt
+```
+
+**Example Output:**
+
+```
+╭──────────────────────────────────────────────────────────────────╮
+│ AWS JWT Federation Configuration                                  │
+├─────────────────────┬────────────────────────────────────────────┤
+│ Property            │ Value                                      │
+├─────────────────────┼────────────────────────────────────────────┤
+│ Enabled             │ ✅ Yes                                      │
+│ Issuer URL          │ https://abc123-def456.tokens.sts.global... │
+│ Signing Algorithm   │ ES384                                      │
+│ Duration (seconds)  │ 300                                        │
+│ Audiences           │ https://api.example.com                    │
+│                     │ https://api2.example.com                   │
+╰─────────────────────┴────────────────────────────────────────────╯
+```
 
 ### Setup Cognito
 
@@ -580,7 +677,56 @@ agentcore identity cleanup --agent my-agent --force
 
 ## Identity Example Usage
 
-### Complete Identity Setup Workflow
+### AWS JWT Federation Workflow
+
+For M2M authentication with external services that support OIDC tokens (no secrets required):
+
+```bash
+# 1. Configure agent
+agentcore configure --entrypoint agent.py --name my-agent --disable-memory
+
+# 2. Set up AWS JWT federation
+agentcore identity setup-aws-jwt --audience https://api.example.com
+
+# 3. Deploy agent (IAM permissions added automatically)
+agentcore launch
+
+# 4. Invoke agent
+agentcore invoke '{"prompt": "Call the external API"}'
+```
+
+**Agent Code:**
+
+```python
+from strands import Agent, tool
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from bedrock_agentcore.identity.auth import requires_iam_access_token
+
+app = BedrockAgentCoreApp()
+
+@tool
+@requires_iam_access_token(
+    audience=["https://api.example.com"],
+)
+def call_external_api(query: str, *, access_token: str) -> str:
+    """Call external API with AWS IAM JWT authentication."""
+    import requests
+    response = requests.get(
+        "https://api.example.com/data",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"q": query},
+    )
+    return response.text
+
+@app.entrypoint
+async def invoke(payload, context):
+    agent = Agent(model="us.anthropic.claude-sonnet-4-5-20250929-v1:0", tools=[call_external_api])
+    response = await agent.invoke_async(payload.get("prompt", ""))
+    return {"response": str(response.message)}
+```
+
+
+### OAuth Identity Setup Workflow
 
 ```bash
 # 1. Create Cognito pools
