@@ -264,16 +264,12 @@ The SDK exposes the underlying Starlette request object via `context.request`, e
 ```python
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from bedrock_agentcore import BedrockAgentCoreApp
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        auth = request.headers.get('Authorization', '')
-        if auth.startswith('Bearer '):
-            request.state.user_id = 'user_123'
-            request.state.authenticated = True
-        else:
-            request.state.authenticated = False
+        # Add custom data to request state
+        request.state.authenticated = True
+        request.state.user_id = "user-123"
         return await call_next(request)
 
 app = BedrockAgentCoreApp(
@@ -375,7 +371,7 @@ See the [Async Processing Guide](async.md) for detailed examples and testing str
 
 ## Invoking WebSocket Agents
 
-After deploying a WebSocket agent, you can connect to it programmatically using the `AgentRuntimeClient`. There is currently no CLI support for WebSocket connections.
+After deploying a WebSocket agent, you can connect to it programmatically using the `AgentCoreRuntimeClient`. There is currently no CLI support for WebSocket connections.
 
 ### Client Connection Methods
 
@@ -383,7 +379,7 @@ The SDK provides three authentication methods for WebSocket connections:
 
 **1. SigV4 Signed Headers (AWS Credentials):**
 ```python
-from bedrock_agentcore.runtime import AgentRuntimeClient
+from bedrock_agentcore.runtime import AgentCoreRuntimeClient
 import websockets
 import asyncio
 import os
@@ -394,7 +390,7 @@ async def main():
         raise ValueError("AGENT_ARN environment variable is required")
 
     # Initialize client
-    client = AgentRuntimeClient(region="us-west-2")
+    client = AgentCoreRuntimeClient(region="us-west-2")
 
     # Generate WebSocket connection with SigV4 authentication
     ws_url, headers = client.generate_ws_connection(
@@ -413,11 +409,11 @@ if __name__ == "__main__":
 
 **2. Presigned URL (Frontend/Browser Compatible):**
 ```python
-from bedrock_agentcore.runtime import AgentRuntimeClient
+from bedrock_agentcore.runtime import AgentCoreRuntimeClient
 import os
 
 runtime_arn = os.getenv('AGENT_ARN')
-client = AgentRuntimeClient(region="us-west-2")
+client = AgentCoreRuntimeClient(region="us-west-2")
 
 # Generate presigned URL (max 300 seconds expiry)
 presigned_url = client.generate_presigned_url(
@@ -431,7 +427,7 @@ print(presigned_url)
 
 **3. OAuth Bearer Token:**
 ```python
-from bedrock_agentcore.runtime import AgentRuntimeClient
+from bedrock_agentcore.runtime import AgentCoreRuntimeClient
 import websockets
 import asyncio
 import os
@@ -440,7 +436,7 @@ async def main():
     runtime_arn = os.getenv('AGENT_ARN')
     bearer_token = os.getenv('BEARER_TOKEN')
 
-    client = AgentRuntimeClient(region="us-west-2")
+    client = AgentCoreRuntimeClient(region="us-west-2")
 
     # Generate WebSocket connection with OAuth
     ws_url, headers = client.generate_ws_connection_oauth(
