@@ -2511,6 +2511,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#setup-aws-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup AWS JWT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-aws-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List AWS JWT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-cognito" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2583,10 +2605,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#complete-identity-setup-workflow" class="md-nav__link">
+  <a href="#aws-jwt-federation-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Complete Identity Setup Workflow
+        AWS JWT Federation Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oauth-identity-setup-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OAuth Identity Setup Workflow
       
     </span>
   </a>
@@ -3260,6 +3293,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#setup-aws-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup AWS JWT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-aws-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List AWS JWT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#setup-cognito" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3332,10 +3387,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#complete-identity-setup-workflow" class="md-nav__link">
+  <a href="#aws-jwt-federation-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Complete Identity Setup Workflow
+        AWS JWT Federation Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oauth-identity-setup-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OAuth Identity Setup Workflow
       
     </span>
   </a>
@@ -4232,7 +4298,101 @@ agentcore<span class="w"> </span>stop-session<span class="w"> </span>--agent<spa
 </li>
 </ul>
 <h2 id="identity-commands">Identity Commands<a class="headerlink" href="#identity-commands" title="Permanent link">&para;</a></h2>
-<p>Manage AgentCore Identity resources for OAuth authentication and external service access.</p>
+<p>Manage AgentCore Identity resources for authentication with external services.</p>
+<p>AgentCore supports two authentication methods for agents to access external services:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Use Case</th>
+<th>Secrets Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OAuth 2.0</strong></td>
+<td>User-delegated access (USER_FEDERATION) or M2M with OAuth providers</td>
+<td>Yes (client secret)</td>
+</tr>
+<tr>
+<td><strong>AWS JWT</strong></td>
+<td>M2M with services that accept OIDC tokens</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="setup-aws-jwt">Setup AWS JWT<a class="headerlink" href="#setup-aws-jwt" title="Permanent link">&para;</a></h3>
+<p>Enable AWS IAM Outbound Web Identity Federation for secretless M2M authentication.</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</code></pre></div>
+<p>Options:</p>
+<ul>
+<li><code>--audience, -a TEXT</code>: Audience URL for the JWT - the external service that will validate the token (required)</li>
+<li><code>--signing-algorithm, -s TEXT</code>: Signing algorithm: ES384 (recommended) or RS256 (default: ES384)</li>
+<li><code>--duration, -d INTEGER</code>: Default token duration in seconds, 60-3600 (default: 300)</li>
+<li><code>--region, -r TEXT</code>: AWS region (defaults to configured region)</li>
+</ul>
+<p><strong>What it does:</strong></p>
+<ol>
+<li>Enables AWS IAM Outbound Web Identity Federation for your account (one-time, idempotent)</li>
+<li>Stores the audience configuration in <code>.bedrock_agentcore.yaml</code></li>
+<li>Returns the issuer URL to configure in your external service</li>
+</ol>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Set up AWS JWT for an external API</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span>--audience<span class="w"> </span>https://api.example.com
+
+<span class="c1"># Add another audience (run command again)</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span>--audience<span class="w"> </span>https://api2.example.com
+
+<span class="c1"># Use RS256 algorithm for compatibility with legacy services</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span>--audience<span class="w"> </span>https://legacy-api.example.com<span class="w"> </span>--signing-algorithm<span class="w"> </span>RS256
+
+<span class="c1"># Custom token duration (10 minutes)</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span>--audience<span class="w"> </span>https://api.example.com<span class="w"> </span>--duration<span class="w"> </span><span class="m">600</span>
+</code></pre></div>
+<p><strong>Output:</strong></p>
+<div class="highlight"><pre><span></span><code>╭─────────────────────────────────────────────────────────────────╮
+│ ✅ Success                                                       │
+│                                                                  │
+│ AWS JWT Federation Configured                                    │
+│                                                                  │
+│ Issuer URL: https://abc123-def456.tokens.sts.global.api.aws     │
+│ Audiences: https://api.example.com                               │
+│ Algorithm: ES384                                                 │
+│ Duration: 300s                                                   │
+│                                                                  │
+│ Next Steps:                                                      │
+│ 1. Configure your external service to trust this issuer URL      │
+│ 2. Run agentcore launch to deploy (IAM permissions auto-added)   │
+│ 3. Use @requires_iam_access_token(audience=[...]) in your agent  │
+╰─────────────────────────────────────────────────────────────────╯
+</code></pre></div>
+<p><strong>External Service Configuration:</strong></p>
+<p>After running this command, configure your external service to:</p>
+<ol>
+<li>Trust the issuer URL displayed in the output</li>
+<li>Validate the audience claim matches your configured audience</li>
+<li>Fetch the JWKS from <code>{issuer_url}/.well-known/jwks.json</code></li>
+</ol>
+<h3 id="list-aws-jwt">List AWS JWT<a class="headerlink" href="#list-aws-jwt" title="Permanent link">&para;</a></h3>
+<p>Display the current AWS JWT federation configuration.</p>
+<div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>list-aws-jwt
+</code></pre></div>
+<p><strong>Example Output:</strong></p>
+<div class="highlight"><pre><span></span><code>╭──────────────────────────────────────────────────────────────────╮
+│ AWS JWT Federation Configuration                                  │
+├─────────────────────┬────────────────────────────────────────────┤
+│ Property            │ Value                                      │
+├─────────────────────┼────────────────────────────────────────────┤
+│ Enabled             │ ✅ Yes                                      │
+│ Issuer URL          │ https://abc123-def456.tokens.sts.global... │
+│ Signing Algorithm   │ ES384                                      │
+│ Duration (seconds)  │ 300                                        │
+│ Audiences           │ https://api.example.com                    │
+│                     │ https://api2.example.com                   │
+╰─────────────────────┴────────────────────────────────────────────╯
+</code></pre></div>
 <h3 id="setup-cognito">Setup Cognito<a class="headerlink" href="#setup-cognito" title="Permanent link">&para;</a></h3>
 <p>Create Cognito user pools for Identity authentication.</p>
 <div class="highlight"><pre><span></span><code>agentcore<span class="w"> </span>identity<span class="w"> </span>setup-cognito<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
@@ -4419,7 +4579,48 @@ agentcore<span class="w"> </span>identity<span class="w"> </span>cleanup<span cl
 agentcore<span class="w"> </span>identity<span class="w"> </span>cleanup<span class="w"> </span>--agent<span class="w"> </span>my-agent<span class="w"> </span>--force
 </code></pre></div>
 <h2 id="identity-example-usage">Identity Example Usage<a class="headerlink" href="#identity-example-usage" title="Permanent link">&para;</a></h2>
-<h3 id="complete-identity-setup-workflow">Complete Identity Setup Workflow<a class="headerlink" href="#complete-identity-setup-workflow" title="Permanent link">&para;</a></h3>
+<h3 id="aws-jwt-federation-workflow">AWS JWT Federation Workflow<a class="headerlink" href="#aws-jwt-federation-workflow" title="Permanent link">&para;</a></h3>
+<p>For M2M authentication with external services that support OIDC tokens (no secrets required):</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Configure agent</span>
+agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<span class="w"> </span>agent.py<span class="w"> </span>--name<span class="w"> </span>my-agent<span class="w"> </span>--disable-memory
+
+<span class="c1"># 2. Set up AWS JWT federation</span>
+agentcore<span class="w"> </span>identity<span class="w"> </span>setup-aws-jwt<span class="w"> </span>--audience<span class="w"> </span>https://api.example.com
+
+<span class="c1"># 3. Deploy agent (IAM permissions added automatically)</span>
+agentcore<span class="w"> </span>launch
+
+<span class="c1"># 4. Invoke agent</span>
+agentcore<span class="w"> </span>invoke<span class="w"> </span><span class="s1">&#39;{&quot;prompt&quot;: &quot;Call the external API&quot;}&#39;</span>
+</code></pre></div>
+<p><strong>Agent Code:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">strands</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">tool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.runtime</span><span class="w"> </span><span class="kn">import</span> <span class="n">BedrockAgentCoreApp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bedrock_agentcore.identity.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">requires_iam_access_token</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
+
+<span class="nd">@tool</span>
+<span class="nd">@requires_iam_access_token</span><span class="p">(</span>
+    <span class="n">audience</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;https://api.example.com&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">call_external_api</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">access_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Call external API with AWS IAM JWT authentication.&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">&quot;https://api.example.com/data&quot;</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">access_token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;us.anthropic.claude-sonnet-4-5-20250929-v1:0&quot;</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">call_external_api</span><span class="p">])</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">invoke_async</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">)}</span>
+</code></pre></div>
+<h3 id="oauth-identity-setup-workflow">OAuth Identity Setup Workflow<a class="headerlink" href="#oauth-identity-setup-workflow" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># 1. Create Cognito pools</span>
 agentcore<span class="w"> </span>identity<span class="w"> </span>setup-cognito
 
