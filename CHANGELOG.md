@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.2] - 2025-12-04
+
+### Changes
+
+- feat(identity): Add AWS JWT federation support for  M2M auth (#382) (2b492c6)
+- docs: add WebSocket bi-directional streaming to runtime overview (#392) (b8fa78c)
+- Add require aws creds decorator to policy cli commands (#391) (cd3758b)
+- add aws docs link in quickstart guides for Runtime, Identity, Policy, Observability, Memory (#389) (52cf2ed)
+- chore: bump version to 0.2.1 (#390) (c4d573e)
+
 ## [0.2.1] - 2025-12-02
 
 ### Changes
