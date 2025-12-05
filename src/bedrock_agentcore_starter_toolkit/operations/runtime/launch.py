@@ -325,6 +325,7 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
             region=region,
             account_id=account_id,
             agent_name=agent_name,
+            agent_config=agent_config,
         )
 
         # Update the config
@@ -908,10 +909,15 @@ def launch_bedrock_agentcore(
 
     account_id = agent_config.aws.account
 
-    # Step 2: Ensure execution role exists (moved before ECR push)
+    # Step 2: Ensure ECR repository exists (MOVED BEFORE ROLE)
+    log.info("Uploading to ECR...")
+    ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, bedrock_agentcore_name, region)
+    log.info("ECR repository ready: %s", ecr_uri)
+
+    # Step 3: Ensure execution role exists (MOVED AFTER ECR)
     _ensure_execution_role(agent_config, project_config, config_path, bedrock_agentcore_name, region, account_id)
 
-    # Step 2.5: Check Service-Linked Role and ensure Identity permissions
+    # Step 3.5: Check Service-Linked Role and ensure Identity permissions
     if agent_config.identity and agent_config.identity.is_enabled:
         # Check if Service-Linked Role exists
         try:
@@ -941,11 +947,7 @@ def launch_bedrock_agentcore(
             console=console,
         )
 
-    # Step 3: Push to ECR
-    log.info("Uploading to ECR...")
-
-    # Handle ECR repository
-    ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, bedrock_agentcore_name, region)
+    # Step 4: Push image to ECR
 
     # Deploy to ECR
     repo_name = "/".join(ecr_uri.split("/")[1:])
@@ -953,7 +955,7 @@ def launch_bedrock_agentcore(
 
     log.info("Image uploaded to ECR: %s", ecr_uri)
 
-    # Step 4: Deploy agent (with retry logic for role readiness)
+    # Step 5: Deploy agent (with retry logic for role readiness)
     agent_id, agent_arn = _deploy_to_bedrock_agentcore(
         agent_config,
         project_config,
@@ -1200,14 +1202,14 @@ def _launch_with_direct_code_deploy(
     account_id = agent_config.aws.account
     session = boto3.Session(region_name=region)
 
-    # Step 1: Ensure execution role
+    # Step 1: Ensure memory (if configured) - BEFORE ROLE for scoped permissions
+    step_start = time.time()
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+
+    # Step 2: Ensure execution role (after memory for scoped memory permissions)
     step_start = time.time()
     log.info("Ensuring execution role...")
     _ensure_execution_role(agent_config, project_config, config_path, agent_config.name, region, account_id)
-
-    # Step 2: Ensure memory (if configured)
-    step_start = time.time()
-    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
 
     # Step 3: Prepare entrypoint (compute relative path from source directory)
     step_start = time.time()
