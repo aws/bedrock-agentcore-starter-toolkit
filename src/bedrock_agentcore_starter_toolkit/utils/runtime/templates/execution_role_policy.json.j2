@@ -1,6 +1,7 @@
 {
   "Version": "2012-10-17",
   "Statement": [
+    {% if deployment_type == "container" %}
     {
       "Sid": "ECRImageAccess",
       "Effect": "Allow",
@@ -9,9 +10,14 @@
         "ecr:GetDownloadUrlForLayer"
       ],
       "Resource": [
+        {% if has_ecr_repository %}
+        "arn:aws:ecr:{{ region }}:{{ account_id }}:repository/{{ ecr_repository_name }}"
+        {% else %}
         "arn:aws:ecr:{{ region }}:{{ account_id }}:repository/*"
+        {% endif %}
       ]
     },
+    {% endif %}
     {
       "Effect": "Allow",
       "Action": [
@@ -41,6 +47,7 @@
         "arn:aws:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
       ]
     },
+    {% if deployment_type == "container" %}
     {
       "Sid": "ECRTokenAccess",
       "Effect": "Allow",
@@ -49,6 +56,7 @@
       ],
       "Resource": "*"
     },
+    {% endif %}
     {
       "Effect": "Allow",
       "Action": [
@@ -82,6 +90,7 @@
         ],
         "Resource": "*"
     },
+    {% if is_a2a_protocol %}
     {
       "Sid": "BedrockAgentCoreRuntime",
       "Effect": "Allow",
@@ -93,6 +102,9 @@
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
       ]
     },
+    {% endif %}
+    {% if memory_enabled %}
+    {% if not has_memory_id %}
     {
       "Sid": "BedrockAgentCoreMemoryCreateMemory",
       "Effect": "Allow",
@@ -101,6 +113,7 @@
       ],
       "Resource": "*"
     },
+    {% endif %}
     {
       "Sid": "BedrockAgentCoreMemory",
       "Effect": "Allow",
@@ -118,9 +131,14 @@
         "bedrock-agentcore:RetrieveMemoryRecords"
       ],
       "Resource": [
+        {% if has_memory_id %}
+        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/{{ memory_id }}"
+        {% else %}
         "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/*"
+        {% endif %}
       ]
     },
+    {% endif %}
     {
       "Sid": "BedrockAgentCoreIdentityGetResourceApiKey",
       "Effect": "Allow",
@@ -190,20 +208,15 @@
       "Sid": "BedrockAgentCoreCodeInterpreter",
       "Effect": "Allow",
       "Action": [
-        "bedrock-agentcore:CreateCodeInterpreter",
         "bedrock-agentcore:StartCodeInterpreterSession",
         "bedrock-agentcore:InvokeCodeInterpreter",
         "bedrock-agentcore:StopCodeInterpreterSession",
-        "bedrock-agentcore:DeleteCodeInterpreter",
-        "bedrock-agentcore:ListCodeInterpreters",
         "bedrock-agentcore:GetCodeInterpreter",
         "bedrock-agentcore:GetCodeInterpreterSession",
         "bedrock-agentcore:ListCodeInterpreterSessions"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:aws:code-interpreter/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:code-interpreter-custom/*"
+        "arn:aws:bedrock-agentcore:{{ region }}:aws:code-interpreter/aws.codeinterpreter.v1"
       ]
     },
     {
