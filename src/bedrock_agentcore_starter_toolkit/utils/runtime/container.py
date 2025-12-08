@@ -11,6 +11,7 @@ from jinja2 import Template
 from rich.console import Console
 
 from ...cli.common import _handle_warn, _print_success
+from ..paths import _relative_to_build_context
 from .entrypoint import detect_dependencies, get_python_version
 
 console = Console()
@@ -193,27 +194,14 @@ class ContainerRuntime:
 
         dependencies_file = deps.file
         dependencies_install_path = deps.install_path
+        has_dependency_install_context = bool(deps.install_path and deps.resolved_path)
 
-        def _relative_to_build_context(path: Path, description: str) -> str:
-            """Convert an absolute dependency path to Docker context-relative form."""
-            context_root = build_context_root
-            try:
-                relative = path.resolve().relative_to(context_root)
-            except ValueError as exc:
-                context_hint = (
-                    f" Ensure the file lives within the configured source_path '{context_root}'." if source_path else ""
-                )
-                raise ValueError(
-                    f"{description} '{path}' is outside the Docker build context '{context_root}'.{context_hint}"
-                ) from exc
-
-            relative_str = relative.as_posix()
-            return relative_str if relative_str else "."
-
-        if deps.install_path and deps.resolved_path:
+        if has_dependency_install_context:
             install_dir = Path(deps.resolved_path).parent
             try:
-                dependencies_install_path = _relative_to_build_context(install_dir, "Dependency install path")
+                dependencies_install_path = _relative_to_build_context(
+                    context_root=build_context_root, path=install_dir, description="Dependency install path"
+                )
             except ValueError as exc:
                 if source_path:
                     raise exc
@@ -221,7 +209,9 @@ class ContainerRuntime:
 
         if deps.file and deps.resolved_path and not deps.install_path:
             try:
-                dependencies_file = _relative_to_build_context(Path(deps.resolved_path), "Dependency file")
+                dependencies_file = _relative_to_build_context(
+                    context_root=build_context_root, path=Path(deps.resolved_path), description="Dependency file"
+                )
             except ValueError as exc:
                 if source_path:
                     raise exc
