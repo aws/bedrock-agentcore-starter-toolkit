@@ -233,26 +233,25 @@ class TestPolicyTemplate:
 
     def test_conditional_memory_permissions(self):
         """Test that memory permissions are only included when memory is enabled."""
-        # With memory enabled
+        # With memory enabled (memory_id provided)
         policy_enabled = json.loads(
             render_execution_policy_template(
                 region="us-east-1",
                 account_id="123456789012",
                 agent_name="test-agent",
-                memory_enabled=True,
+                memory_id="test-memory-id",
             )
         )
         sids_enabled = [s.get("Sid") for s in policy_enabled["Statement"]]
         assert "BedrockAgentCoreMemory" in sids_enabled
-        assert "BedrockAgentCoreMemoryCreateMemory" in sids_enabled
 
-        # With memory disabled
+        # With memory disabled (memory_id is None)
         policy_disabled = json.loads(
             render_execution_policy_template(
                 region="us-east-1",
                 account_id="123456789012",
                 agent_name="test-agent",
-                memory_enabled=False,
+                memory_id=None,
             )
         )
         sids_disabled = [s.get("Sid") for s in policy_disabled["Statement"]]
@@ -266,7 +265,6 @@ class TestPolicyTemplate:
                 region="us-east-1",
                 account_id="123456789012",
                 agent_name="test-agent",
-                memory_enabled=True,
                 memory_id="my-memory-id",
             )
         )
@@ -280,26 +278,6 @@ class TestPolicyTemplate:
         # CreateMemory permission should NOT be included when memory_id is provided
         sids = [s.get("Sid") for s in policy["Statement"]]
         assert "BedrockAgentCoreMemoryCreateMemory" not in sids
-
-    def test_conditional_memory_wildcard_when_no_memory_id(self):
-        """Test that memory permissions use wildcard and include CreateMemory when no memory ID."""
-        policy = json.loads(
-            render_execution_policy_template(
-                region="us-east-1",
-                account_id="123456789012",
-                agent_name="test-agent",
-                memory_enabled=True,
-                memory_id=None,
-            )
-        )
-
-        memory_stmt = next((s for s in policy["Statement"] if s.get("Sid") == "BedrockAgentCoreMemory"), None)
-        assert memory_stmt is not None
-        assert memory_stmt["Resource"][0].endswith("memory/*")
-
-        # CreateMemory permission SHOULD be included when memory_id is not provided
-        sids = [s.get("Sid") for s in policy["Statement"]]
-        assert "BedrockAgentCoreMemoryCreateMemory" in sids
 
     def test_code_interpreter_always_included(self):
         """Test that CodeInterpreter permissions are always included and scoped to AWS managed."""
@@ -326,19 +304,17 @@ class TestPolicyTemplate:
             {
                 "deployment_type": "container",
                 "protocol": "A2A",
-                "memory_enabled": True,
                 "memory_id": "mem-123",
                 "ecr_repository_name": "my-repo",
             },
             # Direct code + HTTP + No memory
-            {"deployment_type": "direct_code_deploy", "protocol": "HTTP", "memory_enabled": False},
-            # Container + MCP + Memory without ID
-            {"deployment_type": "container", "protocol": "MCP", "memory_enabled": True, "memory_id": None},
+            {"deployment_type": "direct_code_deploy", "protocol": "HTTP", "memory_id": None},
+            # Container + MCP + No memory
+            {"deployment_type": "container", "protocol": "MCP", "memory_id": None},
             # Direct code + No protocol + Memory with ID
             {
                 "deployment_type": "direct_code_deploy",
                 "protocol": None,
-                "memory_enabled": True,
                 "memory_id": "mem-456",
             },
         ]

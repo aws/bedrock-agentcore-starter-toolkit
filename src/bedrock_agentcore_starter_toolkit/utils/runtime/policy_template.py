@@ -44,7 +44,6 @@ def render_execution_policy_template(
     agent_name: str,
     deployment_type: str = "direct_code_deploy",
     protocol: Optional[str] = None,
-    memory_enabled: bool = False,
     memory_id: Optional[str] = None,
     ecr_repository_name: Optional[str] = None,
 ) -> str:
@@ -56,8 +55,7 @@ def render_execution_policy_template(
         agent_name: Agent name for resource scoping
         deployment_type: Deployment type ("container" or "direct_code_deploy")
         protocol: Server protocol (None, "HTTP", "MCP", or "A2A")
-        memory_enabled: Whether memory is enabled
-        memory_id: Specific memory ID for scoped access (if available)
+        memory_id: Specific memory ID for scoped access. If None, memory is disabled.
         ecr_repository_name: Specific ECR repository name for scoped access
 
     Returns:
@@ -69,7 +67,7 @@ def render_execution_policy_template(
         "agent_name": agent_name,
         "deployment_type": deployment_type,
         "is_a2a_protocol": protocol == "A2A" if protocol else False,
-        "memory_enabled": memory_enabled,
+        "memory_enabled": memory_id is not None,
         "memory_id": memory_id,
         "has_memory_id": memory_id is not None,
         "ecr_repository_name": ecr_repository_name,

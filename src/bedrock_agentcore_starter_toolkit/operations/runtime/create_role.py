@@ -136,7 +136,6 @@ def get_or_create_runtime_execution_role(
                     agent_name=agent_name,
                     deployment_type=agent_config.deployment_type if agent_config else "direct_code_deploy",
                     protocol=agent_config.aws.protocol_configuration.server_protocol if agent_config else None,
-                    memory_enabled=agent_config.memory.is_enabled if agent_config else False,
                     memory_id=memory_id,
                     ecr_repository_name=ecr_repo_name,
                 )
