@@ -12,7 +12,7 @@ from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...utils.aws import get_account_id, get_region
 from ...utils.runtime.config import load_config_if_exists, merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
-from ...utils.runtime.entrypoint import detect_dependencies
+from ...utils.runtime.entrypoint import DependencyInfo, detect_dependencies
 from ...utils.runtime.schema import (
     AWSConfig,
     BedrockAgentCoreAgentSchema,
@@ -106,6 +106,37 @@ def detect_requirements(source_path: Path):
         log.debug("No requirements file found in source directory: %s", source_path_resolved)
 
     return deps
+
+
+def _is_subpath(path: Path, parent: Path) -> bool:
+    """Return True if path is within parent directory."""
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _expand_source_path_for_dependencies(source_dir: Path, dependency_info: DependencyInfo) -> Path:
+    """Expand build context to include dependency file/directory when needed."""
+    if not dependency_info or not dependency_info.resolved_path:
+        return source_dir
+
+    dependency_path = Path(dependency_info.resolved_path)
+    # For pyproject installs we need the containing directory; for requirements just ensure file parent is included
+    if dependency_path.is_file():
+        dependency_root = dependency_path.parent
+    else:
+        dependency_root = dependency_path
+
+    if _is_subpath(dependency_root, source_dir):
+        return source_dir
+
+    # Expand to the lowest common ancestor between source_dir and dependency_root
+    import os
+
+    common_root = Path(os.path.commonpath([source_dir.resolve(), dependency_root.resolve()]))
+    return common_root
 
 
 def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
@@ -406,6 +437,19 @@ def configure_bedrock_agentcore(
         log.debug("  Requirements file: %s", requirements_file)
         if memory_id:
             log.debug("  Memory ID: %s", memory_id)
+
+    # Expand source_path when dependency files live outside the initial entrypoint directory
+    if source_path:
+        source_dir_resolved = Path(source_path).resolve()
+        dep_info_for_context = detect_dependencies(source_dir_resolved, explicit_file=requirements_file)
+        expanded_source_dir = _expand_source_path_for_dependencies(source_dir_resolved, dep_info_for_context)
+        if expanded_source_dir != source_dir_resolved:
+            log.info(
+                "Expanding build context to include dependencies: %s -> %s",
+                source_dir_resolved,
+                expanded_source_dir,
+            )
+        source_path = str(expanded_source_dir)
 
     # Determine output directory for Dockerfile based on source_path
     # If source_path provided: write to .bedrock_agentcore/{agent_name}/ directly

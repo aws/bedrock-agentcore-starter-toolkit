@@ -2258,6 +2258,66 @@ class TestSourcePathConfiguration:
         finally:
             os.chdir(original_cwd)
 
+    def test_source_path_expanded_for_root_dependencies(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Ensure source_path expands to include dependency directories outside entrypoint."""
+        # Create project layout with entrypoint in subdirectory but pyproject.toml at root
+        source_dir = tmp_path / "server"
+        source_dir.mkdir()
+        agent_file = source_dir / "server.py"
+        agent_file.write_text("# test agent")
+
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text("[project]\nname = 'example'\nversion = '0.1.0'\n")
+
+        original_cwd = Path.cwd()
+        import os
+
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            mock_config_manager = Mock()
+            mock_config_manager.prompt_memory_selection.return_value = ("CREATE_NEW", "STM_ONLY")
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager",
+                    return_value=mock_config_manager,
+                ),
+            ):
+                result = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="TestRole",
+                    source_path=str(source_dir),
+                )
+
+                from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+                config = load_config(result.config_path)
+                agent_config = config.get_agent_config("test_agent")
+
+                assert agent_config.source_path == str(tmp_path.resolve())
+
+        finally:
+            os.chdir(original_cwd)
+
 
 class TestHelperFunctions:
     """Test helper functions like get_relative_path, detect_entrypoint, infer_agent_name."""

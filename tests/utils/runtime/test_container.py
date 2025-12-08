@@ -341,6 +341,93 @@ CMD ["python", "/app/{{ agent_file }}"]
                 context = call_args[1] if call_args[1] else call_args[0][0] if call_args[0] else {}
                 assert context.get("has_current_package") is True
 
+    def test_source_path_pyproject_normalizes_install_path(self, tmp_path):
+        """Ensure pyproject installs work when build context is a subdirectory."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+        project_root = tmp_path / "project"
+        source_dir = project_root / "server"
+        source_dir.mkdir(parents=True)
+        agent_file = source_dir / "server.py"
+        agent_file.write_text("# agent entrypoint")
+        pyproject_file = source_dir / "pyproject.toml"
+        pyproject_file.write_text("[project]\nname = 'example'\nversion = '0.1.0'\n")
+
+        def _dep_info(*_, **__):
+            from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+            return DependencyInfo(
+                file="server/pyproject.toml",
+                type="pyproject",
+                resolved_path=str(pyproject_file),
+                install_path="server",
+            )
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies", side_effect=_dep_info
+            ),
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+            patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+        ):
+            mock_template.return_value.render.return_value = "# Dockerfile"
+            runtime.generate_dockerfile(
+                agent_path=agent_file,
+                output_dir=project_root,
+                agent_name="test_agent",
+                source_path=str(source_dir),
+                requirements_file="server/pyproject.toml",
+            )
+
+        call_args = mock_template.return_value.render.call_args
+        context = call_args[1] if call_args[1] else call_args[0][0] if call_args[0] else {}
+        assert context["dependencies_install_path"] == "."
+        assert context["dependencies_file"] == "server/pyproject.toml"
+
+    def test_source_path_requirements_normalizes_file_path(self, tmp_path):
+        """Ensure requirements files inside subdirectories are copied from the context root."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+        project_root = tmp_path / "project"
+        source_dir = project_root / "server"
+        source_dir.mkdir(parents=True)
+        agent_file = source_dir / "server.py"
+        agent_file.write_text("# agent entrypoint")
+        requirements_file = source_dir / "requirements.txt"
+        requirements_file.write_text("requests==2.31.0")
+
+        def _dep_info(*_, **__):
+            from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import DependencyInfo
+
+            return DependencyInfo(
+                file="server/requirements.txt",
+                type="requirements",
+                resolved_path=str(requirements_file),
+            )
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.utils.runtime.container.detect_dependencies", side_effect=_dep_info
+            ),
+            patch("bedrock_agentcore_starter_toolkit.utils.runtime.container.Template") as mock_template,
+            patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+        ):
+            mock_template.return_value.render.return_value = "# Dockerfile"
+            runtime.generate_dockerfile(
+                agent_path=agent_file,
+                output_dir=project_root,
+                agent_name="test_agent",
+                source_path=str(source_dir),
+                requirements_file="server/requirements.txt",
+            )
+
+        call_args = mock_template.return_value.render.call_args
+        context = call_args[1] if call_args[1] else call_args[0][0] if call_args[0] else {}
+        assert context["dependencies_file"] == "requirements.txt"
+        assert context["dependencies_install_path"] is None
+
     def test_is_runtime_installed_success(self):
         """Test _is_runtime_installed with successful runtime detection."""
         runtime = ContainerRuntime.__new__(ContainerRuntime)  # Create instance without __init__

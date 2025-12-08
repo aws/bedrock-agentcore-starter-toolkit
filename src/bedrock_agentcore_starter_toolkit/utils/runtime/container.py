@@ -159,7 +159,7 @@ class ContainerRuntime:
         # Calculate build context root first (needed for validation)
         # If source_path provided: module path relative to source_path (Docker build context)
         # Otherwise: module path relative to project root
-        build_context_root = Path(source_path) if source_path else output_dir
+        build_context_root = Path(source_path).resolve() if source_path else output_dir.resolve()
         # Generate .dockerignore if it doesn't exist
         self._ensure_dockerignore(build_context_root)
 
@@ -189,6 +189,43 @@ class ContainerRuntime:
                 raise FileNotFoundError(f"Explicit dependency file not found: {p}")
             deps.file = p.name
             deps.install_path = None
+            deps.resolved_path = str(p.resolve())
+
+        dependencies_file = deps.file
+        dependencies_install_path = deps.install_path
+
+        def _relative_to_build_context(path: Path, description: str) -> str:
+            """Convert an absolute dependency path to Docker context-relative form."""
+            context_root = build_context_root
+            try:
+                relative = path.resolve().relative_to(context_root)
+            except ValueError as exc:
+                context_hint = (
+                    f" Ensure the file lives within the configured source_path '{context_root}'." if source_path else ""
+                )
+                raise ValueError(
+                    f"{description} '{path}' is outside the Docker build context '{context_root}'.{context_hint}"
+                ) from exc
+
+            relative_str = relative.as_posix()
+            return relative_str if relative_str else "."
+
+        if deps.install_path and deps.resolved_path:
+            install_dir = Path(deps.resolved_path).parent
+            try:
+                dependencies_install_path = _relative_to_build_context(install_dir, "Dependency install path")
+            except ValueError as exc:
+                if source_path:
+                    raise exc
+                dependencies_install_path = deps.install_path
+
+        if deps.file and deps.resolved_path and not deps.install_path:
+            try:
+                dependencies_file = _relative_to_build_context(Path(deps.resolved_path), "Dependency file")
+            except ValueError as exc:
+                if source_path:
+                    raise exc
+                dependencies_file = deps.file
 
         # Add logic to avoid duplicate installation
         # Check for pyproject.toml in the appropriate directory
@@ -207,8 +244,8 @@ class ContainerRuntime:
             "agent_var": agent_name,
             "has_wheelhouse": wheelhouse_dir.exists() and wheelhouse_dir.is_dir(),
             "has_current_package": has_current_package,
-            "dependencies_file": deps.file,
-            "dependencies_install_path": deps.install_path,
+            "dependencies_file": dependencies_file,
+            "dependencies_install_path": dependencies_install_path,
             "aws_region": aws_region,
             "system_packages": [],
             "observability_enabled": enable_observability,
