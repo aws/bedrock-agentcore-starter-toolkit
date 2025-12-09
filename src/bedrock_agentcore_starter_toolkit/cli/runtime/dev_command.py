@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Tuple
 import typer
 
 from ...utils.runtime.config import load_config, load_config_if_exists
+from ...utils.server_addresses import build_server_urls
 from ..common import _handle_error, _handle_warn, assert_valid_aws_creds_or_exit, console
 
 logger = logging.getLogger(__name__)
@@ -41,8 +42,6 @@ def dev(
         console.print(f"[yellow]⚠️  Port {requested_port_val} is already in use[/yellow]")
         console.print(f"[green]✓ Using port {devPort} instead[/green]")
 
-    console.print(f"[blue]Server will be available at: http://localhost:{devPort}/invocations[/blue]")
-
     if port_changed:
         console.print(
             f'[cyan]💡 Test your agent with: agentcore invoke --dev --port {devPort} "Hello" '
@@ -53,6 +52,10 @@ def dev(
 
     console.print("[green]ℹ️  This terminal window will be used to run the dev server [/green]")
     console.print("[yellow]Press Ctrl+C to stop the server[/yellow]\n")
+    console.print("[blue]Server will be available at:[/blue]")
+    for label, url in build_server_urls(int(devPort), path_suffix="/invocations"):
+        console.print(f"[blue]  • {label}: {url}[/blue]")
+    console.print()
 
     cmd = [
         "uv",
@@ -64,8 +67,6 @@ def dev(
         "0.0.0.0",  # nosec B104 - dev server intentionally binds to all interfaces
         "--port",
         str(devPort),
-        "--log-level",
-        "info",
     ]
 
     process = None

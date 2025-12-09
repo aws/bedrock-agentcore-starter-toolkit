@@ -27,6 +27,7 @@ from ...operations.runtime import (
 from ...services.runtime import _handle_http_response
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
+from ...utils.server_addresses import build_server_urls
 from ..common import _handle_error, _print_success, console, requires_aws_creds
 from ._configure_impl import configure_impl
 
@@ -379,12 +380,15 @@ def deploy(
         if result.mode == "local":
             _print_success(f"Docker image built: {result.tag}")
             _print_success("Ready to run locally")
-            console.print("Starting server at http://localhost:8080")
-            console.print("Starting OAuth2 3LO callback server at http://localhost:8081")
-            console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
-
             if result.runtime is None or result.port is None:
                 _handle_error("Unable to launch locally")
+
+            port = int(result.port)
+            console.print("[blue]Starting server at:[/blue]")
+            for label, url in build_server_urls(port):
+                console.print(f"[blue]  • {label}: {url}[/blue]")
+            console.print("Starting OAuth2 3LO callback server at http://localhost:8081")
+            console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             try:
                 oauth2_callback_endpoint = Thread(
@@ -403,7 +407,13 @@ def deploy(
 
         elif result.mode == "local_direct_code_deploy":
             _print_success("Ready to run locally with uv run")
-            console.print(f"Starting server at http://localhost:{result.port}")
+            if result.port is None:
+                _handle_error("Unable to launch locally")
+
+            port = int(result.port)
+            console.print("[blue]Starting server at:[/blue]")
+            for label, url in build_server_urls(port):
+                console.print(f"[blue]  • {label}: {url}[/blue]")
             console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
 
             try:
