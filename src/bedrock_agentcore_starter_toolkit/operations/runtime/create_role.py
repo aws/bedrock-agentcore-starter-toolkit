@@ -3,7 +3,7 @@
 import hashlib
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from boto3 import Session
 from botocore.client import BaseClient
@@ -14,6 +14,27 @@ from ...utils.runtime.policy_template import (
     render_trust_policy_template,
     validate_rendered_policy,
 )
+
+
+def _extract_ecr_repository_name(ecr_uri: Optional[str]) -> Optional[str]:
+    """Extract repository name from ECR URI.
+
+    Args:
+        ecr_uri: ECR URI like {account}.dkr.ecr.{region}.amazonaws.com/repo-name
+
+    Returns:
+        Repository name or None if URI is invalid/missing
+    """
+    if not ecr_uri:
+        return None
+
+    try:
+        # ECR URI format: {account}.dkr.ecr.{region}.amazonaws.com/repo-name
+        if "/" in ecr_uri:
+            return ecr_uri.split("/", 1)[1]
+        return None
+    except (IndexError, AttributeError):
+        return None
 
 
 def _generate_deterministic_suffix(agent_name: str, length: int = 10) -> str:
@@ -41,6 +62,7 @@ def get_or_create_runtime_execution_role(
     account_id: str,
     agent_name: str,
     role_name: Optional[str] = None,
+    agent_config: Optional[Any] = None,
 ) -> str:
     """Get existing execution role or create a new one (idempotent).
 
@@ -51,6 +73,7 @@ def get_or_create_runtime_execution_role(
         account_id: AWS account ID
         agent_name: Agent name for resource scoping
         role_name: Optional custom role name
+        agent_config: Optional agent configuration for conditional policies
 
     Returns:
         Role ARN
@@ -98,9 +121,24 @@ def get_or_create_runtime_execution_role(
                 trust_policy_json = render_trust_policy_template(region, account_id)
                 trust_policy = validate_rendered_policy(trust_policy_json)
 
-                # Render the execution policy template
-                execution_policy_json = render_execution_policy_template(region, account_id, agent_name)
-                execution_policy = validate_rendered_policy(execution_policy_json)
+                # Render the execution policy template with conditional parameters
+                ecr_repo_name = None
+                if agent_config and agent_config.aws.ecr_repository:
+                    ecr_repo_name = _extract_ecr_repository_name(agent_config.aws.ecr_repository)
+
+                memory_id = None
+                if agent_config and agent_config.memory and agent_config.memory.memory_id:
+                    memory_id = agent_config.memory.memory_id
+
+                execution_policy = render_execution_policy_template(
+                    region=region,
+                    account_id=account_id,
+                    agent_name=agent_name,
+                    deployment_type=agent_config.deployment_type if agent_config else "direct_code_deploy",
+                    protocol=agent_config.aws.protocol_configuration.server_protocol if agent_config else None,
+                    memory_id=memory_id,
+                    ecr_repository_name=ecr_repo_name,
+                )
 
                 logger.info("Creating IAM role: %s", role_name)
 

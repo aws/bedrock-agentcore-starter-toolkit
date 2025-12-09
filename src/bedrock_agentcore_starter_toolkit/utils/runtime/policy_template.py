@@ -1,8 +1,9 @@
 """Policy template utilities for runtime execution roles."""
 
 import json
+import re
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -37,13 +38,25 @@ def render_trust_policy_template(region: str, account_id: str) -> str:
     return _render_template("execution_role_trust_policy.json.j2", variables)
 
 
-def render_execution_policy_template(region: str, account_id: str, agent_name: str) -> str:
+def render_execution_policy_template(
+    region: str,
+    account_id: str,
+    agent_name: str,
+    deployment_type: str = "direct_code_deploy",
+    protocol: Optional[str] = None,
+    memory_id: Optional[str] = None,
+    ecr_repository_name: Optional[str] = None,
+) -> str:
     """Render the execution policy template with provided values.
 
     Args:
         region: AWS region
         account_id: AWS account ID
         agent_name: Agent name for resource scoping
+        deployment_type: Deployment type ("container" or "direct_code_deploy")
+        protocol: Server protocol (None, "HTTP", "MCP", or "A2A")
+        memory_id: Specific memory ID for scoped access. If None, memory is disabled.
+        ecr_repository_name: Specific ECR repository name for scoped access
 
     Returns:
         Rendered execution policy as JSON string
@@ -52,8 +65,23 @@ def render_execution_policy_template(region: str, account_id: str, agent_name: s
         "region": region,
         "account_id": account_id,
         "agent_name": agent_name,
+        "deployment_type": deployment_type,
+        "is_a2a_protocol": protocol == "A2A" if protocol else False,
+        "memory_enabled": memory_id is not None,
+        "memory_id": memory_id,
+        "has_memory_id": memory_id is not None,
+        "ecr_repository_name": ecr_repository_name,
+        "has_ecr_repository": ecr_repository_name is not None,
     }
-    return _render_template("execution_role_policy.json.j2", variables)
+    rendered = _render_template("execution_role_policy.json.j2", variables)
+
+    # Clean up any trailing commas before closing braces/brackets
+    cleaned = re.sub(r",(\s*[}\]])", r"\1", rendered)
+
+    # Validate JSON is correct
+    validate_rendered_policy(cleaned)
+
+    return cleaned
 
 
 def validate_rendered_policy(policy_json: str) -> Dict:
