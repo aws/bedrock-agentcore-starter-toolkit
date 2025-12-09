@@ -10,6 +10,7 @@ import boto3
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
 from ...utils.aws import get_account_id, get_region
+from ...utils.paths import expand_source_path_for_dependencies
 from ...utils.runtime.config import load_config_if_exists, merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
 from ...utils.runtime.entrypoint import detect_dependencies
@@ -406,6 +407,19 @@ def configure_bedrock_agentcore(
         log.debug("  Requirements file: %s", requirements_file)
         if memory_id:
             log.debug("  Memory ID: %s", memory_id)
+
+    # Expand source_path when dependency files live outside the initial entrypoint directory
+    if source_path:
+        source_dir_resolved = Path(source_path).resolve()
+        dep_info_for_context = detect_dependencies(source_dir_resolved, explicit_file=requirements_file)
+        expanded_source_dir = expand_source_path_for_dependencies(source_dir_resolved, dep_info_for_context)
+        if expanded_source_dir != source_dir_resolved:
+            log.info(
+                "Expanding build context to include dependencies: %s -> %s",
+                source_dir_resolved,
+                expanded_source_dir,
+            )
+        source_path = str(expanded_source_dir)
 
     # Determine output directory for Dockerfile based on source_path
     # If source_path provided: write to .bedrock_agentcore/{agent_name}/ directly
