@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.3] - 2025-12-09
+
+### Changes
+
+- feat: Printing localhost and local network addresses for local dev commands (#400) (1defa9b)
+- fix: container building doesn't work when dependencies are in a subdirectory (#399) (0f13f6e)
+- fix: Scoping down policy statements (#394) (e548fc7)
+- chore: bump version to 0.2.2 (#393) (4280c41)
+
 ## [0.2.2] - 2025-12-04
 
 ### Changes
