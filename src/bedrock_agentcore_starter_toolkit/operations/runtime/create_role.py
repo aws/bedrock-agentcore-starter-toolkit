@@ -130,7 +130,7 @@ def get_or_create_runtime_execution_role(
                 if agent_config and agent_config.memory and agent_config.memory.memory_id:
                     memory_id = agent_config.memory.memory_id
 
-                execution_policy = render_execution_policy_template(
+                execution_policy_json = render_execution_policy_template(
                     region=region,
                     account_id=account_id,
                     agent_name=agent_name,
@@ -139,6 +139,7 @@ def get_or_create_runtime_execution_role(
                     memory_id=memory_id,
                     ecr_repository_name=ecr_repo_name,
                 )
+                execution_policy = validate_rendered_policy(execution_policy_json)
 
                 logger.info("Creating IAM role: %s", role_name)
 

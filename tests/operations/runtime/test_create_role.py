@@ -563,3 +563,38 @@ class TestCreateRole:
                 )
 
             mock_logger.error.assert_called()
+
+    def test_execution_policy_not_double_encoded(self, mock_session, mock_logger):
+        """Test that execution policy passed to put_role_policy is valid JSON, not double-encoded."""
+        session, mock_iam = mock_session
+
+        error_response = {"Error": {"Code": "NoSuchEntity"}}
+        mock_iam.get_role.side_effect = ClientError(error_response, "GetRole")
+        mock_iam.create_role.return_value = {"Role": {"Arn": "arn:aws:iam::123456789012:role/TestRole"}}
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.render_trust_policy_template",
+                return_value='{"Version": "2012-10-17", "Statement": []}',
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.validate_rendered_policy",
+                return_value={"Version": "2012-10-17", "Statement": []},
+            ),
+        ):
+            get_or_create_runtime_execution_role(
+                session=session,
+                logger=mock_logger,
+                region="us-east-1",
+                account_id="123456789012",
+                agent_name="test-agent",
+            )
+
+        mock_iam.put_role_policy.assert_called_once()
+        call_kwargs = mock_iam.put_role_policy.call_args[1]
+        policy_document = call_kwargs["PolicyDocument"]
+
+        parsed = json.loads(policy_document)
+        assert isinstance(parsed, dict), "Policy document is double-encoded"
+        assert parsed.get("Version") == "2012-10-17"
+        assert "Statement" in parsed
