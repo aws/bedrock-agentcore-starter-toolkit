@@ -159,7 +159,7 @@ def get_or_create_runtime_execution_role(
                     iam_client=iam,
                     role_name=role_name,
                     policy_name=policy_name,
-                    policy_document=json.dumps(execution_policy),
+                    policy_document=execution_policy,
                     logger=logger,
                 )
 
