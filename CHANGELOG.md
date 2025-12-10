@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4] - 2025-12-10
+
+### Changes
+
+- fix: resolve double-encoded execution policy causing MalformedPolicyDocument (#403) (#404) (d2eb189)
+- chore: bump version to 0.2.3 (#401) (d64b571)
+
 ## [0.2.3] - 2025-12-09
 
 ### Changes
