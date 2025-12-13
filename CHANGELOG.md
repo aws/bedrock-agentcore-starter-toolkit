@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5] - 2025-12-13
+
+### Changes
+
+- fix: preserve file permissions in deployment zip (#407) (1ede0f4)
+- chore: bump version to 0.2.4 (#405) (cf174b7)
+
 ## [0.2.4] - 2025-12-10
 
 ### Changes
