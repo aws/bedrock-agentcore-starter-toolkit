@@ -22,7 +22,7 @@ from ...utils.runtime.create_with_iam_eventual_consistency import retry_create_w
 from ...utils.runtime.entrypoint import build_entrypoint_array
 from ...utils.runtime.logs import get_genai_observability_url
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
-from ..identity.helpers import ensure_identity_permissions
+from ..identity.helpers import ensure_aws_jwt_permissions, ensure_identity_permissions
 from .create_role import get_or_create_runtime_execution_role
 from .exceptions import RuntimeToolkitException
 from .models import LaunchResult
@@ -219,6 +219,53 @@ def _ensure_identity_permissions(
         log.warning("You may need to manually add Identity permissions to your execution role")
 
 
+def _ensure_aws_jwt_permissions(
+    agent_config: BedrockAgentCoreAgentSchema,
+    region: str,
+    account_id: str,
+    console: Optional[Console] = None,
+) -> None:
+    """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
+    # Check if AWS JWT is configured
+    if not agent_config.aws_jwt or not agent_config.aws_jwt.enabled or not agent_config.aws_jwt.audiences:
+        log.info("No AWS IAM JWT configuration found, skipping AWS JWT permissions")
+        return
+
+    aws_jwt_config = agent_config.aws_jwt
+
+    if not agent_config.aws.execution_role:
+        log.warning("No execution role configured, cannot add AWS IAM JWT permissions")
+        return
+
+    log.info(
+        "Adding AWS IAM JWT permissions for %d audience(s)...",
+        len(aws_jwt_config.audiences),
+    )
+
+    try:
+        ensure_aws_jwt_permissions(
+            role_arn=agent_config.aws.execution_role,
+            audiences=aws_jwt_config.audiences,
+            region=region,
+            account_id=account_id,
+            signing_algorithm=aws_jwt_config.signing_algorithm,
+            max_duration_seconds=aws_jwt_config.duration_seconds,
+            logger=log,
+        )
+
+        log.info("✅ AWS IAM JWT permissions configured for role")
+        log.info("   - STS:GetWebIdentityToken")
+        log.info("   - Audiences: %s", ", ".join(aws_jwt_config.audiences))
+
+        if console:
+            console.print("✅ AWS IAM JWT permissions added automatically")
+            console.print(f"   Audiences: {', '.join(aws_jwt_config.audiences)}")
+
+    except Exception as e:
+        log.error("Failed to add AWS IAM JWT permissions: %s", str(e))
+        log.warning("You may need to manually add STS:GetWebIdentityToken permissions to your execution role")
+
+
 def _validate_execution_role(role_arn: str, session: boto3.Session) -> bool:
     """Validate that execution role exists and has correct trust policy for Bedrock AgentCore."""
     iam = session.client("iam")
@@ -278,6 +325,7 @@ def _ensure_execution_role(agent_config, project_config, config_path, agent_name
             region=region,
             account_id=account_id,
             agent_name=agent_name,
+            agent_config=agent_config,
         )
 
         # Update the config
@@ -861,10 +909,15 @@ def launch_bedrock_agentcore(
 
     account_id = agent_config.aws.account
 
-    # Step 2: Ensure execution role exists (moved before ECR push)
+    # Step 2: Ensure ECR repository exists (MOVED BEFORE ROLE)
+    log.info("Uploading to ECR...")
+    ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, bedrock_agentcore_name, region)
+    log.info("ECR repository ready: %s", ecr_uri)
+
+    # Step 3: Ensure execution role exists (MOVED AFTER ECR)
     _ensure_execution_role(agent_config, project_config, config_path, bedrock_agentcore_name, region, account_id)
 
-    # Step 2.5: Check Service-Linked Role and ensure Identity permissions
+    # Step 3.5: Check Service-Linked Role and ensure Identity permissions
     if agent_config.identity and agent_config.identity.is_enabled:
         # Check if Service-Linked Role exists
         try:
@@ -887,12 +940,14 @@ def launch_bedrock_agentcore(
 
         # Still add Identity permissions to execution role (for backward compatibility)
         _ensure_identity_permissions(agent_config, region, account_id, console)
+        _ensure_aws_jwt_permissions(
+            agent_config=agent_config,
+            region=region,
+            account_id=account_id,
+            console=console,
+        )
 
-    # Step 3: Push to ECR
-    log.info("Uploading to ECR...")
-
-    # Handle ECR repository
-    ecr_uri = _ensure_ecr_repository(agent_config, project_config, config_path, bedrock_agentcore_name, region)
+    # Step 4: Push image to ECR
 
     # Deploy to ECR
     repo_name = "/".join(ecr_uri.split("/")[1:])
@@ -900,7 +955,7 @@ def launch_bedrock_agentcore(
 
     log.info("Image uploaded to ECR: %s", ecr_uri)
 
-    # Step 4: Deploy agent (with retry logic for role readiness)
+    # Step 5: Deploy agent (with retry logic for role readiness)
     agent_id, agent_arn = _deploy_to_bedrock_agentcore(
         agent_config,
         project_config,
@@ -972,6 +1027,10 @@ def _execute_codebuild_workflow(
             if agent_config.identity and agent_config.identity.is_enabled:
                 log.info("🔍 DEBUG: Adding Identity permissions in CodeBuild flow...")
                 _ensure_identity_permissions(agent_config, region, account_id, None)
+
+            if agent_config.aws_jwt and agent_config.aws_jwt.enabled and agent_config.aws_jwt.audiences:
+                log.info("🔍 DEBUG: Adding AWS IAM JWT permissions in CodeBuild flow...")
+                _ensure_aws_jwt_permissions(agent_config, region, account_id, None)
 
         # Prepare CodeBuild
         log.info("Preparing CodeBuild project and uploading source...")
@@ -1143,14 +1202,14 @@ def _launch_with_direct_code_deploy(
     account_id = agent_config.aws.account
     session = boto3.Session(region_name=region)
 
-    # Step 1: Ensure execution role
+    # Step 1: Ensure memory (if configured) - BEFORE ROLE for scoped permissions
+    step_start = time.time()
+    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
+
+    # Step 2: Ensure execution role (after memory for scoped memory permissions)
     step_start = time.time()
     log.info("Ensuring execution role...")
     _ensure_execution_role(agent_config, project_config, config_path, agent_config.name, region, account_id)
-
-    # Step 2: Ensure memory (if configured)
-    step_start = time.time()
-    _ensure_memory_for_agent(agent_config, project_config, config_path, agent_config.name)
 
     # Step 3: Prepare entrypoint (compute relative path from source directory)
     step_start = time.time()

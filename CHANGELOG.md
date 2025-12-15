@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.2.5] - 2025-12-13
+
+### Changes
+
+- fix: preserve file permissions in deployment zip (#407) (1ede0f4)
+- chore: bump version to 0.2.4 (#405) (cf174b7)
+
+## [0.2.4] - 2025-12-10
+
+### Changes
+
+- fix: resolve double-encoded execution policy causing MalformedPolicyDocument (#403) (#404) (d2eb189)
+- chore: bump version to 0.2.3 (#401) (d64b571)
+
+## [0.2.3] - 2025-12-09
+
+### Changes
+
+- feat: Printing localhost and local network addresses for local dev commands (#400) (1defa9b)
+- fix: container building doesn't work when dependencies are in a subdirectory (#399) (0f13f6e)
+- fix: Scoping down policy statements (#394) (e548fc7)
+- chore: bump version to 0.2.2 (#393) (4280c41)
+
+## [0.2.2] - 2025-12-04
+
+### Changes
+
+- feat(identity): Add AWS JWT federation support for  M2M auth (#382) (2b492c6)
+- docs: add WebSocket bi-directional streaming to runtime overview (#392) (b8fa78c)
+- Add require aws creds decorator to policy cli commands (#391) (cd3758b)
+- add aws docs link in quickstart guides for Runtime, Identity, Policy, Observability, Memory (#389) (52cf2ed)
+- chore: bump version to 0.2.1 (#390) (c4d573e)
+
+## [0.2.1] - 2025-12-02
+
+### Changes
+
+- fix: catch the expired creds exception and throw it using the method in utils (#388) (9826b08)
+- re:Invent 2025 Feature Launch: AgentCore Policy Engine, Evals and Identity Custom Claims (#387) (70e3078)
+- fix: Fail early if deployment package size exceeds 250MB (#386) (916f81d)
+- fix: agent_config.name bug when running configure after create with production template mode (#384) (824316c)
+- docs: update middleware integration in Runtime Overview (#381) (48968f4)
+- fix: add missing basic template README. Also fix erroneous print statment in IAC path (#377) (63970da)
+- feat: CLI UX improvements (#380) (da80cf5)
+- chore: bump version to 0.2.0 (#376) (31a37ff)
+
 ## [0.2.0] - 2025-11-27
 
 ### Changes

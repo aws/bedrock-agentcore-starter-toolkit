@@ -309,3 +309,229 @@ class TestBedrockAgentCoreConfigSchema:
         result = config.get_agent_config()
 
         assert result.name == "agent2"
+
+
+class TestAwsJwtConfig:
+    """Test AwsJwtConfig schema validation."""
+
+    def test_default_values(self):
+        """Test default values for AwsJwtConfig."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig()
+
+        assert config.enabled is False
+        assert config.audiences == []
+        assert config.signing_algorithm == "ES384"
+        assert config.issuer_url is None
+        assert config.duration_seconds == 300
+
+    def test_valid_es384_algorithm(self):
+        """Test valid ES384 signing algorithm."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(signing_algorithm="ES384")
+        assert config.signing_algorithm == "ES384"
+
+        # Test lowercase conversion
+        config_lower = AwsJwtConfig(signing_algorithm="es384")
+        assert config_lower.signing_algorithm == "ES384"
+
+    def test_valid_rs256_algorithm(self):
+        """Test valid RS256 signing algorithm."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(signing_algorithm="RS256")
+        assert config.signing_algorithm == "RS256"
+
+        # Test lowercase conversion
+        config_lower = AwsJwtConfig(signing_algorithm="rs256")
+        assert config_lower.signing_algorithm == "RS256"
+
+    def test_invalid_signing_algorithm(self):
+        """Test invalid signing algorithm validation."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        with pytest.raises(ValidationError) as exc_info:
+            AwsJwtConfig(signing_algorithm="INVALID")
+
+        error_msg = str(exc_info.value)
+        assert "Invalid signing_algorithm" in error_msg or "ES384" in error_msg
+
+    def test_valid_duration_min(self):
+        """Test minimum valid duration (60 seconds)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(duration_seconds=60)
+        assert config.duration_seconds == 60
+
+    def test_valid_duration_max(self):
+        """Test maximum valid duration (3600 seconds)."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(duration_seconds=3600)
+        assert config.duration_seconds == 3600
+
+    def test_invalid_duration_too_short(self):
+        """Test duration below minimum."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        with pytest.raises(ValidationError) as exc_info:
+            AwsJwtConfig(duration_seconds=59)
+
+        error_msg = str(exc_info.value)
+        assert "60" in error_msg or "greater than" in error_msg.lower()
+
+    def test_invalid_duration_too_long(self):
+        """Test duration above maximum."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        with pytest.raises(ValidationError) as exc_info:
+            AwsJwtConfig(duration_seconds=3601)
+
+        error_msg = str(exc_info.value)
+        assert "3600" in error_msg or "less than" in error_msg.lower()
+
+    def test_with_audiences(self):
+        """Test AwsJwtConfig with audiences list."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        audiences = ["https://api1.example.com", "https://api2.example.com"]
+        config = AwsJwtConfig(enabled=True, audiences=audiences)
+
+        assert config.enabled is True
+        assert config.audiences == audiences
+        assert len(config.audiences) == 2
+
+    def test_with_issuer_url(self):
+        """Test AwsJwtConfig with issuer URL."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(
+            enabled=True,
+            issuer_url="https://sts.us-west-2.amazonaws.com",
+        )
+
+        assert config.issuer_url == "https://sts.us-west-2.amazonaws.com"
+
+    def test_full_configuration(self):
+        """Test AwsJwtConfig with all fields."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import AwsJwtConfig
+
+        config = AwsJwtConfig(
+            enabled=True,
+            audiences=["https://api.example.com"],
+            signing_algorithm="RS256",
+            issuer_url="https://sts.us-west-2.amazonaws.com",
+            duration_seconds=900,
+        )
+
+        assert config.enabled is True
+        assert config.audiences == ["https://api.example.com"]
+        assert config.signing_algorithm == "RS256"
+        assert config.issuer_url == "https://sts.us-west-2.amazonaws.com"
+        assert config.duration_seconds == 900
+
+
+class TestIdentityConfigAwsJwt:
+    """Test IdentityConfig - aws_jwt is now at agent level, not identity level."""
+
+    def test_identity_config_is_enabled_with_oauth_only(self):
+        """Test is_enabled property with OAuth providers only."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            CredentialProviderInfo,
+            IdentityConfig,
+        )
+
+        config = IdentityConfig()
+        config.credential_providers = [
+            CredentialProviderInfo(
+                name="TestProvider",
+                arn="arn:aws:identity:us-west-2:123456789012:provider/TestProvider",
+                type="cognito",
+                callback_url="https://example.com/callback",
+            )
+        ]
+
+        assert config.is_enabled is True
+        assert config.has_oauth_providers is True
+
+    def test_identity_config_is_not_enabled(self):
+        """Test is_enabled property when nothing is configured."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import IdentityConfig
+
+        config = IdentityConfig()
+
+        assert config.is_enabled is False
+        assert config.has_oauth_providers is False
+
+    def test_identity_config_provider_names(self):
+        """Test provider_names property."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            CredentialProviderInfo,
+            IdentityConfig,
+        )
+
+        config = IdentityConfig()
+        config.credential_providers = [
+            CredentialProviderInfo(
+                name="Provider1",
+                arn="arn:aws:identity:us-west-2:123456789012:provider/Provider1",
+                type="cognito",
+                callback_url="https://example.com/callback",
+            ),
+            CredentialProviderInfo(
+                name="Provider2",
+                arn="arn:aws:identity:us-west-2:123456789012:provider/Provider2",
+                type="github",
+                callback_url="https://example.com/callback",
+            ),
+        ]
+
+        assert config.provider_names == ["Provider1", "Provider2"]
+
+
+class TestAwsJwtConfigAtAgentLevel:
+    """Test AwsJwtConfig at agent schema level (moved from IdentityConfig)."""
+
+    def test_agent_schema_has_aws_jwt(self):
+        """Test that aws_jwt is at agent level."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            AWSConfig,
+            AwsJwtConfig,
+            BedrockAgentCoreAgentSchema,
+            BedrockAgentCoreDeploymentInfo,
+            NetworkConfiguration,
+        )
+
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+            aws=AWSConfig(network_configuration=NetworkConfiguration()),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+            aws_jwt=AwsJwtConfig(enabled=True, audiences=["https://api.example.com"]),
+        )
+
+        assert agent.aws_jwt is not None
+        assert agent.aws_jwt.enabled is True
+        assert agent.aws_jwt.audiences == ["https://api.example.com"]
+
+    def test_agent_schema_default_aws_jwt(self):
+        """Test default aws_jwt config at agent level."""
+        from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
+            AWSConfig,
+            BedrockAgentCoreAgentSchema,
+            BedrockAgentCoreDeploymentInfo,
+            NetworkConfiguration,
+        )
+
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+            aws=AWSConfig(network_configuration=NetworkConfiguration()),
+            bedrock_agentcore=BedrockAgentCoreDeploymentInfo(),
+        )
+
+        assert agent.aws_jwt is not None
+        assert agent.aws_jwt.enabled is False
+        assert agent.aws_jwt.audiences == []

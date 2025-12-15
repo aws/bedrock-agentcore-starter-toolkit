@@ -217,7 +217,7 @@ class CodeZipPackager:
             log.info("✓ Deployment package ready: %.2f MB", size_mb)
 
             if size_mb > 250:
-                log.warning("⚠️  Package size (%.2f MB) exceeds 250MB limit. Consider reducing dependencies.", size_mb)
+                raise Exception(f"Package size ({size_mb:.2f} MB) exceeds 250MB limit. Consider reducing dependencies.")
 
             # Check if aws-opentelemetry-distro is present for instrumentation
             has_otel_distro = self._check_otel_distro(requirements_file)
@@ -475,12 +475,16 @@ class CodeZipPackager:
             if dependencies_zip and dependencies_zip.exists():
                 with zipfile.ZipFile(dependencies_zip, "r") as dep:
                     for item in dep.namelist():
-                        out.writestr(item, dep.read(item))
+                        # Preserve original permissions for dependencies
+                        original_info = dep.getinfo(item)
+                        out.writestr(original_info, dep.read(item))
 
             # Layer 2: Code (overwrites conflicts - user code takes precedence)
             with zipfile.ZipFile(direct_code_deploy, "r") as code:
                 for item in code.namelist():
-                    out.writestr(item, code.read(item))
+                    # Preserve original permissions
+                    original_info = code.getinfo(item)
+                    out.writestr(original_info, code.read(item))
 
     def _get_ignore_patterns(self) -> List[str]:
         """Get ignore patterns from dockerignore.template (matches CodeBuild logic).

@@ -149,7 +149,7 @@ def _apply_iac_generation(ctx: ProjectContext, agent_config: BedrockAgentCoreAge
         resolve_agent_config_with_project_context(ctx, agent_config)
     iac_feature_registry[ctx.iac_provider]().apply(ctx)
     # create dockerfile
-    ContainerRuntime().generate_dockerfile(
+    ContainerRuntime(print_logs=False).generate_dockerfile(
         agent_path=ctx.entrypoint_path,
         output_dir=ctx.output_dir,
         explicit_requirements_file=ctx.output_dir / "pyproject.toml",

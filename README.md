@@ -75,11 +75,21 @@ AgentCore Observability helps developers trace, debug, and monitor agent perform
 
 **[Observability Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html)**
 
+## 🎯 Amazon Bedrock AgentCore Evaluation
+AgentCore Evaluation enables developers to assess and improve agent quality through built-in and custom evaluators. With support for on-demand evaluation and continuous monitoring via online evaluation, developers can measure agent performance metrics like helpfulness, correctness, and goal success rates. Evaluation integrates seamlessly with observability to provide actionable insights for maintaining and improving agent quality at scale.
+
+**[Evaluation Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html)** • **[Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/evaluation/quickstart.html)**
+
 ## 🔐 Amazon Bedrock AgentCore Identity
 
 AgentCore Identity provides a secure, scalable agent identity and access management capability accelerating AI agent development. It is compatible with existing identity providers, eliminating needs for user migration or rebuilding authentication flows. AgentCore Identity's helps to minimize consent fatigue with a secure token vault and allows you to build streamlined AI agent experiences. Just-enough access and secure permission delegation allow agents to securely access AWS resources and third-party tools and services.
 
 **[Identity Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started-cognito.html)**
+
+## 🛡️ Amazon Bedrock AgentCore Policy
+Policy in AgentCore gives you real time, deterministic control over agent's actions through AgentCore Gateway, ensuring agents stay within defined boundaries and business rules without slowing them down. Easily express fine-grained rules using natural language description or author them directly using Cedar - AWS's open-source policy language - giving you complete control over who can perform which actions under what conditions.
+
+**[Policy Quick Start](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html)**
 
 ## 🔐 Import Amazon Bedrock Agents to Bedrock AgentCore
 

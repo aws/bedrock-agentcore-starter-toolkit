@@ -302,7 +302,8 @@ def _handle_monorepo_flow(
             configure_impl(create=True)
             _pause_and_new_line_on_finish(sleep_override=1.0)
             # load new config in
-            agent_config = load_config(configure_yaml)
+            configure_schema = load_config(configure_yaml)
+            agent_config = next(iter(configure_schema.agents.values()))
 
     return sdk, model_provider, iac, agent_config
 

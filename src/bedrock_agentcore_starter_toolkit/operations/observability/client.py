@@ -59,7 +59,7 @@ class ObservabilityClient:
         Returns:
             List of Span objects
         """
-        self.logger.info("Querying spans for session: %s (agent: %s)", session_id, agent_id)
+        self.logger.debug("Querying spans for session: %s (agent: %s)", session_id, agent_id)
 
         # Pass agent_id to prevent cross-agent session ID collisions
         query_string = self.query_builder.build_spans_by_session_query(session_id, agent_id=agent_id)
@@ -72,7 +72,7 @@ class ObservabilityClient:
         )
 
         spans = [CloudWatchResultBuilder.build_span(result) for result in results]
-        self.logger.info("Found %d spans for session %s", len(spans), session_id)
+        self.logger.debug("Found %d spans for session %s", len(spans), session_id)
 
         return spans
 
@@ -94,7 +94,7 @@ class ObservabilityClient:
         Returns:
             List of Span objects
         """
-        self.logger.info("Querying spans for trace: %s (agent: %s)", trace_id, agent_id)
+        self.logger.debug("Querying spans for trace: %s (agent: %s)", trace_id, agent_id)
 
         # Note: Trace IDs are globally unique, so no agent_id filter needed in query
         query_string = self.query_builder.build_spans_by_trace_query(trace_id)
@@ -107,7 +107,7 @@ class ObservabilityClient:
         )
 
         spans = [CloudWatchResultBuilder.build_span(result) for result in results]
-        self.logger.info("Found %d spans for trace %s", len(spans), trace_id)
+        self.logger.debug("Found %d spans for trace %s", len(spans), trace_id)
 
         return spans
 
@@ -138,7 +138,7 @@ class ObservabilityClient:
 
         runtime_log_group = f"/aws/bedrock-agentcore/runtimes/{agent_id}-{endpoint_name}"
 
-        self.logger.info(
+        self.logger.debug(
             "Querying runtime logs for %d traces from %s (single batch query)", len(trace_ids), runtime_log_group
         )
 
@@ -154,7 +154,7 @@ class ObservabilityClient:
             )
 
             logs = [CloudWatchResultBuilder.build_runtime_log(result) for result in results]
-            self.logger.info("Found total %d runtime logs across %d traces", len(logs), len(trace_ids))
+            self.logger.debug("Found total %d runtime logs across %d traces", len(logs), len(trace_ids))
             return logs
 
         except Exception as e:

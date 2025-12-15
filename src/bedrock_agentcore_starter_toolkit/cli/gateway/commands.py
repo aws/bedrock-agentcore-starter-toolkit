@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 
 from ...operations.gateway import GatewayClient
-from ..common import console
+from ..common import _handle_error, console
 
 # Create a Typer app for gateway commands
 gateway_app = typer.Typer(help="Manage Bedrock AgentCore Gateways")
@@ -272,6 +272,58 @@ def get_mcp_gateway_target(
         gateway_arn=gateway_arn,
         target_id=target_id,
         target_name=target_name,
+    )
+    console.print(result)
+
+
+@gateway_app.command(name="update-gateway")
+def update_gateway(
+    region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
+    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID to update"),
+    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN to update"),
+    description: Optional[str] = typer.Option(None, "--description", help="New gateway description"),
+    policy_engine_arn: Optional[str] = typer.Option(None, "--policy-engine-arn", help="Policy engine ARN to attach"),
+    policy_engine_mode: Optional[str] = typer.Option(
+        None, "--policy-engine-mode", help="Policy engine mode: LOG_ONLY or ENFORCE"
+    ),
+) -> None:
+    """Update gateway configuration.
+
+    Note: Gateway names cannot be updated after creation.
+    You can specify the gateway by ID or ARN.
+    Supports updating description and policy engine configuration.
+
+    :param region: optional - region to use (defaults to us-west-2).
+    :param gateway_identifier: optional - the gateway ID to update.
+    :param gateway_arn: optional - the gateway ARN to update.
+    :param description: optional - new gateway description.
+    :param policy_engine_arn: optional - policy engine ARN to attach.
+    :param policy_engine_mode: optional - policy engine mode (LOG_ONLY or ENFORCE).
+    :return:
+    """
+    client = GatewayClient(region_name=region)
+
+    # Resolve gateway identifier
+    resolved_id = None
+    if gateway_identifier:
+        resolved_id = gateway_identifier
+    elif gateway_arn:
+        resolved_id = gateway_arn
+    else:
+        _handle_error("gateway_identifier or gateway_arn required")
+
+    # Build policy engine config if provided
+    policy_engine_config = None
+    if policy_engine_arn:
+        policy_engine_config = {
+            "arn": policy_engine_arn,
+            "mode": policy_engine_mode or "ENFORCE",
+        }
+
+    result = client.update_gateway(
+        gateway_identifier=resolved_id,
+        description=description,
+        policy_engine_config=policy_engine_config,
     )
     console.print(result)
 

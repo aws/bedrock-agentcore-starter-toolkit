@@ -23,11 +23,13 @@ def retry_create_with_eventual_iam_consistency(create_function: Callable[[], Any
             error_message = e.response.get("Error", {}).get("Message", "")
 
             # Check if this is a role validation error
-            is_role_validation_error = (
+            role_validation = (
                 error_code == "ValidationException"
                 and "Role validation failed" in error_message
                 and execution_role_arn in error_message
             )
+            role_invalid_param = error_code == "InvalidParameterValueException" and "cannot be assumed" in error_message
+            is_role_validation_error = role_validation or role_invalid_param
 
             if not is_role_validation_error or attempt == max_retries:
                 # Not a role validation error, or we've exhausted retries

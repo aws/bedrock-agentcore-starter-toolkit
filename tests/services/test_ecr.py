@@ -5,7 +5,9 @@ import pytest
 from bedrock_agentcore_starter_toolkit.services.ecr import (
     create_ecr_repository,
     deploy_to_ecr,
+    get_account_id,
     get_or_create_ecr_repository,
+    get_region,
     sanitize_ecr_repo_name,
 )
 
@@ -179,3 +181,30 @@ class TestGetOrCreateECRRepository:
         # Verify creation message printed
         captured = capsys.readouterr()
         assert "Repository doesn't exist, creating new ECR repository" in captured.out
+
+
+class TestECRHelpers:
+    """Test ECR helper functions."""
+
+    def test_get_account_id(self, mock_boto3_clients):
+        """Test getting AWS account ID."""
+        account_id = get_account_id()
+        assert account_id == "123456789012"
+        mock_boto3_clients["sts"].get_caller_identity.assert_called_once()
+
+    def test_get_region(self):
+        """Test getting AWS region."""
+        from unittest.mock import MagicMock, patch
+
+        # Test when region is set
+        mock_session = MagicMock()
+        mock_session.region_name = "us-east-1"
+        with patch("boto3.Session", return_value=mock_session):
+            region = get_region()
+            assert region == "us-east-1"
+
+        # Test when region is None (fallback to us-west-2)
+        mock_session.region_name = None
+        with patch("boto3.Session", return_value=mock_session):
+            region = get_region()
+            assert region == "us-west-2"

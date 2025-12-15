@@ -4,6 +4,8 @@ This tutorial shows you how to use the Amazon Bedrock AgentCore [starter toolkit
 
 The starter toolkit is a Command Line Interface (CLI) toolkit that you can use to deploy AI agents to an AgentCore Runtime. You can use the toolkit with popular Python agent frameworks, such as LangGraph or [Strands Agents](https://strandsagents.com/latest/documentation/docs/). This tutorial uses Strands Agents.
 
+**📚 For more information and detail beyond this quickstart, see the [AgentCore Runtime Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html)**
+
 ## Prerequisites
 
 Before you start, make sure you have:

@@ -11,6 +11,7 @@ from jinja2 import Template
 from rich.console import Console
 
 from ...cli.common import _handle_warn, _print_success
+from ..paths import _relative_to_build_context
 from .entrypoint import detect_dependencies, get_python_version
 
 console = Console()
@@ -24,11 +25,12 @@ class ContainerRuntime:
     DEFAULT_RUNTIME = "auto"
     DEFAULT_PLATFORM = "linux/arm64"
 
-    def __init__(self, runtime_type: Optional[str] = None):
+    def __init__(self, runtime_type: Optional[str] = None, print_logs=True):
         """Initialize container runtime.
 
         Args:
             runtime_type: Runtime type to use, defaults to auto-detection
+            print_logs: Whether to emit prints in __init__
         """
         runtime_type = runtime_type or self.DEFAULT_RUNTIME
         self.available_runtimes = ["finch", "docker", "podman"]
@@ -43,11 +45,12 @@ class ContainerRuntime:
                     break
             else:
                 # Informational message - default CodeBuild deployment works fine
-                console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
-                _print_success(
-                    "Default deployment uses CodeBuild (no container engine needed), "
-                    "For local builds, install Docker, Finch, or Podman"
-                )
+                if print_logs:
+                    console.print("\n💡 [cyan]No container engine found (Docker/Finch/Podman not installed)[/cyan]")
+                    _print_success(
+                        "Default deployment uses CodeBuild (no container engine needed), "
+                        "For local builds, install Docker, Finch, or Podman"
+                    )
                 self.runtime = "none"
                 self.has_local_runtime = False
         elif runtime_type in self.available_runtimes:
@@ -157,7 +160,7 @@ class ContainerRuntime:
         # Calculate build context root first (needed for validation)
         # If source_path provided: module path relative to source_path (Docker build context)
         # Otherwise: module path relative to project root
-        build_context_root = Path(source_path) if source_path else output_dir
+        build_context_root = Path(source_path).resolve() if source_path else output_dir.resolve()
         # Generate .dockerignore if it doesn't exist
         self._ensure_dockerignore(build_context_root)
 
@@ -187,6 +190,32 @@ class ContainerRuntime:
                 raise FileNotFoundError(f"Explicit dependency file not found: {p}")
             deps.file = p.name
             deps.install_path = None
+            deps.resolved_path = str(p.resolve())
+
+        dependencies_file = deps.file
+        dependencies_install_path = deps.install_path
+        has_dependency_install_context = bool(deps.install_path and deps.resolved_path)
+
+        if has_dependency_install_context:
+            install_dir = Path(deps.resolved_path).parent
+            try:
+                dependencies_install_path = _relative_to_build_context(
+                    context_root=build_context_root, path=install_dir, description="Dependency install path"
+                )
+            except ValueError as exc:
+                if source_path:
+                    raise exc
+                dependencies_install_path = deps.install_path
+
+        if deps.file and deps.resolved_path and not deps.install_path:
+            try:
+                dependencies_file = _relative_to_build_context(
+                    context_root=build_context_root, path=Path(deps.resolved_path), description="Dependency file"
+                )
+            except ValueError as exc:
+                if source_path:
+                    raise exc
+                dependencies_file = deps.file
 
         # Add logic to avoid duplicate installation
         # Check for pyproject.toml in the appropriate directory
@@ -205,8 +234,8 @@ class ContainerRuntime:
             "agent_var": agent_name,
             "has_wheelhouse": wheelhouse_dir.exists() and wheelhouse_dir.is_dir(),
             "has_current_package": has_current_package,
-            "dependencies_file": deps.file,
-            "dependencies_install_path": deps.install_path,
+            "dependencies_file": dependencies_file,
+            "dependencies_install_path": dependencies_install_path,
             "aws_region": aws_region,
             "system_packages": [],
             "observability_enabled": enable_observability,

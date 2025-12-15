@@ -350,7 +350,104 @@ Options:
 
 ## Identity Commands
 
-Manage AgentCore Identity resources for OAuth authentication and external service access.
+Manage AgentCore Identity resources for authentication with external services.
+
+AgentCore supports two authentication methods for agents to access external services:
+
+| Method | Use Case | Secrets Required |
+|--------|----------|------------------|
+| **OAuth 2.0** | User-delegated access (USER_FEDERATION) or M2M with OAuth providers | Yes (client secret) |
+| **AWS JWT** | M2M with services that accept OIDC tokens | No |
+
+### Setup AWS JWT
+
+Enable AWS IAM Outbound Web Identity Federation for secretless M2M authentication.
+
+```bash
+agentcore identity setup-aws-jwt [OPTIONS]
+```
+
+Options:
+
+- `--audience, -a TEXT`: Audience URL for the JWT - the external service that will validate the token (required)
+- `--signing-algorithm, -s TEXT`: Signing algorithm: ES384 (recommended) or RS256 (default: ES384)
+- `--duration, -d INTEGER`: Default token duration in seconds, 60-3600 (default: 300)
+- `--region, -r TEXT`: AWS region (defaults to configured region)
+
+**What it does:**
+
+1. Enables AWS IAM Outbound Web Identity Federation for your account (one-time, idempotent)
+2. Stores the audience configuration in `.bedrock_agentcore.yaml`
+3. Returns the issuer URL to configure in your external service
+
+**Examples:**
+
+```bash
+# Set up AWS JWT for an external API
+agentcore identity setup-aws-jwt --audience https://api.example.com
+
+# Add another audience (run command again)
+agentcore identity setup-aws-jwt --audience https://api2.example.com
+
+# Use RS256 algorithm for compatibility with legacy services
+agentcore identity setup-aws-jwt --audience https://legacy-api.example.com --signing-algorithm RS256
+
+# Custom token duration (10 minutes)
+agentcore identity setup-aws-jwt --audience https://api.example.com --duration 600
+```
+
+**Output:**
+
+```
+╭─────────────────────────────────────────────────────────────────╮
+│ ✅ Success                                                       │
+│                                                                  │
+│ AWS JWT Federation Configured                                    │
+│                                                                  │
+│ Issuer URL: https://abc123-def456.tokens.sts.global.api.aws     │
+│ Audiences: https://api.example.com                               │
+│ Algorithm: ES384                                                 │
+│ Duration: 300s                                                   │
+│                                                                  │
+│ Next Steps:                                                      │
+│ 1. Configure your external service to trust this issuer URL      │
+│ 2. Run agentcore launch to deploy (IAM permissions auto-added)   │
+│ 3. Use @requires_iam_access_token(audience=[...]) in your agent  │
+╰─────────────────────────────────────────────────────────────────╯
+```
+
+**External Service Configuration:**
+
+After running this command, configure your external service to:
+
+1. Trust the issuer URL displayed in the output
+2. Validate the audience claim matches your configured audience
+3. Fetch the JWKS from `{issuer_url}/.well-known/jwks.json`
+
+### List AWS JWT
+
+Display the current AWS JWT federation configuration.
+
+```bash
+agentcore identity list-aws-jwt
+```
+
+**Example Output:**
+
+```
+╭──────────────────────────────────────────────────────────────────╮
+│ AWS JWT Federation Configuration                                  │
+├─────────────────────┬────────────────────────────────────────────┤
+│ Property            │ Value                                      │
+├─────────────────────┼────────────────────────────────────────────┤
+│ Enabled             │ ✅ Yes                                      │
+│ Issuer URL          │ https://abc123-def456.tokens.sts.global... │
+│ Signing Algorithm   │ ES384                                      │
+│ Duration (seconds)  │ 300                                        │
+│ Audiences           │ https://api.example.com                    │
+│                     │ https://api2.example.com                   │
+╰─────────────────────┴────────────────────────────────────────────╯
+```
 
 ### Setup Cognito
 
@@ -580,7 +677,56 @@ agentcore identity cleanup --agent my-agent --force
 
 ## Identity Example Usage
 
-### Complete Identity Setup Workflow
+### AWS JWT Federation Workflow
+
+For M2M authentication with external services that support OIDC tokens (no secrets required):
+
+```bash
+# 1. Configure agent
+agentcore configure --entrypoint agent.py --name my-agent --disable-memory
+
+# 2. Set up AWS JWT federation
+agentcore identity setup-aws-jwt --audience https://api.example.com
+
+# 3. Deploy agent (IAM permissions added automatically)
+agentcore launch
+
+# 4. Invoke agent
+agentcore invoke '{"prompt": "Call the external API"}'
+```
+
+**Agent Code:**
+
+```python
+from strands import Agent, tool
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from bedrock_agentcore.identity.auth import requires_iam_access_token
+
+app = BedrockAgentCoreApp()
+
+@tool
+@requires_iam_access_token(
+    audience=["https://api.example.com"],
+)
+def call_external_api(query: str, *, access_token: str) -> str:
+    """Call external API with AWS IAM JWT authentication."""
+    import requests
+    response = requests.get(
+        "https://api.example.com/data",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"q": query},
+    )
+    return response.text
+
+@app.entrypoint
+async def invoke(payload, context):
+    agent = Agent(model="us.anthropic.claude-sonnet-4-5-20250929-v1:0", tools=[call_external_api])
+    response = await agent.invoke_async(payload.get("prompt", ""))
+    return {"response": str(response.message)}
+```
+
+
+### OAuth Identity Setup Workflow
 
 ```bash
 # 1. Create Cognito pools
@@ -923,6 +1069,501 @@ Options:
 
 **Note:** You can specify the gateway by ID, ARN, or name. You can specify the target by ID or name.
 
+### Update Gateway
+
+Update gateway configuration including description and policy engine.
+
+**Note:** Gateway names cannot be updated after creation (AWS API limitation).
+
+```bash
+agentcore gateway update-gateway [OPTIONS]
+```
+
+Options:
+
+- `--region TEXT`: AWS region to use (defaults to us-west-2)
+
+- `--id TEXT`: Gateway ID to update
+
+- `--arn TEXT`: Gateway ARN to update
+
+- `--description TEXT`: New gateway description
+
+- `--policy-engine-arn TEXT`: Policy engine ARN to attach
+
+- `--policy-engine-mode TEXT`: Policy engine mode (LOG_ONLY or ENFORCE)
+
+**Note:** You can specify the gateway by ID or ARN. To attach or update a policy engine, use the `--policy-engine-arn` and `--policy-engine-mode` options with the `update-gateway` command.
+
+## Policy Commands
+
+Manage AgentCore Policy resources for governance and authorization.
+
+Access policy subcommands:
+
+```bash
+agentcore policy [COMMAND]
+```
+
+### Create Policy Engine
+
+Create a new policy engine to manage Cedar policies.
+
+```bash
+agentcore policy create-policy-engine [OPTIONS]
+```
+
+Options:
+
+- `--name, -n TEXT`: Name of the policy engine (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--description, -d TEXT`: Policy engine description (optional)
+
+**Example:**
+
+```bash
+agentcore policy create-policy-engine \
+  --name "RefundPolicyEngine" \
+  --description "Policy engine to regulate refund operations"
+```
+
+### Get Policy Engine
+
+Get details of a policy engine.
+
+```bash
+agentcore policy get-policy-engine [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Example:**
+
+```bash
+agentcore policy get-policy-engine --policy-engine-id "testPolicyEngine-abc123"
+```
+
+### Update Policy Engine
+
+Update a policy engine's properties.
+
+```bash
+agentcore policy update-policy-engine [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--description, -d TEXT`: Updated description (optional)
+
+**Example:**
+
+```bash
+agentcore policy update-policy-engine \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --description "Updated policy engine description"
+```
+
+### List Policy Engines
+
+List all policy engines in the region.
+
+```bash
+agentcore policy list-policy-engines [OPTIONS]
+```
+
+Options:
+
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--max-results INTEGER`: Maximum number of results (optional)
+- `--next-token TEXT`: Token for pagination (optional)
+
+**Example:**
+
+```bash
+agentcore policy list-policy-engines --max-results 50
+```
+
+### Delete Policy Engine
+
+Delete a policy engine.
+
+```bash
+agentcore policy delete-policy-engine [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Example:**
+
+```bash
+agentcore policy delete-policy-engine --policy-engine-id "testPolicyEngine-abc123"
+```
+
+### Create Policy
+
+Create a new Cedar policy in a policy engine.
+
+```bash
+agentcore policy create-policy [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--name, -n TEXT`: Policy name (required)
+- `--definition, -def TEXT`: Policy definition JSON (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--description, -d TEXT`: Policy description (optional)
+- `--validation-mode TEXT`: Validation mode - FAIL_ON_ANY_FINDINGS or IGNORE_ALL_FINDINGS (optional)
+
+**Policy Definition Format:**
+
+The definition must be a JSON string containing Cedar policy statements. Cedar policies require resource constraints and do not support glob-style wildcards:
+
+```json
+{
+  "cedar": {
+    "statement": "permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 1000 };"
+  }
+}
+```
+
+**Action Name Format:**
+
+Action names follow the pattern `TargetName___tool_name` (triple underscore):
+- Format: `AgentCore::Action::"<TargetName>___<tool_name>"`
+- Example: `AgentCore::Action::"RefundTarget___process_refund"`
+- The target name and tool name are separated by **three underscores** (`___`)
+
+**Resource Constraints:**
+
+Cedar policies must specify a specific Gateway ARN:
+
+- **Specific Gateway:** `resource == AgentCore::Gateway::"arn:aws:bedrock-agentcore:region:account:gateway/id"`
+
+❌ **Invalid:** `permit(principal, action, resource);` - Unconstrained wildcard resources are not allowed
+
+**Important Note on Numeric Comparisons:**
+
+When using numeric comparisons in Cedar conditions, the JSON Schema type matters:
+
+- **`"type": "integer"`** (maps to Cedar Long) → Use direct comparison operators: `<`, `>`, `<=`, `>=`, `==`
+  ```cedar
+  context.input.amount < 1000
+  ```
+
+- **`"type": "number"`** (maps to Cedar Decimal) → Use comparison methods: `.lessThan()`, `.greaterThan()`, `.lessThanOrEqual()`, `.greaterThanOrEqual()`
+  ```cedar
+  context.input.amount.lessThan(decimal("1000.00"))
+  ```
+
+For simplicity, use `"type": "integer"` for whole number amounts (like dollar amounts) to enable direct comparison operators.
+
+**Tip: Use `.contains()` for Multiple Value Checks:**
+
+Instead of chaining multiple OR conditions, use `.contains()` with a set:
+
+```cedar
+// ❌ Verbose
+context.input.region == "US" || context.input.region == "CA" || context.input.region == "UK"
+
+// ✅ Cleaner
+["US", "CA", "UK"].contains(context.input.region)
+```
+
+**Example:**
+
+```bash
+agentcore policy create-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --name "refund_limit_policy" \
+  --description "Allow refunds under \$1000" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 1000 };"}}'
+```
+
+### Get Policy
+
+Get details of a specific policy.
+
+```bash
+agentcore policy get-policy [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-id, -p TEXT`: Policy ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Example:**
+
+```bash
+agentcore policy get-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789"
+```
+
+### Update Policy
+
+Update an existing policy's definition.
+
+```bash
+agentcore policy update-policy [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-id, -p TEXT`: Policy ID (required)
+- `--definition, -def TEXT`: Updated policy definition JSON (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--description, -d TEXT`: Updated description (optional)
+- `--validation-mode TEXT`: Validation mode (optional)
+
+**Example:**
+
+```bash
+agentcore policy update-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --description "Updated to \$500 limit"
+```
+
+### List Policies
+
+List policies in a policy engine.
+
+```bash
+agentcore policy list-policies [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--target-resource-scope TEXT`: Filter by resource ARN (optional)
+- `--max-results INTEGER`: Maximum number of results (optional)
+- `--next-token TEXT`: Token for pagination (optional)
+
+**Example:**
+
+```bash
+# List all policies
+agentcore policy list-policies --policy-engine-id "testPolicyEngine-abc123"
+
+# Filter by resource
+agentcore policy list-policies \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --target-resource-scope "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/my-gateway"
+```
+
+### Delete Policy
+
+Delete a policy from a policy engine.
+
+```bash
+agentcore policy delete-policy [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--policy-id, -p TEXT`: Policy ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Example:**
+
+```bash
+agentcore policy delete-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789"
+```
+
+### Start Policy Generation
+
+Policy generation requires a policy engine and gateway. Create the engine first to manage policies, then generate Cedar statements from natural language that target your gateway resource.
+
+Generate Cedar policies from natural language descriptions.
+
+```bash
+agentcore policy start-policy-generation [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--name, -n TEXT`: Generation name (required) - Must match pattern `^[A-Za-z][A-Za-z0-9_]*$` (letters, numbers, underscores only; must start with a letter)
+- `--resource-arn TEXT`: Gateway ARN that the generated policies will target (required)
+- `--content, -c TEXT`: Natural language policy description (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Note:** Policy generation typically completes within 30 seconds.
+
+**Name Validation:**
+- ✅ Valid: `refund_policy`, `MyPolicy123`, `policy_v1`
+- ❌ Invalid: `refund-policy` (hyphens not allowed), `123policy` (must start with letter), `my.policy` (dots not allowed)
+
+**Workflow:**
+
+After starting generation, poll the generation status until complete, then list the generated policy assets.
+
+**Example:**
+
+```bash
+# 0. Create policy engine (one-time setup)
+agentcore policy create-policy-engine \
+  --name "RefundPolicyEngine" \
+  --region us-west-2
+
+# 1. Start policy generation (note: use underscores, not hyphens in name)
+agentcore policy start-policy-generation \
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --name "refund_limit_gen" \
+  --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/gw-abc123" \
+  --content "Allow refunds under $1000" \
+  --region us-west-2
+```
+
+Output:
+```
+✓ Policy generation initiated!
+Generation ID: refund_limit_gen-x9y8z7w6v5
+Status: GENERATING
+Name: refund_limit_gen
+Use 'get-policy-generation' to check progress
+ARN: arn:aws:bedrock-agentcore:us-west-2:123456789012:policy-engine/RefundEngine-a1b2c3d4e5/policy-generation/refund-limit-gen-x9y8z7w6v5
+```
+
+```bash
+# 2. Poll generation status (repeat until status is GENERATED)
+agentcore policy get-policy-generation \
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --generation-id "refund_limit_gen-x9y8z7w6v5" \
+  --region us-west-2
+```
+
+Output when complete:
+```
+Policy Generation Details:
+Generation ID: refund_limit_gen-x9y8z7w6v5
+Name: refund_limit_gen
+Status: GENERATED
+ARN: arn:aws:bedrock-agentcore:us-west-2:123456789012:policy-engine/RefundEngine-a1b2c3d4e5/policy-generation/refund-limit-gen-x9y8z7w6v5
+Created: 2025-03-15T10:30:00Z
+Updated: 2025-03-15T10:30:22Z
+```
+
+```bash
+# 3. List generated policy assets
+agentcore policy list-policy-generation-assets \
+  --policy-engine-id "RefundEngine-a1b2c3d4e5" \
+  --generation-id "refund_limit_gen-x9y8z7w6v5" \
+  --region us-west-2
+```
+
+Output:
+```json
+{
+  "policyGenerationAssets": [
+    {
+      "policyGenerationAssetId": "asset-m1n2o3p4q5",
+      "definition": {
+        "cedar": {
+          "statement": "permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/gw-abc123\") when { context.input.amount < 1000 };"
+        }
+      },
+      "rawTextFragment": "Allow refunds under $1000",
+      "findings": [
+        {
+          "type": "VALID",
+          "description": "Policy is syntactically valid"
+        }
+      ]
+    }
+  ]
+}
+```
+
+You can now create a policy using the generated Cedar statement from the `definition.cedar.statement` field.
+
+### Get Policy Generation
+
+Get the status and details of a policy generation.
+
+```bash
+agentcore policy get-policy-generation [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--generation-id, -g TEXT`: Generation ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+
+**Example:**
+
+```bash
+agentcore policy get-policy-generation \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "gen-abc123"
+```
+
+### List Policy Generation Assets
+
+List the generated policies from a policy generation.
+
+```bash
+agentcore policy list-policy-generation-assets [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--generation-id, -g TEXT`: Generation ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--max-results INTEGER`: Maximum number of results (optional)
+- `--next-token TEXT`: Token for pagination (optional)
+
+**Example:**
+
+```bash
+agentcore policy list-policy-generation-assets \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "gen-abc123"
+```
+
+### List Policy Generations
+
+List all policy generations in a policy engine.
+
+```bash
+agentcore policy list-policy-generations [OPTIONS]
+```
+
+Options:
+
+- `--policy-engine-id, -e TEXT`: Policy engine ID (required)
+- `--region, -r TEXT`: AWS region (defaults to us-east-1)
+- `--max-results INTEGER`: Maximum number of results (optional)
+- `--next-token TEXT`: Token for pagination (optional)
+
+**Example:**
+
+```bash
+agentcore policy list-policy-generations \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --max-results 20
+```
+
 ## Example Usage
 
 ### Configure an Agent
@@ -1096,6 +1737,142 @@ agentcore memory status my_memory_abc123
 
 # Delete memory
 agentcore memory delete my_memory_abc123 --wait
+```
+
+### Policy Operations
+
+```bash
+# Create a policy engine
+agentcore policy create-policy-engine \
+  --name "RefundPolicyEngine" \
+  --description "Policy engine to regulate refund operations" \
+  --region us-west-2
+
+# List all policy engines
+agentcore policy list-policy-engines --region us-west-2
+
+# Get policy engine details
+agentcore policy get-policy-engine \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --region us-west-2
+
+# Create a Cedar policy
+agentcore policy create-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --name "refund_limit_policy" \
+  --description "Allow refunds under $1000" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 1000 };"}}' \
+  --region us-west-2
+
+# List policies in engine
+agentcore policy list-policies \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --region us-west-2
+
+# Get policy details
+agentcore policy get-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789" \
+  --region us-west-2
+
+# Update policy with new limit
+agentcore policy update-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway\") when { context.input.amount < 500 };"}}' \
+  --description "Updated to $500 limit" \
+  --region us-west-2
+
+# Generate policy from natural language (use underscores in name)
+agentcore policy start-policy-generation \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --name "refund_policy_generation" \
+  --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/my-gateway" \
+  --content "Allow refunds for amounts less than $1000" \
+  --region us-west-2
+
+# Check generation status
+agentcore policy get-policy-generation \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "gen-abc123" \
+  --region us-west-2
+
+# List generated policy assets
+agentcore policy list-policy-generation-assets \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "gen-abc123" \
+  --region us-west-2
+
+# List all policy generations
+agentcore policy list-policy-generations \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --region us-west-2
+
+# Delete a policy
+agentcore policy delete-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --policy-id "policy-xyz789" \
+  --region us-west-2
+
+# Delete policy engine
+agentcore policy delete-policy-engine \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --region us-west-2
+```
+
+### Complete Policy Workflow with Gateway
+
+```bash
+# 1. Create gateway
+agentcore gateway create-mcp-gateway \
+  --name "RefundGateway" \
+  --region us-west-2
+
+# 2. Add Lambda target to gateway
+agentcore gateway create-mcp-gateway-target \
+  --gateway-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123" \
+  --gateway-url "https://gateway.us-west-2.amazonaws.com" \
+  --role-arn "arn:aws:iam::123456789012:role/GatewayRole" \
+  --name "RefundTarget" \
+  --target-type lambda \
+  --region us-west-2
+
+# 3. Create policy engine
+agentcore policy create-policy-engine \
+  --name "RefundPolicyEngine" \
+  --description "Governance for refund operations" \
+  --region us-west-2
+
+# 4. Generate policy from natural language
+agentcore policy start-policy-generation \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --name "refund_policy_gen" \
+  --resource-arn "arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123" \
+  --content "Allow refunds under \$1000" \
+  --region us-west-2
+
+# 5. Wait and check generation (poll until GENERATED, typically ~20-30 seconds)
+agentcore policy get-policy-generation \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "refund_policy_gen-xyz789" \
+  --region us-west-2
+
+# 6. Review generated policies
+agentcore policy list-policy-generation-assets \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --generation-id "refund_policy_gen-xyz789" \
+  --region us-west-2
+
+# 7. Create policy from generated asset (or use your own)
+agentcore policy create-policy \
+  --policy-engine-id "testPolicyEngine-abc123" \
+  --name "refund_limit_policy" \
+  --description "Allow refunds under \$1000" \
+  --definition '{"cedar":{"statement":"permit(principal, action == AgentCore::Action::\"RefundTarget___process_refund\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-west-2:123456789012:gateway/abc123\") when { context.input.amount < 1000 };"}}' \
+  --region us-west-2
+
+# 8. Policies are now enforced at gateway runtime
+# Test via agent invocation with gateway
 ```
 
 ### Importing from Bedrock Agents
