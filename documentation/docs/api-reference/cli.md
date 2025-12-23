@@ -927,7 +927,7 @@ Options:
 
 - `--authorizer-config TEXT`: Serialized authorizer config
 
-- `--enable-semantic-search, -sem`: Whether to enable search tool (defaults to True)
+- `--enable_semantic_search, -sem`: Whether to enable search tool (defaults to True)
 
 ### Create MCP Gateway Target
 
