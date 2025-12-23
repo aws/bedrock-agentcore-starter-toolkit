@@ -292,9 +292,18 @@ jobs:
           name: dist
           path: dist/
 
+  approval:
+    name: Release Approval
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    environment: pypi-approval
+    steps:
+      - name: Release approved
+        run: echo "Release has been approved by a team member"
+
   publish-pypi:
     name: Publish to PyPI
-    needs: [test, build]
+    needs: [approval]
     runs-on: ubuntu-latest
     environment:
       name: pypi
