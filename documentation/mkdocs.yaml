@@ -157,6 +157,7 @@ plugins:
           - "user-guide/create/quickstart.md"
           - "user-guide/dev/quickstart.md"
           - "user-guide/runtime/quickstart.md"
+          - "user-guide/evaluation/quickstart.md": "Evaluation quickstart"
           - "mcp/agentcore_runtime_deployment.md"
           - "user-guide/runtime/overview.md": "Runtime service overview"
           - "user-guide/runtime/permissions.md": "Runtime permissions guide"
