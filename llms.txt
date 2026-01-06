@@ -9,6 +9,7 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 - [Create Agent](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.md)
 - [Local Development](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/dev/quickstart.md)
 - [Runtime Quickstart](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.md)
+- [Evaluation Quickstart](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/evaluation/quickstart.md): Evaluation quickstart
 - [Agentcore runtime deployment](https://aws.github.io/bedrock-agentcore-starter-toolkit/mcp/agentcore_runtime_deployment.md)
 - [Runtime Overview](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/overview.md): Runtime service overview
 - [Runtime Permissions](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/permissions.md): Runtime permissions guide
@@ -55,6 +56,14 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 - [Cloudformation multi agent deploy bash script](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-bash-script.md)
 - [Cloudformation multi agent deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-readme.md)
 - [Cloudformation multi agent template](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-template.md)
+- [Basic terraform deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-readme.md)
+- [Basic terraform deploy sample](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-sample.md)
+- [Weather agent terraform deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-readme.md)
+- [Macro Syntax Error](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-sample.md)
+- [Mcp server terraform deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-readme.md)
+- [Mcp server terraform deploy sample](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-sample.md)
+- [Multi agent terraform deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-readme.md)
+- [Multi agent terraform deploy sample](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-sample.md)
 - [Adk agent readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/adk/adk-agent-readme.md)
 - [Adk agent](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/adk/adk-agent.md)
 - [Autogen agent readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/integrations/agentic-frameworks/autogen/autogen-agent-readme.md)

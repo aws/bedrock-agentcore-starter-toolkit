@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3795,7 +3795,13 @@ bidirectional streaming connections with agent runtimes.</p>
 <span class="normal">390</span>
 <span class="normal">391</span>
 <span class="normal">392</span>
-<span class="normal">393</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AgentCoreRuntimeClient</span><span class="p">:</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">AgentCoreRuntimeClient</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Client for generating WebSocket authentication for AgentCore Runtime.</span>
 
 <span class="sd">    This client provides authentication credentials for WebSocket connections</span>
@@ -3932,7 +3938,7 @@ bidirectional streaming connections with agent runtimes.</p>
 <span class="sd">            ValueError: If runtime_arn format is invalid.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">            &gt;&gt;&gt; ws_url, headers = client.generate_ws_connection(</span>
 <span class="sd">            ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">            ...     endpoint_name=&#39;DEFAULT&#39;</span>
@@ -3982,11 +3988,12 @@ bidirectional streaming connections with agent runtimes.</p>
             <span class="s2">&quot;Host&quot;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
             <span class="s2">&quot;X-Amz-Date&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;x-amz-date&quot;</span><span class="p">],</span>
             <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Authorization&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
             <span class="s2">&quot;Upgrade&quot;</span><span class="p">:</span> <span class="s2">&quot;websocket&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Connection&quot;</span><span class="p">:</span> <span class="s2">&quot;Upgrade&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Sec-WebSocket-Version&quot;</span><span class="p">:</span> <span class="s2">&quot;13&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Sec-WebSocket-Key&quot;</span><span class="p">:</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">secrets</span><span class="o">.</span><span class="n">token_bytes</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
-            <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;AgentRuntime-Client/1.0 (Session: </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="s2">&quot;AgentCoreRuntimeClient/1.0&quot;</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Add session token if present</span>
@@ -4029,7 +4036,7 @@ bidirectional streaming connections with agent runtimes.</p>
 <span class="sd">            RuntimeError: If URL generation fails or no credentials found.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">            &gt;&gt;&gt; presigned_url = client.generate_presigned_url(</span>
 <span class="sd">            ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">            ...     endpoint_name=&#39;DEFAULT&#39;,</span>
@@ -4050,6 +4057,11 @@ bidirectional streaming connections with agent runtimes.</p>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">session_id</span><span class="p">:</span>
             <span class="n">session_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Auto-generated session ID: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">)</span>
+
+        <span class="c1"># Add session_id to custom_headers (which become query params)</span>
+        <span class="k">if</span> <span class="n">custom_headers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">custom_headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">custom_headers</span><span class="p">[</span><span class="s2">&quot;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">session_id</span>
 
         <span class="c1"># Build WebSocket URL with query parameters</span>
         <span class="n">ws_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_websocket_url</span><span class="p">(</span><span class="n">runtime_arn</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">,</span> <span class="n">custom_headers</span><span class="p">)</span>
@@ -4117,7 +4129,7 @@ bidirectional streaming connections with agent runtimes.</p>
 <span class="sd">            ValueError: If runtime_arn format is invalid or bearer_token is empty.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">            &gt;&gt;&gt; ws_url, headers = client.generate_ws_connection_oauth(</span>
 <span class="sd">            ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">            ...     bearer_token=&#39;eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...&#39;,</span>
@@ -4456,7 +4468,7 @@ in the presigned URL before signing (e.g., {"abc": "pqr"}).</p>
   <blockquote>
 <blockquote>
 <blockquote>
-<p>client = AgentRuntimeClient('us-west-2')
+<p>client = AgentCoreRuntimeClient('us-west-2')
 presigned_url = client.generate_presigned_url(
 ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
 ...     endpoint_name='DEFAULT',
@@ -4470,8 +4482,7 @@ presigned_url = client.generate_presigned_url(
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/runtime/agent_core_runtime_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">226</span>
-<span class="normal">227</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">227</span>
 <span class="normal">228</span>
 <span class="normal">229</span>
 <span class="normal">230</span>
@@ -4560,7 +4571,13 @@ presigned_url = client.generate_presigned_url(
 <span class="normal">313</span>
 <span class="normal">314</span>
 <span class="normal">315</span>
-<span class="normal">316</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_presigned_url</span><span class="p">(</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_presigned_url</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">runtime_arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4593,7 +4610,7 @@ presigned_url = client.generate_presigned_url(
 <span class="sd">        RuntimeError: If URL generation fails or no credentials found.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; presigned_url = client.generate_presigned_url(</span>
 <span class="sd">        ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">        ...     endpoint_name=&#39;DEFAULT&#39;,</span>
@@ -4614,6 +4631,11 @@ presigned_url = client.generate_presigned_url(
     <span class="k">if</span> <span class="ow">not</span> <span class="n">session_id</span><span class="p">:</span>
         <span class="n">session_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Auto-generated session ID: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">)</span>
+
+    <span class="c1"># Add session_id to custom_headers (which become query params)</span>
+    <span class="k">if</span> <span class="n">custom_headers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">custom_headers</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">custom_headers</span><span class="p">[</span><span class="s2">&quot;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">session_id</span>
 
     <span class="c1"># Build WebSocket URL with query parameters</span>
     <span class="n">ws_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_websocket_url</span><span class="p">(</span><span class="n">runtime_arn</span><span class="p">,</span> <span class="n">endpoint_name</span><span class="p">,</span> <span class="n">custom_headers</span><span class="p">)</span>
@@ -4799,7 +4821,7 @@ If provided, adds ?qualifier={endpoint_name} to the URL.</p>
   <blockquote>
 <blockquote>
 <blockquote>
-<p>client = AgentRuntimeClient('us-west-2')
+<p>client = AgentCoreRuntimeClient('us-west-2')
 ws_url, headers = client.generate_ws_connection(
 ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
 ...     endpoint_name='DEFAULT'
@@ -4898,7 +4920,8 @@ ws_url, headers = client.generate_ws_connection(
 <span class="normal">221</span>
 <span class="normal">222</span>
 <span class="normal">223</span>
-<span class="normal">224</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_connection</span><span class="p">(</span>
+<span class="normal">224</span>
+<span class="normal">225</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_connection</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">runtime_arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4923,7 +4946,7 @@ ws_url, headers = client.generate_ws_connection(
 <span class="sd">        ValueError: If runtime_arn format is invalid.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; ws_url, headers = client.generate_ws_connection(</span>
 <span class="sd">        ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">        ...     endpoint_name=&#39;DEFAULT&#39;</span>
@@ -4973,11 +4996,12 @@ ws_url, headers = client.generate_ws_connection(
         <span class="s2">&quot;Host&quot;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
         <span class="s2">&quot;X-Amz-Date&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;x-amz-date&quot;</span><span class="p">],</span>
         <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Authorization&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;X-Amzn-Bedrock-AgentCore-Runtime-Session-Id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
         <span class="s2">&quot;Upgrade&quot;</span><span class="p">:</span> <span class="s2">&quot;websocket&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Connection&quot;</span><span class="p">:</span> <span class="s2">&quot;Upgrade&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Sec-WebSocket-Version&quot;</span><span class="p">:</span> <span class="s2">&quot;13&quot;</span><span class="p">,</span>
         <span class="s2">&quot;Sec-WebSocket-Key&quot;</span><span class="p">:</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">secrets</span><span class="o">.</span><span class="n">token_bytes</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
-        <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;AgentRuntime-Client/1.0 (Session: </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;User-Agent&quot;</span><span class="p">:</span> <span class="s2">&quot;AgentCoreRuntimeClient/1.0&quot;</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># Add session token if present</span>
@@ -5142,7 +5166,7 @@ If provided, adds ?qualifier={endpoint_name} to the URL.</p>
   <blockquote>
 <blockquote>
 <blockquote>
-<p>client = AgentRuntimeClient('us-west-2')
+<p>client = AgentCoreRuntimeClient('us-west-2')
 ws_url, headers = client.generate_ws_connection_oauth(
 ...     runtime_arn='arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime',
 ...     bearer_token='eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
@@ -5155,13 +5179,7 @@ ws_url, headers = client.generate_ws_connection_oauth(
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/runtime/agent_core_runtime_client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">324</span>
 <span class="normal">325</span>
 <span class="normal">326</span>
 <span class="normal">327</span>
@@ -5230,7 +5248,13 @@ ws_url, headers = client.generate_ws_connection_oauth(
 <span class="normal">390</span>
 <span class="normal">391</span>
 <span class="normal">392</span>
-<span class="normal">393</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_connection_oauth</span><span class="p">(</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_ws_connection_oauth</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">runtime_arn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">bearer_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5259,7 +5283,7 @@ ws_url, headers = client.generate_ws_connection_oauth(
 <span class="sd">        ValueError: If runtime_arn format is invalid or bearer_token is empty.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; client = AgentRuntimeClient(&#39;us-west-2&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; client = AgentCoreRuntimeClient(&#39;us-west-2&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; ws_url, headers = client.generate_ws_connection_oauth(</span>
 <span class="sd">        ...     runtime_arn=&#39;arn:aws:bedrock-agentcore:us-west-2:123:runtime/my-runtime&#39;,</span>
 <span class="sd">        ...     bearer_token=&#39;eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...&#39;,</span>
@@ -8362,10 +8386,10 @@ async def handler(websocket, context):
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
         <script src="../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
       
