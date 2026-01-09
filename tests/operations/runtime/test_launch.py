@@ -1,5 +1,6 @@
 """Tests for Bedrock AgentCore launch operation."""
 
+import re
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
@@ -382,7 +383,7 @@ class TestLaunchBedrockAgentCore:
 
             # Verify local build with cloud deployment
             assert result.mode == "cloud"
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert re.match(r"bedrock_agentcore-test-agent:\d{8}-\d{6}-\d{3}$", result.tag)
             assert hasattr(result, "agent_arn")
             assert hasattr(result, "agent_id")
             assert hasattr(result, "ecr_uri")
@@ -2623,6 +2624,159 @@ class TestLaunchBedrockAgentCore:
 
         with pytest.raises(ValueError, match="VPC mode requires network configuration"):
             _validate_vpc_resources(mock_session, agent_config, "us-west-2")
+
+    def test_agent_receives_versioned_uri(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test that agent is created with versioned URI, not :latest."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.BedrockAgentCoreClient"
+            ) as mock_client_class,
+        ):
+            mock_client = MagicMock()
+            mock_client.create_or_update_agent.return_value = {"id": "agent-123", "arn": "arn:aws:agent/123"}
+            mock_client.wait_for_agent_endpoint_ready.return_value = "https://example.com"
+            mock_client_class.return_value = mock_client
+
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify agent was created with versioned URI (not :latest)
+            call_kwargs = mock_client.create_or_update_agent.call_args.kwargs
+            assert re.match(r".*:\d{8}-\d{6}-\d{3}$", call_kwargs["image_uri"])
+            assert ":latest" not in call_kwargs["image_uri"]
+
+    def test_codebuild_with_custom_tag(self, mock_boto3_clients, tmp_path):
+        """Test CodeBuild deployment with custom image tag."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_auto_create=True,
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            # Mock workflow to return versioned URI
+            mock_workflow.return_value = ("build-123", "repo:v1.2.3", "us-west-2", "123456789012")
+            mock_deploy.return_value = ("agent-123", "arn:aws:agent/123")
+
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=True, image_tag="v1.2.3")
+
+            # Verify custom tag passed to workflow
+            assert mock_workflow.call_args.kwargs["image_tag"] == "v1.2.3"
+            # Verify versioned URI passed to agent creation
+            assert mock_deploy.call_args[0][4] == "repo:v1.2.3"
+
+    def test_codebuild_auto_generates_tag(self, mock_boto3_clients, tmp_path):
+        """Test CodeBuild deployment auto-generates tag when none provided."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_auto_create=True,
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._execute_codebuild_workflow"
+            ) as mock_workflow,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            # Mock workflow to return versioned URI with timestamp
+            mock_workflow.return_value = ("build-123", "repo:20260108-120435-123", "us-west-2", "123456789012")
+            mock_deploy.return_value = ("agent-123", "arn:aws:agent/123")
+
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=True)
+
+            # Verify workflow was called (tag generation happens inside)
+            assert mock_workflow.called
+            # Verify versioned URI passed to agent creation (not :latest)
+            agent_uri = mock_deploy.call_args[0][4]
+            assert re.match(r"repo:\d{8}-\d{6}-\d{3}$", agent_uri)
+            assert ":latest" not in agent_uri
+
+    def test_deploy_creates_versioned_image_smoke_test(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Smoke test: Verify deployment creates versioned image, not :latest."""
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo",
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built"])
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.BedrockAgentCoreClient"
+            ) as mock_client_class,
+        ):
+            mock_client = MagicMock()
+            mock_client.create_or_update_agent.return_value = {"id": "agent-123", "arn": "arn:aws:agent/123"}
+            mock_client.wait_for_agent_endpoint_ready.return_value = "https://example.com"
+            mock_client_class.return_value = mock_client
+
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Smoke test assertions: Verify versioned tags throughout
+            # 1. Result contains versioned tag
+            assert re.match(r"bedrock_agentcore-test-agent:\d{8}-\d{6}-\d{3}$", result.tag)
+
+            # 2. Result ECR URI contains versioned tag
+            assert re.match(r".*:\d{8}-\d{6}-\d{3}$", result.ecr_uri)
+
+            # 3. Agent was created with versioned URI (not :latest)
+            agent_image_uri = mock_client.create_or_update_agent.call_args.kwargs["image_uri"]
+            assert re.match(r".*:\d{8}-\d{6}-\d{3}$", agent_image_uri)
+            assert ":latest" not in agent_image_uri
+
+            # 4. No :latest anywhere in the flow
+            assert ":latest" not in result.tag
+            assert ":latest" not in result.ecr_uri
 
 
 class TestEnsureExecutionRole:

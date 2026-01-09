@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 from rich.console import Console
 
 from ...services.codebuild import CodeBuildService
-from ...services.ecr import deploy_to_ecr, get_or_create_ecr_repository
+from ...services.ecr import deploy_to_ecr, generate_image_tag, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...services.xray import enable_traces_delivery_for_runtime, enable_transaction_search_if_needed
 from ...utils.runtime.agentcore_identity import _load_api_key_from_env_if_configured
@@ -583,7 +583,7 @@ def _deploy_to_bedrock_agentcore(
             agent_name=agent_name,
             execution_role_arn=agent_config.aws.execution_role,
             deployment_type="container",
-            image_uri=f"{ecr_uri}:latest",
+            image_uri=ecr_uri,
             network_config=network_config,
             authorizer_config=agent_config.get_authorizer_configuration(),
             request_header_config=agent_config.request_header_configuration,
@@ -751,6 +751,7 @@ def launch_bedrock_agentcore(
     auto_update_on_conflict: bool = False,
     console: Optional[Console] = None,
     force_rebuild_deps: bool = False,
+    image_tag: Optional[str] = None,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -764,6 +765,7 @@ def launch_bedrock_agentcore(
         console: Optional Rich Console instance for progress output. Used to maintain
                 output hierarchy with CLI status contexts.
         force_rebuild_deps: Force rebuild of dependencies (direct_code_deploy deployments only)
+        image_tag: Optional custom image tag. If None, auto-generates timestamp tag.
 
     Returns:
         LaunchResult model with launch details
@@ -827,6 +829,7 @@ def launch_bedrock_agentcore(
             project_config=project_config,
             auto_update_on_conflict=auto_update_on_conflict,
             env_vars=env_vars,
+            image_tag=image_tag,
         )
 
     # Log which agent is being launched
@@ -863,8 +866,15 @@ def launch_bedrock_agentcore(
     build_dir = Path(agent_config.source_path) if agent_config.source_path else config_path.parent
     log.info("Using build directory: %s", build_dir)
 
+    # Generate or use provided image tag
+    if not image_tag:
+        image_tag = generate_image_tag()
+
     bedrock_agentcore_name = agent_config.name
-    tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"
+    tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"  # Local build tag
+    versioned_tag = f"bedrock_agentcore-{bedrock_agentcore_name}:{image_tag}"  # For return value
+
+    log.info("Using image tag: %s", image_tag)
 
     # Step 1: Build Docker image (only if we need it)
     # When using source_path, Dockerfile is in .bedrock_agentcore/{agent_name}/ directory
@@ -949,11 +959,11 @@ def launch_bedrock_agentcore(
 
     # Step 4: Push image to ECR
 
-    # Deploy to ECR
+    # Deploy to ECR with versioned tag
     repo_name = "/".join(ecr_uri.split("/")[1:])
-    deploy_to_ecr(tag, repo_name, region, runtime)
+    ecr_versioned_uri = deploy_to_ecr(tag, repo_name, region, runtime, image_tag=image_tag)
 
-    log.info("Image uploaded to ECR: %s", ecr_uri)
+    log.info("Image uploaded to ECR: %s", ecr_versioned_uri)
 
     # Step 5: Deploy agent (with retry logic for role readiness)
     agent_id, agent_arn = _deploy_to_bedrock_agentcore(
@@ -961,7 +971,7 @@ def launch_bedrock_agentcore(
         project_config,
         config_path,
         bedrock_agentcore_name,
-        ecr_uri,
+        ecr_versioned_uri,
         region,
         account_id,
         env_vars,
@@ -970,10 +980,10 @@ def launch_bedrock_agentcore(
 
     return LaunchResult(
         mode="cloud",
-        tag=tag,
+        tag=versioned_tag,
         agent_arn=agent_arn,
         agent_id=agent_id,
-        ecr_uri=ecr_uri,
+        ecr_uri=ecr_versioned_uri,
         build_output=output,
     )
 
@@ -986,6 +996,7 @@ def _execute_codebuild_workflow(
     ecr_only: bool = False,
     auto_update_on_conflict: bool = False,
     env_vars: Optional[dict] = None,
+    image_tag: Optional[str] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     log.info(
@@ -994,6 +1005,11 @@ def _execute_codebuild_workflow(
         agent_config.aws.account,
         agent_config.aws.region,
     )
+
+    # Generate tag if not provided
+    if not image_tag:
+        image_tag = generate_image_tag()
+        log.info("Generated image tag: %s", image_tag)
 
     # Track created resources for error context
     created_resources = []
@@ -1059,19 +1075,16 @@ def _execute_codebuild_workflow(
             agent_name=agent_name, source_dir=source_dir, dockerfile_dir=str(dockerfile_dir)
         )
 
-        # Use cached project name from config if available
-        if hasattr(agent_config, "codebuild") and agent_config.codebuild.project_name:
-            log.info("Using CodeBuild project from config: %s", agent_config.codebuild.project_name)
-            project_name = agent_config.codebuild.project_name
-        else:
-            project_name = codebuild_service.create_or_update_project(
-                agent_name=agent_name,
-                ecr_repository_uri=ecr_uri,
-                execution_role=codebuild_execution_role,
-                source_location=source_location,
-            )
-            if project_name:
-                created_resources.append(f"CodeBuild Project: {project_name}")
+        # Always create or update project to ensure buildspec has current tag
+        project_name = codebuild_service.create_or_update_project(
+            agent_name=agent_name,
+            ecr_repository_uri=ecr_uri,
+            execution_role=codebuild_execution_role,
+            source_location=source_location,
+            image_tag=image_tag,
+        )
+        if project_name:
+            created_resources.append(f"CodeBuild Project: {project_name}")
 
     except Exception as e:
         if created_resources:
@@ -1098,7 +1111,10 @@ def _execute_codebuild_workflow(
     else:
         log.info("ECR-only build completed (project configuration not saved)")
 
-    return build_id, ecr_uri, region, account_id
+    # Build versioned URI from base URI + tag
+    ecr_versioned_uri = f"{ecr_uri}:{image_tag}"
+
+    return build_id, ecr_versioned_uri, region, account_id
 
 
 def _launch_with_codebuild(
@@ -1109,6 +1125,7 @@ def _launch_with_codebuild(
     auto_update_on_conflict: bool = False,
     env_vars: Optional[dict] = None,
     console: Optional[Console] = None,
+    image_tag: Optional[str] = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     if console is None:
@@ -1117,7 +1134,7 @@ def _launch_with_codebuild(
     _ensure_memory_for_agent(agent_config, project_config, config_path, agent_name, console=console)
 
     # Execute shared CodeBuild workflow with full deployment mode
-    build_id, ecr_uri, region, account_id = _execute_codebuild_workflow(
+    build_id, ecr_versioned_uri, region, account_id = _execute_codebuild_workflow(
         config_path=config_path,
         agent_name=agent_name,
         agent_config=agent_config,
@@ -1125,6 +1142,7 @@ def _launch_with_codebuild(
         ecr_only=False,
         auto_update_on_conflict=auto_update_on_conflict,
         env_vars=env_vars,
+        image_tag=image_tag,
     )
 
     # Deploy to Bedrock AgentCore
@@ -1133,7 +1151,7 @@ def _launch_with_codebuild(
         project_config,
         config_path,
         agent_name,
-        ecr_uri,
+        ecr_versioned_uri,
         region,
         account_id,
         env_vars=env_vars,
@@ -1144,9 +1162,9 @@ def _launch_with_codebuild(
 
     return LaunchResult(
         mode="codebuild",
-        tag=f"bedrock_agentcore-{agent_name}:latest",
+        tag=f"bedrock_agentcore-{agent_name}:{image_tag}",
         codebuild_id=build_id,
-        ecr_uri=ecr_uri,
+        ecr_uri=ecr_versioned_uri,
         agent_arn=agent_arn,
         agent_id=agent_id,
     )

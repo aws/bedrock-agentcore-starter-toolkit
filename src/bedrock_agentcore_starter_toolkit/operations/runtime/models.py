@@ -36,7 +36,9 @@ class LaunchResult(BaseModel):
     """Result of launch operation."""
 
     mode: str = Field(..., description="Launch mode: local, cloud, or codebuild")
-    tag: Optional[str] = Field(default=None, description="Docker image tag (container deployments only)")
+    tag: Optional[str] = Field(
+        default=None, description="Versioned Docker image tag (e.g., 20260108-120435-123 or custom tag)"
+    )
     env_vars: Optional[Dict[str, str]] = Field(default=None, description="Environment variables for local deployment")
 
     # Local mode fields
@@ -44,7 +46,9 @@ class LaunchResult(BaseModel):
     runtime: Optional[ContainerRuntime] = Field(default=None, description="Container runtime instance")
 
     # Cloud mode fields
-    ecr_uri: Optional[str] = Field(default=None, description="ECR repository URI")
+    ecr_uri: Optional[str] = Field(
+        default=None, description="Versioned ECR image URI (e.g., {repo}:20260108-120435-123)"
+    )
     agent_id: Optional[str] = Field(default=None, description="BedrockAgentCore agent ID")
     agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
 

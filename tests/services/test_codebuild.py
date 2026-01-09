@@ -328,8 +328,8 @@ class TestCodeBuildService:
                 codebuild_service.wait_for_completion("test-build-id", timeout=1)
 
     def test_get_arm64_buildspec(self, codebuild_service):
-        """Test ARM64 buildspec generation - native build with parallel ECR auth."""
-        buildspec = codebuild_service._get_arm64_buildspec("test-ecr-uri")
+        """Test ARM64 buildspec generation with provided tag."""
+        buildspec = codebuild_service._get_arm64_buildspec("test-ecr-uri", "20260108-120435-123")
 
         assert "version: 0.2" in buildspec
         assert "test-ecr-uri" in buildspec
@@ -355,9 +355,18 @@ class TestCodeBuildService:
         assert "ECR authentication failed" in buildspec
         assert "Both build and auth completed successfully" in buildspec
 
-        # Verify final steps
-        assert "Tagging image..." in buildspec
-        assert "docker tag bedrock-agentcore-arm64:latest" in buildspec
+        # Verify versioned tagging
+        assert "Tagging image with version" in buildspec
+        assert "docker tag bedrock-agentcore-arm64:latest test-ecr-uri:" in buildspec
+        assert "Pushing versioned image to ECR" in buildspec
+        assert "docker push test-ecr-uri:" in buildspec
+
+    def test_get_arm64_buildspec_with_custom_tag(self, codebuild_service):
+        """Test buildspec with custom image tag."""
+        buildspec = codebuild_service._get_arm64_buildspec("test-ecr-uri", image_tag="v1.2.3")
+
+        assert "test-ecr-uri:v1.2.3" in buildspec
+        assert "docker push test-ecr-uri:v1.2.3" in buildspec
 
     def test_parse_dockerignore_from_template(self, codebuild_service):
         """Test parsing .dockerignore patterns from template."""

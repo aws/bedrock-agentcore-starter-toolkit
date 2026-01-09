@@ -157,12 +157,23 @@ class CodeBuildService:
         )
 
     def create_or_update_project(
-        self, agent_name: str, ecr_repository_uri: str, execution_role: str, source_location: str
+        self,
+        agent_name: str,
+        ecr_repository_uri: str,
+        execution_role: str,
+        source_location: str,
+        image_tag: Optional[str] = None,
     ) -> str:
         """Create or update CodeBuild project for ARM64 builds."""
+        # Generate tag if not provided
+        if not image_tag:
+            from .ecr import generate_image_tag
+
+            image_tag = generate_image_tag()
+
         project_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_name)}-builder"
 
-        buildspec = self._get_arm64_buildspec(ecr_repository_uri)
+        buildspec = self._get_arm64_buildspec(ecr_repository_uri, image_tag)
 
         # CodeBuild expects S3 location without s3:// prefix (bucket/key format)
         codebuild_source_location = self._normalize_s3_location(source_location)
@@ -262,8 +273,8 @@ class CodeBuildService:
         minutes, seconds = divmod(int(total_duration), 60)
         raise TimeoutError(f"CodeBuild timed out after {minutes}m {seconds}s (current phase: {current_phase})")
 
-    def _get_arm64_buildspec(self, ecr_repository_uri: str) -> str:
-        """Get optimized buildspec with parallel ECR authentication."""
+    def _get_arm64_buildspec(self, ecr_repository_uri: str, image_tag: str) -> str:
+        """Get buildspec for ARM64 builds with versioned tagging."""
         return f"""
 version: 0.2
 phases:
@@ -289,12 +300,12 @@ phases:
           exit 1
         fi
         echo "Both build and auth completed successfully"
-      - echo "Tagging image..."
-      - docker tag bedrock-agentcore-arm64:latest {ecr_repository_uri}:latest
+      - echo "Tagging image with version {image_tag}..."
+      - "docker tag bedrock-agentcore-arm64:latest {ecr_repository_uri}:{image_tag}"
   post_build:
     commands:
-      - echo "Pushing ARM64 image to ECR..."
-      - docker push {ecr_repository_uri}:latest
+      - echo "Pushing versioned image to ECR..."
+      - "docker push {ecr_repository_uri}:{image_tag}"
       - echo "Build completed at $(date)"
 """
 

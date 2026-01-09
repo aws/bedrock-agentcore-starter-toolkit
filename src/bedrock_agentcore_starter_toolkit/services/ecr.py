@@ -2,6 +2,8 @@
 
 import base64
 import re
+from datetime import datetime
+from typing import Optional
 
 import boto3
 
@@ -59,6 +61,11 @@ def get_region() -> str:
     return boto3.Session().region_name or "us-west-2"
 
 
+def generate_image_tag() -> str:
+    """Generate unique UTC timestamp tag (YYYYMMDD-HHMMSS-mmm)."""
+    return datetime.utcnow().strftime("%Y%m%d-%H%M%S-%f")[:19]
+
+
 def create_ecr_repository(repo_name: str, region: str) -> str:
     """Create or get existing ECR repository."""
     ecr = boto3.client("ecr", region_name=region)
@@ -99,8 +106,14 @@ def get_or_create_ecr_repository(agent_name: str, region: str) -> str:
         return create_ecr_repository(repo_name, region)
 
 
-def deploy_to_ecr(local_tag: str, repo_name: str, region: str, container_runtime: ContainerRuntime) -> str:
-    """Build and push image to ECR."""
+def deploy_to_ecr(
+    local_tag: str,
+    repo_name: str,
+    region: str,
+    container_runtime: ContainerRuntime,
+    image_tag: Optional[str] = None,
+) -> str:
+    """Build and push image to ECR with versioned tagging."""
     ecr = boto3.client("ecr", region_name=region)
 
     # Get or create repository
@@ -115,12 +128,19 @@ def deploy_to_ecr(local_tag: str, repo_name: str, region: str, container_runtime
     if not container_runtime.login(auth_data["proxyEndpoint"], username, password):
         raise RuntimeError("Failed to login to ECR")
 
-    # Tag and push
-    ecr_tag = f"{ecr_uri}:latest"
-    if not container_runtime.tag(local_tag, ecr_tag):
-        raise RuntimeError("Failed to tag image")
+    # Generate tag if not provided
+    if not image_tag:
+        image_tag = generate_image_tag()
 
-    if not container_runtime.push(ecr_tag):
-        raise RuntimeError("Failed to push image to ECR")
+    # Tag with versioned tag
+    ecr_versioned_tag = f"{ecr_uri}:{image_tag}"
 
-    return ecr_tag
+    if not container_runtime.tag(local_tag, ecr_versioned_tag):
+        raise RuntimeError(f"Failed to tag image as {image_tag}")
+
+    # Push versioned tag
+    if not container_runtime.push(ecr_versioned_tag):
+        raise RuntimeError(f"Failed to push versioned image {image_tag}")
+
+    # Return versioned tag
+    return ecr_versioned_tag
