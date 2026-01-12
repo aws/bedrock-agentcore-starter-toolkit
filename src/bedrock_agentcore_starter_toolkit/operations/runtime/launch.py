@@ -871,7 +871,7 @@ def launch_bedrock_agentcore(
         image_tag = generate_image_tag()
 
     bedrock_agentcore_name = agent_config.name
-    tag = f"bedrock_agentcore-{bedrock_agentcore_name}:latest"  # Local build tag
+    local_tag = f"bedrock_agentcore-{bedrock_agentcore_name}:{image_tag}"  # Local build tag
     versioned_tag = f"bedrock_agentcore-{bedrock_agentcore_name}:{image_tag}"  # For return value
 
     log.info("Using image tag: %s", image_tag)
@@ -886,7 +886,7 @@ def launch_bedrock_agentcore(
     if not dockerfile_path.exists():
         raise RuntimeError(f"Dockerfile not found at {dockerfile_path}. Please run 'agentcore configure' first.")
 
-    success, output = runtime.build(build_dir, tag, dockerfile_path=dockerfile_path)
+    success, output = runtime.build(build_dir, local_tag, dockerfile_path=dockerfile_path)
     if not success:
         error_lines = output[-10:] if len(output) > 10 else output
         error_message = " ".join(error_lines)
@@ -901,13 +901,13 @@ def launch_bedrock_agentcore(
         else:
             raise RuntimeError(f"Build failed: {error_message}")
 
-    log.info("Docker image built: %s", tag)
+    log.info("Docker image built: %s", local_tag)
 
     if local:
         # Return info for local deployment
         return LaunchResult(
             mode="local",
-            tag=tag,
+            tag=local_tag,
             port=8080,
             runtime=runtime,
             env_vars=env_vars,
@@ -961,7 +961,7 @@ def launch_bedrock_agentcore(
 
     # Deploy to ECR with versioned tag
     repo_name = "/".join(ecr_uri.split("/")[1:])
-    ecr_versioned_uri = deploy_to_ecr(tag, repo_name, region, runtime, image_tag=image_tag)
+    ecr_versioned_uri = deploy_to_ecr(local_tag, repo_name, region, runtime, image_tag=image_tag)
 
     log.info("Image uploaded to ECR: %s", ecr_versioned_uri)
 

@@ -197,7 +197,7 @@ class TestLaunchBedrockAgentCore:
 
         # Verify local mode result
         assert result.mode == "local"
-        assert result.tag == "bedrock_agentcore-test-agent:latest"
+        assert re.match(r"bedrock_agentcore-test-agent:\d{8}-\d{6}-\d{3}$", result.tag)
         assert result.port == 8080
         assert hasattr(result, "runtime")
         mock_container_runtime.build.assert_called_once()
@@ -723,7 +723,7 @@ class TestLaunchBedrockAgentCore:
             # Check result structure
             assert result.mode == "local"
             assert result.port == 8080
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert re.match(r"bedrock_agentcore-test-agent:\d{8}-\d{6}-\d{3}$", result.tag)
             assert isinstance(result.runtime, type(mock_container_runtime))
 
     def test_env_vars_handling(self, mock_container_runtime, tmp_path):
@@ -1862,7 +1862,7 @@ class TestLaunchBedrockAgentCore:
             # Verify result has the default port (8080) since PORT env var is only used at runtime
             assert result.mode == "local"
             assert result.port == 8080
-            assert result.tag == "bedrock_agentcore-test-agent:latest"
+            assert re.match(r"bedrock_agentcore-test-agent:\d{8}-\d{6}-\d{3}$", result.tag)
 
             # Verify env_vars were passed through
             assert "PORT" in result.env_vars

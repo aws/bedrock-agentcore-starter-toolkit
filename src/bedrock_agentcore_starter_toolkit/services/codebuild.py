@@ -14,7 +14,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from ..operations.runtime.create_role import get_or_create_codebuild_execution_role
-from .ecr import sanitize_ecr_repo_name
+from .ecr import generate_image_tag, sanitize_ecr_repo_name
 
 
 class CodeBuildService:
@@ -167,8 +167,6 @@ class CodeBuildService:
         """Create or update CodeBuild project for ARM64 builds."""
         # Generate tag if not provided
         if not image_tag:
-            from .ecr import generate_image_tag
-
             image_tag = generate_image_tag()
 
         project_name = f"bedrock-agentcore-{sanitize_ecr_repo_name(agent_name)}-builder"
