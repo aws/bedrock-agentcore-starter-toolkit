@@ -1462,6 +1462,51 @@ class MemoryClient:
         self.add_user_preference_strategy(memory_id, name, description, namespaces)
         return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
+    def add_episodic_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        reflection_namespaces: List[str],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Add an episodic memory strategy.
+
+        Args:
+            memory_id: Memory resource ID
+            name: Strategy name
+            reflection_namespaces: Namespaces for reflections (can be less nested than episode namespaces)
+            description: Optional description
+            namespaces: Optional namespaces for episodes
+        """
+        strategy: Dict = {
+            StrategyType.EPISODIC.value: {
+                "name": name,
+                "reflectionConfiguration": {"namespaces": reflection_namespaces},
+            }
+        }
+
+        if description:
+            strategy[StrategyType.EPISODIC.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.EPISODIC.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_episodic_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        reflection_namespaces: List[str],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> Dict[str, Any]:
+        """Add an episodic strategy and wait for memory to return to ACTIVE state."""
+        self.add_episodic_strategy(memory_id, name, reflection_namespaces, description, namespaces)
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
     def add_custom_semantic_strategy(
         self,
         memory_id: str,
@@ -1522,6 +1567,88 @@ class MemoryClient:
         """Add a custom semantic strategy and wait for memory to return to ACTIVE state."""
         self.add_custom_semantic_strategy(
             memory_id, name, extraction_config, consolidation_config, description, namespaces
+        )
+        return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+
+    def add_custom_episodic_strategy(
+        self,
+        memory_id: str,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        reflection_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Add a custom episodic strategy with prompts.
+
+        Args:
+            memory_id: Memory resource ID
+            name: Strategy name
+            extraction_config: {"prompt": "...", "modelId": "..."}
+            consolidation_config: {"prompt": "...", "modelId": "..."}
+            reflection_config: {"prompt": "...", "modelId": "...", "namespaces": [...]}
+            description: Optional description
+            namespaces: Optional namespaces list
+        """
+        for config, config_name in [
+            (extraction_config, "extraction_config"),
+            (consolidation_config, "consolidation_config"),
+            (reflection_config, "reflection_config"),
+        ]:
+            for key in ("prompt", "modelId"):
+                if key not in config:
+                    raise ValueError(f"{config_name} missing required key: {key}")
+
+        strategy = {
+            StrategyType.CUSTOM.value: {
+                "name": name,
+                "configuration": {
+                    "episodicOverride": {
+                        "extraction": {
+                            "appendToPrompt": extraction_config["prompt"],
+                            "modelId": extraction_config["modelId"],
+                        },
+                        "consolidation": {
+                            "appendToPrompt": consolidation_config["prompt"],
+                            "modelId": consolidation_config["modelId"],
+                        },
+                        "reflection": {
+                            "appendToPrompt": reflection_config["prompt"],
+                            "modelId": reflection_config["modelId"],
+                            **(
+                                {"namespaces": reflection_config["namespaces"]}
+                                if "namespaces" in reflection_config
+                                else {}
+                            ),
+                        },
+                    }
+                },
+            }
+        }
+
+        if description:
+            strategy[StrategyType.CUSTOM.value]["description"] = description
+        if namespaces:
+            strategy[StrategyType.CUSTOM.value]["namespaces"] = namespaces
+
+        return self._add_strategy(memory_id, strategy)
+
+    def add_custom_episodic_strategy_and_wait(
+        self,
+        memory_id: str,
+        name: str,
+        extraction_config: Dict[str, Any],
+        consolidation_config: Dict[str, Any],
+        reflection_config: Dict[str, Any],
+        description: Optional[str] = None,
+        namespaces: Optional[List[str]] = None,
+        max_wait: int = 300,
+        poll_interval: int = 10,
+    ) -> Dict[str, Any]:
+        """Add a custom episodic strategy and wait for memory to return to ACTIVE state."""
+        self.add_custom_episodic_strategy(
+            memory_id, name, extraction_config, consolidation_config, reflection_config, description, namespaces
         )
         return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 
@@ -1854,19 +1981,22 @@ class MemoryClient:
         if "extraction" in config:
             extraction = config["extraction"]
 
-            if any(key in extraction for key in ["triggerEveryNMessages", "historicalContextWindowSize"]):
-                strategy_type_enum = MemoryStrategyTypeEnum(strategy_type)
+            builtin_config_keys = ["triggerEveryNMessages", "historicalContextWindowSize"]
 
-                if strategy_type == "SEMANTIC":
+            if strategy_type == "CUSTOM" and override_type:
+                override_enum = OverrideType(override_type)
+                if override_enum in CUSTOM_EXTRACTION_WRAPPER_KEYS:
+                    wrapped_config["extraction"] = {
+                        "customExtractionConfiguration": {CUSTOM_EXTRACTION_WRAPPER_KEYS[override_enum]: extraction}
+                    }
+                else:
+                    wrapped_config["extraction"] = extraction
+            elif any(key in extraction for key in builtin_config_keys):
+                strategy_type_enum = MemoryStrategyTypeEnum(strategy_type)
+                if strategy_type in ("SEMANTIC", "USER_PREFERENCE"):
                     wrapped_config["extraction"] = {EXTRACTION_WRAPPER_KEYS[strategy_type_enum]: extraction}
-                elif strategy_type == "USER_PREFERENCE":
-                    wrapped_config["extraction"] = {EXTRACTION_WRAPPER_KEYS[strategy_type_enum]: extraction}
-                elif strategy_type == "CUSTOM" and override_type:
-                    override_enum = OverrideType(override_type)
-                    if override_type in ["SEMANTIC_OVERRIDE", "USER_PREFERENCE_OVERRIDE"]:
-                        wrapped_config["extraction"] = {
-                            "customExtractionConfiguration": {CUSTOM_EXTRACTION_WRAPPER_KEYS[override_enum]: extraction}
-                        }
+                else:
+                    wrapped_config["extraction"] = extraction
             else:
                 wrapped_config["extraction"] = extraction
 
@@ -1892,6 +2022,18 @@ class MemoryClient:
                         }
             else:
                 wrapped_config["consolidation"] = consolidation
+
+        if "reflection" in config:
+            reflection = config["reflection"]
+
+            if strategy_type == "CUSTOM" and override_type:
+                override_enum = OverrideType(override_type)
+                if override_enum in CUSTOM_REFLECTION_WRAPPER_KEYS:
+                    wrapped_config["reflection"] = {
+                        "customReflectionConfiguration": {CUSTOM_REFLECTION_WRAPPER_KEYS[override_enum]: reflection}
+                    }
+            else:
+                wrapped_config["reflection"] = reflection
 
         return wrapped_config
 ```
@@ -2001,6 +2143,116 @@ def __init__(self, region_name: Optional[str] = None):
     )
 ```
 
+#### `add_custom_episodic_strategy(memory_id, name, extraction_config, consolidation_config, reflection_config, description=None, namespaces=None)`
+
+Add a custom episodic strategy with prompts.
+
+Parameters:
+
+| Name                   | Type                  | Description                                              | Default    |
+| ---------------------- | --------------------- | -------------------------------------------------------- | ---------- |
+| `memory_id`            | `str`                 | Memory resource ID                                       | *required* |
+| `name`                 | `str`                 | Strategy name                                            | *required* |
+| `extraction_config`    | `Dict[str, Any]`      | {"prompt": "...", "modelId": "..."}                      | *required* |
+| `consolidation_config` | `Dict[str, Any]`      | {"prompt": "...", "modelId": "..."}                      | *required* |
+| `reflection_config`    | `Dict[str, Any]`      | {"prompt": "...", "modelId": "...", "namespaces": [...]} | *required* |
+| `description`          | `Optional[str]`       | Optional description                                     | `None`     |
+| `namespaces`           | `Optional[List[str]]` | Optional namespaces list                                 | `None`     |
+
+Source code in `bedrock_agentcore/memory/client.py`
+
+```
+def add_custom_episodic_strategy(
+    self,
+    memory_id: str,
+    name: str,
+    extraction_config: Dict[str, Any],
+    consolidation_config: Dict[str, Any],
+    reflection_config: Dict[str, Any],
+    description: Optional[str] = None,
+    namespaces: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Add a custom episodic strategy with prompts.
+
+    Args:
+        memory_id: Memory resource ID
+        name: Strategy name
+        extraction_config: {"prompt": "...", "modelId": "..."}
+        consolidation_config: {"prompt": "...", "modelId": "..."}
+        reflection_config: {"prompt": "...", "modelId": "...", "namespaces": [...]}
+        description: Optional description
+        namespaces: Optional namespaces list
+    """
+    for config, config_name in [
+        (extraction_config, "extraction_config"),
+        (consolidation_config, "consolidation_config"),
+        (reflection_config, "reflection_config"),
+    ]:
+        for key in ("prompt", "modelId"):
+            if key not in config:
+                raise ValueError(f"{config_name} missing required key: {key}")
+
+    strategy = {
+        StrategyType.CUSTOM.value: {
+            "name": name,
+            "configuration": {
+                "episodicOverride": {
+                    "extraction": {
+                        "appendToPrompt": extraction_config["prompt"],
+                        "modelId": extraction_config["modelId"],
+                    },
+                    "consolidation": {
+                        "appendToPrompt": consolidation_config["prompt"],
+                        "modelId": consolidation_config["modelId"],
+                    },
+                    "reflection": {
+                        "appendToPrompt": reflection_config["prompt"],
+                        "modelId": reflection_config["modelId"],
+                        **(
+                            {"namespaces": reflection_config["namespaces"]}
+                            if "namespaces" in reflection_config
+                            else {}
+                        ),
+                    },
+                }
+            },
+        }
+    }
+
+    if description:
+        strategy[StrategyType.CUSTOM.value]["description"] = description
+    if namespaces:
+        strategy[StrategyType.CUSTOM.value]["namespaces"] = namespaces
+
+    return self._add_strategy(memory_id, strategy)
+```
+
+#### `add_custom_episodic_strategy_and_wait(memory_id, name, extraction_config, consolidation_config, reflection_config, description=None, namespaces=None, max_wait=300, poll_interval=10)`
+
+Add a custom episodic strategy and wait for memory to return to ACTIVE state.
+
+Source code in `bedrock_agentcore/memory/client.py`
+
+```
+def add_custom_episodic_strategy_and_wait(
+    self,
+    memory_id: str,
+    name: str,
+    extraction_config: Dict[str, Any],
+    consolidation_config: Dict[str, Any],
+    reflection_config: Dict[str, Any],
+    description: Optional[str] = None,
+    namespaces: Optional[List[str]] = None,
+    max_wait: int = 300,
+    poll_interval: int = 10,
+) -> Dict[str, Any]:
+    """Add a custom episodic strategy and wait for memory to return to ACTIVE state."""
+    self.add_custom_episodic_strategy(
+        memory_id, name, extraction_config, consolidation_config, reflection_config, description, namespaces
+    )
+    return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+```
+
 #### `add_custom_semantic_strategy(memory_id, name, extraction_config, consolidation_config, description=None, namespaces=None)`
 
 Add a custom semantic strategy with prompts.
@@ -2088,6 +2340,77 @@ def add_custom_semantic_strategy_and_wait(
     self.add_custom_semantic_strategy(
         memory_id, name, extraction_config, consolidation_config, description, namespaces
     )
+    return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
+```
+
+#### `add_episodic_strategy(memory_id, name, reflection_namespaces, description=None, namespaces=None)`
+
+Add an episodic memory strategy.
+
+Parameters:
+
+| Name                    | Type                  | Description                                                             | Default    |
+| ----------------------- | --------------------- | ----------------------------------------------------------------------- | ---------- |
+| `memory_id`             | `str`                 | Memory resource ID                                                      | *required* |
+| `name`                  | `str`                 | Strategy name                                                           | *required* |
+| `reflection_namespaces` | `List[str]`           | Namespaces for reflections (can be less nested than episode namespaces) | *required* |
+| `description`           | `Optional[str]`       | Optional description                                                    | `None`     |
+| `namespaces`            | `Optional[List[str]]` | Optional namespaces for episodes                                        | `None`     |
+
+Source code in `bedrock_agentcore/memory/client.py`
+
+```
+def add_episodic_strategy(
+    self,
+    memory_id: str,
+    name: str,
+    reflection_namespaces: List[str],
+    description: Optional[str] = None,
+    namespaces: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Add an episodic memory strategy.
+
+    Args:
+        memory_id: Memory resource ID
+        name: Strategy name
+        reflection_namespaces: Namespaces for reflections (can be less nested than episode namespaces)
+        description: Optional description
+        namespaces: Optional namespaces for episodes
+    """
+    strategy: Dict = {
+        StrategyType.EPISODIC.value: {
+            "name": name,
+            "reflectionConfiguration": {"namespaces": reflection_namespaces},
+        }
+    }
+
+    if description:
+        strategy[StrategyType.EPISODIC.value]["description"] = description
+    if namespaces:
+        strategy[StrategyType.EPISODIC.value]["namespaces"] = namespaces
+
+    return self._add_strategy(memory_id, strategy)
+```
+
+#### `add_episodic_strategy_and_wait(memory_id, name, reflection_namespaces, description=None, namespaces=None, max_wait=300, poll_interval=10)`
+
+Add an episodic strategy and wait for memory to return to ACTIVE state.
+
+Source code in `bedrock_agentcore/memory/client.py`
+
+```
+def add_episodic_strategy_and_wait(
+    self,
+    memory_id: str,
+    name: str,
+    reflection_namespaces: List[str],
+    description: Optional[str] = None,
+    namespaces: Optional[List[str]] = None,
+    max_wait: int = 300,
+    poll_interval: int = 10,
+) -> Dict[str, Any]:
+    """Add an episodic strategy and wait for memory to return to ACTIVE state."""
+    self.add_episodic_strategy(memory_id, name, reflection_namespaces, description, namespaces)
     return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 ```
 

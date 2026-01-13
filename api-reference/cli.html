@@ -4124,6 +4124,9 @@ agentcore<span class="w"> </span>configure<span class="w"> </span>--entrypoint<s
 <p><code>--local-build, -lb</code>: Build locally and deploy to cloud (requires Docker/Finch/Podman)</p>
 </li>
 <li>
+<p><code>--image-tag, -t TEXT</code>: Custom image tag for version isolation (default: auto-generated timestamp YYYYMMDD-HHMMSS-mmm)</p>
+</li>
+<li>
 <p><code>--auto-update-on-conflict, -auc</code>: Automatically update existing agent instead of failing</p>
 </li>
 <li>
@@ -4139,7 +4142,18 @@ agentcore<span class="w"> </span>deploy<span class="w"> </span>--local
 
 <span class="c1"># Local build mode - Build locally, deploy to cloud</span>
 agentcore<span class="w"> </span>deploy<span class="w"> </span>--local-build
+
+<span class="c1"># Deploy with custom image tag for version control</span>
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--image-tag<span class="w"> </span>v1.2.3
+
+<span class="c1"># Deploy with semantic versioning</span>
+agentcore<span class="w"> </span>deploy<span class="w"> </span>--image-tag<span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>describe<span class="w"> </span>--tags<span class="w"> </span>--always<span class="k">)</span>
 </code></pre></div>
+<p><strong>Image Versioning:</strong></p>
+<p>Each deployment automatically gets a unique immutable image tag for version isolation:
+- Default: Auto-generated timestamp (e.g., <code>20260109-094500-123</code>)
+- Custom: Use <code>--image-tag</code> for semantic versioning or build numbers
+- Ensures previous agent versions continue using their original images</p>
 <p><strong>Memory Provisioning:</strong></p>
 <p>During deploy, if memory is enabled:</p>
 <ul>

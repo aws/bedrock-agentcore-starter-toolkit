@@ -2412,6 +2412,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_custom_episodic_strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy_and_wait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_custom_episodic_strategy_and_wait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_semantic_strategy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2427,6 +2449,28 @@
     <span class="md-ellipsis">
       
         add_custom_semantic_strategy_and_wait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_episodic_strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy_and_wait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_episodic_strategy_and_wait
       
     </span>
   </a>
@@ -3916,6 +3960,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_custom_episodic_strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy_and_wait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_custom_episodic_strategy_and_wait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#bedrock_agentcore.memory.MemoryClient.add_custom_semantic_strategy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3931,6 +3997,28 @@
     <span class="md-ellipsis">
       
         add_custom_semantic_strategy_and_wait
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_episodic_strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy_and_wait" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add_episodic_strategy_and_wait
       
     </span>
   </a>
@@ -5381,8 +5469,7 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  38</span>
-<span class="normal">  39</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">  39</span>
 <span class="normal">  40</span>
 <span class="normal">  41</span>
 <span class="normal">  42</span>
@@ -7196,7 +7283,150 @@
 <span class="normal">1850</span>
 <span class="normal">1851</span>
 <span class="normal">1852</span>
-<span class="normal">1853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MemoryClient</span><span class="p">:</span>
+<span class="normal">1853</span>
+<span class="normal">1854</span>
+<span class="normal">1855</span>
+<span class="normal">1856</span>
+<span class="normal">1857</span>
+<span class="normal">1858</span>
+<span class="normal">1859</span>
+<span class="normal">1860</span>
+<span class="normal">1861</span>
+<span class="normal">1862</span>
+<span class="normal">1863</span>
+<span class="normal">1864</span>
+<span class="normal">1865</span>
+<span class="normal">1866</span>
+<span class="normal">1867</span>
+<span class="normal">1868</span>
+<span class="normal">1869</span>
+<span class="normal">1870</span>
+<span class="normal">1871</span>
+<span class="normal">1872</span>
+<span class="normal">1873</span>
+<span class="normal">1874</span>
+<span class="normal">1875</span>
+<span class="normal">1876</span>
+<span class="normal">1877</span>
+<span class="normal">1878</span>
+<span class="normal">1879</span>
+<span class="normal">1880</span>
+<span class="normal">1881</span>
+<span class="normal">1882</span>
+<span class="normal">1883</span>
+<span class="normal">1884</span>
+<span class="normal">1885</span>
+<span class="normal">1886</span>
+<span class="normal">1887</span>
+<span class="normal">1888</span>
+<span class="normal">1889</span>
+<span class="normal">1890</span>
+<span class="normal">1891</span>
+<span class="normal">1892</span>
+<span class="normal">1893</span>
+<span class="normal">1894</span>
+<span class="normal">1895</span>
+<span class="normal">1896</span>
+<span class="normal">1897</span>
+<span class="normal">1898</span>
+<span class="normal">1899</span>
+<span class="normal">1900</span>
+<span class="normal">1901</span>
+<span class="normal">1902</span>
+<span class="normal">1903</span>
+<span class="normal">1904</span>
+<span class="normal">1905</span>
+<span class="normal">1906</span>
+<span class="normal">1907</span>
+<span class="normal">1908</span>
+<span class="normal">1909</span>
+<span class="normal">1910</span>
+<span class="normal">1911</span>
+<span class="normal">1912</span>
+<span class="normal">1913</span>
+<span class="normal">1914</span>
+<span class="normal">1915</span>
+<span class="normal">1916</span>
+<span class="normal">1917</span>
+<span class="normal">1918</span>
+<span class="normal">1919</span>
+<span class="normal">1920</span>
+<span class="normal">1921</span>
+<span class="normal">1922</span>
+<span class="normal">1923</span>
+<span class="normal">1924</span>
+<span class="normal">1925</span>
+<span class="normal">1926</span>
+<span class="normal">1927</span>
+<span class="normal">1928</span>
+<span class="normal">1929</span>
+<span class="normal">1930</span>
+<span class="normal">1931</span>
+<span class="normal">1932</span>
+<span class="normal">1933</span>
+<span class="normal">1934</span>
+<span class="normal">1935</span>
+<span class="normal">1936</span>
+<span class="normal">1937</span>
+<span class="normal">1938</span>
+<span class="normal">1939</span>
+<span class="normal">1940</span>
+<span class="normal">1941</span>
+<span class="normal">1942</span>
+<span class="normal">1943</span>
+<span class="normal">1944</span>
+<span class="normal">1945</span>
+<span class="normal">1946</span>
+<span class="normal">1947</span>
+<span class="normal">1948</span>
+<span class="normal">1949</span>
+<span class="normal">1950</span>
+<span class="normal">1951</span>
+<span class="normal">1952</span>
+<span class="normal">1953</span>
+<span class="normal">1954</span>
+<span class="normal">1955</span>
+<span class="normal">1956</span>
+<span class="normal">1957</span>
+<span class="normal">1958</span>
+<span class="normal">1959</span>
+<span class="normal">1960</span>
+<span class="normal">1961</span>
+<span class="normal">1962</span>
+<span class="normal">1963</span>
+<span class="normal">1964</span>
+<span class="normal">1965</span>
+<span class="normal">1966</span>
+<span class="normal">1967</span>
+<span class="normal">1968</span>
+<span class="normal">1969</span>
+<span class="normal">1970</span>
+<span class="normal">1971</span>
+<span class="normal">1972</span>
+<span class="normal">1973</span>
+<span class="normal">1974</span>
+<span class="normal">1975</span>
+<span class="normal">1976</span>
+<span class="normal">1977</span>
+<span class="normal">1978</span>
+<span class="normal">1979</span>
+<span class="normal">1980</span>
+<span class="normal">1981</span>
+<span class="normal">1982</span>
+<span class="normal">1983</span>
+<span class="normal">1984</span>
+<span class="normal">1985</span>
+<span class="normal">1986</span>
+<span class="normal">1987</span>
+<span class="normal">1988</span>
+<span class="normal">1989</span>
+<span class="normal">1990</span>
+<span class="normal">1991</span>
+<span class="normal">1992</span>
+<span class="normal">1993</span>
+<span class="normal">1994</span>
+<span class="normal">1995</span>
+<span class="normal">1996</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MemoryClient</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;High-level Bedrock AgentCore Memory client with essential operations.&quot;&quot;&quot;</span>
 
     <span class="c1"># AgentCore Memory data plane methods</span>
@@ -8580,6 +8810,51 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">add_user_preference_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_episodic_strategy</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">reflection_namespaces</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an episodic memory strategy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            memory_id: Memory resource ID</span>
+<span class="sd">            name: Strategy name</span>
+<span class="sd">            reflection_namespaces: Namespaces for reflections (can be less nested than episode namespaces)</span>
+<span class="sd">            description: Optional description</span>
+<span class="sd">            namespaces: Optional namespaces for episodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">strategy</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;reflectionConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="n">reflection_namespaces</span><span class="p">},</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+            <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">if</span> <span class="n">namespaces</span><span class="p">:</span>
+            <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespaces</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_episodic_strategy_and_wait</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">reflection_namespaces</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+        <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an episodic strategy and wait for memory to return to ACTIVE state.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_episodic_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">reflection_namespaces</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">add_custom_semantic_strategy</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -8640,6 +8915,88 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a custom semantic strategy and wait for memory to return to ACTIVE state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_custom_semantic_strategy</span><span class="p">(</span>
             <span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extraction_config</span><span class="p">,</span> <span class="n">consolidation_config</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_custom_episodic_strategy</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">extraction_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">consolidation_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">reflection_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a custom episodic strategy with prompts.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            memory_id: Memory resource ID</span>
+<span class="sd">            name: Strategy name</span>
+<span class="sd">            extraction_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;}</span>
+<span class="sd">            consolidation_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;}</span>
+<span class="sd">            reflection_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;, &quot;namespaces&quot;: [...]}</span>
+<span class="sd">            description: Optional description</span>
+<span class="sd">            namespaces: Optional namespaces list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">config</span><span class="p">,</span> <span class="n">config_name</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">extraction_config</span><span class="p">,</span> <span class="s2">&quot;extraction_config&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">consolidation_config</span><span class="p">,</span> <span class="s2">&quot;consolidation_config&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">reflection_config</span><span class="p">,</span> <span class="s2">&quot;reflection_config&quot;</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;modelId&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config_name</span><span class="si">}</span><span class="s2"> missing required key: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">strategy</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;configuration&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;episodicOverride&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;extraction&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">extraction_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">extraction_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;consolidation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">consolidation_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">consolidation_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;reflection&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                            <span class="o">**</span><span class="p">(</span>
+                                <span class="p">{</span><span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]}</span>
+                                <span class="k">if</span> <span class="s2">&quot;namespaces&quot;</span> <span class="ow">in</span> <span class="n">reflection_config</span>
+                                <span class="k">else</span> <span class="p">{}</span>
+                            <span class="p">),</span>
+                        <span class="p">},</span>
+                    <span class="p">}</span>
+                <span class="p">},</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+            <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">if</span> <span class="n">namespaces</span><span class="p">:</span>
+            <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespaces</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_custom_episodic_strategy_and_wait</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">extraction_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">consolidation_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">reflection_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+        <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a custom episodic strategy and wait for memory to return to ACTIVE state.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_custom_episodic_strategy</span><span class="p">(</span>
+            <span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extraction_config</span><span class="p">,</span> <span class="n">consolidation_config</span><span class="p">,</span> <span class="n">reflection_config</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
 
@@ -8972,19 +9329,22 @@
         <span class="k">if</span> <span class="s2">&quot;extraction&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">extraction</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">extraction</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;triggerEveryNMessages&quot;</span><span class="p">,</span> <span class="s2">&quot;historicalContextWindowSize&quot;</span><span class="p">]):</span>
-                <span class="n">strategy_type_enum</span> <span class="o">=</span> <span class="n">MemoryStrategyTypeEnum</span><span class="p">(</span><span class="n">strategy_type</span><span class="p">)</span>
+            <span class="n">builtin_config_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;triggerEveryNMessages&quot;</span><span class="p">,</span> <span class="s2">&quot;historicalContextWindowSize&quot;</span><span class="p">]</span>
 
-                <span class="k">if</span> <span class="n">strategy_type</span> <span class="o">==</span> <span class="s2">&quot;SEMANTIC&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">strategy_type</span> <span class="o">==</span> <span class="s2">&quot;CUSTOM&quot;</span> <span class="ow">and</span> <span class="n">override_type</span><span class="p">:</span>
+                <span class="n">override_enum</span> <span class="o">=</span> <span class="n">OverrideType</span><span class="p">(</span><span class="n">override_type</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">override_enum</span> <span class="ow">in</span> <span class="n">CUSTOM_EXTRACTION_WRAPPER_KEYS</span><span class="p">:</span>
+                    <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;customExtractionConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">CUSTOM_EXTRACTION_WRAPPER_KEYS</span><span class="p">[</span><span class="n">override_enum</span><span class="p">]:</span> <span class="n">extraction</span><span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extraction</span>
+            <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">extraction</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">builtin_config_keys</span><span class="p">):</span>
+                <span class="n">strategy_type_enum</span> <span class="o">=</span> <span class="n">MemoryStrategyTypeEnum</span><span class="p">(</span><span class="n">strategy_type</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">strategy_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SEMANTIC&quot;</span><span class="p">,</span> <span class="s2">&quot;USER_PREFERENCE&quot;</span><span class="p">):</span>
                     <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">EXTRACTION_WRAPPER_KEYS</span><span class="p">[</span><span class="n">strategy_type_enum</span><span class="p">]:</span> <span class="n">extraction</span><span class="p">}</span>
-                <span class="k">elif</span> <span class="n">strategy_type</span> <span class="o">==</span> <span class="s2">&quot;USER_PREFERENCE&quot;</span><span class="p">:</span>
-                    <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">EXTRACTION_WRAPPER_KEYS</span><span class="p">[</span><span class="n">strategy_type_enum</span><span class="p">]:</span> <span class="n">extraction</span><span class="p">}</span>
-                <span class="k">elif</span> <span class="n">strategy_type</span> <span class="o">==</span> <span class="s2">&quot;CUSTOM&quot;</span> <span class="ow">and</span> <span class="n">override_type</span><span class="p">:</span>
-                    <span class="n">override_enum</span> <span class="o">=</span> <span class="n">OverrideType</span><span class="p">(</span><span class="n">override_type</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">override_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;SEMANTIC_OVERRIDE&quot;</span><span class="p">,</span> <span class="s2">&quot;USER_PREFERENCE_OVERRIDE&quot;</span><span class="p">]:</span>
-                        <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                            <span class="s2">&quot;customExtractionConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">CUSTOM_EXTRACTION_WRAPPER_KEYS</span><span class="p">[</span><span class="n">override_enum</span><span class="p">]:</span> <span class="n">extraction</span><span class="p">}</span>
-                        <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extraction</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;extraction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extraction</span>
 
@@ -9010,6 +9370,18 @@
                         <span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;consolidation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">consolidation</span>
+
+        <span class="k">if</span> <span class="s2">&quot;reflection&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">reflection</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;reflection&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">strategy_type</span> <span class="o">==</span> <span class="s2">&quot;CUSTOM&quot;</span> <span class="ow">and</span> <span class="n">override_type</span><span class="p">:</span>
+                <span class="n">override_enum</span> <span class="o">=</span> <span class="n">OverrideType</span><span class="p">(</span><span class="n">override_type</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">override_enum</span> <span class="ow">in</span> <span class="n">CUSTOM_REFLECTION_WRAPPER_KEYS</span><span class="p">:</span>
+                    <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;reflection&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;customReflectionConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">CUSTOM_REFLECTION_WRAPPER_KEYS</span><span class="p">[</span><span class="n">override_enum</span><span class="p">]:</span> <span class="n">reflection</span><span class="p">}</span>
+                    <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wrapped_config</span><span class="p">[</span><span class="s2">&quot;reflection&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reflection</span>
 
         <span class="k">return</span> <span class="n">wrapped_config</span>
 </code></pre></div></td></tr></table></div>
@@ -9133,8 +9505,7 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 76</span>
-<span class="normal"> 77</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 77</span>
 <span class="normal"> 78</span>
 <span class="normal"> 79</span>
 <span class="normal"> 80</span>
@@ -9174,7 +9545,8 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 <span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
-<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="normal">117</span>
+<span class="normal">118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dynamically forward method calls to the appropriate boto3 client.</span>
 
 <span class="sd">    This method enables access to all boto3 client methods without explicitly</span>
@@ -9238,8 +9610,7 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">63</span>
-<span class="normal">64</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
 <span class="normal">67</span>
@@ -9249,7 +9620,8 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 <span class="normal">71</span>
 <span class="normal">72</span>
 <span class="normal">73</span>
-<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">74</span>
+<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize the Memory client.&quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">region_name</span> <span class="o">=</span> <span class="n">region_name</span> <span class="ow">or</span> <span class="n">boto3</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span><span class="o">.</span><span class="n">region_name</span> <span class="ow">or</span> <span class="s2">&quot;us-west-2&quot;</span>
 
@@ -9261,6 +9633,335 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">gmcp_client</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">region_name</span><span class="p">,</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gmdp_client</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">region_name</span><span class="p">,</span>
     <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_custom_episodic_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extraction_config</span><span class="p">,</span> <span class="n">consolidation_config</span><span class="p">,</span> <span class="n">reflection_config</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespaces</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a custom episodic strategy with prompts.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>memory_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Memory resource ID</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Strategy name</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>extraction_config</code>
+            </td>
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>{"prompt": "...", "modelId": "..."}</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consolidation_config</code>
+            </td>
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>{"prompt": "...", "modelId": "..."}</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reflection_config</code>
+            </td>
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>{"prompt": "...", "modelId": "...", "namespaces": [...]}</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional description</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>namespaces</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional namespaces list</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1531</span>
+<span class="normal">1532</span>
+<span class="normal">1533</span>
+<span class="normal">1534</span>
+<span class="normal">1535</span>
+<span class="normal">1536</span>
+<span class="normal">1537</span>
+<span class="normal">1538</span>
+<span class="normal">1539</span>
+<span class="normal">1540</span>
+<span class="normal">1541</span>
+<span class="normal">1542</span>
+<span class="normal">1543</span>
+<span class="normal">1544</span>
+<span class="normal">1545</span>
+<span class="normal">1546</span>
+<span class="normal">1547</span>
+<span class="normal">1548</span>
+<span class="normal">1549</span>
+<span class="normal">1550</span>
+<span class="normal">1551</span>
+<span class="normal">1552</span>
+<span class="normal">1553</span>
+<span class="normal">1554</span>
+<span class="normal">1555</span>
+<span class="normal">1556</span>
+<span class="normal">1557</span>
+<span class="normal">1558</span>
+<span class="normal">1559</span>
+<span class="normal">1560</span>
+<span class="normal">1561</span>
+<span class="normal">1562</span>
+<span class="normal">1563</span>
+<span class="normal">1564</span>
+<span class="normal">1565</span>
+<span class="normal">1566</span>
+<span class="normal">1567</span>
+<span class="normal">1568</span>
+<span class="normal">1569</span>
+<span class="normal">1570</span>
+<span class="normal">1571</span>
+<span class="normal">1572</span>
+<span class="normal">1573</span>
+<span class="normal">1574</span>
+<span class="normal">1575</span>
+<span class="normal">1576</span>
+<span class="normal">1577</span>
+<span class="normal">1578</span>
+<span class="normal">1579</span>
+<span class="normal">1580</span>
+<span class="normal">1581</span>
+<span class="normal">1582</span>
+<span class="normal">1583</span>
+<span class="normal">1584</span>
+<span class="normal">1585</span>
+<span class="normal">1586</span>
+<span class="normal">1587</span>
+<span class="normal">1588</span>
+<span class="normal">1589</span>
+<span class="normal">1590</span>
+<span class="normal">1591</span>
+<span class="normal">1592</span>
+<span class="normal">1593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_episodic_strategy</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">extraction_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">consolidation_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">reflection_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a custom episodic strategy with prompts.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        memory_id: Memory resource ID</span>
+<span class="sd">        name: Strategy name</span>
+<span class="sd">        extraction_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;}</span>
+<span class="sd">        consolidation_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;}</span>
+<span class="sd">        reflection_config: {&quot;prompt&quot;: &quot;...&quot;, &quot;modelId&quot;: &quot;...&quot;, &quot;namespaces&quot;: [...]}</span>
+<span class="sd">        description: Optional description</span>
+<span class="sd">        namespaces: Optional namespaces list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">config</span><span class="p">,</span> <span class="n">config_name</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">extraction_config</span><span class="p">,</span> <span class="s2">&quot;extraction_config&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">consolidation_config</span><span class="p">,</span> <span class="s2">&quot;consolidation_config&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">reflection_config</span><span class="p">,</span> <span class="s2">&quot;reflection_config&quot;</span><span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;modelId&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config_name</span><span class="si">}</span><span class="s2"> missing required key: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">strategy</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;configuration&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;episodicOverride&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;extraction&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">extraction_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">extraction_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;consolidation&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">consolidation_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">consolidation_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;reflection&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;appendToPrompt&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;prompt&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;modelId&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;modelId&quot;</span><span class="p">],</span>
+                        <span class="o">**</span><span class="p">(</span>
+                            <span class="p">{</span><span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="n">reflection_config</span><span class="p">[</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]}</span>
+                            <span class="k">if</span> <span class="s2">&quot;namespaces&quot;</span> <span class="ow">in</span> <span class="n">reflection_config</span>
+                            <span class="k">else</span> <span class="p">{}</span>
+                        <span class="p">),</span>
+                    <span class="p">},</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+        <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+    <span class="k">if</span> <span class="n">namespaces</span><span class="p">:</span>
+        <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">CUSTOM</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespaces</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy_and_wait" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_custom_episodic_strategy_and_wait</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extraction_config</span><span class="p">,</span> <span class="n">consolidation_config</span><span class="p">,</span> <span class="n">reflection_config</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespaces</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_wait</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">poll_interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span></code>
+
+<a href="#bedrock_agentcore.memory.MemoryClient.add_custom_episodic_strategy_and_wait" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a custom episodic strategy and wait for memory to return to ACTIVE state.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1595</span>
+<span class="normal">1596</span>
+<span class="normal">1597</span>
+<span class="normal">1598</span>
+<span class="normal">1599</span>
+<span class="normal">1600</span>
+<span class="normal">1601</span>
+<span class="normal">1602</span>
+<span class="normal">1603</span>
+<span class="normal">1604</span>
+<span class="normal">1605</span>
+<span class="normal">1606</span>
+<span class="normal">1607</span>
+<span class="normal">1608</span>
+<span class="normal">1609</span>
+<span class="normal">1610</span>
+<span class="normal">1611</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_episodic_strategy_and_wait</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">extraction_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">consolidation_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">reflection_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a custom episodic strategy and wait for memory to return to ACTIVE state.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">add_custom_episodic_strategy</span><span class="p">(</span>
+        <span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extraction_config</span><span class="p">,</span> <span class="n">consolidation_config</span><span class="p">,</span> <span class="n">reflection_config</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9394,51 +10095,51 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1422</span>
-<span class="normal">1423</span>
-<span class="normal">1424</span>
-<span class="normal">1425</span>
-<span class="normal">1426</span>
-<span class="normal">1427</span>
-<span class="normal">1428</span>
-<span class="normal">1429</span>
-<span class="normal">1430</span>
-<span class="normal">1431</span>
-<span class="normal">1432</span>
-<span class="normal">1433</span>
-<span class="normal">1434</span>
-<span class="normal">1435</span>
-<span class="normal">1436</span>
-<span class="normal">1437</span>
-<span class="normal">1438</span>
-<span class="normal">1439</span>
-<span class="normal">1440</span>
-<span class="normal">1441</span>
-<span class="normal">1442</span>
-<span class="normal">1443</span>
-<span class="normal">1444</span>
-<span class="normal">1445</span>
-<span class="normal">1446</span>
-<span class="normal">1447</span>
-<span class="normal">1448</span>
-<span class="normal">1449</span>
-<span class="normal">1450</span>
-<span class="normal">1451</span>
-<span class="normal">1452</span>
-<span class="normal">1453</span>
-<span class="normal">1454</span>
-<span class="normal">1455</span>
-<span class="normal">1456</span>
-<span class="normal">1457</span>
-<span class="normal">1458</span>
-<span class="normal">1459</span>
-<span class="normal">1460</span>
-<span class="normal">1461</span>
-<span class="normal">1462</span>
-<span class="normal">1463</span>
-<span class="normal">1464</span>
-<span class="normal">1465</span>
-<span class="normal">1466</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_semantic_strategy</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1468</span>
+<span class="normal">1469</span>
+<span class="normal">1470</span>
+<span class="normal">1471</span>
+<span class="normal">1472</span>
+<span class="normal">1473</span>
+<span class="normal">1474</span>
+<span class="normal">1475</span>
+<span class="normal">1476</span>
+<span class="normal">1477</span>
+<span class="normal">1478</span>
+<span class="normal">1479</span>
+<span class="normal">1480</span>
+<span class="normal">1481</span>
+<span class="normal">1482</span>
+<span class="normal">1483</span>
+<span class="normal">1484</span>
+<span class="normal">1485</span>
+<span class="normal">1486</span>
+<span class="normal">1487</span>
+<span class="normal">1488</span>
+<span class="normal">1489</span>
+<span class="normal">1490</span>
+<span class="normal">1491</span>
+<span class="normal">1492</span>
+<span class="normal">1493</span>
+<span class="normal">1494</span>
+<span class="normal">1495</span>
+<span class="normal">1496</span>
+<span class="normal">1497</span>
+<span class="normal">1498</span>
+<span class="normal">1499</span>
+<span class="normal">1500</span>
+<span class="normal">1501</span>
+<span class="normal">1502</span>
+<span class="normal">1503</span>
+<span class="normal">1504</span>
+<span class="normal">1505</span>
+<span class="normal">1506</span>
+<span class="normal">1507</span>
+<span class="normal">1508</span>
+<span class="normal">1509</span>
+<span class="normal">1510</span>
+<span class="normal">1511</span>
+<span class="normal">1512</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_semantic_strategy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9505,22 +10206,22 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1468</span>
-<span class="normal">1469</span>
-<span class="normal">1470</span>
-<span class="normal">1471</span>
-<span class="normal">1472</span>
-<span class="normal">1473</span>
-<span class="normal">1474</span>
-<span class="normal">1475</span>
-<span class="normal">1476</span>
-<span class="normal">1477</span>
-<span class="normal">1478</span>
-<span class="normal">1479</span>
-<span class="normal">1480</span>
-<span class="normal">1481</span>
-<span class="normal">1482</span>
-<span class="normal">1483</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_semantic_strategy_and_wait</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1514</span>
+<span class="normal">1515</span>
+<span class="normal">1516</span>
+<span class="normal">1517</span>
+<span class="normal">1518</span>
+<span class="normal">1519</span>
+<span class="normal">1520</span>
+<span class="normal">1521</span>
+<span class="normal">1522</span>
+<span class="normal">1523</span>
+<span class="normal">1524</span>
+<span class="normal">1525</span>
+<span class="normal">1526</span>
+<span class="normal">1527</span>
+<span class="normal">1528</span>
+<span class="normal">1529</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_custom_semantic_strategy_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9545,6 +10246,229 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 <div class="doc doc-object doc-function">
 
 
+<h4 id="bedrock_agentcore.memory.MemoryClient.add_episodic_strategy" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_episodic_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">reflection_namespaces</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespaces</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add an episodic memory strategy.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>memory_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Memory resource ID</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Strategy name</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reflection_namespaces</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Namespaces for reflections (can be less nested than episode namespaces)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional description</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>namespaces</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional namespaces for episodes</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1423</span>
+<span class="normal">1424</span>
+<span class="normal">1425</span>
+<span class="normal">1426</span>
+<span class="normal">1427</span>
+<span class="normal">1428</span>
+<span class="normal">1429</span>
+<span class="normal">1430</span>
+<span class="normal">1431</span>
+<span class="normal">1432</span>
+<span class="normal">1433</span>
+<span class="normal">1434</span>
+<span class="normal">1435</span>
+<span class="normal">1436</span>
+<span class="normal">1437</span>
+<span class="normal">1438</span>
+<span class="normal">1439</span>
+<span class="normal">1440</span>
+<span class="normal">1441</span>
+<span class="normal">1442</span>
+<span class="normal">1443</span>
+<span class="normal">1444</span>
+<span class="normal">1445</span>
+<span class="normal">1446</span>
+<span class="normal">1447</span>
+<span class="normal">1448</span>
+<span class="normal">1449</span>
+<span class="normal">1450</span>
+<span class="normal">1451</span>
+<span class="normal">1452</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_episodic_strategy</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">reflection_namespaces</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add an episodic memory strategy.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        memory_id: Memory resource ID</span>
+<span class="sd">        name: Strategy name</span>
+<span class="sd">        reflection_namespaces: Namespaces for reflections (can be less nested than episode namespaces)</span>
+<span class="sd">        description: Optional description</span>
+<span class="sd">        namespaces: Optional namespaces for episodes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;reflectionConfiguration&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;namespaces&quot;</span><span class="p">:</span> <span class="n">reflection_namespaces</span><span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+        <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+    <span class="k">if</span> <span class="n">namespaces</span><span class="p">:</span>
+        <span class="n">strategy</span><span class="p">[</span><span class="n">StrategyType</span><span class="o">.</span><span class="n">EPISODIC</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="s2">&quot;namespaces&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespaces</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="bedrock_agentcore.memory.MemoryClient.add_episodic_strategy_and_wait" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_episodic_strategy_and_wait</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">reflection_namespaces</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespaces</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_wait</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">poll_interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span></code>
+
+<a href="#bedrock_agentcore.memory.MemoryClient.add_episodic_strategy_and_wait" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add an episodic strategy and wait for memory to return to ACTIVE state.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1454</span>
+<span class="normal">1455</span>
+<span class="normal">1456</span>
+<span class="normal">1457</span>
+<span class="normal">1458</span>
+<span class="normal">1459</span>
+<span class="normal">1460</span>
+<span class="normal">1461</span>
+<span class="normal">1462</span>
+<span class="normal">1463</span>
+<span class="normal">1464</span>
+<span class="normal">1465</span>
+<span class="normal">1466</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_episodic_strategy_and_wait</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">reflection_namespaces</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">namespaces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add an episodic strategy and wait for memory to return to ACTIVE state.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">add_episodic_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">reflection_namespaces</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">namespaces</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_memory_active</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="bedrock_agentcore.memory.MemoryClient.add_semantic_strategy" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">add_semantic_strategy</span><span class="p">(</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespaces</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
@@ -9559,8 +10483,7 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1304</span>
-<span class="normal">1305</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1305</span>
 <span class="normal">1306</span>
 <span class="normal">1307</span>
 <span class="normal">1308</span>
@@ -9581,7 +10504,8 @@ metadata = client.get_memory_metadata(memoryId="mem-123")</p>
 <span class="normal">1323</span>
 <span class="normal">1324</span>
 <span class="normal">1325</span>
-<span class="normal">1326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_semantic_strategy</span><span class="p">(</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_semantic_strategy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9628,8 +10552,7 @@ CREATING state temporarily, preventing subsequent operations.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1328</span>
-<span class="normal">1329</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1329</span>
 <span class="normal">1330</span>
 <span class="normal">1331</span>
 <span class="normal">1332</span>
@@ -9646,7 +10569,8 @@ CREATING state temporarily, preventing subsequent operations.</p>
 <span class="normal">1343</span>
 <span class="normal">1344</span>
 <span class="normal">1345</span>
-<span class="normal">1346</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_semantic_strategy_and_wait</span><span class="p">(</span>
+<span class="normal">1346</span>
+<span class="normal">1347</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_semantic_strategy_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9759,26 +10683,26 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1666</span>
-<span class="normal">1667</span>
-<span class="normal">1668</span>
-<span class="normal">1669</span>
-<span class="normal">1670</span>
-<span class="normal">1671</span>
-<span class="normal">1672</span>
-<span class="normal">1673</span>
-<span class="normal">1674</span>
-<span class="normal">1675</span>
-<span class="normal">1676</span>
-<span class="normal">1677</span>
-<span class="normal">1678</span>
-<span class="normal">1679</span>
-<span class="normal">1680</span>
-<span class="normal">1681</span>
-<span class="normal">1682</span>
-<span class="normal">1683</span>
-<span class="normal">1684</span>
-<span class="normal">1685</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1794</span>
+<span class="normal">1795</span>
+<span class="normal">1796</span>
+<span class="normal">1797</span>
+<span class="normal">1798</span>
+<span class="normal">1799</span>
+<span class="normal">1800</span>
+<span class="normal">1801</span>
+<span class="normal">1802</span>
+<span class="normal">1803</span>
+<span class="normal">1804</span>
+<span class="normal">1805</span>
+<span class="normal">1806</span>
+<span class="normal">1807</span>
+<span class="normal">1808</span>
+<span class="normal">1809</span>
+<span class="normal">1810</span>
+<span class="normal">1811</span>
+<span class="normal">1812</span>
+<span class="normal">1813</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a strategy to a memory (without waiting).</span>
 
 <span class="sd">    WARNING: After adding a strategy, the memory enters CREATING state temporarily.</span>
@@ -9821,8 +10745,7 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1348</span>
-<span class="normal">1349</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1349</span>
 <span class="normal">1350</span>
 <span class="normal">1351</span>
 <span class="normal">1352</span>
@@ -9843,7 +10766,8 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 <span class="normal">1367</span>
 <span class="normal">1368</span>
 <span class="normal">1369</span>
-<span class="normal">1370</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_summary_strategy</span><span class="p">(</span>
+<span class="normal">1370</span>
+<span class="normal">1371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_summary_strategy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9888,8 +10812,7 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1372</span>
-<span class="normal">1373</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1373</span>
 <span class="normal">1374</span>
 <span class="normal">1375</span>
 <span class="normal">1376</span>
@@ -9899,7 +10822,8 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 <span class="normal">1380</span>
 <span class="normal">1381</span>
 <span class="normal">1382</span>
-<span class="normal">1383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_summary_strategy_and_wait</span><span class="p">(</span>
+<span class="normal">1383</span>
+<span class="normal">1384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_summary_strategy_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -9934,8 +10858,7 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1385</span>
-<span class="normal">1386</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1386</span>
 <span class="normal">1387</span>
 <span class="normal">1388</span>
 <span class="normal">1389</span>
@@ -9956,7 +10879,8 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 <span class="normal">1404</span>
 <span class="normal">1405</span>
 <span class="normal">1406</span>
-<span class="normal">1407</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_user_preference_strategy</span><span class="p">(</span>
+<span class="normal">1407</span>
+<span class="normal">1408</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_user_preference_strategy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -10001,8 +10925,7 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1409</span>
-<span class="normal">1410</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1410</span>
 <span class="normal">1411</span>
 <span class="normal">1412</span>
 <span class="normal">1413</span>
@@ -10012,7 +10935,8 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 <span class="normal">1417</span>
 <span class="normal">1418</span>
 <span class="normal">1419</span>
-<span class="normal">1420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_user_preference_strategy_and_wait</span><span class="p">(</span>
+<span class="normal">1420</span>
+<span class="normal">1421</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_user_preference_strategy_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -10191,8 +11115,7 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
-<span class="normal">445</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span>
@@ -10248,7 +11171,8 @@ Use add_*_strategy_and_wait() methods instead to avoid errors.</p>
 <span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
-<span class="normal">501</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_blob_event</span><span class="p">(</span>
+<span class="normal">501</span>
+<span class="normal">502</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_blob_event</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -10507,8 +11431,7 @@ print(event)</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
-<span class="normal">331</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">331</span>
 <span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
@@ -10619,7 +11542,8 @@ print(event)</p>
 <span class="normal">439</span>
 <span class="normal">440</span>
 <span class="normal">441</span>
-<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span>
+<span class="normal">442</span>
+<span class="normal">443</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -10754,8 +11678,7 @@ print(event)</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">119</span>
-<span class="normal">120</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
@@ -10793,7 +11716,8 @@ print(event)</p>
 <span class="normal">155</span>
 <span class="normal">156</span>
 <span class="normal">157</span>
-<span class="normal">158</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_memory</span><span class="p">(</span>
+<span class="normal">158</span>
+<span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_memory</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">strategies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -11040,8 +11964,7 @@ providing a convenient way to ensure the memory is ready for use.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
-<span class="normal">195</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
@@ -11112,7 +12035,8 @@ providing a convenient way to ensure the memory is ready for use.</p>
 <span class="normal">263</span>
 <span class="normal">264</span>
 <span class="normal">265</span>
-<span class="normal">266</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_memory_and_wait</span><span class="p">(</span>
+<span class="normal">266</span>
+<span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_memory_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">strategies</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
@@ -11230,8 +12154,7 @@ providing a convenient way to ensure the memory is ready for use.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">160</span>
-<span class="normal">161</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
@@ -11262,7 +12185,8 @@ providing a convenient way to ensure the memory is ready for use.</p>
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
-<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_or_get_memory</span><span class="p">(</span>
+<span class="normal">192</span>
+<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_or_get_memory</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">strategies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -11317,8 +12241,7 @@ providing a convenient way to ensure the memory is ready for use.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1250</span>
-<span class="normal">1251</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1251</span>
 <span class="normal">1252</span>
 <span class="normal">1253</span>
 <span class="normal">1254</span>
@@ -11327,7 +12250,8 @@ providing a convenient way to ensure the memory is ready for use.</p>
 <span class="normal">1257</span>
 <span class="normal">1258</span>
 <span class="normal">1259</span>
-<span class="normal">1260</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="normal">1260</span>
+<span class="normal">1261</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete a memory resource.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmcp_client</span><span class="o">.</span><span class="n">delete_memory</span><span class="p">(</span>
@@ -11471,8 +12395,7 @@ ensuring clean resource cleanup.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1262</span>
-<span class="normal">1263</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1263</span>
 <span class="normal">1264</span>
 <span class="normal">1265</span>
 <span class="normal">1266</span>
@@ -11511,7 +12434,8 @@ ensuring clean resource cleanup.</p>
 <span class="normal">1299</span>
 <span class="normal">1300</span>
 <span class="normal">1301</span>
-<span class="normal">1302</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_memory_and_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="normal">1302</span>
+<span class="normal">1303</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_memory_and_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete a memory and wait for deletion to complete.</span>
 
 <span class="sd">    This method deletes a memory and polls until it&#39;s fully deleted,</span>
@@ -11574,9 +12498,9 @@ ensuring clean resource cleanup.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1505</span>
-<span class="normal">1506</span>
-<span class="normal">1507</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1633</span>
+<span class="normal">1634</span>
+<span class="normal">1635</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">delete_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete a strategy from a memory.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_memory_strategies</span><span class="p">(</span><span class="n">memory_id</span><span class="o">=</span><span class="n">memory_id</span><span class="p">,</span> <span class="n">delete_strategy_ids</span><span class="o">=</span><span class="p">[</span><span class="n">strategy_id</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
@@ -11601,8 +12525,7 @@ ensuring clean resource cleanup.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1143</span>
-<span class="normal">1144</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1144</span>
 <span class="normal">1145</span>
 <span class="normal">1146</span>
 <span class="normal">1147</span>
@@ -11629,7 +12552,8 @@ ensuring clean resource cleanup.</p>
 <span class="normal">1168</span>
 <span class="normal">1169</span>
 <span class="normal">1170</span>
-<span class="normal">1171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fork_conversation</span><span class="p">(</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fork_conversation</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -11710,8 +12634,7 @@ It handles:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 969</span>
-<span class="normal"> 970</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 970</span>
 <span class="normal"> 971</span>
 <span class="normal"> 972</span>
 <span class="normal"> 973</span>
@@ -11775,7 +12698,8 @@ It handles:
 <span class="normal">1031</span>
 <span class="normal">1032</span>
 <span class="normal">1033</span>
-<span class="normal">1034</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_conversation_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_conversation_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a tree structure of the conversation with all branches.</span>
 
 <span class="sd">    This method transforms a flat list of events into a hierarchical tree structure,</span>
@@ -11888,8 +12812,7 @@ This method groups messages into logical turns for easier processing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1082</span>
-<span class="normal">1083</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1083</span>
 <span class="normal">1084</span>
 <span class="normal">1085</span>
 <span class="normal">1086</span>
@@ -11947,7 +12870,8 @@ This method groups messages into logical turns for easier processing.</p>
 <span class="normal">1138</span>
 <span class="normal">1139</span>
 <span class="normal">1140</span>
-<span class="normal">1141</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_last_k_turns</span><span class="p">(</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_last_k_turns</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -12029,14 +12953,14 @@ This method groups messages into logical turns for easier processing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1206</span>
-<span class="normal">1207</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1207</span>
 <span class="normal">1208</span>
 <span class="normal">1209</span>
 <span class="normal">1210</span>
 <span class="normal">1211</span>
 <span class="normal">1212</span>
-<span class="normal">1213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_memory_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_memory_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get current memory status.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmcp_client</span><span class="o">.</span><span class="n">get_memory</span><span class="p">(</span><span class="n">memoryId</span><span class="o">=</span><span class="n">memory_id</span><span class="p">)</span>  <span class="c1"># Input uses old field name</span>
@@ -12066,8 +12990,7 @@ This method groups messages into logical turns for easier processing.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1173</span>
-<span class="normal">1174</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1174</span>
 <span class="normal">1175</span>
 <span class="normal">1176</span>
 <span class="normal">1177</span>
@@ -12097,7 +13020,8 @@ This method groups messages into logical turns for easier processing.</p>
 <span class="normal">1201</span>
 <span class="normal">1202</span>
 <span class="normal">1203</span>
-<span class="normal">1204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_memory_strategies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_memory_strategies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all strategies for a memory.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmcp_client</span><span class="o">.</span><span class="n">get_memory</span><span class="p">(</span><span class="n">memoryId</span><span class="o">=</span><span class="n">memory_id</span><span class="p">)</span>  <span class="c1"># Input uses old field name</span>
@@ -12290,8 +13214,7 @@ significant boilerplate code with raw boto3. It handles:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">906</span>
-<span class="normal">907</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">907</span>
 <span class="normal">908</span>
 <span class="normal">909</span>
 <span class="normal">910</span>
@@ -12351,7 +13274,8 @@ significant boilerplate code with raw boto3. It handles:
 <span class="normal">964</span>
 <span class="normal">965</span>
 <span class="normal">966</span>
-<span class="normal">967</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_branch_events</span><span class="p">(</span>
+<span class="normal">967</span>
+<span class="normal">968</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_branch_events</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -12461,8 +13385,7 @@ grouping logic if done with raw boto3 calls.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">833</span>
-<span class="normal">834</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">834</span>
 <span class="normal">835</span>
 <span class="normal">836</span>
 <span class="normal">837</span>
@@ -12532,7 +13455,8 @@ grouping logic if done with raw boto3 calls.</p>
 <span class="normal">901</span>
 <span class="normal">902</span>
 <span class="normal">903</span>
-<span class="normal">904</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_branches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">904</span>
+<span class="normal">905</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_branches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List all branches in a session.</span>
 
 <span class="sd">    This method handles pagination automatically and provides a structured view</span>
@@ -12788,8 +13712,7 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">758</span>
-<span class="normal">759</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">759</span>
 <span class="normal">760</span>
 <span class="normal">761</span>
 <span class="normal">762</span>
@@ -12861,7 +13784,8 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 <span class="normal">828</span>
 <span class="normal">829</span>
 <span class="normal">830</span>
-<span class="normal">831</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_events</span><span class="p">(</span>
+<span class="normal">831</span>
+<span class="normal">832</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_events</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -12957,8 +13881,7 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1215</span>
-<span class="normal">1216</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1216</span>
 <span class="normal">1217</span>
 <span class="normal">1218</span>
 <span class="normal">1219</span>
@@ -12990,7 +13913,8 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 <span class="normal">1245</span>
 <span class="normal">1246</span>
 <span class="normal">1247</span>
-<span class="normal">1248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_memories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="normal">1248</span>
+<span class="normal">1249</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_memories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List all memories for the account.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Ensure max_results doesn&#39;t exceed API limit per request</span>
@@ -13164,8 +14088,7 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1036</span>
-<span class="normal">1037</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1037</span>
 <span class="normal">1038</span>
 <span class="normal">1039</span>
 <span class="normal">1040</span>
@@ -13208,7 +14131,8 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 <span class="normal">1077</span>
 <span class="normal">1078</span>
 <span class="normal">1079</span>
-<span class="normal">1080</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">merge_branch_context</span><span class="p">(</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">merge_branch_context</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">branch_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">include_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all messages from a branch for context building.</span>
@@ -13275,25 +14199,25 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1485</span>
-<span class="normal">1486</span>
-<span class="normal">1487</span>
-<span class="normal">1488</span>
-<span class="normal">1489</span>
-<span class="normal">1490</span>
-<span class="normal">1491</span>
-<span class="normal">1492</span>
-<span class="normal">1493</span>
-<span class="normal">1494</span>
-<span class="normal">1495</span>
-<span class="normal">1496</span>
-<span class="normal">1497</span>
-<span class="normal">1498</span>
-<span class="normal">1499</span>
-<span class="normal">1500</span>
-<span class="normal">1501</span>
-<span class="normal">1502</span>
-<span class="normal">1503</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">modify_strategy</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1613</span>
+<span class="normal">1614</span>
+<span class="normal">1615</span>
+<span class="normal">1616</span>
+<span class="normal">1617</span>
+<span class="normal">1618</span>
+<span class="normal">1619</span>
+<span class="normal">1620</span>
+<span class="normal">1621</span>
+<span class="normal">1622</span>
+<span class="normal">1623</span>
+<span class="normal">1624</span>
+<span class="normal">1625</span>
+<span class="normal">1626</span>
+<span class="normal">1627</span>
+<span class="normal">1628</span>
+<span class="normal">1629</span>
+<span class="normal">1630</span>
+<span class="normal">1631</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">modify_strategy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">strategy_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -13335,8 +14259,7 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">629</span>
-<span class="normal">630</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">630</span>
 <span class="normal">631</span>
 <span class="normal">632</span>
 <span class="normal">633</span>
@@ -13375,7 +14298,8 @@ to retrieve all events without the turn grouping logic of get_last_k_turns.</p>
 <span class="normal">666</span>
 <span class="normal">667</span>
 <span class="normal">668</span>
-<span class="normal">669</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">process_turn</span><span class="p">(</span>
+<span class="normal">669</span>
+<span class="normal">670</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">process_turn</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -13649,8 +14573,7 @@ in a single call using a callback pattern.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">671</span>
-<span class="normal">672</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
 <span class="normal">675</span>
@@ -13734,7 +14657,8 @@ in a single call using a callback pattern.</p>
 <span class="normal">753</span>
 <span class="normal">754</span>
 <span class="normal">755</span>
-<span class="normal">756</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">process_turn_with_llm</span><span class="p">(</span>
+<span class="normal">756</span>
+<span class="normal">757</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">process_turn_with_llm</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -13974,8 +14898,7 @@ exact namespace path with all variables resolved.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
-<span class="normal">269</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
 <span class="normal">272</span>
@@ -14034,7 +14957,8 @@ exact namespace path with all variables resolved.</p>
 <span class="normal">325</span>
 <span class="normal">326</span>
 <span class="normal">327</span>
-<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">retrieve_memories</span><span class="p">(</span>
+<span class="normal">328</span>
+<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">retrieve_memories</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve relevant memories from a namespace.</span>
@@ -14276,8 +15200,7 @@ exact namespace path with all variables resolved.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">503</span>
-<span class="normal">504</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">504</span>
 <span class="normal">505</span>
 <span class="normal">506</span>
 <span class="normal">507</span>
@@ -14370,7 +15293,8 @@ exact namespace path with all variables resolved.</p>
 <span class="normal">594</span>
 <span class="normal">595</span>
 <span class="normal">596</span>
-<span class="normal">597</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_conversation</span><span class="p">(</span>
+<span class="normal">597</span>
+<span class="normal">598</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_conversation</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -14488,8 +15412,7 @@ exact namespace path with all variables resolved.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">599</span>
-<span class="normal">600</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">600</span>
 <span class="normal">601</span>
 <span class="normal">602</span>
 <span class="normal">603</span>
@@ -14516,7 +15439,8 @@ exact namespace path with all variables resolved.</p>
 <span class="normal">624</span>
 <span class="normal">625</span>
 <span class="normal">626</span>
-<span class="normal">627</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_turn</span><span class="p">(</span>
+<span class="normal">627</span>
+<span class="normal">628</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_turn</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">actor_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -14567,71 +15491,71 @@ exact namespace path with all variables resolved.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1509</span>
-<span class="normal">1510</span>
-<span class="normal">1511</span>
-<span class="normal">1512</span>
-<span class="normal">1513</span>
-<span class="normal">1514</span>
-<span class="normal">1515</span>
-<span class="normal">1516</span>
-<span class="normal">1517</span>
-<span class="normal">1518</span>
-<span class="normal">1519</span>
-<span class="normal">1520</span>
-<span class="normal">1521</span>
-<span class="normal">1522</span>
-<span class="normal">1523</span>
-<span class="normal">1524</span>
-<span class="normal">1525</span>
-<span class="normal">1526</span>
-<span class="normal">1527</span>
-<span class="normal">1528</span>
-<span class="normal">1529</span>
-<span class="normal">1530</span>
-<span class="normal">1531</span>
-<span class="normal">1532</span>
-<span class="normal">1533</span>
-<span class="normal">1534</span>
-<span class="normal">1535</span>
-<span class="normal">1536</span>
-<span class="normal">1537</span>
-<span class="normal">1538</span>
-<span class="normal">1539</span>
-<span class="normal">1540</span>
-<span class="normal">1541</span>
-<span class="normal">1542</span>
-<span class="normal">1543</span>
-<span class="normal">1544</span>
-<span class="normal">1545</span>
-<span class="normal">1546</span>
-<span class="normal">1547</span>
-<span class="normal">1548</span>
-<span class="normal">1549</span>
-<span class="normal">1550</span>
-<span class="normal">1551</span>
-<span class="normal">1552</span>
-<span class="normal">1553</span>
-<span class="normal">1554</span>
-<span class="normal">1555</span>
-<span class="normal">1556</span>
-<span class="normal">1557</span>
-<span class="normal">1558</span>
-<span class="normal">1559</span>
-<span class="normal">1560</span>
-<span class="normal">1561</span>
-<span class="normal">1562</span>
-<span class="normal">1563</span>
-<span class="normal">1564</span>
-<span class="normal">1565</span>
-<span class="normal">1566</span>
-<span class="normal">1567</span>
-<span class="normal">1568</span>
-<span class="normal">1569</span>
-<span class="normal">1570</span>
-<span class="normal">1571</span>
-<span class="normal">1572</span>
-<span class="normal">1573</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_memory_strategies</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1637</span>
+<span class="normal">1638</span>
+<span class="normal">1639</span>
+<span class="normal">1640</span>
+<span class="normal">1641</span>
+<span class="normal">1642</span>
+<span class="normal">1643</span>
+<span class="normal">1644</span>
+<span class="normal">1645</span>
+<span class="normal">1646</span>
+<span class="normal">1647</span>
+<span class="normal">1648</span>
+<span class="normal">1649</span>
+<span class="normal">1650</span>
+<span class="normal">1651</span>
+<span class="normal">1652</span>
+<span class="normal">1653</span>
+<span class="normal">1654</span>
+<span class="normal">1655</span>
+<span class="normal">1656</span>
+<span class="normal">1657</span>
+<span class="normal">1658</span>
+<span class="normal">1659</span>
+<span class="normal">1660</span>
+<span class="normal">1661</span>
+<span class="normal">1662</span>
+<span class="normal">1663</span>
+<span class="normal">1664</span>
+<span class="normal">1665</span>
+<span class="normal">1666</span>
+<span class="normal">1667</span>
+<span class="normal">1668</span>
+<span class="normal">1669</span>
+<span class="normal">1670</span>
+<span class="normal">1671</span>
+<span class="normal">1672</span>
+<span class="normal">1673</span>
+<span class="normal">1674</span>
+<span class="normal">1675</span>
+<span class="normal">1676</span>
+<span class="normal">1677</span>
+<span class="normal">1678</span>
+<span class="normal">1679</span>
+<span class="normal">1680</span>
+<span class="normal">1681</span>
+<span class="normal">1682</span>
+<span class="normal">1683</span>
+<span class="normal">1684</span>
+<span class="normal">1685</span>
+<span class="normal">1686</span>
+<span class="normal">1687</span>
+<span class="normal">1688</span>
+<span class="normal">1689</span>
+<span class="normal">1690</span>
+<span class="normal">1691</span>
+<span class="normal">1692</span>
+<span class="normal">1693</span>
+<span class="normal">1694</span>
+<span class="normal">1695</span>
+<span class="normal">1696</span>
+<span class="normal">1697</span>
+<span class="normal">1698</span>
+<span class="normal">1699</span>
+<span class="normal">1700</span>
+<span class="normal">1701</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_memory_strategies</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">add_strategies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -14720,25 +15644,25 @@ updating strategies, preventing subsequent update errors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1575</span>
-<span class="normal">1576</span>
-<span class="normal">1577</span>
-<span class="normal">1578</span>
-<span class="normal">1579</span>
-<span class="normal">1580</span>
-<span class="normal">1581</span>
-<span class="normal">1582</span>
-<span class="normal">1583</span>
-<span class="normal">1584</span>
-<span class="normal">1585</span>
-<span class="normal">1586</span>
-<span class="normal">1587</span>
-<span class="normal">1588</span>
-<span class="normal">1589</span>
-<span class="normal">1590</span>
-<span class="normal">1591</span>
-<span class="normal">1592</span>
-<span class="normal">1593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_memory_strategies_and_wait</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1703</span>
+<span class="normal">1704</span>
+<span class="normal">1705</span>
+<span class="normal">1706</span>
+<span class="normal">1707</span>
+<span class="normal">1708</span>
+<span class="normal">1709</span>
+<span class="normal">1710</span>
+<span class="normal">1711</span>
+<span class="normal">1712</span>
+<span class="normal">1713</span>
+<span class="normal">1714</span>
+<span class="normal">1715</span>
+<span class="normal">1716</span>
+<span class="normal">1717</span>
+<span class="normal">1718</span>
+<span class="normal">1719</span>
+<span class="normal">1720</span>
+<span class="normal">1721</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_memory_strategies_and_wait</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">add_strategies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -14912,76 +15836,76 @@ provides extraction status or timestamps.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>bedrock_agentcore/memory/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1595</span>
-<span class="normal">1596</span>
-<span class="normal">1597</span>
-<span class="normal">1598</span>
-<span class="normal">1599</span>
-<span class="normal">1600</span>
-<span class="normal">1601</span>
-<span class="normal">1602</span>
-<span class="normal">1603</span>
-<span class="normal">1604</span>
-<span class="normal">1605</span>
-<span class="normal">1606</span>
-<span class="normal">1607</span>
-<span class="normal">1608</span>
-<span class="normal">1609</span>
-<span class="normal">1610</span>
-<span class="normal">1611</span>
-<span class="normal">1612</span>
-<span class="normal">1613</span>
-<span class="normal">1614</span>
-<span class="normal">1615</span>
-<span class="normal">1616</span>
-<span class="normal">1617</span>
-<span class="normal">1618</span>
-<span class="normal">1619</span>
-<span class="normal">1620</span>
-<span class="normal">1621</span>
-<span class="normal">1622</span>
-<span class="normal">1623</span>
-<span class="normal">1624</span>
-<span class="normal">1625</span>
-<span class="normal">1626</span>
-<span class="normal">1627</span>
-<span class="normal">1628</span>
-<span class="normal">1629</span>
-<span class="normal">1630</span>
-<span class="normal">1631</span>
-<span class="normal">1632</span>
-<span class="normal">1633</span>
-<span class="normal">1634</span>
-<span class="normal">1635</span>
-<span class="normal">1636</span>
-<span class="normal">1637</span>
-<span class="normal">1638</span>
-<span class="normal">1639</span>
-<span class="normal">1640</span>
-<span class="normal">1641</span>
-<span class="normal">1642</span>
-<span class="normal">1643</span>
-<span class="normal">1644</span>
-<span class="normal">1645</span>
-<span class="normal">1646</span>
-<span class="normal">1647</span>
-<span class="normal">1648</span>
-<span class="normal">1649</span>
-<span class="normal">1650</span>
-<span class="normal">1651</span>
-<span class="normal">1652</span>
-<span class="normal">1653</span>
-<span class="normal">1654</span>
-<span class="normal">1655</span>
-<span class="normal">1656</span>
-<span class="normal">1657</span>
-<span class="normal">1658</span>
-<span class="normal">1659</span>
-<span class="normal">1660</span>
-<span class="normal">1661</span>
-<span class="normal">1662</span>
-<span class="normal">1663</span>
-<span class="normal">1664</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">wait_for_memories</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1723</span>
+<span class="normal">1724</span>
+<span class="normal">1725</span>
+<span class="normal">1726</span>
+<span class="normal">1727</span>
+<span class="normal">1728</span>
+<span class="normal">1729</span>
+<span class="normal">1730</span>
+<span class="normal">1731</span>
+<span class="normal">1732</span>
+<span class="normal">1733</span>
+<span class="normal">1734</span>
+<span class="normal">1735</span>
+<span class="normal">1736</span>
+<span class="normal">1737</span>
+<span class="normal">1738</span>
+<span class="normal">1739</span>
+<span class="normal">1740</span>
+<span class="normal">1741</span>
+<span class="normal">1742</span>
+<span class="normal">1743</span>
+<span class="normal">1744</span>
+<span class="normal">1745</span>
+<span class="normal">1746</span>
+<span class="normal">1747</span>
+<span class="normal">1748</span>
+<span class="normal">1749</span>
+<span class="normal">1750</span>
+<span class="normal">1751</span>
+<span class="normal">1752</span>
+<span class="normal">1753</span>
+<span class="normal">1754</span>
+<span class="normal">1755</span>
+<span class="normal">1756</span>
+<span class="normal">1757</span>
+<span class="normal">1758</span>
+<span class="normal">1759</span>
+<span class="normal">1760</span>
+<span class="normal">1761</span>
+<span class="normal">1762</span>
+<span class="normal">1763</span>
+<span class="normal">1764</span>
+<span class="normal">1765</span>
+<span class="normal">1766</span>
+<span class="normal">1767</span>
+<span class="normal">1768</span>
+<span class="normal">1769</span>
+<span class="normal">1770</span>
+<span class="normal">1771</span>
+<span class="normal">1772</span>
+<span class="normal">1773</span>
+<span class="normal">1774</span>
+<span class="normal">1775</span>
+<span class="normal">1776</span>
+<span class="normal">1777</span>
+<span class="normal">1778</span>
+<span class="normal">1779</span>
+<span class="normal">1780</span>
+<span class="normal">1781</span>
+<span class="normal">1782</span>
+<span class="normal">1783</span>
+<span class="normal">1784</span>
+<span class="normal">1785</span>
+<span class="normal">1786</span>
+<span class="normal">1787</span>
+<span class="normal">1788</span>
+<span class="normal">1789</span>
+<span class="normal">1790</span>
+<span class="normal">1791</span>
+<span class="normal">1792</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">wait_for_memories</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">memory_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">180</span><span class="p">,</span> <span class="n">poll_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wait for memory extraction to complete by polling.</span>
