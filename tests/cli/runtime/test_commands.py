@@ -1719,6 +1719,7 @@ agents:
                     auto_update_on_conflict=False,
                     console=ANY,
                     force_rebuild_deps=False,
+                    image_tag=None,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -1773,6 +1774,7 @@ agents:
                     auto_update_on_conflict=False,
                     console=ANY,
                     force_rebuild_deps=False,
+                    image_tag=None,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -2473,6 +2475,7 @@ agents:
                     auto_update_on_conflict=False,
                     console=ANY,
                     force_rebuild_deps=False,
+                    image_tag=None,
                 )
             finally:
                 os.chdir(original_cwd)
@@ -3561,6 +3564,89 @@ agents:
                 assert call_args.kwargs["vpc_subnets"] == ["subnet-abc123def456", "subnet-xyz789ghi012"]
                 assert call_args.kwargs["vpc_security_groups"] == ["sg-abc123xyz789"]
 
+            finally:
+                os.chdir(original_cwd)
+
+    def test_deploy_with_custom_image_tag(self, tmp_path):
+        """Test deploy command with --image-tag option."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
+            mock_result = Mock()
+            mock_result.mode = "cloud"
+            mock_result.tag = "bedrock_agentcore-test-agent:v1.2.3"
+            mock_result.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123"
+            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent:v1.2.3"
+            mock_result.agent_id = "AGENT123"
+            mock_launch.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["deploy", "--image-tag", "v1.2.3"])
+
+                assert result.exit_code == 0
+                assert "v1.2.3" in result.stdout
+
+                # Verify custom tag was passed
+                call_args = mock_launch.call_args
+                assert call_args.kwargs["image_tag"] == "v1.2.3"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_deploy_without_image_tag(self, tmp_path):
+        """Test deploy command without --image-tag (auto-generates)."""
+        config_file = tmp_path / ".bedrock_agentcore.yaml"
+        config_content = """
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: test.py
+    aws:
+      region: any-region-1
+      account: "123456789012"
+"""
+        config_file.write_text(config_content.strip())
+
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
+        ):
+            mock_result = Mock()
+            mock_result.mode = "cloud"
+            mock_result.tag = "bedrock_agentcore-test-agent:20260108-120435-123"
+            mock_result.agent_arn = "arn:aws:bedrock:us-west-2:123456789012:agent-runtime/AGENT123"
+            mock_result.ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-agent:20260108-120435-123"
+            mock_result.agent_id = "AGENT123"
+            mock_launch.return_value = mock_result
+
+            original_cwd = Path.cwd()
+            os.chdir(tmp_path)
+
+            try:
+                result = self.runner.invoke(app, ["deploy"])
+
+                assert result.exit_code == 0
+
+                # Verify image_tag was passed as None (auto-generate)
+                call_args = mock_launch.call_args
+                assert call_args.kwargs["image_tag"] is None
             finally:
                 os.chdir(original_cwd)
 

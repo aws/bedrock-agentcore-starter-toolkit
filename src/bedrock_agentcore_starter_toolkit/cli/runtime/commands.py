@@ -223,6 +223,13 @@ def deploy(
         "-lb",
         help="Build locally and deploy to cloud (container deployment only)",
     ),
+    image_tag: Optional[str] = typer.Option(
+        None,
+        "--image-tag",
+        "-t",
+        help="Custom image tag for version isolation (default: auto-generated timestamp YYYYMMDD-HHMMSS-mmm). "
+        "Each deployment gets a unique immutable version.",
+    ),
     auto_update_on_conflict: bool = typer.Option(
         False,
         "--auto-update-on-conflict",
@@ -291,7 +298,7 @@ def deploy(
     deployment_type = agent_config.deployment_type
 
     # Validate deployment type compatibility early
-    if local_build or force_rebuild_deps:
+    if local_build or force_rebuild_deps or image_tag:
         if local_build and deployment_type == "direct_code_deploy":
             _handle_error(
                 "Error: --local-build is only supported for container deployment type.\n"
@@ -304,6 +311,12 @@ def deploy(
             _handle_error(
                 "Error: --force-rebuild-deps is only supported for direct_code_deploy deployment type.\n"
                 "Container deployments always rebuild dependencies."
+            )
+
+        if image_tag and deployment_type != "container":
+            _handle_error(
+                "Error: --image-tag is only supported for container deployment type.\n"
+                "Direct code deploy does not use container images."
             )
 
     try:
@@ -374,6 +387,7 @@ def deploy(
                 auto_update_on_conflict=auto_update_on_conflict,
                 console=console,
                 force_rebuild_deps=force_rebuild_deps,
+                image_tag=image_tag,
             )
 
         # Handle result based on mode
@@ -514,7 +528,7 @@ def deploy(
                 f"[bold]Agent Details:[/bold]\n"
                 f"Agent Name: [cyan]{agent_name}[/cyan]\n"
                 f"Agent ARN: [cyan]{result.agent_arn}[/cyan]\n"
-                f"ECR URI: [cyan]{result.ecr_uri}:latest[/cyan]\n"
+                f"ECR URI: [cyan]{result.ecr_uri}[/cyan]\n"
                 f"CodeBuild ID: [dim]{result.codebuild_id}[/dim]\n\n"
                 f"🚀 ARM64 container deployed to Bedrock AgentCore\n\n"
                 f"[bold]Next Steps:[/bold]\n"

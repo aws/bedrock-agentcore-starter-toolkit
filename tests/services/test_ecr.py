@@ -1,15 +1,28 @@
 """Tests for Bedrock AgentCore ECR service integration."""
 
+import re
+
 import pytest
 
 from bedrock_agentcore_starter_toolkit.services.ecr import (
     create_ecr_repository,
     deploy_to_ecr,
+    generate_image_tag,
     get_account_id,
     get_or_create_ecr_repository,
     get_region,
     sanitize_ecr_repo_name,
 )
+
+
+class TestImageTagGeneration:
+    """Test image tag generation functionality."""
+
+    def test_generate_image_tag_format(self):
+        """Test tag format is YYYYMMDD-HHMMSS-mmm."""
+        tag = generate_image_tag()
+        assert re.match(r"^\d{8}-\d{6}-\d{3}$", tag)
+        assert len(tag) == 19
 
 
 class TestECRService:
@@ -35,7 +48,7 @@ class TestECRService:
         mock_boto3_clients["ecr"].describe_repositories.assert_called_once_with(repositoryNames=["existing-repo"])
 
     def test_deploy_to_ecr_full_flow(self, mock_boto3_clients, mock_container_runtime):
-        """Test complete ECR deployment flow."""
+        """Test complete ECR deployment flow with auto-generated tag."""
         # Mock successful deployment
         mock_container_runtime.login.return_value = True
         mock_container_runtime.tag.return_value = True
@@ -43,18 +56,43 @@ class TestECRService:
 
         ecr_tag = deploy_to_ecr("local-image:latest", "test-repo", "us-west-2", mock_container_runtime)
 
+        # Verify versioned tag returned (not :latest)
+        assert ":latest" not in ecr_tag
+        assert re.match(r".*:\d{8}-\d{6}-\d{3}$", ecr_tag)
+
         # Verify ECR operations
-        assert ecr_tag == "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo:latest"
         mock_boto3_clients["ecr"].get_authorization_token.assert_called_once()
 
         # Verify container runtime operations
         mock_container_runtime.login.assert_called_once()
-        mock_container_runtime.tag.assert_called_once_with(
-            "local-image:latest", "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo:latest"
+
+        # Verify tag was called with versioned URI
+        tag_call_args = mock_container_runtime.tag.call_args[0]
+        assert tag_call_args[0] == "local-image:latest"
+        assert re.match(r".*:\d{8}-\d{6}-\d{3}$", tag_call_args[1])
+
+        # Verify push was called with versioned URI
+        push_call_args = mock_container_runtime.push.call_args[0]
+        assert re.match(r".*:\d{8}-\d{6}-\d{3}$", push_call_args[0])
+
+    def test_deploy_to_ecr_with_custom_tag(self, mock_boto3_clients, mock_container_runtime):
+        """Test deploy with custom image tag."""
+        mock_container_runtime.login.return_value = True
+        mock_container_runtime.tag.return_value = True
+        mock_container_runtime.push.return_value = True
+
+        custom_tag = "v1.2.3"
+        ecr_tag = deploy_to_ecr(
+            "local-image:latest", "test-repo", "us-west-2", mock_container_runtime, image_tag=custom_tag
         )
-        mock_container_runtime.push.assert_called_once_with(
-            "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo:latest"
-        )
+
+        # Verify custom tag in returned URI
+        assert ecr_tag.endswith(f":{custom_tag}")
+        assert ecr_tag == f"123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo:{custom_tag}"
+
+        # Verify tag and push called once
+        mock_container_runtime.tag.assert_called_once()
+        mock_container_runtime.push.assert_called_once()
 
     def test_ecr_auth_failure(self, mock_boto3_clients, mock_container_runtime):
         """Test ECR authentication error handling."""
@@ -68,14 +106,14 @@ class TestECRService:
         mock_container_runtime.login.return_value = True
         mock_container_runtime.tag.return_value = False
 
-        with pytest.raises(RuntimeError, match="Failed to tag image"):
+        with pytest.raises(RuntimeError, match="Failed to tag image as"):
             deploy_to_ecr("local-image:latest", "test-repo", "us-west-2", mock_container_runtime)
 
         # Mock push failure
         mock_container_runtime.tag.return_value = True
         mock_container_runtime.push.return_value = False
 
-        with pytest.raises(RuntimeError, match="Failed to push image to ECR"):
+        with pytest.raises(RuntimeError, match="Failed to push versioned image"):
             deploy_to_ecr("local-image:latest", "test-repo", "us-west-2", mock_container_runtime)
 
 

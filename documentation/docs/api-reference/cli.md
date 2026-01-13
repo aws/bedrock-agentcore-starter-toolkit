@@ -160,6 +160,8 @@ Options:
 
 - `--local-build, -lb`: Build locally and deploy to cloud (requires Docker/Finch/Podman)
 
+- `--image-tag, -t TEXT`: Custom image tag for version isolation (default: auto-generated timestamp YYYYMMDD-HHMMSS-mmm)
+
 - `--auto-update-on-conflict, -auc`: Automatically update existing agent instead of failing
 
 - `--env, -env TEXT`: Environment variables for agent (format: KEY=VALUE)
@@ -175,7 +177,20 @@ agentcore deploy --local
 
 # Local build mode - Build locally, deploy to cloud
 agentcore deploy --local-build
+
+# Deploy with custom image tag for version control
+agentcore deploy --image-tag v1.2.3
+
+# Deploy with semantic versioning
+agentcore deploy --image-tag $(git describe --tags --always)
 ```
+
+**Image Versioning:**
+
+Each deployment automatically gets a unique immutable image tag for version isolation:
+- Default: Auto-generated timestamp (e.g., `20260109-094500-123`)
+- Custom: Use `--image-tag` for semantic versioning or build numbers
+- Ensures previous agent versions continue using their original images
 
 **Memory Provisioning:**
 
