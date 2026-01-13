@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.6] - 2026-01-13
+
+### Changes
+
+- fix: agent version isolation - use unique image tags instead of :latest (#422) (efda1bc)
+- Policy docs: enhance llms.txt policy headings with comprehensive descriptions (#419) (ab10f84)
+- MCP Server docs add terraform and evaluation quickstart to mcp (#418) (679b83f)
+- chore: bump version to 0.2.5 (#408) (165496e)
+
 ## [0.2.5] - 2025-12-13
 
 ### Changes
