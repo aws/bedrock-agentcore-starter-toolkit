@@ -832,7 +832,7 @@ def setup_aws_jwt(
                 f"Duration: [cyan]{aws_jwt_config.duration_seconds}s[/cyan]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
                 f"1. Configure your external service to trust this issuer URL\n"
-                f"2. Run [cyan]agentcore launch[/cyan] to deploy (IAM permissions auto-added)\n"
+                f"2. Run [cyan]agentcore deploy[/cyan] to deploy (IAM permissions auto-added)\n"
                 f"3. Use [cyan]@requires_iam_access_token(audience=[...])[/cyan] in your agent",
                 title="✅ Success",
                 border_style="green",

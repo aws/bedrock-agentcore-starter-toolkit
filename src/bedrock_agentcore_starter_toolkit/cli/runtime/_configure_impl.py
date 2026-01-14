@@ -642,7 +642,7 @@ def configure_impl(
                 f"{lifecycle_info}\n"
                 f"📄 Config saved to: [dim]{result.config_path}[/dim]\n\n"
                 f"[bold]Next Steps:[/bold]\n"
-                f"[cyan]agentcore launch[/cyan]{' [cyan]agentcore create[/cyan]' if create_mode_enabled else ''}",
+                f"[cyan]agentcore deploy[/cyan]{' [cyan]agentcore create[/cyan]' if create_mode_enabled else ''}",
                 title="Configuration Success",
                 border_style="bright_blue",
             )
