@@ -1,13 +1,98 @@
 """Bedrock AgentCore utility functions for parsing and importing Bedrock AgentCore applications."""
 
+import json
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 log = logging.getLogger(__name__)
+
+# Entrypoint candidates by language
+PYTHON_ENTRYPOINT_CANDIDATES = ["agent.py", "app.py", "main.py", "__main__.py"]
+TYPESCRIPT_ENTRYPOINT_CANDIDATES = ["src/index.ts", "index.ts", "src/agent.ts", "agent.ts", "src/main.ts", "main.ts", "src/app.ts", "app.ts"]
+
+
+def detect_entrypoint_by_language(source_dir: Path, language: str) -> List[Path]:
+    """Detect entrypoint files based on project language.
+
+    Args:
+        source_dir: Directory to search for entrypoint
+        language: Project language ("python" or "typescript")
+
+    Returns:
+        List of detected entrypoint files (empty list if none found)
+    """
+    if language == "typescript":
+        candidates = TYPESCRIPT_ENTRYPOINT_CANDIDATES
+    else:
+        candidates = PYTHON_ENTRYPOINT_CANDIDATES
+
+    found_files = []
+    for candidate in candidates:
+        candidate_path = source_dir / candidate
+        if candidate_path.exists():
+            found_files.append(candidate_path)
+            log.debug("Detected entrypoint: %s", candidate_path)
+            if language == "typescript":
+                break  # TypeScript uses first match only
+
+    if not found_files:
+        log.debug("No entrypoint found in %s", source_dir)
+
+    return found_files
+
+
+def detect_language(project_dir: Path) -> Literal["python", "typescript"]:
+    """Auto-detect project language based on dependency files.
+
+    Args:
+        project_dir: Path to the project directory
+
+    Returns:
+        "typescript" if package.json exists, otherwise "python"
+    """
+    if (project_dir / "package.json").exists():
+        return "typescript"
+    return "python"
+
+
+def detect_typescript_project(project_dir: Path) -> Optional["TypeScriptProjectInfo"]:
+    """Parse package.json and extract TypeScript project information.
+
+    Args:
+        project_dir: Path to the project directory
+
+    Returns:
+        TypeScriptProjectInfo if package.json exists, None otherwise
+    """
+    package_json_path = project_dir / "package.json"
+    if not package_json_path.exists():
+        return None
+
+    try:
+        with open(package_json_path) as f:
+            pkg = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning("Failed to parse package.json: %s", e)
+        return None
+
+    # Parse Node.js version from engines.node (e.g., ">=20.0.0" -> "20")
+    node_constraint = pkg.get("engines", {}).get("node", "")
+    match = re.search(r"(\d+)", node_constraint)
+    node_version = match.group(1) if match else "20"
+
+    # Check for build script
+    has_build_script = "build" in pkg.get("scripts", {})
+
+    return TypeScriptProjectInfo(
+        package_json_path=str(package_json_path),
+        node_version=node_version,
+        has_build_script=has_build_script,
+    )
 
 
 def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
@@ -61,6 +146,20 @@ class DependencyInfo:
     def is_root_package(self) -> bool:
         """Whether this dependency points to the root package."""
         return self.is_pyproject and self.install_path == "."
+
+
+@dataclass
+class TypeScriptProjectInfo:
+    """Information about a TypeScript project extracted from package.json."""
+
+    package_json_path: Optional[str] = None
+    node_version: str = "20"
+    has_build_script: bool = False
+
+    @property
+    def found(self) -> bool:
+        """Whether package.json was found."""
+        return self.package_json_path is not None
 
 
 def detect_dependencies(package_dir: Path, explicit_file: Optional[str] = None) -> DependencyInfo:

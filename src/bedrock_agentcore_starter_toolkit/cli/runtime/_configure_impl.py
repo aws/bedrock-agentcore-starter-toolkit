@@ -16,6 +16,7 @@ from ...operations.runtime import (
 )
 from ...utils.aws import get_account_id
 from ...utils.runtime.config import load_config, load_config_if_exists
+from ...utils.runtime.entrypoint import detect_entrypoint_by_language, detect_language, detect_typescript_project
 from ..common import _handle_error, _print_success, console
 from .configuration_manager import ConfigurationManager
 
@@ -207,7 +208,8 @@ def configure_impl(
         elif entrypoint_path.is_dir():
             # It's a directory - detect entrypoint within it
             source_path = str(entrypoint_path)
-            entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+            early_language = detect_language(entrypoint_path)
+            entrypoint = _detect_entrypoint_in_source(source_path, non_interactive, early_language)
         else:
             entrypoint_path = Path(entrypoint_input).resolve()
             if entrypoint_path.is_file():
@@ -220,7 +222,8 @@ def configure_impl(
             elif entrypoint_path.is_dir():
                 # It's a directory - detect entrypoint within it
                 source_path = str(entrypoint_path)
-                entrypoint = _detect_entrypoint_in_source(source_path, non_interactive)
+                early_language = detect_language(entrypoint_path)
+                entrypoint = _detect_entrypoint_in_source(source_path, non_interactive, early_language)
             else:
                 _handle_error(f"Path not found: {entrypoint_input}")
 
@@ -236,6 +239,27 @@ def configure_impl(
     valid, error = validate_agent_name(agent_name)
     if not valid:
         _handle_error(error)
+
+    # Detect project language
+    detected_language = detect_language(Path(source_path))
+    ts_project_info = None
+    node_version = "20"
+
+    if detected_language == "typescript":
+        ts_project_info = detect_typescript_project(Path(source_path))
+        if ts_project_info:
+            node_version = ts_project_info.node_version
+        console.print(f"\n📦 [cyan]TypeScript project detected[/cyan] (Node.js {node_version})")
+
+    # Enforce container deployment for TypeScript
+    if detected_language == "typescript":
+        if deployment_type == "direct_code_deploy":
+            _handle_error(
+                "TypeScript projects require container deployment.\n"
+                "The direct_code_deploy option is only available for Python projects.\n"
+                "Remove --deployment-type or use --deployment-type container"
+            )
+        deployment_type = "container"
 
     def _validate_deployment_type_compatibility(agent_name: str, deployment_type: str):
         """Validate that deployment type is compatible with existing agent configuration."""
@@ -254,9 +278,11 @@ def configure_impl(
     _validate_deployment_type_compatibility(agent_name, deployment_type)
 
     # Handle dependency file selection with simplified logic
-    # Skip for create mode and existing create-flow agents (already set to None above)
+    # Skip for create mode, existing create-flow agents, and TypeScript projects
     if create_mode_enabled:
         final_requirements_file = None
+    elif detected_language == "typescript":
+        final_requirements_file = None  # TypeScript uses package.json, not requirements.txt
     elif not is_agentcore_create_agent:
         final_requirements_file = _handle_requirements_file_display(requirements_file, non_interactive, source_path)
 
@@ -569,6 +595,8 @@ def configure_impl(
             deployment_type=deployment_type,
             runtime_type=runtime_type,
             is_generated_by_agentcore_create=is_agentcore_create_agent,
+            language=detected_language,
+            node_version=node_version,
         )
 
         # Prepare authorization info for summary
@@ -758,23 +786,28 @@ def _handle_requirements_file_display(
         return result
 
 
-def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False) -> str:
+def _detect_entrypoint_in_source(source_path: str, non_interactive: bool = False, language: str = "python") -> str:
     """Detect entrypoint file in source directory with CLI display."""
     source_dir = Path(source_path)
 
-    # Use operations layer for detection
-    detected = detect_entrypoint(source_dir)
+    # Use unified detection
+    detected = detect_entrypoint_by_language(source_dir, language)
 
     if len(detected) == 0:
-        # No files found - error
         rel_source = get_relative_path(source_dir)
-        _handle_error(
-            f"No entrypoint file found in {rel_source}\n"
-            f"Expected one of: main.py, agent.py, app.py, __main__.py\n"
-            f"Please specify full file path (e.g., {rel_source}/your_agent.py)"
-        )
+        if language == "typescript":
+            _handle_error(
+                f"No TypeScript entrypoint file found in {rel_source}\n"
+                f"Expected one of: index.ts, agent.ts, main.ts, app.ts (or those in src/)\n"
+                f"Please specify full file path (e.g., {rel_source}/src/index.ts)"
+            )
+        else:
+            _handle_error(
+                f"No entrypoint file found in {rel_source}\n"
+                f"Expected one of: main.py, agent.py, app.py, __main__.py\n"
+                f"Please specify full file path (e.g., {rel_source}/your_agent.py)"
+            )
     elif len(detected) > 1:
-        # Multiple files found - error with list
         rel_source = get_relative_path(source_dir)
         files_list = ", ".join(f.name for f in detected)
         _handle_error(

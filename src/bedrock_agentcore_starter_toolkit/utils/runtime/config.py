@@ -162,6 +162,27 @@ def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> Optio
     return load_config(config_path, autofill_missing_aws)
 
 
+def get_entrypoint_from_config(config_path: Path, default: str) -> str:
+    """Get entrypoint from config file or return default.
+    
+    Args:
+        config_path: Path to configuration file
+        default: Default entrypoint to return if not found in config
+        
+    Returns:
+        Entrypoint string from config, or default if not found
+    """
+    if config_path.exists():
+        try:
+            project_config = load_config(config_path, autofill_missing_aws=False)
+            agent_config = project_config.get_agent_config()
+            if agent_config and agent_config.entrypoint:
+                return agent_config.entrypoint
+        except Exception:
+            pass
+    return default
+
+
 def merge_agent_config(
     config_path: Path, agent_name: str, new_config: BedrockAgentCoreAgentSchema
 ) -> BedrockAgentCoreConfigSchema:

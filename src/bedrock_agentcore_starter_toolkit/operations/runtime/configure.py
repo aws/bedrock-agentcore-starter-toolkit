@@ -162,6 +162,8 @@ def configure_bedrock_agentcore(
     deployment_type: str = "direct_code_deploy",
     runtime_type: Optional[str] = None,
     is_generated_by_agentcore_create: bool = False,
+    language: str = "python",
+    node_version: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -197,6 +199,8 @@ def configure_bedrock_agentcore(
         auto_create_s3: Whether to auto-create S3 bucket for direct_code_deploy deployment
         s3_path: S3 path for direct_code_deploy deployment
         is_generated_by_agentcore_create: Whether this agent was created via agentcore create command
+        language: Project language - "python" (default) or "typescript"
+        node_version: Node.js major version for TypeScript projects (e.g., "20", "22")
 
     Returns:
         ConfigureResult model with configuration details
@@ -450,6 +454,8 @@ def configure_bedrock_agentcore(
             memory_name,
             source_path,
             protocol,
+            language=language,
+            node_version=node_version or "20",
         )
         # Log with relative path for better readability
         rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
@@ -542,6 +548,8 @@ def configure_bedrock_agentcore(
     # Create new agent configuration
     config = BedrockAgentCoreAgentSchema(
         name=agent_name,
+        language=language,
+        node_version=node_version,
         entrypoint=entrypoint,
         deployment_type=deployment_type,
         runtime_type=runtime_type,

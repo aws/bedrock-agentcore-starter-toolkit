@@ -772,3 +772,124 @@ CMD ["python", "/app/{{ agent_file }}"]
                 # Check warning message contains expected content
                 warning_call = mock_warn.call_args[0][0]
                 assert "Docker is not installed" in warning_call
+
+
+class TestTypeScriptDockerfileGeneration:
+    """Test TypeScript Dockerfile generation."""
+
+    def test_typescript_template_selection(self, tmp_path, mock_subprocess):
+        """Test that TypeScript uses Dockerfile.node.j2 template."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            # Create TypeScript project structure
+            src_dir = tmp_path / "src"
+            src_dir.mkdir()
+            agent_file = src_dir / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            (tmp_path / "package.json").write_text('{"name": "test", "scripts": {"build": "tsc"}}')
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    aws_region="us-west-2",
+                    language="typescript",
+                    node_version="20",
+                )
+
+                assert dockerfile_path.exists()
+                content = dockerfile_path.read_text()
+                assert "FROM public.ecr.aws/docker/library/node:20-slim" in content
+                assert "npm ci" in content
+                assert "npm run build" in content
+
+    def test_typescript_entrypoint_transformation(self, tmp_path, mock_subprocess):
+        """Test entrypoint is transformed from .ts to dist/.js."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            src_dir = tmp_path / "src"
+            src_dir.mkdir()
+            agent_file = src_dir / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    language="typescript",
+                )
+
+                content = dockerfile_path.read_text()
+                assert "dist/src/index.js" in content
+
+    def test_typescript_root_entrypoint_transformation(self, tmp_path, mock_subprocess):
+        """Test root-level entrypoint transformation."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            agent_file = tmp_path / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    language="typescript",
+                )
+
+                content = dockerfile_path.read_text()
+                assert "dist/index.js" in content
+
+    def test_typescript_node_version(self, tmp_path, mock_subprocess):
+        """Test custom node version in Dockerfile."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            agent_file = tmp_path / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    language="typescript",
+                    node_version="22",
+                )
+
+                content = dockerfile_path.read_text()
+                assert "FROM public.ecr.aws/docker/library/node:22-slim" in content
+
+    def test_typescript_with_memory_id(self, tmp_path, mock_subprocess):
+        """Test TypeScript Dockerfile includes memory_id."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            agent_file = tmp_path / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    language="typescript",
+                    memory_id="mem-123",
+                )
+
+                content = dockerfile_path.read_text()
+                assert "mem-123" in content
+
+    def test_transform_ts_entrypoint_tsx(self, mock_subprocess):
+        """Test _transform_ts_entrypoint with .tsx file."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            result = runtime._transform_ts_entrypoint("src/app.tsx")
+            assert result == "dist/src/app.js"

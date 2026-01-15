@@ -535,3 +535,73 @@ class TestAwsJwtConfigAtAgentLevel:
         assert agent.aws_jwt is not None
         assert agent.aws_jwt.enabled is False
         assert agent.aws_jwt.audiences == []
+
+
+class TestTypeScriptSchemaValidation:
+    """Test TypeScript-related schema fields and validation."""
+
+    def test_language_field_python(self):
+        """Test language field accepts python."""
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+            language="python",
+        )
+        assert agent.language == "python"
+
+    def test_language_field_typescript(self):
+        """Test language field accepts typescript."""
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="src/index.ts",
+            language="typescript",
+            deployment_type="container",
+        )
+        assert agent.language == "typescript"
+
+    def test_language_field_invalid(self):
+        """Test language field rejects invalid values."""
+        with pytest.raises(ValidationError):
+            BedrockAgentCoreAgentSchema(
+                name="test-agent",
+                entrypoint="agent.js",
+                language="javascript",
+            )
+
+    def test_node_version_field(self):
+        """Test node_version field accepts strings."""
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="src/index.ts",
+            language="typescript",
+            deployment_type="container",
+            node_version="20",
+        )
+        assert agent.node_version == "20"
+
+    def test_node_version_field_optional(self):
+        """Test node_version field is optional."""
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+        )
+        assert agent.node_version is None
+
+    def test_typescript_direct_code_deploy_invalid(self):
+        """Test TypeScript with direct_code_deploy fails."""
+        with pytest.raises(ValidationError) as exc_info:
+            BedrockAgentCoreAgentSchema(
+                name="test-agent",
+                entrypoint="src/index.ts",
+                language="typescript",
+                deployment_type="direct_code_deploy",
+            )
+        assert "container" in str(exc_info.value).lower()
+
+    def test_language_defaults_to_python(self):
+        """Test language defaults to python when not specified."""
+        agent = BedrockAgentCoreAgentSchema(
+            name="test-agent",
+            entrypoint="agent.py",
+        )
+        assert agent.language == "python"

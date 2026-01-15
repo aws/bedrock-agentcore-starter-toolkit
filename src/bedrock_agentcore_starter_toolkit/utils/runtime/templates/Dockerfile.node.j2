@@ -1,0 +1,37 @@
+FROM public.ecr.aws/docker/library/node:{{ node_version }}-slim
+WORKDIR /app
+
+# Environment variables (NODE_ENV set after build to allow devDependencies install)
+ENV DOCKER_CONTAINER=1{% if aws_region %} \
+    AWS_REGION={{ aws_region }} \
+    AWS_DEFAULT_REGION={{ aws_region }}{% endif %}{% if memory_id %} \
+    BEDROCK_AGENTCORE_MEMORY_ID={{ memory_id }}{% endif %}{% if memory_name %} \
+    BEDROCK_AGENTCORE_MEMORY_NAME={{ memory_name }}{% endif %}
+
+# Copy package files for layer caching
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for build)
+# Use npm ci for reproducible builds when lock file exists, otherwise npm install
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+# Copy source and build
+COPY . .
+RUN npm run build
+
+# Prune dev dependencies and set production mode
+RUN npm prune --production
+ENV NODE_ENV=production
+
+# Run as non-root user
+USER node
+
+EXPOSE 9000
+EXPOSE 8000
+EXPOSE 8080
+
+{% if observability_enabled %}
+CMD ["node", "--require", "@opentelemetry/auto-instrumentations-node/register", "{{ entrypoint }}"]
+{% else %}
+CMD ["node", "{{ entrypoint }}"]
+{% endif %}

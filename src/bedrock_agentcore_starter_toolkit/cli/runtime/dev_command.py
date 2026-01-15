@@ -9,7 +9,8 @@ from typing import Dict, List, Optional, Tuple
 
 import typer
 
-from ...utils.runtime.config import load_config, load_config_if_exists
+from ...utils.runtime.config import get_entrypoint_from_config, load_config, load_config_if_exists
+from ...utils.runtime.entrypoint import detect_language
 from ...utils.server_addresses import build_server_urls
 from ..common import _handle_error, _handle_warn, assert_valid_aws_creds_or_exit, console
 
@@ -28,6 +29,10 @@ def dev(
     """Start a local development server for your agent with hot reloading."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     _assert_aws_creds_if_required(config_path)
+
+    # Detect language from config or project files
+    language = _get_language(config_path)
+
     module_path, agent_name = _get_module_path_and_agent_name(config_path)
 
     # Setup environment and port
@@ -36,7 +41,12 @@ def dev(
 
     console.print("[green]🚀 Starting development server with hot reloading[/green]")
     console.print(f"[blue]Agent: {agent_name}[/blue]")
-    console.print(f"[blue]Module: {module_path}[/blue]")
+    console.print(f"[blue]Language: {language.capitalize()}[/blue]")
+    if language == "typescript":
+        entrypoint = _get_typescript_entrypoint(config_path)
+        console.print(f"[blue]Entrypoint: {entrypoint}[/blue]")
+    else:
+        console.print(f"[blue]Module: {module_path}[/blue]")
 
     if port_changed:
         console.print(f"[yellow]⚠️  Port {requested_port_val} is already in use[/yellow]")
@@ -57,17 +67,21 @@ def dev(
         console.print(f"[blue]  • {label}: {url}[/blue]")
     console.print()
 
-    cmd = [
-        "uv",
-        "run",
-        "uvicorn",
-        module_path,
-        "--reload",
-        "--host",
-        "0.0.0.0",  # nosec B104 - dev server intentionally binds to all interfaces
-        "--port",
-        str(devPort),
-    ]
+    # Build command based on language
+    if language == "typescript":
+        cmd = _build_typescript_command(config_path, devPort)
+    else:
+        cmd = [
+            "uv",
+            "run",
+            "uvicorn",
+            module_path,
+            "--reload",
+            "--host",
+            "0.0.0.0",  # nosec B104 - dev server intentionally binds to all interfaces
+            "--port",
+            str(devPort),
+        ]
 
     process = None
     try:
@@ -80,6 +94,44 @@ def dev(
     except Exception as e:
         _cleanup_process(process)
         _handle_error(f"Failed to start development server: {e}")
+
+
+def _get_language(config_path: Path) -> str:
+    """Get language from config or detect from project files."""
+    if config_path.exists():
+        try:
+            project_config = load_config(config_path, autofill_missing_aws=False)
+            agent_config = project_config.get_agent_config()
+            if agent_config and agent_config.language:
+                return agent_config.language
+        except Exception:
+            pass
+    return detect_language(Path.cwd())
+
+
+def _has_dev_script(project_dir: Path) -> bool:
+    """Check if package.json has a dev script."""
+    package_json = project_dir / "package.json"
+    if not package_json.exists():
+        return False
+    try:
+        import json
+        with open(package_json) as f:
+            pkg = json.load(f)
+        return "dev" in pkg.get("scripts", {})
+    except Exception:
+        return False
+
+
+def _build_typescript_command(config_path: Path, port: str) -> List[str]:
+    """Build command for TypeScript dev server."""
+    project_dir = Path.cwd()
+    if _has_dev_script(project_dir):
+        return ["npm", "run", "dev"]
+
+    # Fall back to tsx watch with entrypoint
+    entrypoint = get_entrypoint_from_config(config_path, "src/index.ts")
+    return ["npx", "tsx", "watch", entrypoint]
 
 
 def _get_module_path_and_agent_name(config_path: Path) -> tuple[str, str]:

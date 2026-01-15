@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class NetworkModeConfig(BaseModel):
@@ -265,6 +265,12 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     """Type-safe schema for BedrockAgentCore configuration."""
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
+    language: Literal["python", "typescript"] = Field(
+        default="python", description="Programming language of the agent"
+    )
+    node_version: Optional[str] = Field(
+        default=None, description="Node.js major version for TypeScript agents (e.g., '20', '22')"
+    )
     entrypoint: str = Field(..., description="Entrypoint file path (e.g., 'agent.py' or 'agent.py:handler')")
     deployment_type: Literal["container", "direct_code_deploy"] = Field(
         default="container", description="Deployment artifact type: container (Docker) or direct_code_deploy"
@@ -296,6 +302,13 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     is_generated_by_agentcore_create: Optional[bool] = Field(
         default=False, description="True if the agent is created with agentcore create"
     )
+
+    @model_validator(mode="after")
+    def validate_typescript_deployment(self) -> "BedrockAgentCoreAgentSchema":
+        """Ensure TypeScript agents use container deployment."""
+        if self.language == "typescript" and self.deployment_type == "direct_code_deploy":
+            raise ValueError("TypeScript agents require container deployment (direct_code_deploy not supported)")
+        return self
 
     def get_authorizer_configuration(self) -> Optional[dict]:
         """Get the authorizer configuration."""
