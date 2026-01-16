@@ -178,8 +178,8 @@ def get_entrypoint_from_config(config_path: Path, default: str) -> str:
             agent_config = project_config.get_agent_config()
             if agent_config and agent_config.entrypoint:
                 return agent_config.entrypoint
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Failed to load entrypoint from config: %s", e)
     return default
 
 

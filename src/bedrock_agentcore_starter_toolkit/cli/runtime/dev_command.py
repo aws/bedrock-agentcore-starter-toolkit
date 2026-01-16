@@ -104,8 +104,8 @@ def _get_language(config_path: Path) -> str:
             agent_config = project_config.get_agent_config()
             if agent_config and agent_config.language:
                 return agent_config.language
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Failed to load language from config: %s", e)
     return detect_language(Path.cwd())
 
 
