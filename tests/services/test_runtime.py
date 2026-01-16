@@ -155,6 +155,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
         )
 
         # Verify response structure
@@ -187,6 +188,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
         )
 
         # Verify single event handler was registered for all custom headers
@@ -874,6 +876,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
             runtimeUserId="user-456",
         )
 

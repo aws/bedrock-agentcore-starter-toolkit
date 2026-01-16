@@ -1,0 +1,31 @@
+# Dependencies (installed in container)
+node_modules/
+
+# Build output (rebuilt in container)
+dist/
+
+# Version control
+.git/
+
+# Environment files (secrets)
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Bedrock AgentCore
+.bedrock_agentcore.yaml
+.bedrock_agentcore/

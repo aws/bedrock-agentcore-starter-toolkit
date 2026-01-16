@@ -636,6 +636,7 @@ class BedrockAgentCoreClient:
             "qualifier": endpoint_name,
             "runtimeSessionId": session_id,
             "payload": payload,
+            "contentType": "application/json",
         }
 
         if user_id:
