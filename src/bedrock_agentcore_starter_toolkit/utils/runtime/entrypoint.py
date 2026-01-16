@@ -13,7 +13,16 @@ log = logging.getLogger(__name__)
 
 # Entrypoint candidates by language
 PYTHON_ENTRYPOINT_CANDIDATES = ["agent.py", "app.py", "main.py", "__main__.py"]
-TYPESCRIPT_ENTRYPOINT_CANDIDATES = ["src/index.ts", "index.ts", "src/agent.ts", "agent.ts", "src/main.ts", "main.ts", "src/app.ts", "app.ts"]
+TYPESCRIPT_ENTRYPOINT_CANDIDATES = [
+    "src/index.ts",
+    "index.ts",
+    "src/agent.ts",
+    "agent.ts",
+    "src/main.ts",
+    "main.ts",
+    "src/app.ts",
+    "app.ts",
+]
 
 
 def detect_entrypoint_by_language(source_dir: Path, language: str) -> List[Path]:

@@ -8,7 +8,6 @@ from rich.panel import Panel
 
 from ...operations.runtime import (
     configure_bedrock_agentcore,
-    detect_entrypoint,
     detect_requirements,
     get_relative_path,
     infer_agent_name,

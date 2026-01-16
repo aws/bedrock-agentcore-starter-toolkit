@@ -776,7 +776,6 @@ class TestGetAgentcoreDirectory:
         assert result == expected_path
 
 
-
 class TestGetEntrypointFromConfig:
     """Test get_entrypoint_from_config function."""
 

@@ -164,11 +164,11 @@ def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> Optio
 
 def get_entrypoint_from_config(config_path: Path, default: str) -> str:
     """Get entrypoint from config file or return default.
-    
+
     Args:
         config_path: Path to configuration file
         default: Default entrypoint to return if not found in config
-        
+
     Returns:
         Entrypoint string from config, or default if not found
     """

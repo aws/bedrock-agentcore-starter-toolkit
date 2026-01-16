@@ -265,9 +265,7 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     """Type-safe schema for BedrockAgentCore configuration."""
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
-    language: Literal["python", "typescript"] = Field(
-        default="python", description="Programming language of the agent"
-    )
+    language: Literal["python", "typescript"] = Field(default="python", description="Programming language of the agent")
     node_version: Optional[str] = Field(
         default=None, description="Node.js major version for TypeScript agents (e.g., '20', '22')"
     )

@@ -106,21 +106,21 @@ class ContainerRuntime:
 
     def _get_template_path(self, language: str, template_type: str) -> Path:
         """Get template path based on language and type.
-        
+
         Args:
             language: Project language ("python" or "typescript")
             template_type: Template type ("dockerfile" or "dockerignore")
-            
+
         Returns:
             Path to the template file
         """
         templates_dir = Path(__file__).parent / "templates"
-        
+
         if template_type == "dockerfile":
             template_name = "Dockerfile.node.j2" if language == "typescript" else "Dockerfile.j2"
         else:  # dockerignore
             template_name = "dockerignore.node.template" if language == "typescript" else "dockerignore.template"
-        
+
         return templates_dir / template_name
 
     def generate_dockerfile(

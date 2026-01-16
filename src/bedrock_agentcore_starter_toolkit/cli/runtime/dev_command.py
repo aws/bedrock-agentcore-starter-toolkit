@@ -43,7 +43,7 @@ def dev(
     console.print(f"[blue]Agent: {agent_name}[/blue]")
     console.print(f"[blue]Language: {language.capitalize()}[/blue]")
     if language == "typescript":
-        entrypoint = _get_typescript_entrypoint(config_path)
+        entrypoint = get_entrypoint_from_config(config_path, "src/index.ts")
         console.print(f"[blue]Entrypoint: {entrypoint}[/blue]")
     else:
         console.print(f"[blue]Module: {module_path}[/blue]")
@@ -116,6 +116,7 @@ def _has_dev_script(project_dir: Path) -> bool:
         return False
     try:
         import json
+
         with open(package_json) as f:
             pkg = json.load(f)
         return "dev" in pkg.get("scripts", {})

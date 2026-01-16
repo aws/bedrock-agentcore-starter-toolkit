@@ -2573,13 +2573,10 @@ class TestProtocolConfiguration:
             os.chdir(original_cwd)
 
 
-
 class TestTypeScriptConfigure:
     """Test configure_bedrock_agentcore with TypeScript projects."""
 
-    def test_configure_typescript_project(
-        self, mock_boto3_clients, mock_container_runtime, tmp_path
-    ):
+    def test_configure_typescript_project(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test configuration flow for TypeScript project."""
         import os
 
@@ -2589,16 +2586,17 @@ class TestTypeScriptConfigure:
         agent_file = src_dir / "index.ts"
         agent_file.write_text("// TypeScript agent")
 
-        (tmp_path / "package.json").write_text('''{
+        (tmp_path / "package.json").write_text("""{
             "name": "test-agent",
             "scripts": {"build": "tsc"},
             "engines": {"node": ">=20"}
-        }''')
+        }""")
 
         original_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
+
             class MockContainerRuntimeClass:
                 DEFAULT_RUNTIME = "auto"
                 DEFAULT_PLATFORM = "linux/arm64"
@@ -2621,7 +2619,7 @@ class TestTypeScriptConfigure:
                     return_value=mock_config_manager,
                 ),
             ):
-                result = configure_bedrock_agentcore(
+                configure_bedrock_agentcore(
                     agent_name="test_ts_agent",
                     entrypoint_path=agent_file,
                     execution_role="TestRole",

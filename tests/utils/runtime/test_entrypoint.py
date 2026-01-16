@@ -3,13 +3,13 @@
 import pytest
 
 from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import (
+    TypeScriptProjectInfo,
     detect_dependencies,
     detect_entrypoint_by_language,
     detect_language,
     detect_typescript_project,
     get_python_version,
     parse_entrypoint,
-    TypeScriptProjectInfo,
     validate_requirements_file,
 )
 
@@ -371,11 +371,11 @@ class TestDetectTypescriptProject:
     def test_full_package_json(self, tmp_path):
         """Test parsing full package.json with all fields."""
         package_json = tmp_path / "package.json"
-        package_json.write_text('''{
+        package_json.write_text("""{
             "name": "test-agent",
             "scripts": {"build": "tsc"},
             "engines": {"node": ">=20.0.0"}
-        }''')
+        }""")
 
         result = detect_typescript_project(tmp_path)
 
