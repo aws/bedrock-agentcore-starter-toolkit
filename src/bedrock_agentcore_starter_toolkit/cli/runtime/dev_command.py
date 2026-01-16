@@ -14,6 +14,8 @@ from ...utils.runtime.entrypoint import detect_language
 from ...utils.server_addresses import build_server_urls
 from ..common import _handle_error, _handle_warn, assert_valid_aws_creds_or_exit, console
 
+log = logging.getLogger(__name__)
+
 logger = logging.getLogger(__name__)
 
 # Default module path when config is unavailable or invalid
