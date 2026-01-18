@@ -23,6 +23,8 @@ from ...operations.runtime import (
     get_status,
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
+    list_agents_for_pull,
+    pull_agent,
 )
 from ...services.runtime import _handle_http_response
 from ...utils.runtime.config import load_config
@@ -1362,3 +1364,222 @@ def _invoke_dev_server(payload: str, port: int = 8080) -> None:
         )
     except Exception as e:
         console.print(f"[red]Error connecting to dev server: {e}[/red]")
+
+
+@requires_aws_creds
+def pull(
+    agent_name: Optional[str] = typer.Option(
+        None, "--agent-name", "-n", help="Agent name to pull configuration from"
+    ),
+    agent_id: Optional[str] = typer.Option(
+        None, "--agent-id", "-id", help="Agent ID to pull configuration from"
+    ),
+    region: Optional[str] = typer.Option(
+        None, "--region", "-r", help="AWS region where the agent is deployed"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Output path for configuration file (default: .bedrock_agentcore.yaml)"
+    ),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Overwrite existing configuration file"
+    ),
+):
+    """Pull agent configuration from deployed AgentCore runtime.
+
+    This command retrieves the configuration of a deployed AgentCore agent
+    and generates a local .bedrock_agentcore.yaml configuration file.
+
+    Use this to:
+    - Replicate an agent configuration to a new environment
+    - Make modifications to a deployed agent and redeploy
+    - Share agent configurations between team members
+
+    Examples:
+        # Pull by agent name
+        agentcore pull --agent-name my_agent --region us-east-1
+
+        # Pull by agent ID
+        agentcore pull --agent-id abc123xyz --region us-east-1
+
+        # Interactive mode (list and select)
+        agentcore pull --region us-east-1
+
+        # Force overwrite existing config
+        agentcore pull --agent-name my_agent --region us-east-1 --force
+
+    Note:
+        After pulling, you must set the entrypoint:
+        agentcore configure --entrypoint your_agent.py
+    """
+    import os
+
+    import questionary
+
+    # Get region from argument or environment
+    effective_region = region or os.environ.get("AWS_DEFAULT_REGION") or os.environ.get("AWS_REGION")
+    if not effective_region:
+        _handle_error(
+            "Region is required. Provide --region or set AWS_DEFAULT_REGION/AWS_REGION environment variable."
+        )
+
+    # Validate mutually exclusive options
+    if agent_name and agent_id:
+        _handle_error("Cannot specify both --agent-name and --agent-id. Use one or the other.")
+
+    # Set output path
+    output_path = Path(output) if output else Path.cwd() / ".bedrock_agentcore.yaml"
+
+    try:
+        # Interactive mode if neither agent_name nor agent_id provided
+        if not agent_name and not agent_id:
+            console.print(f"[cyan]🔍 Fetching agents in {effective_region}...[/cyan]\n")
+
+            agents = list_agents_for_pull(effective_region)
+
+            if not agents:
+                console.print(
+                    Panel(
+                        f"[yellow]No agents found in region {effective_region}[/yellow]\n\n"
+                        "Deploy an agent first with:\n"
+                        "   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]\n"
+                        "   [cyan]agentcore deploy[/cyan]",
+                        title="No Agents Found",
+                        border_style="yellow",
+                    )
+                )
+                raise typer.Exit(1)
+
+            # Display agents and let user select
+            console.print(f"[bold]Found {len(agents)} agent(s):[/bold]\n")
+
+            choices = []
+            for i, agent in enumerate(agents, 1):
+                status_color = "green" if agent["status"] == "READY" else "yellow"
+                created = agent.get("created_at", "Unknown")
+                if hasattr(created, "strftime"):
+                    created = created.strftime("%Y-%m-%d")
+                display = f"[{i}] {agent['name']} ({agent['status']}) - Created: {created}"
+                choices.append({"name": display, "value": agent})
+                console.print(f"  [{status_color}][{i}][/{status_color}] {agent['name']} "
+                              f"([{status_color}]{agent['status']}[/{status_color}]) - Created: {created}")
+
+            console.print()
+
+            # Use questionary for selection
+            selected = questionary.select(
+                "Select agent to pull:",
+                choices=[c["name"] for c in choices],
+            ).ask()
+
+            if selected is None:
+                console.print("[yellow]Pull cancelled.[/yellow]")
+                raise typer.Exit(0)
+
+            # Extract selected agent
+            selected_idx = next(i for i, c in enumerate(choices) if c["name"] == selected)
+            selected_agent = choices[selected_idx]["value"]
+            agent_id = selected_agent["id"]
+
+        # Execute pull
+        console.print("[cyan]🔍 Pulling agent configuration from AgentCore...[/cyan]\n")
+
+        with console.status("[bold]Pulling configuration...[/bold]"):
+            result = pull_agent(
+                region=effective_region,
+                agent_name=agent_name,
+                agent_id=agent_id,
+                output_path=output_path,
+                force=force,
+            )
+
+        # Show success panel
+        deployment_info = result.deployment_type
+        if result.runtime_type:
+            deployment_info += f" ({result.runtime_type})"
+
+        panel_content = (
+            f"[bold]Agent Details:[/bold]\n"
+            f"Agent Name:    [cyan]{result.agent_name}[/cyan]\n"
+            f"Agent ID:      [cyan]{result.agent_id}[/cyan]\n"
+            f"Region:        [cyan]{result.region}[/cyan]\n"
+            f"Deployment:    [cyan]{deployment_info}[/cyan]\n"
+            f"Network:       [cyan]{result.network_mode}[/cyan]\n"
+            f"Protocol:      [cyan]{result.protocol}[/cyan]\n"
+            f"Config File:   [cyan]{result.config_path}[/cyan]"
+        )
+
+        console.print(
+            Panel(
+                panel_content,
+                title="✅ Successfully Pulled Configuration",
+                border_style="green",
+            )
+        )
+
+        # Show warnings if any
+        if result.has_warnings:
+            warning_lines = []
+
+            if result.env_var_keys:
+                warning_lines.append("[bold]Environment Variables (keys only - values not pulled):[/bold]")
+                for key in result.env_var_keys:
+                    warning_lines.append(f"   • {key}")
+                warning_lines.append("   Set values with: [cyan]agentcore deploy --env KEY=value[/cyan]\n")
+
+            if result.has_memory:
+                warning_lines.append("[bold]Memory Configuration Not Pulled:[/bold]")
+                warning_lines.append(f"   This agent uses AgentCore Memory ({result.memory_id}).")
+                warning_lines.append("   To enable memory: [cyan]agentcore configure --memory-mode STM_ONLY[/cyan]")
+
+            console.print(
+                Panel(
+                    "\n".join(warning_lines),
+                    title="⚠️  Limitations",
+                    border_style="yellow",
+                )
+            )
+
+        # Show required setup
+        console.print(
+            Panel(
+                "[bold]Entrypoint not set.[/bold]\n\n"
+                "Run the following to set your agent file:\n"
+                "   [cyan]agentcore configure --entrypoint your_agent.py[/cyan]",
+                title="📝 Required Setup",
+                border_style="blue",
+            )
+        )
+
+        # Show next steps
+        console.print("\n[bold]Next Steps:[/bold]")
+        console.print("   1. Set entrypoint: [cyan]agentcore configure --entrypoint <file>[/cyan]")
+        if result.env_var_keys:
+            console.print("   2. Set environment variable values")
+        if result.has_memory:
+            console.print("   3. Configure memory if needed")
+        console.print(f"   {3 if not result.has_warnings else 4}. Deploy: [cyan]agentcore deploy[/cyan]")
+
+    except FileExistsError as e:
+        console.print(
+            Panel(
+                f"[red]{str(e)}[/red]\n\n"
+                f"To overwrite, use:\n"
+                f"   [cyan]agentcore pull --force{' --agent-name ' + agent_name if agent_name else ''}"
+                f"{' --agent-id ' + agent_id if agent_id else ''} --region {effective_region}[/cyan]",
+                title="❌ Pull Failed",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(1) from e
+    except ValueError as e:
+        console.print(
+            Panel(
+                f"[red]{str(e)}[/red]",
+                title="❌ Pull Failed",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(1) from e
+    except Exception as e:
+        if not isinstance(e, typer.Exit):
+            _handle_error(f"Pull failed: {e}", e)

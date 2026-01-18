@@ -116,3 +116,26 @@ class StopSessionResult(BaseModel):
     agent_name: str = Field(..., description="Name of the agent")
     status_code: int = Field(..., description="HTTP status code of the operation")
     message: str = Field(default="Session stopped successfully", description="Result message")
+
+
+class PullResult(BaseModel):
+    """Result of pull operation."""
+
+    agent_name: str = Field(..., description="Pulled agent name")
+    agent_id: str = Field(..., description="AgentCore agent ID")
+    config_path: Path = Field(..., description="Path to generated configuration file")
+    deployment_type: str = Field(..., description="Deployment type (container or direct_code_deploy)")
+    runtime_type: Optional[str] = Field(None, description="Python runtime version for direct_code_deploy")
+    network_mode: str = Field(..., description="Network mode (PUBLIC or VPC)")
+    protocol: str = Field(default="HTTP", description="Server protocol (HTTP, MCP, or A2A)")
+    region: str = Field(..., description="AWS region")
+
+    # Warning information
+    env_var_keys: List[str] = Field(default_factory=list, description="Environment variable keys (values not imported)")
+    has_memory: bool = Field(default=False, description="Whether agent uses memory")
+    memory_id: Optional[str] = Field(None, description="Memory ID if agent uses memory")
+
+    @property
+    def has_warnings(self) -> bool:
+        """Check if there are any warnings to display."""
+        return len(self.env_var_keys) > 0 or self.has_memory
