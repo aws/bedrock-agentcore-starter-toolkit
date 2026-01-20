@@ -239,13 +239,14 @@ def configure_impl(
     if not valid:
         _handle_error(error)
 
-    # Detect project language
-    detected_language = detect_language(Path(source_path))
+    # Detect project language from cwd (not source_path, since source_path might be a subdirectory)
+    # package.json is typically in project root, not in src/ subdirectory
+    detected_language = detect_language(Path.cwd())
     ts_project_info = None
     node_version = "20"
 
     if detected_language == "typescript":
-        ts_project_info = detect_typescript_project(Path(source_path))
+        ts_project_info = detect_typescript_project(Path.cwd())
         if ts_project_info:
             node_version = ts_project_info.node_version
         console.print(f"\n📦 [cyan]TypeScript project detected[/cyan] (Node.js {node_version})")

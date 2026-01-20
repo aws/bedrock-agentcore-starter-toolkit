@@ -121,9 +121,11 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
     """
     rel_entrypoint = get_relative_path(entrypoint_path, base)
 
-    # Remove .py extension if present (only at the end)
-    if rel_entrypoint.endswith(".py"):
-        rel_entrypoint = rel_entrypoint[:-3]
+    # Remove file extensions (.py, .ts, .tsx, .js, .jsx)
+    for ext in [".py", ".ts", ".tsx", ".js", ".jsx"]:
+        if rel_entrypoint.endswith(ext):
+            rel_entrypoint = rel_entrypoint[: -len(ext)]
+            break
 
     # Replace spaces, dashes, and OS path separators with underscores
     suggested_name = rel_entrypoint.replace(" ", "_").replace("-", "_").replace(os.sep, "_")
