@@ -3,7 +3,11 @@
 import pytest
 
 from bedrock_agentcore_starter_toolkit.utils.runtime.entrypoint import (
+    TypeScriptProjectInfo,
     detect_dependencies,
+    detect_entrypoint_by_language,
+    detect_language,
+    detect_typescript_project,
     get_python_version,
     parse_entrypoint,
     validate_requirements_file,
@@ -266,3 +270,188 @@ dependencies = ["bedrock_agentcore", "requests"]
         pyproject_file.write_text("[project]\ndependencies = ['bedrock_agentcore']")
 
         return req_file, pyproject_file
+
+
+class TestDetectEntrypointByLanguage:
+    """Test detect_entrypoint_by_language function."""
+
+    def test_python_single_entrypoint(self, tmp_path):
+        """Test Python detection finds single entrypoint."""
+        agent_file = tmp_path / "agent.py"
+        agent_file.write_text("# agent")
+
+        result = detect_entrypoint_by_language(tmp_path, "python")
+        assert len(result) == 1
+        assert result[0] == agent_file
+
+    def test_python_multiple_entrypoints(self, tmp_path):
+        """Test Python detection finds all matching entrypoints."""
+        (tmp_path / "agent.py").write_text("# agent")
+        (tmp_path / "main.py").write_text("# main")
+
+        result = detect_entrypoint_by_language(tmp_path, "python")
+        assert len(result) == 2
+
+    def test_python_no_entrypoint(self, tmp_path):
+        """Test Python detection returns empty list when none found."""
+        result = detect_entrypoint_by_language(tmp_path, "python")
+        assert result == []
+
+    def test_typescript_single_entrypoint(self, tmp_path):
+        """Test TypeScript detection finds first match only."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "index.ts").write_text("// index")
+
+        result = detect_entrypoint_by_language(tmp_path, "typescript")
+        assert len(result) == 1
+        assert result[0].name == "index.ts"
+
+    def test_typescript_first_match_only(self, tmp_path):
+        """Test TypeScript detection stops at first match."""
+        (tmp_path / "index.ts").write_text("// index")
+        (tmp_path / "agent.ts").write_text("// agent")
+
+        result = detect_entrypoint_by_language(tmp_path, "typescript")
+        assert len(result) == 1
+        assert result[0].name == "index.ts"
+
+    def test_typescript_src_priority(self, tmp_path):
+        """Test TypeScript prefers src/ directory."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "index.ts").write_text("// src index")
+
+        result = detect_entrypoint_by_language(tmp_path, "typescript")
+        assert len(result) == 1
+        assert "src" in str(result[0])
+
+    def test_typescript_no_entrypoint(self, tmp_path):
+        """Test TypeScript detection returns empty list when none found."""
+        result = detect_entrypoint_by_language(tmp_path, "typescript")
+        assert result == []
+
+
+class TestDetectLanguage:
+    """Test detect_language function."""
+
+    def test_detect_language_with_package_json(self, tmp_path):
+        """Test that package.json and tsconfig.json returns typescript."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text("{}")
+
+        result = detect_language(tmp_path)
+        assert result == "typescript"
+
+    def test_detect_language_package_json_only(self, tmp_path):
+        """Test that package.json without tsconfig.json returns python (vanilla JS)."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+
+        result = detect_language(tmp_path)
+        assert result == "python"
+
+    def test_detect_language_with_requirements_txt(self, tmp_path):
+        """Test that requirements.txt only returns python."""
+        req_file = tmp_path / "requirements.txt"
+        req_file.write_text("requests")
+
+        result = detect_language(tmp_path)
+        assert result == "python"
+
+    def test_detect_language_empty_directory(self, tmp_path):
+        """Test that empty directory returns python (default)."""
+        result = detect_language(tmp_path)
+        assert result == "python"
+
+    def test_detect_language_both_files(self, tmp_path):
+        """Test that package.json + tsconfig.json takes precedence."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text("{}")
+        (tmp_path / "requirements.txt").write_text("requests")
+
+        result = detect_language(tmp_path)
+        assert result == "typescript"
+
+
+class TestDetectTypescriptProject:
+    """Test detect_typescript_project function."""
+
+    def test_full_package_json(self, tmp_path):
+        """Test parsing full package.json with all fields."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text("""{
+            "name": "test-agent",
+            "scripts": {"build": "tsc"},
+            "engines": {"node": ">=20.0.0"}
+        }""")
+
+        result = detect_typescript_project(tmp_path)
+
+        assert result is not None
+        assert result.found
+        assert result.node_version == "20"
+        assert result.has_build_script is True
+
+    def test_minimal_package_json(self, tmp_path):
+        """Test parsing minimal package.json uses defaults."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"name": "test"}')
+
+        result = detect_typescript_project(tmp_path)
+
+        assert result is not None
+        assert result.found
+        assert result.node_version == "20"  # default
+        assert result.has_build_script is False
+
+    def test_no_package_json(self, tmp_path):
+        """Test returns None when no package.json."""
+        result = detect_typescript_project(tmp_path)
+        assert result is None
+
+    def test_node_version_caret(self, tmp_path):
+        """Test parsing ^22 version string."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"engines": {"node": "^22"}}')
+
+        result = detect_typescript_project(tmp_path)
+
+        assert result.node_version == "22"
+
+    def test_node_version_tilde(self, tmp_path):
+        """Test parsing ~18.0.0 version string."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"engines": {"node": "~18.0.0"}}')
+
+        result = detect_typescript_project(tmp_path)
+
+        assert result.node_version == "18"
+
+    def test_malformed_json(self, tmp_path):
+        """Test graceful failure on malformed JSON."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"invalid json')
+
+        result = detect_typescript_project(tmp_path)
+        assert result is None
+
+
+class TestTypeScriptProjectInfo:
+    """Test TypeScriptProjectInfo dataclass."""
+
+    def test_found_property_true(self):
+        """Test found property when package_json_path is set."""
+        info = TypeScriptProjectInfo(package_json_path="/path/to/package.json")
+        assert info.found is True
+
+    def test_found_property_false(self):
+        """Test found property when package_json_path is None."""
+        info = TypeScriptProjectInfo()
+        assert info.found is False
+
+    def test_default_values(self):
+        """Test default values."""
+        info = TypeScriptProjectInfo()
+        assert info.node_version == "20"
+        assert info.has_build_script is False
+        assert info.package_json_path is None

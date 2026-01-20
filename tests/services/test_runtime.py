@@ -155,6 +155,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
         )
 
         # Verify response structure
@@ -187,6 +188,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
         )
 
         # Verify single event handler was registered for all custom headers
@@ -214,9 +216,9 @@ class TestBedrockAgentCoreRuntime:
             custom_headers={},
         )
 
-        # Verify no event handlers were registered for empty headers
-        mock_events.register_first.assert_not_called()
-        mock_events.unregister.assert_not_called()
+        # Verify event handler was registered for Accept header (even with empty custom headers)
+        assert mock_events.register_first.call_count == 1
+        assert mock_events.unregister.call_count == 1
 
         # Verify response structure
         assert "response" in response
@@ -237,9 +239,9 @@ class TestBedrockAgentCoreRuntime:
             custom_headers=None,
         )
 
-        # Verify no event handlers were registered for None headers
-        mock_events.register_first.assert_not_called()
-        mock_events.unregister.assert_not_called()
+        # Verify event handler was registered for Accept header (even with None custom headers)
+        assert mock_events.register_first.call_count == 1
+        assert mock_events.unregister.call_count == 1
 
         # Verify response structure
         assert "response" in response
@@ -874,6 +876,7 @@ class TestBedrockAgentCoreRuntime:
             qualifier="DEFAULT",
             runtimeSessionId="test-session-123",
             payload='{"message": "Hello"}',
+            contentType="application/json",
             runtimeUserId="user-456",
         )
 
@@ -916,6 +919,7 @@ class TestHttpBedrockAgentCoreClient:
             headers = call_args[1]["headers"]
             assert headers["Authorization"] == "Bearer test-bearer-token"
             assert headers["Content-Type"] == "application/json"
+            assert headers["Accept"] == "text/event-stream, application/json"
             assert headers["X-Amzn-Bedrock-AgentCore-Runtime-Session-Id"] == "test-session-123"
 
             # Check payload - should now send the payload directly, not wrapped
@@ -1157,6 +1161,7 @@ class TestLocalBedrockAgentCoreClient:
 
             headers = call_args[1]["headers"]
             assert headers["Content-Type"] == "application/json"
+            assert headers["Accept"] == "text/event-stream, application/json"
             assert headers[ACCESS_TOKEN_HEADER] == "test-token-456"
             assert headers[SESSION_HEADER] == "test-session-123"
 

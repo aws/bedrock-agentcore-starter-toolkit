@@ -24,7 +24,7 @@ from ...operations.runtime import (
     invoke_bedrock_agentcore,
     launch_bedrock_agentcore,
 )
-from ...services.runtime import _handle_http_response
+from ...services.runtime import _handle_http_response, generate_session_id
 from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
 from ...utils.server_addresses import build_server_urls
@@ -1353,9 +1353,16 @@ def _invoke_dev_server(payload: str, port: int = 8080) -> None:
 
     url = f"http://localhost:{port}/invocations"
 
+    # Set headers including Accept for streaming support and session ID
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream, application/json",
+        "x-amzn-bedrock-agentcore-runtime-session-id": generate_session_id(),
+    }
+
     try:
         session = requests.Session()
-        with session.post(url, json=payload_data, timeout=180, stream=True) as response:
+        with session.post(url, json=payload_data, headers=headers, timeout=180, stream=True) as response:
             console.print("[green]✓ Response from dev server:[/green]")
             result = _handle_http_response(response)
             if result:

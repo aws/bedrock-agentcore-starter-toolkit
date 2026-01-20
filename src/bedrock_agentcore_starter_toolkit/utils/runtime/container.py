@@ -104,6 +104,25 @@ class ContainerRuntime:
         except (subprocess.SubprocessError, OSError):
             return False
 
+    def _get_template_path(self, language: str, template_type: str) -> Path:
+        """Get template path based on language and type.
+
+        Args:
+            language: Project language ("python" or "typescript")
+            template_type: Template type ("dockerfile" or "dockerignore")
+
+        Returns:
+            Path to the template file
+        """
+        templates_dir = Path(__file__).parent / "templates"
+
+        if template_type == "dockerfile":
+            template_name = "Dockerfile.node.j2" if language == "typescript" else "Dockerfile.j2"
+        else:  # dockerignore
+            template_name = "dockerignore.node.template" if language == "typescript" else "dockerignore.template"
+
+        return templates_dir / template_name
+
     def generate_dockerfile(
         self,
         agent_path: Path,
@@ -118,6 +137,8 @@ class ContainerRuntime:
         protocol: Optional[str] = None,
         explicit_requirements_file: Optional[Path] = None,
         silence_warn=False,
+        language: str = "python",
+        node_version: str = "20",
     ) -> Path:
         """Generate Dockerfile from template.
 
@@ -134,6 +155,8 @@ class ContainerRuntime:
             protocol: Optional protocol configuration (HTTP or HTTPS)
             explicit_requirements_file: Optional Path to the requirements_file to override detection logic
             silence_warn: Boolean to not emit warn messages. Defaults to False
+            language: Project language ("python" or "typescript"). Defaults to "python"
+            node_version: Node.js major version for TypeScript projects. Defaults to "20"
         """
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
@@ -148,7 +171,31 @@ class ContainerRuntime:
                     "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
                 )
 
-        template_path = Path(__file__).parent / "templates" / "Dockerfile.j2"
+        dockerfile_path = output_dir / "Dockerfile"
+
+        # Check for user's Dockerfile in project root (source_path or cwd)
+        try:
+            project_root = Path(source_path).resolve() if source_path else Path.cwd()
+            user_dockerfile = project_root / "Dockerfile"
+
+            # Only check if we have a real Path object (check if it's an actual Path instance)
+            if isinstance(user_dockerfile, Path) and user_dockerfile.exists():
+                if user_dockerfile != dockerfile_path.resolve():
+                    # Copy user's Dockerfile to build directory
+                    console.print(f"📄 Using existing Dockerfile from: {user_dockerfile}")
+                    dockerfile_path.write_text(user_dockerfile.read_text())
+                    return dockerfile_path
+        except (AttributeError, TypeError, OSError):
+            # Handle mocked Path in tests or other edge cases - skip user Dockerfile check
+            pass
+
+        # Check if Dockerfile already exists in build directory
+        if dockerfile_path.exists():
+            console.print(f"📄 Using existing Dockerfile: {dockerfile_path}")
+            return dockerfile_path
+
+        # Select template based on language
+        template_path = self._get_template_path(language, "dockerfile")
 
         if not template_path.exists():
             log.error("Dockerfile template not found: %s", template_path)
@@ -157,13 +204,32 @@ class ContainerRuntime:
         with open(template_path) as f:
             template = Template(f.read())
 
-        # Calculate build context root first (needed for validation)
-        # If source_path provided: module path relative to source_path (Docker build context)
-        # Otherwise: module path relative to project root
+        # Calculate build context root first (needed for validation and dockerignore)
         build_context_root = Path(source_path).resolve() if source_path else output_dir.resolve()
-        # Generate .dockerignore if it doesn't exist
-        self._ensure_dockerignore(build_context_root)
+        self._ensure_dockerignore(build_context_root, language)
 
+        # TypeScript: simple context, skip Python-specific logic
+        if language == "typescript":
+            # Get relative path for entrypoint
+            try:
+                relative_entry = agent_path.resolve().relative_to(build_context_root)
+            except ValueError:
+                relative_entry = agent_path
+
+            context = {
+                "node_version": node_version,
+                "entrypoint": self._transform_ts_entrypoint(str(relative_entry)),
+                "aws_region": aws_region,
+                "memory_id": memory_id,
+                "memory_name": memory_name,
+                "observability_enabled": enable_observability,
+            }
+            dockerfile_path = output_dir / "Dockerfile"
+            dockerfile_path.write_text(template.render(**context))
+            console.print(f"📄 Generated Dockerfile: {dockerfile_path}")
+            return dockerfile_path
+
+        # Python: existing logic below
         # Validate module path against build context root
         self._validate_module_path(agent_path, build_context_root)
 
@@ -246,16 +312,31 @@ class ContainerRuntime:
 
         dockerfile_path = output_dir / "Dockerfile"
         dockerfile_path.write_text(template.render(**context))
+        console.print(f"📄 Generated Dockerfile: {dockerfile_path}")
         return dockerfile_path
 
-    def _ensure_dockerignore(self, project_dir: Path) -> None:
+    def _ensure_dockerignore(self, project_dir: Path, language: str = "python") -> None:
         """Create .dockerignore if it doesn't exist."""
         dockerignore_path = project_dir / ".dockerignore"
         if not dockerignore_path.exists():
-            template_path = Path(__file__).parent / "templates" / "dockerignore.template"
+            template_path = self._get_template_path(language, "dockerignore")
             if template_path.exists():
                 dockerignore_path.write_text(template_path.read_text())
                 log.debug("Generated .dockerignore")
+
+    def _transform_ts_entrypoint(self, source_path: str) -> str:
+        """Transform TypeScript source path to compiled JavaScript path.
+
+        Examples:
+            src/index.ts → dist/src/index.js
+            index.ts → dist/index.js
+        """
+        # Replace .ts/.tsx with .js
+        path = source_path.replace(".tsx", ".js").replace(".ts", ".js")
+        # Add dist/ prefix if not present
+        if not path.startswith("dist/"):
+            path = f"dist/{path}"
+        return path
 
     def _validate_module_path(self, agent_path: Path, project_root: Path) -> None:
         """Validate that the agent path can be converted to a valid Python module path."""

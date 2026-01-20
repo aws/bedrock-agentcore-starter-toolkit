@@ -774,3 +774,76 @@ class TestGetAgentcoreDirectory:
         expected_path = tmp_path / "deep" / "nested" / "project" / ".bedrock_agentcore" / "test-agent"
         assert result.exists()
         assert result == expected_path
+
+
+class TestGetEntrypointFromConfig:
+    """Test get_entrypoint_from_config function."""
+
+    def test_config_exists_with_entrypoint(self, tmp_path):
+        """Test returns entrypoint from config when it exists."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text("""
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    entrypoint: src/index.ts
+    deployment_type: container
+""")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import get_entrypoint_from_config
+
+        result = get_entrypoint_from_config(config_path, "default.py")
+        assert result == "src/index.ts"
+
+    def test_config_missing(self, tmp_path):
+        """Test returns default when config doesn't exist."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import get_entrypoint_from_config
+
+        result = get_entrypoint_from_config(config_path, "default.py")
+        assert result == "default.py"
+
+    def test_config_exists_without_entrypoint(self, tmp_path):
+        """Test returns default when entrypoint is None."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text("""
+default_agent: test-agent
+agents:
+  test-agent:
+    name: test-agent
+    deployment_type: container
+""")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import get_entrypoint_from_config
+
+        result = get_entrypoint_from_config(config_path, "default.ts")
+        assert result == "default.ts"
+
+    def test_config_malformed(self, tmp_path):
+        """Test returns default when config is malformed."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text("invalid: yaml: content:")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import get_entrypoint_from_config
+
+        result = get_entrypoint_from_config(config_path, "fallback.py")
+        assert result == "fallback.py"
+
+    def test_config_with_python_entrypoint(self, tmp_path):
+        """Test works with Python entrypoint."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text("""
+default_agent: my-agent
+agents:
+  my-agent:
+    name: my-agent
+    entrypoint: agent.py
+    deployment_type: direct_code_deploy
+""")
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import get_entrypoint_from_config
+
+        result = get_entrypoint_from_config(config_path, "main.py")
+        assert result == "agent.py"

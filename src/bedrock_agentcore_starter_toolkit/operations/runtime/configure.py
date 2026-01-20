@@ -121,9 +121,11 @@ def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
     """
     rel_entrypoint = get_relative_path(entrypoint_path, base)
 
-    # Remove .py extension if present (only at the end)
-    if rel_entrypoint.endswith(".py"):
-        rel_entrypoint = rel_entrypoint[:-3]
+    # Remove file extensions (.py, .ts, .tsx, .js, .jsx)
+    for ext in [".py", ".ts", ".tsx", ".js", ".jsx"]:
+        if rel_entrypoint.endswith(ext):
+            rel_entrypoint = rel_entrypoint[: -len(ext)]
+            break
 
     # Replace spaces, dashes, and OS path separators with underscores
     suggested_name = rel_entrypoint.replace(" ", "_").replace("-", "_").replace(os.sep, "_")
@@ -162,6 +164,8 @@ def configure_bedrock_agentcore(
     deployment_type: str = "direct_code_deploy",
     runtime_type: Optional[str] = None,
     is_generated_by_agentcore_create: bool = False,
+    language: str = "python",
+    node_version: Optional[str] = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -197,6 +201,8 @@ def configure_bedrock_agentcore(
         auto_create_s3: Whether to auto-create S3 bucket for direct_code_deploy deployment
         s3_path: S3 path for direct_code_deploy deployment
         is_generated_by_agentcore_create: Whether this agent was created via agentcore create command
+        language: Project language - "python" (default) or "typescript"
+        node_version: Node.js major version for TypeScript projects (e.g., "20", "22")
 
     Returns:
         ConfigureResult model with configuration details
@@ -450,10 +456,10 @@ def configure_bedrock_agentcore(
             memory_name,
             source_path,
             protocol,
+            language=language,
+            node_version=node_version or "20",
         )
-        # Log with relative path for better readability
-        rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
-        log.info("Generated Dockerfile: %s", rel_dockerfile_path)
+        # generate_dockerfile logs its own status messages
 
     # Ensure .dockerignore exists at Docker build context location (only for container deployments)
     dockerignore_path = None
@@ -542,6 +548,8 @@ def configure_bedrock_agentcore(
     # Create new agent configuration
     config = BedrockAgentCoreAgentSchema(
         name=agent_name,
+        language=language,
+        node_version=node_version,
         entrypoint=entrypoint,
         deployment_type=deployment_type,
         runtime_type=runtime_type,
