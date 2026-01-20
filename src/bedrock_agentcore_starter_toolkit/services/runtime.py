@@ -642,12 +642,18 @@ class BedrockAgentCoreClient:
         if user_id:
             req["runtimeUserId"] = user_id
 
-        # Handle custom headers using boto3 event system
+        # Always add Accept header for streaming support
+        accept_header = {"Accept": "text/event-stream, application/json"}
+
+        # Merge with custom headers if provided
+        all_headers = {**accept_header, **(custom_headers or {})}
+
+        # Handle headers using boto3 event system
         handler_id = None
-        if custom_headers:
-            # Register a single event handler for all custom headers
+        if all_headers:
+            # Register a single event handler for all headers
             def add_all_headers(request, **kwargs):
-                for header_name, header_value in custom_headers.items():
+                for header_name, header_value in all_headers.items():
                     request.headers.add_header(header_name, header_value)
 
             handler_id = self.dataplane_client.meta.events.register_first(
@@ -802,6 +808,7 @@ class HttpBedrockAgentCoreClient:
         # Headers
         headers = {
             "Content-Type": "application/json",
+            "Accept": "text/event-stream, application/json",
             "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
             "User-Agent": _get_user_agent(),
         }
@@ -868,6 +875,7 @@ class LocalBedrockAgentCoreClient:
 
         headers = {
             "Content-Type": "application/json",
+            "Accept": "text/event-stream, application/json",
             ACCESS_TOKEN_HEADER: workload_access_token,
             SESSION_HEADER: session_id,
             OAUTH2_CALLBACK_URL_HEADER: oauth2_callback_url,

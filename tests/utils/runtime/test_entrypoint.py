@@ -338,7 +338,7 @@ class TestDetectLanguage:
     def test_detect_language_with_package_json(self, tmp_path):
         """Test that package.json and tsconfig.json returns typescript."""
         (tmp_path / "package.json").write_text('{"name": "test"}')
-        (tmp_path / "tsconfig.json").write_text('{}')
+        (tmp_path / "tsconfig.json").write_text("{}")
 
         result = detect_language(tmp_path)
         assert result == "typescript"
@@ -366,7 +366,7 @@ class TestDetectLanguage:
     def test_detect_language_both_files(self, tmp_path):
         """Test that package.json + tsconfig.json takes precedence."""
         (tmp_path / "package.json").write_text('{"name": "test"}')
-        (tmp_path / "tsconfig.json").write_text('{}')
+        (tmp_path / "tsconfig.json").write_text("{}")
         (tmp_path / "requirements.txt").write_text("requests")
 
         result = detect_language(tmp_path)

@@ -643,7 +643,6 @@ class TestDevCommand:
             os.chdir(original_cwd)
 
 
-
 class TestTypeScriptHelpers:
     """Test TypeScript-related helper functions."""
 
@@ -673,11 +672,11 @@ class TestTypeScriptHelpers:
         from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _get_language
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
-        
+
         # Create package.json and tsconfig.json to trigger TypeScript detection
         (tmp_path / "package.json").write_text('{"name": "test"}')
-        (tmp_path / "tsconfig.json").write_text('{}')
-        
+        (tmp_path / "tsconfig.json").write_text("{}")
+
         original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
@@ -734,7 +733,7 @@ class TestTypeScriptHelpers:
         from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _build_typescript_command
 
         config_path = tmp_path / ".bedrock_agentcore.yaml"
-        
+
         original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
