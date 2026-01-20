@@ -641,3 +641,130 @@ class TestDevCommand:
 
         finally:
             os.chdir(original_cwd)
+
+
+
+class TestTypeScriptHelpers:
+    """Test TypeScript-related helper functions."""
+
+    def test_get_language_from_config(self, tmp_path):
+        """Test _get_language returns language from config."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _get_language
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_schema = BedrockAgentCoreAgentSchema(
+            name="test_agent",
+            entrypoint="src/index.ts",
+            deployment_type="container",
+            language="typescript",
+            aws=AWSConfig(),
+        )
+        config = BedrockAgentCoreConfigSchema(
+            default_agent="test_agent",
+            agents={"test_agent": agent_schema},
+        )
+        save_config(config, config_path)
+
+        result = _get_language(config_path)
+        assert result == "typescript"
+
+    def test_get_language_no_config(self, tmp_path):
+        """Test _get_language falls back to detection when no config."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _get_language
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        
+        # Create package.json and tsconfig.json to trigger TypeScript detection
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text('{}')
+        
+        original_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            result = _get_language(config_path)
+            assert result == "typescript"
+        finally:
+            os.chdir(original_cwd)
+
+    def test_has_dev_script_true(self, tmp_path):
+        """Test _has_dev_script returns True when dev script exists."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _has_dev_script
+
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"scripts": {"dev": "tsx watch index.ts"}}')
+
+        result = _has_dev_script(tmp_path)
+        assert result is True
+
+    def test_has_dev_script_false(self, tmp_path):
+        """Test _has_dev_script returns False when no dev script."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _has_dev_script
+
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"scripts": {"build": "tsc"}}')
+
+        result = _has_dev_script(tmp_path)
+        assert result is False
+
+    def test_has_dev_script_no_package_json(self, tmp_path):
+        """Test _has_dev_script returns False when no package.json."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _has_dev_script
+
+        result = _has_dev_script(tmp_path)
+        assert result is False
+
+    def test_build_typescript_command_with_dev_script(self, tmp_path):
+        """Test _build_typescript_command uses npm run dev when available."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _build_typescript_command
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        package_json = tmp_path / "package.json"
+        package_json.write_text('{"scripts": {"dev": "tsx watch index.ts"}}')
+
+        original_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            result = _build_typescript_command(config_path, "8080")
+            assert result == ["npm", "run", "dev"]
+        finally:
+            os.chdir(original_cwd)
+
+    def test_build_typescript_command_fallback(self, tmp_path):
+        """Test _build_typescript_command falls back to tsx watch."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _build_typescript_command
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        
+        original_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            result = _build_typescript_command(config_path, "8080")
+            assert result == ["npx", "tsx", "watch", "src/index.ts"]
+        finally:
+            os.chdir(original_cwd)
+
+    def test_build_typescript_command_with_config_entrypoint(self, tmp_path):
+        """Test _build_typescript_command uses entrypoint from config."""
+        from bedrock_agentcore_starter_toolkit.cli.runtime.dev_command import _build_typescript_command
+
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        agent_schema = BedrockAgentCoreAgentSchema(
+            name="test_agent",
+            entrypoint="agent.ts",
+            deployment_type="container",
+            language="typescript",
+            aws=AWSConfig(),
+        )
+        config = BedrockAgentCoreConfigSchema(
+            default_agent="test_agent",
+            agents={"test_agent": agent_schema},
+        )
+        save_config(config, config_path)
+
+        original_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            result = _build_typescript_command(config_path, "8080")
+            assert result == ["npx", "tsx", "watch", "agent.ts"]
+        finally:
+            os.chdir(original_cwd)

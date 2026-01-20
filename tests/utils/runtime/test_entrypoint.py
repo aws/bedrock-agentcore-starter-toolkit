@@ -336,12 +336,19 @@ class TestDetectLanguage:
     """Test detect_language function."""
 
     def test_detect_language_with_package_json(self, tmp_path):
-        """Test that package.json presence returns typescript."""
-        package_json = tmp_path / "package.json"
-        package_json.write_text('{"name": "test"}')
+        """Test that package.json and tsconfig.json returns typescript."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text('{}')
 
         result = detect_language(tmp_path)
         assert result == "typescript"
+
+    def test_detect_language_package_json_only(self, tmp_path):
+        """Test that package.json without tsconfig.json returns python (vanilla JS)."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+
+        result = detect_language(tmp_path)
+        assert result == "python"
 
     def test_detect_language_with_requirements_txt(self, tmp_path):
         """Test that requirements.txt only returns python."""
@@ -357,8 +364,9 @@ class TestDetectLanguage:
         assert result == "python"
 
     def test_detect_language_both_files(self, tmp_path):
-        """Test that package.json takes precedence."""
+        """Test that package.json + tsconfig.json takes precedence."""
         (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text('{}')
         (tmp_path / "requirements.txt").write_text("requests")
 
         result = detect_language(tmp_path)

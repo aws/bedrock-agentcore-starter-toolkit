@@ -62,9 +62,13 @@ def detect_language(project_dir: Path) -> Literal["python", "typescript"]:
         project_dir: Path to the project directory
 
     Returns:
-        "typescript" if package.json exists, otherwise "python"
+        "typescript" if package.json and tsconfig.json exist, otherwise "python"
     """
-    if (project_dir / "package.json").exists():
+    # Check for both package.json and tsconfig.json to distinguish TypeScript from vanilla JS
+    has_package_json = (project_dir / "package.json").exists()
+    has_tsconfig = (project_dir / "tsconfig.json").exists()
+    
+    if has_package_json and has_tsconfig:
         return "typescript"
     return "python"
 

@@ -200,7 +200,13 @@ def configure_impl(
         elif entrypoint_path.is_file():
             # It's a file - use directly as entrypoint
             entrypoint = str(entrypoint_path)
-            source_path = str(entrypoint_path.parent)
+            # For TypeScript: use project root as source_path (package.json location)
+            # For Python: use parent directory of entrypoint
+            early_language = detect_language(Path.cwd())
+            if early_language == "typescript":
+                source_path = str(Path.cwd())
+            else:
+                source_path = str(entrypoint_path.parent)
             if not non_interactive:
                 rel_path = get_relative_path(entrypoint_path)
                 _print_success(f"Using file: {rel_path}")
@@ -214,7 +220,13 @@ def configure_impl(
             if entrypoint_path.is_file():
                 # It's a file - use directly as entrypoint
                 entrypoint = str(entrypoint_path)
-                source_path = str(entrypoint_path.parent)
+                # For TypeScript: use project root as source_path (package.json location)
+                # For Python: use parent directory of entrypoint
+                early_language = detect_language(Path.cwd())
+                if early_language == "typescript":
+                    source_path = str(Path.cwd())
+                else:
+                    source_path = str(entrypoint_path.parent)
                 if not non_interactive:
                     rel_path = get_relative_path(entrypoint_path)
                     _print_success(f"Using file: {rel_path}")

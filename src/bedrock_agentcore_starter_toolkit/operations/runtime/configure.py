@@ -459,9 +459,7 @@ def configure_bedrock_agentcore(
             language=language,
             node_version=node_version or "20",
         )
-        # Log with relative path for better readability
-        rel_dockerfile_path = get_relative_path(Path(dockerfile_path))
-        log.info("Generated Dockerfile: %s", rel_dockerfile_path)
+        # generate_dockerfile logs its own status messages
 
     # Ensure .dockerignore exists at Docker build context location (only for container deployments)
     dockerignore_path = None

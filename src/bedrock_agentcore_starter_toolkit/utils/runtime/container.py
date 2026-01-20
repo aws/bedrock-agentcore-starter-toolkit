@@ -171,6 +171,23 @@ class ContainerRuntime:
                     "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html\n"
                 )
 
+        dockerfile_path = output_dir / "Dockerfile"
+        
+        # Check for user's Dockerfile in project root (source_path or cwd)
+        project_root = Path(source_path).resolve() if source_path else Path.cwd()
+        user_dockerfile = project_root / "Dockerfile"
+        
+        if user_dockerfile.exists() and user_dockerfile != dockerfile_path:
+            # Copy user's Dockerfile to build directory
+            console.print(f"📄 Using existing Dockerfile from: {user_dockerfile}")
+            dockerfile_path.write_text(user_dockerfile.read_text())
+            return dockerfile_path
+        
+        # Check if Dockerfile already exists in build directory
+        if dockerfile_path.exists():
+            console.print(f"📄 Using existing Dockerfile: {dockerfile_path}")
+            return dockerfile_path
+
         # Select template based on language
         template_path = self._get_template_path(language, "dockerfile")
 
@@ -203,6 +220,7 @@ class ContainerRuntime:
             }
             dockerfile_path = output_dir / "Dockerfile"
             dockerfile_path.write_text(template.render(**context))
+            console.print(f"📄 Generated Dockerfile: {dockerfile_path}")
             return dockerfile_path
 
         # Python: existing logic below
@@ -288,6 +306,7 @@ class ContainerRuntime:
 
         dockerfile_path = output_dir / "Dockerfile"
         dockerfile_path.write_text(template.render(**context))
+        console.print(f"📄 Generated Dockerfile: {dockerfile_path}")
         return dockerfile_path
 
     def _ensure_dockerignore(self, project_dir: Path, language: str = "python") -> None:
