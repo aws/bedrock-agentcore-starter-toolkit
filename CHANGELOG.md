@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7] - 2026-01-20
+
+### Changes
+
+- feat(runtime): Add TypeScript/Node.js container deployment support for Runtime (#429) (4260dc5)
+- fix: update 'agentcore launch' to 'agentcore deploy' in Next Steps messages (#424) (b65a330)
+- chore: bump version to 0.2.6 (#425) (11855b7)
+
 ## [0.2.6] - 2026-01-13
 
 ### Changes
