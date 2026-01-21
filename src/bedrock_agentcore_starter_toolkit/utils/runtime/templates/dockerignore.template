@@ -19,6 +19,9 @@ venv/
 env/
 ENV/
 
+# Node.js
+node_modules/
+
 # Testing
 .pytest_cache/
 .coverage
