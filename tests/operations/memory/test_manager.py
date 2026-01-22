@@ -27,19 +27,30 @@ def test_manager_initialization():
 
         manager = MemoryManager(region_name="us-west-2")
 
-        # Check that the region was set correctly and session.client was called once
+        # Check that the region was set correctly and both clients were created
         assert manager.region_name == "us-west-2"
-        assert mock_session.client.call_count == 1
+        assert mock_session.client.call_count == 2
 
-        # Verify the correct service was called with config
-        mock_session.client.assert_called_once()
-        call_args = mock_session.client.call_args
-        assert call_args[0][0] == "bedrock-agentcore-control"
-        assert call_args[1]["region_name"] == "us-west-2"
+        # Verify both services were called
+        calls = mock_session.client.call_args_list
+        services_called = [call[0][0] for call in calls]
+        assert "bedrock-agentcore-control" in services_called
+        assert "bedrock-agentcore" in services_called
 
-        # Verify default config includes user agent
-        config = call_args[1]["config"]
+        # Verify config includes user agent (check first call)
+        config = calls[0][1]["config"]
         assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
+
+
+def test_manager_initialization_region_mismatch():
+    """Test client initialization raises error on region mismatch."""
+    import pytest
+
+    mock_session = MagicMock()
+    mock_session.region_name = "us-west-2"
+
+    with pytest.raises(ValueError, match="Region mismatch"):
+        MemoryManager(region_name="us-east-1", boto3_session=mock_session)
 
 
 def test_manager_initialization_with_boto_client_config():
@@ -63,16 +74,16 @@ def test_manager_initialization_with_boto_client_config():
 
         # Check that the region was set correctly
         assert manager.region_name == "us-east-1"
-        assert mock_session.client.call_count == 1
+        assert mock_session.client.call_count == 2
 
-        # Verify the correct service was called with merged config
-        mock_session.client.assert_called_once()
-        call_args = mock_session.client.call_args
-        assert call_args[0][0] == "bedrock-agentcore-control"
-        assert call_args[1]["region_name"] == "us-east-1"
+        # Verify both services were called with merged config
+        calls = mock_session.client.call_args_list
+        services_called = [call[0][0] for call in calls]
+        assert "bedrock-agentcore-control" in services_called
+        assert "bedrock-agentcore" in services_called
 
-        # Verify config was merged and includes user agent
-        config = call_args[1]["config"]
+        # Verify config was merged and includes user agent (check first call)
+        config = calls[0][1]["config"]
         assert config.user_agent_extra == "bedrock-agentcore-starter-toolkit"
         # The merged config should contain the original settings
         assert hasattr(config, "retries")
@@ -147,14 +158,15 @@ def test_boto_client_config_with_session_and_region():
 
         MemoryManager(region_name="us-west-2", boto3_session=mock_session, boto_client_config=custom_config)
 
-        # Verify the client was created with the session and merged config
-        assert mock_session.client.call_count == 1
-        call_args = mock_session.client.call_args
-        assert call_args[0][0] == "bedrock-agentcore-control"
-        assert call_args[1]["region_name"] == "us-west-2"
+        # Verify both clients were created with the session and merged config
+        assert mock_session.client.call_count == 2
+        calls = mock_session.client.call_args_list
+        services_called = [call[0][0] for call in calls]
+        assert "bedrock-agentcore-control" in services_called
+        assert "bedrock-agentcore" in services_called
 
-        # Verify config was merged properly
-        config = call_args[1]["config"]
+        # Verify config was merged properly (check first call)
+        config = calls[0][1]["config"]
         assert config.user_agent_extra == "test-agent bedrock-agentcore-starter-toolkit"
 
 
@@ -2994,3 +3006,232 @@ def test_region_fallback_to_session():
         # Verify client was created with session region
         call_args = mock_session.client.call_args
         assert call_args[1]["region_name"] == "eu-west-1"
+
+
+# ==================== DATA PLANE METHOD TESTS ====================
+
+
+def test_list_actors():
+    """Test list_actors method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        # Mock response with no pagination
+        mock_data_plane_client.list_actors.return_value = {
+            "actorSummaries": [{"actorId": "actor-1"}, {"actorId": "actor-2"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_actors("mem-123")
+
+        assert len(result) == 2
+        assert result[0]["actorId"] == "actor-1"
+        mock_data_plane_client.list_actors.assert_called_once_with(memoryId="mem-123")
+
+
+def test_list_actors_with_pagination():
+    """Test list_actors with multiple pages."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        # Mock paginated responses
+        mock_data_plane_client.list_actors.side_effect = [
+            {"actorSummaries": [{"actorId": "actor-1"}], "nextToken": "token1"},
+            {"actorSummaries": [{"actorId": "actor-2"}], "nextToken": None},
+        ]
+
+        result = manager.list_actors("mem-123")
+
+        assert len(result) == 2
+        assert mock_data_plane_client.list_actors.call_count == 2
+
+
+def test_list_actors_error():
+    """Test list_actors error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        error_response = {"Error": {"Code": "ResourceNotFoundException", "Message": "Memory not found"}}
+        mock_data_plane_client.list_actors.side_effect = ClientError(error_response, "ListActors")
+
+        try:
+            manager.list_actors("mem-invalid")
+            raise AssertionError("ClientError was not raised")
+        except ClientError as e:
+            assert "ResourceNotFoundException" in str(e)
+
+
+def test_list_sessions():
+    """Test list_sessions method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_sessions.return_value = {
+            "sessionSummaries": [{"sessionId": "session-1"}, {"sessionId": "session-2"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_sessions("mem-123", "actor-1")
+
+        assert len(result) == 2
+        assert result[0]["sessionId"] == "session-1"
+        mock_data_plane_client.list_sessions.assert_called_once_with(memoryId="mem-123", actorId="actor-1")
+
+
+def test_list_events():
+    """Test list_events method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_events.return_value = {
+            "events": [{"eventId": "event-1"}, {"eventId": "event-2"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_events("mem-123", "actor-1", "session-1")
+
+        assert len(result) == 2
+        assert result[0]["eventId"] == "event-1"
+        mock_data_plane_client.list_events.assert_called_once_with(
+            memoryId="mem-123", actorId="actor-1", sessionId="session-1"
+        )
+
+
+def test_list_events_with_max_results():
+    """Test list_events with max_results parameter."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_events.return_value = {
+            "events": [{"eventId": "event-1"}, {"eventId": "event-2"}, {"eventId": "event-3"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_events("mem-123", "actor-1", "session-1", max_results=2)
+
+        assert len(result) == 2
+
+
+def test_get_event():
+    """Test get_event method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.get_event.return_value = {
+            "event": {"eventId": "event-123", "payload": {"message": "test"}}
+        }
+
+        result = manager.get_event("mem-123", "event-123")
+
+        assert result["eventId"] == "event-123"
+        mock_data_plane_client.get_event.assert_called_once_with(memoryId="mem-123", eventId="event-123")
+
+
+def test_list_records():
+    """Test list_records method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_memory_records.return_value = {
+            "memoryRecordSummaries": [{"recordId": "rec-1"}, {"recordId": "rec-2"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_records("mem-123", "/users/alice/facts")
+
+        assert len(result) == 2
+        assert result[0]["recordId"] == "rec-1"
+        mock_data_plane_client.list_memory_records.assert_called_once_with(
+            memoryId="mem-123", namespace="/users/alice/facts"
+        )
+
+
+def test_get_record():
+    """Test get_record method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.get_memory_record.return_value = {
+            "memoryRecord": {"recordId": "rec-123", "content": "User likes blue"}
+        }
+
+        result = manager.get_record("mem-123", "rec-123")
+
+        assert result["recordId"] == "rec-123"
+        mock_data_plane_client.get_memory_record.assert_called_once_with(memoryId="mem-123", memoryRecordId="rec-123")
+
+
+def test_search_records():
+    """Test search_records method."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.retrieve_memory_records.return_value = {
+            "memoryRecordResults": [
+                {"recordId": "rec-1", "score": 0.95},
+                {"recordId": "rec-2", "score": 0.85},
+            ]
+        }
+
+        result = manager.search_records("mem-123", "/users/alice/facts", "favorite color", max_results=5)
+
+        assert len(result) == 2
+        assert result[0]["score"] == 0.95
+        mock_data_plane_client.retrieve_memory_records.assert_called_once_with(
+            memoryId="mem-123",
+            namespace="/users/alice/facts",
+            searchCriteria={"searchQuery": "favorite color"},
+            maxResults=5,
+        )
+
+
+def test_data_plane_client_initialization():
+    """Test that data plane client is initialized alongside control plane client."""
+    with patch("boto3.Session") as mock_session_class:
+        mock_session = MagicMock()
+        mock_session.region_name = "us-west-2"
+        mock_session_class.return_value = mock_session
+
+        mock_client_instance = MagicMock()
+        mock_session.client.return_value = mock_client_instance
+
+        MemoryManager(region_name="us-west-2")
+
+        # Verify both clients were created
+        assert mock_session.client.call_count == 2
+
+        # Get all calls and verify services
+        calls = mock_session.client.call_args_list
+        services_called = [call[0][0] for call in calls]
+        assert "bedrock-agentcore-control" in services_called
+        assert "bedrock-agentcore" in services_called

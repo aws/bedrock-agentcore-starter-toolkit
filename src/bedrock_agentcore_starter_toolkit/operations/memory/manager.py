@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 class MemoryManager:
     """A high-level client for managing the lifecycle of AgentCore Memory resources.
 
-    This class handles all CONTROL PLANE CRUD operations.
+    This class handles CONTROL PLANE operations (create/delete/list/get memories)
+    and DATA PLANE operations (actors, sessions, events, records).
     """
 
     def __init__(
@@ -79,6 +80,9 @@ class MemoryManager:
         self._control_plane_client = session.client(
             "bedrock-agentcore-control", region_name=self.region_name, config=client_config
         )
+        self._data_plane_client = session.client(
+            "bedrock-agentcore", region_name=self.region_name, config=client_config
+        )
 
         # AgentCore Memory control plane methods
         self._ALLOWED_CONTROL_PLANE_METHODS = {
@@ -87,7 +91,7 @@ class MemoryManager:
             "update_memory",
             "delete_memory",
         }
-        logger.info("✅ MemoryManager initialized for region: %s", self.region_name)
+        logger.debug("MemoryManager initialized for region: %s", self.region_name)
 
     def __getattr__(self, name: str):
         """Dynamically forward method calls to the appropriate boto3 client.
@@ -555,6 +559,259 @@ class MemoryManager:
             time.sleep(poll_interval)
 
         raise TimeoutError("Memory %s was not deleted within %d seconds" % (memory_id, max_wait))
+
+    # ==================== DATA PLANE METHODS ====================
+
+    def list_actors(self, memory_id: str) -> List[Dict[str, Any]]:
+        """List all actors who have events in a memory.
+
+        Maps to: bedrock-agentcore.list_actors.
+
+        Args:
+            memory_id: The memory resource ID.
+
+        Returns:
+            List of actor summary dictionaries.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Listing actors for memory: %s", memory_id)
+        try:
+            response = self._data_plane_client.list_actors(memoryId=memory_id)
+            actors = response.get("actorSummaries", [])
+
+            next_token = response.get("nextToken")
+            while next_token:
+                response = self._data_plane_client.list_actors(memoryId=memory_id, nextToken=next_token)
+                actors.extend(response.get("actorSummaries", []))
+                next_token = response.get("nextToken")
+
+            logger.debug("Found %d actors", len(actors))
+            return actors
+        except ClientError as e:
+            logger.error("Error listing actors: %s", e)
+            raise
+
+    def list_sessions(self, memory_id: str, actor_id: str) -> List[Dict[str, Any]]:
+        """List all sessions for an actor.
+
+        Maps to: bedrock-agentcore.list_sessions.
+
+        Args:
+            memory_id: The memory resource ID.
+            actor_id: The actor ID.
+
+        Returns:
+            List of session summary dictionaries.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Listing sessions for actor: %s in memory: %s", actor_id, memory_id)
+        try:
+            response = self._data_plane_client.list_sessions(memoryId=memory_id, actorId=actor_id)
+            sessions = response.get("sessionSummaries", [])
+
+            next_token = response.get("nextToken")
+            while next_token:
+                response = self._data_plane_client.list_sessions(
+                    memoryId=memory_id, actorId=actor_id, nextToken=next_token
+                )
+                sessions.extend(response.get("sessionSummaries", []))
+                next_token = response.get("nextToken")
+
+            logger.debug("Found %d sessions", len(sessions))
+            return sessions
+        except ClientError as e:
+            logger.error("Error listing sessions: %s", e)
+            raise
+
+    def list_events(
+        self,
+        memory_id: str,
+        actor_id: str,
+        session_id: str,
+        max_results: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """List events in a session.
+
+        Maps to: bedrock-agentcore.list_events.
+
+        Args:
+            memory_id: The memory resource ID.
+            actor_id: The actor ID.
+            session_id: The session ID.
+            max_results: Maximum number of events to return.
+
+        Returns:
+            List of event dictionaries.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Listing events for session: %s", session_id)
+        try:
+            kwargs: Dict[str, Any] = {"memoryId": memory_id, "actorId": actor_id, "sessionId": session_id}
+            if max_results:
+                kwargs["maxResults"] = min(max_results, 100)
+
+            response = self._data_plane_client.list_events(**kwargs)
+            events = response.get("events", [])
+
+            next_token = response.get("nextToken")
+            while next_token and (not max_results or len(events) < max_results):
+                if max_results:
+                    kwargs["maxResults"] = min(max_results - len(events), 100)
+                kwargs["nextToken"] = next_token
+                response = self._data_plane_client.list_events(**kwargs)
+                events.extend(response.get("events", []))
+                next_token = response.get("nextToken")
+
+            if max_results:
+                events = events[:max_results]
+
+            logger.debug("Found %d events", len(events))
+            return events
+        except ClientError as e:
+            logger.error("Error listing events: %s", e)
+            raise
+
+    def get_event(self, memory_id: str, event_id: str) -> Dict[str, Any]:
+        """Get a specific event by ID.
+
+        Maps to: bedrock-agentcore.get_event.
+
+        Args:
+            memory_id: The memory resource ID.
+            event_id: The event ID.
+
+        Returns:
+            Event dictionary.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Getting event: %s", event_id)
+        try:
+            response = self._data_plane_client.get_event(memoryId=memory_id, eventId=event_id)
+            logger.debug("Event retrieved")
+            return response.get("event", {})
+        except ClientError as e:
+            logger.error("Error getting event: %s", e)
+            raise
+
+    def list_records(
+        self,
+        memory_id: str,
+        namespace: str,
+        max_results: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """List memory records in a namespace.
+
+        Maps to: bedrock-agentcore.list_memory_records.
+
+        Args:
+            memory_id: The memory resource ID.
+            namespace: The namespace to list records from.
+            max_results: Maximum number of records to return.
+
+        Returns:
+            List of memory record dictionaries.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Listing records in namespace: %s", namespace)
+        try:
+            kwargs: Dict[str, Any] = {"memoryId": memory_id, "namespace": namespace}
+            if max_results:
+                kwargs["maxResults"] = min(max_results, 100)
+
+            response = self._data_plane_client.list_memory_records(**kwargs)
+            records = response.get("memoryRecordSummaries", [])
+
+            next_token = response.get("nextToken")
+            while next_token and (not max_results or len(records) < max_results):
+                if max_results:
+                    kwargs["maxResults"] = min(max_results - len(records), 100)
+                kwargs["nextToken"] = next_token
+                response = self._data_plane_client.list_memory_records(**kwargs)
+                records.extend(response.get("memoryRecordSummaries", []))
+                next_token = response.get("nextToken")
+
+            if max_results:
+                records = records[:max_results]
+
+            logger.debug("Found %d records", len(records))
+            return records
+        except ClientError as e:
+            logger.error("Error listing records: %s", e)
+            raise
+
+    def get_record(self, memory_id: str, record_id: str) -> Dict[str, Any]:
+        """Get a specific memory record by ID.
+
+        Maps to: bedrock-agentcore.get_memory_record.
+
+        Args:
+            memory_id: The memory resource ID.
+            record_id: The record ID.
+
+        Returns:
+            Memory record dictionary.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Getting record: %s", record_id)
+        try:
+            response = self._data_plane_client.get_memory_record(memoryId=memory_id, memoryRecordId=record_id)
+            logger.debug("Record retrieved")
+            return response.get("memoryRecord", {})
+        except ClientError as e:
+            logger.error("Error getting record: %s", e)
+            raise
+
+    def search_records(
+        self,
+        memory_id: str,
+        namespace: str,
+        query: str,
+        max_results: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Semantic search for memory records.
+
+        Maps to: bedrock-agentcore.retrieve_memory_records.
+
+        Args:
+            memory_id: The memory resource ID.
+            namespace: The namespace to search in.
+            query: The search query text.
+            max_results: Maximum number of results to return.
+
+        Returns:
+            List of memory record dictionaries with relevance scores.
+
+        Raises:
+            ClientError: If the API call fails.
+        """
+        logger.debug("Searching records in namespace: %s with query: %s", namespace, query)
+        try:
+            response = self._data_plane_client.retrieve_memory_records(
+                memoryId=memory_id,
+                namespace=namespace,
+                searchCriteria={"searchQuery": query},
+                maxResults=max_results,
+            )
+            records = response.get("memoryRecordResults", [])
+            logger.debug("Found %d matching records", len(records))
+            return records
+        except ClientError as e:
+            logger.error("Error searching records: %s", e)
+            raise
+
+    # ==================== STRATEGY METHODS ====================
 
     def add_semantic_strategy(
         self,
