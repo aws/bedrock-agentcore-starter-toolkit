@@ -20,6 +20,7 @@ from .runtime.commands import (
     deploy,
     destroy,
     invoke,
+    pull,
     status,
     stop_session,
 )
@@ -39,6 +40,7 @@ app.command("invoke")(invoke)
 app.command("status")(status)
 app.command("destroy")(destroy)
 app.command("stop-session")(stop_session)
+app.command("pull")(pull)
 app.add_typer(configure_app)
 
 # Services
