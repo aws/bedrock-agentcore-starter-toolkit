@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.8] - 2026-01-23
+
+### Changes
+
+- feat(memory): add memory visualization CLI commands (#434) (7c23ffd)
+- fix(typescript): exclude node_modules from S3 upload and simplify Dockerfile (#433) (777e61e)
+- chore: bump version to 0.2.7 (#432) (ed5a870)
+
 ## [0.2.7] - 2026-01-20
 
 ### Changes
