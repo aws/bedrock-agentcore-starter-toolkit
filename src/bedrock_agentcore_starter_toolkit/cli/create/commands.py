@@ -10,12 +10,6 @@ import typer
 from ...cli.common import _handle_error, _handle_warn
 from ...create.constants import IACProvider, ModelProvider, SDKProvider, TemplateDisplay
 from ...create.generate import generate_project
-from ...create.types import (
-    CreateIACProvider,
-    CreateModelProvider,
-    CreateSDKProvider,
-    CreateTemplateDisplay,
-)
 from ...utils.runtime.config import load_config
 from ...utils.runtime.schema import BedrockAgentCoreAgentSchema, BedrockAgentCoreConfigSchema
 from ..cli_ui import (
@@ -80,17 +74,24 @@ venv_option = typer.Option(True, "--venv/--no-venv", help="Automatically create 
 def create(
     ctx: typer.Context,
     project_name: Optional[str] = project_name_option,
-    template: Optional[CreateTemplateDisplay] = template_option,
-    sdk: CreateSDKProvider = sdk_option,
-    model_provider: CreateModelProvider = model_provider_option,
+    template: Optional[str] = template_option,
+    sdk: Optional[str] = sdk_option,
+    model_provider: Optional[str] = model_provider_option,
     provider_api_key: Optional[str] = model_provider_api_key_option,
-    iac: Optional[CreateIACProvider] = iac_option,
+    iac: Optional[str] = iac_option,
     non_interactive_flag: Optional[bool] = non_interactive_flag_opt,
     venv_option: bool = venv_option,
 ):
     """CLI Implementation for Create Command."""
     if ctx.invoked_subcommand:
         return
+
+    # Validate template value if provided
+    valid_templates = [TemplateDisplay.BASIC, TemplateDisplay.PRODUCTION]
+    if template is not None and template not in valid_templates:
+        raise typer.BadParameter(
+            f"Invalid template '{template}'. Must be one of: {', '.join(valid_templates)}"
+        )
 
     # Auto-set non-interactive mode
     user_provided_args = any([project_name, sdk, model_provider, iac, template])
@@ -170,11 +171,11 @@ def create(
 
 
 def _apply_non_interactive_defaults(
-    template: Optional[CreateTemplateDisplay],
-    sdk: Optional[CreateSDKProvider],
-    model_provider: Optional[CreateModelProvider],
-    iac: Optional[CreateIACProvider],
-) -> Tuple[CreateTemplateDisplay, CreateSDKProvider, CreateModelProvider, Optional[CreateIACProvider]]:
+    template: Optional[str],
+    sdk: Optional[str],
+    model_provider: Optional[str],
+    iac: Optional[str],
+) -> Tuple[str, str, str, Optional[str]]:
     """Applies defaults for non-interactive mode.
 
     Assumes non-interactive mode is already active.
@@ -212,11 +213,11 @@ def _apply_non_interactive_defaults(
 
 
 def _handle_basic_runtime_flow(
-    sdk: CreateSDKProvider,
-    model_provider: CreateModelProvider,
+    sdk: Optional[str],
+    model_provider: Optional[str],
     provider_api_key: Optional[str],
     non_interactive_flag: bool,
-) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str], bool]:
+) -> Tuple[str, str, Optional[str], bool]:
     """Handles prompt logic for Runtime-only mode."""
     if not sdk:
         sdk = prompt_sdk_provider(is_direct_code_deploy=True)
@@ -257,11 +258,11 @@ def _handle_basic_runtime_flow(
 
 
 def _handle_monorepo_flow(
-    sdk: CreateSDKProvider,
-    model_provider: CreateModelProvider,
-    iac: Optional[CreateIACProvider],
+    sdk: Optional[str],
+    model_provider: Optional[str],
+    iac: Optional[str],
     non_interactive_flag: bool,
-) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[CreateIACProvider], Optional[BedrockAgentCoreAgentSchema]]:
+) -> Tuple[str, str, Optional[str], Optional[BedrockAgentCoreAgentSchema]]:
     """Handles prompt logic for Monorepo mode."""
     agent_config = None
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"
