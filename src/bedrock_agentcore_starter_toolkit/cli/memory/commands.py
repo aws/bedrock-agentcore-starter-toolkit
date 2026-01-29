@@ -234,8 +234,8 @@ def _collect_records_from_namespace_template(
                     _try_collect_records(manager, memory_id, final_ns, max_results, all_records)
             else:
                 _try_collect_records(manager, memory_id, ns, max_results, all_records)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Error collecting records: %s", e)
 
 
 def _try_collect_records(
@@ -251,8 +251,8 @@ def _try_collect_records(
         for r in records:
             r["_namespace"] = namespace
         all_records.extend(records)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Error collecting records from namespace %s: %s", namespace, e)
 
 
 # ==================== Main Memory Commands ====================
