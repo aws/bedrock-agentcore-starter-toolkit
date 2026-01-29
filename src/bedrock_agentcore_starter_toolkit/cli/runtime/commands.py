@@ -173,6 +173,9 @@ def configure(
     runtime: Optional[str] = typer.Option(
         None, "--runtime", "-rt", help="Python runtime version for direct_code_deploy (e.g., PYTHON_3_10, PYTHON_3_11)"
     ),
+    language: Optional[str] = typer.Option(
+        None, "--language", "-lang", help="Project language (python or typescript). Auto-detected if not specified."
+    ),
 ):
     """Configure a Bedrock AgentCore agent interactively or with parameters.
 
@@ -208,6 +211,7 @@ def configure(
         non_interactive=non_interactive,
         deployment_type=deployment_type,
         runtime=runtime,
+        language=language,
     )
 
 

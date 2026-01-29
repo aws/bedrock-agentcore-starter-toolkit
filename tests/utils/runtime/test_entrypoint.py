@@ -364,12 +364,38 @@ class TestDetectLanguage:
         assert result == "python"
 
     def test_detect_language_both_files(self, tmp_path):
-        """Test that package.json + tsconfig.json takes precedence."""
+        """Test that package.json + tsconfig.json returns typescript when no entrypoint."""
         (tmp_path / "package.json").write_text('{"name": "test"}')
         (tmp_path / "tsconfig.json").write_text("{}")
         (tmp_path / "requirements.txt").write_text("requests")
 
         result = detect_language(tmp_path)
+        assert result == "typescript"
+
+    def test_detect_language_python_entrypoint_overrides_package_json(self, tmp_path):
+        """Test that .py entrypoint overrides package.json detection."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text("{}")
+
+        result = detect_language(tmp_path, entrypoint="agent/main.py")
+        assert result == "python"
+
+    def test_detect_language_typescript_entrypoint(self, tmp_path):
+        """Test that .ts entrypoint returns typescript."""
+        result = detect_language(tmp_path, entrypoint="src/index.ts")
+        assert result == "typescript"
+
+    def test_detect_language_js_entrypoint(self, tmp_path):
+        """Test that .js entrypoint returns typescript."""
+        result = detect_language(tmp_path, entrypoint="index.js")
+        assert result == "typescript"
+
+    def test_detect_language_unknown_extension_falls_back(self, tmp_path):
+        """Test that unknown extension falls back to tsconfig detection."""
+        (tmp_path / "package.json").write_text('{"name": "test"}')
+        (tmp_path / "tsconfig.json").write_text("{}")
+
+        result = detect_language(tmp_path, entrypoint="config.yaml")
         assert result == "typescript"
 
 
