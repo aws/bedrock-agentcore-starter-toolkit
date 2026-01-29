@@ -55,15 +55,25 @@ def detect_entrypoint_by_language(source_dir: Path, language: str) -> List[Path]
     return found_files
 
 
-def detect_language(project_dir: Path) -> Literal["python", "typescript"]:
-    """Auto-detect project language based on dependency files.
+def detect_language(project_dir: Path, entrypoint: Optional[str] = None) -> Literal["python", "typescript"]:
+    """Auto-detect project language based on entrypoint extension or dependency files.
 
     Args:
         project_dir: Path to the project directory
+        entrypoint: Optional entrypoint file path to infer language from
 
     Returns:
-        "typescript" if package.json and tsconfig.json exist, otherwise "python"
+        "typescript" if entrypoint is .ts/.js or package.json+tsconfig.json exist, otherwise "python"
     """
+    # Prefer entrypoint extension over dependency file detection
+    if entrypoint:
+        ext = Path(entrypoint).suffix.lower()
+        if ext == ".py":
+            return "python"
+        if ext in (".ts", ".js"):
+            return "typescript"
+
+    # Fall back to dependency file detection
     # Check for both package.json and tsconfig.json to distinguish TypeScript from vanilla JS
     has_package_json = (project_dir / "package.json").exists()
     has_tsconfig = (project_dir / "tsconfig.json").exists()

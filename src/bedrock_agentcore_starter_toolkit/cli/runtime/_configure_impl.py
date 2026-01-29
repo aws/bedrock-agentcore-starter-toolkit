@@ -46,6 +46,7 @@ def configure_impl(
     non_interactive=False,
     deployment_type=None,
     runtime=None,
+    language=None,
 ):
     # Create configuration manager early for consistent prompting
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
@@ -251,9 +252,15 @@ def configure_impl(
     if not valid:
         _handle_error(error)
 
-    # Detect project language from cwd (not source_path, since source_path might be a subdirectory)
-    # package.json is typically in project root, not in src/ subdirectory
-    detected_language = detect_language(Path.cwd())
+    # Validate explicit language parameter
+    if language and language.lower() not in ("python", "typescript"):
+        _handle_error("--language must be 'python' or 'typescript'")
+
+    # Detect project language (explicit > entrypoint extension > package.json+tsconfig.json)
+    if language:
+        detected_language = language.lower()
+    else:
+        detected_language = detect_language(Path.cwd(), entrypoint)
     ts_project_info = None
     node_version = "20"
 

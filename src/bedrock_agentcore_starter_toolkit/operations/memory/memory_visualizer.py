@@ -1,6 +1,7 @@
 """Memory visualization with tree and table views."""
 
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -29,6 +30,8 @@ from .memory_formatters import (
     render_content_panel,
     truncate_text,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryVisualizer:
@@ -482,8 +485,8 @@ class MemoryVisualizer:
                     records = manager.list_records(memory_id, ns, max_results)
                     if records:
                         self._add_records_to_tree(strategy_branch, ns, records, verbose, ns_data["records"])
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Error listing records for namespace %s: %s", ns, e)
 
             if ns_data["records"]:
                 export_data["namespaces"].append(ns_data)
@@ -532,8 +535,8 @@ class MemoryVisualizer:
                         resolved.append(ns.replace("{sessionId}", session_id))
                 else:
                     resolved.append(ns)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Error resolving namespace template %s: %s", ns_template, e)
 
         return resolved
 
