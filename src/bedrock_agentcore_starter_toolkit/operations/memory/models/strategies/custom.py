@@ -29,7 +29,7 @@ class CustomSemanticStrategy(BaseStrategy):
                 append_to_prompt="Consolidate business insights",
                 model_id="anthropic.claude-3-haiku-20240307-v1:0"
             ),
-            namespaces=["custom/{actorId}/{sessionId}"]
+            namespaces=["custom/{actorId}/{sessionId}/"]
         )
     """
 
@@ -91,7 +91,7 @@ class CustomSummaryStrategy(BaseStrategy):
                 append_to_prompt="Consolidate business insights",
                 model_id="anthropic.claude-3-haiku-20240307-v1:0"
             ),
-            namespaces=["custom/{actorId}/{sessionId}"]
+            namespaces=["custom/{actorId}/{sessionId}/"]
         )
     """
 
@@ -148,7 +148,7 @@ class CustomUserPreferenceStrategy(BaseStrategy):
                 append_to_prompt="Consolidate business insights",
                 model_id="anthropic.claude-3-haiku-20240307-v1:0"
             ),
-            namespaces=["custom/{actorId}/{sessionId}"]
+            namespaces=["custom/{actorId}/{sessionId}/"]
         )
     """
 

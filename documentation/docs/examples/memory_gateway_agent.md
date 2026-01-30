@@ -183,12 +183,12 @@ ltm = client.create_memory_and_wait(
         # Extracts user preferences like "I prefer Python"
         {"userPreferenceMemoryStrategy": {
             "name": "prefs",
-            "namespaces": ["/user/preferences"]
+            "namespaces": ["/user/preferences/"]
         }},
         # Extracts facts like "My birthday is in January"
         {"semanticMemoryStrategy": {
             "name": "facts",
-            "namespaces": ["/user/facts"]
+            "namespaces": ["/user/facts/"]
         }}
     ],
     event_expiry_days=30  # Keep for 30 days

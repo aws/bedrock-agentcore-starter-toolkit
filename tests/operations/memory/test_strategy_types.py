@@ -79,12 +79,12 @@ class TestSemanticStrategy:
         strategy = SemanticStrategy(
             name="ConversationSemantics",
             description="Extract semantic information",
-            namespaces=["semantics/{actorId}/{sessionId}"],
+            namespaces=["semantics/{actorId}/{sessionId}/"],
         )
 
         assert strategy.name == "ConversationSemantics"
         assert strategy.description == "Extract semantic information"
-        assert strategy.namespaces == ["semantics/{actorId}/{sessionId}"]
+        assert strategy.namespaces == ["semantics/{actorId}/{sessionId}/"]
 
     def test_semantic_strategy_minimal(self):
         """Test SemanticStrategy with only required fields."""
@@ -96,14 +96,14 @@ class TestSemanticStrategy:
 
     def test_semantic_strategy_to_dict(self):
         """Test SemanticStrategy to_dict conversion."""
-        strategy = SemanticStrategy(name="TestSemantic", description="Test description", namespaces=["test/{actorId}"])
+        strategy = SemanticStrategy(name="TestSemantic", description="Test description", namespaces=["test/{actorId}/"])
 
         result = strategy.to_dict()
         expected = {
             "semanticMemoryStrategy": {
                 "name": "TestSemantic",
                 "description": "Test description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
             }
         }
 
@@ -124,23 +124,23 @@ class TestSummaryStrategy:
         strategy = SummaryStrategy(
             name="ConversationSummary",
             description="Summarize conversations",
-            namespaces=["summaries/{actorId}/{sessionId}"],
+            namespaces=["summaries/{actorId}/{sessionId}/"],
         )
 
         assert strategy.name == "ConversationSummary"
         assert strategy.description == "Summarize conversations"
-        assert strategy.namespaces == ["summaries/{actorId}/{sessionId}"]
+        assert strategy.namespaces == ["summaries/{actorId}/{sessionId}/"]
 
     def test_summary_strategy_to_dict(self):
         """Test SummaryStrategy to_dict conversion."""
-        strategy = SummaryStrategy(name="TestSummary", description="Test description", namespaces=["test/{actorId}"])
+        strategy = SummaryStrategy(name="TestSummary", description="Test description", namespaces=["test/{actorId}/"])
 
         result = strategy.to_dict()
         expected = {
             "summaryMemoryStrategy": {
                 "name": "TestSummary",
                 "description": "Test description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
             }
         }
 
@@ -153,17 +153,17 @@ class TestUserPreferenceStrategy:
     def test_user_preference_strategy_creation(self):
         """Test basic UserPreferenceStrategy creation."""
         strategy = UserPreferenceStrategy(
-            name="UserPreferences", description="Store user preferences", namespaces=["preferences/{actorId}"]
+            name="UserPreferences", description="Store user preferences", namespaces=["preferences/{actorId}/"]
         )
 
         assert strategy.name == "UserPreferences"
         assert strategy.description == "Store user preferences"
-        assert strategy.namespaces == ["preferences/{actorId}"]
+        assert strategy.namespaces == ["preferences/{actorId}/"]
 
     def test_user_preference_strategy_to_dict(self):
         """Test UserPreferenceStrategy to_dict conversion."""
         strategy = UserPreferenceStrategy(
-            name="TestPreferences", description="Test description", namespaces=["test/{actorId}"]
+            name="TestPreferences", description="Test description", namespaces=["test/{actorId}/"]
         )
 
         result = strategy.to_dict()
@@ -171,7 +171,7 @@ class TestUserPreferenceStrategy:
             "userPreferenceMemoryStrategy": {
                 "name": "TestPreferences",
                 "description": "Test description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
             }
         }
 
@@ -195,14 +195,14 @@ class TestCustomSemanticStrategy:
             description="Custom semantic extraction",
             extraction_config=extraction_config,
             consolidation_config=consolidation_config,
-            namespaces=["custom/{actorId}/{sessionId}"],
+            namespaces=["custom/{actorId}/{sessionId}/"],
         )
 
         assert strategy.name == "CustomExtraction"
         assert strategy.description == "Custom semantic extraction"
         assert strategy.extraction_config == extraction_config
         assert strategy.consolidation_config == consolidation_config
-        assert strategy.namespaces == ["custom/{actorId}/{sessionId}"]
+        assert strategy.namespaces == ["custom/{actorId}/{sessionId}/"]
 
     def test_custom_semantic_strategy_to_dict(self):
         """Test CustomSemanticStrategy to_dict conversion."""
@@ -220,7 +220,7 @@ class TestCustomSemanticStrategy:
             description="Test description",
             extraction_config=extraction_config,
             consolidation_config=consolidation_config,
-            namespaces=["test/{actorId}"],
+            namespaces=["test/{actorId}/"],
         )
 
         result = strategy.to_dict()
@@ -228,7 +228,7 @@ class TestCustomSemanticStrategy:
             "customMemoryStrategy": {
                 "name": "TestCustom",
                 "description": "Test description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {
@@ -435,10 +435,10 @@ class TestBaseStrategyAbstract:
 
     def test_base_strategy_optional_fields(self):
         """Test BaseStrategy optional fields through concrete classes."""
-        strategy = SemanticStrategy(name="Test", description="Test description", namespaces=["test/namespace"])
+        strategy = SemanticStrategy(name="Test", description="Test description", namespaces=["test/namespace/"])
 
         assert strategy.description == "Test description"
-        assert strategy.namespaces == ["test/namespace"]
+        assert strategy.namespaces == ["test/namespace/"]
 
         # Test with None values
         strategy2 = SemanticStrategy(name="Test2")
@@ -449,11 +449,11 @@ class TestBaseStrategyAbstract:
 class TestPydanticIntegration:
     def test_model_serialization(self):
         """Test Pydantic model serialization."""
-        strategy = SemanticStrategy(name="TestSemantic", description="Test description", namespaces=["test/{actorId}"])
+        strategy = SemanticStrategy(name="TestSemantic", description="Test description", namespaces=["test/{actorId}/"])
 
         # Test model_dump() method (Pydantic v2)
         strategy_dict = strategy.model_dump()
-        expected = {"name": "TestSemantic", "description": "Test description", "namespaces": ["test/{actorId}"]}
+        expected = {"name": "TestSemantic", "description": "Test description", "namespaces": ["test/{actorId}/"]}
         assert strategy_dict == expected
 
         # Test model_dump_json() method (Pydantic v2)
@@ -499,13 +499,13 @@ class TestCustomSummaryStrategy:
             name="CustomSummary",
             description="Custom summary extraction",
             consolidation_config=consolidation_config,
-            namespaces=["summary/{actorId}/{sessionId}"],
+            namespaces=["summary/{actorId}/{sessionId}/"],
         )
 
         assert strategy.name == "CustomSummary"
         assert strategy.description == "Custom summary extraction"
         assert strategy.consolidation_config == consolidation_config
-        assert strategy.namespaces == ["summary/{actorId}/{sessionId}"]
+        assert strategy.namespaces == ["summary/{actorId}/{sessionId}/"]
 
     def test_custom_summary_strategy_minimal(self):
         """Test CustomSummaryStrategy with minimal configuration."""
@@ -528,7 +528,7 @@ class TestCustomSummaryStrategy:
             name="TestSummary",
             description="Test summary description",
             consolidation_config=consolidation_config,
-            namespaces=["test/{actorId}"],
+            namespaces=["test/{actorId}/"],
         )
 
         result = strategy.to_dict()
@@ -536,7 +536,7 @@ class TestCustomSummaryStrategy:
             "customMemoryStrategy": {
                 "name": "TestSummary",
                 "description": "Test summary description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
                 "configuration": {
                     "summaryOverride": {
                         "consolidation": {
@@ -646,14 +646,14 @@ class TestCustomUserPreferenceStrategy:
             description="Custom user preference extraction",
             extraction_config=extraction_config,
             consolidation_config=consolidation_config,
-            namespaces=["preferences/{actorId}"],
+            namespaces=["preferences/{actorId}/"],
         )
 
         assert strategy.name == "CustomUserPref"
         assert strategy.description == "Custom user preference extraction"
         assert strategy.extraction_config == extraction_config
         assert strategy.consolidation_config == consolidation_config
-        assert strategy.namespaces == ["preferences/{actorId}"]
+        assert strategy.namespaces == ["preferences/{actorId}/"]
 
     def test_custom_user_preference_strategy_minimal(self):
         """Test CustomUserPreferenceStrategy with minimal configuration."""
@@ -682,7 +682,7 @@ class TestCustomUserPreferenceStrategy:
             description="Test user preference description",
             extraction_config=extraction_config,
             consolidation_config=consolidation_config,
-            namespaces=["test/{actorId}"],
+            namespaces=["test/{actorId}/"],
         )
 
         result = strategy.to_dict()
@@ -690,7 +690,7 @@ class TestCustomUserPreferenceStrategy:
             "customMemoryStrategy": {
                 "name": "TestUserPref",
                 "description": "Test user preference description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
                 "configuration": {
                     "userPreferenceOverride": {
                         "extraction": {

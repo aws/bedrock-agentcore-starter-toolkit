@@ -16,7 +16,7 @@ class SummaryStrategy(BaseStrategy):
         strategy = SummaryStrategy(
             name="ConversationSummary",
             description="Summarize conversation content",
-            namespaces=["summaries/{actorId}/{sessionId}"]
+            namespaces=["summaries/{actorId}/{sessionId}/"]
         )
     """
 

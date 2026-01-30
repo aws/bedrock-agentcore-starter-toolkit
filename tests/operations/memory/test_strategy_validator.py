@@ -31,7 +31,7 @@ class TestStrategyComparatorEdgeCases:
             "type": "CUSTOM",
             "name": "TestStrategy",
             "description": "Test description",
-            "namespaces": ["test/{actorId}"],
+            "namespaces": ["test/{actorId}/"],
             "configuration": {
                 "type": "SEMANTIC_OVERRIDE",
                 "extraction": {
@@ -55,7 +55,7 @@ class TestStrategyComparatorEdgeCases:
         assert normalized["type"] == "CUSTOM"
         assert normalized["name"] == "TestStrategy"
         assert normalized["description"] == "Test description"
-        assert normalized["namespaces"] == ["test/{actorId}"]
+        assert normalized["namespaces"] == ["test/{actorId}/"]
         assert "configuration" in normalized
 
     def test_normalize_memory_strategy_without_configuration(self):
@@ -64,7 +64,7 @@ class TestStrategyComparatorEdgeCases:
             "type": "SEMANTIC",
             "name": "TestStrategy",
             "description": "Test description",
-            "namespaces": ["test/{actorId}"],
+            "namespaces": ["test/{actorId}/"],
         }
 
         normalized = StrategyComparator._normalize_memory_strategy(strategy)
@@ -72,7 +72,7 @@ class TestStrategyComparatorEdgeCases:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "TestStrategy"
         assert normalized["description"] == "Test description"
-        assert normalized["namespaces"] == ["test/{actorId}"]
+        assert normalized["namespaces"] == ["test/{actorId}/"]
 
     def test_transform_memory_configuration_semantic_override(self):
         """Test _transform_memory_configuration with SEMANTIC_OVERRIDE."""
@@ -250,7 +250,7 @@ class TestStrategyComparatorEdgeCases:
             "newTypeMemoryStrategy": {
                 "name": "NewTypeStrategy",
                 "description": "Test new type strategy",
-                "namespaces": ["newtype/{actorId}"],
+                "namespaces": ["newtype/{actorId}/"],
                 "customField": "customValue",
             }
         }
@@ -260,7 +260,7 @@ class TestStrategyComparatorEdgeCases:
         assert normalized["type"] == "NEW_TYPE"
         assert normalized["name"] == "NewTypeStrategy"
         assert normalized["description"] == "Test new type strategy"
-        assert normalized["namespaces"] == ["newtype/{actorId}"]
+        assert normalized["namespaces"] == ["newtype/{actorId}/"]
         assert normalized["custom_field"] == "customValue"
 
     def test_normalize_request_strategy_excluded_fields(self):
@@ -269,7 +269,7 @@ class TestStrategyComparatorEdgeCases:
             "semanticMemoryStrategy": {
                 "name": "TestStrategy",
                 "description": "Test description",
-                "namespaces": ["test/{actorId}"],
+                "namespaces": ["test/{actorId}/"],
                 "status": "ACTIVE",  # Should be excluded
                 "strategyId": "strategy-123",  # Should be excluded
                 "customField": "customValue",  # Should be included
@@ -281,7 +281,7 @@ class TestStrategyComparatorEdgeCases:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "TestStrategy"
         assert normalized["description"] == "Test description"
-        assert normalized["namespaces"] == ["test/{actorId}"]
+        assert normalized["namespaces"] == ["test/{actorId}/"]
         assert normalized["custom_field"] == "customValue"
         # Excluded fields should not be present
         assert "status" not in normalized
@@ -294,7 +294,7 @@ class TestStrategyComparatorEdgeCases:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -314,7 +314,7 @@ class TestStrategyComparatorEdgeCases:
                 description="Test custom strategy",
                 extraction_config=extraction_config,
                 consolidation_config=consolidation_config,
-                namespaces=["custom/{actorId}"],
+                namespaces=["custom/{actorId}/"],
             )
         ]
 
@@ -543,7 +543,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -563,7 +563,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 description="Test custom strategy",
                 extraction_config=extraction_config,
                 consolidation_config=consolidation_config,
-                namespaces=["custom/{actorId}"],
+                namespaces=["custom/{actorId}/"],
             )
         ]
 
@@ -577,7 +577,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "type": "CUSTOM",
                 "name": "CustomSummaryStrategy",
                 "description": "Test custom summary strategy",
-                "namespaces": ["summary/{actorId}"],
+                "namespaces": ["summary/{actorId}/"],
                 "configuration": {
                     "summaryOverride": {
                         "consolidation": {"appendToPrompt": "Consolidate summaries", "modelId": "claude-3-haiku"}
@@ -593,7 +593,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 name="CustomSummaryStrategy",
                 description="Test custom summary strategy",
                 consolidation_config=consolidation_config,
-                namespaces=["summary/{actorId}"],
+                namespaces=["summary/{actorId}/"],
             )
         ]
 
@@ -607,7 +607,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "type": "CUSTOM",
                 "name": "CustomUserPrefStrategy",
                 "description": "Test custom user preference strategy",
-                "namespaces": ["preferences/{actorId}"],
+                "namespaces": ["preferences/{actorId}/"],
                 "configuration": {
                     "userPreferenceOverride": {
                         "extraction": {"appendToPrompt": "Extract preferences", "modelId": "claude-3-sonnet"},
@@ -628,7 +628,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 description="Test custom user preference strategy",
                 extraction_config=extraction_config,
                 consolidation_config=consolidation_config,
-                namespaces=["preferences/{actorId}"],
+                namespaces=["preferences/{actorId}/"],
             )
         ]
 
@@ -642,7 +642,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Existing description",
-                "namespaces": ["existing/{actorId}"],
+                "namespaces": ["existing/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Existing extraction prompt", "modelId": "existing-model"},
@@ -669,7 +669,7 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 description="Existing description",
                 extraction_config=extraction_config,
                 consolidation_config=consolidation_config,
-                namespaces=["existing/{actorId}"],
+                namespaces=["existing/{actorId}/"],
             )
         ]
 
@@ -687,13 +687,13 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test semantic strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             },
             {
                 "type": "SUMMARIZATION",
                 "name": "SummaryStrategy",
                 "description": "Test summary strategy",
-                "namespaces": ["summary/{actorId}"],
+                "namespaces": ["summary/{actorId}/"],
             },
         ]
 
@@ -702,14 +702,14 @@ class TestValidateExistingMemoryStrategiesEdgeCases:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test semantic strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             },
             {
                 "summaryMemoryStrategy": {
                     "name": "SummaryStrategy",
                     "description": "Test summary strategy",
-                    "namespaces": ["summary/{actorId}"],
+                    "namespaces": ["summary/{actorId}/"],
                 }
             },
         ]
@@ -788,7 +788,7 @@ class TestErrorHandlingAndEdgeCases:
             "memoryStrategyType": "SEMANTIC",
             "name": "TestStrategy",
             "description": "Test description",
-            "namespaces": ["test/{actorId}"],
+            "namespaces": ["test/{actorId}/"],
         }
 
         normalized = StrategyComparator.normalize_strategy(strategy)
@@ -796,7 +796,7 @@ class TestErrorHandlingAndEdgeCases:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "TestStrategy"
         assert normalized["description"] == "Test description"
-        assert normalized["namespaces"] == ["test/{actorId}"]
+        assert normalized["namespaces"] == ["test/{actorId}/"]
 
     def test_normalize_strategy_with_empty_configuration(self):
         """Test normalize_strategy with empty configuration."""
@@ -804,7 +804,7 @@ class TestErrorHandlingAndEdgeCases:
             "type": "CUSTOM",
             "name": "TestStrategy",
             "description": "Test description",
-            "namespaces": ["test/{actorId}"],
+            "namespaces": ["test/{actorId}/"],
             "configuration": {},
         }
 
@@ -866,7 +866,7 @@ class TestStrategyComparator:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test semantic strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
         }
 
         normalized = StrategyComparator.normalize_strategy(strategy)
@@ -874,7 +874,7 @@ class TestStrategyComparator:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "SemanticStrategy"
         assert normalized["description"] == "Test semantic strategy"
-        assert normalized["namespaces"] == ["semantic/{actorId}"]
+        assert normalized["namespaces"] == ["semantic/{actorId}/"]
 
     def test_normalize_strategy_legacy_fields(self):
         """Test normalizing strategy with legacy field names."""
@@ -882,7 +882,7 @@ class TestStrategyComparator:
             "memoryStrategyType": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test semantic strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
         }
 
         normalized = StrategyComparator.normalize_strategy(strategy)
@@ -896,7 +896,7 @@ class TestStrategyComparator:
             "type": "CUSTOM",
             "name": "CustomStrategy",
             "description": "Test custom strategy",
-            "namespaces": ["custom/{actorId}"],
+            "namespaces": ["custom/{actorId}/"],
             "configuration": {
                 "semanticOverride": {
                     "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -919,7 +919,7 @@ class TestStrategyComparator:
             "semanticMemoryStrategy": {
                 "name": "SemanticStrategy",
                 "description": "Test semantic strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         }
 
@@ -928,7 +928,7 @@ class TestStrategyComparator:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "SemanticStrategy"
         assert normalized["description"] == "Test semantic strategy"
-        assert normalized["namespaces"] == ["semantic/{actorId}"]
+        assert normalized["namespaces"] == ["semantic/{actorId}/"]
 
     def test_normalize_strategy_custom_request(self):
         """Test normalizing custom strategy from request."""
@@ -936,7 +936,7 @@ class TestStrategyComparator:
             "customMemoryStrategy": {
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -968,7 +968,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -977,7 +977,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -994,7 +994,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "ExistingStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1003,7 +1003,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "RequestedStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1022,7 +1022,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Existing description",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1031,7 +1031,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Requested description",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1048,7 +1048,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1057,7 +1057,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["different/{actorId}"],
+                    "namespaces": ["different/{actorId}/"],
                 }
             }
         ]
@@ -1083,7 +1083,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["different/{actorId}"],  # Non-empty namespaces
+                    "namespaces": ["different/{actorId}/"],  # Non-empty namespaces
                 }
             }
         ]
@@ -1100,7 +1100,7 @@ class TestStrategyComparator:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Existing prompt", "modelId": "claude-3-sonnet"},
@@ -1115,7 +1115,7 @@ class TestStrategyComparator:
                 "customMemoryStrategy": {
                     "name": "CustomStrategy",
                     "description": "Test custom strategy",
-                    "namespaces": ["custom/{actorId}"],
+                    "namespaces": ["custom/{actorId}/"],
                     "configuration": {
                         "semanticOverride": {
                             "extraction": {"appendToPrompt": "Requested prompt", "modelId": "claude-3-sonnet"},
@@ -1138,7 +1138,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1147,7 +1147,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             },
             {"summaryMemoryStrategy": {"name": "SummaryStrategy", "description": "Test summary strategy"}},
@@ -1171,14 +1171,14 @@ class TestStrategyComparator:
     def test_compare_strategies_description_none_equivalence(self):
         """Test that None and empty descriptions are treated as equivalent."""
         existing = [
-            {"type": "SEMANTIC", "name": "SemanticStrategy", "description": None, "namespaces": ["semantic/{actorId}"]}
+            {"type": "SEMANTIC", "name": "SemanticStrategy", "description": None, "namespaces": ["semantic/{actorId}/"]}
         ]
 
         requested = [
             {
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                     # No description field
                 }
             }
@@ -1196,7 +1196,7 @@ class TestStrategyComparator:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}", "semantic/{sessionId}"],
+                "namespaces": ["semantic/{actorId}/", "semantic/{sessionId}/"],
             }
         ]
 
@@ -1205,7 +1205,7 @@ class TestStrategyComparator:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{sessionId}", "semantic/{actorId}"],  # Different order
+                    "namespaces": ["semantic/{sessionId}/", "semantic/{actorId}/"],  # Different order
                 }
             }
         ]
@@ -1253,7 +1253,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1262,7 +1262,7 @@ class TestValidateExistingMemoryStrategies:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1277,7 +1277,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SEMANTIC",
                 "name": "ExistingStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1286,7 +1286,7 @@ class TestValidateExistingMemoryStrategies:
                 "semanticMemoryStrategy": {
                     "name": "RequestedStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1301,7 +1301,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -1316,7 +1316,7 @@ class TestValidateExistingMemoryStrategies:
                 "customMemoryStrategy": {
                     "name": "CustomStrategy",
                     "description": "Test custom strategy",
-                    "namespaces": ["custom/{actorId}"],
+                    "namespaces": ["custom/{actorId}/"],
                     "configuration": {
                         "semanticOverride": {
                             "extraction": {"appendToPrompt": "Extract insights", "modelId": "claude-3-sonnet"},
@@ -1337,7 +1337,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "CUSTOM",
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "configuration": {
                     "semanticOverride": {
                         "extraction": {"appendToPrompt": "Existing prompt", "modelId": "claude-3-sonnet"},
@@ -1352,7 +1352,7 @@ class TestValidateExistingMemoryStrategies:
                 "customMemoryStrategy": {
                     "name": "CustomStrategy",
                     "description": "Test custom strategy",
-                    "namespaces": ["custom/{actorId}"],
+                    "namespaces": ["custom/{actorId}/"],
                     "configuration": {
                         "semanticOverride": {
                             "extraction": {"appendToPrompt": "Requested prompt", "modelId": "claude-3-sonnet"},
@@ -1373,13 +1373,13 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test semantic strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             },
             {
                 "type": "SUMMARIZATION",
                 "name": "SummaryStrategy",
                 "description": "Test summary strategy",
-                "namespaces": ["summary/{actorId}"],
+                "namespaces": ["summary/{actorId}/"],
             },
         ]
 
@@ -1388,14 +1388,14 @@ class TestValidateExistingMemoryStrategies:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test semantic strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             },
             {
                 "summaryMemoryStrategy": {
                     "name": "SummaryStrategy",
                     "description": "Test summary strategy",
-                    "namespaces": ["summary/{actorId}"],
+                    "namespaces": ["summary/{actorId}/"],
                 }
             },
         ]
@@ -1410,13 +1410,13 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SUMMARIZATION",
                 "name": "SummaryStrategy",
                 "description": "Test summary strategy",
-                "namespaces": ["summary/{actorId}"],
+                "namespaces": ["summary/{actorId}/"],
             },
             {
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test semantic strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             },
         ]
 
@@ -1425,14 +1425,14 @@ class TestValidateExistingMemoryStrategies:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test semantic strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             },
             {
                 "summaryMemoryStrategy": {
                     "name": "SummaryStrategy",
                     "description": "Test summary strategy",
-                    "namespaces": ["summary/{actorId}"],
+                    "namespaces": ["summary/{actorId}/"],
                 }
             },
         ]
@@ -1447,7 +1447,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1456,7 +1456,7 @@ class TestValidateExistingMemoryStrategies:
                 "semanticMemoryStrategy": {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1509,7 +1509,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "USER_PREFERENCE",
                 "name": "UserPrefStrategy",
                 "description": "Test user preference strategy",
-                "namespaces": ["preferences/{actorId}"],
+                "namespaces": ["preferences/{actorId}/"],
             }
         ]
 
@@ -1518,7 +1518,7 @@ class TestValidateExistingMemoryStrategies:
                 "userPreferenceMemoryStrategy": {
                     "name": "UserPrefStrategy",
                     "description": "Test user preference strategy",
-                    "namespaces": ["preferences/{actorId}"],
+                    "namespaces": ["preferences/{actorId}/"],
                 }
             }
         ]
@@ -1533,7 +1533,7 @@ class TestValidateExistingMemoryStrategies:
                 "type": "SEMANTIC",
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         ]
 
@@ -1542,7 +1542,7 @@ class TestValidateExistingMemoryStrategies:
                 StrategyType.SEMANTIC.value: {
                     "name": "SemanticStrategy",
                     "description": "Test strategy",
-                    "namespaces": ["semantic/{actorId}"],
+                    "namespaces": ["semantic/{actorId}/"],
                 }
             }
         ]
@@ -1569,7 +1569,7 @@ class TestValidateExistingMemoryStrategies:
             "type": "CUSTOM",
             "name": "CustomStrategy",
             "description": "Test custom strategy",
-            "namespaces": ["custom/{actorId}"],
+            "namespaces": ["custom/{actorId}/"],
             # No configuration field
         }
 
@@ -1662,7 +1662,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             "new_future_field": "existing_value",  # Simulated future field
         }
 
@@ -1670,7 +1670,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             "new_future_field": "existing_value",  # Same value
         }
 
@@ -1685,7 +1685,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             "new_future_field": "existing_value",
         }
 
@@ -1693,7 +1693,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             "new_future_field": "different_value",  # Different value
         }
 
@@ -1710,7 +1710,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             "new_future_field": "existing_value",
         }
 
@@ -1718,7 +1718,7 @@ class TestFutureProofValidation:
             "type": "SEMANTIC",
             "name": "SemanticStrategy",
             "description": "Test strategy",
-            "namespaces": ["semantic/{actorId}"],
+            "namespaces": ["semantic/{actorId}/"],
             # Missing new_future_field
         }
 
@@ -1788,7 +1788,7 @@ class TestFutureProofNormalization:
             "newTypeMemoryStrategy": {
                 "name": "NewTypeStrategy",
                 "description": "Test new type strategy",
-                "namespaces": ["newtype/{actorId}"],
+                "namespaces": ["newtype/{actorId}/"],
             }
         }
 
@@ -1797,7 +1797,7 @@ class TestFutureProofNormalization:
         assert normalized["type"] == "NEW_TYPE"
         assert normalized["name"] == "NewTypeStrategy"
         assert normalized["description"] == "Test new type strategy"
-        assert normalized["namespaces"] == ["newtype/{actorId}"]
+        assert normalized["namespaces"] == ["newtype/{actorId}/"]
 
     def test_normalize_custom_with_new_fields(self):
         """Test normalization of custom strategy with new camelCase fields."""
@@ -1805,7 +1805,7 @@ class TestFutureProofNormalization:
             "customMemoryStrategy": {
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 "newFutureField": "future_value",  # Future field at strategy level
                 "configuration": {
                     "semanticOverride": {
@@ -1836,7 +1836,7 @@ class TestFutureProofNormalization:
             StrategyType.SEMANTIC.value: {
                 "name": "SemanticStrategy",
                 "description": "Test semantic strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
             }
         }
 
@@ -1845,7 +1845,7 @@ class TestFutureProofNormalization:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "SemanticStrategy"
         assert normalized["description"] == "Test semantic strategy"
-        assert normalized["namespaces"] == ["semantic/{actorId}"]
+        assert normalized["namespaces"] == ["semantic/{actorId}/"]
 
     def test_normalize_invalid_format_still_fails(self):
         """Test that invalid strategy formats still raise errors."""
@@ -1860,7 +1860,7 @@ class TestFutureProofNormalization:
             "customMemoryStrategy": {
                 "name": "CustomStrategy",
                 "description": "Test custom strategy",
-                "namespaces": ["custom/{actorId}"],
+                "namespaces": ["custom/{actorId}/"],
                 # No configuration section
             }
         }
@@ -1878,7 +1878,7 @@ class TestFutureProofNormalization:
             "semanticMemoryStrategy": {
                 "name": "SemanticStrategy",
                 "description": "Test strategy",
-                "namespaces": ["semantic/{actorId}"],
+                "namespaces": ["semantic/{actorId}/"],
                 "newFutureField": "future_value",  # Future field
                 "anotherNewField": {"nested": "data"},
             }
@@ -1889,7 +1889,7 @@ class TestFutureProofNormalization:
         assert normalized["type"] == "SEMANTIC"
         assert normalized["name"] == "SemanticStrategy"
         assert normalized["description"] == "Test strategy"
-        assert normalized["namespaces"] == ["semantic/{actorId}"]
+        assert normalized["namespaces"] == ["semantic/{actorId}/"]
         # Future fields should be preserved with normalized names
         assert normalized["new_future_field"] == "future_value"
         assert normalized["another_new_field"] == {"nested": "data"}
