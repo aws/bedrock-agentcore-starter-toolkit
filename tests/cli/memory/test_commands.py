@@ -285,7 +285,7 @@ class TestShowRecordsCommand:
         mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
         mock_manager_class.return_value = MagicMock()
 
-        result = runner.invoke(show_app, ["records", "--all", "--namespace", "/test"])
+        result = runner.invoke(show_app, ["records", "--all", "--namespace", "/test/"])
 
         assert result.exit_code == 1
         assert "Use --namespace without --all" in result.output
@@ -329,7 +329,7 @@ class TestShowRecordsCommand:
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
 
-        result = runner.invoke(show_app, ["records", "--namespace", "/test", "--query", "search term"])
+        result = runner.invoke(show_app, ["records", "--namespace", "/test/", "--query", "search term"])
 
         assert result.exit_code == 0
         mock_manager.search_records.assert_called_once()
@@ -527,7 +527,7 @@ class TestShowRecordsEdgeCases:
         mock_manager_class.return_value = mock_manager
         mock_manager.search_records.return_value = []
 
-        result = runner.invoke(show_app, ["records", "--namespace", "/test", "--query", "nonexistent"])
+        result = runner.invoke(show_app, ["records", "--namespace", "/test/", "--query", "nonexistent"])
 
         assert result.exit_code == 0
         assert "No matching records" in result.output
@@ -588,17 +588,17 @@ class TestCollectAllRecords:
         manager = MagicMock()
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
 
-        records = _collect_all_records(manager, "mem-123", "/test", 10)
+        records = _collect_all_records(manager, "mem-123", "/test/", 10)
 
         assert len(records) == 1
-        assert records[0]["_namespace"] == "/test"
+        assert records[0]["_namespace"] == "/test/"
 
     def test_collect_records_all_namespaces(self):
         """Test collecting records from all namespaces."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_all_records
 
         manager = MagicMock()
-        manager.get_memory.return_value = {"strategies": [{"name": "Facts", "namespaces": ["/facts"]}]}
+        manager.get_memory.return_value = {"strategies": [{"name": "Facts", "namespaces": ["/facts/"]}]}
         manager.list_records.return_value = [{"memoryRecordId": "r1"}]
         manager.list_actors.return_value = []
 
@@ -618,7 +618,7 @@ class TestCollectRecordsFromNamespaceTemplate:
         manager.list_records.return_value = [{"memoryRecordId": "r1"}]
         all_records = []
 
-        _collect_records_from_namespace_template(manager, "mem-123", "/facts", 10, all_records)
+        _collect_records_from_namespace_template(manager, "mem-123", "/facts/", 10, all_records)
 
         assert len(all_records) == 1
 
@@ -631,7 +631,7 @@ class TestCollectRecordsFromNamespaceTemplate:
         manager.list_records.return_value = [{"memoryRecordId": "r1"}]
         all_records = []
 
-        _collect_records_from_namespace_template(manager, "mem-123", "/users/{actorId}/facts", 10, all_records)
+        _collect_records_from_namespace_template(manager, "mem-123", "/users/{actorId}/facts/", 10, all_records)
 
         assert len(all_records) == 1
 
@@ -646,7 +646,7 @@ class TestCollectRecordsFromNamespaceTemplate:
         all_records = []
 
         _collect_records_from_namespace_template(
-            manager, "mem-123", "/users/{actorId}/sessions/{sessionId}", 10, all_records
+            manager, "mem-123", "/users/{actorId}/sessions/{sessionId}/", 10, all_records
         )
 
         assert len(all_records) == 1
@@ -659,7 +659,7 @@ class TestCollectRecordsFromNamespaceTemplate:
         manager.list_actors.side_effect = Exception("API error")
         all_records = []
 
-        _collect_records_from_namespace_template(manager, "mem-123", "/users/{actorId}/facts", 10, all_records)
+        _collect_records_from_namespace_template(manager, "mem-123", "/users/{actorId}/facts/", 10, all_records)
 
         assert len(all_records) == 0
 
@@ -675,10 +675,10 @@ class TestTryCollectRecords:
         manager.list_records.return_value = [{"memoryRecordId": "r1"}]
         all_records = []
 
-        _try_collect_records(manager, "mem-123", "/test", 10, all_records)
+        _try_collect_records(manager, "mem-123", "/test/", 10, all_records)
 
         assert len(all_records) == 1
-        assert all_records[0]["_namespace"] == "/test"
+        assert all_records[0]["_namespace"] == "/test/"
 
     def test_error_handling(self):
         """Test error handling in record collection."""
@@ -688,7 +688,7 @@ class TestTryCollectRecords:
         manager.list_records.side_effect = Exception("API error")
         all_records = []
 
-        _try_collect_records(manager, "mem-123", "/test", 10, all_records)
+        _try_collect_records(manager, "mem-123", "/test/", 10, all_records)
 
         assert len(all_records) == 0
 

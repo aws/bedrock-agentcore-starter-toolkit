@@ -153,21 +153,21 @@ export class AgentCoreStack extends cdk.Stack {
                 {
                     userPreferenceMemoryStrategy: {
                         name: "UserPreferences",
-                        namespaces: ["/users/{actorId}/preferences"],
+                        namespaces: ["/users/{actorId}/preferences/"],
                         description: "Instance of built-in user preference memory strategy"
                     }
                 },
                 {
                     semanticMemoryStrategy: {
                         name: "SemanticFacts",
-                        namespaces: ["/users/{actorId}/facts"],
+                        namespaces: ["/users/{actorId}/facts/"],
                         description: "Instance of built-in semantic memory strategy"
                     }
                 },
                 {
                     summaryMemoryStrategy: {
                         name: "SessionSummaries",
-                        namespaces: ["/summaries/{actorId}/{sessionId}"],
+                        namespaces: ["/summaries/{actorId}/{sessionId}/"],
                         description: "Instance of built-in summary memory strategy"
                     }
                 }

@@ -303,7 +303,7 @@ class BaseBedrockTranslator:
                     {
                         "summaryMemoryStrategy": {
                             "name": "SessionSummarizer",
-                            "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                            "namespaces": ["/summaries/{actorId}/{sessionId}/"],
                         }
                     }
                 ],

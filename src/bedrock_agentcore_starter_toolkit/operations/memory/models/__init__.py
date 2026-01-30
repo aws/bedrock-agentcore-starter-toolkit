@@ -17,7 +17,7 @@ Example:
     semantic_strategy = SemanticStrategy(
         name="ConversationSemantics",
         description="Extract semantic information",
-        namespaces=["semantics/{actorId}/{sessionId}"]
+        namespaces=["semantics/{actorId}/{sessionId}/"]
     )
 
     custom_strategy = CustomSemanticStrategy(

@@ -413,19 +413,19 @@ def _ensure_memory_for_agent(
                         {
                             StrategyType.USER_PREFERENCE.value: {
                                 "name": "UserPreferences",
-                                "namespaces": ["/users/{actorId}/preferences"],
+                                "namespaces": ["/users/{actorId}/preferences/"],
                             }
                         },
                         {
                             StrategyType.SEMANTIC.value: {
                                 "name": "SemanticFacts",
-                                "namespaces": ["/users/{actorId}/facts"],
+                                "namespaces": ["/users/{actorId}/facts/"],
                             }
                         },
                         {
                             StrategyType.SUMMARY.value: {
                                 "name": "SessionSummaries",
-                                "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                                "namespaces": ["/summaries/{actorId}/{sessionId}/"],
                             }
                         },
                     ],
@@ -457,19 +457,19 @@ def _ensure_memory_for_agent(
                     {
                         StrategyType.USER_PREFERENCE.value: {
                             "name": "UserPreferences",
-                            "namespaces": ["/users/{actorId}/preferences"],
+                            "namespaces": ["/users/{actorId}/preferences/"],
                         }
                     },
                     {
                         StrategyType.SEMANTIC.value: {
                             "name": "SemanticFacts",
-                            "namespaces": ["/users/{actorId}/facts"],
+                            "namespaces": ["/users/{actorId}/facts/"],
                         }
                     },
                     {
                         StrategyType.SUMMARY.value: {
                             "name": "SessionSummaries",
-                            "namespaces": ["/summaries/{actorId}/{sessionId}"],
+                            "namespaces": ["/summaries/{actorId}/{sessionId}/"],
                         }
                     },
                 ]
