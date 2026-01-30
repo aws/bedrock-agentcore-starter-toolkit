@@ -61,11 +61,11 @@ class TestFormatNamespaces:
         assert format_namespaces([]) == "[dim]None[/dim]"
 
     def test_format_namespaces_single(self):
-        assert format_namespaces(["/users/{actorId}"]) == "/users/{actorId}"
+        assert format_namespaces(["/users/{actorId}/"]) == "/users/{actorId}/"
 
     def test_format_namespaces_multiple(self):
-        result = format_namespaces(["/a", "/b"])
-        assert result == "/a, /b"
+        result = format_namespaces(["/a/", "/b/"])
+        assert result == "/a/, /b/"
 
 
 class TestFormatMemoryAge:

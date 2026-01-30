@@ -15,7 +15,7 @@ class UserPreferenceStrategy(BaseStrategy):
         strategy = UserPreferenceStrategy(
             name="UserPreferences",
             description="Store user preferences and settings",
-            namespaces=["preferences/{actorId}"]
+            namespaces=["preferences/{actorId}/"]
         )
     """
 

@@ -92,7 +92,7 @@ In AgentCore Memory, the utility implements a similar memory model using a summa
 {
     "summaryMemoryStrategy": {
         "name": "SessionSummarizer",
-        "namespaces": ["/summaries/{actorId}/{sessionId}"],
+        "namespaces": ["/summaries/{actorId}/{sessionId}/"],
     }
 }
 ```

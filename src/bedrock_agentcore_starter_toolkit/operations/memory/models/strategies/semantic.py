@@ -16,7 +16,7 @@ class SemanticStrategy(BaseStrategy):
         strategy = SemanticStrategy(
             name="ConversationSemantics",
             description="Extract semantic information from conversations",
-            namespaces=["semantics/{actorId}/{sessionId}"]
+            namespaces=["semantics/{actorId}/{sessionId}/"]
         )
     """
 

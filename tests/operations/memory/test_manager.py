@@ -544,7 +544,7 @@ def test_add_user_preference_strategy():
                 memory_id="mem-456",
                 name="Test User Preference Strategy",
                 description="User preference test description",
-                namespaces=["preferences/{actorId}"],
+                namespaces=["preferences/{actorId}/"],
             )
 
             assert mock_control_plane_client.update_memory.called
@@ -564,7 +564,7 @@ def test_add_user_preference_strategy():
             user_pref_config = strategy["userPreferenceMemoryStrategy"]
             assert user_pref_config["name"] == "Test User Preference Strategy"
             assert user_pref_config["description"] == "User preference test description"
-            assert user_pref_config["namespaces"] == ["preferences/{actorId}"]
+            assert user_pref_config["namespaces"] == ["preferences/{actorId}/"]
 
             # Verify client token and memory ID
             assert kwargs["memoryId"] == "mem-456"
@@ -600,7 +600,7 @@ def test_add_custom_semantic_strategy():
                 extraction_config=extraction_config,
                 consolidation_config=consolidation_config,
                 description="Custom semantic strategy test description",
-                namespaces=["custom/{actorId}/{sessionId}"],
+                namespaces=["custom/{actorId}/{sessionId}/"],
             )
 
             assert mock_control_plane_client.update_memory.called
@@ -620,7 +620,7 @@ def test_add_custom_semantic_strategy():
             custom_config = strategy["customMemoryStrategy"]
             assert custom_config["name"] == "Test Custom Semantic Strategy"
             assert custom_config["description"] == "Custom semantic strategy test description"
-            assert custom_config["namespaces"] == ["custom/{actorId}/{sessionId}"]
+            assert custom_config["namespaces"] == ["custom/{actorId}/{sessionId}/"]
 
             # Verify the semantic override configuration
             assert "configuration" in custom_config
@@ -966,7 +966,7 @@ def test_modify_strategy():
                 memory_id="mem-123",
                 strategy_id="strat-789",
                 description="Modified description",
-                namespaces=["custom/namespace"],
+                namespaces=["custom/namespace/"],
             )
 
             assert mock_control_plane_client.update_memory.called
@@ -981,7 +981,7 @@ def test_modify_strategy():
             modified_strategy = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
             assert modified_strategy["strategyId"] == "strat-789"
             assert modified_strategy["description"] == "Modified description"
-            assert modified_strategy["namespaces"] == ["custom/namespace"]
+            assert modified_strategy["namespaces"] == ["custom/namespace/"]
 
 
 def test_add_semantic_strategy_and_wait():
@@ -1435,14 +1435,14 @@ def test_validate_namespace():
         manager = MemoryManager(region_name="us-east-1")
 
         # Test valid namespaces
-        assert manager._validate_namespace("custom/{actorId}/{sessionId}")
-        assert manager._validate_namespace("preferences/{actorId}")
-        assert manager._validate_namespace("strategy/{strategyId}")
-        assert manager._validate_namespace("simple/namespace")
+        assert manager._validate_namespace("custom/{actorId}/{sessionId}/")
+        assert manager._validate_namespace("preferences/{actorId}/")
+        assert manager._validate_namespace("strategy/{strategyId}/")
+        assert manager._validate_namespace("simple/namespace/")
 
         # Test namespace with invalid template variables (should log warning)
         with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger:
-            assert manager._validate_namespace("invalid/{unknownVar}")
+            assert manager._validate_namespace("invalid/{unknownVar}/")
             mock_logger.warning.assert_called_once()
 
 
@@ -1456,7 +1456,7 @@ def test_validate_strategy_config():
             strategy = {
                 "semanticMemoryStrategy": {
                     "name": "Test Strategy",
-                    "namespaces": ["custom/{actorId}", "preferences/{sessionId}"],
+                    "namespaces": ["custom/{actorId}/", "preferences/{sessionId}/"],
                 }
             }
 
@@ -1464,8 +1464,8 @@ def test_validate_strategy_config():
 
             # Should validate each namespace
             assert mock_validate.call_count == 2
-            mock_validate.assert_any_call("custom/{actorId}")
-            mock_validate.assert_any_call("preferences/{sessionId}")
+            mock_validate.assert_any_call("custom/{actorId}/")
+            mock_validate.assert_any_call("preferences/{sessionId}/")
 
 
 def test_check_strategies_terminal_state():
@@ -2062,10 +2062,10 @@ def test_validate_namespace_with_invalid_template():
 
         # Test namespace with invalid template variables (should log warning)
         with patch("bedrock_agentcore_starter_toolkit.operations.memory.manager.logger") as mock_logger:
-            result = manager._validate_namespace("invalid/{unknownVar}")
+            result = manager._validate_namespace("invalid/{unknownVar}/")
             assert result
             mock_logger.warning.assert_called_once_with(
-                "Namespace with templates should contain valid variables: %s", "invalid/{unknownVar}"
+                "Namespace with templates should contain valid variables: %s", "invalid/{unknownVar}/"
             )
 
 
@@ -2079,7 +2079,7 @@ def test_validate_strategy_config_with_namespaces():
             strategy = {
                 "semanticMemoryStrategy": {
                     "name": "Test Strategy",
-                    "namespaces": ["custom/{actorId}", "preferences/{sessionId}"],
+                    "namespaces": ["custom/{actorId}/", "preferences/{sessionId}/"],
                 }
             }
 
@@ -2087,8 +2087,8 @@ def test_validate_strategy_config_with_namespaces():
 
             # Should validate each namespace
             assert mock_validate.call_count == 2
-            mock_validate.assert_any_call("custom/{actorId}")
-            mock_validate.assert_any_call("preferences/{sessionId}")
+            mock_validate.assert_any_call("custom/{actorId}/")
+            mock_validate.assert_any_call("preferences/{sessionId}/")
 
 
 def test_wrap_configuration_consolidation_passthrough():
@@ -2213,7 +2213,7 @@ def test_add_semantic_strategy_with_namespaces():
                 memory_id="mem-123",
                 name="Test Semantic Strategy",
                 description="Test description",
-                namespaces=["custom/{actorId}/{sessionId}"],
+                namespaces=["custom/{actorId}/{sessionId}/"],
             )
 
             assert mock_control_plane_client.update_memory.called
@@ -2222,7 +2222,7 @@ def test_add_semantic_strategy_with_namespaces():
             args, kwargs = mock_control_plane_client.update_memory.call_args
             add_strategies = kwargs["memoryStrategies"]["addMemoryStrategies"]
             strategy = add_strategies[0]["semanticMemoryStrategy"]
-            assert strategy["namespaces"] == ["custom/{actorId}/{sessionId}"]
+            assert strategy["namespaces"] == ["custom/{actorId}/{sessionId}/"]
 
 
 def test_add_summary_strategy_with_namespaces():
@@ -2246,7 +2246,7 @@ def test_add_summary_strategy_with_namespaces():
                 memory_id="mem-456",
                 name="Test Summary Strategy",
                 description="Test description",
-                namespaces=["summaries/{actorId}"],
+                namespaces=["summaries/{actorId}/"],
             )
 
             assert mock_control_plane_client.update_memory.called
@@ -2255,7 +2255,7 @@ def test_add_summary_strategy_with_namespaces():
             args, kwargs = mock_control_plane_client.update_memory.call_args
             add_strategies = kwargs["memoryStrategies"]["addMemoryStrategies"]
             strategy = add_strategies[0]["summaryMemoryStrategy"]
-            assert strategy["namespaces"] == ["summaries/{actorId}"]
+            assert strategy["namespaces"] == ["summaries/{actorId}/"]
 
 
 def test_delete_memory_and_wait_debug_logging():
@@ -2318,7 +2318,7 @@ def test_modify_strategy_with_configuration():
                 memory_id="mem-123",
                 strategy_id="strat-789",
                 description="Modified description",
-                namespaces=["custom/namespace"],
+                namespaces=["custom/namespace/"],
                 configuration=configuration,
             )
 
@@ -3161,12 +3161,12 @@ def test_list_records():
             "nextToken": None,
         }
 
-        result = manager.list_records("mem-123", "/users/alice/facts")
+        result = manager.list_records("mem-123", "/users/alice/facts/")
 
         assert len(result) == 2
         assert result[0]["recordId"] == "rec-1"
         mock_data_plane_client.list_memory_records.assert_called_once_with(
-            memoryId="mem-123", namespace="/users/alice/facts"
+            memoryId="mem-123", namespace="/users/alice/facts/"
         )
 
 
@@ -3203,13 +3203,13 @@ def test_search_records():
             ]
         }
 
-        result = manager.search_records("mem-123", "/users/alice/facts", "favorite color", max_results=5)
+        result = manager.search_records("mem-123", "/users/alice/facts/", "favorite color", max_results=5)
 
         assert len(result) == 2
         assert result[0]["score"] == 0.95
         mock_data_plane_client.retrieve_memory_records.assert_called_once_with(
             memoryId="mem-123",
-            namespace="/users/alice/facts",
+            namespace="/users/alice/facts/",
             searchCriteria={"searchQuery": "favorite color"},
             maxResults=5,
         )
