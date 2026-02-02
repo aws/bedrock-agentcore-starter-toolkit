@@ -708,10 +708,10 @@
                       session_id=session_id,
                       actor_id=user_id,
                       retrieval_config={
-                          "/facts/{actorId}/": RetrievalConfig(top_k=10, relevance_score=0.4),
-                          "/preferences/{actorId}/": RetrievalConfig(top_k=5, relevance_score=0.5),
-                          "/summaries/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
-                          "/episodes/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          f"/facts/{user_id}/": RetrievalConfig(top_k=10, relevance_score=0.4),
+                          f"/preferences/{user_id}/": RetrievalConfig(top_k=5, relevance_score=0.5),
+                          f"/summaries/{user_id}/{session_id}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          f"/episodes/{user_id}/{session_id}/": RetrievalConfig(top_k=5, relevance_score=0.4),
                       }
                   ),
                   REGION
@@ -1737,10 +1737,10 @@
                       session_id=session_id,
                       actor_id=user_id,
                       retrieval_config={
-                          "/facts/{actorId}/": RetrievalConfig(top_k=10, relevance_score=0.4),
-                          "/preferences/{actorId}/": RetrievalConfig(top_k=5, relevance_score=0.5),
-                          "/summaries/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
-                          "/episodes/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          f"/facts/{user_id}/": RetrievalConfig(top_k=10, relevance_score=0.4),
+                          f"/preferences/{user_id}/": RetrievalConfig(top_k=5, relevance_score=0.5),
+                          f"/summaries/{user_id}/{session_id}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          f"/episodes/{user_id}/{session_id}/": RetrievalConfig(top_k=5, relevance_score=0.4),
                       }
                   ),
                   REGION
