@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.9] - 2026-02-02
+
+### Changes
+
+- Fix/cdk template memory and permissions (#444) (ca6b95c)
+- fix: escape special characters in Slack notification payload (#441) (782b7d2)
+- fix(configure): infer language from entrypoint extension before packa… (#439) (057a17e)
+- feat: add Slack notification workflow for new issues (#437) (1be8f12)
+- chore: bump version to 0.2.8 (#435) (f727b3d)
+
 ## [0.2.8] - 2026-01-23
 
 ### Changes
