@@ -1,5 +1,5 @@
 """BedrockAgentCore Starter Toolkit."""
 
-from .notebook import Evaluation, Observability, Runtime
+from .notebook import Evaluation, Memory, Observability, Runtime
 
-__all__ = ["Runtime", "Observability", "Evaluation"]
+__all__ = ["Runtime", "Observability", "Evaluation", "Memory"]
