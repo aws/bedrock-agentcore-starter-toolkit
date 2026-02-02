@@ -101,4 +101,4 @@ class Feature(ABC):
             rendered_content = template.render(context.dict())
             # Only write the file if it has content (skip empty files)
             if rendered_content.strip():
-                dest.write_text(rendered_content)
+                dest.write_text(rendered_content, encoding="utf-8")
