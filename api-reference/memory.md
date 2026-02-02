@@ -103,12 +103,17 @@ class MemoryClient:
         "list_memory_strategies",
     }
 
-    def __init__(self, region_name: Optional[str] = None):
+    def __init__(self, region_name: Optional[str] = None, integration_source: Optional[str] = None):
         """Initialize the Memory client."""
         self.region_name = region_name or boto3.Session().region_name or "us-west-2"
+        self.integration_source = integration_source
 
-        self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name)
-        self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name)
+        # Build config with user-agent for telemetry
+        user_agent_extra = build_user_agent_suffix(integration_source)
+        client_config = Config(user_agent_extra=user_agent_extra)
+
+        self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name, config=client_config)
+        self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
 
         logger.info(
             "Initialized MemoryClient for control plane: %s, data plane: %s",
@@ -138,7 +143,7 @@ class MemoryClient:
             client = MemoryClient()
 
             # These calls are forwarded to the appropriate boto3 client
-            response = client.list_memory_records(memoryId="mem-123", namespace="test")
+            response = client.list_memory_records(memoryId="mem-123", namespace="test/")
             metadata = client.get_memory_metadata(memoryId="mem-123")
         """
         if name in self._ALLOWED_GMDP_METHODS and hasattr(self.gmdp_client, name):
@@ -330,12 +335,12 @@ class MemoryClient:
             # Correct - exact namespace
             memories = client.retrieve_memories(
                 memory_id="mem-123",
-                namespace="support/facts/session-456",
+                namespace="support/facts/session-456/",
                 query="customer preferences"
             )
 
             # Incorrect - wildcards not supported
-            # memories = client.retrieve_memories(..., namespace="support/facts/*", ...)
+            # memories = client.retrieve_memories(..., namespace="support/facts/*/", ...)
         """
         if "*" in namespace:
             logger.error("Wildcards are not supported in namespaces. Please provide exact namespace.")
@@ -378,6 +383,7 @@ class MemoryClient:
         messages: List[Tuple[str, str]],
         event_timestamp: Optional[datetime] = None,
         branch: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
     ) -> Dict[str, Any]:
         """Save an event of an agent interaction or conversation with a user.
 
@@ -394,6 +400,9 @@ class MemoryClient:
             branch: Optional branch info. For new branches: {"rootEventId": "...", "name": "..."}
                    For continuing existing branch: {"name": "..."} or {"name": "...", "rootEventId": "..."}
                    A branch is used when you want to have a different history of events.
+            metadata: Optional custom key-value metadata to attach to the event.
+                     Maximum 15 key-value pairs. Keys must be 1-128 characters.
+                     Example: {"location": {"stringValue": "NYC"}}
 
         Returns:
             Created event
@@ -473,6 +482,9 @@ class MemoryClient:
             if branch:
                 params["branch"] = branch
 
+            if metadata:
+                params["metadata"] = metadata
+
             response = self.gmdp_client.create_event(**params)
 
             event = response["event"]
@@ -492,6 +504,7 @@ class MemoryClient:
         blob_data: Any,
         event_timestamp: Optional[datetime] = None,
         branch: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
     ) -> Dict[str, Any]:
         """Save a blob event to AgentCore Memory.
 
@@ -502,17 +515,20 @@ class MemoryClient:
             blob_data: Binary or structured data to store
             event_timestamp: Optional timestamp for the event
             branch: Optional branch info
+            metadata: Optional custom key-value metadata to attach to the event.
+                     Maximum 15 key-value pairs. Keys must be 1-128 characters.
+                     Example: {"location": {"stringValue": "NYC"}}
 
         Returns:
             Created event
 
         Example:
-            # Store binary data
             event = client.create_blob_event(
                 memory_id="mem-xyz",
                 actor_id="user-123",
                 session_id="session-456",
-                blob_data={"file_content": "base64_encoded_data", "metadata": {"type": "image"}}
+                blob_data={"file_content": "base64_encoded_data"},
+                metadata={"type": {"stringValue": "image"}}
             )
         """
         try:
@@ -531,6 +547,9 @@ class MemoryClient:
 
             if branch:
                 params["branch"] = branch
+
+            if metadata:
+                params["metadata"] = metadata
 
             response = self.gmdp_client.create_event(**params)
 
@@ -764,7 +783,7 @@ class MemoryClient:
                 session_id="session-456",
                 user_input="What did we discuss yesterday?",
                 llm_callback=my_llm,
-                retrieval_namespace="support/facts/{sessionId}"
+                retrieval_namespace="support/facts/{sessionId}/"
             )
         """
         # Step 1: Retrieve relevant memories
@@ -805,6 +824,7 @@ class MemoryClient:
         session_id: str,
         branch_name: Optional[str] = None,
         include_parent_branches: bool = False,
+        event_metadata: Optional[List[EventMetadataFilter]] = None,
         max_results: int = 100,
         include_payload: bool = True,
     ) -> List[Dict[str, Any]]:
@@ -819,6 +839,9 @@ class MemoryClient:
             session_id: Session identifier
             branch_name: Optional branch name to filter events (None for all branches)
             include_parent_branches: Whether to include parent branch events (only applies with branch_name)
+            event_metadata: Optional list of event metadata filters to apply.
+                           Example: [{"left": {"metadataKey": "location"}, "operator": "EQUALS_TO",
+                                      "right": {"metadataValue": {"stringValue": "NYC"}}}]
             max_results: Maximum number of events to return
             include_payload: Whether to include event payloads in response
 
@@ -829,11 +852,15 @@ class MemoryClient:
             # Get all events
             events = client.list_events(memory_id, actor_id, session_id)
 
-            # Get only main branch events
-            main_events = client.list_events(memory_id, actor_id, session_id, branch_name="main")
-
-            # Get events from a specific branch
-            branch_events = client.list_events(memory_id, actor_id, session_id, branch_name="test-branch")
+            # Get events filtered by metadata
+            events = client.list_events(
+                memory_id, actor_id, session_id,
+                event_metadata=[{
+                    "left": {"metadataKey": "location"},
+                    "operator": "EQUALS_TO",
+                    "right": {"metadataValue": {"stringValue": "NYC"}}
+                }]
+            )
         """
         try:
             all_events = []
@@ -851,11 +878,19 @@ class MemoryClient:
                 if next_token:
                     params["nextToken"] = next_token
 
+                # Build filter map
+                filter_map = {}
+
                 # Add branch filter if specified (but not for "main")
                 if branch_name and branch_name != "main":
-                    params["filter"] = {
-                        "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
-                    }
+                    filter_map["branch"] = {"name": branch_name, "includeParentBranches": include_parent_branches}
+
+                # Add event metadata filter if specified
+                if event_metadata:
+                    filter_map["eventMetadata"] = event_metadata
+
+                if filter_map:
+                    params["filter"] = filter_map
 
                 response = self.gmdp_client.list_events(**params)
 
@@ -1130,55 +1165,75 @@ class MemoryClient:
         k: int = 5,
         branch_name: Optional[str] = None,
         include_branches: bool = False,
-        max_results: int = 100,
+        max_results: Optional[int] = None,
     ) -> List[List[Dict[str, Any]]]:
         """Get the last K conversation turns.
 
         A "turn" typically consists of a user message followed by assistant response(s).
         This method groups messages into logical turns for easier processing.
 
+        If max_results is specified, fetches up to that many events and finds turns within them
+        (backward compatible behavior).
+        If max_results is None, automatically paginates until k turns are found.
+
         Returns:
             List of turns, where each turn is a list of message dictionaries
         """
+        base_params = {
+            "memoryId": memory_id,
+            "actorId": actor_id,
+            "sessionId": session_id,
+        }
+
+        if branch_name and branch_name != "main":
+            base_params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_branches}}
+
         try:
-            # Use the new list_events method
-            events = self.list_events(
-                memory_id=memory_id,
-                actor_id=actor_id,
-                session_id=session_id,
-                branch_name=branch_name,
-                include_parent_branches=False,
-                max_results=max_results,
-            )
+            turns: List[List[Dict[str, Any]]] = []
+            current_turn: List[Dict[str, Any]] = []
+            next_token = None
+            total_fetched = 0
 
-            if not events:
-                return []
+            while len(turns) < k:
+                if max_results is not None:
+                    remaining = max_results - total_fetched
+                    if remaining <= 0:
+                        break
+                    batch_size = min(100, remaining)
+                else:
+                    batch_size = 100
 
-            # Process events to group into turns
-            turns = []
-            current_turn = []
+                params = {**base_params, "maxResults": batch_size, "includePayloads": True}
+                if next_token:
+                    params["nextToken"] = next_token
 
-            for event in events:
-                if len(turns) >= k:
-                    break  # Only need last K turns
-                for payload_item in event.get("payload", []):
-                    if "conversational" in payload_item:
-                        role = payload_item["conversational"].get("role")
+                response = self.gmdp_client.list_events(**params)
+                events = response.get("events", [])
 
-                        # Start new turn on USER message
-                        if role == Role.USER.value and current_turn:
-                            turns.append(current_turn)
-                            current_turn = []
+                if not events:
+                    break
 
-                        current_turn.append(payload_item["conversational"])
+                total_fetched += len(events)
 
-            # Don't forget the last turn
-            if current_turn:
+                for event in events:
+                    if len(turns) >= k:
+                        break
+                    for payload_item in event.get("payload", []):
+                        if "conversational" in payload_item:
+                            role = payload_item["conversational"].get("role")
+                            if role == Role.USER.value and current_turn:
+                                turns.append(current_turn)
+                                current_turn = []
+                            current_turn.append(payload_item["conversational"])
+
+                next_token = response.get("nextToken")
+                if not next_token:
+                    break
+
+            if current_turn and len(turns) < k:
                 turns.append(current_turn)
 
-            # Return the last k turns
-            return turns[:k] if len(turns) > k else turns
-
+            return turns[:k]
         except ClientError as e:
             logger.error("Failed to get last K turns: %s", e)
             raise
@@ -1192,6 +1247,7 @@ class MemoryClient:
         branch_name: str,
         new_messages: List[Tuple[str, str]],
         event_timestamp: Optional[datetime] = None,
+        metadata: Optional[Dict[str, MetadataValue]] = None,
     ) -> Dict[str, Any]:
         """Fork a conversation from a specific event to create a new branch."""
         try:
@@ -1204,6 +1260,7 @@ class MemoryClient:
                 messages=new_messages,
                 branch=branch,
                 event_timestamp=event_timestamp,
+                metadata=metadata,
             )
 
             logger.info("Created branch '%s' from event %s", branch_name, root_event_id)
@@ -1772,8 +1829,8 @@ class MemoryClient:
            existing memories in the namespace, this method may return True immediately
            even if new extractions haven't completed.
         2. Wildcards (*) are NOT supported in namespaces. You must provide the exact
-           namespace path with all variables resolved (e.g., "support/facts/session-123"
-           not "support/facts/*").
+           namespace path with all variables resolved (e.g., "support/facts/session-123/"
+           not "support/facts/*/").
 
         For subsequent extractions in populated namespaces, use a fixed wait time:
             time.sleep(150)  # Wait 2.5 minutes for extraction
@@ -1945,7 +2002,7 @@ class MemoryClient:
 
             if "namespaces" not in strategy_config:
                 strategy_type = StrategyType(strategy_type_key)
-                strategy_config["namespaces"] = DEFAULT_NAMESPACES.get(strategy_type, ["custom/{actorId}/{sessionId}"])
+                strategy_config["namespaces"] = DEFAULT_NAMESPACES.get(strategy_type, ["custom/{actorId}/{sessionId}/"])
 
             self._validate_strategy_config(strategy_copy, strategy_type_key)
 
@@ -2073,7 +2130,7 @@ client = MemoryClient()
 
 ##### These calls are forwarded to the appropriate boto3 client
 
-response = client.list_memory_records(memoryId="mem-123", namespace="test") metadata = client.get_memory_metadata(memoryId="mem-123")
+response = client.list_memory_records(memoryId="mem-123", namespace="test/") metadata = client.get_memory_metadata(memoryId="mem-123")
 
 Source code in `bedrock_agentcore/memory/client.py`
 
@@ -2100,7 +2157,7 @@ def __getattr__(self, name: str):
         client = MemoryClient()
 
         # These calls are forwarded to the appropriate boto3 client
-        response = client.list_memory_records(memoryId="mem-123", namespace="test")
+        response = client.list_memory_records(memoryId="mem-123", namespace="test/")
         metadata = client.get_memory_metadata(memoryId="mem-123")
     """
     if name in self._ALLOWED_GMDP_METHODS and hasattr(self.gmdp_client, name):
@@ -2122,19 +2179,24 @@ def __getattr__(self, name: str):
     )
 ```
 
-#### `__init__(region_name=None)`
+#### `__init__(region_name=None, integration_source=None)`
 
 Initialize the Memory client.
 
 Source code in `bedrock_agentcore/memory/client.py`
 
 ```
-def __init__(self, region_name: Optional[str] = None):
+def __init__(self, region_name: Optional[str] = None, integration_source: Optional[str] = None):
     """Initialize the Memory client."""
     self.region_name = region_name or boto3.Session().region_name or "us-west-2"
+    self.integration_source = integration_source
 
-    self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name)
-    self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name)
+    # Build config with user-agent for telemetry
+    user_agent_extra = build_user_agent_suffix(integration_source)
+    client_config = Config(user_agent_extra=user_agent_extra)
+
+    self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name, config=client_config)
+    self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
 
     logger.info(
         "Initialized MemoryClient for control plane: %s, data plane: %s",
@@ -2632,20 +2694,21 @@ def add_user_preference_strategy_and_wait(
     return self._wait_for_memory_active(memory_id, max_wait, poll_interval)
 ```
 
-#### `create_blob_event(memory_id, actor_id, session_id, blob_data, event_timestamp=None, branch=None)`
+#### `create_blob_event(memory_id, actor_id, session_id, blob_data, event_timestamp=None, branch=None, metadata=None)`
 
 Save a blob event to AgentCore Memory.
 
 Parameters:
 
-| Name              | Type                       | Description                        | Default    |
-| ----------------- | -------------------------- | ---------------------------------- | ---------- |
-| `memory_id`       | `str`                      | Memory resource ID                 | *required* |
-| `actor_id`        | `str`                      | Actor identifier                   | *required* |
-| `session_id`      | `str`                      | Session identifier                 | *required* |
-| `blob_data`       | `Any`                      | Binary or structured data to store | *required* |
-| `event_timestamp` | `Optional[datetime]`       | Optional timestamp for the event   | `None`     |
-| `branch`          | `Optional[Dict[str, str]]` | Optional branch info               | `None`     |
+| Name              | Type                                 | Description                                                                                                                                                         | Default    |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `memory_id`       | `str`                                | Memory resource ID                                                                                                                                                  | *required* |
+| `actor_id`        | `str`                                | Actor identifier                                                                                                                                                    | *required* |
+| `session_id`      | `str`                                | Session identifier                                                                                                                                                  | *required* |
+| `blob_data`       | `Any`                                | Binary or structured data to store                                                                                                                                  | *required* |
+| `event_timestamp` | `Optional[datetime]`                 | Optional timestamp for the event                                                                                                                                    | `None`     |
+| `branch`          | `Optional[Dict[str, str]]`           | Optional branch info                                                                                                                                                | `None`     |
+| `metadata`        | `Optional[Dict[str, MetadataValue]]` | Optional custom key-value metadata to attach to the event. Maximum 15 key-value pairs. Keys must be 1-128 characters. Example: {"location": {"stringValue": "NYC"}} | `None`     |
 
 Returns:
 
@@ -2655,9 +2718,7 @@ Returns:
 
 Example
 
-##### Store binary data
-
-event = client.create_blob_event( memory_id="mem-xyz", actor_id="user-123", session_id="session-456", blob_data={"file_content": "base64_encoded_data", "metadata": {"type": "image"}} )
+event = client.create_blob_event( memory_id="mem-xyz", actor_id="user-123", session_id="session-456", blob_data={"file_content": "base64_encoded_data"}, metadata={"type": {"stringValue": "image"}} )
 
 Source code in `bedrock_agentcore/memory/client.py`
 
@@ -2670,6 +2731,7 @@ def create_blob_event(
     blob_data: Any,
     event_timestamp: Optional[datetime] = None,
     branch: Optional[Dict[str, str]] = None,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
 ) -> Dict[str, Any]:
     """Save a blob event to AgentCore Memory.
 
@@ -2680,17 +2742,20 @@ def create_blob_event(
         blob_data: Binary or structured data to store
         event_timestamp: Optional timestamp for the event
         branch: Optional branch info
+        metadata: Optional custom key-value metadata to attach to the event.
+                 Maximum 15 key-value pairs. Keys must be 1-128 characters.
+                 Example: {"location": {"stringValue": "NYC"}}
 
     Returns:
         Created event
 
     Example:
-        # Store binary data
         event = client.create_blob_event(
             memory_id="mem-xyz",
             actor_id="user-123",
             session_id="session-456",
-            blob_data={"file_content": "base64_encoded_data", "metadata": {"type": "image"}}
+            blob_data={"file_content": "base64_encoded_data"},
+            metadata={"type": {"stringValue": "image"}}
         )
     """
     try:
@@ -2710,6 +2775,9 @@ def create_blob_event(
         if branch:
             params["branch"] = branch
 
+        if metadata:
+            params["metadata"] = metadata
+
         response = self.gmdp_client.create_event(**params)
 
         event = response["event"]
@@ -2722,7 +2790,7 @@ def create_blob_event(
         raise
 ```
 
-#### `create_event(memory_id, actor_id, session_id, messages, event_timestamp=None, branch=None)`
+#### `create_event(memory_id, actor_id, session_id, messages, event_timestamp=None, branch=None, metadata=None)`
 
 Save an event of an agent interaction or conversation with a user.
 
@@ -2730,14 +2798,15 @@ This is the basis of short-term memory. If you configured your Memory resource t
 
 Parameters:
 
-| Name              | Type                       | Description                                                                                                                                                                                                                                  | Default    |
-| ----------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `memory_id`       | `str`                      | Memory resource ID                                                                                                                                                                                                                           | *required* |
-| `actor_id`        | `str`                      | Actor identifier (could be id of your user or an agent)                                                                                                                                                                                      | *required* |
-| `session_id`      | `str`                      | Session identifier (meant to logically group a series of events)                                                                                                                                                                             | *required* |
-| `messages`        | `List[Tuple[str, str]]`    | List of (text, role) tuples. Role can be USER, ASSISTANT, TOOL, etc.                                                                                                                                                                         | *required* |
-| `event_timestamp` | `Optional[datetime]`       | timestamp for the entire event (not per message)                                                                                                                                                                                             | `None`     |
-| `branch`          | `Optional[Dict[str, str]]` | Optional branch info. For new branches: {"rootEventId": "...", "name": "..."} For continuing existing branch: {"name": "..."} or {"name": "...", "rootEventId": "..."} A branch is used when you want to have a different history of events. | `None`     |
+| Name              | Type                                 | Description                                                                                                                                                                                                                                  | Default    |
+| ----------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `memory_id`       | `str`                                | Memory resource ID                                                                                                                                                                                                                           | *required* |
+| `actor_id`        | `str`                                | Actor identifier (could be id of your user or an agent)                                                                                                                                                                                      | *required* |
+| `session_id`      | `str`                                | Session identifier (meant to logically group a series of events)                                                                                                                                                                             | *required* |
+| `messages`        | `List[Tuple[str, str]]`              | List of (text, role) tuples. Role can be USER, ASSISTANT, TOOL, etc.                                                                                                                                                                         | *required* |
+| `event_timestamp` | `Optional[datetime]`                 | timestamp for the entire event (not per message)                                                                                                                                                                                             | `None`     |
+| `branch`          | `Optional[Dict[str, str]]`           | Optional branch info. For new branches: {"rootEventId": "...", "name": "..."} For continuing existing branch: {"name": "..."} or {"name": "...", "rootEventId": "..."} A branch is used when you want to have a different history of events. | `None`     |
+| `metadata`        | `Optional[Dict[str, MetadataValue]]` | Optional custom key-value metadata to attach to the event. Maximum 15 key-value pairs. Keys must be 1-128 characters. Example: {"location": {"stringValue": "NYC"}}                                                                          | `None`     |
 
 Returns:
 
@@ -2772,6 +2841,7 @@ def create_event(
     messages: List[Tuple[str, str]],
     event_timestamp: Optional[datetime] = None,
     branch: Optional[Dict[str, str]] = None,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
 ) -> Dict[str, Any]:
     """Save an event of an agent interaction or conversation with a user.
 
@@ -2788,6 +2858,9 @@ def create_event(
         branch: Optional branch info. For new branches: {"rootEventId": "...", "name": "..."}
                For continuing existing branch: {"name": "..."} or {"name": "...", "rootEventId": "..."}
                A branch is used when you want to have a different history of events.
+        metadata: Optional custom key-value metadata to attach to the event.
+                 Maximum 15 key-value pairs. Keys must be 1-128 characters.
+                 Example: {"location": {"stringValue": "NYC"}}
 
     Returns:
         Created event
@@ -2866,6 +2939,9 @@ def create_event(
 
         if branch:
             params["branch"] = branch
+
+        if metadata:
+            params["metadata"] = metadata
 
         response = self.gmdp_client.create_event(**params)
 
@@ -3189,7 +3265,7 @@ def delete_strategy(self, memory_id: str, strategy_id: str) -> Dict[str, Any]:
     return self.update_memory_strategies(memory_id=memory_id, delete_strategy_ids=[strategy_id])
 ```
 
-#### `fork_conversation(memory_id, actor_id, session_id, root_event_id, branch_name, new_messages, event_timestamp=None)`
+#### `fork_conversation(memory_id, actor_id, session_id, root_event_id, branch_name, new_messages, event_timestamp=None, metadata=None)`
 
 Fork a conversation from a specific event to create a new branch.
 
@@ -3205,6 +3281,7 @@ def fork_conversation(
     branch_name: str,
     new_messages: List[Tuple[str, str]],
     event_timestamp: Optional[datetime] = None,
+    metadata: Optional[Dict[str, MetadataValue]] = None,
 ) -> Dict[str, Any]:
     """Fork a conversation from a specific event to create a new branch."""
     try:
@@ -3217,6 +3294,7 @@ def fork_conversation(
             messages=new_messages,
             branch=branch,
             event_timestamp=event_timestamp,
+            metadata=metadata,
         )
 
         logger.info("Created branch '%s' from event %s", branch_name, root_event_id)
@@ -3315,11 +3393,13 @@ def get_conversation_tree(self, memory_id: str, actor_id: str, session_id: str) 
         raise
 ```
 
-#### `get_last_k_turns(memory_id, actor_id, session_id, k=5, branch_name=None, include_branches=False, max_results=100)`
+#### `get_last_k_turns(memory_id, actor_id, session_id, k=5, branch_name=None, include_branches=False, max_results=None)`
 
 Get the last K conversation turns.
 
 A "turn" typically consists of a user message followed by assistant response(s). This method groups messages into logical turns for easier processing.
+
+If max_results is specified, fetches up to that many events and finds turns within them (backward compatible behavior). If max_results is None, automatically paginates until k turns are found.
 
 Returns:
 
@@ -3338,55 +3418,75 @@ def get_last_k_turns(
     k: int = 5,
     branch_name: Optional[str] = None,
     include_branches: bool = False,
-    max_results: int = 100,
+    max_results: Optional[int] = None,
 ) -> List[List[Dict[str, Any]]]:
     """Get the last K conversation turns.
 
     A "turn" typically consists of a user message followed by assistant response(s).
     This method groups messages into logical turns for easier processing.
 
+    If max_results is specified, fetches up to that many events and finds turns within them
+    (backward compatible behavior).
+    If max_results is None, automatically paginates until k turns are found.
+
     Returns:
         List of turns, where each turn is a list of message dictionaries
     """
+    base_params = {
+        "memoryId": memory_id,
+        "actorId": actor_id,
+        "sessionId": session_id,
+    }
+
+    if branch_name and branch_name != "main":
+        base_params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_branches}}
+
     try:
-        # Use the new list_events method
-        events = self.list_events(
-            memory_id=memory_id,
-            actor_id=actor_id,
-            session_id=session_id,
-            branch_name=branch_name,
-            include_parent_branches=False,
-            max_results=max_results,
-        )
+        turns: List[List[Dict[str, Any]]] = []
+        current_turn: List[Dict[str, Any]] = []
+        next_token = None
+        total_fetched = 0
 
-        if not events:
-            return []
+        while len(turns) < k:
+            if max_results is not None:
+                remaining = max_results - total_fetched
+                if remaining <= 0:
+                    break
+                batch_size = min(100, remaining)
+            else:
+                batch_size = 100
 
-        # Process events to group into turns
-        turns = []
-        current_turn = []
+            params = {**base_params, "maxResults": batch_size, "includePayloads": True}
+            if next_token:
+                params["nextToken"] = next_token
 
-        for event in events:
-            if len(turns) >= k:
-                break  # Only need last K turns
-            for payload_item in event.get("payload", []):
-                if "conversational" in payload_item:
-                    role = payload_item["conversational"].get("role")
+            response = self.gmdp_client.list_events(**params)
+            events = response.get("events", [])
 
-                    # Start new turn on USER message
-                    if role == Role.USER.value and current_turn:
-                        turns.append(current_turn)
-                        current_turn = []
+            if not events:
+                break
 
-                    current_turn.append(payload_item["conversational"])
+            total_fetched += len(events)
 
-        # Don't forget the last turn
-        if current_turn:
+            for event in events:
+                if len(turns) >= k:
+                    break
+                for payload_item in event.get("payload", []):
+                    if "conversational" in payload_item:
+                        role = payload_item["conversational"].get("role")
+                        if role == Role.USER.value and current_turn:
+                            turns.append(current_turn)
+                            current_turn = []
+                        current_turn.append(payload_item["conversational"])
+
+            next_token = response.get("nextToken")
+            if not next_token:
+                break
+
+        if current_turn and len(turns) < k:
             turns.append(current_turn)
 
-        # Return the last k turns
-        return turns[:k] if len(turns) > k else turns
-
+        return turns[:k]
     except ClientError as e:
         logger.error("Failed to get last K turns: %s", e)
         raise
@@ -3633,7 +3733,7 @@ def list_branches(self, memory_id: str, actor_id: str, session_id: str) -> List[
         raise
 ```
 
-#### `list_events(memory_id, actor_id, session_id, branch_name=None, include_parent_branches=False, max_results=100, include_payload=True)`
+#### `list_events(memory_id, actor_id, session_id, branch_name=None, include_parent_branches=False, event_metadata=None, max_results=100, include_payload=True)`
 
 List all events in a session with pagination support.
 
@@ -3641,15 +3741,16 @@ This method provides direct access to the raw events API, allowing developers to
 
 Parameters:
 
-| Name                      | Type            | Description                                                             | Default    |
-| ------------------------- | --------------- | ----------------------------------------------------------------------- | ---------- |
-| `memory_id`               | `str`           | Memory resource ID                                                      | *required* |
-| `actor_id`                | `str`           | Actor identifier                                                        | *required* |
-| `session_id`              | `str`           | Session identifier                                                      | *required* |
-| `branch_name`             | `Optional[str]` | Optional branch name to filter events (None for all branches)           | `None`     |
-| `include_parent_branches` | `bool`          | Whether to include parent branch events (only applies with branch_name) | `False`    |
-| `max_results`             | `int`           | Maximum number of events to return                                      | `100`      |
-| `include_payload`         | `bool`          | Whether to include event payloads in response                           | `True`     |
+| Name                      | Type                                  | Description                                                                                                                                                                     | Default    |
+| ------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `memory_id`               | `str`                                 | Memory resource ID                                                                                                                                                              | *required* |
+| `actor_id`                | `str`                                 | Actor identifier                                                                                                                                                                | *required* |
+| `session_id`              | `str`                                 | Session identifier                                                                                                                                                              | *required* |
+| `branch_name`             | `Optional[str]`                       | Optional branch name to filter events (None for all branches)                                                                                                                   | `None`     |
+| `include_parent_branches` | `bool`                                | Whether to include parent branch events (only applies with branch_name)                                                                                                         | `False`    |
+| `event_metadata`          | `Optional[List[EventMetadataFilter]]` | Optional list of event metadata filters to apply. Example: [{"left": {"metadataKey": "location"}, "operator": "EQUALS_TO", "right": {"metadataValue": {"stringValue": "NYC"}}}] | `None`     |
+| `max_results`             | `int`                                 | Maximum number of events to return                                                                                                                                              | `100`      |
+| `include_payload`         | `bool`                                | Whether to include event payloads in response                                                                                                                                   | `True`     |
 
 Returns:
 
@@ -3663,13 +3764,9 @@ Example
 
 events = client.list_events(memory_id, actor_id, session_id)
 
-##### Get only main branch events
+##### Get events filtered by metadata
 
-main_events = client.list_events(memory_id, actor_id, session_id, branch_name="main")
-
-##### Get events from a specific branch
-
-branch_events = client.list_events(memory_id, actor_id, session_id, branch_name="test-branch")
+events = client.list_events( memory_id, actor_id, session_id, event_metadata=[{ "left": {"metadataKey": "location"}, "operator": "EQUALS_TO", "right": {"metadataValue": {"stringValue": "NYC"}} }] )
 
 Source code in `bedrock_agentcore/memory/client.py`
 
@@ -3681,6 +3778,7 @@ def list_events(
     session_id: str,
     branch_name: Optional[str] = None,
     include_parent_branches: bool = False,
+    event_metadata: Optional[List[EventMetadataFilter]] = None,
     max_results: int = 100,
     include_payload: bool = True,
 ) -> List[Dict[str, Any]]:
@@ -3695,6 +3793,9 @@ def list_events(
         session_id: Session identifier
         branch_name: Optional branch name to filter events (None for all branches)
         include_parent_branches: Whether to include parent branch events (only applies with branch_name)
+        event_metadata: Optional list of event metadata filters to apply.
+                       Example: [{"left": {"metadataKey": "location"}, "operator": "EQUALS_TO",
+                                  "right": {"metadataValue": {"stringValue": "NYC"}}}]
         max_results: Maximum number of events to return
         include_payload: Whether to include event payloads in response
 
@@ -3705,11 +3806,15 @@ def list_events(
         # Get all events
         events = client.list_events(memory_id, actor_id, session_id)
 
-        # Get only main branch events
-        main_events = client.list_events(memory_id, actor_id, session_id, branch_name="main")
-
-        # Get events from a specific branch
-        branch_events = client.list_events(memory_id, actor_id, session_id, branch_name="test-branch")
+        # Get events filtered by metadata
+        events = client.list_events(
+            memory_id, actor_id, session_id,
+            event_metadata=[{
+                "left": {"metadataKey": "location"},
+                "operator": "EQUALS_TO",
+                "right": {"metadataValue": {"stringValue": "NYC"}}
+            }]
+        )
     """
     try:
         all_events = []
@@ -3727,11 +3832,19 @@ def list_events(
             if next_token:
                 params["nextToken"] = next_token
 
+            # Build filter map
+            filter_map = {}
+
             # Add branch filter if specified (but not for "main")
             if branch_name and branch_name != "main":
-                params["filter"] = {
-                    "branch": {"name": branch_name, "includeParentBranches": include_parent_branches}
-                }
+                filter_map["branch"] = {"name": branch_name, "includeParentBranches": include_parent_branches}
+
+            # Add event metadata filter if specified
+            if event_metadata:
+                filter_map["eventMetadata"] = event_metadata
+
+            if filter_map:
+                params["filter"] = filter_map
 
             response = self.gmdp_client.list_events(**params)
 
@@ -3988,7 +4101,7 @@ response = bedrock.invoke_model(
 return response['content']
 ```
 
-memories, response, event = client.process_turn_with_llm( memory_id="mem-xyz", actor_id="user-123", session_id="session-456", user_input="What did we discuss yesterday?", llm_callback=my_llm, retrieval_namespace="support/facts/{sessionId}" )
+memories, response, event = client.process_turn_with_llm( memory_id="mem-xyz", actor_id="user-123", session_id="session-456", user_input="What did we discuss yesterday?", llm_callback=my_llm, retrieval_namespace="support/facts/{sessionId}/" )
 
 Source code in `bedrock_agentcore/memory/client.py`
 
@@ -4046,7 +4159,7 @@ def process_turn_with_llm(
             session_id="session-456",
             user_input="What did we discuss yesterday?",
             llm_callback=my_llm,
-            retrieval_namespace="support/facts/{sessionId}"
+            retrieval_namespace="support/facts/{sessionId}/"
         )
     """
     # Step 1: Retrieve relevant memories
@@ -4107,11 +4220,11 @@ Example
 
 ##### Correct - exact namespace
 
-memories = client.retrieve_memories( memory_id="mem-123", namespace="support/facts/session-456", query="customer preferences" )
+memories = client.retrieve_memories( memory_id="mem-123", namespace="support/facts/session-456/", query="customer preferences" )
 
 ##### Incorrect - wildcards not supported
 
-##### memories = client.retrieve_memories(..., namespace="support/facts/\*", ...)
+##### memories = client.retrieve_memories(..., namespace="support/facts/\*/", ...)
 
 Source code in `bedrock_agentcore/memory/client.py`
 
@@ -4138,12 +4251,12 @@ def retrieve_memories(
         # Correct - exact namespace
         memories = client.retrieve_memories(
             memory_id="mem-123",
-            namespace="support/facts/session-456",
+            namespace="support/facts/session-456/",
             query="customer preferences"
         )
 
         # Incorrect - wildcards not supported
-        # memories = client.retrieve_memories(..., namespace="support/facts/*", ...)
+        # memories = client.retrieve_memories(..., namespace="support/facts/*/", ...)
     """
     if "*" in namespace:
         logger.error("Wildcards are not supported in namespaces. Please provide exact namespace.")
@@ -4461,7 +4574,7 @@ Wait for memory extraction to complete by polling.
 IMPORTANT LIMITATIONS:
 
 1. This method only works reliably on empty namespaces. If there are already existing memories in the namespace, this method may return True immediately even if new extractions haven't completed.
-1. Wildcards (*) are NOT supported in namespaces. You must provide the exact namespace path with all variables resolved (e.g., "support/facts/session-123" not "support/facts/*").
+1. Wildcards (*) are NOT supported in namespaces. You must provide the exact namespace path with all variables resolved (e.g., "support/facts/session-123/" not "support/facts/*/").
 
 For subsequent extractions in populated namespaces, use a fixed wait time: time.sleep(150) # Wait 2.5 minutes for extraction
 
@@ -4498,8 +4611,8 @@ def wait_for_memories(
        existing memories in the namespace, this method may return True immediately
        even if new extractions haven't completed.
     2. Wildcards (*) are NOT supported in namespaces. You must provide the exact
-       namespace path with all variables resolved (e.g., "support/facts/session-123"
-       not "support/facts/*").
+       namespace path with all variables resolved (e.g., "support/facts/session-123/"
+       not "support/facts/*/").
 
     For subsequent extractions in populated namespaces, use a fixed wait time:
         time.sleep(150)  # Wait 2.5 minutes for extraction
@@ -5958,7 +6071,7 @@ class MemorySession(DictWrapper):
         k: int = 5,
         branch_name: Optional[str] = None,
         include_parent_branches: Optional[bool] = None,
-        max_results: int = 100,
+        max_results: Optional[int] = None,
     ) -> List[List[EventMessage]]:
         """Delegates to manager.get_last_k_turns."""
         return self._manager.get_last_k_turns(
@@ -6149,7 +6262,7 @@ def get_event(self, event_id: str) -> Event:
     return self._manager.get_event(self._actor_id, self._session_id, event_id)
 ```
 
-#### `get_last_k_turns(k=5, branch_name=None, include_parent_branches=None, max_results=100)`
+#### `get_last_k_turns(k=5, branch_name=None, include_parent_branches=None, max_results=None)`
 
 Delegates to manager.get_last_k_turns.
 
@@ -6161,7 +6274,7 @@ def get_last_k_turns(
     k: int = 5,
     branch_name: Optional[str] = None,
     include_parent_branches: Optional[bool] = None,
-    max_results: int = 100,
+    max_results: Optional[int] = None,
 ) -> List[List[EventMessage]]:
     """Delegates to manager.get_last_k_turns."""
     return self._manager.get_last_k_turns(
@@ -6366,7 +6479,7 @@ memories, response, event = manager.process_turn_with_llm(
     session_id="session-789",
     user_input="What did we discuss?",
     llm_callback=my_llm,
-    retrieval_namespace="support/facts/{sessionId}"
+    retrieval_namespace="support/facts/{sessionId}/"
 )
 ```
 
@@ -6439,7 +6552,7 @@ class MemorySessionManager:
             session_id="session-789",
             user_input="What did we discuss?",
             llm_callback=my_llm,
-            retrieval_namespace="support/facts/{sessionId}"
+            retrieval_namespace="support/facts/{sessionId}/"
         )
         ```
 
@@ -6665,8 +6778,8 @@ class MemorySessionManager:
                 return response['content']
 
             retrieval_config = {
-                "support/facts/{sessionId}": RetrievalConfig(top_k=5, relevance_score=0.3),
-                "user/preferences/{actorId}": RetrievalConfig(top_k=3, relevance_score=0.5)
+                "support/facts/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.3),
+                "user/preferences/{actorId}/": RetrievalConfig(top_k=3, relevance_score=0.5)
             }
 
             memories, response, event = manager.process_turn_with_llm(
@@ -7153,53 +7266,75 @@ class MemorySessionManager:
         k: int = 5,
         branch_name: Optional[str] = None,
         include_parent_branches: bool = False,
-        max_results: int = 100,
+        max_results: Optional[int] = None,
     ) -> List[List[EventMessage]]:
         """Get the last K conversation turns.
 
         A "turn" typically consists of a user message followed by assistant response(s).
         This method groups messages into logical turns for easier processing.
 
+        If max_results is specified, fetches up to that many events and finds turns within them
+        (backward compatible behavior).
+        If max_results is None, automatically paginates until k turns are found.
+
         Returns:
             List of turns, where each turn is a list of message dictionaries
         """
+        base_params = {
+            "memoryId": self._memory_id,
+            "actorId": actor_id,
+            "sessionId": session_id,
+        }
+
+        if branch_name and branch_name != "main":
+            base_params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_branches}}
+
         try:
-            events = self.list_events(
-                actor_id=actor_id,
-                session_id=session_id,
-                branch_name=branch_name,
-                include_parent_branches=include_parent_branches,
-                max_results=max_results,
-            )
+            turns: List[List[EventMessage]] = []
+            current_turn: List[EventMessage] = []
+            next_token = None
+            total_fetched = 0
 
-            if not events:
-                return []
+            while len(turns) < k:
+                if max_results is not None:
+                    remaining = max_results - total_fetched
+                    if remaining <= 0:
+                        break
+                    batch_size = min(100, remaining)
+                else:
+                    batch_size = 100
 
-            # Process events to group into turns
-            turns = []
-            current_turn = []
+                params = {**base_params, "maxResults": batch_size, "includePayloads": True}
+                if next_token:
+                    params["nextToken"] = next_token
 
-            for event in events:
-                if len(turns) >= k:
-                    break  # Only need last K turns
-                for payload_item in event.get("payload", []):
-                    if "conversational" in payload_item:
-                        role = payload_item["conversational"].get("role")
+                response = self._data_plane_client.list_events(**params)
+                events = response.get("events", [])
 
-                        # Start new turn on USER message
-                        if role == MessageRole.USER.value and current_turn:
-                            turns.append(current_turn)
-                            current_turn = []
+                if not events:
+                    break
 
-                        current_turn.append(EventMessage(payload_item["conversational"]))
+                total_fetched += len(events)
 
-            # Don't forget the last turn
-            if current_turn:
+                for event in events:
+                    if len(turns) >= k:
+                        break
+                    for payload_item in event.get("payload", []):
+                        if "conversational" in payload_item:
+                            role = payload_item["conversational"].get("role")
+                            if role == MessageRole.USER.value and current_turn:
+                                turns.append(current_turn)
+                                current_turn = []
+                            current_turn.append(EventMessage(payload_item["conversational"]))
+
+                next_token = response.get("nextToken")
+                if not next_token:
+                    break
+
+            if current_turn and len(turns) < k:
                 turns.append(current_turn)
 
-            # Return the last k turns
-            return turns[:k] if len(turns) > k else turns
-
+            return turns[:k]
         except ClientError as e:
             logger.error("Failed to get last K turns: %s", e)
             raise
@@ -7909,11 +8044,13 @@ def get_event(self, actor_id: str, session_id: str, event_id: str) -> Event:
         raise
 ```
 
-#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_parent_branches=False, max_results=100)`
+#### `get_last_k_turns(actor_id, session_id, k=5, branch_name=None, include_parent_branches=False, max_results=None)`
 
 Get the last K conversation turns.
 
 A "turn" typically consists of a user message followed by assistant response(s). This method groups messages into logical turns for easier processing.
+
+If max_results is specified, fetches up to that many events and finds turns within them (backward compatible behavior). If max_results is None, automatically paginates until k turns are found.
 
 Returns:
 
@@ -7931,53 +8068,75 @@ def get_last_k_turns(
     k: int = 5,
     branch_name: Optional[str] = None,
     include_parent_branches: bool = False,
-    max_results: int = 100,
+    max_results: Optional[int] = None,
 ) -> List[List[EventMessage]]:
     """Get the last K conversation turns.
 
     A "turn" typically consists of a user message followed by assistant response(s).
     This method groups messages into logical turns for easier processing.
 
+    If max_results is specified, fetches up to that many events and finds turns within them
+    (backward compatible behavior).
+    If max_results is None, automatically paginates until k turns are found.
+
     Returns:
         List of turns, where each turn is a list of message dictionaries
     """
+    base_params = {
+        "memoryId": self._memory_id,
+        "actorId": actor_id,
+        "sessionId": session_id,
+    }
+
+    if branch_name and branch_name != "main":
+        base_params["filter"] = {"branch": {"name": branch_name, "includeParentBranches": include_parent_branches}}
+
     try:
-        events = self.list_events(
-            actor_id=actor_id,
-            session_id=session_id,
-            branch_name=branch_name,
-            include_parent_branches=include_parent_branches,
-            max_results=max_results,
-        )
+        turns: List[List[EventMessage]] = []
+        current_turn: List[EventMessage] = []
+        next_token = None
+        total_fetched = 0
 
-        if not events:
-            return []
+        while len(turns) < k:
+            if max_results is not None:
+                remaining = max_results - total_fetched
+                if remaining <= 0:
+                    break
+                batch_size = min(100, remaining)
+            else:
+                batch_size = 100
 
-        # Process events to group into turns
-        turns = []
-        current_turn = []
+            params = {**base_params, "maxResults": batch_size, "includePayloads": True}
+            if next_token:
+                params["nextToken"] = next_token
 
-        for event in events:
-            if len(turns) >= k:
-                break  # Only need last K turns
-            for payload_item in event.get("payload", []):
-                if "conversational" in payload_item:
-                    role = payload_item["conversational"].get("role")
+            response = self._data_plane_client.list_events(**params)
+            events = response.get("events", [])
 
-                    # Start new turn on USER message
-                    if role == MessageRole.USER.value and current_turn:
-                        turns.append(current_turn)
-                        current_turn = []
+            if not events:
+                break
 
-                    current_turn.append(EventMessage(payload_item["conversational"]))
+            total_fetched += len(events)
 
-        # Don't forget the last turn
-        if current_turn:
+            for event in events:
+                if len(turns) >= k:
+                    break
+                for payload_item in event.get("payload", []):
+                    if "conversational" in payload_item:
+                        role = payload_item["conversational"].get("role")
+                        if role == MessageRole.USER.value and current_turn:
+                            turns.append(current_turn)
+                            current_turn = []
+                        current_turn.append(EventMessage(payload_item["conversational"]))
+
+            next_token = response.get("nextToken")
+            if not next_token:
+                break
+
+        if current_turn and len(turns) < k:
             turns.append(current_turn)
 
-        # Return the last k turns
-        return turns[:k] if len(turns) > k else turns
-
+        return turns[:k]
     except ClientError as e:
         logger.error("Failed to get last K turns: %s", e)
         raise
@@ -8492,7 +8651,7 @@ response = bedrock.invoke_model(
 return response['content']
 ```
 
-retrieval_config = { "support/facts/{sessionId}": RetrievalConfig(top_k=5, relevance_score=0.3), "user/preferences/{actorId}": RetrievalConfig(top_k=3, relevance_score=0.5) }
+retrieval_config = { "support/facts/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.3), "user/preferences/{actorId}/": RetrievalConfig(top_k=3, relevance_score=0.5) }
 
 memories, response, event = manager.process_turn_with_llm( actor_id="user-123", session_id="session-456", user_input="What did we discuss yesterday?", llm_callback=my_llm, retrieval_config=retrieval_config )
 
@@ -8547,8 +8706,8 @@ def process_turn_with_llm(
             return response['content']
 
         retrieval_config = {
-            "support/facts/{sessionId}": RetrievalConfig(top_k=5, relevance_score=0.3),
-            "user/preferences/{actorId}": RetrievalConfig(top_k=3, relevance_score=0.5)
+            "support/facts/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.3),
+            "user/preferences/{actorId}/": RetrievalConfig(top_k=3, relevance_score=0.5)
         }
 
         memories, response, event = manager.process_turn_with_llm(

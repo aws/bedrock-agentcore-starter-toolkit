@@ -94,24 +94,40 @@ class CodeInterpreter:
         ...     result = client.execute_code('import numpy as np; print(np.pi)')
     """
 
-    def __init__(self, region: str, session: Optional[boto3.Session] = None) -> None:
+    def __init__(
+        self, region: str, session: Optional[boto3.Session] = None, integration_source: Optional[str] = None
+    ) -> None:
         """Initialize a Code Interpreter client for the specified AWS region.
 
         Args:
             region (str): The AWS region to use.
             session (Optional[boto3.Session]): Optional boto3 session.
+            integration_source (Optional[str]): Framework integration identifier
+                for telemetry (e.g., 'langchain', 'crewai'). Used to track
+                customer acquisition from different integrations.
         """
         self.region = region
         self.logger = logging.getLogger(__name__)
+        self.integration_source = integration_source
 
         if session is None:
             session = boto3.Session()
+
+        # Build config with user-agent for telemetry
+        user_agent_extra = build_user_agent_suffix(integration_source)
+
+        # Control plane config (no special timeout)
+        control_config = Config(user_agent_extra=user_agent_extra)
+
+        # Data plane config (preserve existing read_timeout)
+        data_config = Config(read_timeout=300, user_agent_extra=user_agent_extra)
 
         # Control plane client for interpreter management
         self.control_plane_client = session.client(
             "bedrock-agentcore-control",
             region_name=region,
             endpoint_url=get_control_plane_endpoint(region),
+            config=control_config,
         )
 
         # Data plane client for session operations
@@ -119,7 +135,7 @@ class CodeInterpreter:
             "bedrock-agentcore",
             region_name=region,
             endpoint_url=get_data_plane_endpoint(region),
-            config=Config(read_timeout=300),
+            config=data_config,
         )
 
         self._identifier = None
@@ -798,38 +814,55 @@ Get the current code interpreter identifier.
 
 Get the current session ID.
 
-#### `__init__(region, session=None)`
+#### `__init__(region, session=None, integration_source=None)`
 
 Initialize a Code Interpreter client for the specified AWS region.
 
 Parameters:
 
-| Name      | Type                | Description             | Default    |
-| --------- | ------------------- | ----------------------- | ---------- |
-| `region`  | `str`               | The AWS region to use.  | *required* |
-| `session` | `Optional[Session]` | Optional boto3 session. | `None`     |
+| Name                 | Type                | Description                                                                                                                                   | Default    |
+| -------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `region`             | `str`               | The AWS region to use.                                                                                                                        | *required* |
+| `session`            | `Optional[Session]` | Optional boto3 session.                                                                                                                       | `None`     |
+| `integration_source` | `Optional[str]`     | Framework integration identifier for telemetry (e.g., 'langchain', 'crewai'). Used to track customer acquisition from different integrations. | `None`     |
 
 Source code in `bedrock_agentcore/tools/code_interpreter_client.py`
 
 ```
-def __init__(self, region: str, session: Optional[boto3.Session] = None) -> None:
+def __init__(
+    self, region: str, session: Optional[boto3.Session] = None, integration_source: Optional[str] = None
+) -> None:
     """Initialize a Code Interpreter client for the specified AWS region.
 
     Args:
         region (str): The AWS region to use.
         session (Optional[boto3.Session]): Optional boto3 session.
+        integration_source (Optional[str]): Framework integration identifier
+            for telemetry (e.g., 'langchain', 'crewai'). Used to track
+            customer acquisition from different integrations.
     """
     self.region = region
     self.logger = logging.getLogger(__name__)
+    self.integration_source = integration_source
 
     if session is None:
         session = boto3.Session()
+
+    # Build config with user-agent for telemetry
+    user_agent_extra = build_user_agent_suffix(integration_source)
+
+    # Control plane config (no special timeout)
+    control_config = Config(user_agent_extra=user_agent_extra)
+
+    # Data plane config (preserve existing read_timeout)
+    data_config = Config(read_timeout=300, user_agent_extra=user_agent_extra)
 
     # Control plane client for interpreter management
     self.control_plane_client = session.client(
         "bedrock-agentcore-control",
         region_name=region,
         endpoint_url=get_control_plane_endpoint(region),
+        config=control_config,
     )
 
     # Data plane client for session operations
@@ -837,7 +870,7 @@ def __init__(self, region: str, session: Optional[boto3.Session] = None) -> None
         "bedrock-agentcore",
         region_name=region,
         endpoint_url=get_data_plane_endpoint(region),
-        config=Config(read_timeout=300),
+        config=data_config,
     )
 
     self._identifier = None
@@ -2089,20 +2122,29 @@ class BrowserClient:
         session_id (str, optional): The active session ID.
     """
 
-    def __init__(self, region: str) -> None:
+    def __init__(self, region: str, integration_source: Optional[str] = None) -> None:
         """Initialize a Browser client for the specified AWS region.
 
         Args:
             region (str): The AWS region to use for the Browser service.
+            integration_source (Optional[str]): Framework integration identifier
+                for telemetry (e.g., 'langchain', 'crewai'). Used to track
+                customer acquisition from different integrations.
         """
         self.region = region
         self.logger = logging.getLogger(__name__)
+        self.integration_source = integration_source
+
+        # Build config with user-agent for telemetry
+        user_agent_extra = build_user_agent_suffix(integration_source)
+        client_config = Config(user_agent_extra=user_agent_extra)
 
         # Control plane client for browser management
         self.control_plane_client = boto3.client(
             "bedrock-agentcore-control",
             region_name=region,
             endpoint_url=get_control_plane_endpoint(region),
+            config=client_config,
         )
 
         # Data plane client for session operations
@@ -2110,6 +2152,7 @@ class BrowserClient:
             "bedrock-agentcore",
             region_name=region,
             endpoint_url=get_data_plane_endpoint(region),
+            config=client_config,
         )
 
         self._identifier = None
@@ -2621,33 +2664,43 @@ Get the current browser identifier.
 
 Get the current session ID.
 
-#### `__init__(region)`
+#### `__init__(region, integration_source=None)`
 
 Initialize a Browser client for the specified AWS region.
 
 Parameters:
 
-| Name     | Type  | Description                                    | Default    |
-| -------- | ----- | ---------------------------------------------- | ---------- |
-| `region` | `str` | The AWS region to use for the Browser service. | *required* |
+| Name                 | Type            | Description                                                                                                                                   | Default    |
+| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `region`             | `str`           | The AWS region to use for the Browser service.                                                                                                | *required* |
+| `integration_source` | `Optional[str]` | Framework integration identifier for telemetry (e.g., 'langchain', 'crewai'). Used to track customer acquisition from different integrations. | `None`     |
 
 Source code in `bedrock_agentcore/tools/browser_client.py`
 
 ```
-def __init__(self, region: str) -> None:
+def __init__(self, region: str, integration_source: Optional[str] = None) -> None:
     """Initialize a Browser client for the specified AWS region.
 
     Args:
         region (str): The AWS region to use for the Browser service.
+        integration_source (Optional[str]): Framework integration identifier
+            for telemetry (e.g., 'langchain', 'crewai'). Used to track
+            customer acquisition from different integrations.
     """
     self.region = region
     self.logger = logging.getLogger(__name__)
+    self.integration_source = integration_source
+
+    # Build config with user-agent for telemetry
+    user_agent_extra = build_user_agent_suffix(integration_source)
+    client_config = Config(user_agent_extra=user_agent_extra)
 
     # Control plane client for browser management
     self.control_plane_client = boto3.client(
         "bedrock-agentcore-control",
         region_name=region,
         endpoint_url=get_control_plane_endpoint(region),
+        config=client_config,
     )
 
     # Data plane client for session operations
@@ -2655,6 +2708,7 @@ def __init__(self, region: str) -> None:
         "bedrock-agentcore",
         region_name=region,
         endpoint_url=get_data_plane_endpoint(region),
+        config=client_config,
     )
 
     self._identifier = None
