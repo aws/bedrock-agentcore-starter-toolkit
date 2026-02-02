@@ -100,7 +100,26 @@ export class AgentCoreStack extends cdk.Stack {
             },
         });
 
-        new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+        // Add Policy Engine permissions to Gateway role
+        // Required for Policy Engine integration when adding policies to gateway:
+        // - GetPolicyEngine: retrieve policy engine
+        // - AuthorizeAction: evaluate Cedar policies for authorization requests
+        // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+        agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+            sid: 'AgentCorePolicyEngineAccess',
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'bedrock-agentcore:GetPolicyEngine',
+                'bedrock-agentcore:AuthorizeAction',
+                'bedrock-agentcore:PartiallyAuthorizeActions',
+            ],
+            resources: [
+                `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                this.agentCoreGateway.attrGatewayArn,
+            ],
+        }));
+
+        const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
             name: `${props.appName}-Target`,
             gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
             credentialProviderConfigurations: [
@@ -138,7 +157,10 @@ export class AgentCoreStack extends cdk.Stack {
                     }
                 }
             }
-        })
+        });
+
+        // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+        gatewayTarget.node.addDependency(agentCoreGatewayRole);
         {% if memory_enabled %}
         /*****************************
         * AgentCore Memory
@@ -151,24 +173,34 @@ export class AgentCoreStack extends cdk.Stack {
             memoryStrategies: [
                 {%- if memory_is_long_term %}
                 {
-                    userPreferenceMemoryStrategy: {
-                        name: "UserPreferences",
-                        namespaces: ["/users/{actorId}/preferences"],
-                        description: "Instance of built-in user preference memory strategy"
+                    semanticMemoryStrategy: {
+                        name: "SemanticFacts",
+                        namespaces: ["/facts/{actorId}/"],
+                        description: "Instance of built-in semantic memory strategy"
                     }
                 },
                 {
-                    semanticMemoryStrategy: {
-                        name: "SemanticFacts",
-                        namespaces: ["/users/{actorId}/facts"],
-                        description: "Instance of built-in semantic memory strategy"
+                    userPreferenceMemoryStrategy: {
+                        name: "UserPreferences",
+                        namespaces: ["/preferences/{actorId}/"],
+                        description: "Instance of built-in user preference memory strategy"
                     }
                 },
                 {
                     summaryMemoryStrategy: {
                         name: "SessionSummaries",
-                        namespaces: ["/summaries/{actorId}/{sessionId}"],
+                        namespaces: ["/summaries/{actorId}/{sessionId}/"],
                         description: "Instance of built-in summary memory strategy"
+                    }
+                },
+                {
+                    episodicMemoryStrategy: {
+                        name: "EpisodeTracker",
+                        namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                        reflectionConfiguration: {
+                            namespaces: ["/episodes/{actorId}/"],
+                        },
+                        description: "Instance of built-in episodic memory strategy"
                     }
                 }
                 {%- else %}
@@ -259,6 +291,21 @@ export class AgentCoreStack extends cdk.Stack {
                         `arn:aws:bedrock:${region}:${accountId}:*`,
                     ],
                 }),
+                {% if memory_enabled %}
+                new iam.PolicyStatement({
+                    sid: 'AgentCoreMemoryAccess',
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'bedrock-agentcore:CreateEvent',
+                        'bedrock-agentcore:ListEvents',
+                        'bedrock-agentcore:GetMemory',
+                        'bedrock-agentcore:RetrieveMemoryRecords',
+                    ],
+                    resources: [
+                        this.agentCoreMemory.attrMemoryArn,
+                    ],
+                }),
+                {% endif %}
             ],
         });
 
@@ -269,6 +316,9 @@ export class AgentCoreStack extends cdk.Stack {
                 RuntimeAccessPolicy: runtimePolicy
             }
         });
+        {% if memory_enabled %}
+        runtimeRole.node.addDependency(this.agentCoreMemory);
+        {% endif %}
 
         this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
             agentRuntimeArtifact: {
@@ -290,7 +340,7 @@ export class AgentCoreStack extends cdk.Stack {
                 "AWS_REGION": region,
                 "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                 {% if memory_enabled %}
-                "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,{% endif %}
+                "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,{% endif %}
                 {%- if not custom_authorizer_enabled %}
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                 "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager

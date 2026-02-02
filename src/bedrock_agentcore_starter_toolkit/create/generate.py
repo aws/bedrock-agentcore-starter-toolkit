@@ -69,7 +69,7 @@ def generate_project(
         ctx.memory_enabled = True
         ctx.memory_name = name + "_Memory"
         ctx.memory_event_expiry_days = 30
-        ctx.memory_is_long_term = False
+        ctx.memory_is_long_term = True
         # custom authorizer
         ctx.custom_authorizer_enabled = False
         ctx.custom_authorizer_url = None

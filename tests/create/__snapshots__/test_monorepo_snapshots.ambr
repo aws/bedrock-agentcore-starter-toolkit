@@ -220,7 +220,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -258,7 +277,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -269,7 +291,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -355,6 +407,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -365,6 +432,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -382,7 +452,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -1129,7 +1199,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -1167,7 +1256,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -1178,7 +1270,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -1264,6 +1386,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -1274,6 +1411,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -1291,7 +1431,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -2038,7 +2178,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -2076,7 +2235,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -2087,7 +2249,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -2173,6 +2365,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -2183,6 +2390,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -2200,7 +2410,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -2957,7 +3167,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -2995,7 +3224,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -3006,7 +3238,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -3092,6 +3354,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -3102,6 +3379,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -3119,7 +3399,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -3856,7 +4136,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -3894,7 +4193,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -3905,7 +4207,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -3991,6 +4323,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -4001,6 +4348,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -4018,7 +4368,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -4735,7 +5085,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -4773,7 +5142,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -4784,7 +5156,37 @@
                   eventExpiryDuration: 30,
                   description: "Memory resource with 30 days event expiry",
                   memoryStrategies: [
-                      // can take a built-in strategy from https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/built-in-strategies.html or define a custom one
+                      {
+                          semanticMemoryStrategy: {
+                              name: "SemanticFacts",
+                              namespaces: ["/facts/{actorId}/"],
+                              description: "Instance of built-in semantic memory strategy"
+                          }
+                      },
+                      {
+                          userPreferenceMemoryStrategy: {
+                              name: "UserPreferences",
+                              namespaces: ["/preferences/{actorId}/"],
+                              description: "Instance of built-in user preference memory strategy"
+                          }
+                      },
+                      {
+                          summaryMemoryStrategy: {
+                              name: "SessionSummaries",
+                              namespaces: ["/summaries/{actorId}/{sessionId}/"],
+                              description: "Instance of built-in summary memory strategy"
+                          }
+                      },
+                      {
+                          episodicMemoryStrategy: {
+                              name: "EpisodeTracker",
+                              namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                              reflectionConfiguration: {
+                                  namespaces: ["/episodes/{actorId}/"],
+                              },
+                              description: "Instance of built-in episodic memory strategy"
+                          }
+                      }
                   ],
               });
               
@@ -4870,6 +5272,21 @@
                               `arn:aws:bedrock:${region}:${accountId}:*`,
                           ],
                       }),
+                      
+                      new iam.PolicyStatement({
+                          sid: 'AgentCoreMemoryAccess',
+                          effect: iam.Effect.ALLOW,
+                          actions: [
+                              'bedrock-agentcore:CreateEvent',
+                              'bedrock-agentcore:ListEvents',
+                              'bedrock-agentcore:GetMemory',
+                              'bedrock-agentcore:RetrieveMemoryRecords',
+                          ],
+                          resources: [
+                              this.agentCoreMemory.attrMemoryArn,
+                          ],
+                      }),
+                      
                   ],
               });
       
@@ -4880,6 +5297,9 @@
                       RuntimeAccessPolicy: runtimePolicy
                   }
               });
+              
+              runtimeRole.node.addDependency(this.agentCoreMemory);
+              
       
               this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
                   agentRuntimeArtifact: {
@@ -4897,7 +5317,7 @@
                       "AWS_REGION": region,
                       "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                       
-                      "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,
+                      "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
                       "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                       "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager
                       "COGNITO_TOKEN_URL": cognitoTokenUrl,
@@ -5142,6 +5562,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
       
           # Configure memory if available
           session_manager = None
@@ -5150,10 +5571,12 @@
                   AgentCoreMemoryConfig(
                       memory_id=MEMORY_ID,
                       session_id=session_id,
-                      actor_id="quickstart-user",
+                      actor_id=user_id,
                       retrieval_config={
-                          "/users/quickstart-user/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
-                          "/users/quickstart-user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
+                          "/facts/{actorId}/": RetrievalConfig(top_k=10, relevance_score=0.4),
+                          "/preferences/{actorId}/": RetrievalConfig(top_k=5, relevance_score=0.5),
+                          "/summaries/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          "/episodes/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
                       }
                   ),
                   REGION
@@ -5378,6 +5801,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
       
           # Configure memory if available
           session_manager = None
@@ -5386,10 +5810,12 @@
                   AgentCoreMemoryConfig(
                       memory_id=MEMORY_ID,
                       session_id=session_id,
-                      actor_id="quickstart-user",
+                      actor_id=user_id,
                       retrieval_config={
-                          "/users/quickstart-user/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
-                          "/users/quickstart-user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
+                          "/facts/{actorId}/": RetrievalConfig(top_k=10, relevance_score=0.4),
+                          "/preferences/{actorId}/": RetrievalConfig(top_k=5, relevance_score=0.5),
+                          "/summaries/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                          "/episodes/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
                       }
                   ),
                   REGION
