@@ -220,7 +220,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -258,7 +277,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
@@ -1033,7 +1055,26 @@
                   },
               });
       
-              new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
+              // Add Policy Engine permissions to Gateway role
+              // Required for Policy Engine integration when adding policies to gateway:
+              // - GetPolicyEngine: retrieve policy engine
+              // - AuthorizeAction: evaluate Cedar policies for authorization requests
+              // - PartiallyAuthorizeActions: partial evaluation for listing allowed tools
+              agentCoreGatewayRole.addToPolicy(new iam.PolicyStatement({
+                  sid: 'AgentCorePolicyEngineAccess',
+                  effect: iam.Effect.ALLOW,
+                  actions: [
+                      'bedrock-agentcore:GetPolicyEngine',
+                      'bedrock-agentcore:AuthorizeAction',
+                      'bedrock-agentcore:PartiallyAuthorizeActions',
+                  ],
+                  resources: [
+                      `arn:aws:bedrock-agentcore:${region}:${accountId}:policy-engine/*`,
+                      this.agentCoreGateway.attrGatewayArn,
+                  ],
+              }));
+      
+              const gatewayTarget = new bedrockagentcore.CfnGatewayTarget(this, `${props.appName}-AgentCoreGatewayLambdaTarget`, {
                   name: `${props.appName}-Target`,
                   gatewayIdentifier: this.agentCoreGateway.attrGatewayIdentifier,
                   credentialProviderConfigurations: [
@@ -1071,7 +1112,10 @@
                           }
                       }
                   }
-              })
+              });
+      
+              // Ensure GatewayTarget waits for IAM policy (from grantInvoke) to be attached to role
+              gatewayTarget.node.addDependency(agentCoreGatewayRole);
               
               /*****************************
               * AgentCore Memory
