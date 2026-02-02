@@ -180,7 +180,7 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
                 "memory_synopsis = memory_manager.get_memory_synopsis()"
                 if not self.agentcore_memory_enabled
                 else """
-            memories = memory_client.retrieve_memories(memory_id=memory_id, namespace=f'/summaries/{user_id}', query="Retrieve the most recent session sumamries.", top_k=20)
+            memories = memory_client.retrieve_memories(memory_id=memory_id, namespace=f'/summaries/{user_id}/', query="Retrieve the most recent session sumamries.", top_k=20)
             memory_synopsis = "\\n".join([m.get("content", {}).get("text", "") for m in memories])
 """
             )

@@ -373,21 +373,21 @@ resource "aws_bedrockagentcore_memory" "agentcore_memory" {
 resource "aws_bedrockagentcore_memory_strategy" "user_preference_memory_strategy" {
   memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
   name       = "UserPreferences"
-  namespaces = ["/users/{actorId}/preferences"]
+  namespaces = ["/users/{actorId}/preferences/"]
   type       = "USER_PREFERENCE"
 }
 
 resource "aws_bedrockagentcore_memory_strategy" "semantic_memory_strategy" {
   memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
   name       = "SemanticFacts"
-  namespaces = ["/users/{actorId}/facts"]
+  namespaces = ["/users/{actorId}/facts/"]
   type       = "SEMANTIC"
 }
 
 resource "aws_bedrockagentcore_memory_strategy" "summary_memory_strategy" {
   memory_id  = aws_bedrockagentcore_memory.agentcore_memory.id
   name       = "SessionSummaries"
-  namespaces = ["/summaries/{actorId}/{sessionId}"]
+  namespaces = ["/summaries/{actorId}/{sessionId}/"]
   type       = "SUMMARIZATION"
 }
 {%- else %}

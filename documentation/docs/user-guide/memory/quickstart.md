@@ -59,7 +59,7 @@ memory = memory_manager.get_or_create_memory(
     strategies=[
         SemanticStrategy(
             name="semanticLongTermMemory",
-            namespaces=['/strategies/{memoryStrategyId}/actors/{actorId}'],
+            namespaces=['/strategies/{memoryStrategyId}/actors/{actorId}/'],
         )
     ]
 )

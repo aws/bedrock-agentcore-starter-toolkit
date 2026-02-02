@@ -99,7 +99,7 @@ manager = MemoryManager(region_name="us-east-1")
 semantic_strategy = SemanticStrategy(
     name="ConversationSemantics",
     description="Extract semantic information from conversations",
-    namespaces=["semantics/{actorId}/{sessionId}"]
+    namespaces=["semantics/{actorId}/{sessionId}/"]
 )
 
 memory = manager.create_memory_and_wait(
@@ -233,7 +233,7 @@ from bedrock_agentcore_starter_toolkit.operations.memory.models import SummarySt
 summary = SummaryStrategy(
     name="ConversationSummary",
     description="Summarize conversations",
-    namespaces=["summaries/{actorId}/{sessionId}"]
+    namespaces=["summaries/{actorId}/{sessionId}/"]
 )
 
 memory = manager.add_strategy_and_wait(
@@ -278,7 +278,7 @@ memory = manager.update_memory_strategies_and_wait(
 modify_configs = [{
     "strategyId": "strat-456",
     "description": "Updated description",
-    "namespaces": ["updated/{actorId}"]
+    "namespaces": ["updated/{actorId}/"]
 }]
 
 memory = manager.update_memory_strategies_and_wait(
@@ -309,7 +309,7 @@ memory = manager.modify_strategy(
     memory_id="mem-123",
     strategy_id="strat-456",
     description="Updated strategy description",
-    namespaces=["custom/{actorId}/{sessionId}"]
+    namespaces=["custom/{actorId}/{sessionId}/"]
 )
 
 # Update strategy configuration
@@ -343,7 +343,7 @@ memory = manager.add_semantic_strategy_and_wait(
     memory_id="mem-123",
     name="ConversationSemantics",
     description="Extract semantic information",
-    namespaces=["semantics/{actorId}/{sessionId}"]
+    namespaces=["semantics/{actorId}/{sessionId}/"]
 )
 ```
 
@@ -352,7 +352,7 @@ memory = manager.add_summary_strategy_and_wait(
     memory_id="mem-123",
     name="ConversationSummary",
     description="Summarize conversations",
-    namespaces=["summaries/{actorId}/{sessionId}"]
+    namespaces=["summaries/{actorId}/{sessionId}/"]
 )
 ```
 
@@ -361,7 +361,7 @@ memory = manager.add_user_preference_strategy_and_wait(
     memory_id="mem-123",
     name="UserPreferences",
     description="Store user preferences",
-    namespaces=["preferences/{actorId}"]
+    namespaces=["preferences/{actorId}/"]
 )
 ```
 
@@ -400,7 +400,7 @@ semantic = SemanticStrategy(
 semantic = SemanticStrategy(
     name="ConversationSemantics",
     description="Extract semantic information from conversations",
-    namespaces=["semantics/{actorId}/{sessionId}"]
+    namespaces=["semantics/{actorId}/{sessionId}/"]
 )
 
 # Add to memory
@@ -422,7 +422,7 @@ summary = SummaryStrategy(
 summary = SummaryStrategy(
     name="ConversationSummary",
     description="Summarize conversation content",
-    namespaces=["summaries/{actorId}/{sessionId}"]
+    namespaces=["summaries/{actorId}/{sessionId}/"]
 )
 
 # Add to memory
@@ -438,7 +438,7 @@ from bedrock_agentcore_starter_toolkit.operations.memory.models import UserPrefe
 user_pref = UserPreferenceStrategy(
     name="UserPreferences",
     description="Store user preferences and settings",
-    namespaces=["preferences/{actorId}"]  # Note: typically per-actor, not per-session
+    namespaces=["preferences/{actorId}/"]  # Note: typically per-actor, not per-session
 )
 
 # Add to memory
@@ -469,7 +469,7 @@ custom = CustomSemanticStrategy(
     description="Extract and consolidate business insights",
     extraction_config=extraction_config,
     consolidation_config=consolidation_config,
-    namespaces=["business/{actorId}/{sessionId}"]
+    namespaces=["business/{actorId}/{sessionId}/"]
 )
 
 # Add to memory
@@ -486,7 +486,7 @@ semantic = {
     "semanticMemoryStrategy": {
         "name": "SemanticStrategy",
         "description": "dictionary-based strategy",
-        "namespaces": ["business/{actorId}/{sessionId}"]
+        "namespaces": ["business/{actorId}/{sessionId}/"]
     }
 }
 
@@ -519,11 +519,11 @@ Namespaces support template variables for dynamic organization:
 ```python
 # Available template variables
 namespaces = [
-    "global/shared",                   # Static namespace
-    "actor/{actorId}",                 # Per-actor namespace
-    "session/{actorId}/{sessionId}",   # Per-session namespace
-    "strategy/{strategyId}",           # Per-strategy namespace
-    "custom/{actorId}/{sessionId}"     # Custom pattern
+    "global/shared/",                   # Static namespace
+    "actor/{actorId}/",                 # Per-actor namespace
+    "session/{actorId}/{sessionId}/",   # Per-session namespace
+    "strategy/{strategyId}/",           # Per-strategy namespace
+    "custom/{actorId}/{sessionId}/"     # Custom pattern
 ]
 
 strategy = SemanticStrategy(
@@ -788,7 +788,7 @@ memory = manager.add_strategy(memory_id, new_strategy)  # May leave memory in CR
 semantic = SemanticStrategy(
     name="CustomerSupportSemantics",
     description="Extract semantic information from customer support conversations",
-    namespaces=["support/semantics/{actorId}/{sessionId}"]
+    namespaces=["support/semantics/{actorId}/{sessionId}/"]
 )
 
 # ❌ Avoid: Generic names
@@ -831,18 +831,18 @@ memory = manager.get_or_create_memory(
 conversation_strategies = [
     SemanticStrategy(
         name="ConversationSemantics",
-        namespaces=["conversation/semantics/{actorId}/{sessionId}"]
+        namespaces=["conversation/semantics/{actorId}/{sessionId}/"]
     ),
     SummaryStrategy(
         name="ConversationSummary",
-        namespaces=["conversation/summaries/{actorId}/{sessionId}"]
+        namespaces=["conversation/summaries/{actorId}/{sessionId}/"]
     )
 ]
 
 user_strategies = [
     UserPreferenceStrategy(
         name="UserPreferences",
-        namespaces=["user/preferences/{actorId}"]
+        namespaces=["user/preferences/{actorId}/"]
     )
 ]
 

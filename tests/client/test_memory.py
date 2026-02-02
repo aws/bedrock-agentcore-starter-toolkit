@@ -370,7 +370,7 @@ class TestMemoryShowRecords:
         mem = Memory(memory_id="mem-123")
 
         with pytest.raises(ValueError, match="Use namespace without all"):
-            mem.show_records(all=True, namespace="/some/path")
+            mem.show_records(all=True, namespace="/some/path/")
 
     @patch("bedrock_agentcore_starter_toolkit.notebook.memory.memory._resolve_memory_config")
     def test_show_records_namespace_only(self, mock_resolve):
@@ -384,10 +384,11 @@ class TestMemoryShowRecords:
 
         mem = Memory(memory_id="mem-123")
         mem.visualizer = mock_visualizer
-        result = mem.show_records(namespace="/test/ns")
+        result = mem.show_records(namespace="/test/ns/")
 
         assert len(result) == 1
-        mock_manager.list_records.assert_called_once_with("mem-123", "/test/ns", 10)
+        # Namespace is passed through as-is
+        mock_manager.list_records.assert_called_once_with("mem-123", "/test/ns/", 10)
 
     @patch("bedrock_agentcore_starter_toolkit.notebook.memory.memory._resolve_memory_config")
     def test_show_records_query_requires_namespace(self, mock_resolve):
@@ -413,10 +414,11 @@ class TestMemoryShowRecords:
 
         mem = Memory(memory_id="mem-123")
         mem.visualizer = mock_visualizer
-        result = mem.show_records(namespace="/test", query="search term")
+        result = mem.show_records(namespace="/test/", query="search term")
 
         assert len(result) == 1
-        mock_manager.search_records.assert_called_once_with("mem-123", "/test", "search term", 10)
+        # Namespace is passed through as-is
+        mock_manager.search_records.assert_called_once_with("mem-123", "/test/", "search term", 10)
 
     @patch("bedrock_agentcore_starter_toolkit.notebook.memory.memory._resolve_memory_config")
     def test_show_records_query_no_results(self, mock_resolve):
@@ -430,7 +432,7 @@ class TestMemoryShowRecords:
 
         mem = Memory(memory_id="mem-123")
         mem.visualizer = mock_visualizer
-        result = mem.show_records(namespace="/test", query="no match")
+        result = mem.show_records(namespace="/test/", query="no match")
 
         assert result == []
         mock_visualizer.display_search_results.assert_not_called()

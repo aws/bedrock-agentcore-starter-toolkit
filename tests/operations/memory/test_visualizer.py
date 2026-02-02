@@ -57,7 +57,7 @@ class TestVisualizeMemory:
                 "id": "mem-123",
                 "name": "test_mem",
                 "status": "ACTIVE",
-                "strategies": [{"name": "Facts", "type": "SEMANTIC", "status": "ACTIVE", "namespaces": ["/facts"]}],
+                "strategies": [{"name": "Facts", "type": "SEMANTIC", "status": "ACTIVE", "namespaces": ["/facts/"]}],
             }
         )
 
@@ -176,7 +176,7 @@ class TestDisplayRecordsTree:
     def test_display_records_tree_with_records(self, visualizer, console):
         manager = MagicMock()
         manager.get_memory.return_value = MagicMock(
-            _data={"strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts"]}]}
+            _data={"strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]}]}
         )
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
 
@@ -191,14 +191,14 @@ class TestDisplayNamespaceRecords:
         manager = MagicMock()
         manager.list_records.return_value = []
 
-        visualizer.display_namespace_records(manager, "mem-123", "/test", verbose=False, max_results=10, output=None)
+        visualizer.display_namespace_records(manager, "mem-123", "/test/", verbose=False, max_results=10, output=None)
         console.print.assert_called()
 
     def test_display_namespace_records_with_records(self, visualizer, console):
         manager = MagicMock()
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
 
-        visualizer.display_namespace_records(manager, "mem-123", "/test", verbose=False, max_results=10, output=None)
+        visualizer.display_namespace_records(manager, "mem-123", "/test/", verbose=False, max_results=10, output=None)
         console.print.assert_called()
 
 
@@ -208,7 +208,7 @@ class TestDisplaySingleRecord:
     def test_display_single_record_basic(self, visualizer, console):
         record = {
             "memoryRecordId": "r1",
-            "namespace": "/test",
+            "namespace": "/test/",
             "createdAt": "2024-01-01T00:00:00Z",
             "content": {"text": "test content"},
         }
@@ -219,7 +219,7 @@ class TestDisplaySingleRecord:
     def test_display_single_record_verbose(self, visualizer, console):
         record = {
             "memoryRecordId": "r1",
-            "namespace": "/test",
+            "namespace": "/test/",
             "createdAt": "2024-01-01T00:00:00Z",
             "content": {"text": "test content"},
         }
@@ -236,12 +236,12 @@ class TestDisplaySearchResults:
         console.print.assert_called()
 
     def test_display_search_results_with_results(self, visualizer, console):
-        results = [{"memoryRecordId": "r1", "namespace": "/test", "score": 0.95, "content": {"text": "match"}}]
+        results = [{"memoryRecordId": "r1", "namespace": "/test/", "score": 0.95, "content": {"text": "match"}}]
         visualizer.display_search_results(results, "query", verbose=False)
         console.print.assert_called()
 
     def test_display_search_results_verbose(self, visualizer, console):
-        results = [{"memoryRecordId": "r1", "namespace": "/test", "score": 0.95, "content": {"text": "match"}}]
+        results = [{"memoryRecordId": "r1", "namespace": "/test/", "score": 0.95, "content": {"text": "match"}}]
         visualizer.display_search_results(results, "query", verbose=True)
         console.print.assert_called()
 
@@ -419,7 +419,7 @@ class TestRecordsTreeEdgeCases:
     def test_records_tree_with_strategy_records(self, visualizer, console):
         manager = MagicMock()
         manager.get_memory.return_value = {
-            "strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts"]}]
+            "strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]}]
         }
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
         visualizer.display_records_tree(manager, "mem-123", False, 10, None)
@@ -428,7 +428,7 @@ class TestRecordsTreeEdgeCases:
     def test_records_tree_list_records_error(self, visualizer, console):
         manager = MagicMock()
         manager.get_memory.return_value = {
-            "strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts"]}]
+            "strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]}]
         }
         manager.list_records.side_effect = Exception("API error")
         visualizer.display_records_tree(manager, "mem-123", False, 10, None)
@@ -441,14 +441,14 @@ class TestNamespaceRecordsEdgeCases:
     def test_namespace_records_error(self, visualizer, console):
         manager = MagicMock()
         manager.list_records.side_effect = Exception("API error")
-        visualizer.display_namespace_records(manager, "mem-123", "/test", False, 10, None)
+        visualizer.display_namespace_records(manager, "mem-123", "/test/", False, 10, None)
         console.print.assert_called()
 
     def test_namespace_records_with_output(self, visualizer, console, tmp_path):
         manager = MagicMock()
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
         output_file = tmp_path / "ns_records.json"
-        visualizer.display_namespace_records(manager, "mem-123", "/test", False, 10, str(output_file))
+        visualizer.display_namespace_records(manager, "mem-123", "/test/", False, 10, str(output_file))
         assert output_file.exists()
 
 
@@ -457,27 +457,27 @@ class TestResolveNamespace:
 
     def test_resolve_simple_namespace(self, visualizer):
         manager = MagicMock()
-        result = visualizer._resolve_namespace(manager, "mem-123", "/facts")
-        assert result == ["/facts"]
+        result = visualizer._resolve_namespace(manager, "mem-123", "/facts/")
+        assert result == ["/facts/"]
 
     def test_resolve_actor_template(self, visualizer):
         manager = MagicMock()
         manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
-        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/facts")
-        assert "/users/user1/facts" in result
-        assert "/users/user2/facts" in result
+        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/facts/")
+        assert "/users/user1/facts/" in result
+        assert "/users/user2/facts/" in result
 
     def test_resolve_session_template(self, visualizer):
         manager = MagicMock()
         manager.list_actors.return_value = [{"actorId": "user1"}]
         manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/sessions/{sessionId}")
-        assert "/users/user1/sessions/sess1" in result
+        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/sessions/{sessionId}/")
+        assert "/users/user1/sessions/sess1/" in result
 
     def test_resolve_namespace_error(self, visualizer):
         manager = MagicMock()
         manager.list_actors.side_effect = Exception("API error")
-        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/facts")
+        result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/facts/")
         assert result == []
 
 
@@ -499,7 +499,7 @@ class TestStrategyWithVerbose:
                         "status": "ACTIVE",
                         "strategyId": "strat-123",
                         "description": "Test strategy",
-                        "namespaces": ["/facts"],
+                        "namespaces": ["/facts/"],
                         "createdAt": "2024-01-01T00:00:00Z",
                         "updatedAt": "2024-01-02T00:00:00Z",
                         "configuration": {"nested": {"key": "value"}, "simple": "val"},
@@ -520,7 +520,7 @@ class TestAddRecordsToTree:
         parent = Tree("test")
         records = [{"memoryRecordId": f"r{i}", "content": {"text": f"text{i}"}, "createdAt": "2024"} for i in range(15)]
         export_list = []
-        visualizer._add_records_to_tree(parent, "/test", records, False, export_list)
+        visualizer._add_records_to_tree(parent, "/test/", records, False, export_list)
         assert len(export_list) <= 10
 
 
@@ -612,12 +612,17 @@ class TestSingleRecordDisplay:
     """Test single record display edge cases."""
 
     def test_single_record_no_content(self, visualizer, console):
-        record = {"memoryRecordId": "r1", "namespace": "/test", "createdAt": "2024-01-01T00:00:00Z"}
+        record = {"memoryRecordId": "r1", "namespace": "/test/", "createdAt": "2024-01-01T00:00:00Z"}
         visualizer.display_single_record(record, 1, 1, verbose=False)
         console.print.assert_called()
 
     def test_single_record_with_recordId(self, visualizer, console):
-        record = {"recordId": "r1", "namespace": "/test", "createdAt": "2024-01-01T00:00:00Z", "content": {"text": "x"}}
+        record = {
+            "recordId": "r1",
+            "namespace": "/test/",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "content": {"text": "x"},
+        }
         visualizer.display_single_record(record, 1, 1, verbose=True)
         console.print.assert_called()
 
@@ -628,7 +633,7 @@ class TestStrategyRecordsWithResolvedNamespaces:
     def test_strategy_records_with_actor_template(self, visualizer, console):
         manager = MagicMock()
         manager.get_memory.return_value = {
-            "strategies": [{"name": "UserFacts", "type": "SEMANTIC", "namespaces": ["/users/{actorId}/facts"]}]
+            "strategies": [{"name": "UserFacts", "type": "SEMANTIC", "namespaces": ["/users/{actorId}/facts/"]}]
         }
         manager.list_actors.return_value = [{"actorId": "user1"}]
         manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
@@ -898,7 +903,7 @@ class TestAddStrategyRecords:
             root,
             manager,
             "mem-123",
-            {"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts"]},
+            {"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]},
             False,
             10,
             export_data,
@@ -932,7 +937,7 @@ class TestMemoryVisualizerIntegration:
                         "status": "ACTIVE",
                         "strategyId": "strat-123",
                         "description": "Semantic facts",
-                        "namespaces": ["/facts", "/summaries"],
+                        "namespaces": ["/facts/", "/summaries/"],
                         "createdAt": "2024-01-01T00:00:00Z",
                         "updatedAt": "2024-01-02T00:00:00Z",
                         "configuration": {"key": "value", "nested": {"inner": "data"}},
