@@ -4618,3 +4618,65 @@ agents:
                 assert "Use KEY=VALUE format" in result.stdout
         finally:
             os.chdir(original_cwd)
+
+    def test_invoke_dev_mode_basic(self):
+        """Test invoke command with --dev mode sends request to dev server."""
+        with (
+            patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.requests.Session") as mock_session_class,
+            patch(
+                "bedrock_agentcore_starter_toolkit.cli.runtime.commands.generate_session_id"
+            ) as mock_generate_session_id,
+        ):
+            mock_generate_session_id.return_value = "auto-generated-session-id"
+
+            mock_session = Mock()
+            mock_response = Mock()
+            mock_response.headers = {"content-type": "application/json"}
+            mock_response.iter_lines.return_value = [b'{"response": "hello from dev"}']
+            mock_response.__enter__ = Mock(return_value=mock_response)
+            mock_response.__exit__ = Mock(return_value=False)
+            mock_session.post.return_value = mock_response
+            mock_session_class.return_value = mock_session
+
+            result = self.runner.invoke(app, ["invoke", "--dev", '{"prompt": "hello"}'])
+
+            assert result.exit_code == 0
+            mock_session.post.assert_called_once()
+            call_args = mock_session.post.call_args
+            assert call_args.kwargs["json"] == {"prompt": "hello"}
+            assert call_args.kwargs["headers"]["x-amzn-bedrock-agentcore-runtime-session-id"] == "auto-generated-session-id"
+
+    def test_invoke_dev_mode_with_session_id(self):
+        """Test invoke command with --dev mode uses provided session_id."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.requests.Session") as mock_session_class:
+            mock_session = Mock()
+            mock_response = Mock()
+            mock_response.headers = {"content-type": "application/json"}
+            mock_response.iter_lines.return_value = [b'{"response": "hello from dev"}']
+            mock_response.__enter__ = Mock(return_value=mock_response)
+            mock_response.__exit__ = Mock(return_value=False)
+            mock_session.post.return_value = mock_response
+            mock_session_class.return_value = mock_session
+
+            result = self.runner.invoke(
+                app, ["invoke", "--dev", "--session-id", "my-custom-session", '{"prompt": "hello"}']
+            )
+
+            assert result.exit_code == 0
+            mock_session.post.assert_called_once()
+            call_args = mock_session.post.call_args
+            assert call_args.kwargs["headers"]["x-amzn-bedrock-agentcore-runtime-session-id"] == "my-custom-session"
+
+    def test_invoke_dev_mode_connection_error(self):
+        """Test invoke command with --dev mode shows helpful error when server not running."""
+        with patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.requests.Session") as mock_session_class:
+            import requests
+
+            mock_session = Mock()
+            mock_session.post.side_effect = requests.exceptions.ConnectionError("Connection refused")
+            mock_session_class.return_value = mock_session
+
+            result = self.runner.invoke(app, ["invoke", "--dev", '{"prompt": "hello"}'])
+
+            assert "Development Server Not Found" in result.stdout
+            assert "localhost" in result.stdout

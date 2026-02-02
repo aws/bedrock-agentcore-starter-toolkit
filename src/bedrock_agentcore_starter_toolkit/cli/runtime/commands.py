@@ -736,7 +736,7 @@ def invoke(
 
     # Handle dev mode - simple HTTP request to development server
     if dev_mode:
-        _invoke_dev_server(payload, port)
+        _invoke_dev_server(payload, port, session_id)
         return
 
     try:
@@ -1347,7 +1347,7 @@ def destroy(
         _handle_error(f"Destruction failed: {e}", e)
 
 
-def _invoke_dev_server(payload: str, port: int = 8080) -> None:
+def _invoke_dev_server(payload: str, port: int = 8080, session_id: str = None) -> None:
     """Invoke local development server with simple HTTP request."""
     # Try to parse payload as JSON, fallback to wrapping in prompt
     try:
@@ -1357,11 +1357,15 @@ def _invoke_dev_server(payload: str, port: int = 8080) -> None:
 
     url = f"http://localhost:{port}/invocations"
 
+    # Use provided session_id or generate a new one
+    if session_id is None:
+        session_id = generate_session_id()
+
     # Set headers including Accept for streaming support and session ID
     headers = {
         "Content-Type": "application/json",
         "Accept": "text/event-stream, application/json",
-        "x-amzn-bedrock-agentcore-runtime-session-id": generate_session_id(),
+        "x-amzn-bedrock-agentcore-runtime-session-id": session_id,
     }
 
     try:
