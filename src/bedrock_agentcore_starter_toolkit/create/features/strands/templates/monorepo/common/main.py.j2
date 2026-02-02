@@ -32,6 +32,7 @@ log = app.logger
 @app.entrypoint
 async def invoke(payload, context):
     session_id = getattr(context, 'session_id', 'default')
+    user_id = payload.get("user_id") or 'default-user'
 
     # Configure memory if available
     session_manager = None
@@ -40,10 +41,12 @@ async def invoke(payload, context):
             AgentCoreMemoryConfig(
                 memory_id=MEMORY_ID,
                 session_id=session_id,
-                actor_id="quickstart-user",
+                actor_id=user_id,
                 retrieval_config={
-                    "/users/quickstart-user/facts": RetrievalConfig(top_k=3, relevance_score=0.5),
-                    "/users/quickstart-user/preferences": RetrievalConfig(top_k=3, relevance_score=0.5)
+                    "/facts/{actorId}/": RetrievalConfig(top_k=10, relevance_score=0.4),
+                    "/preferences/{actorId}/": RetrievalConfig(top_k=5, relevance_score=0.5),
+                    "/summaries/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
+                    "/episodes/{actorId}/{sessionId}/": RetrievalConfig(top_k=5, relevance_score=0.4),
                 }
             ),
             REGION

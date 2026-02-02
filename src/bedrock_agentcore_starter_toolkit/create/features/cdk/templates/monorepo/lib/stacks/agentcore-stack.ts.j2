@@ -151,24 +151,34 @@ export class AgentCoreStack extends cdk.Stack {
             memoryStrategies: [
                 {%- if memory_is_long_term %}
                 {
-                    userPreferenceMemoryStrategy: {
-                        name: "UserPreferences",
-                        namespaces: ["/users/{actorId}/preferences"],
-                        description: "Instance of built-in user preference memory strategy"
+                    semanticMemoryStrategy: {
+                        name: "SemanticFacts",
+                        namespaces: ["/facts/{actorId}/"],
+                        description: "Instance of built-in semantic memory strategy"
                     }
                 },
                 {
-                    semanticMemoryStrategy: {
-                        name: "SemanticFacts",
-                        namespaces: ["/users/{actorId}/facts"],
-                        description: "Instance of built-in semantic memory strategy"
+                    userPreferenceMemoryStrategy: {
+                        name: "UserPreferences",
+                        namespaces: ["/preferences/{actorId}/"],
+                        description: "Instance of built-in user preference memory strategy"
                     }
                 },
                 {
                     summaryMemoryStrategy: {
                         name: "SessionSummaries",
-                        namespaces: ["/summaries/{actorId}/{sessionId}"],
+                        namespaces: ["/summaries/{actorId}/{sessionId}/"],
                         description: "Instance of built-in summary memory strategy"
+                    }
+                },
+                {
+                    episodicMemoryStrategy: {
+                        name: "EpisodeTracker",
+                        namespaces: ["/episodes/{actorId}/{sessionId}/"],
+                        reflectionConfiguration: {
+                            namespaces: ["/episodes/{actorId}/"],
+                        },
+                        description: "Instance of built-in episodic memory strategy"
                     }
                 }
                 {%- else %}
@@ -259,6 +269,21 @@ export class AgentCoreStack extends cdk.Stack {
                         `arn:aws:bedrock:${region}:${accountId}:*`,
                     ],
                 }),
+                {% if memory_enabled %}
+                new iam.PolicyStatement({
+                    sid: 'AgentCoreMemoryAccess',
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'bedrock-agentcore:CreateEvent',
+                        'bedrock-agentcore:ListEvents',
+                        'bedrock-agentcore:GetMemory',
+                        'bedrock-agentcore:RetrieveMemoryRecords',
+                    ],
+                    resources: [
+                        this.agentCoreMemory.attrMemoryArn,
+                    ],
+                }),
+                {% endif %}
             ],
         });
 
@@ -269,6 +294,9 @@ export class AgentCoreStack extends cdk.Stack {
                 RuntimeAccessPolicy: runtimePolicy
             }
         });
+        {% if memory_enabled %}
+        runtimeRole.node.addDependency(this.agentCoreMemory);
+        {% endif %}
 
         this.agentCoreRuntime = new bedrockagentcore.CfnRuntime(this, `${props.appName}-AgentCoreRuntime`, {
             agentRuntimeArtifact: {
@@ -290,7 +318,7 @@ export class AgentCoreStack extends cdk.Stack {
                 "AWS_REGION": region,
                 "GATEWAY_URL": this.agentCoreGateway.attrGatewayUrl,
                 {% if memory_enabled %}
-                "MEMORY_ID":  this.agentCoreMemory.attrMemoryId,{% endif %}
+                "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,{% endif %}
                 {%- if not custom_authorizer_enabled %}
                 "COGNITO_CLIENT_ID": cognitoAppClient.userPoolClientId,
                 "COGNITO_CLIENT_SECRET": cognitoAppClient.userPoolClientSecret.unsafeUnwrap(), // alternatives to consider: agentcore identity (no cdk constructs yet) or secrets manager

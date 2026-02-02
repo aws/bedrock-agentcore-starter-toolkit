@@ -1482,6 +1482,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
           
           # Create code interpreter
           code_interpreter = AgentCoreCodeInterpreter(
@@ -1615,6 +1616,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
           
           # Create code interpreter
           code_interpreter = AgentCoreCodeInterpreter(
@@ -1734,6 +1736,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
           
           # Create code interpreter
           code_interpreter = AgentCoreCodeInterpreter(
@@ -1871,6 +1874,7 @@
       @app.entrypoint
       async def invoke(payload, context):
           session_id = getattr(context, 'session_id', 'default')
+          user_id = payload.get("user_id") or 'default-user'
           
           # Create code interpreter
           code_interpreter = AgentCoreCodeInterpreter(
