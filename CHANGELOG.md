@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.10] - 2026-02-03
+
+### Changes
+
+- fix: export Memory class from package root (#449) (819193a)
+- fix: pass session_id to dev server in invoke --dev mode (#448) (01808f8)
+- Add trailing slash to namespace strings (#440) (3b4eafb)
+- fix: bump minimum typer version to 0.19.0 (#421) (6cff769)
+- fix: add UTF-8 encoding to template file writes for Windows compatibility (#443) (563bfa3)
+- fix: Retrieval Config in Strands Templates (#446) (4fec9b7)
+- chore: bump version to 0.2.9 (#445) (195109a)
+
 ## [0.2.9] - 2026-02-02
 
 ### Changes
