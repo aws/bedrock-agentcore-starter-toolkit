@@ -370,7 +370,7 @@ def configure_impl(
         default_idx = str(runtime_options.index(default_runtime) + 1)
 
         while True:
-            choice = prompt(f"Choice [{default_idx}]: ", default=default_idx).strip()
+            choice = prompt(f"Choice [{default_idx}]: ").strip() or default_idx
             if choice in ["1", "2", "3", "4"]:
                 return runtime_options[int(choice) - 1]
             console.print("[red]Invalid choice. Please enter 1-4.[/red]")
@@ -489,7 +489,7 @@ def configure_impl(
             runtime_type = None
         else:
             while True:
-                choice = prompt("Choice [1]: ", default="1").strip()
+                choice = prompt("Choice [1]: ").strip() or "1"
                 if choice in ["1", "2"]:
                     deployment_type = deployment_options[int(choice) - 1][1]
                     break
