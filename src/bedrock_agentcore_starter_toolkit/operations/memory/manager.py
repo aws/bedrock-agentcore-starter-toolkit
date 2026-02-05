@@ -4,7 +4,7 @@ import copy
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import boto3
 from botocore.config import Config as BotocoreConfig
@@ -562,38 +562,121 @@ class MemoryManager:
 
     # ==================== DATA PLANE METHODS ====================
 
-    def list_actors(self, memory_id: str) -> List[Dict[str, Any]]:
+    def _paginated_list(
+        self,
+        api_method: Callable[..., Dict[str, Any]],
+        response_key: str,
+        base_kwargs: Dict[str, Any],
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> tuple[List[Dict[str, Any]], Optional[str]]:
+        """Generic paginated list helper for data plane list operations.
+
+        Args:
+            api_method: The boto3 client method to call.
+            response_key: Key in response containing the list of items.
+            base_kwargs: Base kwargs for the API call (e.g., memoryId, actorId).
+            max_results: Maximum number of items to return. If None, fetches all.
+            next_token: Token for pagination. If provided, fetches single page.
+
+        Returns:
+            Tuple of (items list, next_token or None).
+        """
+        kwargs = {**base_kwargs}
+        if max_results:
+            kwargs["maxResults"] = min(max_results, 100)
+        if next_token:
+            kwargs["nextToken"] = next_token
+
+        response = api_method(**kwargs)
+        items = response.get(response_key, [])
+        result_token = response.get("nextToken")
+
+        # If next_token was provided, return single page
+        if next_token is not None:
+            return items, result_token
+
+        # Otherwise, fetch all pages (original behavior)
+        while result_token and (not max_results or len(items) < max_results):
+            if max_results:
+                kwargs["maxResults"] = min(max_results - len(items), 100)
+            kwargs["nextToken"] = result_token
+            response = api_method(**kwargs)
+            items.extend(response.get(response_key, []))
+            result_token = response.get("nextToken")
+
+        if max_results:
+            items = items[:max_results]
+
+        return items, result_token
+
+    def _paginated_list_page(
+        self,
+        api_method: Callable[..., Dict[str, Any]],
+        response_key: str,
+        base_kwargs: Dict[str, Any],
+        max_results: Optional[int] = None,
+        next_token: Optional[str] = None,
+    ) -> tuple[List[Dict[str, Any]], Optional[str]]:
+        """Fetch a single page of results for browser pagination.
+
+        Args:
+            api_method: The boto3 client method to call.
+            response_key: Key in response containing the list of items.
+            base_kwargs: Base kwargs for the API call.
+            max_results: Maximum number of items per page.
+            next_token: Token for fetching the next page.
+
+        Returns:
+            Tuple of (items list, next_token or None).
+        """
+        kwargs = {**base_kwargs}
+        if max_results:
+            kwargs["maxResults"] = min(max_results, 100)
+        if next_token:
+            kwargs["nextToken"] = next_token
+        response = api_method(**kwargs)
+        return response.get(response_key, []), response.get("nextToken")
+
+    def list_actors(
+        self,
+        memory_id: str,
+        max_results: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
         """List all actors who have events in a memory.
 
         Maps to: bedrock-agentcore.list_actors.
 
         Args:
             memory_id: The memory resource ID.
+            max_results: Maximum number of actors to return. If None, fetches all.
 
         Returns:
-            List of actor summary dictionaries.
+            List of actor dicts.
 
         Raises:
             ClientError: If the API call fails.
         """
         logger.debug("Listing actors for memory: %s", memory_id)
         try:
-            response = self._data_plane_client.list_actors(memoryId=memory_id)
-            actors = response.get("actorSummaries", [])
-
-            next_token = response.get("nextToken")
-            while next_token:
-                response = self._data_plane_client.list_actors(memoryId=memory_id, nextToken=next_token)
-                actors.extend(response.get("actorSummaries", []))
-                next_token = response.get("nextToken")
-
+            actors, _ = self._paginated_list(
+                self._data_plane_client.list_actors,
+                "actorSummaries",
+                {"memoryId": memory_id},
+                max_results,
+            )
             logger.debug("Found %d actors", len(actors))
             return actors
         except ClientError as e:
             logger.error("Error listing actors: %s", e)
             raise
 
-    def list_sessions(self, memory_id: str, actor_id: str) -> List[Dict[str, Any]]:
+    def list_sessions(
+        self,
+        memory_id: str,
+        actor_id: str,
+        max_results: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
         """List all sessions for an actor.
 
         Maps to: bedrock-agentcore.list_sessions.
@@ -601,26 +684,22 @@ class MemoryManager:
         Args:
             memory_id: The memory resource ID.
             actor_id: The actor ID.
+            max_results: Maximum number of sessions to return. If None, fetches all.
 
         Returns:
-            List of session summary dictionaries.
+            List of session dicts.
 
         Raises:
             ClientError: If the API call fails.
         """
         logger.debug("Listing sessions for actor: %s in memory: %s", actor_id, memory_id)
         try:
-            response = self._data_plane_client.list_sessions(memoryId=memory_id, actorId=actor_id)
-            sessions = response.get("sessionSummaries", [])
-
-            next_token = response.get("nextToken")
-            while next_token:
-                response = self._data_plane_client.list_sessions(
-                    memoryId=memory_id, actorId=actor_id, nextToken=next_token
-                )
-                sessions.extend(response.get("sessionSummaries", []))
-                next_token = response.get("nextToken")
-
+            sessions, _ = self._paginated_list(
+                self._data_plane_client.list_sessions,
+                "sessionSummaries",
+                {"memoryId": memory_id, "actorId": actor_id},
+                max_results,
+            )
             logger.debug("Found %d sessions", len(sessions))
             return sessions
         except ClientError as e:
@@ -642,35 +721,22 @@ class MemoryManager:
             memory_id: The memory resource ID.
             actor_id: The actor ID.
             session_id: The session ID.
-            max_results: Maximum number of events to return.
+            max_results: Maximum number of events to return. If None, fetches all.
 
         Returns:
-            List of event dictionaries.
+            List of event dicts.
 
         Raises:
             ClientError: If the API call fails.
         """
         logger.debug("Listing events for session: %s", session_id)
         try:
-            kwargs: Dict[str, Any] = {"memoryId": memory_id, "actorId": actor_id, "sessionId": session_id}
-            if max_results:
-                kwargs["maxResults"] = min(max_results, 100)
-
-            response = self._data_plane_client.list_events(**kwargs)
-            events = response.get("events", [])
-
-            next_token = response.get("nextToken")
-            while next_token and (not max_results or len(events) < max_results):
-                if max_results:
-                    kwargs["maxResults"] = min(max_results - len(events), 100)
-                kwargs["nextToken"] = next_token
-                response = self._data_plane_client.list_events(**kwargs)
-                events.extend(response.get("events", []))
-                next_token = response.get("nextToken")
-
-            if max_results:
-                events = events[:max_results]
-
+            events, _ = self._paginated_list(
+                self._data_plane_client.list_events,
+                "events",
+                {"memoryId": memory_id, "actorId": actor_id, "sessionId": session_id},
+                max_results,
+            )
             logger.debug("Found %d events", len(events))
             return events
         except ClientError as e:
@@ -714,35 +780,22 @@ class MemoryManager:
         Args:
             memory_id: The memory resource ID.
             namespace: The namespace to list records from.
-            max_results: Maximum number of records to return.
+            max_results: Maximum number of records to return. If None, fetches all.
 
         Returns:
-            List of memory record dictionaries.
+            List of record dicts.
 
         Raises:
             ClientError: If the API call fails.
         """
         logger.debug("Listing records in namespace: %s", namespace)
         try:
-            kwargs: Dict[str, Any] = {"memoryId": memory_id, "namespace": namespace}
-            if max_results:
-                kwargs["maxResults"] = min(max_results, 100)
-
-            response = self._data_plane_client.list_memory_records(**kwargs)
-            records = response.get("memoryRecordSummaries", [])
-
-            next_token = response.get("nextToken")
-            while next_token and (not max_results or len(records) < max_results):
-                if max_results:
-                    kwargs["maxResults"] = min(max_results - len(records), 100)
-                kwargs["nextToken"] = next_token
-                response = self._data_plane_client.list_memory_records(**kwargs)
-                records.extend(response.get("memoryRecordSummaries", []))
-                next_token = response.get("nextToken")
-
-            if max_results:
-                records = records[:max_results]
-
+            records, _ = self._paginated_list(
+                self._data_plane_client.list_memory_records,
+                "memoryRecordSummaries",
+                {"memoryId": memory_id, "namespace": namespace},
+                max_results,
+            )
             logger.debug("Found %d records", len(records))
             return records
         except ClientError as e:

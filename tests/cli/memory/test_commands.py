@@ -4,9 +4,19 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from bedrock_agentcore_starter_toolkit.cli.memory.commands import show_app
+from bedrock_agentcore_starter_toolkit.cli.memory.commands import _ConfigLookupResult, memory_app, show_app
 
 runner = CliRunner()
+
+
+def _mock_config(memory_id=None, region=None, config_exists=True, agent_name=None):
+    """Helper to create _ConfigLookupResult for tests."""
+    return _ConfigLookupResult(
+        memory_id=memory_id,
+        region=region,
+        config_exists=config_exists,
+        agent_name=agent_name,
+    )
 
 
 class TestShowCommand:
@@ -17,7 +27,7 @@ class TestShowCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_uses_config_memory_id(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show uses memory_id from config."""
-        mock_config.return_value = {"memory_id": "config-mem-123", "region": "us-west-2"}
+        mock_config.return_value = _mock_config(memory_id="config-mem-123", region="us-west-2")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_memory = MagicMock()
@@ -34,7 +44,7 @@ class TestShowCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_explicit_memory_id_overrides_config(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test explicit --memory-id overrides config."""
-        mock_config.return_value = {"memory_id": "config-mem", "region": "us-west-2"}
+        mock_config.return_value = _mock_config(memory_id="config-mem", region="us-west-2")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_memory = MagicMock()
@@ -49,7 +59,7 @@ class TestShowCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_no_memory_id_errors(self, mock_config):
         """Test show errors when no memory_id available."""
-        mock_config.return_value = None
+        mock_config.return_value = _mock_config(config_exists=False)
 
         result = runner.invoke(show_app, [])
 
@@ -61,12 +71,13 @@ class TestShowCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_with_verbose(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show with verbose flag."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_memory = MagicMock()
         mock_memory.items.return_value = [("id", "mem-123")]
         mock_manager.get_memory.return_value = mock_memory
+        mock_manager.list_actors.return_value = []
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
 
@@ -82,7 +93,7 @@ class TestShowCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_with_region(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show with explicit region."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-west-2"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-west-2")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_memory = MagicMock()
@@ -108,7 +119,7 @@ class TestShowEventsCommand:
         self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class
     ):
         """Test show events shows latest event by default."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -131,7 +142,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_events")
     def test_show_events_last_n(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show events --last N shows Nth most recent."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -151,7 +162,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_events_list_actors(self, mock_config, mock_manager_class):
         """Test show events --list-actors."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
@@ -166,7 +177,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_events_list_sessions_requires_actor(self, mock_config, mock_manager_class):
         """Test show events --list-sessions requires --actor-id."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["events", "--list-sessions"])
@@ -178,7 +189,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_events_session_requires_actor(self, mock_config, mock_manager_class):
         """Test show events --session-id requires --actor-id."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["events", "--all", "--session-id", "sess-123"])
@@ -190,7 +201,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_events_all_and_last_conflict(self, mock_config, mock_manager_class):
         """Test show events --all and --last conflict."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["events", "--all", "--last", "2"])
@@ -203,7 +214,7 @@ class TestShowEventsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryVisualizer")
     def test_show_events_all_displays_tree(self, mock_visualizer_class, mock_config, mock_manager_class):
         """Test show events --all displays tree."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -225,7 +236,7 @@ class TestShowRecordsCommand:
         self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class
     ):
         """Test show records shows latest record by default."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -247,7 +258,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_records")
     def test_show_records_last_n(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records --last N shows Nth most recent."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -268,7 +279,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_all_displays_tree(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records --all displays tree."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -282,7 +293,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_all_with_namespace_errors(self, mock_config, mock_manager_class):
         """Test show records --all with --namespace errors."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["records", "--all", "--namespace", "/test/"])
@@ -295,7 +306,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_namespace_drills_down(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records --namespace drills into namespace."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
@@ -309,7 +320,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_query_requires_namespace(self, mock_config, mock_manager_class):
         """Test show records --query requires --namespace."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["records", "--query", "test"])
@@ -322,7 +333,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_query_with_namespace(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records --query with --namespace performs search."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_manager.search_records.return_value = [{"content": "match"}]
@@ -339,7 +350,7 @@ class TestShowRecordsCommand:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_all_and_last_conflict(self, mock_config, mock_manager_class):
         """Test show records --all and --last conflict."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
 
         result = runner.invoke(show_app, ["records", "--all", "--last", "2"])
@@ -354,12 +365,25 @@ class TestConfigResolution:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_no_config_no_memory_id_errors(self, mock_config):
         """Test error when no config and no memory_id."""
-        mock_config.return_value = None
+        mock_config.return_value = _mock_config(config_exists=False)
 
         result = runner.invoke(show_app, ["events"])
 
         assert result.exit_code == 1
         assert "No memory specified" in result.output
+        assert "no .bedrock_agentcore.yaml found" in result.output
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
+    def test_config_exists_but_no_memory_id_errors(self, mock_config):
+        """Test error when config exists but no memory_id configured."""
+        mock_config.return_value = _mock_config(config_exists=True, agent_name="my-agent")
+
+        result = runner.invoke(show_app, ["events"])
+
+        assert result.exit_code == 1
+        assert "Found .bedrock_agentcore.yaml" in result.output
+        assert "'my-agent' has no memory_id configured" in result.output
+        assert "agentcore launch" in result.output
 
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryVisualizer")
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryManager")
@@ -367,7 +391,7 @@ class TestConfigResolution:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_events")
     def test_region_from_config(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test region is taken from config."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "eu-west-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="eu-west-1")
         mock_collect.return_value = [{"eventTimestamp": "2024-01-01T00:00:00Z"}]
         mock_visualizer_class.return_value = MagicMock()
 
@@ -388,7 +412,8 @@ class TestGetMemoryConfigFromFile:
 
         mock_load.return_value = None
         result = _get_memory_config_from_file("test-agent")
-        assert result is None
+        assert result.config_exists is False
+        assert result.memory_id is None
 
     @patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists")
     def test_config_without_memory(self, mock_load):
@@ -396,6 +421,7 @@ class TestGetMemoryConfigFromFile:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _get_memory_config_from_file
 
         mock_config = MagicMock()
+        mock_config.default_agent = "default"
         mock_agent_config = MagicMock()
         mock_agent_config.memory = None
         mock_agent_config.aws.region = "us-east-1"
@@ -403,7 +429,8 @@ class TestGetMemoryConfigFromFile:
         mock_load.return_value = mock_config
 
         result = _get_memory_config_from_file("test-agent")
-        assert result is None
+        assert result.config_exists is True
+        assert result.memory_id is None
 
     @patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists")
     def test_config_with_memory(self, mock_load):
@@ -411,6 +438,7 @@ class TestGetMemoryConfigFromFile:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _get_memory_config_from_file
 
         mock_config = MagicMock()
+        mock_config.default_agent = "default"
         mock_agent_config = MagicMock()
         mock_agent_config.memory.memory_id = "mem-123"
         mock_agent_config.aws.region = "us-west-2"
@@ -418,7 +446,9 @@ class TestGetMemoryConfigFromFile:
         mock_load.return_value = mock_config
 
         result = _get_memory_config_from_file("test-agent")
-        assert result == {"memory_id": "mem-123", "region": "us-west-2"}
+        assert result.config_exists is True
+        assert result.memory_id == "mem-123"
+        assert result.region == "us-west-2"
 
     @patch("bedrock_agentcore_starter_toolkit.utils.runtime.config.load_config_if_exists")
     def test_config_exception(self, mock_load):
@@ -430,7 +460,8 @@ class TestGetMemoryConfigFromFile:
         mock_load.return_value = mock_config
 
         result = _get_memory_config_from_file("test-agent")
-        assert result is None
+        assert result.config_exists is True
+        assert result.memory_id is None
 
 
 class TestShowEventsEdgeCases:
@@ -440,7 +471,7 @@ class TestShowEventsEdgeCases:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_events_list_sessions(self, mock_config, mock_manager_class):
         """Test show events --list-sessions with --actor-id."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_manager.list_sessions.return_value = [{"sessionId": "sess1"}, {"sessionId": "sess2"}]
@@ -457,7 +488,7 @@ class TestShowEventsEdgeCases:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_events")
     def test_show_events_no_events(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show events when no events found."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_collect.return_value = []
 
@@ -472,7 +503,7 @@ class TestShowEventsEdgeCases:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_events")
     def test_show_events_last_exceeds_count(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show events --last N when N exceeds event count."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_collect.return_value = [{"eventTimestamp": "2024-01-01T00:00:00Z"}]
 
@@ -491,7 +522,7 @@ class TestShowRecordsEdgeCases:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._collect_all_records")
     def test_show_records_no_records(self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records when no records found."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_collect.return_value = []
 
@@ -508,7 +539,7 @@ class TestShowRecordsEdgeCases:
         self, mock_collect, mock_config, mock_manager_class, mock_visualizer_class
     ):
         """Test show records --last N when N exceeds record count."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager_class.return_value = MagicMock()
         mock_collect.return_value = [{"createdAt": "2024-01-01T00:00:00Z"}]
 
@@ -522,7 +553,7 @@ class TestShowRecordsEdgeCases:
     @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
     def test_show_records_query_no_results(self, mock_config, mock_manager_class, mock_visualizer_class):
         """Test show records --query with no results."""
-        mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-east-1")
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
         mock_manager.search_records.return_value = []
@@ -716,7 +747,7 @@ class TestResolveMemoryConfig:
         """Test resolve from config."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "config-mem", "region": "eu-west-1"}
+        mock_config.return_value = _mock_config(memory_id="config-mem", region="eu-west-1")
 
         result = _resolve_memory_config(show_hint=False)
 
@@ -729,7 +760,7 @@ class TestResolveMemoryConfig:
         """Test resolve region from boto session."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "config-mem"}
+        mock_config.return_value = _mock_config(memory_id="config-mem")
         mock_session = MagicMock()
         mock_session.region_name = "ap-southeast-1"
         mock_session_class.return_value = mock_session
@@ -744,7 +775,7 @@ class TestResolveMemoryConfig:
         """Test resolve with agent name."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "agent-mem", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="agent-mem", region="us-east-1")
 
         result = _resolve_memory_config(agent="my-agent", show_hint=False)
 
@@ -757,7 +788,7 @@ class TestResolveMemoryConfig:
         """Test config region is used when no explicit region."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "config-mem", "region": "config-region"}
+        mock_config.return_value = _mock_config(memory_id="config-mem", region="config-region")
 
         result = _resolve_memory_config(show_hint=False)
 
@@ -769,7 +800,7 @@ class TestResolveMemoryConfig:
         """Test explicit region overrides config region."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "config-mem", "region": "config-region"}
+        mock_config.return_value = _mock_config(memory_id="config-mem", region="config-region")
 
         result = _resolve_memory_config(region="explicit-region", show_hint=False)
 
@@ -781,8 +812,50 @@ class TestResolveMemoryConfig:
         """Test explicit memory_id overrides config."""
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _resolve_memory_config
 
-        mock_config.return_value = {"memory_id": "config-mem", "region": "us-east-1"}
+        mock_config.return_value = _mock_config(memory_id="config-mem", region="us-east-1")
 
         result = _resolve_memory_config(memory_id="explicit-mem", show_hint=False)
 
         assert result.memory_id == "explicit-mem"
+
+
+class TestBrowseCommand:
+    """Test the browse command."""
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.browser.MemoryBrowser")
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryManager")
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
+    def test_browse_success(self, mock_config, mock_manager_class, mock_browser_class):
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-west-2")
+        mock_manager = mock_manager_class.return_value
+        mock_manager.get_memory.return_value = {"id": "mem-123"}
+
+        result = runner.invoke(memory_app, ["browse", "--memory-id", "mem-123", "--region", "us-west-2"])
+
+        assert result.exit_code == 0
+        mock_browser_class.assert_called_once()
+        mock_browser_class.return_value.run.assert_called_once()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryManager")
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
+    def test_browse_auth_error(self, mock_config, mock_manager_class):
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-west-2")
+        mock_manager_class.return_value.get_memory.side_effect = Exception("Token expired")
+
+        result = runner.invoke(memory_app, ["browse", "--memory-id", "mem-123", "--region", "us-west-2"])
+
+        assert result.exit_code == 1
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.browser.MemoryBrowser")
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands.MemoryManager")
+    @patch("bedrock_agentcore_starter_toolkit.cli.memory.commands._get_memory_config_from_file")
+    def test_browse_passes_initial_memory(self, mock_config, mock_manager_class, mock_browser_class):
+        mock_config.return_value = _mock_config(memory_id="mem-123", region="us-west-2")
+        memory_data = {"id": "mem-123", "strategies": []}
+        mock_manager_class.return_value.get_memory.return_value = memory_data
+
+        runner.invoke(memory_app, ["browse", "--memory-id", "mem-123", "--region", "us-west-2"])
+
+        mock_browser_class.assert_called_once()
+        call_kwargs = mock_browser_class.call_args
+        assert call_kwargs.kwargs.get("initial_memory") == memory_data
