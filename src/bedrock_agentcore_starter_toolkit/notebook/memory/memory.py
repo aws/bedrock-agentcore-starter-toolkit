@@ -87,7 +87,7 @@ class Memory:
 
         # List actors mode
         if list_actors:
-            actors = self.manager.list_actors(self.memory_id)
+            actors, _ = self.manager.list_actors(self.memory_id)
             tree = Tree(f"🧠 [bold cyan]{self.memory_id}[/bold cyan]")
             for a in actors:
                 tree.add(f"👤 {a.get('actorId')}")
@@ -98,7 +98,7 @@ class Memory:
         if list_sessions:
             if not actor_id:
                 raise ValueError("list_sessions requires actor_id")
-            sessions = self.manager.list_sessions(self.memory_id, actor_id)
+            sessions, _ = self.manager.list_sessions(self.memory_id, actor_id)
             tree = Tree(f"🧠 [bold cyan]{self.memory_id}[/bold cyan]")
             actor_tree = tree.add(f"👤 [bold]{actor_id}[/bold]")
             for s in sessions:

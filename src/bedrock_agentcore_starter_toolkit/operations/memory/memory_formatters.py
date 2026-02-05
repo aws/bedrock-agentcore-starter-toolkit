@@ -224,6 +224,27 @@ def render_content_panel(text: str, verbose: bool = False) -> Union[Panel, str]:
     return format_content_preview(text)
 
 
+def format_payload_snippet(event: Dict[str, Any], max_len: int = 60) -> str:
+    """Format raw payload as truncated JSON snippet.
+
+    Args:
+        event: Event dict with payload field.
+        max_len: Maximum length before truncation.
+
+    Returns:
+        Truncated JSON string with dim styling.
+    """
+    import json
+
+    payload = event.get("payload")
+    if not payload:
+        return "[dim](empty)[/dim]"
+    raw = json.dumps(payload, default=str)
+    if len(raw) > max_len:
+        return f"[dim]{raw[:max_len]}…[/dim]"
+    return f"[dim]{raw}[/dim]"
+
+
 def format_truncation_hint(shown: int, total: int) -> str:
     """Format '... N more items' hint.
 

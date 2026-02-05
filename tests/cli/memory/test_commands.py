@@ -67,6 +67,7 @@ class TestShowCommand:
         mock_memory = MagicMock()
         mock_memory.items.return_value = [("id", "mem-123")]
         mock_manager.get_memory.return_value = mock_memory
+        mock_manager.list_actors.return_value = ([], None)
         mock_visualizer = MagicMock()
         mock_visualizer_class.return_value = mock_visualizer
 
@@ -154,7 +155,7 @@ class TestShowEventsCommand:
         mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
-        mock_manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
+        mock_manager.list_actors.return_value = ([{"actorId": "user1"}, {"actorId": "user2"}], None)
 
         result = runner.invoke(show_app, ["events", "--list-actors"])
 
@@ -443,7 +444,7 @@ class TestShowEventsEdgeCases:
         mock_config.return_value = {"memory_id": "mem-123", "region": "us-east-1"}
         mock_manager = MagicMock()
         mock_manager_class.return_value = mock_manager
-        mock_manager.list_sessions.return_value = [{"sessionId": "sess1"}, {"sessionId": "sess2"}]
+        mock_manager.list_sessions.return_value = ([{"sessionId": "sess1"}, {"sessionId": "sess2"}], None)
 
         result = runner.invoke(show_app, ["events", "--list-sessions", "--actor-id", "user1"])
 
@@ -541,9 +542,9 @@ class TestCollectAllEvents:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_all_events
 
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = [{"eventId": "e1", "eventTimestamp": "2024-01-01T00:00:00Z"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = ([{"eventId": "e1", "eventTimestamp": "2024-01-01T00:00:00Z"}], None)
 
         events = _collect_all_events(manager, "mem-123")
 
@@ -556,9 +557,9 @@ class TestCollectAllEvents:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_all_events
 
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}, {}]  # Second actor has no actorId
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = [{"eventId": "e1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}, {}], None)  # Second actor has no actorId
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = ([{"eventId": "e1"}], None)
 
         events = _collect_all_events(manager, "mem-123")
 
@@ -569,9 +570,9 @@ class TestCollectAllEvents:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_all_events
 
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}, {}]  # Second session has no sessionId
-        manager.list_events.return_value = [{"eventId": "e1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}, {}], None)  # Second session has no sessionId
+        manager.list_events.return_value = ([{"eventId": "e1"}], None)
 
         events = _collect_all_events(manager, "mem-123")
 
@@ -586,7 +587,7 @@ class TestCollectAllRecords:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_all_records
 
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
+        manager.list_records.return_value = ([{"memoryRecordId": "r1", "content": {"text": "test"}}], None)
 
         records = _collect_all_records(manager, "mem-123", "/test/", 10)
 
@@ -599,8 +600,8 @@ class TestCollectAllRecords:
 
         manager = MagicMock()
         manager.get_memory.return_value = {"strategies": [{"name": "Facts", "namespaces": ["/facts/"]}]}
-        manager.list_records.return_value = [{"memoryRecordId": "r1"}]
-        manager.list_actors.return_value = []
+        manager.list_records.return_value = ([{"memoryRecordId": "r1"}], None)
+        manager.list_actors.return_value = ([], None)
 
         records = _collect_all_records(manager, "mem-123", None, 10)
 
@@ -615,7 +616,7 @@ class TestCollectRecordsFromNamespaceTemplate:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_records_from_namespace_template
 
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1"}]
+        manager.list_records.return_value = ([{"memoryRecordId": "r1"}], None)
         all_records = []
 
         _collect_records_from_namespace_template(manager, "mem-123", "/facts/", 10, all_records)
@@ -627,8 +628,8 @@ class TestCollectRecordsFromNamespaceTemplate:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_records_from_namespace_template
 
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_records.return_value = [{"memoryRecordId": "r1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_records.return_value = ([{"memoryRecordId": "r1"}], None)
         all_records = []
 
         _collect_records_from_namespace_template(manager, "mem-123", "/users/{actorId}/facts/", 10, all_records)
@@ -640,9 +641,9 @@ class TestCollectRecordsFromNamespaceTemplate:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _collect_records_from_namespace_template
 
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_records.return_value = [{"memoryRecordId": "r1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_records.return_value = ([{"memoryRecordId": "r1"}], None)
         all_records = []
 
         _collect_records_from_namespace_template(
@@ -672,7 +673,7 @@ class TestTryCollectRecords:
         from bedrock_agentcore_starter_toolkit.cli.memory.commands import _try_collect_records
 
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1"}]
+        manager.list_records.return_value = ([{"memoryRecordId": "r1"}], None)
         all_records = []
 
         _try_collect_records(manager, "mem-123", "/test/", 10, all_records)
