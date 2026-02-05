@@ -12,6 +12,7 @@ from bedrock_agentcore_starter_toolkit.operations.memory.memory_formatters impor
     format_content_preview,
     format_memory_age,
     format_namespaces,
+    format_payload_snippet,
     format_role_icon,
     format_truncation_hint,
     get_memory_status_icon,
@@ -162,6 +163,14 @@ class TestExtractEventText:
         event = {"payload": [{"conversational": {"content": {"text": "not json"}}}]}
         assert extract_event_text(event) is None
 
+    def test_extract_event_text_empty_message_content(self):
+        """Test when message.content is empty list."""
+        import json
+
+        inner = {"message": {"content": []}}
+        event = {"payload": [{"conversational": {"content": {"text": json.dumps(inner)}}}]}
+        assert extract_event_text(event) is None
+
 
 class TestExtractEventRole:
     """Test event role extraction."""
@@ -296,3 +305,25 @@ class TestStrategyTypeConstants:
 
         assert StrategyType.SEMANTIC.get_override_type() is None
         assert StrategyType.SUMMARY.get_override_type() is None
+
+
+class TestFormatPayloadSnippet:
+    """Test format_payload_snippet function."""
+
+    def test_format_payload_snippet_empty(self):
+        """Test with empty payload."""
+        event = {"payload": None}
+        result = format_payload_snippet(event)
+        assert "(empty)" in result
+
+    def test_format_payload_snippet_short(self):
+        """Test with short payload."""
+        event = {"payload": [{"key": "value"}]}
+        result = format_payload_snippet(event, max_len=100)
+        assert "key" in result
+
+    def test_format_payload_snippet_truncated(self):
+        """Test with long payload that gets truncated."""
+        event = {"payload": [{"key": "a" * 200}]}
+        result = format_payload_snippet(event, max_len=50)
+        assert "…" in result

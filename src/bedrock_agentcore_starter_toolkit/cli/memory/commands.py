@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import typer
+from rich.panel import Panel
 from rich.tree import Tree
 
 from ...operations.memory import MemoryManager
@@ -161,17 +162,17 @@ def _validate_records_options(
 def _collect_all_events(manager: MemoryManager, memory_id: str) -> List[Dict[str, Any]]:
     """Collect all events across all actors/sessions in a memory."""
     all_events = []
-    actors = manager.list_actors(memory_id)
+    actors, _ = manager.list_actors(memory_id)
     for actor in actors:
         actor_id = actor.get("actorId")
         if not actor_id:
             continue
-        sessions = manager.list_sessions(memory_id, actor_id)
+        sessions, _ = manager.list_sessions(memory_id, actor_id)
         for session in sessions:
             session_id = session.get("sessionId")
             if not session_id:
                 continue
-            events = manager.list_events(memory_id, actor_id, session_id, max_results=100)
+            events, _ = manager.list_events(memory_id, actor_id, session_id, max_results=100)
             for event in events:
                 event["_actorId"] = actor_id
                 event["_sessionId"] = session_id
@@ -190,7 +191,7 @@ def _collect_all_records(
 
     if namespace:
         # Single namespace
-        records = manager.list_records(memory_id, namespace, max_results)
+        records, _ = manager.list_records(memory_id, namespace, max_results)
         for r in records:
             r["_namespace"] = namespace
         return records
@@ -221,13 +222,13 @@ def _collect_records_from_namespace_template(
 
     # Need to enumerate actors/sessions
     try:
-        actors = manager.list_actors(memory_id)
+        actors, _ = manager.list_actors(memory_id)
         for actor in actors[:5]:  # Limit actors
             actor_id = actor.get("actorId", "")
             ns = ns_template.replace("{actorId}", actor_id)
 
             if "{sessionId}" in ns:
-                sessions = manager.list_sessions(memory_id, actor_id)
+                sessions, _ = manager.list_sessions(memory_id, actor_id)
                 for sess in sessions[:3]:  # Limit sessions
                     session_id = sess.get("sessionId", "")
                     final_ns = ns.replace("{sessionId}", session_id)
@@ -247,7 +248,7 @@ def _try_collect_records(
 ) -> None:
     """Try to collect records from a namespace, ignoring errors."""
     try:
-        records = manager.list_records(memory_id, namespace, max_results)
+        records, _ = manager.list_records(memory_id, namespace, max_results)
         for r in records:
             r["_namespace"] = namespace
         all_records.extend(records)
@@ -544,7 +545,7 @@ def show_callback(
 
         actor_count = None
         if verbose:
-            actors = manager.list_actors(config.memory_id)
+            actors, _ = manager.list_actors(config.memory_id)
             actor_count = len(actors)
 
         visualizer = MemoryVisualizer(console)
@@ -636,7 +637,7 @@ def show_events(
 
 def _handle_list_actors(manager: MemoryManager, memory_id: str) -> None:
     """Handle --list-actors mode."""
-    actors = manager.list_actors(memory_id)
+    actors, _ = manager.list_actors(memory_id)
     tree = Tree(f"🧠 [bold cyan]{memory_id}[/bold cyan]")
     for a in actors:
         tree.add(f"👤 {a.get('actorId')}")
@@ -648,7 +649,7 @@ def _handle_list_sessions(manager: MemoryManager, memory_id: str, actor_id: Opti
     """Handle --list-sessions mode."""
     if not actor_id:
         _handle_error("--list-sessions requires --actor-id")
-    sessions = manager.list_sessions(memory_id, actor_id)
+    sessions, _ = manager.list_sessions(memory_id, actor_id)
     tree = Tree(f"🧠 [bold cyan]{memory_id}[/bold cyan]")
     actor_tree = tree.add(f"👤 [bold]{actor_id}[/bold]")
     for s in sessions:
@@ -715,10 +716,10 @@ def show_records(
         agentcore memory show records --all
 
         # Search records semantically
-        agentcore memory show records --query "user preferences" -n /users/quickstart-user/facts
+        agentcore memory show records --query "user preferences" -n /users/quickstart-user/facts/
 
         # Show records from specific namespace
-        agentcore memory show records -n /users/quickstart-user/facts
+        agentcore memory show records -n /users/quickstart-user/facts/
 
         # Show with full content
         agentcore memory show records --verbose
@@ -809,6 +810,51 @@ def _handle_show_nth_record(
         with path.open("w") as f:
             json.dump(record, f, indent=2, default=str)
         console.print(f"[green]✓[/green] Exported record to {path}")
+
+
+# ==================== Browse Command ====================
+
+
+@memory_app.command()
+def browse(
+    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory ID to browse"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name from config"),
+    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+) -> None:
+    """Interactive TUI browser for exploring memory content.
+
+    Navigate through actors, sessions, events (STM) and namespaces, records (LTM).
+
+    Key bindings:
+      ↑↓     Navigate list
+      Enter  Select item
+      b      Go back
+      h      Home (return to memory view)
+      v      Toggle verbose
+      m      Load more (when paginated)
+      q      Quit
+    """
+    from .browser import MemoryBrowser
+
+    config = _resolve_memory_config(agent, memory_id, region)
+    manager = MemoryManager(region_name=config.region)
+
+    # Validate credentials before starting browser
+    try:
+        manager.get_memory(config.memory_id)
+    except Exception as e:
+        console.print(
+            Panel(
+                f"[red]Cannot start browser:[/red] {e}",
+                title="[red]Authentication Error[/red]",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(1) from None
+
+    visualizer = MemoryVisualizer()
+    app = MemoryBrowser(manager, config.memory_id, visualizer)
+    app.run()
 
 
 if __name__ == "__main__":

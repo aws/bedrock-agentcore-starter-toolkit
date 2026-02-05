@@ -232,7 +232,7 @@ class TestMemoryShowEvents:
         mock_console = MagicMock()
         mock_resolve.return_value = ("mem-123", "us-east-1", mock_manager, mock_console)
 
-        mock_manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
+        mock_manager.list_actors.return_value = ([{"actorId": "user1"}, {"actorId": "user2"}], None)
 
         mem = Memory(memory_id="mem-123")
         result = mem.show_events(list_actors=True)
@@ -247,7 +247,7 @@ class TestMemoryShowEvents:
         mock_console = MagicMock()
         mock_resolve.return_value = ("mem-123", "us-east-1", mock_manager, mock_console)
 
-        mock_manager.list_sessions.return_value = [{"sessionId": "sess-1"}]
+        mock_manager.list_sessions.return_value = ([{"sessionId": "sess-1"}], None)
 
         mem = Memory(memory_id="mem-123")
         result = mem.show_events(list_sessions=True, actor_id="user1")

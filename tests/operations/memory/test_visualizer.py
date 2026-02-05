@@ -8,6 +8,72 @@ from rich.console import Console
 from bedrock_agentcore_starter_toolkit.operations.memory.memory_visualizer import MemoryVisualizer
 
 
+def test_build_event_detail_raw_payload_branch():
+    """Test that raw payload branch is covered when no text is extractable."""
+    from rich.panel import Panel
+
+    vis = MemoryVisualizer()
+    event = {"eventId": "e1", "payload": [{"blob": {"data": "test"}}]}
+    result = vis.build_event_detail(event)
+    assert isinstance(result, Panel)
+    content = str(result.renderable)
+    assert "Raw payload" in content
+    assert "blob" in content
+
+
+def test_build_event_detail_with_extractable_text():
+    """Test event detail when text can be extracted from payload."""
+    import json
+
+    from rich.panel import Panel
+
+    vis = MemoryVisualizer()
+    # Create payload with extractable text (nested JSON structure)
+    inner = {"message": {"content": [{"text": "Hello world"}]}}
+    event = {
+        "eventId": "e1",
+        "payload": [{"conversational": {"content": {"text": json.dumps(inner)}}}],
+    }
+    result = vis.build_event_detail(event)
+    assert isinstance(result, Panel)
+    assert "Hello world" in str(result.renderable)
+
+
+def test_display_single_event_with_extractable_text(visualizer):
+    """Test display_single_event when text can be extracted."""
+    import json
+
+    inner = {"message": {"content": [{"text": "Test message"}]}}
+    event = {
+        "eventId": "e1",
+        "eventTimestamp": "2024-01-01T00:00:00Z",
+        "payload": [{"conversational": {"content": {"text": json.dumps(inner)}}}],
+    }
+    visualizer.display_single_event(event, 1, 1, verbose=False)
+
+
+def test_format_memory_row_with_data_attribute(visualizer):
+    """Test _format_memory_row fallback to _data attribute."""
+
+    class MockMemory:
+        _data = {"memoryId": "mem-123", "name": "Test", "status": "ACTIVE"}
+
+    result = visualizer._format_memory_row(MockMemory(), None)
+    assert "mem-123" in str(result[0])
+
+
+def test_format_strategy_header_with_type_icon(visualizer):
+    """Test _format_strategy_header when type icon is present."""
+    from unittest.mock import patch
+
+    with patch(
+        "bedrock_agentcore_starter_toolkit.operations.memory.memory_visualizer.get_strategy_type_icon",
+        return_value="🧠",
+    ):
+        result = visualizer._format_strategy_header("Test", "SEMANTIC", "ACTIVE")
+        assert "🧠" in str(result)
+
+
 @pytest.fixture
 def console():
     """Create a mock console."""
@@ -103,32 +169,35 @@ class TestDisplayEventsTree:
 
     def test_display_events_tree_no_actors(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = []
+        manager.list_actors.return_value = ([], None)
 
         visualizer.display_events_tree("mem-123", manager)
         console.print.assert_called()
 
     def test_display_events_tree_with_actors(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = []
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = ([], None)
 
         visualizer.display_events_tree("mem-123", manager)
         console.print.assert_called()
 
     def test_display_events_tree_with_events(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = [
-            {
-                "eventId": "e1",
-                "eventTimestamp": "2024-01-01T00:00:00Z",
-                "branchName": "main",
-                "payload": [{"conversational": {"role": "USER", "content": {"text": "{}"}}}],
-            }
-        ]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = (
+            [
+                {
+                    "eventId": "e1",
+                    "eventTimestamp": "2024-01-01T00:00:00Z",
+                    "branchName": "main",
+                    "payload": [{"conversational": {"role": "USER", "content": {"text": "{}"}}}],
+                }
+            ],
+            None,
+        )
 
         visualizer.display_events_tree("mem-123", manager)
         console.print.assert_called()
@@ -178,7 +247,7 @@ class TestDisplayRecordsTree:
         manager.get_memory.return_value = MagicMock(
             _data={"strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]}]}
         )
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
+        manager.list_records.return_value = ([{"memoryRecordId": "r1", "content": {"text": "test"}}], None)
 
         visualizer.display_records_tree(manager, "mem-123", verbose=False, max_results=10, output=None)
         console.print.assert_called()
@@ -189,14 +258,14 @@ class TestDisplayNamespaceRecords:
 
     def test_display_namespace_records_empty(self, visualizer, console):
         manager = MagicMock()
-        manager.list_records.return_value = []
+        manager.list_records.return_value = ([], None)
 
         visualizer.display_namespace_records(manager, "mem-123", "/test/", verbose=False, max_results=10, output=None)
         console.print.assert_called()
 
     def test_display_namespace_records_with_records(self, visualizer, console):
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}}]
+        manager.list_records.return_value = ([{"memoryRecordId": "r1", "content": {"text": "test"}}], None)
 
         visualizer.display_namespace_records(manager, "mem-123", "/test/", verbose=False, max_results=10, output=None)
         console.print.assert_called()
@@ -295,37 +364,37 @@ class TestEventsTreeEdgeCases:
 
     def test_events_tree_with_actor_filter(self, visualizer, console):
         manager = MagicMock()
-        manager.list_sessions.return_value = []
+        manager.list_sessions.return_value = ([], None)
         visualizer.display_events_tree("mem-123", manager, actor_id="user1")
         console.print.assert_called()
 
     def test_events_tree_with_session_filter(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = []
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = ([], None)
         visualizer.display_events_tree("mem-123", manager, session_id="sess1")
         console.print.assert_called()
 
     def test_events_tree_truncation_hint(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": f"user{i}"} for i in range(15)]
-        manager.list_sessions.return_value = []
+        manager.list_actors.return_value = ([{"actorId": f"user{i}"} for i in range(15)], None)
+        manager.list_sessions.return_value = ([], None)
         visualizer.display_events_tree("mem-123", manager, max_actors=5)
         console.print.assert_called()
 
     def test_events_tree_session_error(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
         manager.list_sessions.side_effect = Exception("API error")
         visualizer.display_events_tree("mem-123", manager)
         console.print.assert_called()
 
     def test_events_tree_with_output_file(self, visualizer, console, tmp_path):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
-        manager.list_events.return_value = []
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
+        manager.list_events.return_value = ([], None)
         output_file = tmp_path / "events.json"
         visualizer.display_events_tree("mem-123", manager, output=str(output_file))
         assert output_file.exists()
@@ -339,9 +408,10 @@ class TestBuildSessionSubtree:
 
         root = Tree("test")
         manager = MagicMock()
-        manager.list_events.return_value = [
-            {"eventId": "e1", "eventTimestamp": "2024-01-01T00:00:00Z", "branch": {"name": "main"}, "payload": []}
-        ]
+        manager.list_events.return_value = (
+            [{"eventId": "e1", "eventTimestamp": "2024-01-01T00:00:00Z", "branch": {"name": "main"}, "payload": []}],
+            None,
+        )
         result = visualizer._build_session_subtree(root, manager, "mem-123", "user1", {"sessionId": "sess1"}, 10, False)
         assert result["sessionId"] == "sess1"
 
@@ -373,17 +443,24 @@ class TestAddEventNode:
         visualizer._add_event_node(branch, event, False)
 
     def test_event_node_verbose_user(self, visualizer):
+        import json
+
         from rich.tree import Tree
 
         branch = Tree("test")
-        event = {"payload": [{"conversational": {"role": "USER", "content": {"text": "hello"}}}]}
+        # Create properly formatted event with extractable text
+        text_json = json.dumps({"message": {"content": [{"text": "hello world"}]}})
+        event = {"payload": [{"conversational": {"role": "USER", "content": {"text": text_json}}}]}
         visualizer._add_event_node(branch, event, True)
 
     def test_event_node_assistant(self, visualizer):
+        import json
+
         from rich.tree import Tree
 
         branch = Tree("test")
-        event = {"payload": [{"conversational": {"role": "ASSISTANT", "content": {"text": "hi"}}}]}
+        text_json = json.dumps({"message": {"content": [{"text": "hi there"}]}})
+        event = {"payload": [{"conversational": {"role": "ASSISTANT", "content": {"text": text_json}}}]}
         visualizer._add_event_node(branch, event, False)
 
 
@@ -421,7 +498,10 @@ class TestRecordsTreeEdgeCases:
         manager.get_memory.return_value = {
             "strategies": [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts/"]}]
         }
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
+        manager.list_records.return_value = (
+            [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}],
+            None,
+        )
         visualizer.display_records_tree(manager, "mem-123", False, 10, None)
         console.print.assert_called()
 
@@ -446,7 +526,10 @@ class TestNamespaceRecordsEdgeCases:
 
     def test_namespace_records_with_output(self, visualizer, console, tmp_path):
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
+        manager.list_records.return_value = (
+            [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}],
+            None,
+        )
         output_file = tmp_path / "ns_records.json"
         visualizer.display_namespace_records(manager, "mem-123", "/test/", False, 10, str(output_file))
         assert output_file.exists()
@@ -462,15 +545,15 @@ class TestResolveNamespace:
 
     def test_resolve_actor_template(self, visualizer):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}, {"actorId": "user2"}], None)
         result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/facts/")
         assert "/users/user1/facts/" in result
         assert "/users/user2/facts/" in result
 
     def test_resolve_session_template(self, visualizer):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}], None)
         result = visualizer._resolve_namespace(manager, "mem-123", "/users/{actorId}/sessions/{sessionId}/")
         assert "/users/user1/sessions/sess1/" in result
 
@@ -587,9 +670,9 @@ class TestSessionTruncation:
 
     def test_session_truncation_hint(self, visualizer, console):
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_sessions.return_value = [{"sessionId": f"sess{i}"} for i in range(15)]
-        manager.list_events.return_value = []
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_sessions.return_value = ([{"sessionId": f"sess{i}"} for i in range(15)], None)
+        manager.list_events.return_value = ([], None)
         visualizer.display_events_tree("mem-123", manager, max_sessions=5)
         console.print.assert_called()
 
@@ -635,8 +718,11 @@ class TestStrategyRecordsWithResolvedNamespaces:
         manager.get_memory.return_value = {
             "strategies": [{"name": "UserFacts", "type": "SEMANTIC", "namespaces": ["/users/{actorId}/facts/"]}]
         }
-        manager.list_actors.return_value = [{"actorId": "user1"}]
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}], None)
+        manager.list_records.return_value = (
+            [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}],
+            None,
+        )
         visualizer.display_records_tree(manager, "mem-123", False, 10, None)
         console.print.assert_called()
 
@@ -860,7 +946,7 @@ class TestGetActors:
     def test_get_actors_without_filter(self, visualizer):
         """Test getting actors without filter."""
         manager = MagicMock()
-        manager.list_actors.return_value = [{"actorId": "user1"}, {"actorId": "user2"}]
+        manager.list_actors.return_value = ([{"actorId": "user1"}, {"actorId": "user2"}], None)
         actors, total = visualizer._get_actors(manager, "mem-123", None, 10)
         assert len(actors) == 2
         assert total == 2
@@ -880,7 +966,7 @@ class TestGetSessions:
     def test_get_sessions_without_filter(self, visualizer):
         """Test getting sessions without filter."""
         manager = MagicMock()
-        manager.list_sessions.return_value = [{"sessionId": "sess1"}, {"sessionId": "sess2"}]
+        manager.list_sessions.return_value = ([{"sessionId": "sess1"}, {"sessionId": "sess2"}], None)
         sessions, total = visualizer._get_sessions(manager, "mem-123", "user1", None, 10)
         assert len(sessions) == 2
         assert total == 2
@@ -895,8 +981,11 @@ class TestAddStrategyRecords:
 
         root = Tree("test")
         manager = MagicMock()
-        manager.list_records.return_value = [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}]
-        manager.list_actors.return_value = []
+        manager.list_records.return_value = (
+            [{"memoryRecordId": "r1", "content": {"text": "test"}, "createdAt": "2024"}],
+            None,
+        )
+        manager.list_actors.return_value = ([], None)
         export_data = {"namespaces": []}
 
         visualizer._add_strategy_records(
@@ -948,3 +1037,184 @@ class TestMemoryVisualizerIntegration:
 
         visualizer.visualize_memory(memory, verbose=True, actor_count=5)
         console.print.assert_called()
+
+
+class TestBuildMemoryTree:
+    """Test build_memory_tree method."""
+
+    def test_build_memory_tree_returns_tree(self, visualizer):
+        from rich.tree import Tree
+
+        memory = {"id": "mem-123", "name": "test", "status": "ACTIVE", "strategies": []}
+        result = visualizer.build_memory_tree(memory)
+        assert isinstance(result, Tree)
+
+    def test_build_memory_tree_with_actor_count(self, visualizer):
+        from rich.tree import Tree
+
+        memory = {"id": "mem-123", "name": "test", "status": "ACTIVE", "strategies": []}
+        result = visualizer.build_memory_tree(memory, actor_count=5)
+        assert isinstance(result, Tree)
+
+
+class TestBuildActorsTable:
+    """Test build_actors_table method."""
+
+    def test_build_actors_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        actors = [{"actorId": "actor-1"}, {"actorId": "actor-2"}]
+        result = visualizer.build_actors_table(actors, "mem-123")
+        assert isinstance(result, Table)
+
+    def test_build_actors_table_empty(self, visualizer):
+        from rich.table import Table
+
+        result = visualizer.build_actors_table([], "mem-123")
+        assert isinstance(result, Table)
+
+
+class TestBuildSessionsTable:
+    """Test build_sessions_table method."""
+
+    def test_build_sessions_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        sessions = [{"sessionId": "sess-1"}, {"sessionId": "sess-2"}]
+        result = visualizer.build_sessions_table(sessions, "actor-1")
+        assert isinstance(result, Table)
+
+
+class TestBuildEventsTable:
+    """Test build_events_table method."""
+
+    def test_build_events_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        events = [
+            {"eventId": "evt-1", "eventTimestamp": "2024-01-01T00:00:00", "payload": {"content": [{"text": "Hello"}]}},
+        ]
+        result = visualizer.build_events_table(events, "sess-1")
+        assert isinstance(result, Table)
+
+    def test_build_events_table_verbose(self, visualizer):
+        from rich.table import Table
+
+        events = [{"eventId": "evt-1", "payload": {"content": [{"text": "Hello world"}]}}]
+        result = visualizer.build_events_table(events, "sess-1", verbose=True)
+        assert isinstance(result, Table)
+
+
+class TestBuildEventDetail:
+    """Test build_event_detail method."""
+
+    def test_build_event_detail_returns_panel(self, visualizer):
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "eventTimestamp": "2024-01-01T00:00:00",
+            "actorId": "actor-1",
+            "sessionId": "sess-1",
+            "payload": {"content": [{"text": "Hello"}]},
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+    def test_build_event_detail_with_branch(self, visualizer):
+        from rich.panel import Panel
+
+        event = {"eventId": "evt-1", "branch": {"name": "main"}}
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+    def test_build_event_detail_with_raw_payload(self, visualizer):
+        """Test event detail with raw payload when no text is extractable."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "eventTimestamp": "2024-01-01T00:00:00",
+            "payload": [{"blob": {"data": "binary_data"}}],
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+        # Verify raw payload is shown
+        assert "Raw payload" in str(result.renderable)
+
+    def test_build_event_detail_with_raw_payload_verbose(self, visualizer):
+        """Test event detail with raw payload in verbose mode."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "payload": [{"blob": {"data": "x" * 500}}],
+        }
+        result = visualizer.build_event_detail(event, verbose=True)
+        assert isinstance(result, Panel)
+        # Verbose mode should show full payload
+        assert "x" * 500 in str(result.renderable)
+
+    def test_build_event_detail_with_role(self, visualizer):
+        """Test event detail with role."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "payload": [{"conversational": {"role": "USER", "content": {"text": "hello"}}}],
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+
+class TestBuildNamespacesTable:
+    """Test build_namespaces_table method."""
+
+    def test_build_namespaces_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        strategies = [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts", "/user/{actorId}"]}]
+        result = visualizer.build_namespaces_table(strategies, "mem-123")
+        assert isinstance(result, Table)
+
+    def test_build_namespaces_table_empty_strategies(self, visualizer):
+        from rich.table import Table
+
+        result = visualizer.build_namespaces_table([], "mem-123")
+        assert isinstance(result, Table)
+
+
+class TestBuildRecordsTable:
+    """Test build_records_table method."""
+
+    def test_build_records_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        records = [{"memoryRecordId": "rec-1", "createdAt": "2024-01-01", "content": {"text": "Test"}}]
+        result = visualizer.build_records_table(records, "/facts")
+        assert isinstance(result, Table)
+
+    def test_build_records_table_verbose(self, visualizer):
+        from rich.table import Table
+
+        records = [{"memoryRecordId": "rec-1", "content": {"text": "Test content"}}]
+        result = visualizer.build_records_table(records, "/facts", verbose=True)
+        assert isinstance(result, Table)
+
+
+class TestBuildRecordDetail:
+    """Test build_record_detail method."""
+
+    def test_build_record_detail_returns_panel(self, visualizer):
+        from rich.panel import Panel
+
+        record = {"memoryRecordId": "rec-1", "createdAt": "2024-01-01", "content": {"text": "Test"}}
+        result = visualizer.build_record_detail(record)
+        assert isinstance(result, Panel)
+
+    def test_build_record_detail_with_namespace(self, visualizer):
+        from rich.panel import Panel
+
+        record = {"memoryRecordId": "rec-1", "_namespace": "/facts", "content": {"text": "Test"}}
+        result = visualizer.build_record_detail(record)
+        assert isinstance(result, Panel)
