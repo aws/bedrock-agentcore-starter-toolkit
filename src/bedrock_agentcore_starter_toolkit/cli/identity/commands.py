@@ -961,9 +961,9 @@ def cleanup_identity(
     if agent_config.identity and agent_config.identity.workload:
         try:
             console.print(f"  • Deleting workload identity: {agent_config.identity.workload.name}")
-            identity_client.identity_client.delete_workload_identity(name=agent_config.identity.workload.name)
+            identity_client.cp_client.delete_workload_identity(name=agent_config.identity.workload.name)
             console.print("    ✓ Deleted")
-        except identity_client.identity_client.exceptions.ResourceNotFoundException:
+        except identity_client.cp_client.exceptions.ResourceNotFoundException:
             console.print("    ✓ Already deleted or never existed")
         except Exception as e:
             console.print(f"    ⚠️  Error: {repr(e)}")
