@@ -3,10 +3,6 @@
     Bedrock AgentCore Starter Toolkit
   </h1>
 
-  <h2>
-    Deploy your local AI agent to Bedrock AgentCore with zero infrastructure
-  </h2>
-
   <div align="center">
     <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/graphs/commit-activity"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/aws/bedrock-agentcore-starter-toolkit"/></a>
     <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit/issues"><img alt="GitHub open issues" src="https://img.shields.io/github/issues/aws/bedrock-agentcore-starter-toolkit"/></a>
@@ -26,6 +22,9 @@
 
   </p>
 </div>
+
+<br/>
+<b>Note: The AgentCore Starter Toolkit is an experimental offering and features are subject to change in future releases.</b>
 
 ## Overview
 Amazon Bedrock AgentCore enables you to deploy and operate highly effective agents securely, at scale using any framework and model. With Amazon Bedrock AgentCore, developers can accelerate AI agents into production with the scale, reliability, and security, critical to real-world deployment. AgentCore provides tools and capabilities to make agents more effective and capable, purpose-built infrastructure to securely scale agents, and controls to operate trustworthy agents. Amazon Bedrock AgentCore services are composable and work with popular open-source frameworks and any model, so you don’t have to choose between open-source flexibility and enterprise-grade security and reliability.
