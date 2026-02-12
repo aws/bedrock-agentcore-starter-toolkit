@@ -4644,7 +4644,10 @@ agents:
             mock_session.post.assert_called_once()
             call_args = mock_session.post.call_args
             assert call_args.kwargs["json"] == {"prompt": "hello"}
-            assert call_args.kwargs["headers"]["x-amzn-bedrock-agentcore-runtime-session-id"] == "auto-generated-session-id"
+            assert (
+                call_args.kwargs["headers"]["x-amzn-bedrock-agentcore-runtime-session-id"]
+                == "auto-generated-session-id"
+            )
 
     def test_invoke_dev_mode_with_session_id(self):
         """Test invoke command with --dev mode uses provided session_id."""
