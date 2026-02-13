@@ -1601,7 +1601,6 @@ class TestCleanup:
         with patch("bedrock_agentcore.services.identity.IdentityClient") as mock_identity_class:
             mock_identity = Mock()
             mock_identity.cp_client = Mock()
-            mock_identity.identity_client = Mock()
             mock_identity_class.return_value = mock_identity
 
             with patch(
@@ -1617,7 +1616,7 @@ class TestCleanup:
 
         # Verify deletions were called
         mock_identity.cp_client.delete_oauth2_credential_provider.assert_called_once_with(name="TestProvider")
-        mock_identity.identity_client.delete_workload_identity.assert_called_once_with(name="test-workload")
+        mock_identity.cp_client.delete_workload_identity.assert_called_once_with(name="test-workload")
 
         # Verify Cognito cleanup was called for each flow
         assert mock_manager.cleanup_cognito_pools.call_count == 2
@@ -1714,7 +1713,6 @@ class TestCleanup:
             mock_cp_client.delete_oauth2_credential_provider.side_effect = Exception("Deletion failed")
 
             mock_identity.cp_client = mock_cp_client
-            mock_identity.identity_client = Mock()
             mock_identity_class.return_value = mock_identity
 
             result = runner.invoke(identity_app, ["cleanup", "--force"])
