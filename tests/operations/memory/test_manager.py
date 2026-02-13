@@ -3,6 +3,7 @@
 import uuid
 from unittest.mock import MagicMock, patch
 
+import pytest
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.memory.constants import (
@@ -498,6 +499,23 @@ def test_get_memory_status():
         # Verify API call
         args, kwargs = mock_control_plane_client.get_memory.call_args
         assert kwargs["memoryId"] == "mem-123"
+
+
+def test_get_memory_status_error():
+    """Test get_memory_status error handling."""
+    from botocore.exceptions import ClientError
+
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        mock_control_plane_client.get_memory.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException", "Message": "Not found"}}, "GetMemory"
+        )
+
+        with pytest.raises(ClientError):
+            manager.get_memory_status("mem-123")
 
 
 def test_add_summary_strategy():
@@ -3033,23 +3051,23 @@ def test_list_actors():
 
 
 def test_list_actors_with_pagination():
-    """Test list_actors with multiple pages."""
+    """Test list_actors with pagination token."""
     with patch("boto3.client"):
         manager = MemoryManager(region_name="us-east-1")
 
         mock_data_plane_client = MagicMock()
         manager._data_plane_client = mock_data_plane_client
 
-        # Mock paginated responses
-        mock_data_plane_client.list_actors.side_effect = [
-            {"actorSummaries": [{"actorId": "actor-1"}], "nextToken": "token1"},
-            {"actorSummaries": [{"actorId": "actor-2"}], "nextToken": None},
-        ]
+        # Mock response with pagination token
+        mock_data_plane_client.list_actors.return_value = {
+            "actorSummaries": [{"actorId": "actor-1"}],
+            "nextToken": "token1",
+        }
 
-        result = manager.list_actors("mem-123")
+        result = manager.list_actors("mem-123", max_results=1)
 
-        assert len(result) == 2
-        assert mock_data_plane_client.list_actors.call_count == 2
+        assert len(result) == 1
+        mock_data_plane_client.list_actors.assert_called_once_with(memoryId="mem-123", maxResults=1)
 
 
 def test_list_actors_error():
@@ -3090,6 +3108,76 @@ def test_list_sessions():
         mock_data_plane_client.list_sessions.assert_called_once_with(memoryId="mem-123", actorId="actor-1")
 
 
+def test_list_sessions_with_pagination():
+    """Test list_sessions with pagination token."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_sessions.return_value = {
+            "sessionSummaries": [{"sessionId": "session-1"}],
+            "nextToken": "token1",
+        }
+
+        result = manager.list_sessions("mem-123", "actor-1", max_results=1)
+
+        assert len(result) == 1
+        mock_data_plane_client.list_sessions.assert_called_once_with(
+            memoryId="mem-123", actorId="actor-1", maxResults=1
+        )
+
+
+def test_list_actors_with_next_token():
+    """Test list_actors with next_token parameter."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_actors.return_value = {
+            "actorSummaries": [{"actorId": "actor-2"}],
+            "nextToken": None,
+        }
+
+        result = manager.list_actors("mem-123")
+
+        assert len(result) == 1
+        mock_data_plane_client.list_actors.assert_called_once_with(memoryId="mem-123")
+
+
+def test_list_sessions_error():
+    """Test list_sessions error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_sessions.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Access denied"}}, "ListSessions"
+        )
+
+        with pytest.raises(ClientError):
+            manager.list_sessions("mem-123", "actor-1")
+
+
+def test_list_events_error():
+    """Test list_events error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_events.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Access denied"}}, "ListEvents"
+        )
+
+        with pytest.raises(ClientError):
+            manager.list_events("mem-123", "actor-1", "session-1")
+
+
 def test_list_events():
     """Test list_events method."""
     with patch("boto3.client"):
@@ -3110,6 +3198,25 @@ def test_list_events():
         mock_data_plane_client.list_events.assert_called_once_with(
             memoryId="mem-123", actorId="actor-1", sessionId="session-1"
         )
+
+
+def test_list_events_paginated():
+    """Test list_events auto-paginates through all pages."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_events.side_effect = [
+            {"events": [{"eventId": "event-1"}], "nextToken": "tok2"},
+            {"events": [{"eventId": "event-2"}], "nextToken": None},
+        ]
+
+        result = manager.list_events("mem-123", "actor-1", "session-1")
+
+        assert len(result) == 2
+        assert result[0]["eventId"] == "event-1"
+        assert result[1]["eventId"] == "event-2"
 
 
 def test_list_events_with_max_results():
@@ -3148,6 +3255,21 @@ def test_get_event():
         mock_data_plane_client.get_event.assert_called_once_with(memoryId="mem-123", eventId="event-123")
 
 
+def test_get_event_error():
+    """Test get_event error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.get_event.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException", "Message": "Not found"}}, "GetEvent"
+        )
+
+        with pytest.raises(ClientError):
+            manager.get_event("mem-123", "event-123")
+
+
 def test_list_records():
     """Test list_records method."""
     with patch("boto3.client"):
@@ -3168,6 +3290,40 @@ def test_list_records():
         mock_data_plane_client.list_memory_records.assert_called_once_with(
             memoryId="mem-123", namespace="/users/alice/facts/"
         )
+
+
+def test_list_records_paginated():
+    """Test list_records auto-paginates through all pages."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_memory_records.side_effect = [
+            {"memoryRecordSummaries": [{"recordId": "rec-1"}], "nextToken": "tok2"},
+            {"memoryRecordSummaries": [{"recordId": "rec-2"}], "nextToken": None},
+        ]
+
+        result = manager.list_records("mem-123", "/facts")
+
+        assert len(result) == 2
+        assert result[0]["recordId"] == "rec-1"
+        assert result[1]["recordId"] == "rec-2"
+
+
+def test_list_records_error():
+    """Test list_records error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.list_memory_records.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Access denied"}}, "ListMemoryRecords"
+        )
+
+        with pytest.raises(ClientError):
+            manager.list_records("mem-123", "/namespace")
 
 
 def test_get_record():
@@ -3213,6 +3369,21 @@ def test_search_records():
             searchCriteria={"searchQuery": "favorite color"},
             maxResults=5,
         )
+
+
+def test_search_records_error():
+    """Test search_records error handling."""
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+        mock_data_plane_client = MagicMock()
+        manager._data_plane_client = mock_data_plane_client
+
+        mock_data_plane_client.retrieve_memory_records.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Access denied"}}, "RetrieveMemoryRecords"
+        )
+
+        with pytest.raises(ClientError):
+            manager.search_records("mem-123", "/namespace", "query")
 
 
 def test_data_plane_client_initialization():

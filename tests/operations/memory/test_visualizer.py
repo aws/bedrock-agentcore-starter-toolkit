@@ -8,6 +8,72 @@ from rich.console import Console
 from bedrock_agentcore_starter_toolkit.operations.memory.memory_visualizer import MemoryVisualizer
 
 
+def test_build_event_detail_raw_payload_branch():
+    """Test that raw payload branch is covered when no text is extractable."""
+    from rich.panel import Panel
+
+    vis = MemoryVisualizer()
+    event = {"eventId": "e1", "payload": [{"blob": {"data": "test"}}]}
+    result = vis.build_event_detail(event)
+    assert isinstance(result, Panel)
+    content = str(result.renderable)
+    assert "Raw payload" in content
+    assert "blob" in content
+
+
+def test_build_event_detail_with_extractable_text():
+    """Test event detail when text can be extracted from payload."""
+    import json
+
+    from rich.panel import Panel
+
+    vis = MemoryVisualizer()
+    # Create payload with extractable text (nested JSON structure)
+    inner = {"message": {"content": [{"text": "Hello world"}]}}
+    event = {
+        "eventId": "e1",
+        "payload": [{"conversational": {"content": {"text": json.dumps(inner)}}}],
+    }
+    result = vis.build_event_detail(event)
+    assert isinstance(result, Panel)
+    assert "Hello world" in str(result.renderable)
+
+
+def test_display_single_event_with_extractable_text(visualizer):
+    """Test display_single_event when text can be extracted."""
+    import json
+
+    inner = {"message": {"content": [{"text": "Test message"}]}}
+    event = {
+        "eventId": "e1",
+        "eventTimestamp": "2024-01-01T00:00:00Z",
+        "payload": [{"conversational": {"content": {"text": json.dumps(inner)}}}],
+    }
+    visualizer.display_single_event(event, 1, 1, verbose=False)
+
+
+def test_format_memory_row_with_data_attribute(visualizer):
+    """Test _format_memory_row fallback to _data attribute."""
+
+    class MockMemory:
+        _data = {"memoryId": "mem-123", "name": "Test", "status": "ACTIVE"}
+
+    result = visualizer._format_memory_row(MockMemory(), None)
+    assert "mem-123" in str(result[0])
+
+
+def test_format_strategy_header_with_type_icon(visualizer):
+    """Test _format_strategy_header when type icon is present."""
+    from unittest.mock import patch
+
+    with patch(
+        "bedrock_agentcore_starter_toolkit.operations.memory.memory_visualizer.get_strategy_type_icon",
+        return_value="🧠",
+    ):
+        result = visualizer._format_strategy_header("Test", "SEMANTIC", "ACTIVE")
+        assert "🧠" in str(result)
+
+
 @pytest.fixture
 def console():
     """Create a mock console."""
@@ -373,17 +439,24 @@ class TestAddEventNode:
         visualizer._add_event_node(branch, event, False)
 
     def test_event_node_verbose_user(self, visualizer):
+        import json
+
         from rich.tree import Tree
 
         branch = Tree("test")
-        event = {"payload": [{"conversational": {"role": "USER", "content": {"text": "hello"}}}]}
+        # Create properly formatted event with extractable text
+        text_json = json.dumps({"message": {"content": [{"text": "hello world"}]}})
+        event = {"payload": [{"conversational": {"role": "USER", "content": {"text": text_json}}}]}
         visualizer._add_event_node(branch, event, True)
 
     def test_event_node_assistant(self, visualizer):
+        import json
+
         from rich.tree import Tree
 
         branch = Tree("test")
-        event = {"payload": [{"conversational": {"role": "ASSISTANT", "content": {"text": "hi"}}}]}
+        text_json = json.dumps({"message": {"content": [{"text": "hi there"}]}})
+        event = {"payload": [{"conversational": {"role": "ASSISTANT", "content": {"text": text_json}}}]}
         visualizer._add_event_node(branch, event, False)
 
 
@@ -948,3 +1021,184 @@ class TestMemoryVisualizerIntegration:
 
         visualizer.visualize_memory(memory, verbose=True, actor_count=5)
         console.print.assert_called()
+
+
+class TestBuildMemoryTree:
+    """Test build_memory_tree method."""
+
+    def test_build_memory_tree_returns_tree(self, visualizer):
+        from rich.tree import Tree
+
+        memory = {"id": "mem-123", "name": "test", "status": "ACTIVE", "strategies": []}
+        result = visualizer.build_memory_tree(memory)
+        assert isinstance(result, Tree)
+
+    def test_build_memory_tree_with_actor_count(self, visualizer):
+        from rich.tree import Tree
+
+        memory = {"id": "mem-123", "name": "test", "status": "ACTIVE", "strategies": []}
+        result = visualizer.build_memory_tree(memory, actor_count=5)
+        assert isinstance(result, Tree)
+
+
+class TestBuildActorsTable:
+    """Test build_actors_table method."""
+
+    def test_build_actors_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        actors = [{"actorId": "actor-1"}, {"actorId": "actor-2"}]
+        result = visualizer.build_actors_table(actors, "mem-123")
+        assert isinstance(result, Table)
+
+    def test_build_actors_table_empty(self, visualizer):
+        from rich.table import Table
+
+        result = visualizer.build_actors_table([], "mem-123")
+        assert isinstance(result, Table)
+
+
+class TestBuildSessionsTable:
+    """Test build_sessions_table method."""
+
+    def test_build_sessions_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        sessions = [{"sessionId": "sess-1"}, {"sessionId": "sess-2"}]
+        result = visualizer.build_sessions_table(sessions, "actor-1")
+        assert isinstance(result, Table)
+
+
+class TestBuildEventsTable:
+    """Test build_events_table method."""
+
+    def test_build_events_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        events = [
+            {"eventId": "evt-1", "eventTimestamp": "2024-01-01T00:00:00", "payload": {"content": [{"text": "Hello"}]}},
+        ]
+        result = visualizer.build_events_table(events, "sess-1")
+        assert isinstance(result, Table)
+
+    def test_build_events_table_verbose(self, visualizer):
+        from rich.table import Table
+
+        events = [{"eventId": "evt-1", "payload": {"content": [{"text": "Hello world"}]}}]
+        result = visualizer.build_events_table(events, "sess-1", verbose=True)
+        assert isinstance(result, Table)
+
+
+class TestBuildEventDetail:
+    """Test build_event_detail method."""
+
+    def test_build_event_detail_returns_panel(self, visualizer):
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "eventTimestamp": "2024-01-01T00:00:00",
+            "actorId": "actor-1",
+            "sessionId": "sess-1",
+            "payload": {"content": [{"text": "Hello"}]},
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+    def test_build_event_detail_with_branch(self, visualizer):
+        from rich.panel import Panel
+
+        event = {"eventId": "evt-1", "branch": {"name": "main"}}
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+    def test_build_event_detail_with_raw_payload(self, visualizer):
+        """Test event detail with raw payload when no text is extractable."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "eventTimestamp": "2024-01-01T00:00:00",
+            "payload": [{"blob": {"data": "binary_data"}}],
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+        # Verify raw payload is shown
+        assert "Raw payload" in str(result.renderable)
+
+    def test_build_event_detail_with_raw_payload_verbose(self, visualizer):
+        """Test event detail with raw payload in verbose mode."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "payload": [{"blob": {"data": "x" * 500}}],
+        }
+        result = visualizer.build_event_detail(event, verbose=True)
+        assert isinstance(result, Panel)
+        # Verbose mode should show full payload
+        assert "x" * 500 in str(result.renderable)
+
+    def test_build_event_detail_with_role(self, visualizer):
+        """Test event detail with role."""
+        from rich.panel import Panel
+
+        event = {
+            "eventId": "evt-1",
+            "payload": [{"conversational": {"role": "USER", "content": {"text": "hello"}}}],
+        }
+        result = visualizer.build_event_detail(event)
+        assert isinstance(result, Panel)
+
+
+class TestBuildNamespacesTable:
+    """Test build_namespaces_table method."""
+
+    def test_build_namespaces_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        strategies = [{"name": "Facts", "type": "SEMANTIC", "namespaces": ["/facts", "/user/{actorId}"]}]
+        result = visualizer.build_namespaces_table(strategies, "mem-123")
+        assert isinstance(result, Table)
+
+    def test_build_namespaces_table_empty_strategies(self, visualizer):
+        from rich.table import Table
+
+        result = visualizer.build_namespaces_table([], "mem-123")
+        assert isinstance(result, Table)
+
+
+class TestBuildRecordsTable:
+    """Test build_records_table method."""
+
+    def test_build_records_table_returns_table(self, visualizer):
+        from rich.table import Table
+
+        records = [{"memoryRecordId": "rec-1", "createdAt": "2024-01-01", "content": {"text": "Test"}}]
+        result = visualizer.build_records_table(records, "/facts")
+        assert isinstance(result, Table)
+
+    def test_build_records_table_verbose(self, visualizer):
+        from rich.table import Table
+
+        records = [{"memoryRecordId": "rec-1", "content": {"text": "Test content"}}]
+        result = visualizer.build_records_table(records, "/facts", verbose=True)
+        assert isinstance(result, Table)
+
+
+class TestBuildRecordDetail:
+    """Test build_record_detail method."""
+
+    def test_build_record_detail_returns_panel(self, visualizer):
+        from rich.panel import Panel
+
+        record = {"memoryRecordId": "rec-1", "createdAt": "2024-01-01", "content": {"text": "Test"}}
+        result = visualizer.build_record_detail(record)
+        assert isinstance(result, Panel)
+
+    def test_build_record_detail_with_namespace(self, visualizer):
+        from rich.panel import Panel
+
+        record = {"memoryRecordId": "rec-1", "content": {"text": "Test"}}
+        result = visualizer.build_record_detail(record, namespace="/facts")
+        assert isinstance(result, Panel)

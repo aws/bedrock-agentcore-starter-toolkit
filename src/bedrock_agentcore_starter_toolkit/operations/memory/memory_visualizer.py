@@ -21,6 +21,7 @@ from .memory_formatters import (
     format_content_preview,
     format_memory_age,
     format_namespaces,
+    format_payload_snippet,
     format_role_icon,
     format_truncation_hint,
     get_memory_status_icon,
@@ -41,23 +42,219 @@ class MemoryVisualizer:
         """Initialize the memory visualizer."""
         self.console = console or Console()
 
+    # ==================== Build Methods (return renderables) ====================
+
+    def build_memory_tree(
+        self, memory: Dict[str, Any], verbose: bool = False, actor_count: Optional[int] = None
+    ) -> Tree:
+        """Build a memory tree renderable.
+
+        Args:
+            memory: Memory data dict or object.
+            verbose: Include verbose details.
+            actor_count: Optional actor count to display.
+
+        Returns:
+            Rich Tree renderable.
+        """
+        data = self._extract_memory_data(memory)
+        memory_id = data.get("id") or data.get("memoryId", "Unknown")
+        name = data.get("name", "Unknown")
+        status = data.get("status", "UNKNOWN")
+
+        tree = Tree(self._format_memory_header(memory_id, name, status), guide_style="cyan")
+        self._add_memory_info(tree, data, verbose, actor_count)
+        self._add_memory_strategies(tree, data, verbose)
+        return tree
+
+    def build_actors_table(self, actors: List[Dict[str, Any]], memory_id: str) -> Table:
+        """Build an actors table renderable.
+
+        Args:
+            actors: List of actor dicts with actorId.
+            memory_id: Memory ID for context.
+
+        Returns:
+            Rich Table renderable.
+        """
+        table = Table(title=f"Actors in {memory_id} ({len(actors)})", box=ROUNDED)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Actor ID", style="cyan")
+
+        for idx, actor in enumerate(actors, 1):
+            table.add_row(str(idx), actor.get("actorId", "N/A"))
+        return table
+
+    def build_sessions_table(self, sessions: List[Dict[str, Any]], actor_id: str) -> Table:
+        """Build a sessions table renderable.
+
+        Args:
+            sessions: List of session dicts with sessionId.
+            actor_id: Actor ID for context.
+
+        Returns:
+            Rich Table renderable.
+        """
+        table = Table(title=f"Sessions for {actor_id} ({len(sessions)})", box=ROUNDED)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Session ID", style="cyan")
+
+        for idx, session in enumerate(sessions, 1):
+            table.add_row(str(idx), session.get("sessionId", "N/A"))
+        return table
+
+    def build_events_table(self, events: List[Dict[str, Any]], session_id: str, verbose: bool = False) -> Table:
+        """Build an events table renderable.
+
+        Args:
+            events: List of event dicts.
+            session_id: Session ID for context.
+            verbose: Include full content.
+
+        Returns:
+            Rich Table renderable.
+        """
+        table = Table(title=f"Events in {session_id} ({len(events)})", box=ROUNDED)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Timestamp", style="dim", width=19)
+        table.add_column("Role", width=10)
+        table.add_column("Content", no_wrap=False)
+
+        for idx, event in enumerate(events, 1):
+            timestamp = str(event.get("eventTimestamp", ""))[:19]
+            role = extract_event_role(event)
+            text = extract_event_text(event)
+            content = text if verbose else format_content_preview(text) if text else "[dim](no text)[/dim]"
+            table.add_row(str(idx), timestamp, format_role_icon(role), content)
+        return table
+
+    def build_event_detail(self, event: Dict[str, Any], verbose: bool = False) -> Panel:
+        """Build an event detail panel renderable.
+
+        Args:
+            event: Event dict.
+            verbose: Include full content.
+
+        Returns:
+            Rich Panel renderable.
+        """
+        import json
+
+        lines = []
+        lines.append(f"[dim]Event ID:[/dim]   {event.get('eventId', 'N/A')}")
+        lines.append(f"[dim]Timestamp:[/dim]  {event.get('eventTimestamp', 'N/A')}")
+        lines.append(f"[dim]Actor:[/dim]      {event.get('_actorId', event.get('actorId', 'N/A'))}")
+        lines.append(f"[dim]Session:[/dim]    {event.get('_sessionId', event.get('sessionId', 'N/A'))}")
+
+        branch = event.get("branch", {}).get("name")
+        if branch:
+            lines.append(f"[dim]Branch:[/dim]     {branch}")
+
+        role = extract_event_role(event)
+        if role:
+            lines.append(f"[dim]Role:[/dim]       {format_role_icon(role)}")
+
+        text = extract_event_text(event)
+        if text:
+            lines.append("")
+            content = text if verbose else truncate_text(text, DisplayConfig.MAX_CONTENT_LENGTH)
+            lines.append(content)
+        else:
+            # Show raw payload JSON when no extractable text
+            payload = event.get("payload")
+            if payload:
+                lines.append("")
+                lines.append("Raw payload:")
+                raw = json.dumps(payload, indent=2, default=str)
+                if not verbose:
+                    raw = truncate_text(raw, DisplayConfig.MAX_CONTENT_LENGTH)
+                lines.append(raw)
+
+        return Panel("\n".join(lines), title="Event Detail", border_style="cyan")
+
+    def build_namespaces_table(self, strategies: List[Dict[str, Any]], memory_id: str) -> Table:
+        """Build a namespaces table renderable.
+
+        Args:
+            strategies: List of strategy dicts with namespaces.
+            memory_id: Memory ID for context.
+
+        Returns:
+            Rich Table renderable.
+        """
+        table = Table(title=f"Namespaces in {memory_id}", box=ROUNDED)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Strategy", style="bold")
+        table.add_column("Type", style="dim")
+        table.add_column("Namespace", style="cyan")
+
+        idx = 1
+        for strategy in strategies:
+            name = strategy.get("name", "Unknown")
+            stype = strategy.get("type") or strategy.get("memoryStrategyType", "")
+            for ns in strategy.get("namespaces", []):
+                table.add_row(str(idx), name, stype, ns)
+                idx += 1
+        return table
+
+    def build_records_table(self, records: List[Dict[str, Any]], namespace: str, verbose: bool = False) -> Table:
+        """Build a records table renderable.
+
+        Args:
+            records: List of record dicts.
+            namespace: Namespace for context.
+            verbose: Include full content.
+
+        Returns:
+            Rich Table renderable.
+        """
+        table = Table(title=f"Records in {namespace} ({len(records)})", box=ROUNDED)
+        table.add_column("#", style="dim", width=3)
+        table.add_column("Record ID", style="dim", width=20)
+        table.add_column("Created", style="dim", width=19)
+        table.add_column("Content", no_wrap=False)
+
+        for idx, record in enumerate(records, 1):
+            record_id = record.get("memoryRecordId", record.get("recordId", "N/A"))
+            created = str(record.get("createdAt", ""))[:19]
+            text = extract_record_text(record)
+            content = text if verbose else format_content_preview(text) if text else "[dim](no text)[/dim]"
+            table.add_row(str(idx), record_id, created, content)
+        return table
+
+    def build_record_detail(
+        self, record: Dict[str, Any], verbose: bool = False, namespace: Optional[str] = None
+    ) -> Panel:
+        """Build a record detail panel renderable.
+
+        Args:
+            record: Record dict.
+            verbose: Include full content.
+            namespace: Namespace the record belongs to.
+
+        Returns:
+            Rich Panel renderable.
+        """
+        lines = []
+        lines.append(f"[dim]Record ID:[/dim]  {record.get('memoryRecordId', record.get('recordId', 'N/A'))}")
+        lines.append(f"[dim]Namespace:[/dim]  {namespace or 'N/A'}")
+        lines.append(f"[dim]Created:[/dim]    {record.get('createdAt', 'N/A')}")
+
+        text = extract_record_text(record)
+        if text:
+            lines.append("")
+            content = text if verbose else truncate_text(text, DisplayConfig.MAX_CONTENT_LENGTH)
+            lines.append(content)
+
+        return Panel("\n".join(lines), title="Record Detail", border_style="cyan")
+
     # ==================== Memory Details ====================
 
     def visualize_memory(
         self, memory: Dict[str, Any], verbose: bool = False, actor_count: Optional[int] = None
     ) -> None:
         """Visualize a memory resource as a hierarchical tree."""
-        data = self._extract_memory_data(memory)
-
-        memory_id = data.get("id") or data.get("memoryId", "Unknown")
-        name = data.get("name", "Unknown")
-        status = data.get("status", "UNKNOWN")
-
-        tree = Tree(self._format_memory_header(memory_id, name, status), guide_style="cyan")
-
-        self._add_memory_info(tree, data, verbose, actor_count)
-        self._add_memory_strategies(tree, data, verbose)
-
+        tree = self.build_memory_tree(memory, verbose, actor_count)
         self.console.print(tree)
 
     def _extract_memory_data(self, memory: Any) -> Dict[str, Any]:
@@ -356,15 +553,16 @@ class MemoryVisualizer:
         if text_content:
             if verbose:
                 role_label = format_role_icon(role)
-                branch_tree.add(Panel(text_content.strip(), title=role_label, border_style="dim", padding=(0, 1)))
+                branch_tree.add(
+                    Panel(text_content.strip(), title=role_label, border_style="dim", padding=(0, 1), width=100)
+                )
             else:
                 preview = format_content_preview(text_content)
                 role_prefix = "[cyan]👤 User:[/cyan]" if role == "USER" else "[green]🤖 Assistant:[/green]"
                 branch_tree.add(f"{role_prefix} {preview}")
-        elif event_type == "blob":
-            branch_tree.add(f"[dim]{timestamp} (blob)[/dim]")
-        else:
-            branch_tree.add(f"[dim]{timestamp}[/dim]")
+        elif event_type == "blob" or not text_content:
+            snippet = format_payload_snippet(event, max_len=150)
+            branch_tree.add(f"[dim]{timestamp}[/dim] {snippet}")
 
     # ==================== Single Event/Record Display ====================
 

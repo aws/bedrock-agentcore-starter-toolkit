@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import typer
+from rich.panel import Panel
 from rich.tree import Tree
 
 from ...operations.memory import MemoryManager
@@ -36,10 +37,20 @@ class ResolvedMemoryConfig:
     region: Optional[str]
 
 
-def _get_memory_config_from_file(agent_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+@dataclass
+class _ConfigLookupResult:
+    """Result of looking up memory config from file."""
+
+    memory_id: Optional[str] = None
+    region: Optional[str] = None
+    config_exists: bool = False
+    agent_name: Optional[str] = None  # The resolved agent name (could be default)
+
+
+def _get_memory_config_from_file(agent_name: Optional[str] = None) -> _ConfigLookupResult:
     """Load memory config from .bedrock_agentcore.yaml if it exists.
 
-    Returns dict with memory_id, region, or None if not found.
+    Returns _ConfigLookupResult with details about what was found.
     """
     from ...utils.runtime.config import load_config_if_exists
 
@@ -47,23 +58,23 @@ def _get_memory_config_from_file(agent_name: Optional[str] = None) -> Optional[D
     config = load_config_if_exists(config_path)
 
     if not config:
-        return None
+        return _ConfigLookupResult(config_exists=False)
 
     try:
         agent_config = config.get_agent_config(agent_name)
+        resolved_agent = agent_name or config.default_agent or "default"
         memory_id = agent_config.memory.memory_id if agent_config.memory else None
         region = agent_config.aws.region
 
-        if not memory_id:
-            return None
-
-        return {
-            "memory_id": memory_id,
-            "region": region,
-        }
+        return _ConfigLookupResult(
+            memory_id=memory_id,
+            region=region,
+            config_exists=True,
+            agent_name=resolved_agent,
+        )
     except Exception as e:
         logger.debug("Failed to load memory config: %s", e)
-        return None
+        return _ConfigLookupResult(config_exists=True, agent_name=agent_name)
 
 
 def _resolve_memory_config(
@@ -88,24 +99,34 @@ def _resolve_memory_config(
     """
     final_memory_id = memory_id
     final_region = region
+    config_result: Optional[_ConfigLookupResult] = None
 
     if not final_memory_id:
-        config = _get_memory_config_from_file(agent)
-        if config:
-            final_memory_id = config.get("memory_id")
+        config_result = _get_memory_config_from_file(agent)
+        if config_result.memory_id:
+            final_memory_id = config_result.memory_id
             if not final_region:
-                final_region = config.get("region")
+                final_region = config_result.region
             if show_hint:
                 console.print(f"[dim]Using memory from config: {final_memory_id}[/dim]\n")
 
     if not final_memory_id:
-        _handle_error(
-            "No memory specified\n\n"
-            "Provide memory via:\n"
-            "  1. --memory-id MEM_ID\n"
-            "  2. --agent AGENT_NAME (requires config with memory)\n"
-            "  3. Run from directory with .bedrock_agentcore.yaml"
-        )
+        # Build context-specific error message
+        if config_result and config_result.config_exists:
+            agent_desc = f"'{config_result.agent_name}'" if config_result.agent_name else "default agent"
+            _handle_error(
+                f"Found .bedrock_agentcore.yaml but {agent_desc} has no memory_id configured.\n\n"
+                "This usually means you need to run 'agentcore launch' first to create the memory,\n"
+                "or provide memory directly via --memory-id MEM_ID"
+            )
+        else:
+            _handle_error(
+                "No memory specified and no .bedrock_agentcore.yaml found.\n\n"
+                "Provide memory via:\n"
+                "  1. --memory-id MEM_ID\n"
+                "  2. --agent AGENT_NAME (defaults to default_agent in config)\n"
+                "  3. Run from directory with .bedrock_agentcore.yaml"
+            )
 
     # Resolve region from boto3 if not set
     if not final_region:
@@ -715,10 +736,10 @@ def show_records(
         agentcore memory show records --all
 
         # Search records semantically
-        agentcore memory show records --query "user preferences" -n /users/quickstart-user/facts
+        agentcore memory show records --query "user preferences" -n /users/quickstart-user/facts/
 
         # Show records from specific namespace
-        agentcore memory show records -n /users/quickstart-user/facts
+        agentcore memory show records -n /users/quickstart-user/facts/
 
         # Show with full content
         agentcore memory show records --verbose
@@ -809,6 +830,50 @@ def _handle_show_nth_record(
         with path.open("w") as f:
             json.dump(record, f, indent=2, default=str)
         console.print(f"[green]✓[/green] Exported record to {path}")
+
+
+# ==================== Browse Command ====================
+
+
+@memory_app.command()
+def browse(
+    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory ID to browse"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name from config"),
+    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+) -> None:
+    """Interactive TUI browser for exploring memory content.
+
+    Navigate through actors, sessions, events (STM) and namespaces, records (LTM).
+
+    Key bindings:
+      ↑↓     Navigate list
+      Enter  Select item
+      b      Go back
+      h      Home (return to memory view)
+      v      Toggle verbose
+      m      Load more (when paginated)
+      q      Quit
+    """
+    from .browser import MemoryBrowser
+
+    config = _resolve_memory_config(agent, memory_id, region)
+    manager = MemoryManager(region_name=config.region)
+
+    # Validate credentials before starting browser
+    try:
+        memory = manager.get_memory(config.memory_id)
+    except Exception as e:
+        console.print(
+            Panel(
+                f"[red]Cannot start browser:[/red] {e}",
+                title="[red]Authentication Error[/red]",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(1) from None
+
+    app = MemoryBrowser(manager, config.memory_id, initial_memory=memory)
+    app.run()
 
 
 if __name__ == "__main__":
