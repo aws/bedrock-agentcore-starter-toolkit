@@ -22,10 +22,16 @@ from .runtime.commands import (
     invoke,
     status,
     stop_session,
+    ui,
 )
 from .runtime.dev_command import dev
 
-app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=False, rich_markup_mode="rich")
+app = typer.Typer(
+    name="agentcore",
+    help="BedrockAgentCore CLI",
+    add_completion=False,
+    rich_markup_mode="rich",
+)
 
 # Setup centralized logging for CLI
 setup_toolkit_logging(mode="cli")
@@ -34,6 +40,7 @@ app.command("create")(create)
 app.add_typer(create_app, name="create")
 create_app.command("import")(import_agent)
 app.command("dev")(dev)
+app.command("ui")(ui)
 app.command("deploy")(deploy)
 app.command("invoke")(invoke)
 app.command("status")(status)
