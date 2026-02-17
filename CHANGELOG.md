@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0] - 2026-02-17
+
+### Changes
+
+- Add missing comma in @requires_access_token parameters (#458) (260d94f)
+- feat(memory): add interactive TUI browser for exploring memory content (#451) (10bb727)
+- fix: format long line and fix broken integ test (#455) (a71ab6f)
+- Update README to remove subtitle and add note (#454) (074456a)
+- updated quick start instructions (#306) (f3eedb8)
+- chore: bump version to 0.2.10 (#450) (2fe9d84)
+
 ## [0.2.10] - 2026-02-03
 
 ### Changes
