@@ -6,7 +6,7 @@ import secrets
 import string
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -16,9 +16,9 @@ def create_cognito_oauth_pool(
     base_name: str = "AgentCoreTest",
     region: str = "us-west-2",
     create_test_user: bool = True,
-    agentcore_callback_url: Optional[str] = None,
+    agentcore_callback_url: str | None = None,
     use_for_runtime_auth: bool = False,
-) -> Dict:
+) -> dict:
     """Create a Cognito user pool configured for OAuth 2.0 flows.
 
     Args:
@@ -149,7 +149,7 @@ def get_cognito_access_token(
     username: str,
     password: str,
     region: str = "us-west-2",
-    client_secret: Optional[str] = None,
+    client_secret: str | None = None,
 ) -> str:
     """Retrieve an access token from Cognito using username/password.
 
@@ -192,7 +192,7 @@ def get_cognito_m2m_token(
     client_id: str,
     client_secret: str,
     region: str = "us-west-2",
-    scopes: Optional[List[str]] = None,
+    scopes: list[str] | None = None,
 ) -> str:
     """Retrieve an access token from Cognito using M2M client credentials flow.
 
@@ -357,7 +357,7 @@ def ensure_identity_permissions(role_arn: str, provider_arns: list, region: str,
         raise
 
 
-def setup_aws_jwt_federation(region: str, logger: Optional[logging.Logger] = None) -> Tuple[bool, str]:
+def setup_aws_jwt_federation(region: str, logger: logging.Logger | None = None) -> tuple[bool, str]:
     """Enable AWS IAM Outbound Federation and return the issuer URL.
 
     This is idempotent - if already enabled, just returns the issuer URL.
@@ -421,7 +421,7 @@ def setup_aws_jwt_federation(region: str, logger: Optional[logging.Logger] = Non
         raise
 
 
-def get_aws_jwt_federation_info(region: str, logger: Optional[logging.Logger] = None) -> Optional[Dict[str, Any]]:
+def get_aws_jwt_federation_info(region: str, logger: logging.Logger | None = None) -> dict[str, Any] | None:
     """Get AWS IAM JWT federation info if enabled.
 
     Args:
@@ -453,12 +453,12 @@ def get_aws_jwt_federation_info(region: str, logger: Optional[logging.Logger] = 
 
 def ensure_aws_jwt_permissions(
     role_arn: str,
-    audiences: List[str],
+    audiences: list[str],
     region: str,
     account_id: str,
     signing_algorithm: str = "ES384",
     max_duration_seconds: int = 3600,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> None:
     """Ensure execution role has STS:GetWebIdentityToken permissions.
 
@@ -543,7 +543,7 @@ class IdentityCognitoManager:
         """Generate a random ID for Cognito resources using cryptographically secure random."""
         return str(uuid.uuid4())[:8]
 
-    def create_dual_pool_setup(self) -> Dict[str, Any]:
+    def create_dual_pool_setup(self) -> dict[str, Any]:
         """Create complete Cognito setup for Identity.
 
         Creates two user pools:
@@ -576,7 +576,7 @@ class IdentityCognitoManager:
             self.logger.error("Failed to create Cognito pools: %s", str(e))
             raise
 
-    def _create_runtime_pool(self) -> Dict[str, Any]:
+    def _create_runtime_pool(self) -> dict[str, Any]:
         """Create Runtime User Pool for agent inbound authentication.
 
         Returns:
@@ -628,7 +628,7 @@ class IdentityCognitoManager:
             "password": password,
         }
 
-    def _create_identity_pool(self) -> Dict[str, Any]:
+    def _create_identity_pool(self) -> dict[str, Any]:
         """Create Identity User Pool for external service authentication.
 
         Returns:
@@ -779,7 +779,7 @@ class IdentityCognitoManager:
             else:
                 self.logger.warning("    ⚠️  Error deleting %s pool: %s", pool_type, str(e))
 
-    def _create_identity_pool_m2m(self) -> Dict[str, Any]:
+    def _create_identity_pool_m2m(self) -> dict[str, Any]:
         """Create Identity User Pool for M2M (client credentials) flows.
 
         Returns:
@@ -832,7 +832,7 @@ class IdentityCognitoManager:
             "flow_type": "client_credentials",
         }
 
-    def create_user_federation_pools(self) -> Dict[str, Any]:
+    def create_user_federation_pools(self) -> dict[str, Any]:
         """Create pools for USER_FEDERATION flow (user consent required).
 
         Returns:
@@ -848,7 +848,7 @@ class IdentityCognitoManager:
 
         return {"runtime": runtime_config, "identity": identity_config, "flow_type": "user"}
 
-    def create_m2m_pools(self) -> Dict[str, Any]:
+    def create_m2m_pools(self) -> dict[str, Any]:
         """Create pools for M2M CLIENT_CREDENTIALS flow (no user required).
 
         Returns:

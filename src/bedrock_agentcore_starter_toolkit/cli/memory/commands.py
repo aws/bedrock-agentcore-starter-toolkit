@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import typer
 from rich.panel import Panel
@@ -34,20 +34,20 @@ class ResolvedMemoryConfig:
     """Resolved memory configuration from explicit params or config file."""
 
     memory_id: str
-    region: Optional[str]
+    region: str | None
 
 
 @dataclass
 class _ConfigLookupResult:
     """Result of looking up memory config from file."""
 
-    memory_id: Optional[str] = None
-    region: Optional[str] = None
+    memory_id: str | None = None
+    region: str | None = None
     config_exists: bool = False
-    agent_name: Optional[str] = None  # The resolved agent name (could be default)
+    agent_name: str | None = None  # The resolved agent name (could be default)
 
 
-def _get_memory_config_from_file(agent_name: Optional[str] = None) -> _ConfigLookupResult:
+def _get_memory_config_from_file(agent_name: str | None = None) -> _ConfigLookupResult:
     """Load memory config from .bedrock_agentcore.yaml if it exists.
 
     Returns _ConfigLookupResult with details about what was found.
@@ -78,9 +78,9 @@ def _get_memory_config_from_file(agent_name: Optional[str] = None) -> _ConfigLoo
 
 
 def _resolve_memory_config(
-    agent: Optional[str] = None,
-    memory_id: Optional[str] = None,
-    region: Optional[str] = None,
+    agent: str | None = None,
+    memory_id: str | None = None,
+    region: str | None = None,
     show_hint: bool = True,
 ) -> ResolvedMemoryConfig:
     """Resolve memory configuration from explicit params or config file.
@@ -99,7 +99,7 @@ def _resolve_memory_config(
     """
     final_memory_id = memory_id
     final_region = region
-    config_result: Optional[_ConfigLookupResult] = None
+    config_result: _ConfigLookupResult | None = None
 
     if not final_memory_id:
         config_result = _get_memory_config_from_file(agent)
@@ -144,8 +144,8 @@ def _resolve_memory_config(
 def _validate_events_options(
     all_events: bool,
     last: int,
-    session_id: Optional[str],
-    actor_id: Optional[str],
+    session_id: str | None,
+    actor_id: str | None,
     list_sessions: bool,
 ) -> None:
     """Validate mutually exclusive options for events command."""
@@ -162,8 +162,8 @@ def _validate_events_options(
 def _validate_records_options(
     all_records: bool,
     last: int,
-    namespace: Optional[str],
-    query: Optional[str],
+    namespace: str | None,
+    query: str | None,
 ) -> None:
     """Validate mutually exclusive options for records command."""
     if all_records and last != 1:
@@ -179,7 +179,7 @@ def _validate_records_options(
 # ==================== Data Collection Utilities ====================
 
 
-def _collect_all_events(manager: MemoryManager, memory_id: str) -> List[Dict[str, Any]]:
+def _collect_all_events(manager: MemoryManager, memory_id: str) -> list[dict[str, Any]]:
     """Collect all events across all actors/sessions in a memory."""
     all_events = []
     actors = manager.list_actors(memory_id)
@@ -203,11 +203,11 @@ def _collect_all_events(manager: MemoryManager, memory_id: str) -> List[Dict[str
 def _collect_all_records(
     manager: MemoryManager,
     memory_id: str,
-    namespace: Optional[str],
+    namespace: str | None,
     max_results: int,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Collect records from specified namespace or all namespaces."""
-    all_records: List[Dict[str, Any]] = []
+    all_records: list[dict[str, Any]] = []
 
     if namespace:
         # Single namespace
@@ -232,7 +232,7 @@ def _collect_records_from_namespace_template(
     memory_id: str,
     ns_template: str,
     max_results: int,
-    all_records: List[Dict[str, Any]],
+    all_records: list[dict[str, Any]],
 ) -> None:
     """Collect records from a namespace template, resolving placeholders."""
     if "{actorId}" not in ns_template and "{sessionId}" not in ns_template:
@@ -264,7 +264,7 @@ def _try_collect_records(
     memory_id: str,
     namespace: str,
     max_results: int,
-    all_records: List[Dict[str, Any]],
+    all_records: list[dict[str, Any]],
 ) -> None:
     """Try to collect records from a namespace, ignoring errors."""
     try:
@@ -282,19 +282,17 @@ def _try_collect_records(
 @memory_app.command()
 def create(
     name: str = typer.Argument(..., help="Name for the memory resource"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: session region)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Description for the memory"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: session region)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Description for the memory"),
     event_expiry_days: int = typer.Option(90, "--event-expiry-days", "-e", help="Event retention in days"),
-    strategies: Optional[str] = typer.Option(
+    strategies: str | None = typer.Option(
         None,
         "--strategies",
         "-s",
         help='JSON string of memory strategies (e.g., \'[{"semanticMemoryStrategy": {"name": "Facts"}}]\')',
     ),
-    memory_execution_role_arn: Optional[str] = typer.Option(
-        None, "--role-arn", help="IAM role ARN for memory execution"
-    ),
-    encryption_key_arn: Optional[str] = typer.Option(None, "--encryption-key-arn", help="KMS key ARN for encryption"),
+    memory_execution_role_arn: str | None = typer.Option(None, "--role-arn", help="IAM role ARN for memory execution"),
+    encryption_key_arn: str | None = typer.Option(None, "--encryption-key-arn", help="KMS key ARN for encryption"),
     wait: bool = typer.Option(True, "--wait/--no-wait", help="Wait for memory to become ACTIVE"),
     max_wait: int = typer.Option(300, "--max-wait", help="Maximum wait time in seconds"),
 ) -> None:
@@ -352,18 +350,18 @@ def create(
 
 @memory_app.command()
 def show(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory ID (overrides config)"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    memory_id: str | None = typer.Option(None, "--memory-id", "-m", help="Memory ID (overrides config)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     all_events: bool = typer.Option(False, "--all", help="Show all events in memory"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full configuration and event content"),
     max_events: int = typer.Option(10, "--max-events", "-n", help="Max events per session (with --all)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Export to JSON file"),
 ) -> None:
     """Show memory details and events.
 
@@ -428,7 +426,7 @@ def show(
 @memory_app.command()
 def get(
     memory_id: str = typer.Argument(..., help="Memory resource ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ) -> None:
     """Get details of a memory resource.
 
@@ -457,7 +455,7 @@ def get(
 
 @memory_app.command(name="list")
 def list_memories_cmd(
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     max_results: int = typer.Option(100, "--max-results", "-n", help="Maximum number of results"),
 ) -> None:
     """List all memory resources.
@@ -479,7 +477,7 @@ def list_memories_cmd(
 @memory_app.command()
 def delete(
     memory_id: str = typer.Argument(..., help="Memory resource ID to delete"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     wait: bool = typer.Option(False, "--wait", help="Wait for deletion to complete"),
     max_wait: int = typer.Option(300, "--max-wait", help="Maximum wait time in seconds"),
 ) -> None:
@@ -507,7 +505,7 @@ def delete(
 @memory_app.command()
 def status(
     memory_id: str = typer.Argument(..., help="Memory resource ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ) -> None:
     """Get memory provisioning status.
 
@@ -531,11 +529,11 @@ def status(
 @show_app.callback()
 def show_callback(
     ctx: typer.Context,
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name from config"),
-    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Agent name from config"),
+    memory_id: str | None = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full details"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Export to JSON file"),
 ) -> None:
     """Show memory details from config or explicit memory ID.
 
@@ -579,18 +577,18 @@ def show_callback(
 
 @show_app.command(name="events")
 def show_events(
-    agent: Optional[str] = typer.Option(None, "--agent", help="Agent name from config"),
-    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    agent: str | None = typer.Option(None, "--agent", help="Agent name from config"),
+    memory_id: str | None = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     all_events: bool = typer.Option(False, "--all", help="Show events tree"),
-    actor_id: Optional[str] = typer.Option(None, "--actor-id", "-a", help="Filter to specific actor"),
-    session_id: Optional[str] = typer.Option(None, "--session-id", "-s", help="Filter to specific session"),
+    actor_id: str | None = typer.Option(None, "--actor-id", "-a", help="Filter to specific actor"),
+    session_id: str | None = typer.Option(None, "--session-id", "-s", help="Filter to specific session"),
     last: int = typer.Option(1, "--last", "-l", help="Show Nth most recent event (default: 1=latest)"),
     list_actors: bool = typer.Option(False, "--list-actors", help="List all actor IDs"),
     list_sessions: bool = typer.Option(False, "--list-sessions", help="List all session IDs for actor"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full content"),
     max_events: int = typer.Option(10, "--max-events", help="Max events per session used with --all"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Export to JSON file"),
 ) -> None:
     """Show memory events.
 
@@ -665,7 +663,7 @@ def _handle_list_actors(manager: MemoryManager, memory_id: str) -> None:
     console.print(f"\n[dim]{len(actors)} actors[/dim]")
 
 
-def _handle_list_sessions(manager: MemoryManager, memory_id: str, actor_id: Optional[str]) -> None:
+def _handle_list_sessions(manager: MemoryManager, memory_id: str, actor_id: str | None) -> None:
     """Handle --list-sessions mode."""
     if not actor_id:
         _handle_error("--list-sessions requires --actor-id")
@@ -684,7 +682,7 @@ def _handle_show_nth_event(
     memory_id: str,
     last: int,
     verbose: bool,
-    output: Optional[str],
+    output: str | None,
 ) -> None:
     """Handle showing the Nth most recent event."""
     console.print(f"[dim]Fetching events for {memory_id}...[/dim]")
@@ -712,16 +710,16 @@ def _handle_show_nth_event(
 
 @show_app.command(name="records")
 def show_records(
-    agent: Optional[str] = typer.Option(None, "--agent", help="Agent name from config"),
-    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
-    namespace: Optional[str] = typer.Option(None, "--namespace", "-n", help="Namespace to list records from"),
-    query: Optional[str] = typer.Option(None, "--query", "-q", help="Semantic search query"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    agent: str | None = typer.Option(None, "--agent", help="Agent name from config"),
+    memory_id: str | None = typer.Option(None, "--memory-id", "-m", help="Memory resource ID"),
+    namespace: str | None = typer.Option(None, "--namespace", "-n", help="Namespace to list records from"),
+    query: str | None = typer.Option(None, "--query", "-q", help="Semantic search query"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
     all_records: bool = typer.Option(False, "--all", help="Show all records across all namespaces"),
     last: int = typer.Option(1, "--last", "-l", help="Show Nth most recent record (default: 1=latest)"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full record content"),
     max_results: int = typer.Option(10, "--max-results", help="Max records to return"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Export to JSON file"),
 ) -> None:
     """Show memory records (long-term memory).
 
@@ -781,7 +779,7 @@ def _handle_semantic_search(
     manager: MemoryManager,
     visualizer: MemoryVisualizer,
     memory_id: str,
-    namespace: Optional[str],
+    namespace: str | None,
     query: str,
     max_results: int,
     verbose: bool,
@@ -801,11 +799,11 @@ def _handle_show_nth_record(
     manager: MemoryManager,
     visualizer: MemoryVisualizer,
     memory_id: str,
-    namespace: Optional[str],
+    namespace: str | None,
     last: int,
     verbose: bool,
     max_results: int,
-    output: Optional[str],
+    output: str | None,
 ) -> None:
     """Handle showing the Nth most recent record."""
     console.print(f"[dim]Fetching records for {memory_id}...[/dim]")
@@ -837,9 +835,9 @@ def _handle_show_nth_record(
 
 @memory_app.command()
 def browse(
-    memory_id: Optional[str] = typer.Option(None, "--memory-id", "-m", help="Memory ID to browse"),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name from config"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    memory_id: str | None = typer.Option(None, "--memory-id", "-m", help="Memory ID to browse"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Agent name from config"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ) -> None:
     """Interactive TUI browser for exploring memory content.
 

@@ -1,7 +1,6 @@
 """Status operations for Bedrock AgentCore SDK."""
 
 from pathlib import Path
-from typing import Optional
 
 from ...services.runtime import BedrockAgentCoreClient
 from ...utils.runtime.config import load_config
@@ -9,7 +8,7 @@ from ...utils.runtime.create import resolve_create_with_iac_project_config
 from .models import StatusConfigInfo, StatusResult
 
 
-def get_status(config_path: Path, agent_name: Optional[str] = None) -> StatusResult:
+def get_status(config_path: Path, agent_name: str | None = None) -> StatusResult:
     """Get Bedrock AgentCore status including config and runtime details.
 
     Args:

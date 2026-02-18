@@ -4,7 +4,7 @@ This module contains all business logic for evaluator management,
 separated from UI/display concerns.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .control_plane_client import EvaluationControlPlaneClient
 
@@ -13,7 +13,7 @@ from .control_plane_client import EvaluationControlPlaneClient
 # =============================================================================
 
 
-def filter_custom_evaluators(evaluators: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_custom_evaluators(evaluators: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Filter list to only custom evaluators.
 
     Args:
@@ -37,7 +37,7 @@ def is_builtin_evaluator(evaluator_id: str) -> bool:
     return evaluator_id.startswith("Builtin.")
 
 
-def validate_evaluator_config(config_data: Dict[str, Any]) -> None:
+def validate_evaluator_config(config_data: dict[str, Any]) -> None:
     """Validate evaluator configuration structure.
 
     Args:
@@ -57,7 +57,7 @@ def validate_evaluator_config(config_data: Dict[str, Any]) -> None:
 
 def get_evaluator_for_duplication(
     client: EvaluationControlPlaneClient, evaluator_id: str
-) -> Tuple[Dict[str, Any], str, str]:
+) -> tuple[dict[str, Any], str, str]:
     """Get evaluator details and prepare for duplication.
 
     Args:
@@ -96,10 +96,10 @@ def get_evaluator_for_duplication(
 def create_evaluator(
     client: EvaluationControlPlaneClient,
     name: str,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     level: str = "TRACE",
-    description: Optional[str] = None,
-) -> Dict[str, Any]:
+    description: str | None = None,
+) -> dict[str, Any]:
     """Create a new evaluator.
 
     Args:
@@ -120,8 +120,8 @@ def create_evaluator(
 
 
 def duplicate_evaluator(
-    client: EvaluationControlPlaneClient, source_evaluator_id: str, new_name: str, new_description: Optional[str] = None
-) -> Dict[str, Any]:
+    client: EvaluationControlPlaneClient, source_evaluator_id: str, new_name: str, new_description: str | None = None
+) -> dict[str, Any]:
     """Duplicate an existing custom evaluator.
 
     Args:
@@ -154,9 +154,9 @@ def duplicate_evaluator(
 def update_evaluator(
     client: EvaluationControlPlaneClient,
     evaluator_id: str,
-    description: Optional[str] = None,
-    config: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    description: str | None = None,
+    config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Update an existing evaluator.
 
     Args:
@@ -185,7 +185,7 @@ def update_evaluator(
 
 def update_evaluator_instructions(
     client: EvaluationControlPlaneClient, evaluator_id: str, new_instructions: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Update only the instructions of an evaluator.
 
     Args:
@@ -239,7 +239,7 @@ def delete_evaluator(client: EvaluationControlPlaneClient, evaluator_id: str) ->
 # =============================================================================
 
 
-def list_evaluators(client: EvaluationControlPlaneClient, max_results: int = 50) -> Dict[str, Any]:
+def list_evaluators(client: EvaluationControlPlaneClient, max_results: int = 50) -> dict[str, Any]:
     """List all evaluators.
 
     Args:
@@ -252,7 +252,7 @@ def list_evaluators(client: EvaluationControlPlaneClient, max_results: int = 50)
     return client.list_evaluators(max_results=max_results)
 
 
-def get_evaluator(client: EvaluationControlPlaneClient, evaluator_id: str) -> Dict[str, Any]:
+def get_evaluator(client: EvaluationControlPlaneClient, evaluator_id: str) -> dict[str, Any]:
     """Get evaluator details.
 
     Args:

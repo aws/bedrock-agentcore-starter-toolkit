@@ -3,7 +3,6 @@
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -13,7 +12,7 @@ def _get_template_dir() -> Path:
     return Path(__file__).parent / "templates"
 
 
-def _render_template(template_name: str, variables: Dict[str, str]) -> str:
+def _render_template(template_name: str, variables: dict[str, str]) -> str:
     """Render a Jinja2 template with the provided variables."""
     template_dir = _get_template_dir()
     env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
@@ -43,9 +42,9 @@ def render_execution_policy_template(
     account_id: str,
     agent_name: str,
     deployment_type: str = "direct_code_deploy",
-    protocol: Optional[str] = None,
-    memory_id: Optional[str] = None,
-    ecr_repository_name: Optional[str] = None,
+    protocol: str | None = None,
+    memory_id: str | None = None,
+    ecr_repository_name: str | None = None,
 ) -> str:
     """Render the execution policy template with provided values.
 
@@ -84,7 +83,7 @@ def render_execution_policy_template(
     return cleaned
 
 
-def validate_rendered_policy(policy_json: str) -> Dict:
+def validate_rendered_policy(policy_json: str) -> dict:
     """Validate that the rendered policy is valid JSON.
 
     Args:

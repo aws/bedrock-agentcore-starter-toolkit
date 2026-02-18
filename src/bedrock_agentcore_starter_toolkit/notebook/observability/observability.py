@@ -1,7 +1,6 @@
 """Notebook interface for observability - thin wrappers over operations."""
 
 import logging
-from typing import Optional
 
 from rich.console import Console
 
@@ -32,9 +31,9 @@ class Observability:
 
     def __init__(
         self,
-        agent_id: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        region: Optional[str] = None,
+        agent_id: str | None = None,
+        agent_name: str | None = None,
+        region: str | None = None,
         runtime_suffix: str = DEFAULT_RUNTIME_SUFFIX,
     ):
         """Initialize observability interface.
@@ -67,7 +66,7 @@ class Observability:
 
     def list(
         self,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         days: int = DEFAULT_LOOKBACK_DAYS,
         errors: bool = False,
     ) -> TraceData:
@@ -135,14 +134,14 @@ class Observability:
 
     def show(
         self,
-        trace_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        trace_id: str | None = None,
+        session_id: str | None = None,
         days: int = DEFAULT_LOOKBACK_DAYS,
         all: bool = False,
         last: int = 1,
         errors: bool = False,
         verbose: bool = False,
-        output: Optional[str] = None,
+        output: str | None = None,
     ) -> TraceData:
         """Show traces (equivalent to `agentcore obs show`).
 

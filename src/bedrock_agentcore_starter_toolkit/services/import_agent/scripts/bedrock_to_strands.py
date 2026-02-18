@@ -59,7 +59,7 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
         model_configs = []
 
         for i, config in enumerate(self.prompt_configs):
-            prompt_type = config.get("promptType", "CUSTOM_{}".format(i))
+            prompt_type = config.get("promptType", f"CUSTOM_{i}")
             if prompt_type == "KNOWLEDGE_BASE_RESPONSE_GENERATION" and not self.knowledge_bases:
                 continue
             inference_config = config.get("inferenceConfiguration", {})

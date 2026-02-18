@@ -2,7 +2,6 @@
 
 import re
 import time
-from typing import Optional
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.filters import Condition
@@ -433,7 +432,7 @@ def sandwich_text_ui(style: str, text: str) -> None:
     _pause_and_new_line_on_finish()
 
 
-def show_invalid_aws_creds(ok: bool, msg: Optional[str], optional_header: Optional[str] = None) -> bool:
+def show_invalid_aws_creds(ok: bool, msg: str | None, optional_header: str | None = None) -> bool:
     """Standard UI messaging for AWS credential validation.
 
     Returns True if creds are valid, False otherwise.

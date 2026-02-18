@@ -3,7 +3,6 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 from ..common import _handle_error, _print_success, _prompt_with_default, console
 
@@ -11,7 +10,7 @@ from ..common import _handle_error, _print_success, _prompt_with_default, consol
 class ConfigurationManager:
     """Manages interactive configuration prompts with existing configuration defaults."""
 
-    def __init__(self, config_path: Path, non_interactive: bool = False, region: Optional[str] = None):
+    def __init__(self, config_path: Path, non_interactive: bool = False, region: str | None = None):
         """Initialize the ConfigPrompt with a configuration path.
 
         Args:
@@ -49,7 +48,7 @@ class ConfigurationManager:
         _print_success(f"Using agent name: [cyan]{agent_name}[/cyan]")
         return agent_name
 
-    def prompt_execution_role(self) -> Optional[str]:
+    def prompt_execution_role(self) -> str | None:
         """Prompt for execution role. Returns role name/ARN or None for auto-creation."""
         if self.non_interactive:
             _print_success("Will auto-create execution role")
@@ -69,7 +68,7 @@ class ConfigurationManager:
             _print_success("Will auto-create execution role")
             return None
 
-    def prompt_ecr_repository(self) -> tuple[Optional[str], bool]:
+    def prompt_ecr_repository(self) -> tuple[str | None, bool]:
         """Prompt for ECR repository. Returns (repository, auto_create_flag)."""
         if self.non_interactive:
             _print_success("Will auto-create ECR repository")
@@ -89,7 +88,7 @@ class ConfigurationManager:
             _print_success("Will auto-create ECR repository")
             return None, True
 
-    def prompt_s3_bucket(self) -> tuple[Optional[str], bool]:
+    def prompt_s3_bucket(self) -> tuple[str | None, bool]:
         """Prompt for S3 bucket. Returns (bucket_uri, auto_create_flag)."""
         if self.non_interactive:
             _print_success("Will auto-create S3 bucket")
@@ -144,7 +143,7 @@ class ConfigurationManager:
         except Exception:
             return False
 
-    def prompt_oauth_config(self) -> Optional[dict]:
+    def prompt_oauth_config(self) -> dict | None:
         """Prompt for OAuth configuration. Returns OAuth config dict or None."""
         if self.non_interactive:
             _print_success("Using default IAM authorization")
@@ -205,7 +204,7 @@ class ConfigurationManager:
             json.loads(custom_claim.strip()) for custom_claim in custom_claims_input.split(", ") if custom_claim.strip()
         ]
 
-        config: Dict = {
+        config: dict = {
             "customJWTAuthorizer": {
                 "discoveryUrl": discovery_url,
             }
@@ -226,7 +225,7 @@ class ConfigurationManager:
         _print_success("OAuth authorizer configuration created")
         return config
 
-    def prompt_request_header_allowlist(self) -> Optional[dict]:
+    def prompt_request_header_allowlist(self) -> dict | None:
         """Prompt for request header allowlist configuration. Returns allowlist config dict or None."""
         if self.non_interactive:
             _print_success("Using default request header configuration")
@@ -313,7 +312,7 @@ class ConfigurationManager:
 
         return enable_memory, enable_ltm
 
-    def prompt_memory_selection(self) -> Tuple[str, str]:
+    def prompt_memory_selection(self) -> tuple[str, str]:
         """Prompt user to select existing memory or create new (no skip option).
 
         Returns:
@@ -406,7 +405,7 @@ class ConfigurationManager:
         # Fall back to creating new memory
         return self._prompt_new_memory_config()
 
-    def _prompt_new_memory_config(self) -> Tuple[str, str]:
+    def _prompt_new_memory_config(self) -> tuple[str, str]:
         """Prompt for new memory configuration - LTM yes/no only."""
         console.print("[green]✓ Short-term memory will be enabled (default)[/green]")
         console.print("  • Stores conversations within sessions")

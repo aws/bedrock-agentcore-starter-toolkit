@@ -1,6 +1,6 @@
 """User preference memory strategy implementation."""
 
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseStrategy
 
@@ -19,7 +19,7 @@ class UserPreferenceStrategy(BaseStrategy):
         )
     """
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,

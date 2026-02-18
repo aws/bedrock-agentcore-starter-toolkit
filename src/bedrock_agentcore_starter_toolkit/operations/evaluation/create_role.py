@@ -4,7 +4,6 @@ import hashlib
 import json
 import logging
 import time
-from typing import Optional
 
 from boto3 import Session
 from botocore.client import BaseClient
@@ -36,7 +35,7 @@ def get_or_create_evaluation_execution_role(
     region: str,
     account_id: str,
     config_name: str,
-    role_name: Optional[str] = None,
+    role_name: str | None = None,
 ) -> str:
     """Get existing evaluation execution role or create a new one (idempotent).
 

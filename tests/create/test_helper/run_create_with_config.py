@@ -1,6 +1,5 @@
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from typer.testing import CliRunner
 
@@ -15,7 +14,7 @@ FIXTURES = Path(__file__).parent.parent / "fixtures" / "scenarios"
 test_runner = CliRunner()
 
 
-def run_create_with_config(tmp_path, monkeypatch, scenario, iac: Optional[IACProvider]) -> tuple[Path, ScenarioConfig]:
+def run_create_with_config(tmp_path, monkeypatch, scenario, iac: IACProvider | None) -> tuple[Path, ScenarioConfig]:
     """Runs the CLI generator and returns the project directory and the ScenarioConfig used"""
     scenario_config = IAC_WITH_CONFIG_SCENARIOS[scenario]
     sdk = scenario_config.sdk

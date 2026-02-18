@@ -1,6 +1,6 @@
 """Self managed memory strategy implementation."""
 
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -61,15 +61,13 @@ class SelfManagedStrategy(BaseStrategy):
         )
     """
 
-    trigger_conditions: List[Union[MessageBasedTrigger, TokenBasedTrigger, TimeBasedTrigger]] = Field(
-        default_factory=list
-    )
+    trigger_conditions: list[MessageBasedTrigger | TokenBasedTrigger | TimeBasedTrigger] = Field(default_factory=list)
     invocation_config: InvocationConfig
     historical_context_window_size: int = Field(
         default=4, description="Number of historical messages to include in processing context."
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format for API calls."""
         config = {
             "name": self.name,
@@ -87,7 +85,7 @@ class SelfManagedStrategy(BaseStrategy):
 
         return {"customMemoryStrategy": config}
 
-    def _convert_trigger_conditions(self) -> List[Dict[str, Any]]:
+    def _convert_trigger_conditions(self) -> list[dict[str, Any]]:
         """Convert trigger conditions to API format."""
         conditions = []
         for condition in self.trigger_conditions:
@@ -99,7 +97,7 @@ class SelfManagedStrategy(BaseStrategy):
                 conditions.append({"timeBasedTrigger": {"idleSessionTimeout": condition.idle_session_timeout}})
         return conditions
 
-    def _convert_invocation_config(self) -> Dict[str, Any]:
+    def _convert_invocation_config(self) -> dict[str, Any]:
         """Convert invocation config to API format."""
         return {
             "topicArn": self.invocation_config.topic_arn,

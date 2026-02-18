@@ -5,7 +5,7 @@ Separates business logic from API client calls for better testability and reusab
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -43,7 +43,7 @@ class EvaluationProcessor:
         self.data_plane_client = data_plane_client
         self.control_plane_client = control_plane_client
 
-    def get_latest_session(self, agent_id: str, region: str) -> Optional[str]:
+    def get_latest_session(self, agent_id: str, region: str) -> str | None:
         """Get the latest session ID for an agent.
 
         Args:
@@ -148,7 +148,7 @@ class EvaluationProcessor:
         except (ClientError, ValueError, KeyError, TypeError) as e:
             raise RuntimeError(f"Failed to fetch session data: {e}") from e
 
-    def extract_raw_spans(self, trace_data: TraceData) -> List[Dict[str, Any]]:
+    def extract_raw_spans(self, trace_data: TraceData) -> list[dict[str, Any]]:
         """Extract raw span documents from TraceData.
 
         Args:
@@ -171,7 +171,7 @@ class EvaluationProcessor:
 
         return raw_spans
 
-    def filter_relevant_spans(self, raw_spans: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_relevant_spans(self, raw_spans: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Filter to only high-signal spans for evaluation.
 
         Keeps only:
@@ -246,7 +246,7 @@ class EvaluationProcessor:
 
     def get_most_recent_spans(
         self, trace_data: TraceData, max_items: int = DEFAULT_MAX_EVALUATION_ITEMS
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get most recent relevant spans across all traces in session.
 
         Collects spans from known instrumentation scopes and log events with conversation data,
@@ -278,7 +278,7 @@ class EvaluationProcessor:
         # Return most recent max_items
         return relevant_spans[:max_items]
 
-    def count_span_types(self, raw_spans: List[Dict[str, Any]]) -> tuple:
+    def count_span_types(self, raw_spans: list[dict[str, Any]]) -> tuple:
         """Count spans, logs, and scoped spans.
 
         Args:
@@ -304,9 +304,9 @@ class EvaluationProcessor:
         self,
         evaluator_level: str,
         trace_data: TraceData,
-        trace_id: Optional[str] = None,
+        trace_id: str | None = None,
         max_items: int = DEFAULT_MAX_EVALUATION_ITEMS,
-    ) -> tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
         """Determine which spans to send based on evaluator level.
 
         Args:
@@ -341,11 +341,11 @@ class EvaluationProcessor:
 
     def execute_evaluators(
         self,
-        evaluators: List[str],
-        otel_spans: List[Dict[str, Any]],
+        evaluators: list[str],
+        otel_spans: list[dict[str, Any]],
         session_id: str,
-        evaluation_target: Optional[Dict[str, Any]] = None,
-    ) -> List[EvaluationResult]:
+        evaluation_target: dict[str, Any] | None = None,
+    ) -> list[EvaluationResult]:
         """Execute evaluators and return results.
 
         Calls data plane API once per evaluator.
@@ -396,10 +396,10 @@ class EvaluationProcessor:
     def evaluate_session(
         self,
         session_id: str,
-        evaluators: List[str],
+        evaluators: list[str],
         agent_id: str,
         region: str,
-        trace_id: Optional[str] = None,
+        trace_id: str | None = None,
         days: int = DEFAULT_LOOKBACK_DAYS,
     ) -> EvaluationResults:
         """Evaluate a session using multiple evaluators.
@@ -486,7 +486,7 @@ class EvaluationProcessor:
 
         return results
 
-    def _group_evaluators_by_level(self, evaluators: List[str]) -> Dict[str, List[str]]:
+    def _group_evaluators_by_level(self, evaluators: list[str]) -> dict[str, list[str]]:
         """Group evaluators by their level (SESSION or TRACE).
 
         Note: TOOL_CALL and other levels are treated as TRACE for evaluation purposes.

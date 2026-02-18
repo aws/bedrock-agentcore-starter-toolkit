@@ -4,7 +4,6 @@ import os
 import re
 import textwrap
 import uuid
-from typing import List
 
 import pytest
 from click.testing import Result
@@ -57,7 +56,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
         with open(self.requirements_file, "w") as file:
             file.write("bedrock-agentcore\nboto3\n")
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         """Define the sequence of commands to test Identity flow (config only)."""
         return [
             # Step 1: Setup Cognito pools
@@ -172,7 +171,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
                 return json.load(f)
         return None
 
-    def _build_jwt_config_command(self) -> List[str]:
+    def _build_jwt_config_command(self) -> list[str]:
         """Build configure command with JWT authorizer."""
         cognito_config = self._load_cognito_config()
         if not cognito_config:
@@ -201,7 +200,7 @@ class TestIdentityFlow(BaseCLIRuntimeTest):
             "--non-interactive",
         ]
 
-    def _build_create_provider_command(self) -> List[str]:
+    def _build_create_provider_command(self) -> list[str]:
         """Build create-credential-provider command."""
         cognito_config = self._load_cognito_config()
         if not cognito_config:

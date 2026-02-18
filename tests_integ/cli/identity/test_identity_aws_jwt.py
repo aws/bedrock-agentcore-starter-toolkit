@@ -2,7 +2,6 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import List
 from unittest.mock import patch
 
 from click.testing import Result
@@ -29,7 +28,7 @@ class TestIdentityAwsJwt(BaseCLIRuntimeTest):
         self.audience = "https://api.example.com"
         self.issuer_url = None
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         """Test AWS JWT-specific commands."""
         return [
             # Step 1: Configure agent first
@@ -249,7 +248,7 @@ class TestIdentityAwsJwtValidation(BaseCLIRuntimeTest):
         """Setup for validation tests."""
         pass
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         """Test validation error cases."""
         return [
             # Test invalid signing algorithm

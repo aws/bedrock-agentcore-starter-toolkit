@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import socket
-from typing import List, Optional, Tuple
 
-ServerUrl = Tuple[str, str]
+ServerUrl = tuple[str, str]
 
 
-def build_server_urls(port: int, *, path_suffix: str = "", protocol: str = "http") -> List[ServerUrl]:
+def build_server_urls(port: int, *, path_suffix: str = "", protocol: str = "http") -> list[ServerUrl]:
     """Return URLs that are reachable when binding to 0.0.0.0."""
     suffix = _normalize_path_suffix(path_suffix)
-    urls: List[ServerUrl] = [
+    urls: list[ServerUrl] = [
         ("Localhost", f"{protocol}://localhost:{port}{suffix}"),
         ("127.0.0.1", f"{protocol}://127.0.0.1:{port}{suffix}"),
     ]
@@ -29,7 +28,7 @@ def _normalize_path_suffix(path_suffix: str) -> str:
     return path_suffix if path_suffix.startswith("/") else f"/{path_suffix}"
 
 
-def _detect_local_network_ip() -> Optional[str]:
+def _detect_local_network_ip() -> str | None:
     """Best-effort detection of an externally reachable LAN IP."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
