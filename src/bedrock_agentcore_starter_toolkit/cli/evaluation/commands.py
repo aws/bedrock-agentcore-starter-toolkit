@@ -3,7 +3,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from botocore.exceptions import ClientError
@@ -38,7 +37,7 @@ online_app = typer.Typer(help="Manage online evaluation configurations for conti
 evaluation_app.add_typer(online_app, name="online")
 
 
-def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[dict]:
+def _get_agent_config_from_file(agent_name: str | None = None) -> dict | None:
     """Get agent configuration from .bedrock_agentcore.yaml file.
 
     Args:
@@ -76,25 +75,25 @@ def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[di
 
 @evaluation_app.command("run")
 def run_evaluation(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    session_id: Optional[str] = typer.Option(None, "--session-id", "-s", help="Override session ID from config"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
-    trace_id: Optional[str] = typer.Option(
+    session_id: str | None = typer.Option(None, "--session-id", "-s", help="Override session ID from config"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Override agent ID from config"),
+    trace_id: str | None = typer.Option(
         None,
         "--trace-id",
         "-t",
         help="Evaluate only this trace (includes spans from all previous traces for context)",
     ),
-    evaluators: List[str] = typer.Option(  # noqa: B008
+    evaluators: list[str] = typer.Option(  # noqa: B008
         [], "--evaluator", "-e", help="Evaluator(s) to use (can specify multiple times)"
     ),
     days: int = typer.Option(7, "--days", "-d", help="Number of days to look back for session data (default: 7)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
 ):
     """Run evaluation on a session.
 
@@ -262,7 +261,7 @@ def get_evaluator(
     evaluator_id: str = typer.Option(
         ..., "--evaluator-id", help="Evaluator ID (e.g., Builtin.Helpfulness or custom-id)"
     ),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save to JSON file"),
 ):
     """Get detailed information about an evaluator.
 
@@ -354,10 +353,10 @@ def _interactive_create_evaluator(client: EvaluationControlPlaneClient) -> tuple
 
 @evaluator_app.command("create")
 def create_evaluator(
-    name: Optional[str] = typer.Option(None, "--name", help="Evaluator name"),
-    config: Optional[str] = typer.Option(None, "--config", help="Path to evaluator config JSON file or inline JSON"),
-    level: Optional[str] = typer.Option(None, "--level", help="Evaluation level (SESSION, TRACE, TOOL_CALL)"),
-    description: Optional[str] = typer.Option(None, "--description", help="Evaluator description"),
+    name: str | None = typer.Option(None, "--name", help="Evaluator name"),
+    config: str | None = typer.Option(None, "--config", help="Path to evaluator config JSON file or inline JSON"),
+    level: str | None = typer.Option(None, "--level", help="Evaluation level (SESSION, TRACE, TOOL_CALL)"),
+    description: str | None = typer.Option(None, "--description", help="Evaluator description"),
 ):
     r"""Create a custom evaluator.
 
@@ -435,8 +434,8 @@ def create_evaluator(
 @evaluator_app.command("update")
 def update_evaluator(
     evaluator_id: str = typer.Option(..., "--evaluator-id", help="Evaluator ID to update"),
-    description: Optional[str] = typer.Option(None, "--description", help="New description"),
-    config: Optional[str] = typer.Option(None, "--config", help="Path to new config JSON file"),
+    description: str | None = typer.Option(None, "--description", help="New description"),
+    config: str | None = typer.Option(None, "--config", help="Path to new config JSON file"),
 ):
     r"""Update a custom evaluator.
 
@@ -531,23 +530,21 @@ def delete_evaluator(
 
 @online_app.command("create")
 def create_online_config(
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Agent ID (uses config file if not provided)"),
-    config_name: Optional[str] = typer.Option(
-        None, "--name", "-n", help="Name for the online evaluation configuration"
-    ),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name from config file"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Agent ID (uses config file if not provided)"),
+    config_name: str | None = typer.Option(None, "--name", "-n", help="Name for the online evaluation configuration"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Agent name from config file"),
     endpoint: str = typer.Option("DEFAULT", "--endpoint", help="Agent endpoint (DEFAULT, DRAFT, or alias ARN)"),
     sampling_rate: float = typer.Option(1.0, "--sampling-rate", "-s", help="Sampling rate percentage (0-100)"),
-    evaluators: List[str] = typer.Option(  # noqa: B008
+    evaluators: list[str] = typer.Option(  # noqa: B008
         [], "--evaluator", "-e", help="Evaluator ID(s) to use (can specify multiple times)"
     ),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Config description"),
-    execution_role: Optional[str] = typer.Option(
+    description: str | None = typer.Option(None, "--description", "-d", help="Config description"),
+    execution_role: str | None = typer.Option(
         None, "--execution-role", help="IAM role ARN (auto-creates if not provided)"
     ),
     no_auto_create_role: bool = typer.Option(False, "--no-auto-create-role", help="Disable automatic role creation"),
     disabled: bool = typer.Option(False, "--disabled", help="Create config in disabled state"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save config details to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save config details to JSON file"),
 ):
     r"""Create online evaluation configuration for continuous agent evaluation.
 
@@ -653,7 +650,7 @@ def create_online_config(
 @online_app.command("get")
 def get_online_config(
     config_id: str = typer.Option(..., "--config-id", help="Online evaluation config ID"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save config details to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save config details to JSON file"),
 ):
     """Get online evaluation configuration details.
 
@@ -713,10 +710,10 @@ def get_online_config(
 
 @online_app.command("list")
 def list_online_configs(
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Filter by agent ID"),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Filter by agent name from config file"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Filter by agent ID"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Filter by agent name from config file"),
     max_results: int = typer.Option(50, "--max-results", help="Maximum number of configs to return"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save configs list to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save configs list to JSON file"),
 ):
     """List online evaluation configurations.
 
@@ -795,13 +792,13 @@ def list_online_configs(
 @online_app.command("update")
 def update_online_config(
     config_id: str = typer.Option(..., "--config-id", help="Online evaluation config ID to update"),
-    status: Optional[str] = typer.Option(None, "--status", help="New status (ENABLED or DISABLED)"),
-    sampling_rate: Optional[float] = typer.Option(None, "--sampling-rate", "-s", help="New sampling rate (0-100)"),
-    evaluators: Optional[List[str]] = typer.Option(  # noqa: B008
+    status: str | None = typer.Option(None, "--status", help="New status (ENABLED or DISABLED)"),
+    sampling_rate: float | None = typer.Option(None, "--sampling-rate", "-s", help="New sampling rate (0-100)"),
+    evaluators: list[str] | None = typer.Option(  # noqa: B008
         None, "--evaluator", "-e", help="New evaluator list (replaces existing, can specify multiple)"
     ),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="New description"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save updated config to JSON file"),
+    description: str | None = typer.Option(None, "--description", "-d", help="New description"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Save updated config to JSON file"),
 ):
     r"""Update online evaluation configuration.
 
@@ -876,9 +873,7 @@ def update_online_config(
 def delete_online_config(
     config_id: str = typer.Option(..., "--config-id", help="Online evaluation config ID to delete"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip all confirmation prompts"),
-    delete_role: Optional[bool] = typer.Option(
-        None, "--delete-role/--no-delete-role", help="Delete IAM execution role"
-    ),
+    delete_role: bool | None = typer.Option(None, "--delete-role/--no-delete-role", help="Delete IAM execution role"),
 ):
     """Delete online evaluation configuration.
 

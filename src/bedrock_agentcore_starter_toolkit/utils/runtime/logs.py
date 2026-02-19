@@ -1,10 +1,9 @@
 """Utility functions for agent log information."""
 
 from datetime import datetime, timezone
-from typing import Optional, Tuple
 
 
-def get_agent_runtime_log_group(agent_id: str, endpoint_name: Optional[str] = None) -> str:
+def get_agent_runtime_log_group(agent_id: str, endpoint_name: str | None = None) -> str:
     """Get the CloudWatch log group name for agent runtime logs.
 
     This is used by observability and evaluation features to reference agent logs.
@@ -34,10 +33,10 @@ def get_genai_observability_url(region: str) -> str:
 
 def get_agent_log_paths(
     agent_id: str,
-    endpoint_name: Optional[str] = None,
-    deployment_type: Optional[str] = None,
-    session_id: Optional[str] = None,
-) -> Tuple[str, str]:
+    endpoint_name: str | None = None,
+    deployment_type: str | None = None,
+    session_id: str | None = None,
+) -> tuple[str, str]:
     """Get CloudWatch log group paths for an agent.
 
     Args:

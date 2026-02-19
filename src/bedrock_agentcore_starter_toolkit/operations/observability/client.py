@@ -2,7 +2,6 @@
 
 import logging
 import time
-from typing import Dict, List, Optional
 
 import boto3
 
@@ -47,7 +46,7 @@ class ObservabilityClient:
         start_time_ms: int,
         end_time_ms: int,
         agent_id: str,
-    ) -> List[Span]:
+    ) -> list[Span]:
         """Query all spans for a session from aws/spans log group.
 
         Args:
@@ -82,7 +81,7 @@ class ObservabilityClient:
         start_time_ms: int,
         end_time_ms: int,
         agent_id: str,
-    ) -> List[Span]:
+    ) -> list[Span]:
         """Query all spans for a trace from aws/spans log group.
 
         Args:
@@ -113,12 +112,12 @@ class ObservabilityClient:
 
     def query_runtime_logs_by_traces(
         self,
-        trace_ids: List[str],
+        trace_ids: list[str],
         start_time_ms: int,
         end_time_ms: int,
         agent_id: str,
         endpoint_name: str = "DEFAULT",
-    ) -> List[RuntimeLog]:
+    ) -> list[RuntimeLog]:
         """Query runtime logs for multiple traces from agent-specific log group.
 
         Optimized to use a single batch query instead of one query per trace.
@@ -165,12 +164,12 @@ class ObservabilityClient:
 
     def _query_runtime_logs_individually(
         self,
-        trace_ids: List[str],
+        trace_ids: list[str],
         start_time_ms: int,
         end_time_ms: int,
         agent_id: str,
         endpoint_name: str = "DEFAULT",
-    ) -> List[RuntimeLog]:
+    ) -> list[RuntimeLog]:
         """Fallback method to query runtime logs one trace at a time.
 
         Args:
@@ -214,7 +213,7 @@ class ObservabilityClient:
         start_time_ms: int,
         end_time_ms: int,
         agent_id: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get the most recent session ID for an agent.
 
         Args:
@@ -260,7 +259,7 @@ class ObservabilityClient:
         log_group_name: str,
         start_time: int,
         end_time: int,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Execute a CloudWatch Logs Insights query and wait for results.
 
         Args:

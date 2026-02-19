@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from .constants import StrategyType
 from .models import convert_strategies_to_dicts
@@ -36,7 +36,7 @@ class UniversalComparator:
             return data
 
     @staticmethod
-    def deep_compare(dict1: Dict[str, Any], dict2: Dict[str, Any], path: str = "") -> tuple[bool, str]:
+    def deep_compare(dict1: dict[str, Any], dict2: dict[str, Any], path: str = "") -> tuple[bool, str]:
         """Deep compare two dictionaries with detailed error reporting."""
         # Normalize both dictionaries
         norm1 = UniversalComparator.normalize_field_names(dict1)
@@ -127,7 +127,7 @@ class StrategyComparator:
     """Utility class for comparing memory strategies in detail."""
 
     @staticmethod
-    def normalize_strategy(strategy: Union[Dict[str, Any], Dict[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    def normalize_strategy(strategy: dict[str, Any] | dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Normalize a strategy to a standard format with universal field normalization.
 
         Args:
@@ -144,7 +144,7 @@ class StrategyComparator:
         return StrategyComparator._normalize_request_strategy(strategy)
 
     @staticmethod
-    def _normalize_memory_strategy(strategy: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_memory_strategy(strategy: dict[str, Any]) -> dict[str, Any]:
         """Normalize a strategy from memory response, including only fields relevant for comparison."""
         # Handle different field name variations
         strategy_type = strategy.get("type", strategy.get("memoryStrategyType"))
@@ -169,7 +169,7 @@ class StrategyComparator:
         return normalized
 
     @staticmethod
-    def _transform_memory_configuration(config: Dict[str, Any], strategy_type: str) -> Dict[str, Any]:
+    def _transform_memory_configuration(config: dict[str, Any], strategy_type: str) -> dict[str, Any]:
         """Transform memory configuration from stored format to match requested format.
 
         This handles the structural differences between how configurations are stored
@@ -266,7 +266,7 @@ class StrategyComparator:
         return config
 
     @staticmethod
-    def _normalize_request_strategy(strategy_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_request_strategy(strategy_dict: dict[str, Any]) -> dict[str, Any]:
         """Normalize a strategy from request format."""
         # Find the strategy type key in the dictionary
         strategy_type = None
@@ -321,7 +321,7 @@ class StrategyComparator:
 
     @staticmethod
     def compare_strategies(
-        existing_strategies: List[Dict[str, Any]], requested_strategies: List[Union[BaseStrategy, Dict[str, Any]]]
+        existing_strategies: list[dict[str, Any]], requested_strategies: list[BaseStrategy | dict[str, Any]]
     ) -> tuple[bool, str]:
         """Compare existing memory strategies with requested strategies using universal comparison.
 
@@ -377,8 +377,8 @@ class StrategyComparator:
 
 
 def validate_existing_memory_strategies(
-    memory_strategies: List[Dict[str, Any]],
-    requested_strategies: List[Union[BaseStrategy, Dict[str, Any]]],
+    memory_strategies: list[dict[str, Any]],
+    requested_strategies: list[BaseStrategy | dict[str, Any]],
     memory_name: str,
 ) -> None:
     """Validate that existing memory strategies match the requested strategies using universal comparison.

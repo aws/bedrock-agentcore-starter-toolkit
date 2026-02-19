@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional
 
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import PathCompleter
@@ -716,7 +715,7 @@ def _validate_requirements_file(file_path: str) -> str:
         _handle_error(str(e), e)
 
 
-def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: str = "") -> Optional[str]:
+def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: str = "") -> str | None:
     """Prompt user for requirements file path with validation.
 
     Args:
@@ -752,8 +751,8 @@ def _prompt_for_requirements_file(prompt_text: str, source_path: str, default: s
 
 
 def _handle_requirements_file_display(
-    requirements_file: Optional[str], non_interactive: bool = False, source_path: Optional[str] = None
-) -> Optional[str]:
+    requirements_file: str | None, non_interactive: bool = False, source_path: str | None = None
+) -> str | None:
     """Handle requirements file with display logic for CLI.
 
     Args:

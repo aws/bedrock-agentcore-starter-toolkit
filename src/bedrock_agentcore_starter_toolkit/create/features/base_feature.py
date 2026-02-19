@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -15,18 +14,18 @@ from ..types import ProjectContext
 class Feature(ABC):
     """Base feature class for applying Jinja2-based templates to a target directory."""
 
-    feature_dir_name: Optional[str]
+    feature_dir_name: str | None
     python_dependencies: list[str] = []
-    template_override_dir: Optional[Path] = None
+    template_override_dir: Path | None = None
     render_common_dir: bool = False
 
     def __init__(self) -> None:
         """Initialize the base feature."""
         if not (self.template_override_dir or self.feature_dir_name):
             raise Exception("Without template_override_parent_dir, feature_dir_name must be defined")
-        self.template_dir: Optional[Path] = None
-        self.base_path: Optional[Path] = None
-        self.model_provider_name: Optional[str] = None
+        self.template_dir: Path | None = None
+        self.base_path: Path | None = None
+        self.model_provider_name: str | None = None
 
     def _resolve_template_dir(self, context: ProjectContext) -> Path:
         """Determine which template directory to use."""

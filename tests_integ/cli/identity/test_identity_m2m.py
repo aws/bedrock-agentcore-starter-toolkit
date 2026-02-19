@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import re
-from typing import List
 
 from click.testing import Result
 
@@ -29,7 +28,7 @@ class TestIdentityM2M(BaseCLIRuntimeTest):
         self.runtime_pool_id = None
         self.identity_pool_id = None
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         """Test M2M-specific commands."""
         return [
             # Step 1: Setup Cognito with M2M flow

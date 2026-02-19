@@ -1,7 +1,6 @@
 """VPC networking validation utilities for AgentCore Runtime."""
 
 import logging
-from typing import List, Optional, Tuple
 
 import boto3
 from botocore.exceptions import ClientError
@@ -11,10 +10,10 @@ log = logging.getLogger(__name__)
 
 def validate_vpc_configuration(
     region: str,
-    subnets: List[str],
-    security_groups: List[str],
-    session: Optional[boto3.Session] = None,
-) -> Tuple[str, List[str]]:
+    subnets: list[str],
+    security_groups: list[str],
+    session: boto3.Session | None = None,
+) -> tuple[str, list[str]]:
     """Validate VPC configuration and return VPC ID and any warnings.
 
     Args:
@@ -44,7 +43,7 @@ def validate_vpc_configuration(
     return vpc_id, warnings
 
 
-def _validate_subnets(ec2_client, subnets: List[str], warnings: List[str]) -> str:
+def _validate_subnets(ec2_client, subnets: list[str], warnings: list[str]) -> str:
     """Validate subnets and return VPC ID."""
     try:
         response = ec2_client.describe_subnets(SubnetIds=subnets)
@@ -83,7 +82,7 @@ def _validate_subnets(ec2_client, subnets: List[str], warnings: List[str]) -> st
 
 
 def _validate_security_groups(
-    ec2_client, security_groups: List[str], expected_vpc_id: str, warnings: List[str]
+    ec2_client, security_groups: list[str], expected_vpc_id: str, warnings: list[str]
 ) -> None:
     """Validate security groups are in the expected VPC."""
     try:
@@ -124,12 +123,12 @@ def _validate_security_groups(
 
 def check_network_immutability(
     existing_network_mode: str,
-    existing_subnets: Optional[List[str]],
-    existing_security_groups: Optional[List[str]],
+    existing_subnets: list[str] | None,
+    existing_security_groups: list[str] | None,
     new_network_mode: str,
-    new_subnets: Optional[List[str]],
-    new_security_groups: Optional[List[str]],
-) -> Optional[str]:
+    new_subnets: list[str] | None,
+    new_security_groups: list[str] | None,
+) -> str | None:
     """Check if network configuration is being changed (not allowed).
 
     Returns:
@@ -165,7 +164,7 @@ def check_network_immutability(
     return None
 
 
-def verify_subnet_azs(ec2_client, subnets: List[str], region: str) -> List[str]:
+def verify_subnet_azs(ec2_client, subnets: list[str], region: str) -> list[str]:
     """Verify subnets are in supported AZs and return any issues."""
     # Supported AZ IDs for us-west-2
     SUPPORTED_AZS = {

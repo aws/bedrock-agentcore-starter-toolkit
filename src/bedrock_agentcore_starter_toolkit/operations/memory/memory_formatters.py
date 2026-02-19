@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from rich.panel import Panel
 
@@ -91,7 +91,7 @@ class DisplayConfig:
 # ==================== Content Extraction ====================
 
 
-def extract_record_text(record: Dict[str, Any]) -> str:
+def extract_record_text(record: dict[str, Any]) -> str:
     """Extract text content from a record.
 
     Args:
@@ -106,7 +106,7 @@ def extract_record_text(record: Dict[str, Any]) -> str:
     return str(content)
 
 
-def extract_event_text(event: Dict[str, Any]) -> Optional[str]:
+def extract_event_text(event: dict[str, Any]) -> str | None:
     """Extract text content from event payload.
 
     Args:
@@ -139,7 +139,7 @@ def extract_event_text(event: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def extract_event_role(event: Dict[str, Any]) -> Optional[str]:
+def extract_event_role(event: dict[str, Any]) -> str | None:
     """Extract role from event payload.
 
     Args:
@@ -156,7 +156,7 @@ def extract_event_role(event: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def extract_event_type(event: Dict[str, Any]) -> Optional[str]:
+def extract_event_type(event: dict[str, Any]) -> str | None:
     """Extract event type from payload.
 
     Args:
@@ -209,7 +209,7 @@ def format_content_preview(text: str, verbose: bool = False) -> str:
     return truncate_text(preview, max_len, verbose=False)
 
 
-def render_content_panel(text: str, verbose: bool = False) -> Union[Panel, str]:
+def render_content_panel(text: str, verbose: bool = False) -> Panel | str:
     """Render content as panel (verbose) or truncated string.
 
     Args:
@@ -224,7 +224,7 @@ def render_content_panel(text: str, verbose: bool = False) -> Union[Panel, str]:
     return format_content_preview(text)
 
 
-def format_payload_snippet(event: Dict[str, Any], max_len: int = 60) -> str:
+def format_payload_snippet(event: dict[str, Any], max_len: int = 60) -> str:
     """Format raw payload as truncated JSON snippet.
 
     Args:
@@ -261,7 +261,7 @@ def format_truncation_hint(shown: int, total: int) -> str:
     return f"[dim]... {remaining} more[/dim]"
 
 
-def format_role_icon(role: Optional[str]) -> str:
+def format_role_icon(role: str | None) -> str:
     """Format role as colored icon string.
 
     Args:

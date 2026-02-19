@@ -1,7 +1,6 @@
 import json
 import logging
 import textwrap
-from typing import List
 
 import boto3
 from click.testing import Result
@@ -109,7 +108,7 @@ class TestSimpleAgent(BaseCLIRuntimeTest):
             logger.error("Error updating role trust policy: %s", str(e))
             raise
 
-    def get_command_invocations(self) -> List[CommandInvocation]:
+    def get_command_invocations(self) -> list[CommandInvocation]:
         configure_invocation = CommandInvocation(
             command=[
                 "configure",

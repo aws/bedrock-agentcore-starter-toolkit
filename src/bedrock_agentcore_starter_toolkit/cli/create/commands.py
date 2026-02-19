@@ -3,7 +3,6 @@
 import re
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
 
 import typer
 
@@ -79,13 +78,13 @@ venv_option = typer.Option(True, "--venv/--no-venv", help="Automatically create 
 @create_app.callback(invoke_without_command=True)
 def create(
     ctx: typer.Context,
-    project_name: Optional[str] = project_name_option,
-    template: Optional[CreateTemplateDisplay] = template_option,
+    project_name: str | None = project_name_option,
+    template: CreateTemplateDisplay | None = template_option,
     sdk: CreateSDKProvider = sdk_option,
     model_provider: CreateModelProvider = model_provider_option,
-    provider_api_key: Optional[str] = model_provider_api_key_option,
-    iac: Optional[CreateIACProvider] = iac_option,
-    non_interactive_flag: Optional[bool] = non_interactive_flag_opt,
+    provider_api_key: str | None = model_provider_api_key_option,
+    iac: CreateIACProvider | None = iac_option,
+    non_interactive_flag: bool | None = non_interactive_flag_opt,
     venv_option: bool = venv_option,
 ):
     """CLI Implementation for Create Command."""
@@ -170,11 +169,11 @@ def create(
 
 
 def _apply_non_interactive_defaults(
-    template: Optional[CreateTemplateDisplay],
-    sdk: Optional[CreateSDKProvider],
-    model_provider: Optional[CreateModelProvider],
-    iac: Optional[CreateIACProvider],
-) -> Tuple[CreateTemplateDisplay, CreateSDKProvider, CreateModelProvider, Optional[CreateIACProvider]]:
+    template: CreateTemplateDisplay | None,
+    sdk: CreateSDKProvider | None,
+    model_provider: CreateModelProvider | None,
+    iac: CreateIACProvider | None,
+) -> tuple[CreateTemplateDisplay, CreateSDKProvider, CreateModelProvider, CreateIACProvider | None]:
     """Applies defaults for non-interactive mode.
 
     Assumes non-interactive mode is already active.
@@ -214,9 +213,9 @@ def _apply_non_interactive_defaults(
 def _handle_basic_runtime_flow(
     sdk: CreateSDKProvider,
     model_provider: CreateModelProvider,
-    provider_api_key: Optional[str],
+    provider_api_key: str | None,
     non_interactive_flag: bool,
-) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str], bool]:
+) -> tuple[CreateSDKProvider, CreateModelProvider, str | None, bool]:
     """Handles prompt logic for Runtime-only mode."""
     if not sdk:
         sdk = prompt_sdk_provider(is_direct_code_deploy=True)
@@ -259,9 +258,9 @@ def _handle_basic_runtime_flow(
 def _handle_monorepo_flow(
     sdk: CreateSDKProvider,
     model_provider: CreateModelProvider,
-    iac: Optional[CreateIACProvider],
+    iac: CreateIACProvider | None,
     non_interactive_flag: bool,
-) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[CreateIACProvider], Optional[BedrockAgentCoreAgentSchema]]:
+) -> tuple[CreateSDKProvider, CreateModelProvider, CreateIACProvider | None, BedrockAgentCoreAgentSchema | None]:
     """Handles prompt logic for Monorepo mode."""
     agent_config = None
     configure_yaml = Path.cwd() / ".bedrock_agentcore.yaml"

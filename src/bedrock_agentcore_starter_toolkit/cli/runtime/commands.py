@@ -10,7 +10,6 @@ import logging
 import os
 from pathlib import Path
 from threading import Thread
-from typing import List, Optional
 
 import requests
 import typer
@@ -107,27 +106,25 @@ def configure(
     ctx: typer.Context,
     *,
     create: bool = typer.Option(False, "--create", "-c"),
-    entrypoint: Optional[str] = typer.Option(
+    entrypoint: str | None = typer.Option(
         None,
         "--entrypoint",
         "-e",
         help="Entry point: file path (e.g., agent.py) or directory path (auto-detects main.py, agent.py, app.py)",
     ),
-    agent_name: Optional[str] = typer.Option(None, "--name", "-n"),
-    execution_role: Optional[str] = typer.Option(None, "--execution-role", "-er"),
-    code_build_execution_role: Optional[str] = typer.Option(None, "--code-build-execution-role", "-cber"),
-    ecr_repository: Optional[str] = typer.Option(None, "--ecr", "-ecr"),
-    s3_bucket: Optional[str] = typer.Option(None, "--s3", "-s3", help="S3 bucket for direct_code_deploy deployment"),
-    container_runtime: Optional[str] = typer.Option(None, "--container-runtime", "-ctr"),
-    requirements_file: Optional[str] = typer.Option(
-        None, "--requirements-file", "-rf", help="Path to requirements file"
-    ),
+    agent_name: str | None = typer.Option(None, "--name", "-n"),
+    execution_role: str | None = typer.Option(None, "--execution-role", "-er"),
+    code_build_execution_role: str | None = typer.Option(None, "--code-build-execution-role", "-cber"),
+    ecr_repository: str | None = typer.Option(None, "--ecr", "-ecr"),
+    s3_bucket: str | None = typer.Option(None, "--s3", "-s3", help="S3 bucket for direct_code_deploy deployment"),
+    container_runtime: str | None = typer.Option(None, "--container-runtime", "-ctr"),
+    requirements_file: str | None = typer.Option(None, "--requirements-file", "-rf", help="Path to requirements file"),
     disable_otel: bool = typer.Option(False, "--disable-otel", "-do", help="Disable OpenTelemetry"),
     disable_memory: bool = typer.Option(False, "--disable-memory", "-dm", help="Disable memory"),
-    authorizer_config: Optional[str] = typer.Option(
+    authorizer_config: str | None = typer.Option(
         None, "--authorizer-config", "-ac", help="OAuth authorizer configuration as JSON string"
     ),
-    request_header_allowlist: Optional[str] = typer.Option(
+    request_header_allowlist: str | None = typer.Option(
         None,
         "--request-header-allowlist",
         "-rha",
@@ -137,24 +134,24 @@ def configure(
     vpc: bool = typer.Option(
         False, "--vpc", help="Enable VPC networking mode (requires --subnets and --security-groups)"
     ),
-    subnets: Optional[str] = typer.Option(
+    subnets: str | None = typer.Option(
         None,
         "--subnets",
         help="Comma-separated list of subnet IDs (e.g., subnet-abc123,subnet-def456). Required with --vpc.",
     ),
-    security_groups: Optional[str] = typer.Option(
+    security_groups: str | None = typer.Option(
         None,
         "--security-groups",
         help="Comma-separated list of security group IDs (e.g., sg-xyz789). Required with --vpc.",
     ),
-    idle_timeout: Optional[int] = typer.Option(
+    idle_timeout: int | None = typer.Option(
         None,
         "--idle-timeout",
         help="Idle runtime session timeout in seconds (60-28800, default: 900)",
         min=60,
         max=28800,
     ),
-    max_lifetime: Optional[int] = typer.Option(
+    max_lifetime: int | None = typer.Option(
         None,
         "--max-lifetime",
         help="Maximum instance lifetime in seconds (60-28800, default: 28800)",
@@ -162,18 +159,18 @@ def configure(
         max=28800,
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
-    region: Optional[str] = typer.Option(None, "--region", "-r"),
-    protocol: Optional[str] = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
+    region: str | None = typer.Option(None, "--region", "-r"),
+    protocol: str | None = typer.Option(None, "--protocol", "-p", help="Server protocol (HTTP or MCP or A2A)"),
     non_interactive: bool = typer.Option(
         False, "--non-interactive", "-ni", help="Skip prompts; use defaults unless overridden"
     ),
-    deployment_type: Optional[str] = typer.Option(
+    deployment_type: str | None = typer.Option(
         None, "--deployment-type", "-dt", help="Deployment type (container or direct_code_deploy)"
     ),
-    runtime: Optional[str] = typer.Option(
+    runtime: str | None = typer.Option(
         None, "--runtime", "-rt", help="Python runtime version for direct_code_deploy (e.g., PYTHON_3_10, PYTHON_3_11)"
     ),
-    language: Optional[str] = typer.Option(
+    language: str | None = typer.Option(
         None, "--language", "-lang", help="Project language (python or typescript). Auto-detected if not specified."
     ),
 ):
@@ -217,7 +214,7 @@ def configure(
 
 @requires_aws_creds
 def deploy(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     local: bool = typer.Option(False, "--local", "-l", help="Run locally for development and testing"),
@@ -227,7 +224,7 @@ def deploy(
         "-lb",
         help="Build locally and deploy to cloud (container deployment only)",
     ),
-    image_tag: Optional[str] = typer.Option(
+    image_tag: str | None = typer.Option(
         None,
         "--image-tag",
         "-t",
@@ -246,7 +243,7 @@ def deploy(
         "-frd",
         help="Force rebuild of dependencies even if cached (direct_code_deploy deployments only)",
     ),
-    envs: List[str] = typer.Option(  # noqa: B008
+    envs: list[str] = typer.Option(  # noqa: B008
         None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
     ),
     code_build: bool = typer.Option(
@@ -713,18 +710,18 @@ def _parse_custom_headers(headers_str: str) -> dict:
 
 def invoke(
     payload: str = typer.Argument(..., help="JSON payload to send"),
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
     ),
-    session_id: Optional[str] = typer.Option(None, "--session-id", "-s"),
-    bearer_token: Optional[str] = typer.Option(
+    session_id: str | None = typer.Option(None, "--session-id", "-s"),
+    bearer_token: str | None = typer.Option(
         None, "--bearer-token", "-bt", help="Bearer token for OAuth authentication"
     ),
-    local_mode: Optional[bool] = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
-    dev_mode: Optional[bool] = typer.Option(False, "--dev", "-d", help="Send request to local development server"),
-    port: Optional[int] = typer.Option(8080, "--port", help="Port for local development server"),
-    user_id: Optional[str] = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
-    headers: Optional[str] = typer.Option(
+    local_mode: bool | None = typer.Option(False, "--local", "-l", help="Send request to a running local container"),
+    dev_mode: bool | None = typer.Option(False, "--dev", "-d", help="Send request to local development server"),
+    port: int | None = typer.Option(8080, "--port", help="Port for local development server"),
+    user_id: str | None = typer.Option(None, "--user-id", "-u", help="User id for authorization flows"),
+    headers: str | None = typer.Option(
         None,
         "--headers",
         help="Custom headers (format: 'Header1:value,Header2:value2'). "
@@ -875,10 +872,10 @@ def invoke(
 
 
 def status(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'bedrock_agentcore configure list' to see available)"
     ),
-    verbose: Optional[bool] = typer.Option(
+    verbose: bool | None = typer.Option(
         None, "--verbose", "-v", help="Verbose json output of config, agent and endpoint status"
     ),
 ):
@@ -1096,13 +1093,13 @@ def status(
 
 
 def stop_session(
-    session_id: Optional[str] = typer.Option(
+    session_id: str | None = typer.Option(
         None,
         "--session-id",
         "-s",
         help="Runtime session ID to stop. If not provided, stops the last active session from invoke.",
     ),
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
@@ -1199,7 +1196,7 @@ def stop_session(
 
 
 def destroy(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None, "--agent", "-a", help="Agent name (use 'agentcore configure list' to see available agents)"
     ),
     dry_run: bool = typer.Option(

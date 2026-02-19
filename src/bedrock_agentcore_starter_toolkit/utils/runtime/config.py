@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import ValidationError
@@ -30,7 +29,7 @@ def is_project_config_format(config_path: Path) -> bool:
     """Check if config file uses project format (has 'agents' key)."""
     if not config_path.exists():
         return False
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         data = yaml.safe_load(f) or {}
     return isinstance(data, dict) and "agents" in data
 
@@ -74,7 +73,7 @@ def load_config(config_path: Path, autofill_missing_aws=True) -> BedrockAgentCor
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration not found: {config_path}")
 
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         data = yaml.safe_load(f) or {}
 
     # Auto-detect and transform legacy format
@@ -147,7 +146,7 @@ def save_config(config: BedrockAgentCoreConfigSchema, config_path: Path):
         )
 
 
-def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> Optional[BedrockAgentCoreConfigSchema]:
+def load_config_if_exists(config_path: Path, autofill_missing_aws=True) -> BedrockAgentCoreConfigSchema | None:
     """Load configuration if file exists, otherwise return None.
 
     Args:
@@ -225,7 +224,7 @@ def merge_agent_config(
     return config
 
 
-def get_agentcore_directory(project_root: Path, agent_name: str, source_path: Optional[str] = None) -> Path:
+def get_agentcore_directory(project_root: Path, agent_name: str, source_path: str | None = None) -> Path:
     """Get the agentcore directory for an agent's build artifacts.
 
     Args:

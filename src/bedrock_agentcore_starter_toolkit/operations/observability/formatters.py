@@ -1,6 +1,6 @@
 """Formatting utilities for observability data display."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from ..constants import GenAIAttributes, LLMAttributes, TruncationConfig
 
@@ -223,7 +223,7 @@ def format_status_display(has_errors: bool) -> tuple[str, str]:
 # Attribute extraction helpers
 
 
-def get_span_attribute(attributes: Dict[str, Any], *attr_names: str) -> Optional[Any]:
+def get_span_attribute(attributes: dict[str, Any], *attr_names: str) -> Any | None:
     """Get first available attribute from a list of attribute names.
 
     Args:
@@ -249,7 +249,7 @@ def get_span_attribute(attributes: Dict[str, Any], *attr_names: str) -> Optional
     return None
 
 
-def extract_prompt(attributes: Dict[str, Any]) -> Optional[str]:
+def extract_prompt(attributes: dict[str, Any]) -> str | None:
     """Extract prompt/user message from span attributes.
 
     Checks GenAI and LLM attribute patterns in priority order.
@@ -274,7 +274,7 @@ def extract_prompt(attributes: Dict[str, Any]) -> Optional[str]:
     return str(value) if value is not None else None
 
 
-def extract_completion(attributes: Dict[str, Any]) -> Optional[str]:
+def extract_completion(attributes: dict[str, Any]) -> str | None:
     """Extract completion/assistant response from span attributes.
 
     Checks GenAI and LLM attribute patterns in priority order.
@@ -299,7 +299,7 @@ def extract_completion(attributes: Dict[str, Any]) -> Optional[str]:
     return str(value) if value is not None else None
 
 
-def extract_invocation_payload(attributes: Dict[str, Any]) -> Optional[str]:
+def extract_invocation_payload(attributes: dict[str, Any]) -> str | None:
     """Extract invocation request payload from span attributes.
 
     Checks multiple GenAI attribute patterns for invocation data.
@@ -324,7 +324,7 @@ def extract_invocation_payload(attributes: Dict[str, Any]) -> Optional[str]:
     return str(value) if value is not None else None
 
 
-def extract_input_data(attributes: Dict[str, Any]) -> Optional[str]:
+def extract_input_data(attributes: dict[str, Any]) -> str | None:
     """Extract input data from span attributes.
 
     Checks multiple GenAI attribute patterns for input data.
@@ -348,7 +348,7 @@ def extract_input_data(attributes: Dict[str, Any]) -> Optional[str]:
     return str(value) if value is not None else None
 
 
-def extract_output_data(attributes: Dict[str, Any]) -> Optional[str]:
+def extract_output_data(attributes: dict[str, Any]) -> str | None:
     """Extract output data from span attributes.
 
     Checks multiple GenAI attribute patterns for output data.
@@ -398,7 +398,7 @@ def truncate_for_display(text: str, verbose: bool = False, is_tool_use: bool = F
     return TruncationConfig.truncate(text, is_tool_use=is_tool_use)
 
 
-def has_llm_attributes(attributes: Dict[str, Any]) -> bool:
+def has_llm_attributes(attributes: dict[str, Any]) -> bool:
     """Check if span has any LLM-related attributes.
 
     Args:

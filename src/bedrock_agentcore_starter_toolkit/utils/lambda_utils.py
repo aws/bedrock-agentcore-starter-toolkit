@@ -4,7 +4,6 @@ import io
 import json
 import logging
 import zipfile
-from typing import Optional
 
 from boto3 import Session
 
@@ -19,7 +18,7 @@ def create_lambda_function(
     runtime: str,
     handler: str,
     gateway_role_arn: str,
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> str:
     """Create a Lambda function with the specified code.
 

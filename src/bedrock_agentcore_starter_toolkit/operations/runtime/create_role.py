@@ -3,7 +3,7 @@
 import hashlib
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from boto3 import Session
 from botocore.client import BaseClient
@@ -16,7 +16,7 @@ from ...utils.runtime.policy_template import (
 )
 
 
-def _extract_ecr_repository_name(ecr_uri: Optional[str]) -> Optional[str]:
+def _extract_ecr_repository_name(ecr_uri: str | None) -> str | None:
     """Extract repository name from ECR URI.
 
     Args:
@@ -61,8 +61,8 @@ def get_or_create_runtime_execution_role(
     region: str,
     account_id: str,
     agent_name: str,
-    role_name: Optional[str] = None,
-    agent_config: Optional[Any] = None,
+    role_name: str | None = None,
+    agent_config: Any | None = None,
 ) -> str:
     """Get existing execution role or create a new one (idempotent).
 

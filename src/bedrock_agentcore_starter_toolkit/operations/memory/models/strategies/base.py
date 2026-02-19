@@ -1,7 +1,7 @@
 """Base classes and types for memory strategies."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,8 +21,8 @@ class ExtractionConfig(BaseModel):
         model_id: Model identifier for extraction operations
     """
 
-    append_to_prompt: Optional[str] = Field(None, description="Additional prompt text for extraction")
-    model_id: Optional[str] = Field(None, description="Model identifier for extraction operations")
+    append_to_prompt: str | None = Field(None, description="Additional prompt text for extraction")
+    model_id: str | None = Field(None, description="Model identifier for extraction operations")
 
     model_config = ConfigDict(validate_by_name=True)
 
@@ -35,8 +35,8 @@ class ConsolidationConfig(BaseModel):
         model_id: Model identifier for consolidation operations
     """
 
-    append_to_prompt: Optional[str] = Field(None, description="Additional prompt text for consolidation")
-    model_id: Optional[str] = Field(None, description="Model identifier for consolidation operations")
+    append_to_prompt: str | None = Field(None, description="Additional prompt text for consolidation")
+    model_id: str | None = Field(None, description="Model identifier for consolidation operations")
 
     model_config = ConfigDict(validate_by_name=True)
 
@@ -51,11 +51,11 @@ class BaseStrategy(BaseModel, ABC):
     """
 
     name: str = Field(..., description="Strategy name")
-    description: Optional[str] = Field(None, description="Strategy description")
-    namespaces: Optional[List[str]] = Field(None, description="Strategy namespaces")
+    description: str | None = Field(None, description="Strategy description")
+    namespaces: list[str] | None = Field(None, description="Strategy namespaces")
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert strategy to dictionary format for API calls.
 
         Returns:
@@ -75,5 +75,5 @@ StrategyType = Union[
     "CustomUserPreferenceStrategy",
     "UserPreferenceStrategy",
     "SelfManagedStrategy",
-    Dict[str, Any],  # Backward compatibility with dict-based strategies
+    dict[str, Any],  # Backward compatibility with dict-based strategies
 ]

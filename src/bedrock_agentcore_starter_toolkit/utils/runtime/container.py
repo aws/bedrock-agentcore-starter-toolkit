@@ -5,7 +5,6 @@ import platform
 import subprocess  # nosec B404 - Required for container runtime operations
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 from jinja2 import Template
 from rich.console import Console
@@ -25,7 +24,7 @@ class ContainerRuntime:
     DEFAULT_RUNTIME = "auto"
     DEFAULT_PLATFORM = "linux/arm64"
 
-    def __init__(self, runtime_type: Optional[str] = None, print_logs=True):
+    def __init__(self, runtime_type: str | None = None, print_logs=True):
         """Initialize container runtime.
 
         Args:
@@ -128,14 +127,14 @@ class ContainerRuntime:
         agent_path: Path,
         output_dir: Path,
         agent_name: str,
-        aws_region: Optional[str] = None,
+        aws_region: str | None = None,
         enable_observability: bool = True,
-        requirements_file: Optional[str] = None,
-        memory_id: Optional[str] = None,
-        memory_name: Optional[str] = None,
-        source_path: Optional[str] = None,
-        protocol: Optional[str] = None,
-        explicit_requirements_file: Optional[Path] = None,
+        requirements_file: str | None = None,
+        memory_id: str | None = None,
+        memory_name: str | None = None,
+        source_path: str | None = None,
+        protocol: str | None = None,
+        explicit_requirements_file: Path | None = None,
         silence_warn=False,
         language: str = "python",
         node_version: str = "20",
@@ -388,9 +387,9 @@ class ContainerRuntime:
         self,
         build_context: Path,
         tag: str,
-        dockerfile_path: Optional[Path] = None,
-        platform: Optional[str] = None,
-    ) -> Tuple[bool, List[str]]:
+        dockerfile_path: Path | None = None,
+        platform: str | None = None,
+    ) -> tuple[bool, list[str]]:
         """Build container image.
 
         Args:
@@ -433,7 +432,7 @@ class ContainerRuntime:
 
         return self._execute_command(cmd)
 
-    def run_local(self, tag: str, port: int = 8080, env_vars: Optional[dict] = None) -> subprocess.CompletedProcess:
+    def run_local(self, tag: str, port: int = 8080, env_vars: dict | None = None) -> subprocess.CompletedProcess:
         """Run container locally.
 
         Args:
@@ -519,7 +518,7 @@ class ContainerRuntime:
             log.error("Failed to push image")
             return False
 
-    def _execute_command(self, cmd: List[str]) -> Tuple[bool, List[str]]:
+    def _execute_command(self, cmd: list[str]) -> tuple[bool, list[str]]:
         """Execute command and capture output."""
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)  # nosec B603

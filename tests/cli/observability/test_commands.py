@@ -747,7 +747,7 @@ class TestShowCommandWithOutput:
         mock_client_class.return_value = mock_client
 
         # Mock file operation to raise error
-        mock_path.return_value.open.side_effect = IOError("Cannot write file")
+        mock_path.return_value.open.side_effect = OSError("Cannot write file")
 
         result = runner.invoke(observability_app, ["show", "--trace-id", "error-export", "--output", "bad-path.json"])
 
