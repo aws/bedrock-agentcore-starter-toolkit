@@ -52,7 +52,9 @@ def test_create_policy_engine_basic(mock_policy_client):
     assert result.exit_code == 0
     assert "Policy engine creation initiated" in result.output
     assert "testEngine-123" in result.output
-    mock_policy_client.create_policy_engine.assert_called_once_with(name="TestEngine", description="Test policy engine")
+    mock_policy_client.create_policy_engine.assert_called_once_with(
+        name="TestEngine", description="Test policy engine", encryption_key_arn=None, tags=None
+    )
 
 
 def test_create_policy_engine_defaults(mock_policy_client):
@@ -63,6 +65,114 @@ def test_create_policy_engine_defaults(mock_policy_client):
 
     assert result.exit_code == 0
     assert "Policy engine creation initiated" in result.output
+
+
+def test_create_policy_engine_with_encryption_key(mock_policy_client):
+    """Test create-policy-engine with encryption key ARN."""
+    mock_response = {
+        "policyEngineId": "engine-123",
+        "policyEngineArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy-engine/engine-123",
+        "status": "CREATING",
+        "name": "SecureEngine",
+    }
+    mock_policy_client.create_policy_engine.return_value = mock_response
+
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-engine",
+            "--name",
+            "SecureEngine",
+            "--encryption-key-arn",
+            "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Policy engine creation initiated" in result.output
+    call_args = mock_policy_client.create_policy_engine.call_args[1]
+    assert (
+        call_args["encryption_key_arn"] == "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+    )
+
+
+def test_create_policy_engine_with_tags(mock_policy_client):
+    """Test create-policy-engine with tags."""
+    mock_response = {
+        "policyEngineId": "engine-123",
+        "status": "CREATING",
+        "name": "TaggedEngine",
+    }
+    mock_policy_client.create_policy_engine.return_value = mock_response
+
+    tags = {"Environment": "Production", "Team": "Security"}
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-engine",
+            "--name",
+            "TaggedEngine",
+            "--tags",
+            json.dumps(tags),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Policy engine creation initiated" in result.output
+    call_args = mock_policy_client.create_policy_engine.call_args[1]
+    assert call_args["tags"] == tags
+
+
+def test_create_policy_engine_with_encryption_and_tags(mock_policy_client):
+    """Test create-policy-engine with both encryption key and tags."""
+    mock_response = {
+        "policyEngineId": "engine-123",
+        "status": "CREATING",
+        "name": "FullyConfiguredEngine",
+    }
+    mock_policy_client.create_policy_engine.return_value = mock_response
+
+    tags = {"Environment": "Production"}
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-engine",
+            "--name",
+            "FullyConfiguredEngine",
+            "--description",
+            "Test engine",
+            "--encryption-key-arn",
+            "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+            "--tags",
+            json.dumps(tags),
+        ],
+    )
+
+    assert result.exit_code == 0
+    call_args = mock_policy_client.create_policy_engine.call_args[1]
+    assert call_args["name"] == "FullyConfiguredEngine"
+    assert call_args["description"] == "Test engine"
+    assert (
+        call_args["encryption_key_arn"] == "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+    )
+    assert call_args["tags"] == tags
+
+
+def test_create_policy_engine_with_invalid_tags_json(mock_policy_client):
+    """Test create-policy-engine with invalid tags JSON."""
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-engine",
+            "--name",
+            "TestEngine",
+            "--tags",
+            "invalid-json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "Error parsing tags JSON" in result.output
 
 
 def test_get_policy_engine(mock_policy_client):
@@ -413,6 +523,144 @@ def test_delete_policy(mock_policy_client):
     assert "Policy deletion initiated" in result.output
     assert "policy-123" in result.output
     mock_policy_client.delete_policy.assert_called_once_with("engine-123", "policy-123")
+
+
+def test_create_policy_from_generation_basic(mock_policy_client):
+    """Test create-policy-from-generation command."""
+    mock_response = {
+        "policyId": "policy-123",
+        "policyArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy/policy-123",
+        "status": "CREATING",
+        "name": "GeneratedPolicy",
+    }
+    mock_policy_client.create_policy_from_generation_asset.return_value = mock_response
+
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-from-generation",
+            "--policy-engine-id",
+            "engine-123",
+            "--name",
+            "GeneratedPolicy",
+            "--generation-id",
+            "gen-456",
+            "--asset-id",
+            "asset-789",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Policy creation from generation asset initiated" in result.output
+    assert "policy-123" in result.output
+    call_args = mock_policy_client.create_policy_from_generation_asset.call_args[1]
+    assert call_args["policy_engine_id"] == "engine-123"
+    assert call_args["name"] == "GeneratedPolicy"
+    assert call_args["policy_generation_id"] == "gen-456"
+    assert call_args["policy_generation_asset_id"] == "asset-789"
+
+
+def test_create_policy_from_generation_with_description(mock_policy_client):
+    """Test create-policy-from-generation with description."""
+    mock_response = {
+        "policyId": "policy-123",
+        "status": "CREATING",
+        "name": "GeneratedPolicy",
+    }
+    mock_policy_client.create_policy_from_generation_asset.return_value = mock_response
+
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-from-generation",
+            "--policy-engine-id",
+            "engine-123",
+            "--name",
+            "GeneratedPolicy",
+            "--generation-id",
+            "gen-456",
+            "--asset-id",
+            "asset-789",
+            "--description",
+            "Policy generated from AI",
+        ],
+    )
+
+    assert result.exit_code == 0
+    call_args = mock_policy_client.create_policy_from_generation_asset.call_args[1]
+    assert call_args["description"] == "Policy generated from AI"
+
+
+def test_create_policy_from_generation_with_validation_mode(mock_policy_client):
+    """Test create-policy-from-generation with validation mode."""
+    mock_response = {
+        "policyId": "policy-123",
+        "status": "CREATING",
+    }
+    mock_policy_client.create_policy_from_generation_asset.return_value = mock_response
+
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-from-generation",
+            "--policy-engine-id",
+            "engine-123",
+            "--name",
+            "GeneratedPolicy",
+            "--generation-id",
+            "gen-456",
+            "--asset-id",
+            "asset-789",
+            "--validation-mode",
+            "FAIL_ON_ANY_FINDINGS",
+        ],
+    )
+
+    assert result.exit_code == 0
+    call_args = mock_policy_client.create_policy_from_generation_asset.call_args[1]
+    assert call_args["validation_mode"] == "FAIL_ON_ANY_FINDINGS"
+
+
+def test_create_policy_from_generation_with_all_params(mock_policy_client):
+    """Test create-policy-from-generation with all parameters."""
+    mock_response = {
+        "policyId": "policy-123",
+        "policyArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy/policy-123",
+        "status": "CREATING",
+        "name": "FullyConfiguredPolicy",
+    }
+    mock_policy_client.create_policy_from_generation_asset.return_value = mock_response
+
+    result = runner.invoke(
+        policy_app,
+        [
+            "create-policy-from-generation",
+            "--policy-engine-id",
+            "engine-123",
+            "--name",
+            "FullyConfiguredPolicy",
+            "--generation-id",
+            "gen-456",
+            "--asset-id",
+            "asset-789",
+            "--description",
+            "Generated policy",
+            "--validation-mode",
+            "IGNORE_ALL_FINDINGS",
+            "--region",
+            "us-west-2",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "arn:aws:bedrock-agentcore:us-east-1:123:policy/policy-123" in result.output
+    call_args = mock_policy_client.create_policy_from_generation_asset.call_args[1]
+    assert call_args["policy_engine_id"] == "engine-123"
+    assert call_args["name"] == "FullyConfiguredPolicy"
+    assert call_args["policy_generation_id"] == "gen-456"
+    assert call_args["policy_generation_asset_id"] == "asset-789"
+    assert call_args["description"] == "Generated policy"
+    assert call_args["validation_mode"] == "IGNORE_ALL_FINDINGS"
 
 
 def test_policy_api_error(mock_policy_client):
