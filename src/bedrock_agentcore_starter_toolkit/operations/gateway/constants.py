@@ -79,7 +79,22 @@ AGENTCORE_FULL_ACCESS = {
     ],
 }
 
-POLICIES_TO_CREATE = [("BedrockAgentCoreGatewayStarterFullAccess", AGENTCORE_FULL_ACCESS)]
+KMS_FULL_ACCESS = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "KmsFullAccess",
+            "Effect": "Allow",
+            "Action": ["kms:*"],
+            "Resource": "arn:aws:kms:*:*:*",
+        }
+    ],
+}
+
+POLICIES_TO_CREATE = [
+    ("BedrockAgentCoreGatewayStarterFullAccess", AGENTCORE_FULL_ACCESS),
+    ("KmsStarterFullAccess", KMS_FULL_ACCESS),
+]
 
 POLICIES = {
     "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
