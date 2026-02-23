@@ -28,8 +28,6 @@ from bedrock_agentcore_starter_toolkit.utils.lambda_utils import create_lambda_f
 REGION = "us-east-1"
 REFUND_LIMIT = 1000
 
-# GENESIS_ENDPOINT_URL = 'https://gamma.us-east-1.elcapcp.genesis-primitives.aws.dev'
-
 
 def initialize_clients(region):
     """Initialize gateway and policy clients once."""
@@ -62,7 +60,9 @@ def lambda_handler(event, context):
 
     cognito_response = gateway_client.create_oauth_authorizer_with_cognito("PolicyDemo")
     gateway = gateway_client.create_mcp_gateway(
-        name="RefundGatewaSid22", authorizer_config=cognito_response["authorizer_config"], enable_semantic_search=False
+        name=f"RefundGateway{int(time.time())}",
+        authorizer_config=cognito_response["authorizer_config"],
+        enable_semantic_search=False,
     )
     gateway_client.fix_iam_permissions(gateway)
     time.sleep(30)
@@ -106,7 +106,7 @@ def lambda_handler(event, context):
 
     # Create policy
     engine = policy_client.create_or_get_policy_engine(
-        name="RefundPolicyEngineSidTest21", description="Policy engine for refund governance"
+        name=f"RefundPolicyEngine_{int(time.time())}", description="Policy engine for refund governance"
     )
 
     cedar_statement = (
@@ -118,7 +118,7 @@ def lambda_handler(event, context):
 
     policy_client.create_or_get_policy(
         policy_engine_id=engine["policyEngineId"],
-        name="refund_limit_policy_sid_213212",
+        name=f"refund_limit_policy_{int(time.time())}",
         description=f"Allow refunds under ${REFUND_LIMIT}",
         definition={"cedar": {"statement": cedar_statement}},
     )
@@ -295,7 +295,7 @@ def test_encryption_and_tags(config, clients):
 
     except Exception as e:
         print(f"❌ Error creating policy engine: {str(e)}")
-        # kms_client.schedule_key_deletion(KeyId=kms_key_id, PendingWindowInDays=7)
+        kms_client.schedule_key_deletion(KeyId=kms_key_id, PendingWindowInDays=7)
         print("🗑️  KMS key scheduled for deletion")
 
     print("=" * 60)
@@ -447,10 +447,10 @@ def cleanup(config, clients):
         policy_client.cleanup_policy_engine(config["secure_engine_id"])
         print("✅ Secure policy engine cleanup complete")
 
-    # if "kms_key_id" in config:
-    #     kms_client = boto3.client("kms", region_name=config["region"])
-    #     kms_client.schedule_key_deletion(KeyId=config["kms_key_id"], PendingWindowInDays=7)
-    #     print(f"✅ KMS key {config['kms_key_id']} scheduled for deletion (7 days)")
+    if "kms_key_id" in config:
+        kms_client = boto3.client("kms", region_name=config["region"])
+        kms_client.schedule_key_deletion(KeyId=config["kms_key_id"], PendingWindowInDays=7)
+        print(f"✅ KMS key {config['kms_key_id']} scheduled for deletion (7 days)")
 
     gateway_client.cleanup_gateway(config["gateway_id"], config["client_info"])
 
