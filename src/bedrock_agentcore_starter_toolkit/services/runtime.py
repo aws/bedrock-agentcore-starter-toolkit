@@ -181,6 +181,7 @@ class BedrockAgentCoreClient:
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str]:
         """Create new agent with either direct_code_deploy or container deployment.
 
@@ -202,6 +203,7 @@ class BedrockAgentCoreClient:
             env_vars: Environment variables
             auto_update_on_conflict: Whether to auto-update on conflict
             lifecycle_config: Lifecycle configuration for session timeouts
+            tags: Optional tags to apply to the agent runtime resource
 
         Returns:
             Dict with agent id and arn
@@ -250,6 +252,9 @@ class BedrockAgentCoreClient:
 
             if lifecycle_config is not None:
                 params["lifecycleConfiguration"] = lifecycle_config
+
+            if tags is not None:
+                params["tags"] = tags
 
             resp = self.client.create_agent_runtime(**params)
             agent_id = resp["agentRuntimeId"]
@@ -308,6 +313,7 @@ class BedrockAgentCoreClient:
                     request_header_config=request_header_config,
                     protocol_config=protocol_config,
                     env_vars=env_vars,
+                    tags=tags,
                 )
 
                 # Return the existing agent info (keeping the original ID and ARN)
@@ -339,6 +345,7 @@ class BedrockAgentCoreClient:
         protocol_config: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         lifecycle_config: Optional[Dict] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str]:
         """Update existing agent with either direct_code_deploy or container deployment.
 
@@ -359,6 +366,7 @@ class BedrockAgentCoreClient:
             protocol_config: Protocol configuration
             env_vars: Environment variables
             lifecycle_config: Lifecycle configuration for session timeouts
+            tags: Optional tags to apply to the agent runtime resource
 
         Returns:
             Dict with agent id and arn
@@ -407,6 +415,9 @@ class BedrockAgentCoreClient:
 
             if lifecycle_config is not None:
                 params["lifecycleConfiguration"] = lifecycle_config
+
+            if tags is not None:
+                params["tags"] = tags
 
             resp = self.client.update_agent_runtime(**params)
             agent_arn = resp["agentRuntimeArn"]
@@ -478,6 +489,7 @@ class BedrockAgentCoreClient:
         env_vars: Optional[Dict] = None,
         auto_update_on_conflict: bool = False,
         lifecycle_config: Optional[Dict] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str]:
         """Create or update agent with either direct_code_deploy or container deployment."""
         if agent_id:
@@ -497,6 +509,7 @@ class BedrockAgentCoreClient:
                 protocol_config=protocol_config,
                 env_vars=env_vars,
                 lifecycle_config=lifecycle_config,
+                tags=tags,
             )
         return self.create_agent(
             agent_name,
@@ -515,6 +528,7 @@ class BedrockAgentCoreClient:
             env_vars=env_vars,
             auto_update_on_conflict=auto_update_on_conflict,
             lifecycle_config=lifecycle_config,
+            tags=tags,
         )
 
     def wait_for_agent_endpoint_ready(self, agent_id: str, endpoint_name: str = "DEFAULT", max_wait: int = 120) -> str:
