@@ -21,12 +21,25 @@ def create_policy_engine(
     name: str = typer.Option(..., "--name", "-n", help="Name of the policy engine"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="Policy engine description"),
+    encryption_key_arn: Optional[str] = typer.Option(None, "--encryption-key-arn", help="KMS key ARN for encryption"),
+    tags: Optional[str] = typer.Option(None, "--tags", help='Tags as JSON (e.g., \'{"Environment":"Prod"}\')'),
 ) -> None:
     """Create a new policy engine."""
     client = PolicyClient(region_name=region)
+
+    tags_dict = None
+    if tags:
+        try:
+            tags_dict = json.loads(tags)
+        except json.JSONDecodeError as e:
+            console.print(f"[red]Error parsing tags JSON: {e}[/red]")
+            raise typer.Exit(1) from None
+
     response = client.create_policy_engine(
         name=name,
         description=description,
+        encryption_key_arn=encryption_key_arn,
+        tags=tags_dict,
     )
     console.print("[green]✓ Policy engine creation initiated![/green]")
     console.print(f"[bold]Engine ID:[/bold] {response.get('policyEngineId', 'N/A')}")
@@ -301,6 +314,39 @@ def delete_policy(
     console.print(f"[bold]Policy ID:[/bold] {policy_id}")
     if response.get("status"):
         console.print(f"[bold]Status:[/bold] {response['status']}")
+
+
+@policy_app.command("create-policy-from-generation")
+@requires_aws_creds
+def create_policy_from_generation(
+    policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
+    name: str = typer.Option(..., "--name", "-n", help="Policy name"),
+    generation_id: str = typer.Option(..., "--generation-id", "-g", help="Policy generation ID"),
+    asset_id: str = typer.Option(..., "--asset-id", "-a", help="Policy generation asset ID"),
+    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: Optional[str] = typer.Option(None, "--description", "-d", help="Policy description"),
+    validation_mode: Optional[str] = typer.Option(
+        None, "--validation-mode", help="Validation mode (FAIL_ON_ANY_FINDINGS, IGNORE_ALL_FINDINGS)"
+    ),
+) -> None:
+    """Create a policy from a generation asset."""
+    client = PolicyClient(region_name=region)
+
+    response = client.create_policy_from_generation_asset(
+        policy_engine_id=policy_engine_id,
+        name=name,
+        policy_generation_id=generation_id,
+        policy_generation_asset_id=asset_id,
+        description=description,
+        validation_mode=validation_mode,
+    )
+    console.print("[green]✓ Policy creation from generation asset initiated![/green]")
+    console.print(f"[bold]Policy ID:[/bold] {response.get('policyId', 'N/A')}")
+    console.print(f"[bold]Status:[/bold] {response.get('status', 'N/A')}")
+    console.print(f"[bold]Name:[/bold] {response.get('name', 'N/A')}")
+    console.print("[dim]Use 'get-policy' to check when status becomes ACTIVE[/dim]")
+    if response.get("policyArn"):
+        console.print(f"[bold]ARN:[/bold] [dim]{response['policyArn']}[/dim]")
 
 
 # ==================== Policy Generation Commands ====================

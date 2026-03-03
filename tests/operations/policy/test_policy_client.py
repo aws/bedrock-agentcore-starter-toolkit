@@ -77,6 +77,77 @@ class TestPolicyEngineOperations:
         assert result == mock_response
         mock_client.create_policy_engine.assert_called_once_with(name="TestEngine", description="Test description")
 
+    def test_create_policy_engine_with_encryption_key(self, policy_client):
+        """Test create policy engine with encryption key ARN."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_response = {
+            "policyEngineId": "engine-123",
+            "policyEngineArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy-engine/engine-123",
+            "status": "CREATING",
+        }
+        mock_client.create_policy_engine.return_value = mock_response
+
+        result = policy_client.create_policy_engine(
+            name="TestEngine",
+            encryption_key_arn="arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+        )
+
+        assert result == mock_response
+        mock_client.create_policy_engine.assert_called_once_with(
+            name="TestEngine",
+            encryptionKeyArn="arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+        )
+
+    def test_create_policy_engine_with_tags(self, policy_client):
+        """Test create policy engine with tags."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_response = {
+            "policyEngineId": "engine-123",
+            "policyEngineArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy-engine/engine-123",
+            "status": "CREATING",
+        }
+        mock_client.create_policy_engine.return_value = mock_response
+
+        tags = {"Environment": "Production", "Team": "Security"}
+        result = policy_client.create_policy_engine(name="TestEngine", tags=tags)
+
+        assert result == mock_response
+        mock_client.create_policy_engine.assert_called_once_with(name="TestEngine", tags=tags)
+
+    def test_create_policy_engine_with_all_params(self, policy_client):
+        """Test create policy engine with all parameters."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_response = {
+            "policyEngineId": "engine-123",
+            "policyEngineArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy-engine/engine-123",
+            "status": "CREATING",
+        }
+        mock_client.create_policy_engine.return_value = mock_response
+
+        tags = {"Environment": "Production"}
+        result = policy_client.create_policy_engine(
+            name="TestEngine",
+            description="Test description",
+            encryption_key_arn="arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+            tags=tags,
+            client_token="my-token",
+        )
+
+        assert result == mock_response
+        mock_client.create_policy_engine.assert_called_once_with(
+            name="TestEngine",
+            description="Test description",
+            encryptionKeyArn="arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+            tags=tags,
+            clientToken="my-token",
+        )
+
     def test_create_policy_engine_with_client_token(self, policy_client):
         """Test create policy engine with client token."""
         mock_client = Mock()
@@ -136,6 +207,40 @@ class TestPolicyEngineOperations:
         assert result["policyEngineId"] == "new-engine"
         assert result["status"] == "ACTIVE"
         mock_client.create_policy_engine.assert_called_once()
+
+    @patch("time.sleep")
+    def test_create_or_get_policy_engine_with_encryption_and_tags(self, mock_sleep, policy_client):
+        """Test create_or_get_policy_engine with encryption key and tags."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_client.list_policy_engines.return_value = {"policyEngines": []}
+
+        mock_client.create_policy_engine.return_value = {
+            "policyEngineId": "new-engine",
+            "policyEngineArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy-engine/new-engine",
+            "status": "CREATING",
+        }
+
+        mock_client.get_policy_engine.return_value = {
+            "policyEngineId": "new-engine",
+            "status": "ACTIVE",
+        }
+
+        tags = {"Environment": "Test"}
+        result = policy_client.create_or_get_policy_engine(
+            name="NewEngine",
+            encryption_key_arn="arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012",
+            tags=tags,
+        )
+
+        assert result["policyEngineId"] == "new-engine"
+        call_args = mock_client.create_policy_engine.call_args[1]
+        assert (
+            call_args["encryptionKeyArn"]
+            == "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+        )
+        assert call_args["tags"] == tags
 
     @patch("time.sleep")
     def test_create_or_get_policy_engine_finds_existing(self, mock_sleep, policy_client):
@@ -500,6 +605,62 @@ class TestPolicyOperations:
 
         assert result == mock_response
         mock_client.delete_policy.assert_called_once_with(policyEngineId="engine-123", policyId="policy-123")
+
+    def test_create_policy_from_generation_asset_success(self, policy_client):
+        """Test create policy from generation asset."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_response = {
+            "policyId": "policy-123",
+            "policyArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy/policy-123",
+            "status": "CREATING",
+        }
+        mock_client.create_policy.return_value = mock_response
+
+        result = policy_client.create_policy_from_generation_asset(
+            policy_engine_id="engine-123",
+            name="GeneratedPolicy",
+            policy_generation_id="gen-123",
+            policy_generation_asset_id="asset-456",
+        )
+
+        assert result == mock_response
+        call_args = mock_client.create_policy.call_args[1]
+        assert call_args["policyEngineId"] == "engine-123"
+        assert call_args["name"] == "GeneratedPolicy"
+        assert "definition" in call_args
+        assert "policyGeneration" in call_args["definition"]
+        assert call_args["definition"]["policyGeneration"]["policyGenerationId"] == "gen-123"
+        assert call_args["definition"]["policyGeneration"]["policyGenerationAssetId"] == "asset-456"
+
+    def test_create_policy_from_generation_asset_with_optional_params(self, policy_client):
+        """Test create policy from generation asset with optional parameters."""
+        mock_client = Mock()
+        policy_client.client = mock_client
+
+        mock_response = {
+            "policyId": "policy-123",
+            "policyArn": "arn:aws:bedrock-agentcore:us-east-1:123:policy/policy-123",
+            "status": "CREATING",
+        }
+        mock_client.create_policy.return_value = mock_response
+
+        result = policy_client.create_policy_from_generation_asset(
+            policy_engine_id="engine-123",
+            name="GeneratedPolicy",
+            policy_generation_id="gen-123",
+            policy_generation_asset_id="asset-456",
+            description="Generated from AI",
+            validation_mode="FAIL_ON_ANY_FINDINGS",
+            client_token="my-token",
+        )
+
+        assert result == mock_response
+        call_args = mock_client.create_policy.call_args[1]
+        assert call_args["description"] == "Generated from AI"
+        assert call_args["validationMode"] == "FAIL_ON_ANY_FINDINGS"
+        assert call_args["clientToken"] == "my-token"
 
     @patch("time.sleep")
     def test_wait_for_policy_active_success(self, mock_sleep, policy_client):

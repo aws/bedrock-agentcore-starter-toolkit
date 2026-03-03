@@ -55,6 +55,8 @@ class PolicyClient:
         self,
         name: str,
         description: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
         client_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a new policy engine.
@@ -62,6 +64,8 @@ class PolicyClient:
         Args:
             name: Name of the policy engine
             description: Optional description
+            encryption_key_arn: Optional KMS key ARN for encryption
+            tags: Optional tags for the policy engine
             client_token: Optional client token for idempotency
 
         Returns:
@@ -73,6 +77,10 @@ class PolicyClient:
 
         if description:
             request["description"] = description
+        if encryption_key_arn:
+            request["encryptionKeyArn"] = encryption_key_arn
+        if tags:
+            request["tags"] = tags
         if client_token:
             request["clientToken"] = client_token
 
@@ -87,6 +95,8 @@ class PolicyClient:
         self,
         name: str,
         description: Optional[str] = None,
+        encryption_key_arn: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
         client_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Create a new policy engine or get existing one with the same name.
@@ -99,6 +109,8 @@ class PolicyClient:
         Args:
             name: Name of the policy engine
             description: Optional description (only used when creating)
+            encryption_key_arn: Optional KMS key ARN for encryption (only used when creating)
+            tags: Optional tags for the policy engine (only used when creating)
             client_token: Optional client token for idempotency
 
         Returns:
@@ -139,7 +151,13 @@ class PolicyClient:
 
         # Not found, create new one
         try:
-            engine = self.create_policy_engine(name=name, description=description, client_token=client_token)
+            engine = self.create_policy_engine(
+                name=name,
+                description=description,
+                encryption_key_arn=encryption_key_arn,
+                tags=tags,
+                client_token=client_token,
+            )
 
             # Wait for active before returning
             self.logger.info("Waiting for Policy Engine to be active...")
@@ -554,6 +572,46 @@ class PolicyClient:
             raise PolicyNotFoundException(f"Policy not found: {policy_id}") from e
         except Exception as e:
             raise PolicySetupException(f"Failed to delete policy: {e}") from e
+
+    def create_policy_from_generation_asset(
+        self,
+        policy_engine_id: str,
+        name: str,
+        policy_generation_id: str,
+        policy_generation_asset_id: str,
+        description: Optional[str] = None,
+        validation_mode: Optional[str] = None,
+        client_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a policy from a generation asset.
+
+        Args:
+            policy_engine_id: ID of the policy engine
+            name: Name of the policy
+            policy_generation_id: ID of the policy generation
+            policy_generation_asset_id: ID of the generation asset
+            description: Optional description
+            validation_mode: Optional validation mode (FAIL_ON_ANY_FINDINGS, IGNORE_ALL_FINDINGS)
+            client_token: Optional client token for idempotency
+
+        Returns:
+            Policy details including policyId, ARN, and status
+        """
+        definition = {
+            "policyGeneration": {
+                "policyGenerationId": policy_generation_id,
+                "policyGenerationAssetId": policy_generation_asset_id,
+            }
+        }
+
+        return self.create_policy(
+            policy_engine_id=policy_engine_id,
+            name=name,
+            definition=definition,
+            description=description,
+            validation_mode=validation_mode,
+            client_token=client_token,
+        )
 
     # ==================== Policy Generation Operations ====================
 
