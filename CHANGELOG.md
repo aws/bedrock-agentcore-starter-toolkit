@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] - 2026-03-03
+
+### Changes
+
+- Policy in AgentCore GA (#466) (0aecfb6)
+- chore: bump version to 0.3.0 (#459) (9cfc3b2)
+
 ## [0.3.0] - 2026-02-17
 
 ### Changes
