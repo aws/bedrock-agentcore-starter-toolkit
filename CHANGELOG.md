@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2] - 2026-03-04
+
+### Changes
+
+- Improve error messages for auth failures during invoke (#469) (9762551)
+- chore: bump version to 0.3.1 (#467) (dccdb42)
+
 ## [0.3.1] - 2026-03-03
 
 ### Changes
