@@ -852,9 +852,7 @@ def invoke(
 
         err_response = getattr(e, "response", {})
         request_id = (
-            err_response.get("ResponseMetadata", {}).get("RequestId")
-            if isinstance(err_response, dict)
-            else None
+            err_response.get("ResponseMetadata", {}).get("RequestId") if isinstance(err_response, dict) else None
         )
         effective_session = session_id or (
             agent_config.bedrock_agentcore.agent_session_id
