@@ -67,6 +67,12 @@ def _validate_runtime_type(runtime_type: Optional[str]) -> str:
 
 
 def _handle_http_response(response) -> dict:
+    if response.status_code in (401, 403):
+        raise ValueError(
+            f"{response.status_code} {response.reason} for url: {response.url}\n"
+            "Your bearer token may be expired or invalid. "
+            "Please re-login to get a new auth token."
+        )
     response.raise_for_status()
     if "text/event-stream" in response.headers.get("content-type", ""):
         return _handle_streaming_response(response)
@@ -663,6 +669,15 @@ class BedrockAgentCoreClient:
         try:
             response = self.dataplane_client.invoke_agent_runtime(**req)
             return _handle_aws_response(response)
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code == "AccessDeniedException":
+                raise ValueError(
+                    f"{e}\n"
+                    "Your AWS credentials or bearer token may be expired. "
+                    "Please re-login to get a new auth token."
+                ) from e
+            raise
         finally:
             # Always clean up event handler
             if handler_id is not None:
