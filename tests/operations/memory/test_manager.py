@@ -744,7 +744,7 @@ def test_update_memory_strategies_modify():
 
         with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
             # Test modifying strategies
-            modify_strategies = [{"strategyId": "strat-456", "description": "Updated description"}]
+            modify_strategies = [{"memoryStrategyId": "strat-456", "description": "Updated description"}]
             manager.update_memory_strategies(memory_id="mem-123", modify_strategies=modify_strategies)
 
             assert mock_control_plane_client.update_memory.called
@@ -757,7 +757,7 @@ def test_update_memory_strategies_modify():
 
             # Verify the modified strategy has the correct ID
             modified_strategy = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
-            assert modified_strategy["strategyId"] == "strat-456"
+            assert modified_strategy["memoryStrategyId"] == "strat-456"
             assert modified_strategy["description"] == "Updated description"
 
 
@@ -997,7 +997,7 @@ def test_modify_strategy():
 
             # Verify the modified strategy has correct details
             modified_strategy = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
-            assert modified_strategy["strategyId"] == "strat-789"
+            assert modified_strategy["memoryStrategyId"] == "strat-789"
             assert modified_strategy["description"] == "Modified description"
             assert modified_strategy["namespaces"] == ["custom/namespace/"]
 
@@ -1979,7 +1979,7 @@ def test_delete_memory_and_wait_other_client_error():
 
 
 def test_update_memory_strategies_missing_strategy_id():
-    """Test update_memory_strategies with missing strategyId in modify_strategies."""
+    """Test update_memory_strategies with missing memoryStrategyId in modify_strategies."""
     with patch("boto3.client"):
         manager = MemoryManager(region_name="us-east-1")
 
@@ -1989,12 +1989,12 @@ def test_update_memory_strategies_missing_strategy_id():
 
         with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
             try:
-                # Missing strategyId in modify strategy
+                # Missing memoryStrategyId in modify strategy
                 modify_strategies = [{"description": "Updated description"}]
                 manager.update_memory_strategies(memory_id="mem-123", modify_strategies=modify_strategies)
                 raise AssertionError("ValueError was not raised")
             except ValueError as e:
-                assert "Each modify strategy must include strategyId" in str(e)
+                assert "Each modify strategy must include memoryStrategyId" in str(e)
 
 
 def test_update_memory_strategies_strategy_not_found():
@@ -2013,7 +2013,7 @@ def test_update_memory_strategies_strategy_not_found():
 
         with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
             try:
-                modify_strategies = [{"strategyId": "nonexistent-strat", "description": "Updated description"}]
+                modify_strategies = [{"memoryStrategyId": "nonexistent-strat", "description": "Updated description"}]
                 manager.update_memory_strategies(memory_id="mem-123", modify_strategies=modify_strategies)
                 raise AssertionError("ValueError was not raised")
             except ValueError as e:
@@ -2380,7 +2380,7 @@ def test_update_memory_strategies_with_configuration_wrapping():
             # Test modifying strategy with configuration that needs wrapping
             modify_strategies = [
                 {
-                    "strategyId": "strat-789",
+                    "memoryStrategyId": "strat-789",
                     "configuration": {"extraction": {"triggerEveryNMessages": 5, "modelId": "test-model"}},
                 }
             ]
@@ -3406,3 +3406,89 @@ def test_data_plane_client_initialization():
         services_called = [call[0][0] for call in calls]
         assert "bedrock-agentcore-control" in services_called
         assert "bedrock-agentcore" in services_called
+
+
+def test_modify_strategy_sends_memory_strategy_id_not_strategy_id():
+    """Test that modify_strategy sends memoryStrategyId (not strategyId) to the API.
+
+    Regression test for GitHub issue #452: the modifyMemoryStrategies payload
+    must use the field name 'memoryStrategyId', not 'strategyId'.
+    """
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        # Mock get_memory_strategies to return existing strategies
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "memoryId": "mem-123",
+                "status": "ACTIVE",
+                "memoryStrategies": [
+                    {"strategyId": "strat-001", "memoryStrategyType": "SEMANTIC", "name": "Strategy One"}
+                ],
+            }
+        }
+
+        mock_control_plane_client.update_memory.return_value = {
+            "memory": {"memoryId": "mem-123", "status": "CREATING"}
+        }
+
+        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+            manager.modify_strategy(
+                memory_id="mem-123",
+                strategy_id="strat-001",
+                description="Updated via modify_strategy",
+            )
+
+            args, kwargs = mock_control_plane_client.update_memory.call_args
+            modified = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
+
+            # The API requires memoryStrategyId, not strategyId
+            assert "memoryStrategyId" in modified, "Payload must use 'memoryStrategyId'"
+            assert "strategyId" not in modified, "Payload must NOT use 'strategyId'"
+            assert modified["memoryStrategyId"] == "strat-001"
+            assert modified["description"] == "Updated via modify_strategy"
+
+
+def test_update_memory_strategies_modify_uses_memory_strategy_id():
+    """Test that update_memory_strategies sends memoryStrategyId in modifyMemoryStrategies.
+
+    Regression test for GitHub issue #452: directly calling update_memory_strategies
+    with modify_strategies must also use 'memoryStrategyId'.
+    """
+    with patch("boto3.client"):
+        manager = MemoryManager(region_name="us-east-1")
+
+        mock_control_plane_client = MagicMock()
+        manager._control_plane_client = mock_control_plane_client
+
+        mock_control_plane_client.get_memory.return_value = {
+            "memory": {
+                "memoryId": "mem-456",
+                "status": "ACTIVE",
+                "memoryStrategies": [
+                    {"strategyId": "strat-abc", "memoryStrategyType": "SEMANTIC", "name": "My Strategy"}
+                ],
+            }
+        }
+
+        mock_control_plane_client.update_memory.return_value = {
+            "memory": {"memoryId": "mem-456", "status": "CREATING"}
+        }
+
+        with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
+            modify_strategies = [
+                {"memoryStrategyId": "strat-abc", "description": "New description", "namespaces": ["ns1/"]}
+            ]
+            manager.update_memory_strategies(memory_id="mem-456", modify_strategies=modify_strategies)
+
+            args, kwargs = mock_control_plane_client.update_memory.call_args
+            modified = kwargs["memoryStrategies"]["modifyMemoryStrategies"][0]
+
+            assert "memoryStrategyId" in modified
+            assert "strategyId" not in modified
+            assert modified["memoryStrategyId"] == "strat-abc"
+            assert modified["description"] == "New description"
+            assert modified["namespaces"] == ["ns1/"]
