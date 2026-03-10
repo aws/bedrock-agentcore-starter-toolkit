@@ -17,6 +17,10 @@ from .util.create_agentcore_yaml import write_minimal_create_runtime_yaml, write
 from .util.dotenv import _write_env_file_directly
 from .util.subprocess import create_and_init_venv, init_git_project
 
+# boto3 and botocore are required when using Bedrock as the model provider.
+# These are needed by SDKs (e.g. strands-agents, langchain_aws) to interact with the Bedrock API.
+BEDROCK_MODEL_PROVIDER_DEPS = ["boto3 >= 1.38.0", "botocore >= 1.38.0"]
+
 
 def generate_project(
     name: str,
@@ -132,6 +136,10 @@ def _apply_baseline_and_sdk_features(ctx: ProjectContext) -> None:
         # Call before_apply to ensure dependencies are set correctly based on model provider
         sdk_feature.before_apply(ctx)
         deps.update(sdk_feature.python_dependencies)
+
+    # Add boto3/botocore when Bedrock is the model provider — required by all SDKs for Bedrock API access
+    if ctx.model_provider == ModelProvider.Bedrock:
+        deps.update(BEDROCK_MODEL_PROVIDER_DEPS)
 
     ctx.python_dependencies = sorted(deps)
 
