@@ -4,6 +4,7 @@ import fnmatch
 import hashlib
 import logging
 import os
+import re
 import shutil
 import subprocess  # nosec B404 - subprocess is required for pip/uv package installation
 import tempfile
@@ -252,6 +253,9 @@ class CodeZipPackager:
             cross_compile = self._should_cross_compile()
             self._install_dependencies(resolved_reqs, package_dir, runtime_version, cross_compile)
 
+            # Fix hardcoded shebangs in bin/ scripts so they work on AgentCore
+            self._fix_shebangs_in_bin_dir(package_dir)
+
             # Create zip (keep metadata for proper package resolution)
             log.info("Creating dependencies.zip...")
             with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -283,6 +287,55 @@ class CodeZipPackager:
         except Exception as e:
             log.debug("Could not check requirements for OpenTelemetry: %s", e)
             return False
+
+    @staticmethod
+    def _fix_shebangs_in_bin_dir(package_dir: Path) -> None:
+        """Replace hardcoded shebangs in bin/ scripts with portable ones.
+
+        When dependencies are installed into a target directory, scripts in bin/
+        may contain shebangs pointing to the local venv Python path (e.g.,
+        #!/Users/username/project/.venv/bin/python3). These won't work when
+        deployed to AgentCore. This method replaces them with the portable
+        #!/usr/bin/env python3.
+
+        Args:
+            package_dir: Root directory of installed dependencies (contains bin/).
+        """
+        bin_dir = package_dir / "bin"
+        if not bin_dir.is_dir():
+            return
+
+        # Pattern matches shebangs with hardcoded absolute paths to a python interpreter.
+        # Examples:
+        #   #!/Users/user/.venv/bin/python3
+        #   #!/home/user/project/.venv/bin/python
+        #   #!C:\Users\user\.venv\Scripts\python.exe
+        hardcoded_shebang_re = re.compile(r"^#!(?!/usr/bin/env\b)(.+python[0-9.]*)\s*$")
+        portable_shebang = "#!/usr/bin/env python3"
+
+        fixed_count = 0
+        for entry in bin_dir.iterdir():
+            if not entry.is_file():
+                continue
+            try:
+                content = entry.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                # Skip binary files or files that can't be read
+                continue
+
+            lines = content.split("\n", 1)
+            if not lines:
+                continue
+
+            first_line = lines[0]
+            if hardcoded_shebang_re.match(first_line):
+                new_content = portable_shebang + ("\n" + lines[1] if len(lines) > 1 else "")
+                entry.write_text(new_content, encoding="utf-8")
+                log.debug("Fixed shebang in %s: %s -> %s", entry.name, first_line, portable_shebang)
+                fixed_count += 1
+
+        if fixed_count:
+            log.info("Fixed hardcoded shebangs in %d bin/ script(s)", fixed_count)
 
     def _resolve_pyproject_to_requirements(self, pyproject_file: Path, output_dir: Path) -> Path:
         """Convert pyproject.toml to requirements.txt using uv.

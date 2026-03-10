@@ -511,3 +511,164 @@ class TestCodeZipPackager:
         assert "3.12" in cmd3
         assert "--python-platform" in cmd3
         assert "aarch64-manylinux2014" in cmd3
+
+
+class TestFixShebangsInBinDir:
+    """Test shebang fixing in bin/ scripts during dependency packaging."""
+
+    def test_fixes_hardcoded_venv_shebang(self, tmp_path):
+        """Test that a hardcoded venv shebang is replaced with a portable one."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        script = bin_dir / "opentelemetry-instrument"
+        script.write_text("#!/Users/username/project/.venv/bin/python3\n# -*- coding: utf-8 -*-\nimport sys\n")
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        result = script.read_text()
+        assert result.startswith("#!/usr/bin/env python3\n")
+        assert "# -*- coding: utf-8 -*-\n" in result
+        assert "import sys\n" in result
+
+    def test_fixes_home_dir_shebang(self, tmp_path):
+        """Test that a hardcoded /home/ shebang is replaced."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        script = bin_dir / "some-tool"
+        script.write_text("#!/home/user/myproject/.venv/bin/python3.11\nprint('hello')\n")
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        result = script.read_text()
+        assert result.startswith("#!/usr/bin/env python3\n")
+        assert "print('hello')\n" in result
+
+    def test_leaves_portable_shebang_unchanged(self, tmp_path):
+        """Test that an already-portable #!/usr/bin/env python3 shebang is not modified."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        original_content = "#!/usr/bin/env python3\nimport sys\n"
+        script = bin_dir / "already-portable"
+        script.write_text(original_content)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert script.read_text() == original_content
+
+    def test_leaves_env_python_shebang_unchanged(self, tmp_path):
+        """Test that #!/usr/bin/env python is not modified."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        original_content = "#!/usr/bin/env python\nimport os\n"
+        script = bin_dir / "env-python"
+        script.write_text(original_content)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert script.read_text() == original_content
+
+    def test_no_bin_dir(self, tmp_path):
+        """Test that missing bin/ directory is handled gracefully."""
+        package_dir = tmp_path / "package"
+        package_dir.mkdir()
+
+        # Should not raise
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+    def test_skips_binary_files(self, tmp_path):
+        """Test that binary files in bin/ are skipped without error."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        binary_file = bin_dir / "compiled-binary"
+        binary_file.write_bytes(b"\x00\x01\x02\x03\xff\xfe")
+
+        # Should not raise
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+    def test_fixes_multiple_scripts(self, tmp_path):
+        """Test that multiple scripts with hardcoded shebangs are all fixed."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        scripts = {
+            "script-a": "#!/Users/alice/.venv/bin/python3\nprint('a')\n",
+            "script-b": "#!/home/bob/env/bin/python3.10\nprint('b')\n",
+            "script-c": "#!/usr/bin/env python3\nprint('c')\n",  # already portable
+        }
+
+        for name, content in scripts.items():
+            (bin_dir / name).write_text(content)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert (bin_dir / "script-a").read_text().startswith("#!/usr/bin/env python3\n")
+        assert (bin_dir / "script-b").read_text().startswith("#!/usr/bin/env python3\n")
+        # script-c should remain unchanged
+        assert (bin_dir / "script-c").read_text() == "#!/usr/bin/env python3\nprint('c')\n"
+
+    def test_fixes_shebang_with_plain_python(self, tmp_path):
+        """Test that shebangs referencing just 'python' (no version) are fixed."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        script = bin_dir / "tool"
+        script.write_text("#!/some/path/to/python\nimport sys\n")
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert script.read_text().startswith("#!/usr/bin/env python3\n")
+
+    def test_skips_non_python_shebangs(self, tmp_path):
+        """Test that shebangs for non-Python interpreters are left alone."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        original_content = "#!/bin/bash\necho 'hello'\n"
+        script = bin_dir / "bash-script"
+        script.write_text(original_content)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert script.read_text() == original_content
+
+    def test_skips_files_without_shebang(self, tmp_path):
+        """Test that files without any shebang are left alone."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        original_content = "import sys\nprint('no shebang')\n"
+        script = bin_dir / "no-shebang"
+        script.write_text(original_content)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        assert script.read_text() == original_content
+
+    def test_preserves_script_body(self, tmp_path):
+        """Test that the entire script body after the shebang is preserved exactly."""
+        package_dir = tmp_path / "package"
+        bin_dir = package_dir / "bin"
+        bin_dir.mkdir(parents=True)
+
+        body = "# -*- coding: utf-8 -*-\nimport re\nimport sys\n\ndef main():\n    pass\n"
+        script = bin_dir / "tool"
+        script.write_text("#!/Users/dev/.venv/bin/python3\n" + body)
+
+        CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
+
+        result = script.read_text()
+        assert result == "#!/usr/bin/env python3\n" + body
