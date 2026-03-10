@@ -4251,9 +4251,7 @@ class TestEcrRepoNameResolution:
         """Test resolving a bare repository name to a full URI."""
         mock_ecr = mock_boto3_clients["ecr"]
         mock_ecr.describe_repositories.return_value = {
-            "repositories": [
-                {"repositoryUri": "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo"}
-            ]
+            "repositories": [{"repositoryUri": "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo"}]
         }
 
         result = _resolve_ecr_repo_name_to_uri("my-repo", "us-west-2")
@@ -4286,9 +4284,7 @@ class TestEcrRepoNameResolution:
         with patch(
             "bedrock_agentcore_starter_toolkit.operations.runtime.launch._resolve_ecr_repo_name_to_uri"
         ) as mock_resolve:
-            result = _ensure_ecr_repository(
-                agent_config, project_config, config_path, "test-agent", "us-west-2"
-            )
+            result = _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
 
             # Should return the full URI as-is
             assert result == full_uri
@@ -4311,9 +4307,7 @@ class TestEcrRepoNameResolution:
         ) as mock_resolve:
             mock_resolve.return_value = resolved_uri
 
-            result = _ensure_ecr_repository(
-                agent_config, project_config, config_path, "test-agent", "us-west-2"
-            )
+            result = _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
 
             # Should return the resolved full URI
             assert result == resolved_uri
@@ -4338,9 +4332,7 @@ class TestEcrRepoNameResolution:
         ) as mock_resolve:
             mock_resolve.return_value = resolved_uri
 
-            _ensure_ecr_repository(
-                agent_config, project_config, config_path, "test-agent", "us-west-2"
-            )
+            _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
 
         # Reload config from disk and verify it was saved
         reloaded_config = load_config(config_path)
@@ -4397,9 +4389,7 @@ class TestEcrRepoNameResolution:
             "Role": {
                 "Arn": "arn:aws:iam::123456789012:role/TestRole",
                 "AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}
-                    ]
+                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
                 },
             }
         }
