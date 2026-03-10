@@ -143,13 +143,52 @@ def _ensure_network_service_linked_role(session: boto3.Session, logger) -> None:
                 raise
 
 
+def _resolve_ecr_repo_name_to_uri(repo_name: str, region: str) -> str:
+    """Resolve an ECR repository name to its full URI.
+
+    When the user provides just a repository name (without the full
+    ``<account>.dkr.ecr.<region>.amazonaws.com/`` prefix), we look it up
+    via ``ecr.describe_repositories`` so that downstream code always
+    receives a full URI.
+
+    Args:
+        repo_name: The bare repository name (no ``/``).
+        region: AWS region.
+
+    Returns:
+        The full ECR repository URI.
+
+    Raises:
+        ValueError: If the repository does not exist.
+    """
+    ecr_client = boto3.client("ecr", region_name=region)
+    try:
+        response = ecr_client.describe_repositories(repositoryNames=[repo_name])
+        return response["repositories"][0]["repositoryUri"]
+    except ClientError as e:
+        raise ValueError(
+            f"ECR repository '{repo_name}' not found in region '{region}'. "
+            "Please provide the full ECR URI or ensure the repository exists."
+        ) from e
+
+
 def _ensure_ecr_repository(agent_config, project_config, config_path, agent_name, region):
     """Ensure ECR repository exists (idempotent)."""
     ecr_uri = agent_config.aws.ecr_repository
 
     # Step 1: Check if we already have a repository in config
     if ecr_uri:
-        log.info("Using ECR repository from config: %s", ecr_uri)
+        # If the value is just a repository name (no "/"), resolve to the full URI
+        if "/" not in ecr_uri:
+            log.info("ECR config value '%s' appears to be a repository name, resolving to full URI...", ecr_uri)
+            ecr_uri = _resolve_ecr_repo_name_to_uri(ecr_uri, region)
+            # Persist the resolved full URI back into the config
+            agent_config.aws.ecr_repository = ecr_uri
+            project_config.agents[agent_config.name] = agent_config
+            save_config(project_config, config_path)
+            log.info("Resolved ECR repository URI: %s", ecr_uri)
+        else:
+            log.info("Using ECR repository from config: %s", ecr_uri)
         return ecr_uri
 
     # Step 2: Create repository if needed (idempotent)
@@ -960,7 +999,9 @@ def launch_bedrock_agentcore(
     # Step 4: Push image to ECR
 
     # Deploy to ECR with versioned tag
-    repo_name = "/".join(ecr_uri.split("/")[1:])
+    # Extract repository name from URI (e.g., "account.dkr.ecr.region.amazonaws.com/repo" -> "repo")
+    # Also handle the case where ecr_uri is just a repo name (no "/")
+    repo_name = "/".join(ecr_uri.split("/")[1:]) if "/" in ecr_uri else ecr_uri
     ecr_versioned_uri = deploy_to_ecr(local_tag, repo_name, region, runtime, image_tag=image_tag)
 
     log.info("Image uploaded to ECR: %s", ecr_versioned_uri)
