@@ -9,6 +9,7 @@ from bedrock_agentcore_starter_toolkit.create.constants import (
     TemplateDirSelection,
 )
 from bedrock_agentcore_starter_toolkit.create.generate import (
+    BEDROCK_MODEL_PROVIDER_DEPS,
     _apply_baseline_and_sdk_features,
     generate_project,
 )
@@ -377,3 +378,62 @@ class TestApplyBaselineAndSdkFeatures:
                 _apply_baseline_and_sdk_features(ctx)
 
             mock_sdk_feature.apply.assert_not_called()
+
+    def test_bedrock_model_provider_adds_boto3_and_botocore(self, tmp_path):
+        """Test that boto3 and botocore are added when Bedrock is the model provider."""
+        ctx = self._create_context(tmp_path, sdk_provider="Strands", model_provider=ModelProvider.Bedrock)
+
+        with patch("bedrock_agentcore_starter_toolkit.create.generate.BaselineFeature") as MockBaseline:
+            mock_baseline = MagicMock()
+            mock_baseline.python_dependencies = ["baseline-dep"]
+            MockBaseline.return_value = mock_baseline
+
+            mock_sdk_feature = MagicMock()
+            mock_sdk_feature.python_dependencies = ["sdk-dep"]
+
+            with patch(
+                "bedrock_agentcore_starter_toolkit.create.generate.sdk_feature_registry",
+                {"Strands": lambda: mock_sdk_feature},
+            ):
+                _apply_baseline_and_sdk_features(ctx)
+
+        for dep in BEDROCK_MODEL_PROVIDER_DEPS:
+            assert dep in ctx.python_dependencies, f"Expected '{dep}' in dependencies for Bedrock model provider"
+
+    def test_non_bedrock_model_provider_does_not_add_boto3(self, tmp_path):
+        """Test that boto3 and botocore are NOT added for non-Bedrock model providers."""
+        for provider in [ModelProvider.OpenAI, ModelProvider.Anthropic, ModelProvider.Gemini]:
+            ctx = self._create_context(tmp_path, sdk_provider="Strands", model_provider=provider)
+
+            with patch("bedrock_agentcore_starter_toolkit.create.generate.BaselineFeature") as MockBaseline:
+                mock_baseline = MagicMock()
+                mock_baseline.python_dependencies = ["baseline-dep"]
+                MockBaseline.return_value = mock_baseline
+
+                mock_sdk_feature = MagicMock()
+                mock_sdk_feature.python_dependencies = ["sdk-dep"]
+
+                with patch(
+                    "bedrock_agentcore_starter_toolkit.create.generate.sdk_feature_registry",
+                    {"Strands": lambda: mock_sdk_feature},
+                ):
+                    _apply_baseline_and_sdk_features(ctx)
+
+            for dep in BEDROCK_MODEL_PROVIDER_DEPS:
+                assert dep not in ctx.python_dependencies, (
+                    f"'{dep}' should not be in dependencies for {provider} model provider"
+                )
+
+    def test_bedrock_deps_included_without_sdk_provider(self, tmp_path):
+        """Test that boto3/botocore are added for Bedrock even without an SDK provider."""
+        ctx = self._create_context(tmp_path, sdk_provider=None, model_provider=ModelProvider.Bedrock)
+
+        with patch("bedrock_agentcore_starter_toolkit.create.generate.BaselineFeature") as MockBaseline:
+            mock_baseline = MagicMock()
+            mock_baseline.python_dependencies = ["baseline-dep"]
+            MockBaseline.return_value = mock_baseline
+
+            _apply_baseline_and_sdk_features(ctx)
+
+        for dep in BEDROCK_MODEL_PROVIDER_DEPS:
+            assert dep in ctx.python_dependencies, f"Expected '{dep}' in dependencies for Bedrock without SDK provider"
