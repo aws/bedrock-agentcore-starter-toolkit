@@ -964,3 +964,167 @@ class TestConfigureImplCreateMode:
 
         finally:
             os.chdir(original_cwd)
+
+
+class TestConfigureImplSuccessPanelNoDuplicateECR:
+    """Test that the Configuration Success panel does not show duplicate ECR Repository text (issue #472)."""
+
+    def test_ecr_repository_appears_once_in_container_success_panel(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that ECR Repository text appears exactly once in the success panel for container deployment."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+        (tmp_path / "requirements.txt").write_text("boto3>=1.0.0")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.ConfigurationManager"
+                ) as mock_config_manager_class,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_ops_config_manager,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console") as mock_console,
+            ):
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_agent_name.return_value = "test_agent"
+                mock_config_manager.prompt_execution_role.return_value = None
+                mock_config_manager.prompt_ecr_repository.return_value = (None, True)
+                mock_config_manager.prompt_oauth_config.return_value = None
+                mock_config_manager.prompt_request_header_allowlist.return_value = None
+                mock_config_manager.existing_config = None
+                mock_config_manager_class.return_value = mock_config_manager
+                mock_ops_config_manager.return_value = Mock()
+
+                configure_impl(
+                    entrypoint=str(agent_file),
+                    agent_name="test_agent",
+                    execution_role="TestRole",
+                    non_interactive=True,
+                    deployment_type="container",
+                )
+
+                # Find the Panel call that contains "Configuration Success"
+                from rich.panel import Panel
+
+                panel_calls = [
+                    call
+                    for call in mock_console.print.call_args_list
+                    if call.args
+                    and isinstance(call.args[0], Panel)
+                    and call.args[0].title
+                    and "Configuration Success" in str(call.args[0].title)
+                ]
+
+                assert len(panel_calls) == 1, "Expected exactly one Configuration Success panel"
+
+                # Extract the panel renderable text content
+                panel_content = str(panel_calls[0].args[0].renderable)
+                ecr_count = panel_content.count("ECR Repository")
+                assert ecr_count == 1, (
+                    f"Expected 'ECR Repository' to appear exactly once in the success panel, "
+                    f"but found {ecr_count} occurrences"
+                )
+
+        finally:
+            os.chdir(original_cwd)
+
+    def test_no_ecr_repository_in_direct_code_deploy_success_panel(
+        self, mock_bedrock_agentcore_app, mock_boto3_clients, mock_container_runtime, tmp_path
+    ):
+        """Test that ECR Repository text does not appear in the success panel for direct_code_deploy."""
+        agent_file = tmp_path / "test_agent.py"
+        agent_file.write_text("# test agent")
+        (tmp_path / "requirements.txt").write_text("boto3>=1.0.0")
+
+        original_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+
+            class MockContainerRuntimeClass:
+                DEFAULT_RUNTIME = "auto"
+                DEFAULT_PLATFORM = "linux/arm64"
+
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def __new__(cls, *args, **kwargs):
+                    return mock_container_runtime
+
+            with (
+                patch(
+                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.ConfigurationManager"
+                ) as mock_config_manager_class,
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ContainerRuntime",
+                    MockContainerRuntimeClass,
+                ),
+                patch(
+                    "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
+                ) as mock_ops_config_manager,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console") as mock_console,
+                patch("shutil.which", return_value="/usr/bin/uv"),
+            ):
+                mock_config_manager = Mock()
+                mock_config_manager.prompt_agent_name.return_value = "test_agent"
+                mock_config_manager.prompt_execution_role.return_value = None
+                mock_config_manager.prompt_s3_bucket.return_value = (None, True)
+                mock_config_manager.prompt_oauth_config.return_value = None
+                mock_config_manager.prompt_request_header_allowlist.return_value = None
+                mock_config_manager.existing_config = None
+                mock_config_manager_class.return_value = mock_config_manager
+                mock_ops_config_manager.return_value = Mock()
+
+                configure_impl(
+                    entrypoint=str(agent_file),
+                    agent_name="test_agent",
+                    execution_role="TestRole",
+                    non_interactive=True,
+                    deployment_type="direct_code_deploy",
+                    runtime="PYTHON_3_11",
+                )
+
+                # Find the Panel call that contains "Configuration Success"
+                from rich.panel import Panel
+
+                panel_calls = [
+                    call
+                    for call in mock_console.print.call_args_list
+                    if call.args
+                    and isinstance(call.args[0], Panel)
+                    and call.args[0].title
+                    and "Configuration Success" in str(call.args[0].title)
+                ]
+
+                assert len(panel_calls) == 1, "Expected exactly one Configuration Success panel"
+
+                # Extract the panel renderable text content
+                panel_content = str(panel_calls[0].args[0].renderable)
+                ecr_count = panel_content.count("ECR Repository")
+                assert ecr_count == 0, (
+                    f"Expected 'ECR Repository' to not appear in the success panel for direct_code_deploy, "
+                    f"but found {ecr_count} occurrences"
+                )
+
+        finally:
+            os.chdir(original_cwd)
