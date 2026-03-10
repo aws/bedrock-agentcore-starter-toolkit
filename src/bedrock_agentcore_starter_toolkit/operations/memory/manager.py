@@ -1056,7 +1056,7 @@ class MemoryManager:
         configuration: Optional[Dict[str, Any]] = None,
     ) -> Memory:
         """Modify a strategy with full control over configuration."""
-        modify_config: Dict = {"strategyId": strategy_id}
+        modify_config: Dict = {"memoryStrategyId": strategy_id}
 
         if description is not None:
             modify_config["description"] = description
@@ -1109,14 +1109,14 @@ class MemoryManager:
 
             if modify_strategies:
                 current_strategies = self.get_memory_strategies(memory_id)
-                strategy_map = {s["strategyId"]: s for s in current_strategies}
+                strategy_map = {s.get("memoryStrategyId", s.get("strategyId")): s for s in current_strategies}
 
                 modify_list = []
                 for strategy in modify_strategies:
-                    if "strategyId" not in strategy:
-                        raise ValueError("Each modify strategy must include strategyId")
+                    if "memoryStrategyId" not in strategy:
+                        raise ValueError("Each modify strategy must include memoryStrategyId")
 
-                    strategy_id = strategy["strategyId"]
+                    strategy_id = strategy["memoryStrategyId"]
                     strategy_info = strategy_map.get(strategy_id)
 
                     if not strategy_info:
