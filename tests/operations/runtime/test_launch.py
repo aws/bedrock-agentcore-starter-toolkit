@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from bedrock_agentcore_starter_toolkit.operations.runtime.launch import (
+    _ensure_ecr_repository,
     _ensure_execution_role,
+    _resolve_ecr_repo_name_to_uri,
     launch_bedrock_agentcore,
 )
 from bedrock_agentcore_starter_toolkit.utils.runtime.config import save_config
@@ -4240,3 +4242,187 @@ class TestCodeZipDeployment:
 
             # Should have tried max retries (4 attempts total: initial + 3 retries)
             assert mock_client.create_or_update_agent.call_count == 4
+
+
+class TestEcrRepoNameResolution:
+    """Test ECR repository name-only resolution (GitHub Issue #463)."""
+
+    def test_resolve_ecr_repo_name_to_uri_success(self, mock_boto3_clients):
+        """Test resolving a bare repository name to a full URI."""
+        mock_ecr = mock_boto3_clients["ecr"]
+        mock_ecr.describe_repositories.return_value = {
+            "repositories": [{"repositoryUri": "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo"}]
+        }
+
+        result = _resolve_ecr_repo_name_to_uri("my-repo", "us-west-2")
+
+        assert result == "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo"
+
+    def test_resolve_ecr_repo_name_to_uri_not_found(self, mock_boto3_clients):
+        """Test resolving a non-existent repository name raises ValueError."""
+        from botocore.exceptions import ClientError
+
+        mock_ecr = mock_boto3_clients["ecr"]
+        mock_ecr.describe_repositories.side_effect = ClientError(
+            {"Error": {"Code": "RepositoryNotFoundException", "Message": "not found"}},
+            "DescribeRepositories",
+        )
+
+        with pytest.raises(ValueError, match="ECR repository 'nonexistent-repo' not found"):
+            _resolve_ecr_repo_name_to_uri("nonexistent-repo", "us-west-2")
+
+    def test_ensure_ecr_repository_full_uri_unchanged(self, tmp_path):
+        """Test that a full ECR URI is returned as-is without calling describe_repositories."""
+        full_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/test-repo"
+        config_path = create_test_config(tmp_path, ecr_repository=full_uri)
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch._resolve_ecr_repo_name_to_uri"
+        ) as mock_resolve:
+            result = _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
+
+            # Should return the full URI as-is
+            assert result == full_uri
+            # Should NOT have called the resolution function
+            mock_resolve.assert_not_called()
+
+    def test_ensure_ecr_repository_name_only_resolved(self, tmp_path):
+        """Test that a repository name (no slash) is resolved to full URI."""
+        repo_name = "my-agent-repo"
+        resolved_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-agent-repo"
+        config_path = create_test_config(tmp_path, ecr_repository=repo_name)
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch._resolve_ecr_repo_name_to_uri"
+        ) as mock_resolve:
+            mock_resolve.return_value = resolved_uri
+
+            result = _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
+
+            # Should return the resolved full URI
+            assert result == resolved_uri
+            # Should have called the resolution function with the repo name
+            mock_resolve.assert_called_once_with(repo_name, "us-west-2")
+            # Config should be updated with the resolved URI
+            assert agent_config.aws.ecr_repository == resolved_uri
+
+    def test_ensure_ecr_repository_name_only_persisted_to_config(self, tmp_path):
+        """Test that the resolved URI is persisted back to the config file."""
+        repo_name = "my-agent-repo"
+        resolved_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-agent-repo"
+        config_path = create_test_config(tmp_path, ecr_repository=repo_name)
+
+        from bedrock_agentcore_starter_toolkit.utils.runtime.config import load_config
+
+        project_config = load_config(config_path)
+        agent_config = project_config.agents["test-agent"]
+
+        with patch(
+            "bedrock_agentcore_starter_toolkit.operations.runtime.launch._resolve_ecr_repo_name_to_uri"
+        ) as mock_resolve:
+            mock_resolve.return_value = resolved_uri
+
+            _ensure_ecr_repository(agent_config, project_config, config_path, "test-agent", "us-west-2")
+
+        # Reload config from disk and verify it was saved
+        reloaded_config = load_config(config_path)
+        reloaded_agent = reloaded_config.agents["test-agent"]
+        assert reloaded_agent.aws.ecr_repository == resolved_uri
+
+    def test_repo_name_extraction_with_full_uri(self):
+        """Test repo_name extraction logic works with full ECR URI."""
+        ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-repo"
+        repo_name = "/".join(ecr_uri.split("/")[1:]) if "/" in ecr_uri else ecr_uri
+        assert repo_name == "my-repo"
+
+    def test_repo_name_extraction_with_nested_path(self):
+        """Test repo_name extraction logic works with nested repo path."""
+        ecr_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/org/my-repo"
+        repo_name = "/".join(ecr_uri.split("/")[1:]) if "/" in ecr_uri else ecr_uri
+        assert repo_name == "org/my-repo"
+
+    def test_repo_name_extraction_with_name_only(self):
+        """Test repo_name extraction logic works with bare repo name (no slash)."""
+        ecr_uri = "my-repo"
+        repo_name = "/".join(ecr_uri.split("/")[1:]) if "/" in ecr_uri else ecr_uri
+        assert repo_name == "my-repo"
+
+    def test_repo_name_extraction_without_fix_would_be_empty(self):
+        """Test that the OLD extraction logic would produce empty string for name-only input."""
+        ecr_uri = "my-repo"
+        # This is the OLD broken logic
+        old_repo_name = "/".join(ecr_uri.split("/")[1:])
+        assert old_repo_name == ""  # Confirms the bug existed
+
+        # This is the NEW fixed logic
+        new_repo_name = "/".join(ecr_uri.split("/")[1:]) if "/" in ecr_uri else ecr_uri
+        assert new_repo_name == "my-repo"  # Confirms the fix works
+
+    def test_launch_cloud_with_repo_name_only(self, mock_boto3_clients, mock_container_runtime, tmp_path):
+        """Test end-to-end cloud deployment with repository name only (no full URI)."""
+        repo_name_only = "my-custom-repo"
+        resolved_uri = "123456789012.dkr.ecr.us-west-2.amazonaws.com/my-custom-repo"
+
+        config_path = create_test_config(
+            tmp_path,
+            execution_role="arn:aws:iam::123456789012:role/TestRole",
+            ecr_repository=repo_name_only,
+        )
+        create_test_agent_file(tmp_path)
+        create_test_dockerfile(tmp_path)
+
+        mock_container_runtime.build.return_value = (True, ["Successfully built test-image"])
+
+        # Mock IAM client response for role validation
+        mock_iam_client = MagicMock()
+        mock_iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/TestRole",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [{"Effect": "Allow", "Principal": {"Service": "bedrock-agentcore.amazonaws.com"}}]
+                },
+            }
+        }
+        mock_boto3_clients["session"].client.return_value = mock_iam_client
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._resolve_ecr_repo_name_to_uri"
+            ) as mock_resolve,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._ensure_memory_for_agent",
+                return_value=None,
+            ),
+            patch("bedrock_agentcore_starter_toolkit.services.ecr.deploy_to_ecr"),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.ContainerRuntime",
+                return_value=mock_container_runtime,
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch._deploy_to_bedrock_agentcore"
+            ) as mock_deploy,
+        ):
+            mock_resolve.return_value = resolved_uri
+            mock_deploy.return_value = (
+                "agent-123",
+                "arn:aws:bedrock-agentcore:us-west-2:123456789012:agent-runtime/agent-123",
+            )
+
+            result = launch_bedrock_agentcore(config_path, local=False, use_codebuild=False)
+
+            # Verify resolution was called with the bare repo name
+            mock_resolve.assert_called_once_with(repo_name_only, "us-west-2")
+
+            # Verify deployment succeeded
+            assert result.mode == "cloud"
+            assert result.agent_id == "agent-123"
