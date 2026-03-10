@@ -1003,9 +1003,7 @@ class TestConfigureImplSuccessPanelNoDuplicateECR:
                 patch(
                     "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
                 ) as mock_ops_config_manager,
-                patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console"
-                ) as mock_console,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console") as mock_console,
             ):
                 mock_config_manager = Mock()
                 mock_config_manager.prompt_agent_name.return_value = "test_agent"
@@ -1031,7 +1029,9 @@ class TestConfigureImplSuccessPanelNoDuplicateECR:
                 panel_calls = [
                     call
                     for call in mock_console.print.call_args_list
-                    if call.args and isinstance(call.args[0], Panel) and call.args[0].title
+                    if call.args
+                    and isinstance(call.args[0], Panel)
+                    and call.args[0].title
                     and "Configuration Success" in str(call.args[0].title)
                 ]
 
@@ -1082,9 +1082,7 @@ class TestConfigureImplSuccessPanelNoDuplicateECR:
                 patch(
                     "bedrock_agentcore_starter_toolkit.operations.runtime.configure.ConfigurationManager"
                 ) as mock_ops_config_manager,
-                patch(
-                    "bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console"
-                ) as mock_console,
+                patch("bedrock_agentcore_starter_toolkit.cli.runtime._configure_impl.console") as mock_console,
                 patch("shutil.which", return_value="/usr/bin/uv"),
             ):
                 mock_config_manager = Mock()
@@ -1112,7 +1110,9 @@ class TestConfigureImplSuccessPanelNoDuplicateECR:
                 panel_calls = [
                     call
                     for call in mock_console.print.call_args_list
-                    if call.args and isinstance(call.args[0], Panel) and call.args[0].title
+                    if call.args
+                    and isinstance(call.args[0], Panel)
+                    and call.args[0].title
                     and "Configuration Success" in str(call.args[0].title)
                 ]
 
