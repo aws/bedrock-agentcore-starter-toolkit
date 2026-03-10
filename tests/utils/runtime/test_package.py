@@ -523,11 +523,7 @@ class TestFixShebangsInBinDir:
         bin_dir.mkdir(parents=True)
 
         script = bin_dir / "opentelemetry-instrument"
-        script.write_text(
-            "#!/Users/username/project/.venv/bin/python3\n"
-            "# -*- coding: utf-8 -*-\n"
-            "import sys\n"
-        )
+        script.write_text("#!/Users/username/project/.venv/bin/python3\n# -*- coding: utf-8 -*-\nimport sys\n")
 
         CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
 
@@ -543,10 +539,7 @@ class TestFixShebangsInBinDir:
         bin_dir.mkdir(parents=True)
 
         script = bin_dir / "some-tool"
-        script.write_text(
-            "#!/home/user/myproject/.venv/bin/python3.11\n"
-            "print('hello')\n"
-        )
+        script.write_text("#!/home/user/myproject/.venv/bin/python3.11\nprint('hello')\n")
 
         CodeZipPackager._fix_shebangs_in_bin_dir(package_dir)
 
