@@ -3431,9 +3431,7 @@ def test_modify_strategy_sends_memory_strategy_id_not_strategy_id():
             }
         }
 
-        mock_control_plane_client.update_memory.return_value = {
-            "memory": {"memoryId": "mem-123", "status": "CREATING"}
-        }
+        mock_control_plane_client.update_memory.return_value = {"memory": {"memoryId": "mem-123", "status": "CREATING"}}
 
         with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
             manager.modify_strategy(
@@ -3474,9 +3472,7 @@ def test_update_memory_strategies_modify_uses_memory_strategy_id():
             }
         }
 
-        mock_control_plane_client.update_memory.return_value = {
-            "memory": {"memoryId": "mem-456", "status": "CREATING"}
-        }
+        mock_control_plane_client.update_memory.return_value = {"memory": {"memoryId": "mem-456", "status": "CREATING"}}
 
         with patch("uuid.uuid4", return_value=uuid.UUID("12345678-1234-5678-1234-567812345678")):
             modify_strategies = [
