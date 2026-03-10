@@ -415,7 +415,7 @@ class TestApplyBaselineAndSdkFeatures:
 
                 with patch(
                     "bedrock_agentcore_starter_toolkit.create.generate.sdk_feature_registry",
-                    {"Strands": lambda: mock_sdk_feature},
+                    {"Strands": lambda f=mock_sdk_feature: f},
                 ):
                     _apply_baseline_and_sdk_features(ctx)
 
