@@ -12,7 +12,7 @@ CreateIACProvider = Literal["CDK", "Terraform"]
 CreateTemplateDirSelection = Literal["monorepo", "common", "runtime_only"]
 CreateTemplateDisplay = Literal["basic", "production"]
 
-CreateRuntimeProtocol = Literal["HTTP", "MCP", "A2A"]
+CreateRuntimeProtocol = Literal["HTTP", "MCP", "A2A", "AGUI"]
 
 # until we have direct code deployment constructs, only support container deploy
 CreateDeploymentType = Literal["container", "direct_code_deploy"]

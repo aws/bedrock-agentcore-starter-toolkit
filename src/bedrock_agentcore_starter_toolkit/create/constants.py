@@ -38,6 +38,7 @@ class RuntimeProtocol:
     HTTP = "HTTP"
     MCP = "MCP"
     A2A = "A2A"
+    AGUI = "AGUI"
 
 
 class IACProvider:
