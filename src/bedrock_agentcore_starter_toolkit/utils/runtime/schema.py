@@ -161,7 +161,7 @@ class ProtocolConfiguration(BaseModel):
     @classmethod
     def validate_protocol(cls, v: str) -> str:
         """Validate protocol is one of the supported types."""
-        allowed = ["HTTP", "MCP", "A2A"]
+        allowed = ["HTTP", "MCP", "A2A", "AGUI"]
         if v.upper() not in allowed:
             raise ValueError(f"Protocol must be one of {allowed}, got: {v}")
         return v.upper()

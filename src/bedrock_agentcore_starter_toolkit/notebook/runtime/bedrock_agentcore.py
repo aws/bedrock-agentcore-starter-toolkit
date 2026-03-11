@@ -51,7 +51,7 @@ class Runtime:
         authorizer_configuration: Optional[Dict[str, Any]] = None,
         request_header_configuration: Optional[Dict[str, Any]] = None,
         region: Optional[str] = None,
-        protocol: Optional[Literal["HTTP", "MCP", "A2A"]] = None,
+        protocol: Optional[Literal["HTTP", "MCP", "A2A", "AGUI"]] = None,
         disable_otel: bool = False,
         memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
         non_interactive: bool = True,
@@ -129,8 +129,8 @@ class Runtime:
                 max_lifetime=7200   # 2 hours
             )
         """
-        if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A"]:
-            raise ValueError("protocol must be either HTTP or MCP or A2A")
+        if protocol and protocol.upper() not in ["HTTP", "MCP", "A2A", "AGUI"]:
+            raise ValueError("protocol must be either HTTP or MCP or A2A, or AGUI")
 
         # Validate VPC configuration
         if vpc_enabled:

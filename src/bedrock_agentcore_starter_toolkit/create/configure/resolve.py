@@ -35,7 +35,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
     protocol_configuration: ProtocolConfiguration = aws_config.protocol_configuration
     ctx.runtime_protocol = protocol_configuration.server_protocol
     if protocol_configuration.server_protocol != RuntimeProtocol.HTTP:
-        _handle_error("Only HTTP Protocol is supported by agentcore create --iac")
+        _handle_error("Only HTTP and AGUI Protocol is supported by agentcore create --iac")
 
     # memory
     memory_config: MemoryConfig = agent_config.memory

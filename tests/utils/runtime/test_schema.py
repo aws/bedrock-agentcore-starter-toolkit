@@ -88,6 +88,9 @@ class TestProtocolConfiguration:
         config3 = ProtocolConfiguration(server_protocol="a2a")
         assert config3.server_protocol == "A2A"
 
+        config4 = ProtocolConfiguration(server_protocol="agui")
+        assert config4.server_protocol == "AGUI"
+
     def test_protocol_to_aws_dict(self):
         """Test to_aws_dict conversion."""
         config = ProtocolConfiguration(server_protocol="MCP")

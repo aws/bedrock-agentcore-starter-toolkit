@@ -55,6 +55,10 @@ class TestRuntimeProtocol:
         """Test A2A constant value."""
         assert RuntimeProtocol.A2A == "A2A"
 
+    def test_agui_value(self):
+        """Test AGUI constant value."""
+        assert RuntimeProtocol.AGUI == "AGUI"
+
 
 class TestIACProvider:
     """Tests for IACProvider class."""
