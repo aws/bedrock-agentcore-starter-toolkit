@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.3] - 2026-03-11
+
+### Changes
+
+- feat: add AG-UI protocol support to starter toolkit (#480) (d40c0cf)
+- Fix memoryStrategyId field name in modifyMemoryStrategies payload (#479) (88f8317)
+- Add boto3 and botocore to generated project deps for Bedrock provider (#478) (fcad8de)
+- Fix --ecr with repository name only causing empty repositoryName (#477) (07b3107)
+- Fix duplicate ECR Repository text in configuration success pane (#476) (75515fc)
+- Fix hardcoded shebang paths in packaged dependency scripts (#475) (f7f1cd9)
+- Add daily Slack notification for open PRs (#473) (a9062d3)
+- chore: bump version to 0.3.2 (#470) (703006f)
+
 ## [0.3.2] - 2026-03-04
 
 ### Changes
