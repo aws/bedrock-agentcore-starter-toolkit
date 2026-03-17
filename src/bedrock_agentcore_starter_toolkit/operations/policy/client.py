@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import boto3
 
@@ -28,7 +28,7 @@ class PolicyClient:
     and policy generation operations.
     """
 
-    def __init__(self, region_name: Optional[str] = None):
+    def __init__(self, region_name: str | None = None):
         """Initialize the Policy client.
 
         Args:
@@ -54,11 +54,11 @@ class PolicyClient:
     def create_policy_engine(
         self,
         name: str,
-        description: Optional[str] = None,
-        encryption_key_arn: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+        encryption_key_arn: str | None = None,
+        tags: dict[str, str] | None = None,
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new policy engine.
 
         Args:
@@ -94,11 +94,11 @@ class PolicyClient:
     def create_or_get_policy_engine(
         self,
         name: str,
-        description: Optional[str] = None,
-        encryption_key_arn: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+        encryption_key_arn: str | None = None,
+        tags: dict[str, str] | None = None,
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new policy engine or get existing one with the same name.
 
         This method is idempotent - it will reuse existing policy engines with
@@ -199,7 +199,7 @@ class PolicyClient:
                 raise
             raise
 
-    def get_policy_engine(self, policy_engine_id: str) -> Dict[str, Any]:
+    def get_policy_engine(self, policy_engine_id: str) -> dict[str, Any]:
         """Get policy engine details.
 
         Args:
@@ -219,8 +219,8 @@ class PolicyClient:
     def update_policy_engine(
         self,
         policy_engine_id: str,
-        description: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+    ) -> dict[str, Any]:
         """Update a policy engine.
 
         Args:
@@ -248,9 +248,9 @@ class PolicyClient:
 
     def list_policy_engines(
         self,
-        max_results: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        max_results: int | None = None,
+        next_token: str | None = None,
+    ) -> dict[str, Any]:
         """List policy engines.
 
         Args:
@@ -272,7 +272,7 @@ class PolicyClient:
         except Exception as e:
             raise PolicySetupException(f"Failed to list policy engines: {e}") from e
 
-    def delete_policy_engine(self, policy_engine_id: str) -> Dict[str, Any]:
+    def delete_policy_engine(self, policy_engine_id: str) -> dict[str, Any]:
         """Delete a policy engine.
 
         Args:
@@ -298,11 +298,11 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         name: str,
-        definition: Dict[str, Any],
-        description: Optional[str] = None,
-        validation_mode: Optional[str] = None,
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        definition: dict[str, Any],
+        description: str | None = None,
+        validation_mode: str | None = None,
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new policy.
 
         Args:
@@ -344,11 +344,11 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         name: str,
-        definition: Dict[str, Any],
-        description: Optional[str] = None,
-        validation_mode: Optional[str] = None,
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        definition: dict[str, Any],
+        description: str | None = None,
+        validation_mode: str | None = None,
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new policy or get existing one with the same name.
 
         This method is idempotent - it will reuse existing policies with
@@ -451,7 +451,7 @@ class PolicyClient:
                 raise
             raise
 
-    def get_policy(self, policy_engine_id: str, policy_id: str) -> Dict[str, Any]:
+    def get_policy(self, policy_engine_id: str, policy_id: str) -> dict[str, Any]:
         """Get policy details.
 
         Args:
@@ -476,10 +476,10 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         policy_id: str,
-        definition: Dict[str, Any],
-        description: Optional[str] = None,
-        validation_mode: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        definition: dict[str, Any],
+        description: str | None = None,
+        validation_mode: str | None = None,
+    ) -> dict[str, Any]:
         """Update a policy.
 
         Args:
@@ -517,10 +517,10 @@ class PolicyClient:
     def list_policies(
         self,
         policy_engine_id: str,
-        target_resource_scope: Optional[str] = None,
-        max_results: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        target_resource_scope: str | None = None,
+        max_results: int | None = None,
+        next_token: str | None = None,
+    ) -> dict[str, Any]:
         """List policies.
 
         Args:
@@ -549,7 +549,7 @@ class PolicyClient:
         except Exception as e:
             raise PolicySetupException(f"Failed to list policies: {e}") from e
 
-    def delete_policy(self, policy_engine_id: str, policy_id: str) -> Dict[str, Any]:
+    def delete_policy(self, policy_engine_id: str, policy_id: str) -> dict[str, Any]:
         """Delete a policy.
 
         Args:
@@ -579,10 +579,10 @@ class PolicyClient:
         name: str,
         policy_generation_id: str,
         policy_generation_asset_id: str,
-        description: Optional[str] = None,
-        validation_mode: Optional[str] = None,
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+        validation_mode: str | None = None,
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Create a policy from a generation asset.
 
         Args:
@@ -619,10 +619,10 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         name: str,
-        resource: Dict[str, Any],
-        content: Dict[str, Any],
-        client_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        resource: dict[str, Any],
+        content: dict[str, Any],
+        client_token: str | None = None,
+    ) -> dict[str, Any]:
         """Start a policy generation.
 
         Args:
@@ -660,7 +660,7 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         policy_generation_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get policy generation details.
 
         Args:
@@ -685,9 +685,9 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         policy_generation_id: str,
-        max_results: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        max_results: int | None = None,
+        next_token: str | None = None,
+    ) -> dict[str, Any]:
         """Get policy generation assets (generated policies).
 
         Args:
@@ -720,9 +720,9 @@ class PolicyClient:
     def list_policy_generations(
         self,
         policy_engine_id: str,
-        max_results: Optional[int] = None,
-        next_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        max_results: int | None = None,
+        next_token: str | None = None,
+    ) -> dict[str, Any]:
         """List policy generations.
 
         Args:
@@ -752,13 +752,13 @@ class PolicyClient:
         self,
         policy_engine_id: str,
         name: str,
-        resource: Dict[str, Any],
-        content: Dict[str, Any],
-        client_token: Optional[str] = None,
+        resource: dict[str, Any],
+        content: dict[str, Any],
+        client_token: str | None = None,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         delay: int = DEFAULT_POLL_DELAY,
         fetch_assets: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate Cedar policies from natural language and wait for completion.
 
         This is a convenience method that combines start_policy_generation()
@@ -845,7 +845,7 @@ class PolicyClient:
         policy_engine_id: str,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         delay: int = DEFAULT_POLL_DELAY,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Wait for a policy engine to become active.
 
         Args:
@@ -880,7 +880,7 @@ class PolicyClient:
         policy_id: str,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         delay: int = DEFAULT_POLL_DELAY,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Wait for a policy to become active.
 
         Args:

@@ -1,7 +1,7 @@
 """Builders for constructing telemetry models from CloudWatch Logs Insights results."""
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from .telemetry import RuntimeLog, Span
 
@@ -37,12 +37,12 @@ class CloudWatchResultBuilder:
                     return value
             return value
 
-        def get_float(field_name: str) -> Optional[float]:
+        def get_float(field_name: str) -> float | None:
             """Get field as float. CloudWatch returns numeric fields as strings."""
             value = get_field(field_name)
             return float(value) if value is not None else None
 
-        def get_int(field_name: str) -> Optional[int]:
+        def get_int(field_name: str) -> int | None:
             """Get field as int. CloudWatch returns numeric fields as strings."""
             value = get_field(field_name)
             return int(value) if value is not None else None

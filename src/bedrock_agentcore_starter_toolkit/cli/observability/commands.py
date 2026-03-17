@@ -4,7 +4,6 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.text import Text
@@ -34,7 +33,7 @@ def _get_default_time_range(days: int = DEFAULT_LOOKBACK_DAYS) -> tuple[int, int
     return int(start_time.timestamp() * 1000), int(end_time.timestamp() * 1000)
 
 
-def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[dict]:
+def _get_agent_config_from_file(agent_name: str | None = None) -> dict | None:
     """Load agent configuration from .bedrock_agentcore.yaml."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     config = load_config_if_exists(config_path)
@@ -65,10 +64,10 @@ def _get_agent_config_from_file(agent_name: Optional[str] = None) -> Optional[di
 
 
 def _create_observability_client(
-    agent_id: Optional[str],
-    agent: Optional[str] = None,
-    region: Optional[str] = None,
-    runtime_suffix: Optional[str] = None,
+    agent_id: str | None,
+    agent: str | None = None,
+    region: str | None = None,
+    runtime_suffix: str | None = None,
 ) -> tuple[ObservabilityClient, str, str]:
     """Create stateless ObservabilityClient and return agent context.
 
@@ -241,15 +240,15 @@ def _export_trace_data_to_json(trace_data: TraceData, output_path: str, data_typ
 
 @observability_app.command("show")
 def show(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    trace_id: Optional[str] = typer.Option(None, "--trace-id", "-t", help="Trace ID to visualize"),
-    session_id: Optional[str] = typer.Option(None, "--session-id", "-s", help="Session ID to visualize"),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
+    trace_id: str | None = typer.Option(None, "--trace-id", "-t", help="Trace ID to visualize"),
+    session_id: str | None = typer.Option(None, "--session-id", "-s", help="Session ID to visualize"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Override agent ID from config"),
     days: int = typer.Option(
         DEFAULT_LOOKBACK_DAYS, "--days", "-d", help=f"Number of days to look back (default: {DEFAULT_LOOKBACK_DAYS})"
     ),
@@ -258,7 +257,7 @@ def show(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Show full event payloads and detailed metadata without truncation"
     ),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Export to JSON file"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Export to JSON file"),
     last: int = typer.Option(1, "--last", "-n", help="[Session only] Show Nth most recent trace (default: 1 = latest)"),
 ) -> None:
     """Show trace details with full visualization.
@@ -407,7 +406,7 @@ def _show_trace_view(
     start_time_ms: int,
     end_time_ms: int,
     verbose: bool,
-    output: Optional[str],
+    output: str | None,
     agent_id: str,
     endpoint_name: str = "DEFAULT",
 ) -> None:
@@ -449,7 +448,7 @@ def _show_session_view(
     end_time_ms: int,
     verbose: bool,
     errors_only: bool,
-    output: Optional[str],
+    output: str | None,
     agent_id: str,
     endpoint_name: str = "DEFAULT",
     show_all: bool = True,
@@ -551,16 +550,16 @@ def _show_session_view(
 
 @observability_app.command("list")
 def list_traces(
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
         help="Agent name (use 'agentcore configure list' to see available agents)",
     ),
-    session_id: Optional[str] = typer.Option(
+    session_id: str | None = typer.Option(
         None, "--session-id", "-s", help="Session ID to list traces from. Omit to use config."
     ),
-    agent_id: Optional[str] = typer.Option(None, "--agent-id", help="Override agent ID from config"),
+    agent_id: str | None = typer.Option(None, "--agent-id", help="Override agent ID from config"),
     days: int = typer.Option(
         DEFAULT_LOOKBACK_DAYS, "--days", "-d", help=f"Number of days to look back (default: {DEFAULT_LOOKBACK_DAYS})"
     ),

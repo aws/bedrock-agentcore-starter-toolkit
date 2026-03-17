@@ -5,7 +5,7 @@ This client only makes API calls - all business logic is in processor.py
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import boto3
 
@@ -38,7 +38,7 @@ class EvaluationControlPlaneClient:
     NO business logic - that belongs in EvaluationProcessor or formatters.
     """
 
-    def __init__(self, region_name: str, endpoint_url: Optional[str] = None, boto_client: Optional[Any] = None):
+    def __init__(self, region_name: str, endpoint_url: str | None = None, boto_client: Any | None = None):
         """Initialize Control Plane client.
 
         Args:
@@ -67,7 +67,7 @@ class EvaluationControlPlaneClient:
                 endpoint_url=self.endpoint_url,
             )
 
-    def list_evaluators(self, max_results: int = 50) -> Dict[str, Any]:
+    def list_evaluators(self, max_results: int = 50) -> dict[str, Any]:
         """List all evaluators (builtin and custom).
 
         Returns evaluators with level and description for display.
@@ -93,7 +93,7 @@ class EvaluationControlPlaneClient:
         """
         return self.client.list_evaluators(maxResults=max_results)
 
-    def get_evaluator(self, evaluator_id: str) -> Dict[str, Any]:
+    def get_evaluator(self, evaluator_id: str) -> dict[str, Any]:
         """Get evaluator details.
 
         Args:
@@ -105,8 +105,8 @@ class EvaluationControlPlaneClient:
         return self.client.get_evaluator(evaluatorId=evaluator_id)
 
     def create_evaluator(
-        self, name: str, config: Dict[str, Any], level: str = "TRACE", description: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, name: str, config: dict[str, Any], level: str = "TRACE", description: str | None = None
+    ) -> dict[str, Any]:
         """Create custom evaluator.
 
         Args:
@@ -125,8 +125,8 @@ class EvaluationControlPlaneClient:
         return self.client.create_evaluator(**params)
 
     def update_evaluator(
-        self, evaluator_id: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, evaluator_id: str, description: str | None = None, config: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Update custom evaluator.
 
         Args:
@@ -177,13 +177,13 @@ class EvaluationControlPlaneClient:
         config_name: str,
         agent_id: str,
         agent_endpoint: str = "DEFAULT",
-        config_description: Optional[str] = None,
+        config_description: str | None = None,
         sampling_rate: float = 1.0,
-        evaluator_list: Optional[List[str]] = None,
-        execution_role: Optional[str] = None,
+        evaluator_list: list[str] | None = None,
+        execution_role: str | None = None,
         auto_create_execution_role: bool = True,
         enable_on_create: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create online evaluation configuration.
 
         Enables continuous automatic evaluation of agent interactions by monitoring
@@ -266,7 +266,7 @@ class EvaluationControlPlaneClient:
         logger.info("✓ Online evaluation config created: %s", response.get("onlineEvaluationConfigId"))
         return response
 
-    def get_online_evaluation_config(self, config_id: str) -> Dict[str, Any]:
+    def get_online_evaluation_config(self, config_id: str) -> dict[str, Any]:
         """Get online evaluation configuration details.
 
         Args:
@@ -282,7 +282,7 @@ class EvaluationControlPlaneClient:
         """
         return self.client.get_online_evaluation_config(onlineEvaluationConfigId=config_id)
 
-    def list_online_evaluation_configs(self, agent_id: Optional[str] = None, max_results: int = 50) -> Dict[str, Any]:
+    def list_online_evaluation_configs(self, agent_id: str | None = None, max_results: int = 50) -> dict[str, Any]:
         """List online evaluation configurations.
 
         Args:
@@ -312,11 +312,11 @@ class EvaluationControlPlaneClient:
     def update_online_evaluation_config(
         self,
         config_id: str,
-        status: Optional[str] = None,
-        sampling_rate: Optional[float] = None,
-        evaluator_list: Optional[List[str]] = None,
-        description: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        status: str | None = None,
+        sampling_rate: float | None = None,
+        evaluator_list: list[str] | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
         """Update online evaluation configuration.
 
         Args:

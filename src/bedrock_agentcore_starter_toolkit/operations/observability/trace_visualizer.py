@@ -1,6 +1,6 @@
 """Trace visualization with hierarchical tree views."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.console import Console
 from rich.text import Text
@@ -26,7 +26,7 @@ from .trace_processor import TraceProcessor
 class TraceVisualizer:
     """Visualizer for displaying traces in an intuitive hierarchical format."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         """Initialize the trace visualizer.
 
         Args:
@@ -113,7 +113,7 @@ class TraceVisualizer:
             self.visualize_trace(trace_data, trace_id, show_details, show_messages, verbose)
             self.console.print()  # Empty line between traces
 
-    def _format_trace_header(self, trace_id: str, spans: List[Span]) -> Text:
+    def _format_trace_header(self, trace_id: str, spans: list[Span]) -> Text:
         """Format the trace header with summary information.
 
         Args:
@@ -143,7 +143,7 @@ class TraceVisualizer:
         self,
         span: Span,
         show_messages: bool,
-        messages_by_span: Dict[str, List[Dict[str, Any]]],
+        messages_by_span: dict[str, list[dict[str, Any]]],
     ) -> bool:
         """Check if a span has meaningful data worth showing in non-verbose mode.
 
@@ -211,7 +211,7 @@ class TraceVisualizer:
         span: Span,
         show_details: bool,
         show_messages: bool,
-        messages_by_span: Dict[str, List[Dict[str, Any]]],
+        messages_by_span: dict[str, list[dict[str, Any]]],
         seen_messages: set,
         verbose: bool,
     ) -> None:
@@ -251,7 +251,7 @@ class TraceVisualizer:
         span: Span,
         show_details: bool,
         show_messages: bool,
-        messages_by_span: Dict[str, List[Dict[str, Any]]],
+        messages_by_span: dict[str, list[dict[str, Any]]],
         seen_messages: set,
         verbose: bool = False,
     ) -> Text:
@@ -409,7 +409,7 @@ class TraceVisualizer:
 
         return text
 
-    def _get_message_id(self, item: Dict[str, Any]) -> str:
+    def _get_message_id(self, item: dict[str, Any]) -> str:
         """Create a unique identifier for a message/event/exception for deduplication.
 
         Args:
@@ -438,7 +438,7 @@ class TraceVisualizer:
 
         return f"{item_type}_{timestamp}_{hash(str(item))}"
 
-    def _is_generic_wrapper_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
+    def _is_generic_wrapper_event(self, event_name: str, payload: dict[str, Any]) -> bool:
         """Check if an event is a generic wrapper that doesn't add new information.
 
         Args:
@@ -468,7 +468,7 @@ class TraceVisualizer:
 
         return False
 
-    def _format_event_payload_display(self, text: Text, payload: Dict[str, Any], verbose: bool = False) -> None:
+    def _format_event_payload_display(self, text: Text, payload: dict[str, Any], verbose: bool = False) -> None:
         """Format event payload for display in a more readable way.
 
         Args:

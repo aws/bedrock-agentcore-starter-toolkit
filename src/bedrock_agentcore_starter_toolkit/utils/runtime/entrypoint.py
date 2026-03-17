@@ -7,7 +7,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple
+from typing import Literal, Optional
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ TYPESCRIPT_ENTRYPOINT_CANDIDATES = [
 ]
 
 
-def detect_entrypoint_by_language(source_dir: Path, language: str) -> List[Path]:
+def detect_entrypoint_by_language(source_dir: Path, language: str) -> list[Path]:
     """Detect entrypoint files based on project language.
 
     Args:
@@ -55,7 +55,7 @@ def detect_entrypoint_by_language(source_dir: Path, language: str) -> List[Path]
     return found_files
 
 
-def detect_language(project_dir: Path, entrypoint: Optional[str] = None) -> Literal["python", "typescript"]:
+def detect_language(project_dir: Path, entrypoint: str | None = None) -> Literal["python", "typescript"]:
     """Auto-detect project language based on entrypoint extension or dependency files.
 
     Args:
@@ -118,7 +118,7 @@ def detect_typescript_project(project_dir: Path) -> Optional["TypeScriptProjectI
     )
 
 
-def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
+def parse_entrypoint(entrypoint: str) -> tuple[Path, str]:
     """Parse entrypoint into file path and name.
 
     Args:
@@ -145,10 +145,10 @@ def parse_entrypoint(entrypoint: str) -> Tuple[Path, str]:
 class DependencyInfo:
     """Information about project dependencies."""
 
-    file: Optional[str]  # Relative path for Docker context
+    file: str | None  # Relative path for Docker context
     type: str  # "requirements", "pyproject", or "notfound"
-    resolved_path: Optional[str] = None  # Absolute path for validation
-    install_path: Optional[str] = None  # Path for pip install command
+    resolved_path: str | None = None  # Absolute path for validation
+    install_path: str | None = None  # Path for pip install command
 
     @property
     def found(self) -> bool:
@@ -175,7 +175,7 @@ class DependencyInfo:
 class TypeScriptProjectInfo:
     """Information about a TypeScript project extracted from package.json."""
 
-    package_json_path: Optional[str] = None
+    package_json_path: str | None = None
     node_version: str = "20"
     has_build_script: bool = False
 
@@ -185,7 +185,7 @@ class TypeScriptProjectInfo:
         return self.package_json_path is not None
 
 
-def detect_dependencies(package_dir: Path, explicit_file: Optional[str] = None) -> DependencyInfo:
+def detect_dependencies(package_dir: Path, explicit_file: str | None = None) -> DependencyInfo:
     """Detect dependency file, with optional explicit override."""
     if explicit_file:
         return _handle_explicit_file(package_dir, explicit_file)
@@ -309,7 +309,7 @@ class RuntimeEntrypointInfo:
     handler_name: str  # Handler function name (e.g., "app")
 
 
-def parse_entrypoint_for_runtime(entrypoint: str, source_dir: Optional[Path] = None) -> RuntimeEntrypointInfo:
+def parse_entrypoint_for_runtime(entrypoint: str, source_dir: Path | None = None) -> RuntimeEntrypointInfo:
     """Parse entrypoint for Runtime codeConfiguration API.
 
     Supported formats:
@@ -365,7 +365,7 @@ def parse_entrypoint_for_runtime(entrypoint: str, source_dir: Optional[Path] = N
     return RuntimeEntrypointInfo(file_path=file_path, module_name=module, handler_name=handler)
 
 
-def build_entrypoint_array(entrypoint_path: str, has_otel_distro: bool, observability_enabled: bool) -> List[str]:
+def build_entrypoint_array(entrypoint_path: str, has_otel_distro: bool, observability_enabled: bool) -> list[str]:
     """Build entrypoint array for Runtime codeConfiguration API.
 
     Args:

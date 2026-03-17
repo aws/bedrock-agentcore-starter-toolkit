@@ -6,7 +6,7 @@ import time
 import urllib.parse
 import uuid
 from importlib.metadata import version
-from typing import Any, Dict, Optional
+from typing import Any
 
 import boto3
 import requests
@@ -38,7 +38,7 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 
-def _validate_runtime_type(runtime_type: Optional[str]) -> str:
+def _validate_runtime_type(runtime_type: str | None) -> str:
     """Validate runtime type format.
 
     Args:
@@ -107,7 +107,7 @@ def _handle_aws_response(response) -> dict:
         return response
 
 
-def _handle_streaming_response(response) -> Dict[str, Any]:
+def _handle_streaming_response(response) -> dict[str, Any]:
     complete_text = ""
     for line in response.iter_lines(chunk_size=1):
         if line:
@@ -172,22 +172,22 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         # Code zip parameters (for direct_code_deploy deployment)
         deployment_type: str = "direct_code_deploy",
-        code_s3_bucket: Optional[str] = None,
-        code_s3_key: Optional[str] = None,
-        runtime_type: Optional[str] = None,
-        entrypoint_array: Optional[list] = None,
-        entrypoint_handler: Optional[str] = None,
+        code_s3_bucket: str | None = None,
+        code_s3_key: str | None = None,
+        runtime_type: str | None = None,
+        entrypoint_array: list | None = None,
+        entrypoint_handler: str | None = None,
         # Container parameters (for container deployment)
-        image_uri: Optional[str] = None,
+        image_uri: str | None = None,
         # Common parameters
-        network_config: Optional[Dict] = None,
-        authorizer_config: Optional[Dict] = None,
-        request_header_config: Optional[Dict] = None,
-        protocol_config: Optional[Dict] = None,
-        env_vars: Optional[Dict] = None,
+        network_config: dict | None = None,
+        authorizer_config: dict | None = None,
+        request_header_config: dict | None = None,
+        protocol_config: dict | None = None,
+        env_vars: dict | None = None,
         auto_update_on_conflict: bool = False,
-        lifecycle_config: Optional[Dict] = None,
-    ) -> Dict[str, str]:
+        lifecycle_config: dict | None = None,
+    ) -> dict[str, str]:
         """Create new agent with either direct_code_deploy or container deployment.
 
         Args:
@@ -331,21 +331,21 @@ class BedrockAgentCoreClient:
         execution_role_arn: str,
         # Code zip parameters (for direct_code_deploy deployment)
         deployment_type: str = "direct_code_deploy",
-        code_s3_bucket: Optional[str] = None,
-        code_s3_key: Optional[str] = None,
-        runtime_type: Optional[str] = None,
-        entrypoint_array: Optional[list] = None,
-        entrypoint_handler: Optional[str] = None,
+        code_s3_bucket: str | None = None,
+        code_s3_key: str | None = None,
+        runtime_type: str | None = None,
+        entrypoint_array: list | None = None,
+        entrypoint_handler: str | None = None,
         # Container parameters (for container deployment)
-        image_uri: Optional[str] = None,
+        image_uri: str | None = None,
         # Common parameters
-        network_config: Optional[Dict] = None,
-        authorizer_config: Optional[Dict] = None,
-        request_header_config: Optional[Dict] = None,
-        protocol_config: Optional[Dict] = None,
-        env_vars: Optional[Dict] = None,
-        lifecycle_config: Optional[Dict] = None,
-    ) -> Dict[str, str]:
+        network_config: dict | None = None,
+        authorizer_config: dict | None = None,
+        request_header_config: dict | None = None,
+        protocol_config: dict | None = None,
+        env_vars: dict | None = None,
+        lifecycle_config: dict | None = None,
+    ) -> dict[str, str]:
         """Update existing agent with either direct_code_deploy or container deployment.
 
         Args:
@@ -446,7 +446,7 @@ class BedrockAgentCoreClient:
             self.logger.error("Failed to list agents: %s", str(e))
             raise
 
-    def find_agent_by_name(self, agent_name: str) -> Optional[Dict]:
+    def find_agent_by_name(self, agent_name: str) -> dict | None:
         """Find an agent by name, reusing list_agents method."""
         try:
             # Get all agents using the existing method
@@ -464,27 +464,27 @@ class BedrockAgentCoreClient:
 
     def create_or_update_agent(
         self,
-        agent_id: Optional[str],
+        agent_id: str | None,
         agent_name: str,
         execution_role_arn: str,
         # Code zip parameters
         deployment_type: str = "direct_code_deploy",
-        code_s3_bucket: Optional[str] = None,
-        code_s3_key: Optional[str] = None,
-        runtime_type: Optional[str] = None,
-        entrypoint_array: Optional[list] = None,
-        entrypoint_handler: Optional[str] = None,
+        code_s3_bucket: str | None = None,
+        code_s3_key: str | None = None,
+        runtime_type: str | None = None,
+        entrypoint_array: list | None = None,
+        entrypoint_handler: str | None = None,
         # Container parameters
-        image_uri: Optional[str] = None,
+        image_uri: str | None = None,
         # Common parameters
-        network_config: Optional[Dict] = None,
-        authorizer_config: Optional[Dict] = None,
-        request_header_config: Optional[Dict] = None,
-        protocol_config: Optional[Dict] = None,
-        env_vars: Optional[Dict] = None,
+        network_config: dict | None = None,
+        authorizer_config: dict | None = None,
+        request_header_config: dict | None = None,
+        protocol_config: dict | None = None,
+        env_vars: dict | None = None,
         auto_update_on_conflict: bool = False,
-        lifecycle_config: Optional[Dict] = None,
-    ) -> Dict[str, str]:
+        lifecycle_config: dict | None = None,
+    ) -> dict[str, str]:
         """Create or update agent with either direct_code_deploy or container deployment."""
         if agent_id:
             return self.update_agent(
@@ -563,7 +563,7 @@ class BedrockAgentCoreClient:
             f"please check status and try to invoke after some time"
         )
 
-    def get_agent_runtime(self, agent_id: str) -> Dict:
+    def get_agent_runtime(self, agent_id: str) -> dict:
         """Get agent runtime details.
 
         Args:
@@ -574,7 +574,7 @@ class BedrockAgentCoreClient:
         """
         return self.client.get_agent_runtime(agentRuntimeId=agent_id)
 
-    def get_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> Dict:
+    def get_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> dict:
         """Get agent runtime endpoint details.
 
         Args:
@@ -589,7 +589,7 @@ class BedrockAgentCoreClient:
             endpointName=endpoint_name,
         )
 
-    def delete_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> Dict:
+    def delete_agent_runtime_endpoint(self, agent_id: str, endpoint_name: str = "DEFAULT") -> dict:
         """Delete agent runtime endpoint.
 
         Args:
@@ -621,9 +621,9 @@ class BedrockAgentCoreClient:
         payload: str,
         session_id: str,
         endpoint_name: str = "DEFAULT",
-        user_id: Optional[str] = None,
-        custom_headers: Optional[dict] = None,
-    ) -> Dict:
+        user_id: str | None = None,
+        custom_headers: dict | None = None,
+    ) -> dict:
         """Invoke agent endpoint.
 
         Args:
@@ -690,7 +690,7 @@ class BedrockAgentCoreClient:
         agent_arn: str,
         session_id: str,
         endpoint_name: str = "DEFAULT",
-    ) -> Dict:
+    ) -> dict:
         """Stop a runtime session.
 
         Args:
@@ -718,7 +718,7 @@ class BedrockAgentCoreClient:
 
     def _update_api_key_credential_provider(
         self, api_key_credential_provider_name: str, api_key: str, agent_name: str
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         try:
             response = self.client.update_api_key_credential_provider(
                 name=api_key_credential_provider_name, apiKey=api_key
@@ -740,7 +740,7 @@ class BedrockAgentCoreClient:
 
     def _create_api_key_credential_provider(
         self, api_key_credential_provider_name: str, api_key: str, agent_name: str
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         try:
             response = self.client.create_api_key_credential_provider(
                 name=api_key_credential_provider_name, apiKey=api_key
@@ -761,8 +761,8 @@ class BedrockAgentCoreClient:
             raise
 
     def create_or_update_api_key_credential_provider(
-        self, api_key_credential_provider_name: Optional[str], api_key: str, agent_name: str, key_name: str
-    ) -> Dict[Any, Any]:
+        self, api_key_credential_provider_name: str | None, api_key: str, agent_name: str, key_name: str
+    ) -> dict[Any, Any]:
         """Get or Create an API Key Credential provider for an agent."""
         if api_key_credential_provider_name:
             return self._update_api_key_credential_provider(api_key_credential_provider_name, api_key, agent_name)
@@ -770,7 +770,7 @@ class BedrockAgentCoreClient:
 
         return self._create_api_key_credential_provider(api_key_credential_provider_name, api_key, agent_name)
 
-    def delete_api_key_credential_provider(self, api_key_credential_provider_name: str) -> Dict[Any, Any]:
+    def delete_api_key_credential_provider(self, api_key_credential_provider_name: str) -> dict[Any, Any]:
         """Delete an API Key Credential provider."""
         return self.client.delete_api_key_credential_provider(name=api_key_credential_provider_name)
 
@@ -796,11 +796,11 @@ class HttpBedrockAgentCoreClient:
         agent_arn: str,
         payload,
         session_id: str,
-        bearer_token: Optional[str],
-        user_id: Optional[str] = None,
+        bearer_token: str | None,
+        user_id: str | None = None,
         endpoint_name: str = "DEFAULT",
-        custom_headers: Optional[dict] = None,
-    ) -> Dict:
+        custom_headers: dict | None = None,
+    ) -> dict:
         """Invoke agent endpoint using HTTP request with bearer token.
 
         Args:
@@ -881,7 +881,7 @@ class LocalBedrockAgentCoreClient:
         payload: str,
         workload_access_token: str,
         oauth2_callback_url: str,
-        custom_headers: Optional[dict] = None,
+        custom_headers: dict | None = None,
     ):
         """Invoke the endpoint with the given parameters."""
         from bedrock_agentcore.runtime.models import ACCESS_TOKEN_HEADER, OAUTH2_CALLBACK_URL_HEADER, SESSION_HEADER

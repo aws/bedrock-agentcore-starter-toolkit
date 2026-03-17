@@ -3,7 +3,7 @@
 This module contains all business logic for processing TraceData, Spans, and RuntimeLogs.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .message_parser import UnifiedLogParser
 from .telemetry import RuntimeLog, Span, TraceData
@@ -29,7 +29,7 @@ class TraceProcessor:
             trace_data.traces[trace_id].sort(key=lambda s: s.start_time_unix_nano or 0)
 
     @staticmethod
-    def build_span_hierarchy(trace_data: TraceData, trace_id: str) -> List[Span]:
+    def build_span_hierarchy(trace_data: TraceData, trace_id: str) -> list[Span]:
         """Build hierarchical structure of spans for a trace.
 
         Args:
@@ -46,8 +46,8 @@ class TraceProcessor:
         span_map = {span.span_id: span for span in trace_data.traces[trace_id]}
 
         # Build children map and root spans list
-        children_map: Dict[str, List[Span]] = {}
-        root_spans: List[Span] = []
+        children_map: dict[str, list[Span]] = {}
+        root_spans: list[Span] = []
 
         for span in trace_data.traces[trace_id]:
             parent_id = span.parent_span_id
@@ -66,14 +66,14 @@ class TraceProcessor:
         return root_spans
 
     @staticmethod
-    def get_messages_by_span(trace_data: TraceData) -> Dict[str, List[Dict[str, Any]]]:
+    def get_messages_by_span(trace_data: TraceData) -> dict[str, list[dict[str, Any]]]:
         """Extract messages and exceptions from runtime logs grouped by span ID.
 
         Returns:
             Dictionary mapping span_id to list of items (messages/exceptions)
         """
         parser = UnifiedLogParser()
-        items_by_span: Dict[str, List[Dict[str, Any]]] = {}
+        items_by_span: dict[str, list[dict[str, Any]]] = {}
 
         for log in trace_data.runtime_logs:
             if not log.span_id:
@@ -91,7 +91,7 @@ class TraceProcessor:
         return items_by_span
 
     @staticmethod
-    def calculate_trace_duration(spans: List[Span]) -> float:
+    def calculate_trace_duration(spans: list[Span]) -> float:
         """Calculate trace duration from earliest start to latest end time.
 
         Args:
@@ -112,7 +112,7 @@ class TraceProcessor:
         return sum(s.duration_ms or 0 for s in root_spans)
 
     @staticmethod
-    def count_error_spans(spans: List[Span]) -> int:
+    def count_error_spans(spans: list[Span]) -> int:
         """Count number of spans with ERROR status.
 
         Args:
@@ -124,7 +124,7 @@ class TraceProcessor:
         return sum(1 for span in spans if span.status_code == "ERROR")
 
     @staticmethod
-    def get_trace_ids(trace_data: TraceData) -> List[str]:
+    def get_trace_ids(trace_data: TraceData) -> list[str]:
         """Get all unique trace IDs from spans.
 
         Args:
@@ -136,7 +136,7 @@ class TraceProcessor:
         return list(set(span.trace_id for span in trace_data.spans if span.trace_id))
 
     @staticmethod
-    def filter_error_traces(trace_data: TraceData) -> Dict[str, List[Span]]:
+    def filter_error_traces(trace_data: TraceData) -> dict[str, list[Span]]:
         """Filter traces to only those containing errors.
 
         Args:
@@ -201,7 +201,7 @@ class TraceProcessor:
         return input_text, output_text
 
     @staticmethod
-    def to_dict(trace_data: TraceData) -> Dict[str, Any]:
+    def to_dict(trace_data: TraceData) -> dict[str, Any]:
         """Export complete trace data to dictionary for JSON serialization.
 
         Args:
@@ -212,7 +212,7 @@ class TraceProcessor:
         """
         parser = UnifiedLogParser()
 
-        def span_to_dict(span: Span) -> Dict[str, Any]:
+        def span_to_dict(span: Span) -> dict[str, Any]:
             """Convert span to dictionary recursively."""
             return {
                 "trace_id": span.trace_id,
@@ -236,7 +236,7 @@ class TraceProcessor:
                 "children": [span_to_dict(child) for child in span.children],
             }
 
-        def log_to_dict(log: RuntimeLog) -> Dict[str, Any]:
+        def log_to_dict(log: RuntimeLog) -> dict[str, Any]:
             """Convert log to dictionary with parsed content."""
             result = {
                 "timestamp": log.timestamp,

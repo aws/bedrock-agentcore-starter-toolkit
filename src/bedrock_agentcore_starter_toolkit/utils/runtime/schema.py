@@ -1,6 +1,6 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
-from typing import Dict, List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 class NetworkModeConfig(BaseModel):
     """Network mode configuration for VPC deployments."""
 
-    security_groups: List[str] = Field(default_factory=list, description="List of security group IDs")
-    subnets: List[str] = Field(default_factory=list, description="List of subnet IDs")
+    security_groups: list[str] = Field(default_factory=list, description="List of security group IDs")
+    subnets: list[str] = Field(default_factory=list, description="List of subnet IDs")
 
 
 class MemoryConfig(BaseModel):
@@ -18,9 +18,9 @@ class MemoryConfig(BaseModel):
     mode: Literal["STM_ONLY", "STM_AND_LTM", "NO_MEMORY"] = Field(
         default="NO_MEMORY", description="Memory mode - opt-in feature"
     )
-    memory_id: Optional[str] = Field(default=None, description="Memory resource ID")
-    memory_arn: Optional[str] = Field(default=None, description="Memory resource ARN")
-    memory_name: Optional[str] = Field(default=None, description="Memory name")
+    memory_id: str | None = Field(default=None, description="Memory resource ID")
+    memory_arn: str | None = Field(default=None, description="Memory resource ARN")
+    memory_name: str | None = Field(default=None, description="Memory name")
     event_expiry_days: int = Field(default=30, description="Event expiry duration in days")
     first_invoke_memory_check_done: bool = Field(
         default=False, description="Whether first invoke memory check has been performed"
@@ -54,7 +54,7 @@ class WorkloadIdentityInfo(BaseModel):
 
     name: str = Field(..., description="Workload identity name")
     arn: str = Field(..., description="Workload identity ARN")
-    return_urls: List[str] = Field(
+    return_urls: list[str] = Field(
         default_factory=list,
         description="Application return URLs where AgentCore redirects users for session binding verification",
     )
@@ -64,11 +64,11 @@ class AwsJwtConfig(BaseModel):
     """AWS IAM JWT federation configuration for outbound authentication without secrets."""
 
     enabled: bool = Field(default=False, description="Whether AWS IAM JWT federation is enabled for this account")
-    audiences: List[str] = Field(
+    audiences: list[str] = Field(
         default_factory=list, description="List of allowed audiences for STS:GetWebIdentityToken IAM policy"
     )
     signing_algorithm: str = Field(default="ES384", description="Default signing algorithm (ES384 or RS256)")
-    issuer_url: Optional[str] = Field(
+    issuer_url: str | None = Field(
         default=None, description="Account's AWS STS issuer URL (populated after enabling federation)"
     )
     duration_seconds: int = Field(
@@ -91,10 +91,10 @@ class AwsJwtConfig(BaseModel):
 class IdentityConfig(BaseModel):
     """Identity service configuration for outbound authentication."""
 
-    credential_providers: List[CredentialProviderInfo] = Field(
+    credential_providers: list[CredentialProviderInfo] = Field(
         default_factory=list, description="List of configured OAuth2 credential providers"
     )
-    workload: Optional[WorkloadIdentityInfo] = Field(None, description="Workload identity configuration")
+    workload: WorkloadIdentityInfo | None = Field(None, description="Workload identity configuration")
 
     @property
     def is_enabled(self) -> bool:
@@ -107,7 +107,7 @@ class IdentityConfig(BaseModel):
         return len(self.credential_providers) > 0
 
     @property
-    def provider_names(self) -> List[str]:
+    def provider_names(self) -> list[str]:
         """Get list of OAuth provider names."""
         return [p.name for p in self.credential_providers]
 
@@ -116,7 +116,7 @@ class NetworkConfiguration(BaseModel):
     """Network configuration for BedrockAgentCore deployment."""
 
     network_mode: str = Field(default="PUBLIC", description="Network mode for deployment")
-    network_mode_config: Optional[NetworkModeConfig] = Field(
+    network_mode_config: NetworkModeConfig | None = Field(
         default=None, description="Network mode configuration (required for VPC mode)"
     )
 
@@ -131,7 +131,7 @@ class NetworkConfiguration(BaseModel):
 
     @field_validator("network_mode_config")
     @classmethod
-    def validate_network_mode_config(cls, v: Optional[NetworkModeConfig], info) -> Optional[NetworkModeConfig]:
+    def validate_network_mode_config(cls, v: NetworkModeConfig | None, info) -> NetworkModeConfig | None:
         """Validate that network_mode_config is provided when network_mode is VPC."""
         if info.data.get("network_mode") == "VPC" and v is None:
             raise ValueError("network_mode_config is required when network_mode is VPC")
@@ -174,19 +174,19 @@ class ProtocolConfiguration(BaseModel):
 class LifecycleConfiguration(BaseModel):
     """Lifecycle configuration for runtime sessions."""
 
-    idle_runtime_session_timeout: Optional[int] = Field(
+    idle_runtime_session_timeout: int | None = Field(
         default=None,
         description="Timeout in seconds for idle runtime sessions (60-28800)",
         ge=60,
         le=28800,
     )
-    max_lifetime: Optional[int] = Field(
+    max_lifetime: int | None = Field(
         default=None, description="Maximum lifetime for the instance in seconds (60-28800)", ge=60, le=28800
     )
 
     @field_validator("max_lifetime")
     @classmethod
-    def validate_lifecycle_relationship(cls, v: Optional[int], info) -> Optional[int]:
+    def validate_lifecycle_relationship(cls, v: int | None, info) -> int | None:
         """Validate that max_lifetime >= idle_timeout if both are set."""
         if v is None:
             return v
@@ -222,13 +222,13 @@ class ObservabilityConfig(BaseModel):
 class AWSConfig(BaseModel):
     """AWS-specific configuration."""
 
-    execution_role: Optional[str] = Field(default=None, description="AWS IAM execution role ARN")
+    execution_role: str | None = Field(default=None, description="AWS IAM execution role ARN")
     execution_role_auto_create: bool = Field(default=False, description="Whether to auto-create execution role")
-    account: Optional[str] = Field(default=None, description="AWS account ID")
-    region: Optional[str] = Field(default=None, description="AWS region")
-    ecr_repository: Optional[str] = Field(default=None, description="ECR repository URI")
+    account: str | None = Field(default=None, description="AWS account ID")
+    region: str | None = Field(default=None, description="AWS region")
+    ecr_repository: str | None = Field(default=None, description="ECR repository URI")
     ecr_auto_create: bool = Field(default=False, description="Whether to auto-create ECR repository")
-    s3_path: Optional[str] = Field(default=None, description="S3 URI for code deployment")
+    s3_path: str | None = Field(default=None, description="S3 URI for code deployment")
     s3_auto_create: bool = Field(default=False, description="Whether to auto-create S3 bucket")
     network_configuration: NetworkConfiguration = Field(default_factory=NetworkConfiguration)
     protocol_configuration: ProtocolConfiguration = Field(default_factory=ProtocolConfiguration)
@@ -237,7 +237,7 @@ class AWSConfig(BaseModel):
 
     @field_validator("account")
     @classmethod
-    def validate_account(cls, v: Optional[str]) -> Optional[str]:
+    def validate_account(cls, v: str | None) -> str | None:
         """Validate AWS account ID."""
         if v is not None:
             if not v.isdigit() or len(v) != 12:
@@ -248,17 +248,17 @@ class AWSConfig(BaseModel):
 class CodeBuildConfig(BaseModel):
     """CodeBuild deployment information."""
 
-    project_name: Optional[str] = Field(default=None, description="CodeBuild project name")
-    execution_role: Optional[str] = Field(default=None, description="CodeBuild execution role ARN")
-    source_bucket: Optional[str] = Field(default=None, description="S3 source bucket name")
+    project_name: str | None = Field(default=None, description="CodeBuild project name")
+    execution_role: str | None = Field(default=None, description="CodeBuild execution role ARN")
+    source_bucket: str | None = Field(default=None, description="S3 source bucket name")
 
 
 class BedrockAgentCoreDeploymentInfo(BaseModel):
     """BedrockAgentCore deployment information."""
 
-    agent_id: Optional[str] = Field(default=None, description="BedrockAgentCore agent ID")
-    agent_arn: Optional[str] = Field(default=None, description="BedrockAgentCore agent ARN")
-    agent_session_id: Optional[str] = Field(default=None, description="Session ID for invocations")
+    agent_id: str | None = Field(default=None, description="BedrockAgentCore agent ID")
+    agent_arn: str | None = Field(default=None, description="BedrockAgentCore agent ARN")
+    agent_session_id: str | None = Field(default=None, description="Session ID for invocations")
 
 
 class BedrockAgentCoreAgentSchema(BaseModel):
@@ -266,38 +266,38 @@ class BedrockAgentCoreAgentSchema(BaseModel):
 
     name: str = Field(..., description="Name of the Bedrock AgentCore application")
     language: Literal["python", "typescript"] = Field(default="python", description="Programming language of the agent")
-    node_version: Optional[str] = Field(
+    node_version: str | None = Field(
         default=None, description="Node.js major version for TypeScript agents (e.g., '20', '22')"
     )
     entrypoint: str = Field(..., description="Entrypoint file path (e.g., 'agent.py' or 'agent.py:handler')")
     deployment_type: Literal["container", "direct_code_deploy"] = Field(
         default="container", description="Deployment artifact type: container (Docker) or direct_code_deploy"
     )
-    runtime_type: Optional[str] = Field(
+    runtime_type: str | None = Field(
         default=None, description="Managed runtime version for direct_code_deploy (e.g., 'PYTHON_3_10', 'PYTHON_3_11')"
     )
     platform: str = Field(default="linux/amd64", description="Target platform (for container deployments)")
-    container_runtime: Optional[str] = Field(
+    container_runtime: str | None = Field(
         default=None, description="Container runtime to use (for container deployments)"
     )
-    source_path: Optional[str] = Field(default=None, description="Directory containing agent source code")
+    source_path: str | None = Field(default=None, description="Directory containing agent source code")
     aws: AWSConfig = Field(default_factory=AWSConfig)
     bedrock_agentcore: BedrockAgentCoreDeploymentInfo = Field(default_factory=BedrockAgentCoreDeploymentInfo)
     codebuild: CodeBuildConfig = Field(default_factory=CodeBuildConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     identity: IdentityConfig = Field(default_factory=IdentityConfig)
     aws_jwt: AwsJwtConfig = Field(default_factory=AwsJwtConfig)
-    authorizer_configuration: Optional[dict] = Field(default=None, description="JWT authorizer configuration")
-    request_header_configuration: Optional[dict] = Field(default=None, description="Request header configuration")
-    oauth_configuration: Optional[dict] = Field(default=None, description="Oauth configuration")
-    api_key_env_var_name: Optional[str] = Field(
+    authorizer_configuration: dict | None = Field(default=None, description="JWT authorizer configuration")
+    request_header_configuration: dict | None = Field(default=None, description="Request header configuration")
+    oauth_configuration: dict | None = Field(default=None, description="Oauth configuration")
+    api_key_env_var_name: str | None = Field(
         default=None,
         description="Environment variable name for API key (e.g., 'OPENAI_API_KEY' for non-Bedrock providers)",
     )
-    api_key_credential_provider_name: Optional[str] = Field(
+    api_key_credential_provider_name: str | None = Field(
         default=None, description="Name of the API Key Credential Provider created in AgentCore Identity"
     )
-    is_generated_by_agentcore_create: Optional[bool] = Field(
+    is_generated_by_agentcore_create: bool | None = Field(
         default=False, description="True if the agent is created with agentcore create"
     )
 
@@ -308,11 +308,11 @@ class BedrockAgentCoreAgentSchema(BaseModel):
             raise ValueError("TypeScript agents require container deployment (direct_code_deploy not supported)")
         return self
 
-    def get_authorizer_configuration(self) -> Optional[dict]:
+    def get_authorizer_configuration(self) -> dict | None:
         """Get the authorizer configuration."""
         return self.authorizer_configuration
 
-    def validate(self, for_local: bool = False) -> List[str]:
+    def validate(self, for_local: bool = False) -> list[str]:
         """Validate configuration and return list of errors.
 
         Args:
@@ -349,15 +349,15 @@ class BedrockAgentCoreConfigSchema(BaseModel):
     Operations use --agent parameter to select which agent to work with.
     """
 
-    default_agent: Optional[str] = Field(default=None, description="Default agent name for operations")
-    is_agentcore_create_with_iac: Optional[bool] = Field(
+    default_agent: str | None = Field(default=None, description="Default agent name for operations")
+    is_agentcore_create_with_iac: bool | None = Field(
         default=False
     )  # will only be provided by projects created from agentcore create
-    agents: Dict[str, BedrockAgentCoreAgentSchema] = Field(
+    agents: dict[str, BedrockAgentCoreAgentSchema] = Field(
         default_factory=dict, description="Named agent configurations"
     )
 
-    def get_agent_config(self, agent_name: Optional[str] = None) -> BedrockAgentCoreAgentSchema:
+    def get_agent_config(self, agent_name: str | None = None) -> BedrockAgentCoreAgentSchema:
         """Get agent config by name or default.
 
         Args:

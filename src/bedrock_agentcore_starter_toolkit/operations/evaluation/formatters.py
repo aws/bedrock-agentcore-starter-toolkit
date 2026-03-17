@@ -6,7 +6,7 @@ All display/UI logic that was duplicated between CLI and notebook is consolidate
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -16,7 +16,7 @@ from rich.text import Text
 from .models import EvaluationResults
 
 
-def display_evaluator_list(evaluators: List[Dict[str, Any]], console: Console) -> None:
+def display_evaluator_list(evaluators: list[dict[str, Any]], console: Console) -> None:
     """Display formatted list of evaluators.
 
     Args:
@@ -71,7 +71,7 @@ def display_evaluator_list(evaluators: List[Dict[str, Any]], console: Console) -
     console.print(f"\n[dim]Total: {len(evaluators)} ({len(builtin)} builtin, {len(custom)} custom)[/dim]")
 
 
-def display_evaluator_details(details: Dict[str, Any], console: Console) -> None:
+def display_evaluator_details(details: dict[str, Any], console: Console) -> None:
     """Display detailed evaluator information.
 
     Args:
@@ -244,7 +244,7 @@ def save_evaluation_results(results: EvaluationResults, output_file: str, consol
         console.print(f"[green]✓[/green] Input data saved to: {input_path}")
 
 
-def save_json_output(data: Dict[str, Any], output_file: str, console: Console) -> None:
+def save_json_output(data: dict[str, Any], output_file: str, console: Console) -> None:
     """Save JSON data to file.
 
     Args:

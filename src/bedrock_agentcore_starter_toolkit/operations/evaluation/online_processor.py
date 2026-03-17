@@ -6,7 +6,7 @@ formatting, and helper utilities.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -21,13 +21,13 @@ def create_online_evaluation_config(
     config_name: str,
     agent_id: str,
     agent_endpoint: str = "DEFAULT",
-    config_description: Optional[str] = None,
+    config_description: str | None = None,
     sampling_rate: float = 1.0,
-    evaluator_list: Optional[List[str]] = None,
-    execution_role: Optional[str] = None,
+    evaluator_list: list[str] | None = None,
+    execution_role: str | None = None,
     auto_create_execution_role: bool = True,
     enable_on_create: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create online evaluation configuration with validation.
 
     Args:
@@ -90,7 +90,7 @@ def create_online_evaluation_config(
 def get_online_evaluation_config(
     client: EvaluationControlPlaneClient,
     config_id: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get online evaluation configuration.
 
     Args:
@@ -112,9 +112,9 @@ def get_online_evaluation_config(
 
 def list_online_evaluation_configs(
     client: EvaluationControlPlaneClient,
-    agent_id: Optional[str] = None,
+    agent_id: str | None = None,
     max_results: int = 50,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """List online evaluation configurations.
 
     Args:
@@ -144,11 +144,11 @@ def list_online_evaluation_configs(
 def update_online_evaluation_config(
     client: EvaluationControlPlaneClient,
     config_id: str,
-    status: Optional[str] = None,
-    sampling_rate: Optional[float] = None,
-    evaluator_list: Optional[List[str]] = None,
-    description: Optional[str] = None,
-) -> Dict[str, Any]:
+    status: str | None = None,
+    sampling_rate: float | None = None,
+    evaluator_list: list[str] | None = None,
+    description: str | None = None,
+) -> dict[str, Any]:
     """Update online evaluation configuration with validation.
 
     Args:

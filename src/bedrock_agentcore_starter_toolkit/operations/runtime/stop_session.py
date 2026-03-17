@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from botocore.exceptions import ClientError
 
@@ -16,8 +15,8 @@ log = logging.getLogger(__name__)
 
 def stop_runtime_session(
     config_path: Path,
-    session_id: Optional[str] = None,
-    agent_name: Optional[str] = None,
+    session_id: str | None = None,
+    agent_name: str | None = None,
 ) -> StopSessionResult:
     """Stop an active runtime session.
 

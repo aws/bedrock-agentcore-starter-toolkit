@@ -2,14 +2,13 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional
 
 from .schema import BedrockAgentCoreAgentSchema
 
 log = logging.getLogger(__name__)
 
 
-def _parse_env_file(env_file_path: Path) -> Dict[str, str]:
+def _parse_env_file(env_file_path: Path) -> dict[str, str]:
     """Parse a .env file and return a dictionary of environment variables.
 
     Args:
@@ -53,7 +52,7 @@ def _parse_env_file(env_file_path: Path) -> Dict[str, str]:
 def _load_api_key_from_env_if_configured(
     agent_config: BedrockAgentCoreAgentSchema,
     project_dir: Path,
-) -> Optional[str]:
+) -> str | None:
     """Load API key from .env file if api_key_env_var_name is configured.
 
     This function checks if the agent is configured to use API key-based authentication

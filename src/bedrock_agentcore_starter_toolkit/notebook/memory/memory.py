@@ -1,6 +1,6 @@
 """Notebook interface for memory - thin wrappers over CLI operations."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.console import Console
 from rich.tree import Tree
@@ -10,9 +10,9 @@ from ...operations.memory.memory_visualizer import MemoryVisualizer
 
 
 def _resolve_memory_config(
-    agent_name: Optional[str] = None,
-    memory_id: Optional[str] = None,
-    region: Optional[str] = None,
+    agent_name: str | None = None,
+    memory_id: str | None = None,
+    region: str | None = None,
 ) -> tuple:
     """Resolve memory_id and region from args or config."""
     import boto3
@@ -57,15 +57,15 @@ class Memory:
 
     def __init__(
         self,
-        memory_id: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        region: Optional[str] = None,
+        memory_id: str | None = None,
+        agent_name: str | None = None,
+        region: str | None = None,
     ):
         """Initialize Memory interface."""
         self.memory_id, self.region, self.manager, self.console = _resolve_memory_config(agent_name, memory_id, region)
         self.visualizer = MemoryVisualizer(self.console)
 
-    def show(self, verbose: bool = False) -> Dict[str, Any]:
+    def show(self, verbose: bool = False) -> dict[str, Any]:
         """Show memory details (equivalent to `agentcore memory show`)."""
         memory = self.manager.get_memory(self.memory_id)
         self.visualizer.visualize_memory(memory, verbose=verbose)
@@ -74,14 +74,14 @@ class Memory:
     def show_events(
         self,
         all: bool = False,
-        actor_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        actor_id: str | None = None,
+        session_id: str | None = None,
         last: int = 1,
         list_actors: bool = False,
         list_sessions: bool = False,
         verbose: bool = False,
         max_events: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Show memory events (equivalent to `agentcore memory show events`)."""
         from ...cli.memory.commands import _collect_all_events
 
@@ -138,12 +138,12 @@ class Memory:
     def show_records(
         self,
         all: bool = False,
-        namespace: Optional[str] = None,
-        query: Optional[str] = None,
+        namespace: str | None = None,
+        query: str | None = None,
         last: int = 1,
         verbose: bool = False,
         max_results: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Show memory records (equivalent to `agentcore memory show records`)."""
         from ...cli.memory.commands import _collect_all_records
 

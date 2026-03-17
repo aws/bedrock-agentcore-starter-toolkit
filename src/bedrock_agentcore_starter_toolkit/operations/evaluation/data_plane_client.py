@@ -5,7 +5,7 @@ This client only makes API calls - all business logic is in processor.py
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import boto3
 from botocore.config import Config
@@ -26,7 +26,7 @@ class EvaluationDataPlaneClient:
     NO business logic - that belongs in EvaluationProcessor.
     """
 
-    def __init__(self, region_name: str, endpoint_url: Optional[str] = None, boto_client: Optional[Any] = None):
+    def __init__(self, region_name: str, endpoint_url: str | None = None, boto_client: Any | None = None):
         """Initialize evaluation data plane client.
 
         Args:
@@ -55,8 +55,8 @@ class EvaluationDataPlaneClient:
             )
 
     def evaluate(
-        self, evaluator_id: str, session_spans: List[Dict[str, Any]], evaluation_target: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, evaluator_id: str, session_spans: list[dict[str, Any]], evaluation_target: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Call evaluation API with transformed spans.
 
         Note: API accepts ONE evaluator per call via URI path.

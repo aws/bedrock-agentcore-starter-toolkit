@@ -1,7 +1,7 @@
 """Data models for evaluation requests and results."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -12,10 +12,10 @@ class EvaluationRequest:
     """
 
     evaluator_id: str
-    session_spans: List[Dict[str, Any]]
-    evaluation_target: Optional[Dict[str, Any]] = None
+    session_spans: list[dict[str, Any]]
+    evaluation_target: dict[str, Any] | None = None
 
-    def to_api_request(self) -> tuple[str, Dict[str, Any]]:
+    def to_api_request(self) -> tuple[str, dict[str, Any]]:
         """Convert to API request format.
 
         Returns:
@@ -37,14 +37,14 @@ class EvaluationResult:
     evaluator_name: str
     evaluator_arn: str
     explanation: str
-    context: Dict[str, Any]  # Contains spanContext union from API
-    value: Optional[float] = None
-    label: Optional[str] = None
-    token_usage: Optional[Dict[str, int]] = None
-    error: Optional[str] = None
+    context: dict[str, Any]  # Contains spanContext union from API
+    value: float | None = None
+    label: str | None = None
+    token_usage: dict[str, int] | None = None
+    error: str | None = None
 
     @classmethod
-    def from_api_response(cls, result: Dict[str, Any]) -> "EvaluationResult":
+    def from_api_response(cls, result: dict[str, Any]) -> "EvaluationResult":
         """Create from API response.
 
         Args:
@@ -87,10 +87,10 @@ class EvaluationResult:
 class EvaluationResults:
     """Container for multiple evaluation results."""
 
-    session_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    results: List[EvaluationResult] = field(default_factory=list)
-    input_data: Optional[Dict[str, Any]] = None  # Store OTel spans sent to API
+    session_id: str | None = None
+    trace_id: str | None = None
+    results: list[EvaluationResult] = field(default_factory=list)
+    input_data: dict[str, Any] | None = None  # Store OTel spans sent to API
 
     def add_result(self, result: EvaluationResult) -> None:
         """Add a result to the collection."""
@@ -100,15 +100,15 @@ class EvaluationResults:
         """Check if any evaluation failed."""
         return any(r.has_error() for r in self.results)
 
-    def get_successful_results(self) -> List[EvaluationResult]:
+    def get_successful_results(self) -> list[EvaluationResult]:
         """Get only successful evaluations."""
         return [r for r in self.results if not r.has_error()]
 
-    def get_failed_results(self) -> List[EvaluationResult]:
+    def get_failed_results(self) -> list[EvaluationResult]:
         """Get only failed evaluations."""
         return [r for r in self.results if r.has_error()]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         result = {
             "session_id": self.session_id,
@@ -152,19 +152,19 @@ class OnlineEvaluationConfig:
     agent_name: str
     log_group_name: str
     sampling_rate: float
-    evaluator_list: List[str]
+    evaluator_list: list[str]
     execution_role: str
     status: str  # ENABLED or DISABLED
-    config_arn: Optional[str] = None
-    agent_endpoint: Optional[str] = None
-    description: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    cloudwatch_logs_url: Optional[str] = None
-    dashboard_url: Optional[str] = None
+    config_arn: str | None = None
+    agent_endpoint: str | None = None
+    description: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    cloudwatch_logs_url: str | None = None
+    dashboard_url: str | None = None
 
     @classmethod
-    def from_api_response(cls, response: Dict[str, Any]) -> "OnlineEvaluationConfig":
+    def from_api_response(cls, response: dict[str, Any]) -> "OnlineEvaluationConfig":
         """Create from API response.
 
         Args:
@@ -212,7 +212,7 @@ class OnlineEvaluationConfig:
             dashboard_url=response.get("dashboard_url"),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "config_id": self.config_id,

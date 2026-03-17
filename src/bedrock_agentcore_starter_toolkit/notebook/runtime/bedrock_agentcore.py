@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from ...operations.runtime import (
     configure_bedrock_agentcore,
@@ -31,37 +31,37 @@ class Runtime:
 
     def __init__(self):
         """Initialize Bedrock AgentCore notebook interface."""
-        self._config_path: Optional[Path] = None
+        self._config_path: Path | None = None
         self.name = None
 
     def configure(
         self,
         entrypoint: str,
-        execution_role: Optional[str] = None,
-        code_build_execution_role: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        requirements: Optional[List[str]] = None,
-        requirements_file: Optional[str] = None,
-        ecr_repository: Optional[str] = None,
-        container_runtime: Optional[str] = None,
+        execution_role: str | None = None,
+        code_build_execution_role: str | None = None,
+        agent_name: str | None = None,
+        requirements: list[str] | None = None,
+        requirements_file: str | None = None,
+        ecr_repository: str | None = None,
+        container_runtime: str | None = None,
         auto_create_ecr: bool = True,
         auto_create_execution_role: bool = False,
-        s3_path: Optional[str] = None,
+        s3_path: str | None = None,
         auto_create_s3: bool = False,
-        authorizer_configuration: Optional[Dict[str, Any]] = None,
-        request_header_configuration: Optional[Dict[str, Any]] = None,
-        region: Optional[str] = None,
-        protocol: Optional[Literal["HTTP", "MCP", "A2A", "AGUI"]] = None,
+        authorizer_configuration: dict[str, Any] | None = None,
+        request_header_configuration: dict[str, Any] | None = None,
+        region: str | None = None,
+        protocol: Literal["HTTP", "MCP", "A2A", "AGUI"] | None = None,
         disable_otel: bool = False,
         memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
         non_interactive: bool = True,
         vpc_enabled: bool = False,
-        vpc_subnets: Optional[List[str]] = None,
-        vpc_security_groups: Optional[List[str]] = None,
-        idle_timeout: Optional[int] = None,
-        max_lifetime: Optional[int] = None,
+        vpc_subnets: list[str] | None = None,
+        vpc_security_groups: list[str] | None = None,
+        idle_timeout: int | None = None,
+        max_lifetime: int | None = None,
         deployment_type: Literal["direct_code_deploy", "container"] = "container",
-        runtime_type: Optional[str] = None,
+        runtime_type: str | None = None,
     ) -> ConfigureResult:
         """Configure Bedrock AgentCore from notebook using an entrypoint file.
 
@@ -259,7 +259,7 @@ class Runtime:
         local: bool = False,
         local_build: bool = False,
         auto_update_on_conflict: bool = False,
-        env_vars: Optional[Dict] = None,
+        env_vars: dict | None = None,
     ) -> LaunchResult:
         """Launch Bedrock AgentCore from notebook.
 
@@ -393,12 +393,12 @@ class Runtime:
 
     def invoke(
         self,
-        payload: Dict[str, Any],
-        session_id: Optional[str] = None,
-        bearer_token: Optional[str] = None,
-        local: Optional[bool] = False,
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        payload: dict[str, Any],
+        session_id: str | None = None,
+        bearer_token: str | None = None,
+        local: bool | None = False,
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Invoke deployed Bedrock AgentCore endpoint.
 
         Args:
@@ -430,7 +430,7 @@ class Runtime:
         )
         return result.response
 
-    def stop_session(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+    def stop_session(self, session_id: str | None = None) -> dict[str, Any]:
         """Stop an active runtime session.
 
         Args:

@@ -4,7 +4,6 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.panel import Panel
@@ -35,13 +34,13 @@ def create_credential_provider(
     provider_type: str = typer.Option(..., "--type", "-t", help="Provider type: cognito, github, google, salesforce"),
     client_id: str = typer.Option(..., "--client-id", help="OAuth client ID"),
     client_secret: str = typer.Option(..., "--client-secret", help="OAuth client secret"),
-    discovery_url: Optional[str] = typer.Option(
+    discovery_url: str | None = typer.Option(
         None, "--discovery-url", help="OAuth discovery URL (required for cognito)"
     ),
-    cognito_pool_id: Optional[str] = typer.Option(
+    cognito_pool_id: str | None = typer.Option(
         None, "--cognito-pool-id", help="Cognito pool ID (for auto-updating callback URLs)"
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     r"""Create an OAuth2 credential provider for outbound authentication (3LO support).
 
@@ -146,13 +145,13 @@ us-west-2_xxx/.well-known/openid-configuration \
 
 @identity_app.command("create-workload-identity")
 def create_workload_identity(
-    name: Optional[str] = typer.Option(None, "--name", "-n", help="Workload identity name (auto-generated if empty)"),
-    return_urls: Optional[str] = typer.Option(
+    name: str | None = typer.Option(None, "--name", "-n", help="Workload identity name (auto-generated if empty)"),
+    return_urls: str | None = typer.Option(
         None,
         "--return-urls",
         help="Optional: OAuth return URLs for enhanced session binding security. Not required for basic OAuth flows.",
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     """Create a workload identity for your agent.
 
@@ -223,11 +222,11 @@ def create_workload_identity(
 @identity_app.command("update-workload-identity")
 def update_workload_identity(
     name: str = typer.Option(..., "--name", "-n", help="Workload identity name"),
-    add_return_urls: Optional[str] = typer.Option(None, "--add-return-urls", help="Comma-separated return URLs to ADD"),
-    set_return_urls: Optional[str] = typer.Option(
+    add_return_urls: str | None = typer.Option(None, "--add-return-urls", help="Comma-separated return URLs to ADD"),
+    set_return_urls: str | None = typer.Option(
         None, "--set-return-urls", help="Comma-separated return URLs to SET (replaces existing)"
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     r"""Update workload identity callback URLs.
 
@@ -290,22 +289,22 @@ def get_cognito_inbound_token(
     auth_flow: str = typer.Option(
         "user", "--auth-flow", help="OAuth flow type: 'user' (USER_FEDERATION) or 'm2m' (M2M)"
     ),
-    pool_id: Optional[str] = typer.Option(
+    pool_id: str | None = typer.Option(
         None, "--pool-id", help="Cognito User Pool ID (auto-loads from RUNTIME_POOL_ID env var)"
     ),
-    client_id: Optional[str] = typer.Option(
+    client_id: str | None = typer.Option(
         None, "--client-id", help="Cognito App Client ID (auto-loads from RUNTIME_CLIENT_ID env var)"
     ),
-    client_secret: Optional[str] = typer.Option(
+    client_secret: str | None = typer.Option(
         None, "--client-secret", help="Client secret (auto-loads from RUNTIME_CLIENT_SECRET env var, required for m2m)"
     ),
-    username: Optional[str] = typer.Option(
+    username: str | None = typer.Option(
         None, "--username", "-u", help="Username (auto-loads from RUNTIME_USERNAME env var, required for user flow)"
     ),
-    password: Optional[str] = typer.Option(
+    password: str | None = typer.Option(
         None, "--password", "-p", help="Password (auto-loads from RUNTIME_PASSWORD env var, required for user flow)"
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     """Get an access token from Cognito for Runtime inbound authentication.
 
@@ -468,7 +467,7 @@ def list_credential_providers():
 
 
 def _build_provider_config(
-    provider_type: str, name: str, client_id: str, client_secret: str, discovery_url: Optional[str]
+    provider_type: str, name: str, client_id: str, client_secret: str, discovery_url: str | None
 ) -> dict:
     """Build provider configuration based on type."""
     if provider_type == "cognito":
@@ -545,7 +544,7 @@ def _save_provider_config(name: str, arn: str, provider_type: str, callback_url:
         _handle_warn(".bedrock_agentcore.yaml not found. Provider created but not saved to config.")
 
 
-def _save_workload_config(name: str, arn: str, return_urls: List[str]):
+def _save_workload_config(name: str, arn: str, return_urls: list[str]):
     """Save workload identity configuration to .bedrock_agentcore.yaml."""
     config_path = Path.cwd() / ".bedrock_agentcore.yaml"
     if config_path.exists():
@@ -565,7 +564,7 @@ def _save_workload_config(name: str, arn: str, return_urls: List[str]):
 
 @identity_app.command("setup-cognito")
 def setup_cognito(
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (defaults to configured region)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (defaults to configured region)"),
     auth_flow: str = typer.Option(
         "user", "--auth-flow", help="Identity pool OAuth flow type: user (USER_FEDERATION) or m2m (client_credentials)"
     ),
@@ -716,7 +715,7 @@ def setup_aws_jwt(
         help="Signing algorithm: ES384 (default) or RS256",
     ),
     duration_seconds: int = typer.Option(300, "--duration", "-d", help="Default token duration in seconds (60-3600)"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region"),
 ):
     """Set up AWS IAM JWT federation for M2M authentication without secrets.
 
@@ -892,7 +891,7 @@ def list_aws_jwt():
 
 @identity_app.command("cleanup")
 def cleanup_identity(
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent name to clean up Identity resources for"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Agent name to clean up Identity resources for"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompts"),
 ):
     """Clean up Identity resources for an agent.

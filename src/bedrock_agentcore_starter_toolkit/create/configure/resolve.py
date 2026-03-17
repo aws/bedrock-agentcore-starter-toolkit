@@ -1,7 +1,5 @@
 """Implementation for create command to be compatible with the outputs from the configure command."""
 
-from typing import Optional
-
 from ...cli.common import _handle_error, _handle_warn
 from ...utils.runtime.schema import (
     AWSConfig,
@@ -46,7 +44,7 @@ def resolve_agent_config_with_project_context(ctx: ProjectContext, agent_config:
         ctx.memory_name = memory_config.memory_name
 
     # custom authorizer
-    authorizer_config: Optional[dict[str, any]] = agent_config.authorizer_configuration
+    authorizer_config: dict[str, any] | None = agent_config.authorizer_configuration
     if authorizer_config:
         ctx.custom_authorizer_enabled = True
         authorizer_config_values = authorizer_config["customJWTAuthorizer"]

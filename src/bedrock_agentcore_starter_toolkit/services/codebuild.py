@@ -8,7 +8,6 @@ import time
 import zipfile
 from importlib.resources import files
 from pathlib import Path
-from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -72,7 +71,7 @@ class CodeBuildService:
 
         return bucket_name
 
-    def upload_source(self, agent_name: str, source_dir: str = ".", dockerfile_dir: Optional[str] = None) -> str:
+    def upload_source(self, agent_name: str, source_dir: str = ".", dockerfile_dir: str | None = None) -> str:
         """Upload source directory to S3, respecting .dockerignore patterns.
 
         Args:
@@ -162,7 +161,7 @@ class CodeBuildService:
         ecr_repository_uri: str,
         execution_role: str,
         source_location: str,
-        image_tag: Optional[str] = None,
+        image_tag: str | None = None,
     ) -> str:
         """Create or update CodeBuild project for ARM64 builds."""
         # Generate tag if not provided
@@ -307,7 +306,7 @@ phases:
       - echo "Build completed at $(date)"
 """
 
-    def _parse_dockerignore(self) -> List[str]:
+    def _parse_dockerignore(self) -> list[str]:
         """Parse .dockerignore patterns from template for consistent filtering.
 
         Always uses the dockerignore.template to ensure consistent file filtering
@@ -345,7 +344,7 @@ phases:
                 ".bedrock_agentcore.yaml",  # Always exclude config
             ]
 
-    def _should_ignore(self, path: str, patterns: List[str], is_dir: bool = False) -> bool:
+    def _should_ignore(self, path: str, patterns: list[str], is_dir: bool = False) -> bool:
         """Check if path should be ignored based on dockerignore patterns."""
         # Normalize path
         if path.startswith("./"):

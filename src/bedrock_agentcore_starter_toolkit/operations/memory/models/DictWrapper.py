@@ -1,12 +1,12 @@
 """Base wrapper class for dictionary-like data structures."""
 
-from typing import Any, Dict
+from typing import Any
 
 
 class DictWrapper:
     """A wrapper class that provides both attribute and dictionary-style access to data."""
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data: dict[str, Any]):
         """Initialize the wrapper with dictionary data.
 
         Args:

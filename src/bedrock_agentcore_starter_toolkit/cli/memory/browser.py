@@ -3,7 +3,7 @@
 import json
 import logging
 from dataclasses import dataclass, field, replace
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from botocore.exceptions import BotoCoreError, ClientError
 from prompt_toolkit import Application
@@ -24,13 +24,13 @@ PAGE_SIZE = 25
 class NavigationState:
     """State for navigation through memory hierarchy."""
 
-    memory_id: Optional[str] = None
-    actor_id: Optional[str] = None
-    session_id: Optional[str] = None
-    namespace: Optional[str] = None
-    namespace_template: Optional[str] = None
-    event_index: Optional[int] = None
-    record_index: Optional[int] = None
+    memory_id: str | None = None
+    actor_id: str | None = None
+    session_id: str | None = None
+    namespace: str | None = None
+    namespace_template: str | None = None
+    event_index: int | None = None
+    record_index: int | None = None
     view: str = "memory"
     cursor: int = 0
 
@@ -39,12 +39,12 @@ class NavigationState:
 class BrowserData:
     """Cached data for the browser."""
 
-    memory: Optional[Dict[str, Any]] = None
-    actors: List[Dict[str, Any]] = field(default_factory=list)
-    sessions: List[Dict[str, Any]] = field(default_factory=list)
-    events: List[Dict[str, Any]] = field(default_factory=list)
-    namespaces: List[Dict[str, Any]] = field(default_factory=list)
-    records: List[Dict[str, Any]] = field(default_factory=list)
+    memory: dict[str, Any] | None = None
+    actors: list[dict[str, Any]] = field(default_factory=list)
+    sessions: list[dict[str, Any]] = field(default_factory=list)
+    events: list[dict[str, Any]] = field(default_factory=list)
+    namespaces: list[dict[str, Any]] = field(default_factory=list)
+    records: list[dict[str, Any]] = field(default_factory=list)
 
 
 class MemoryBrowser:
@@ -54,25 +54,25 @@ class MemoryBrowser:
         self,
         manager: MemoryManager,
         memory_id: str,
-        visualizer: Optional[MemoryVisualizer] = None,
-        initial_memory: Optional[Dict[str, Any]] = None,
+        visualizer: MemoryVisualizer | None = None,
+        initial_memory: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the memory browser."""
         self.manager = manager
         self.console = Console()
         self.visualizer = visualizer or MemoryVisualizer(self.console)
-        self.nav_stack: List[NavigationState] = []
+        self.nav_stack: list[NavigationState] = []
         self.current = NavigationState(memory_id=memory_id, view="memory")
         self.data = BrowserData()
         if initial_memory:
             self.data.memory = initial_memory
         self.verbose = False
         self.cursor = 0
-        self.items: List[Any] = []
-        self.actors_next_token: Optional[str] = None
-        self.sessions_next_token: Optional[str] = None
-        self.events_next_token: Optional[str] = None
-        self.records_next_token: Optional[str] = None
+        self.items: list[Any] = []
+        self.actors_next_token: str | None = None
+        self.sessions_next_token: str | None = None
+        self.events_next_token: str | None = None
+        self.records_next_token: str | None = None
 
     def run(self) -> None:
         """Run the interactive browser."""
@@ -669,7 +669,7 @@ class MemoryBrowser:
         self.current.record_index = self.cursor
         self.current.view = "record_detail"
 
-    def _extract_role(self, event: Dict[str, Any]) -> str:
+    def _extract_role(self, event: dict[str, Any]) -> str:
         """Extract role from event."""
         payload = event.get("payload", {})
         if isinstance(payload, dict):
@@ -680,7 +680,7 @@ class MemoryBrowser:
                         return item["role"]
         return ""
 
-    def _extract_text(self, event: Dict[str, Any]) -> str:
+    def _extract_text(self, event: dict[str, Any]) -> str:
         """Extract text from event."""
         payload = event.get("payload", {})
         if isinstance(payload, dict):
@@ -691,7 +691,7 @@ class MemoryBrowser:
                         return item["text"]
         return ""
 
-    def _extract_payload_snippet(self, event: Dict[str, Any]) -> str:
+    def _extract_payload_snippet(self, event: dict[str, Any]) -> str:
         """Extract a snippet from raw payload for preview."""
         payload = event.get("payload")
         if not payload:
@@ -701,7 +701,7 @@ class MemoryBrowser:
             return f"{raw[:60]}…"
         return raw
 
-    def _extract_record_text(self, record: Dict[str, Any]) -> str:
+    def _extract_record_text(self, record: dict[str, Any]) -> str:
         """Extract text from record."""
         content = record.get("content", {})
         if isinstance(content, dict):

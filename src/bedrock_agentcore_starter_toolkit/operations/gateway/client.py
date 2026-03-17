@@ -5,7 +5,7 @@ import logging
 import time
 import urllib.parse
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 import boto3
 import urllib3
@@ -25,7 +25,7 @@ from .exceptions import GatewaySetupException
 class GatewayClient:
     """High-level client for Bedrock AgentCore Gateway operations."""
 
-    def __init__(self, region_name: Optional[str] = None, endpoint_url: Optional[str] = None):
+    def __init__(self, region_name: str | None = None, endpoint_url: str | None = None):
         """Initialize the Gateway client.
 
         Args:
@@ -267,9 +267,9 @@ class GatewayClient:
 
     def delete_gateway(
         self,
-        gateway_identifier: Optional[str] = None,
-        name: Optional[str] = None,
-        gateway_arn: Optional[str] = None,
+        gateway_identifier: str | None = None,
+        name: str | None = None,
+        gateway_arn: str | None = None,
         skip_resource_in_use: bool = False,
     ) -> dict:
         """Delete a gateway resource.
@@ -280,7 +280,7 @@ class GatewayClient:
         :param skip_resource_in_use: If True, delete all targets before deleting the gateway (default: False)
         :return: Result dict with status and details
         """
-        resolved_id: Optional[str] = None
+        resolved_id: str | None = None
 
         # Resolve gateway ID from different input types
         if gateway_identifier:
@@ -342,11 +342,11 @@ class GatewayClient:
 
     def delete_gateway_target(
         self,
-        gateway_identifier: Optional[str] = None,
-        name: Optional[str] = None,
-        gateway_arn: Optional[str] = None,
-        target_id: Optional[str] = None,
-        target_name: Optional[str] = None,
+        gateway_identifier: str | None = None,
+        name: str | None = None,
+        gateway_arn: str | None = None,
+        target_id: str | None = None,
+        target_name: str | None = None,
     ) -> dict:
         """Delete a gateway target.
 
@@ -357,7 +357,7 @@ class GatewayClient:
         :param target_name: Target name to delete (will look up ID)
         :return: Result dict with status and details
         """
-        resolved_id: Optional[str] = None
+        resolved_id: str | None = None
 
         # Resolve gateway ID
         if gateway_identifier:
@@ -404,7 +404,7 @@ class GatewayClient:
             self.logger.error("Error deleting gateway target: %s", str(e))
             return {"status": "error", "message": f"Error deleting gateway target: {str(e)}"}
 
-    def _get_gateway_id_by_name(self, name: str) -> Optional[str]:
+    def _get_gateway_id_by_name(self, name: str) -> str | None:
         """Get gateway ID by name.
 
         :param name: Gateway name to look up
@@ -413,7 +413,7 @@ class GatewayClient:
         try:
             next_token = None
             while True:
-                kwargs: Dict[str, Any] = {"maxResults": 1000}
+                kwargs: dict[str, Any] = {"maxResults": 1000}
                 if next_token:
                     kwargs["nextToken"] = next_token
                 resp = self.client.list_gateways(**kwargs)
@@ -430,7 +430,7 @@ class GatewayClient:
 
     def list_gateways(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         max_results: int = 50,
     ) -> dict:
         """List all gateways.
@@ -443,7 +443,7 @@ class GatewayClient:
             next_token = None
             items = []
             while True:
-                kwargs: Dict[str, Any] = {"maxResults": min(max_results - len(items), 1000)}
+                kwargs: dict[str, Any] = {"maxResults": min(max_results - len(items), 1000)}
                 if next_token:
                     kwargs["nextToken"] = next_token
                 resp = self.client.list_gateways(**kwargs)
@@ -466,9 +466,9 @@ class GatewayClient:
 
     def get_gateway(
         self,
-        gateway_identifier: Optional[str] = None,
-        name: Optional[str] = None,
-        gateway_arn: Optional[str] = None,
+        gateway_identifier: str | None = None,
+        name: str | None = None,
+        gateway_arn: str | None = None,
     ) -> dict:
         """Get gateway details.
 
@@ -477,7 +477,7 @@ class GatewayClient:
         :param gateway_arn: Gateway ARN (will extract ID)
         :return: Result dict with status and gateway details
         """
-        resolved_id: Optional[str] = None
+        resolved_id: str | None = None
 
         # Resolve gateway ID
         if gateway_identifier:
@@ -503,9 +503,9 @@ class GatewayClient:
 
     def list_gateway_targets(
         self,
-        gateway_identifier: Optional[str] = None,
-        name: Optional[str] = None,
-        gateway_arn: Optional[str] = None,
+        gateway_identifier: str | None = None,
+        name: str | None = None,
+        gateway_arn: str | None = None,
         max_results: int = 50,
     ) -> dict:
         """List gateway targets.
@@ -516,7 +516,7 @@ class GatewayClient:
         :param max_results: Maximum number of results to return (default: 50)
         :return: Result dict with status and list of targets
         """
-        resolved_id: Optional[str] = None
+        resolved_id: str | None = None
 
         # Resolve gateway ID
         if gateway_identifier:
@@ -536,7 +536,7 @@ class GatewayClient:
             next_token = None
             items = []
             while True:
-                kwargs: Dict[str, Any] = {
+                kwargs: dict[str, Any] = {
                     "gatewayIdentifier": resolved_id,
                     "maxResults": min(max_results - len(items), 1000),
                 }
@@ -560,11 +560,11 @@ class GatewayClient:
 
     def get_gateway_target(
         self,
-        gateway_identifier: Optional[str] = None,
-        name: Optional[str] = None,
-        gateway_arn: Optional[str] = None,
-        target_id: Optional[str] = None,
-        target_name: Optional[str] = None,
+        gateway_identifier: str | None = None,
+        name: str | None = None,
+        gateway_arn: str | None = None,
+        target_id: str | None = None,
+        target_name: str | None = None,
     ) -> dict:
         """Get gateway target details.
 
@@ -575,7 +575,7 @@ class GatewayClient:
         :param target_name: Target name (will look up ID)
         :return: Result dict with status and target details
         """
-        resolved_id: Optional[str] = None
+        resolved_id: str | None = None
 
         # Resolve gateway ID
         if gateway_identifier:
@@ -619,7 +619,7 @@ class GatewayClient:
             self.logger.error("Error getting gateway target: %s", str(e))
             return {"status": "error", "message": f"Error getting gateway target: {str(e)}"}
 
-    def cleanup_gateway(self, gateway_id: str, client_info: Optional[Dict] = None) -> None:
+    def cleanup_gateway(self, gateway_id: str, client_info: dict | None = None) -> None:
         """Remove all resources associated with a gateway.
 
         :param gateway_id: the ID of the gateway to clean up
@@ -696,7 +696,7 @@ class GatewayClient:
 
         self.logger.info("✅ Cleanup complete")
 
-    def __handle_lambda_target_creation(self, role_arn: str) -> Dict[str, Any]:
+    def __handle_lambda_target_creation(self, role_arn: str) -> dict[str, Any]:
         """Create a test lambda.
 
         :return: the targetConfiguration for the Lambda.
@@ -708,8 +708,8 @@ class GatewayClient:
         }
 
     def __handle_openapi_target_credential_provider_creation(
-        self, name: str, credentials: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, name: str, credentials: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate the credential provider config for open api target.
 
         :param name: the name of the target.
@@ -794,7 +794,7 @@ class GatewayClient:
         """Generate a random ID for Cognito resources."""
         return str(uuid.uuid4())[:8]
 
-    def create_oauth_authorizer_with_cognito(self, gateway_name: str) -> Dict[str, Any]:
+    def create_oauth_authorizer_with_cognito(self, gateway_name: str) -> dict[str, Any]:
         """Creates Cognito OAuth authorization server.
 
         Note: This implementation uses AdminCreateUserOnly mode where only administrators
@@ -926,8 +926,8 @@ class GatewayClient:
     def update_gateway(
         self,
         gateway_identifier: str,
-        description: Optional[str] = None,
-        policy_engine_config: Optional[Dict] = None,
+        description: str | None = None,
+        policy_engine_config: dict | None = None,
     ) -> dict:
         """Update gateway configuration.
 
@@ -1027,7 +1027,7 @@ class GatewayClient:
             },
         )
 
-    def get_access_token_for_cognito(self, client_info: Dict[str, Any]) -> str:
+    def get_access_token_for_cognito(self, client_info: dict[str, Any]) -> str:
         """Get OAuth token using client credentials flow.
 
         :param client_info: credentials and context needed to get the access token
@@ -1109,10 +1109,10 @@ class GatewayClient:
     def enable_observability(
         self,
         gateway_id: str,
-        gateway_arn: Optional[str] = None,
+        gateway_arn: str | None = None,
         enable_logs: bool = True,
         enable_traces: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Enable CloudWatch observability for an existing gateway resource."""
         delivery_manager = ObservabilityDeliveryManager(
             region_name=self.region,
@@ -1137,7 +1137,7 @@ class GatewayClient:
         self,
         gateway_id: str,
         delete_log_group: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Disable CloudWatch observability for a gateway resource."""
         delivery_manager = ObservabilityDeliveryManager(region_name=self.region)
         result = delivery_manager.disable_for_gateway(

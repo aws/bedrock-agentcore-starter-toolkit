@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Literal
 
 import boto3
 
@@ -31,7 +31,7 @@ from .models import ConfigureResult
 log = logging.getLogger(__name__)
 
 
-def get_relative_path(path: Path, base: Optional[Path] = None) -> str:
+def get_relative_path(path: Path, base: Path | None = None) -> str:
     """Convert path to relative format with OS-native separators.
 
     Args:
@@ -61,7 +61,7 @@ def get_relative_path(path: Path, base: Optional[Path] = None) -> str:
         return str(path_obj)
 
 
-def detect_entrypoint(source_path: Path) -> List[Path]:
+def detect_entrypoint(source_path: Path) -> list[Path]:
     """Detect entrypoint files in source directory.
 
     Args:
@@ -109,7 +109,7 @@ def detect_requirements(source_path: Path):
     return deps
 
 
-def infer_agent_name(entrypoint_path: Path, base: Optional[Path] = None) -> str:
+def infer_agent_name(entrypoint_path: Path, base: Path | None = None) -> str:
     """Infer agent name from entrypoint path.
 
     Args:
@@ -138,34 +138,34 @@ def configure_bedrock_agentcore(
     agent_name: str,
     entrypoint_path: Path,
     create_mode_enabled: bool = False,
-    execution_role: Optional[str] = None,
-    code_build_execution_role: Optional[str] = None,
-    ecr_repository: Optional[str] = None,
-    s3_path: Optional[str] = None,
-    container_runtime: Optional[str] = None,
+    execution_role: str | None = None,
+    code_build_execution_role: str | None = None,
+    ecr_repository: str | None = None,
+    s3_path: str | None = None,
+    container_runtime: str | None = None,
     auto_create_ecr: bool = True,
     auto_create_s3: bool = True,
     auto_create_execution_role: bool = True,
     enable_observability: bool = True,
     memory_mode: Literal["NO_MEMORY", "STM_ONLY", "STM_AND_LTM"] = "NO_MEMORY",
-    requirements_file: Optional[str] = None,
-    authorizer_configuration: Optional[Dict[str, Any]] = None,
-    request_header_configuration: Optional[Dict[str, Any]] = None,
+    requirements_file: str | None = None,
+    authorizer_configuration: dict[str, Any] | None = None,
+    request_header_configuration: dict[str, Any] | None = None,
     verbose: bool = False,
-    region: Optional[str] = None,
-    protocol: Optional[str] = None,
+    region: str | None = None,
+    protocol: str | None = None,
     non_interactive: bool = False,
-    source_path: Optional[str] = None,
+    source_path: str | None = None,
     vpc_enabled: bool = False,
-    vpc_subnets: Optional[List[str]] = None,
-    vpc_security_groups: Optional[List[str]] = None,
-    idle_timeout: Optional[int] = None,
-    max_lifetime: Optional[int] = None,
+    vpc_subnets: list[str] | None = None,
+    vpc_security_groups: list[str] | None = None,
+    idle_timeout: int | None = None,
+    max_lifetime: int | None = None,
     deployment_type: str = "direct_code_deploy",
-    runtime_type: Optional[str] = None,
+    runtime_type: str | None = None,
     is_generated_by_agentcore_create: bool = False,
     language: str = "python",
-    node_version: Optional[str] = None,
+    node_version: str | None = None,
 ) -> ConfigureResult:
     """Configure Bedrock AgentCore application with deployment settings.
 
@@ -626,7 +626,7 @@ AGENT_NAME_ERROR = (
 )
 
 
-def validate_agent_name(name: str) -> Tuple[bool, str]:
+def validate_agent_name(name: str) -> tuple[bool, str]:
     """Check if name matches the pattern [a-zA-Z][a-zA-Z0-9_]{0,47}.
 
     This pattern requires:

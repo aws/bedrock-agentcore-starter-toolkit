@@ -1,7 +1,7 @@
 """Common utilities for BedrockAgentCore CLI."""
 
 import functools
-from typing import NoReturn, Optional
+from typing import NoReturn
 
 import typer
 from prompt_toolkit import prompt
@@ -32,7 +32,7 @@ def assert_valid_aws_creds_or_exit(failure_message=None):
         raise typer.Exit(code=1)
 
 
-def _handle_error(message: str, exception: Optional[Exception] = None) -> NoReturn:
+def _handle_error(message: str, exception: Exception | None = None) -> NoReturn:
     """Handle errors with consistent formatting and exit."""
     console.print(f"[red]❌ {message}[/red]")
     if exception:
@@ -51,7 +51,7 @@ def _print_success(message: str) -> None:
     console.print(f"[green]✓[/green] {message}")
 
 
-def _prompt_with_default(question: str, default_value: Optional[str] = "") -> str:
+def _prompt_with_default(question: str, default_value: str | None = "") -> str:
     """Prompt user with AWS CLI style [default] format and empty input field."""
     prompt_text = question
     if default_value:
