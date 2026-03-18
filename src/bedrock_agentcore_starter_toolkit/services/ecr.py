@@ -3,7 +3,6 @@
 import base64
 import re
 from datetime import datetime
-from typing import Optional
 
 import boto3
 
@@ -111,7 +110,7 @@ def deploy_to_ecr(
     repo_name: str,
     region: str,
     container_runtime: ContainerRuntime,
-    image_tag: Optional[str] = None,
+    image_tag: str | None = None,
 ) -> str:
     """Build and push image to ECR with versioned tagging."""
     ecr = boto3.client("ecr", region_name=region)

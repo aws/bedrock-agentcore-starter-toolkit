@@ -19,7 +19,7 @@ Reference: AWS Documentation - "Configure CloudWatch resources using an AWS SDK"
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -65,8 +65,8 @@ class ObservabilityDeliveryManager:
 
     def __init__(
         self,
-        region_name: Optional[str] = None,
-        boto3_session: Optional[boto3.Session] = None,
+        region_name: str | None = None,
+        boto3_session: boto3.Session | None = None,
     ):
         """Initialize the ObservabilityDeliveryManager.
 
@@ -101,12 +101,12 @@ class ObservabilityDeliveryManager:
     def enable_observability_for_resource(
         self,
         resource_arn: str,
-        resource_id: Optional[str] = None,
-        resource_type: Optional[str] = None,
+        resource_id: str | None = None,
+        resource_type: str | None = None,
         enable_logs: bool = True,
         enable_traces: bool = True,
-        custom_log_group: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        custom_log_group: str | None = None,
+    ) -> dict[str, Any]:
         """Enable CloudWatch observability for an AgentCore resource.
 
         This configures CloudWatch delivery sources and destinations to capture
@@ -159,7 +159,7 @@ class ObservabilityDeliveryManager:
                 f"Unsupported resource_type: '{resource_type}'. Must be one of: {self.SUPPORTED_RESOURCE_TYPES}"
             )
 
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "resource_id": resource_id,
             "resource_type": resource_type,
             "resource_arn": resource_arn,
@@ -242,7 +242,7 @@ class ObservabilityDeliveryManager:
         self,
         runtime_arn: str,
         runtime_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Enable TRACES delivery for a Runtime resource.
 
         This is a convenience method for Runtime resources where:
@@ -284,7 +284,7 @@ class ObservabilityDeliveryManager:
         resource_arn: str,
         resource_id: str,
         log_group_arn: str,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Set up APPLICATION_LOGS delivery to CloudWatch Logs.
 
         This creates:
@@ -360,7 +360,7 @@ class ObservabilityDeliveryManager:
         self,
         resource_arn: str,
         resource_id: str,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Set up TRACES delivery to X-Ray.
 
         This creates:
@@ -427,7 +427,7 @@ class ObservabilityDeliveryManager:
         self,
         resource_id: str,
         delete_log_group: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Disable CloudWatch observability for a resource.
 
         This removes the delivery sources, destinations, and deliveries.
@@ -441,7 +441,7 @@ class ObservabilityDeliveryManager:
         Returns:
             Dict with status and list of deleted resources
         """
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "resource_id": resource_id,
             "deleted": [],
             "errors": [],
@@ -493,7 +493,7 @@ class ObservabilityDeliveryManager:
     def get_observability_status(
         self,
         resource_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Check the observability configuration status for a resource.
 
         Args:
@@ -502,7 +502,7 @@ class ObservabilityDeliveryManager:
         Returns:
             Dict with status information for logs and traces delivery
         """
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "resource_id": resource_id,
             "logs": {"configured": False},
             "traces": {"configured": False},
@@ -531,10 +531,10 @@ class ObservabilityDeliveryManager:
     def enable_for_memory(
         self,
         memory_id: str,
-        memory_arn: Optional[str] = None,
+        memory_arn: str | None = None,
         enable_logs: bool = True,
         enable_traces: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Enable observability for a memory resource.
 
         Convenience method that handles ARN construction if not provided.
@@ -553,10 +553,10 @@ class ObservabilityDeliveryManager:
     def enable_for_gateway(
         self,
         gateway_id: str,
-        gateway_arn: Optional[str] = None,
+        gateway_arn: str | None = None,
         enable_logs: bool = True,
         enable_traces: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Enable observability for a gateway resource.
 
         Convenience method that handles ARN construction if not provided.
@@ -576,7 +576,7 @@ class ObservabilityDeliveryManager:
         self,
         memory_id: str,
         delete_log_group: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Disable observability for a memory resource."""
         return self.disable_observability_for_resource(
             resource_id=memory_id,
@@ -587,7 +587,7 @@ class ObservabilityDeliveryManager:
         self,
         gateway_id: str,
         delete_log_group: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Disable observability for a gateway resource."""
         return self.disable_observability_for_resource(
             resource_id=gateway_id,
@@ -603,7 +603,7 @@ def enable_observability_for_resource(
     region: str = "us-east-1",
     enable_logs: bool = True,
     enable_traces: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Enable observability for a Bedrock AgentCore resource.
 
     This is a convenience function that matches the signature from AWS documentation.

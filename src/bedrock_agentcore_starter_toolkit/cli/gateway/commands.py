@@ -1,7 +1,6 @@
 """Bedrock AgentCore CLI - Command line interface for Bedrock AgentCore."""
 
 import json
-from typing import Optional
 
 import typer
 
@@ -15,14 +14,12 @@ gateway_app = typer.Typer(help="Manage Bedrock AgentCore Gateways")
 @gateway_app.command()
 def create_mcp_gateway(
     region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    name: Optional[str] = typer.Option(None, help="Name of the gateway (defaults to TestGateway)"),
-    role_arn: Optional[str] = typer.Option(
-        None, "--role-arn", help="IAM role ARN to use (creates one if not provided)"
-    ),
-    authorizer_config: Optional[str] = typer.Option(
+    name: str | None = typer.Option(None, help="Name of the gateway (defaults to TestGateway)"),
+    role_arn: str | None = typer.Option(None, "--role-arn", help="IAM role ARN to use (creates one if not provided)"),
+    authorizer_config: str | None = typer.Option(
         None, "--authorizer-config", help="Serialized authorizer config JSON (creates one if not provided)"
     ),
-    enable_semantic_search: Optional[bool] = typer.Option(
+    enable_semantic_search: bool | None = typer.Option(
         True, "--enable_semantic_search", "-sem", help="Enable semantic search tool"
     ),
 ) -> None:
@@ -49,16 +46,16 @@ def create_mcp_gateway_target(
     gateway_url: str = typer.Option(None, "--gateway-url", help="URL of the created gateway (required)"),
     role_arn: str = typer.Option(None, "--role-arn", help="IAM role ARN of the created gateway (required)"),
     region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    name: Optional[str] = typer.Option(None, help="Name of the target (defaults to TestGatewayTarget)"),
-    target_type: Optional[str] = typer.Option(
+    name: str | None = typer.Option(None, help="Name of the target (defaults to TestGatewayTarget)"),
+    target_type: str | None = typer.Option(
         None,
         "--target-type",
         help="Type of target: 'lambda', 'openApiSchema', 'mcpServer', or 'smithyModel' (defaults to 'lambda')",
     ),
-    target_payload: Optional[str] = typer.Option(
+    target_payload: str | None = typer.Option(
         None, "--target-payload", help="Target specification JSON (required for openApiSchema targets)"
     ),
-    credentials: Optional[str] = typer.Option(
+    credentials: str | None = typer.Option(
         None, help="Credentials JSON for target access (API key or OAuth2, for openApiSchema targets)"
     ),
 ) -> None:
@@ -101,9 +98,9 @@ def create_mcp_gateway_target(
 @gateway_app.command(name="delete-mcp-gateway")
 def delete_mcp_gateway(
     region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID to delete"),
-    name: Optional[str] = typer.Option(None, help="Gateway name to delete"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN to delete"),
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID to delete"),
+    name: str | None = typer.Option(None, help="Gateway name to delete"),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN to delete"),
     force: bool = typer.Option(False, "--force", help="Delete all targets before deleting the gateway"),
 ) -> None:
     """Deletes an MCP Gateway.
@@ -136,11 +133,11 @@ def delete_mcp_gateway(
 @gateway_app.command(name="delete-mcp-gateway-target")
 def delete_mcp_gateway_target(
     region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID"),
-    name: Optional[str] = typer.Option(None, help="Gateway name"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN"),
-    target_id: Optional[str] = typer.Option(None, "--target-id", help="Target ID to delete"),
-    target_name: Optional[str] = typer.Option(None, "--target-name", help="Target name to delete"),
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID"),
+    name: str | None = typer.Option(None, help="Gateway name"),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN"),
+    target_id: str | None = typer.Option(None, "--target-id", help="Target ID to delete"),
+    target_name: str | None = typer.Option(None, "--target-name", help="Target name to delete"),
 ) -> None:
     """Deletes an MCP Gateway Target.
 
@@ -169,7 +166,7 @@ def delete_mcp_gateway_target(
 @gateway_app.command(name="list-mcp-gateways")
 def list_mcp_gateways(
     region: str = typer.Option(None, help="AWS region to use"),
-    name: Optional[str] = typer.Option(None, help="Filter by gateway name"),
+    name: str | None = typer.Option(None, help="Filter by gateway name"),
     max_results: int = typer.Option(50, "--max-results", "-m", min=1, max=1000, help="Maximum number of results"),
 ) -> None:
     """Lists MCP Gateways.
@@ -189,9 +186,9 @@ def list_mcp_gateways(
 @gateway_app.command(name="get-mcp-gateway")
 def get_mcp_gateway(
     region: str = typer.Option(None, help="AWS region to use"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID"),
-    name: Optional[str] = typer.Option(None, help="Gateway name"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN"),
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID"),
+    name: str | None = typer.Option(None, help="Gateway name"),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN"),
 ) -> None:
     """Gets details for a specific MCP Gateway.
 
@@ -215,9 +212,9 @@ def get_mcp_gateway(
 @gateway_app.command(name="list-mcp-gateway-targets")
 def list_mcp_gateway_targets(
     region: str = typer.Option(None, help="AWS region to use"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID"),
-    name: Optional[str] = typer.Option(None, help="Gateway name"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN"),
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID"),
+    name: str | None = typer.Option(None, help="Gateway name"),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN"),
     max_results: int = typer.Option(
         50, "--max-results", "-m", min=1, max=1000, help="Maximum number of results to return"
     ),
@@ -246,11 +243,11 @@ def list_mcp_gateway_targets(
 @gateway_app.command(name="get-mcp-gateway-target")
 def get_mcp_gateway_target(
     region: str = typer.Option(None, help="AWS region to use"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID"),
-    name: Optional[str] = typer.Option(None, help="Gateway name "),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN"),
-    target_id: Optional[str] = typer.Option(None, "--target-id", help="Target ID"),
-    target_name: Optional[str] = typer.Option(None, "--target-name", help="Target name"),
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID"),
+    name: str | None = typer.Option(None, help="Gateway name "),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN"),
+    target_id: str | None = typer.Option(None, "--target-id", help="Target ID"),
+    target_name: str | None = typer.Option(None, "--target-name", help="Target name"),
 ) -> None:
     """Gets details for a specific Gateway Target.
 
@@ -279,11 +276,11 @@ def get_mcp_gateway_target(
 @gateway_app.command(name="update-gateway")
 def update_gateway(
     region: str = typer.Option(None, help="AWS region to use (defaults to us-west-2)"),
-    gateway_identifier: Optional[str] = typer.Option(None, "--id", help="Gateway ID to update"),
-    gateway_arn: Optional[str] = typer.Option(None, "--arn", help="Gateway ARN to update"),
-    description: Optional[str] = typer.Option(None, "--description", help="New gateway description"),
-    policy_engine_arn: Optional[str] = typer.Option(None, "--policy-engine-arn", help="Policy engine ARN to attach"),
-    policy_engine_mode: Optional[str] = typer.Option(
+    gateway_identifier: str | None = typer.Option(None, "--id", help="Gateway ID to update"),
+    gateway_arn: str | None = typer.Option(None, "--arn", help="Gateway ARN to update"),
+    description: str | None = typer.Option(None, "--description", help="New gateway description"),
+    policy_engine_arn: str | None = typer.Option(None, "--policy-engine-arn", help="Policy engine ARN to attach"),
+    policy_engine_mode: str | None = typer.Option(
         None, "--policy-engine-mode", help="Policy engine mode: LOG_ONLY or ENFORCE"
     ),
 ) -> None:

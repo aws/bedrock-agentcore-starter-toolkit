@@ -1,7 +1,6 @@
 """Bedrock AgentCore Policy CLI commands."""
 
 import json
-from typing import Optional
 
 import typer
 
@@ -19,10 +18,10 @@ policy_app = typer.Typer(help="Manage Bedrock AgentCore Policy Engines and Polic
 @requires_aws_creds
 def create_policy_engine(
     name: str = typer.Option(..., "--name", "-n", help="Name of the policy engine"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Policy engine description"),
-    encryption_key_arn: Optional[str] = typer.Option(None, "--encryption-key-arn", help="KMS key ARN for encryption"),
-    tags: Optional[str] = typer.Option(None, "--tags", help='Tags as JSON (e.g., \'{"Environment":"Prod"}\')'),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Policy engine description"),
+    encryption_key_arn: str | None = typer.Option(None, "--encryption-key-arn", help="KMS key ARN for encryption"),
+    tags: str | None = typer.Option(None, "--tags", help='Tags as JSON (e.g., \'{"Environment":"Prod"}\')'),
 ) -> None:
     """Create a new policy engine."""
     client = PolicyClient(region_name=region)
@@ -54,7 +53,7 @@ def create_policy_engine(
 @requires_aws_creds
 def get_policy_engine(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Get policy engine details."""
     client = PolicyClient(region_name=region)
@@ -76,8 +75,8 @@ def get_policy_engine(
 @requires_aws_creds
 def update_policy_engine(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Updated description"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Updated description"),
 ) -> None:
     """Update a policy engine."""
     client = PolicyClient(region_name=region)
@@ -95,9 +94,9 @@ def update_policy_engine(
 @policy_app.command("list-policy-engines")
 @requires_aws_creds
 def list_policy_engines(
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
-    next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    max_results: int | None = typer.Option(None, "--max-results", help="Maximum number of results"),
+    next_token: str | None = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
     """List policy engines."""
     from rich.table import Table
@@ -135,7 +134,7 @@ def list_policy_engines(
 @requires_aws_creds
 def delete_policy_engine(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Delete a policy engine."""
     client = PolicyClient(region_name=region)
@@ -160,9 +159,9 @@ def create_policy(
         "-def",
         help='Policy definition JSON (e.g., \'{"cedar":{"statement":"permit(...);"}}\')',
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Policy description"),
-    validation_mode: Optional[str] = typer.Option(
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Policy description"),
+    validation_mode: str | None = typer.Option(
         None, "--validation-mode", help="Validation mode (FAIL_ON_ANY_FINDINGS, IGNORE_ALL_FINDINGS)"
     ),
 ) -> None:
@@ -197,7 +196,7 @@ def create_policy(
 def get_policy(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Get policy details."""
     client = PolicyClient(region_name=region)
@@ -224,9 +223,9 @@ def update_policy(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
     definition: str = typer.Option(..., "--definition", "-def", help="Updated policy definition JSON"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Updated description"),
-    validation_mode: Optional[str] = typer.Option(
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Updated description"),
+    validation_mode: str | None = typer.Option(
         None, "--validation-mode", help="Validation mode (FAIL_ON_ANY_FINDINGS, IGNORE_ALL_FINDINGS)"
     ),
 ) -> None:
@@ -258,10 +257,10 @@ def update_policy(
 @requires_aws_creds
 def list_policies(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    target_resource_scope: Optional[str] = typer.Option(None, "--target-resource-scope", help="Filter by resource ARN"),
-    max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
-    next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    target_resource_scope: str | None = typer.Option(None, "--target-resource-scope", help="Filter by resource ARN"),
+    max_results: int | None = typer.Option(None, "--max-results", help="Maximum number of results"),
+    next_token: str | None = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
     """List policies."""
     from rich.table import Table
@@ -305,7 +304,7 @@ def list_policies(
 def delete_policy(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     policy_id: str = typer.Option(..., "--policy-id", "-p", help="Policy ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Delete a policy."""
     client = PolicyClient(region_name=region)
@@ -323,9 +322,9 @@ def create_policy_from_generation(
     name: str = typer.Option(..., "--name", "-n", help="Policy name"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Policy generation ID"),
     asset_id: str = typer.Option(..., "--asset-id", "-a", help="Policy generation asset ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Policy description"),
-    validation_mode: Optional[str] = typer.Option(
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Policy description"),
+    validation_mode: str | None = typer.Option(
         None, "--validation-mode", help="Validation mode (FAIL_ON_ANY_FINDINGS, IGNORE_ALL_FINDINGS)"
     ),
 ) -> None:
@@ -364,7 +363,7 @@ def start_policy_generation(
         "-c",
         help="Natural language policy description",
     ),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     r"""Start a policy generation workflow.
 
@@ -400,7 +399,7 @@ def start_policy_generation(
 def get_policy_generation(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Generation ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
 ) -> None:
     """Get policy generation details."""
     client = PolicyClient(region_name=region)
@@ -422,9 +421,9 @@ def get_policy_generation(
 def list_policy_generation_assets(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
     generation_id: str = typer.Option(..., "--generation-id", "-g", help="Generation ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
-    next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    max_results: int | None = typer.Option(None, "--max-results", help="Maximum number of results"),
+    next_token: str | None = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
     """List policy generation assets (generated policies)."""
     client = PolicyClient(region_name=region)
@@ -442,9 +441,9 @@ def list_policy_generation_assets(
 @requires_aws_creds
 def list_policy_generations(
     policy_engine_id: str = typer.Option(..., "--policy-engine-id", "-e", help="Policy engine ID"),
-    region: Optional[str] = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
-    max_results: Optional[int] = typer.Option(None, "--max-results", help="Maximum number of results"),
-    next_token: Optional[str] = typer.Option(None, "--next-token", help="Token for pagination"),
+    region: str | None = typer.Option(None, "--region", "-r", help="AWS region (default: us-east-1)"),
+    max_results: int | None = typer.Option(None, "--max-results", help="Maximum number of results"),
+    next_token: str | None = typer.Option(None, "--next-token", help="Token for pagination"),
 ) -> None:
     """List policy generations."""
     from rich.table import Table

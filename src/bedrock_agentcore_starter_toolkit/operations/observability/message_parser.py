@@ -9,7 +9,7 @@ Extracts:
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..constants import InstrumentationScopes
 
@@ -17,7 +17,7 @@ from ..constants import InstrumentationScopes
 class UnifiedLogParser:
     """OpenTelemetry-based parser for runtime logs."""
 
-    def parse(self, raw_message: Optional[Dict[str, Any]], timestamp: str) -> List[Dict[str, Any]]:
+    def parse(self, raw_message: dict[str, Any] | None, timestamp: str) -> list[dict[str, Any]]:
         """Parse structured data from an OpenTelemetry runtime log.
 
         Returns a list of items, each with a 'type' field:
@@ -42,7 +42,7 @@ class UnifiedLogParser:
         # 2. Extract messages (conversations)
         return self._extract_messages(raw_message, timestamp)
 
-    def _extract_exception(self, raw_message: Dict[str, Any], timestamp: str) -> Optional[Dict[str, Any]]:
+    def _extract_exception(self, raw_message: dict[str, Any], timestamp: str) -> dict[str, Any] | None:
         """Extract exception from OTEL attributes.
 
         OTEL format: attributes.exception.type, attributes.exception.message, attributes.exception.stacktrace
@@ -64,7 +64,7 @@ class UnifiedLogParser:
 
         return None
 
-    def _extract_messages(self, raw_message: Dict[str, Any], timestamp: str) -> List[Dict[str, Any]]:
+    def _extract_messages(self, raw_message: dict[str, Any], timestamp: str) -> list[dict[str, Any]]:
         """Extract conversation messages using scope-based routing.
 
         Routes to appropriate extractor based on scope.name:
@@ -90,7 +90,7 @@ class UnifiedLogParser:
         # Fallback: Generic OTEL extraction
         return self._extract_generic_otel(raw_message, body, timestamp)
 
-    def _get_role_from_event_name(self, event_name: str) -> Optional[str]:
+    def _get_role_from_event_name(self, event_name: str) -> str | None:
         """Infer message role from OTEL gen_ai event name.
 
         OTEL convention: gen_ai.{role}.message
@@ -109,7 +109,7 @@ class UnifiedLogParser:
 
         return None
 
-    def _extract_content(self, body: Dict[str, Any]) -> Optional[str]:
+    def _extract_content(self, body: dict[str, Any]) -> str | None:
         """Extract text content from body.
 
         OTEL GenAI format: body.content (string or array of content parts)
@@ -139,8 +139,8 @@ class UnifiedLogParser:
         return None
 
     def _extract_generic_otel(
-        self, raw_message: Dict[str, Any], body: Dict[str, Any], timestamp: str
-    ) -> List[Dict[str, Any]]:
+        self, raw_message: dict[str, Any], body: dict[str, Any], timestamp: str
+    ) -> list[dict[str, Any]]:
         """Extract from generic OTEL format (gen_ai events or input/output structure)."""
         attributes = raw_message.get("attributes", {})
         event_name = attributes.get("event.name", "") if isinstance(attributes, dict) else ""
@@ -164,11 +164,11 @@ class UnifiedLogParser:
 
         return []
 
-    def _extract_from_strands(self, body: Dict[str, Any], timestamp: str) -> List[Dict[str, Any]]:
+    def _extract_from_strands(self, body: dict[str, Any], timestamp: str) -> list[dict[str, Any]]:
         """Extract from Strands instrumentation (uses standard input/output structure)."""
         return self._extract_from_input_output(body, timestamp)
 
-    def _extract_from_input_output(self, body: Dict[str, Any], timestamp: str) -> List[Dict[str, Any]]:
+    def _extract_from_input_output(self, body: dict[str, Any], timestamp: str) -> list[dict[str, Any]]:
         """Extract from input/output structure.
 
         Format: {"input": {"messages": [...]}, "output": {"messages": [...]}}
@@ -204,7 +204,7 @@ class UnifiedLogParser:
 
         return messages
 
-    def _extract_from_langchain(self, body: Dict[str, Any], timestamp: str) -> List[Dict[str, Any]]:
+    def _extract_from_langchain(self, body: dict[str, Any], timestamp: str) -> list[dict[str, Any]]:
         """Extract from LangChain/LangGraph - parse JSON string and extract content."""
         messages = []
 
@@ -220,7 +220,7 @@ class UnifiedLogParser:
 
         return messages
 
-    def _parse_langchain_input(self, body: Dict[str, Any]) -> Optional[str]:
+    def _parse_langchain_input(self, body: dict[str, Any]) -> str | None:
         """Parse LangChain input message."""
         try:
             input_data = body.get("input", {}).get("messages", [])
@@ -237,7 +237,7 @@ class UnifiedLogParser:
         except (json.JSONDecodeError, KeyError, IndexError, AttributeError):
             return None
 
-    def _parse_langchain_output(self, body: Dict[str, Any]) -> Optional[str]:
+    def _parse_langchain_output(self, body: dict[str, Any]) -> str | None:
         """Parse LangChain output message with tool calls."""
         try:
             output_data = body.get("output", {}).get("messages", [])
@@ -270,7 +270,7 @@ class UnifiedLogParser:
         except (json.JSONDecodeError, KeyError, IndexError, AttributeError):
             return None
 
-    def _format_langchain_content(self, content: Any, tool_calls: list) -> Optional[str]:
+    def _format_langchain_content(self, content: Any, tool_calls: list) -> str | None:
         """Format LangChain content (string or list) with tool calls."""
         parts = []
 
@@ -291,7 +291,7 @@ class UnifiedLogParser:
 
         return "\n".join(parts) if parts else None
 
-    def _extract_text_from_array(self, content: list) -> Optional[str]:
+    def _extract_text_from_array(self, content: list) -> str | None:
         """Extract text from array of content parts (OTEL multimodal format)."""
         text_parts = []
         for item in content:

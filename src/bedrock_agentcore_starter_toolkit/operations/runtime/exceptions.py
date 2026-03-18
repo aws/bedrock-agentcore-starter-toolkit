@@ -1,7 +1,5 @@
 """Exceptions for the Bedrock AgentCore Runtime module."""
 
-from typing import List, Optional
-
 
 class RuntimeException(Exception):
     """Base exception for all Runtime SDK errors."""
@@ -12,7 +10,7 @@ class RuntimeException(Exception):
 class RuntimeToolkitException(RuntimeException):
     """Raised when runtime operations fail with resource tracking."""
 
-    def __init__(self, message: str, created_resources: Optional[List[str]] = None):
+    def __init__(self, message: str, created_resources: list[str] | None = None):
         """Initialize RuntimeToolkitException with optional resource tracking.
 
         Args:

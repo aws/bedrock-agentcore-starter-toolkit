@@ -10,7 +10,6 @@ import subprocess  # nosec B404 - subprocess is required for pip/uv package inst
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import List, Optional
 
 import boto3
 
@@ -42,9 +41,9 @@ class PackageCache:
     def should_rebuild_dependencies(
         self,
         requirements_file: Path,
-        user_lock_file: Optional[Path],
+        user_lock_file: Path | None,
         force: bool,
-        runtime_version: Optional[str] = None,
+        runtime_version: str | None = None,
     ) -> bool:
         """Determine if dependencies need rebuilding using multi-signal detection.
 
@@ -85,7 +84,7 @@ class PackageCache:
         return False
 
     def save_dependencies_hash(
-        self, requirements_file: Path, user_lock_file: Optional[Path], runtime_version: Optional[str] = None
+        self, requirements_file: Path, user_lock_file: Path | None, runtime_version: str | None = None
     ) -> None:
         """Save combined hash of requirements file, uv.lock, and runtime version for future comparisons.
 
@@ -110,7 +109,7 @@ class PackageCache:
         return hashlib.sha256(file_path.read_bytes()).hexdigest()
 
     def _compute_combined_hash(
-        self, requirements_file: Path, user_lock_file: Optional[Path], runtime_version: Optional[str] = None
+        self, requirements_file: Path, user_lock_file: Path | None, runtime_version: str | None = None
     ) -> str:
         """Compute combined hash of requirements file, uv.lock, and runtime version.
 
@@ -156,7 +155,7 @@ class CodeZipPackager:
         agent_name: str,
         cache_dir: Path,
         runtime_version: str,
-        requirements_file: Optional[Path] = None,
+        requirements_file: Path | None = None,
         force_rebuild_deps: bool = False,
     ) -> tuple[Path, bool]:
         """Create deployment.zip with smart dependency caching.
@@ -268,7 +267,7 @@ class CodeZipPackager:
                         arcname = file_path.relative_to(package_dir)
                         zipf.write(file_path, arcname)
 
-    def _check_otel_distro(self, requirements_file: Optional[Path]) -> bool:
+    def _check_otel_distro(self, requirements_file: Path | None) -> bool:
         """Check if aws-opentelemetry-distro is in requirements.
 
         Args:
@@ -434,9 +433,7 @@ class CodeZipPackager:
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Failed to install dependencies with uv: {e.stderr}") from e
 
-    def _build_uv_command(
-        self, requirements: Path, target: Path, py_version: str, platform: Optional[str]
-    ) -> List[str]:
+    def _build_uv_command(self, requirements: Path, target: Path, py_version: str, platform: str | None) -> list[str]:
         """Build uv pip install command.
 
         Args:
@@ -515,7 +512,7 @@ class CodeZipPackager:
 
                     zipf.write(Path(root) / file, file_rel)
 
-    def _merge_zips(self, dependencies_zip: Optional[Path], direct_code_deploy: Path, output_zip: Path) -> None:
+    def _merge_zips(self, dependencies_zip: Path | None, direct_code_deploy: Path, output_zip: Path) -> None:
         """Merge dependencies and code layers into deployment.zip.
 
         Args:
@@ -539,7 +536,7 @@ class CodeZipPackager:
                     original_info = code.getinfo(item)
                     out.writestr(original_info, code.read(item))
 
-    def _get_ignore_patterns(self) -> List[str]:
+    def _get_ignore_patterns(self) -> list[str]:
         """Get ignore patterns from dockerignore.template (matches CodeBuild logic).
 
         Returns:
@@ -578,7 +575,7 @@ class CodeZipPackager:
                 ".bedrock_agentcore",
             ]
 
-    def _should_ignore(self, path: str, patterns: List[str], is_dir: bool) -> bool:
+    def _should_ignore(self, path: str, patterns: list[str], is_dir: bool) -> bool:
         """Check if path should be ignored based on dockerignore patterns.
 
         Args:

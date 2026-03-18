@@ -1,7 +1,5 @@
 """Generic aws utilities."""
 
-from typing import Optional
-
 import boto3
 from botocore.exceptions import (
     ClientError,
@@ -43,7 +41,7 @@ def get_region() -> str:
     return boto3.Session().region_name or DEFAULT_REGION
 
 
-def ensure_valid_aws_creds() -> tuple[bool, Optional[str]]:
+def ensure_valid_aws_creds() -> tuple[bool, str | None]:
     """Try to make an sts call and return a resourceful message if it fails."""
     try:
         get_account_id()

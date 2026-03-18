@@ -1,7 +1,6 @@
 """User-friendly Evaluation client for Python scripts and notebooks."""
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from rich.console import Console
 
@@ -42,8 +41,8 @@ class Evaluation:
 
     def __init__(
         self,
-        region: Optional[str] = None,
-        endpoint_url: Optional[str] = None,
+        region: str | None = None,
+        endpoint_url: str | None = None,
     ):
         """Initialize Evaluation client.
 
@@ -83,8 +82,8 @@ class Evaluation:
 
     @classmethod
     def from_config(
-        cls, config_path: Optional[Path] = None, agent_name: Optional[str] = None
-    ) -> tuple["Evaluation", str, Optional[str]]:
+        cls, config_path: Path | None = None, agent_name: str | None = None
+    ) -> tuple["Evaluation", str, str | None]:
         """Create Evaluation client from config file.
 
         Args:
@@ -120,7 +119,7 @@ class Evaluation:
             agent_config.bedrock_agentcore.agent_session_id,
         )
 
-    def get_latest_session(self, agent_id: str) -> Optional[str]:
+    def get_latest_session(self, agent_id: str) -> str | None:
         """Get the latest session ID for the specified agent.
 
         Args:
@@ -156,10 +155,10 @@ class Evaluation:
     def run(
         self,
         agent_id: str,
-        session_id: Optional[str] = None,
-        evaluators: Optional[List[str]] = None,
-        trace_id: Optional[str] = None,
-        output: Optional[str] = None,
+        session_id: str | None = None,
+        evaluators: list[str] | None = None,
+        trace_id: str | None = None,
+        output: str | None = None,
     ) -> EvaluationResults:
         """Run evaluation on a session (mirrors: agentcore eval run).
 
@@ -251,7 +250,7 @@ class Evaluation:
     # Evaluator Management Methods
     # ===========================
 
-    def list_evaluators(self, max_results: int = 50) -> Dict:
+    def list_evaluators(self, max_results: int = 50) -> dict:
         """List all evaluators (mirrors: agentcore eval evaluator list).
 
         Args:
@@ -272,7 +271,7 @@ class Evaluation:
         display_evaluator_list(evaluators, self.console)
         return response
 
-    def get_evaluator(self, evaluator_id: str, output: Optional[str] = None) -> Dict:
+    def get_evaluator(self, evaluator_id: str, output: str | None = None) -> dict:
         """Get detailed information about an evaluator (mirrors: agentcore eval evaluator get).
 
         Args:
@@ -302,8 +301,8 @@ class Evaluation:
         self,
         source_evaluator_id: str,
         new_name: str,
-        description: Optional[str] = None,
-    ) -> Dict:
+        description: str | None = None,
+    ) -> dict:
         """Duplicate a custom evaluator (mirrors: agentcore eval evaluator create interactive).
 
         Args:
@@ -341,10 +340,10 @@ class Evaluation:
     def create_evaluator(
         self,
         name: str,
-        config: Dict,
+        config: dict,
         level: str = "TRACE",
-        description: Optional[str] = None,
-    ) -> Dict:
+        description: str | None = None,
+    ) -> dict:
         """Create a custom evaluator (mirrors: agentcore eval evaluator create).
 
         Args:
@@ -393,9 +392,9 @@ class Evaluation:
     def update_evaluator(
         self,
         evaluator_id: str,
-        description: Optional[str] = None,
-        config: Optional[Dict] = None,
-    ) -> Dict:
+        description: str | None = None,
+        config: dict | None = None,
+    ) -> dict:
         """Update a custom evaluator (mirrors: agentcore eval evaluator update).
 
         Args:
@@ -444,15 +443,15 @@ class Evaluation:
     def create_online_config(
         self,
         config_name: str,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         agent_endpoint: str = "DEFAULT",
-        config_description: Optional[str] = None,
+        config_description: str | None = None,
         sampling_rate: float = 1.0,
-        evaluator_list: Optional[List[str]] = None,
-        execution_role: Optional[str] = None,
+        evaluator_list: list[str] | None = None,
+        execution_role: str | None = None,
         auto_create_execution_role: bool = True,
         enable_on_create: bool = True,
-    ) -> Dict:
+    ) -> dict:
         """Create online evaluation configuration (mirrors: agentcore eval online create).
 
         Enables continuous automatic evaluation of agent interactions by monitoring
@@ -508,7 +507,7 @@ class Evaluation:
 
         return response
 
-    def get_online_config(self, config_id: str) -> Dict:
+    def get_online_config(self, config_id: str) -> dict:
         """Get online evaluation configuration details (mirrors: agentcore eval online get).
 
         Args:
@@ -529,7 +528,7 @@ class Evaluation:
 
         return response
 
-    def list_online_configs(self, agent_id: Optional[str] = None, max_results: int = 50) -> Dict:
+    def list_online_configs(self, agent_id: str | None = None, max_results: int = 50) -> dict:
         """List online evaluation configurations (mirrors: agentcore eval online list).
 
         Args:
@@ -562,11 +561,11 @@ class Evaluation:
     def update_online_config(
         self,
         config_id: str,
-        status: Optional[str] = None,
-        sampling_rate: Optional[float] = None,
-        evaluator_list: Optional[List[str]] = None,
-        description: Optional[str] = None,
-    ) -> Dict:
+        status: str | None = None,
+        sampling_rate: float | None = None,
+        evaluator_list: list[str] | None = None,
+        description: str | None = None,
+    ) -> dict:
         """Update online evaluation configuration (mirrors: agentcore eval online update).
 
         Args:

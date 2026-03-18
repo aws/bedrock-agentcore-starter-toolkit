@@ -1,7 +1,5 @@
 """Implements code generation for supported SDK and IaC providers."""
 
-from typing import Type
-
 from ..constants import IACProvider, SDKProvider
 from ..types import CreateIACProvider, CreateSDKProvider
 from .autogen.feature import AutogenFeature
@@ -14,7 +12,7 @@ from .openaiagents.feature import OpenAIAgentsFeature
 from .strands.feature import StrandsFeature
 from .terraform.feature import TerraformFeature
 
-sdk_feature_registry: dict[CreateSDKProvider, Type[Feature]] = {
+sdk_feature_registry: dict[CreateSDKProvider, type[Feature]] = {
     SDKProvider.STRANDS: StrandsFeature,
     SDKProvider.LANG_CHAIN_LANG_GRAPH: LangChainLangGraphFeature,
     SDKProvider.GOOGLE_ADK: GoogleADKFeature,
@@ -23,7 +21,7 @@ sdk_feature_registry: dict[CreateSDKProvider, Type[Feature]] = {
     SDKProvider.AUTOGEN: AutogenFeature,
 }
 
-iac_feature_registry: dict[CreateIACProvider, Type[Feature]] = {
+iac_feature_registry: dict[CreateIACProvider, type[Feature]] = {
     IACProvider.CDK: CDKFeature,
     IACProvider.TERRAFORM: TerraformFeature,
 }

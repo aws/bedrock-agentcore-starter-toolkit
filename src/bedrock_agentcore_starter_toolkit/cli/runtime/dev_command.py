@@ -5,7 +5,6 @@ import os
 import socket
 import subprocess  # nosec B404 - subprocess required for running uvicorn dev server
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import typer
 
@@ -23,8 +22,8 @@ DEFAULT_MODULE_PATH = "src.main:app"
 
 
 def dev(
-    port: Optional[int] = typer.Option(None, "--port", "-p", help="Port for development server (default: 8080)"),
-    envs: List[str] = typer.Option(  # noqa: B008
+    port: int | None = typer.Option(None, "--port", "-p", help="Port for development server (default: 8080)"),
+    envs: list[str] = typer.Option(  # noqa: B008
         None, "--env", "-env", help="Environment variables for agent (format: KEY=VALUE)"
     ),
 ):
@@ -126,7 +125,7 @@ def _has_dev_script(project_dir: Path) -> bool:
         return False
 
 
-def _build_typescript_command(config_path: Path, port: str) -> List[str]:
+def _build_typescript_command(config_path: Path, port: str) -> list[str]:
     """Build command for TypeScript dev server."""
     project_dir = Path.cwd()
     if _has_dev_script(project_dir):
@@ -168,7 +167,7 @@ def _get_module_path_and_agent_name(config_path: Path) -> tuple[str, str]:
     return DEFAULT_MODULE_PATH, "default"
 
 
-def _get_env_vars(config_path: Path) -> Dict[str, str]:
+def _get_env_vars(config_path: Path) -> dict[str, str]:
     env_vars = dict()
     if not config_path.exists():
         return env_vars
@@ -186,7 +185,7 @@ def _get_env_vars(config_path: Path) -> Dict[str, str]:
     return env_vars
 
 
-def _ensure_config(config_path: Path) -> Tuple[bool, bool]:
+def _ensure_config(config_path: Path) -> tuple[bool, bool]:
     """Ensure that project configuration and entrypoint file are defined."""
     has_config = config_path.exists()
     has_default_entrypoint = Path("src/main.py").exists()
@@ -220,7 +219,7 @@ def _get_module_path_from_config(config_path: Path, agent_config) -> str:
         return f"{entrypoint_path.stem}:app"
 
 
-def _setup_dev_environment(envs: List[str], port: Optional[int], config_path: Path) -> tuple[dict, bool, int]:
+def _setup_dev_environment(envs: list[str], port: int | None, config_path: Path) -> tuple[dict, bool, int]:
     """Parse environment variables and setup development environment with port handling.
 
     Environment variable precedence (lowest to highest):

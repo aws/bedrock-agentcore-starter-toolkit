@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.box import ROUNDED
 from rich.console import Console
@@ -38,15 +38,13 @@ logger = logging.getLogger(__name__)
 class MemoryVisualizer:
     """Visualizer for displaying memory resources in human-readable format."""
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         """Initialize the memory visualizer."""
         self.console = console or Console()
 
     # ==================== Build Methods (return renderables) ====================
 
-    def build_memory_tree(
-        self, memory: Dict[str, Any], verbose: bool = False, actor_count: Optional[int] = None
-    ) -> Tree:
+    def build_memory_tree(self, memory: dict[str, Any], verbose: bool = False, actor_count: int | None = None) -> Tree:
         """Build a memory tree renderable.
 
         Args:
@@ -67,7 +65,7 @@ class MemoryVisualizer:
         self._add_memory_strategies(tree, data, verbose)
         return tree
 
-    def build_actors_table(self, actors: List[Dict[str, Any]], memory_id: str) -> Table:
+    def build_actors_table(self, actors: list[dict[str, Any]], memory_id: str) -> Table:
         """Build an actors table renderable.
 
         Args:
@@ -85,7 +83,7 @@ class MemoryVisualizer:
             table.add_row(str(idx), actor.get("actorId", "N/A"))
         return table
 
-    def build_sessions_table(self, sessions: List[Dict[str, Any]], actor_id: str) -> Table:
+    def build_sessions_table(self, sessions: list[dict[str, Any]], actor_id: str) -> Table:
         """Build a sessions table renderable.
 
         Args:
@@ -103,7 +101,7 @@ class MemoryVisualizer:
             table.add_row(str(idx), session.get("sessionId", "N/A"))
         return table
 
-    def build_events_table(self, events: List[Dict[str, Any]], session_id: str, verbose: bool = False) -> Table:
+    def build_events_table(self, events: list[dict[str, Any]], session_id: str, verbose: bool = False) -> Table:
         """Build an events table renderable.
 
         Args:
@@ -128,7 +126,7 @@ class MemoryVisualizer:
             table.add_row(str(idx), timestamp, format_role_icon(role), content)
         return table
 
-    def build_event_detail(self, event: Dict[str, Any], verbose: bool = False) -> Panel:
+    def build_event_detail(self, event: dict[str, Any], verbose: bool = False) -> Panel:
         """Build an event detail panel renderable.
 
         Args:
@@ -172,7 +170,7 @@ class MemoryVisualizer:
 
         return Panel("\n".join(lines), title="Event Detail", border_style="cyan")
 
-    def build_namespaces_table(self, strategies: List[Dict[str, Any]], memory_id: str) -> Table:
+    def build_namespaces_table(self, strategies: list[dict[str, Any]], memory_id: str) -> Table:
         """Build a namespaces table renderable.
 
         Args:
@@ -197,7 +195,7 @@ class MemoryVisualizer:
                 idx += 1
         return table
 
-    def build_records_table(self, records: List[Dict[str, Any]], namespace: str, verbose: bool = False) -> Table:
+    def build_records_table(self, records: list[dict[str, Any]], namespace: str, verbose: bool = False) -> Table:
         """Build a records table renderable.
 
         Args:
@@ -222,9 +220,7 @@ class MemoryVisualizer:
             table.add_row(str(idx), record_id, created, content)
         return table
 
-    def build_record_detail(
-        self, record: Dict[str, Any], verbose: bool = False, namespace: Optional[str] = None
-    ) -> Panel:
+    def build_record_detail(self, record: dict[str, Any], verbose: bool = False, namespace: str | None = None) -> Panel:
         """Build a record detail panel renderable.
 
         Args:
@@ -250,14 +246,12 @@ class MemoryVisualizer:
 
     # ==================== Memory Details ====================
 
-    def visualize_memory(
-        self, memory: Dict[str, Any], verbose: bool = False, actor_count: Optional[int] = None
-    ) -> None:
+    def visualize_memory(self, memory: dict[str, Any], verbose: bool = False, actor_count: int | None = None) -> None:
         """Visualize a memory resource as a hierarchical tree."""
         tree = self.build_memory_tree(memory, verbose, actor_count)
         self.console.print(tree)
 
-    def _extract_memory_data(self, memory: Any) -> Dict[str, Any]:
+    def _extract_memory_data(self, memory: Any) -> dict[str, Any]:
         """Extract data dict from memory object."""
         if hasattr(memory, "get"):
             return memory
@@ -274,7 +268,7 @@ class MemoryVisualizer:
         header.append(f" ({icon}{status})", style=style)
         return header
 
-    def _add_memory_info(self, tree: Tree, data: Dict[str, Any], verbose: bool, actor_count: Optional[int]) -> None:
+    def _add_memory_info(self, tree: Tree, data: dict[str, Any], verbose: bool, actor_count: int | None) -> None:
         """Add info section to memory tree."""
         info_branch = tree.add("📋 [bold]Info[/bold]")
 
@@ -299,7 +293,7 @@ class MemoryVisualizer:
         if actor_count is not None:
             info_branch.add(f"[dim]Actors:[/dim] {actor_count}")
 
-    def _add_memory_strategies(self, tree: Tree, data: Dict[str, Any], verbose: bool) -> None:
+    def _add_memory_strategies(self, tree: Tree, data: dict[str, Any], verbose: bool) -> None:
         """Add strategies section to memory tree."""
         strategies = data.get("strategies") or data.get("memoryStrategies") or []
 
@@ -311,7 +305,7 @@ class MemoryVisualizer:
         for strategy in strategies:
             self._add_strategy_node(strategies_branch, strategy, verbose)
 
-    def _add_strategy_node(self, parent: Tree, strategy: Dict[str, Any], verbose: bool) -> None:
+    def _add_strategy_node(self, parent: Tree, strategy: dict[str, Any], verbose: bool) -> None:
         """Add a strategy node to the tree."""
         strategy_name = strategy.get("name", "Unnamed")
         strategy_type = strategy.get("type") or strategy.get("memoryStrategyType", "UNKNOWN")
@@ -351,7 +345,7 @@ class MemoryVisualizer:
         header.append(f" ({status_icon}{status})", style=status_style)
         return header
 
-    def _add_config_tree(self, parent: Tree, config: Dict[str, Any]) -> None:
+    def _add_config_tree(self, parent: Tree, config: dict[str, Any]) -> None:
         """Add configuration subtree."""
         config_branch = parent.add("[dim]Configuration:[/dim]")
         for key, value in config.items():
@@ -363,7 +357,7 @@ class MemoryVisualizer:
 
     # ==================== Memory List ====================
 
-    def display_memory_list(self, memories: List[Dict[str, Any]], manager: Any = None) -> None:
+    def display_memory_list(self, memories: list[dict[str, Any]], manager: Any = None) -> None:
         """Display memories in a table format."""
         if not memories:
             self.console.print("[yellow]No memories found.[/yellow]")
@@ -423,9 +417,9 @@ class MemoryVisualizer:
         max_actors: int = 10,
         max_sessions: int = 10,
         max_events: int = 10,
-        actor_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        output: Optional[str] = None,
+        actor_id: str | None = None,
+        session_id: str | None = None,
+        output: str | None = None,
         verbose: bool = False,
     ) -> None:
         """Display events as a tree: memory -> actors -> sessions -> events."""
@@ -450,7 +444,7 @@ class MemoryVisualizer:
 
         self._output_or_print(root, export_data, output, "events")
 
-    def _get_actors(self, manager: Any, memory_id: str, actor_id: Optional[str], max_actors: int) -> tuple:
+    def _get_actors(self, manager: Any, memory_id: str, actor_id: str | None, max_actors: int) -> tuple:
         """Get actors list (filtered or all)."""
         if actor_id:
             return [{"actorId": actor_id}], 1
@@ -462,12 +456,12 @@ class MemoryVisualizer:
         root: Tree,
         manager: Any,
         memory_id: str,
-        actor: Dict[str, Any],
+        actor: dict[str, Any],
         max_sessions: int,
         max_events: int,
-        session_id: Optional[str],
+        session_id: str | None,
         verbose: bool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build actor subtree with sessions and events."""
         aid = actor.get("actorId", "N/A")
         actor_data = {"actorId": aid, "sessions": []}
@@ -491,7 +485,7 @@ class MemoryVisualizer:
         return actor_data
 
     def _get_sessions(
-        self, manager: Any, memory_id: str, actor_id: str, session_id: Optional[str], max_sessions: int
+        self, manager: Any, memory_id: str, actor_id: str, session_id: str | None, max_sessions: int
     ) -> tuple:
         """Get sessions list (filtered or all)."""
         if session_id:
@@ -505,10 +499,10 @@ class MemoryVisualizer:
         manager: Any,
         memory_id: str,
         actor_id: str,
-        session: Dict[str, Any],
+        session: dict[str, Any],
         max_events: int,
         verbose: bool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build session subtree with events."""
         sid = session.get("sessionId", "N/A")
         session_data = {"sessionId": sid, "events": []}
@@ -533,9 +527,9 @@ class MemoryVisualizer:
 
         return session_data
 
-    def _group_events_by_branch(self, events: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    def _group_events_by_branch(self, events: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         """Group events by branch name."""
-        branches: Dict[str, List[Dict[str, Any]]] = {}
+        branches: dict[str, list[dict[str, Any]]] = {}
         for event in events:
             branch_name = event.get("branch", {}).get("name", "main")
             if branch_name not in branches:
@@ -543,7 +537,7 @@ class MemoryVisualizer:
             branches[branch_name].append(event)
         return branches
 
-    def _add_event_node(self, branch_tree: Tree, event: Dict[str, Any], verbose: bool) -> None:
+    def _add_event_node(self, branch_tree: Tree, event: dict[str, Any], verbose: bool) -> None:
         """Add a single event node to the tree."""
         timestamp = str(event.get("eventTimestamp", ""))[:19]
         text_content = extract_event_text(event)
@@ -566,7 +560,7 @@ class MemoryVisualizer:
 
     # ==================== Single Event/Record Display ====================
 
-    def display_single_event(self, event: Dict[str, Any], nth: int, total: int, verbose: bool) -> None:
+    def display_single_event(self, event: dict[str, Any], nth: int, total: int, verbose: bool) -> None:
         """Display a single event with details."""
         self.console.print(f"[bold]Event[/bold] ({self._format_position_label(nth, total)})\n")
 
@@ -588,7 +582,7 @@ class MemoryVisualizer:
             self.console.print()
             self._print_content_panel(text_content, verbose)
 
-    def display_single_record(self, record: Dict[str, Any], nth: int, total: int, verbose: bool) -> None:
+    def display_single_record(self, record: dict[str, Any], nth: int, total: int, verbose: bool) -> None:
         """Display a single record with details."""
         self.console.print(f"[bold]Record[/bold] ({self._format_position_label(nth, total)})\n")
 
@@ -622,7 +616,7 @@ class MemoryVisualizer:
         namespace: str,
         verbose: bool,
         max_results: int,
-        output: Optional[str] = None,
+        output: str | None = None,
     ) -> None:
         """Display records for a specific namespace."""
         root = Tree(f"🧠 [bold cyan]{memory_id}[/bold cyan]")
@@ -645,7 +639,7 @@ class MemoryVisualizer:
         memory_id: str,
         verbose: bool,
         max_results: int,
-        output: Optional[str] = None,
+        output: str | None = None,
     ) -> None:
         """Display records as a tree by namespace."""
         memory = manager.get_memory(memory_id)
@@ -664,10 +658,10 @@ class MemoryVisualizer:
         root: Tree,
         manager: Any,
         memory_id: str,
-        strategy: Dict[str, Any],
+        strategy: dict[str, Any],
         verbose: bool,
         max_results: int,
-        export_data: Dict[str, Any],
+        export_data: dict[str, Any],
     ) -> None:
         """Add strategy records subtree."""
         strategy_name = strategy.get("name", "Unknown")
@@ -693,9 +687,9 @@ class MemoryVisualizer:
         self,
         parent: Tree,
         namespace: str,
-        records: List[Dict[str, Any]],
+        records: list[dict[str, Any]],
         verbose: bool,
-        export_list: List[Dict[str, Any]],
+        export_list: list[dict[str, Any]],
     ) -> None:
         """Add records to a tree branch."""
         records.sort(key=lambda r: r.get("createdAt", ""))
@@ -714,7 +708,7 @@ class MemoryVisualizer:
         if hint:
             ns_branch.add(hint)
 
-    def _resolve_namespace(self, manager: Any, memory_id: str, ns_template: str) -> List[str]:
+    def _resolve_namespace(self, manager: Any, memory_id: str, ns_template: str) -> list[str]:
         """Resolve namespace template to actual namespaces."""
         if "{actorId}" not in ns_template and "{sessionId}" not in ns_template:
             return [ns_template]
@@ -738,7 +732,7 @@ class MemoryVisualizer:
 
         return resolved
 
-    def display_search_results(self, records: List[Dict[str, Any]], query: str, verbose: bool) -> None:
+    def display_search_results(self, records: list[dict[str, Any]], query: str, verbose: bool) -> None:
         """Display semantic search results."""
         self.console.print(f'[bold]Search Results[/bold] for "{query}" ({len(records)} found)\n')
 
@@ -757,7 +751,7 @@ class MemoryVisualizer:
 
     # ==================== Utility Methods ====================
 
-    def _output_or_print(self, tree: Tree, data: Dict[str, Any], output: Optional[str], label: str) -> None:
+    def _output_or_print(self, tree: Tree, data: dict[str, Any], output: str | None, label: str) -> None:
         """Output to file or print to console."""
         if output:
             path = Path(output)

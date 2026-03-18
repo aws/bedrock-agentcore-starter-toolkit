@@ -5,7 +5,6 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -216,7 +215,7 @@ def _ensure_identity_permissions(
     agent_config: BedrockAgentCoreAgentSchema,
     region: str,
     account_id: str,
-    console: Optional[Console] = None,
+    console: Console | None = None,
 ) -> None:
     """Add Identity service permissions to execution role if credential providers configured."""
     if not agent_config.identity or not agent_config.identity.is_enabled:
@@ -262,7 +261,7 @@ def _ensure_aws_jwt_permissions(
     agent_config: BedrockAgentCoreAgentSchema,
     region: str,
     account_id: str,
-    console: Optional[Console] = None,
+    console: Console | None = None,
 ) -> None:
     """Add AWS IAM JWT (STS:GetWebIdentityToken) permissions to execution role if configured."""
     # Check if AWS JWT is configured
@@ -387,8 +386,8 @@ def _ensure_memory_for_agent(
     project_config: BedrockAgentCoreConfigSchema,
     config_path: Path,
     agent_name: str,
-    console: Optional[Console] = None,
-) -> Optional[str]:
+    console: Console | None = None,
+) -> str | None:
     """Ensure memory resource exists for agent. Returns memory_id or None.
 
     This function is idempotent - it creates memory if needed or reuses existing.
@@ -559,7 +558,7 @@ def _deploy_to_bedrock_agentcore(
     ecr_uri: str,
     region: str,
     account_id: str,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
     auto_update_on_conflict: bool = False,
 ):
     """Deploy agent to Bedrock AgentCore with retry logic for role validation."""
@@ -694,7 +693,7 @@ def _deploy_to_bedrock_agentcore(
     return agent_id, agent_arn
 
 
-def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: List[str], region: str) -> None:
+def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: list[str], region: str) -> None:
     """Verify VPC deployment created ENIs in the specified subnets."""
     ec2_client = session.client("ec2", region_name=region)
 
@@ -727,7 +726,7 @@ def _check_vpc_deployment(session: boto3.Session, agent_id: str, vpc_subnets: Li
 
 def _launch_direct_code_deploy_local(
     agent_config: BedrockAgentCoreAgentSchema,
-    env_vars: Optional[dict],
+    env_vars: dict | None,
 ) -> LaunchResult:
     """Prepare for local direct_code_deploy execution using uv python."""
     import shutil
@@ -783,14 +782,14 @@ def _launch_direct_code_deploy_local(
 
 def launch_bedrock_agentcore(
     config_path: Path,
-    agent_name: Optional[str] = None,
+    agent_name: str | None = None,
     local: bool = False,
     use_codebuild: bool = True,
-    env_vars: Optional[dict] = None,
+    env_vars: dict | None = None,
     auto_update_on_conflict: bool = False,
-    console: Optional[Console] = None,
+    console: Console | None = None,
     force_rebuild_deps: bool = False,
-    image_tag: Optional[str] = None,
+    image_tag: str | None = None,
 ) -> LaunchResult:
     """Launch Bedrock AgentCore locally or to cloud.
 
@@ -1036,8 +1035,8 @@ def _execute_codebuild_workflow(
     project_config,
     ecr_only: bool = False,
     auto_update_on_conflict: bool = False,
-    env_vars: Optional[dict] = None,
-    image_tag: Optional[str] = None,
+    env_vars: dict | None = None,
+    image_tag: str | None = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     log.info(
@@ -1164,9 +1163,9 @@ def _launch_with_codebuild(
     agent_config,
     project_config,
     auto_update_on_conflict: bool = False,
-    env_vars: Optional[dict] = None,
-    console: Optional[Console] = None,
-    image_tag: Optional[str] = None,
+    env_vars: dict | None = None,
+    console: Console | None = None,
+    image_tag: str | None = None,
 ) -> LaunchResult:
     """Launch using CodeBuild for ARM64 builds."""
     if console is None:
@@ -1216,7 +1215,7 @@ def _launch_with_direct_code_deploy(
     agent_config: BedrockAgentCoreAgentSchema,
     project_config: BedrockAgentCoreConfigSchema,
     auto_update_on_conflict: bool,
-    env_vars: Optional[dict],
+    env_vars: dict | None,
     force_rebuild_deps: bool = False,
 ) -> LaunchResult:
     """Deploy using code zip artifact (Lambda-style deployment).
