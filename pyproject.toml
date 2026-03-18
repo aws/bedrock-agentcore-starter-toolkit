@@ -48,7 +48,7 @@ dependencies = [
     "py-openapi-schema-to-json-schema>=0.0.3",
     "starlette>=0.46.2",
     "boto3>=1.42.1",
-    "botocore>=1.42.1",
+    "botocore[crt]>=1.42.1",
 ]
 
 [project.scripts]
