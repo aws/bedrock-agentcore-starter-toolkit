@@ -12,6 +12,7 @@ from ...create.constants import IACProvider, ModelProvider, SDKProvider, Templat
 from ...create.generate import generate_project
 from ...create.types import (
     CreateIACProvider,
+    CreateMemoryType,
     CreateModelProvider,
     CreateSDKProvider,
     CreateTemplateDisplay,
@@ -72,6 +73,9 @@ model_provider_api_key_option = typer.Option(None, "--provider-api-key", "-key",
 iac_option = typer.Option(
     None, "--iac", help="Infrastructure as code provider (CDK or Terraform)", show_default=IACProvider.CDK
 )
+memory_option = typer.Option(
+    None, "--memory", "-m", help="Memory configuration for the agent (STM_ONLY, STM_AND_LTM, NO_MEMORY)"
+)
 non_interactive_flag_opt = typer.Option(False, "--non-interactive", help="Run in non-interactive mode")
 venv_option = typer.Option(True, "--venv/--no-venv", help="Automatically create a venv and install dependencies")
 
@@ -85,6 +89,7 @@ def create(
     model_provider: CreateModelProvider = model_provider_option,
     provider_api_key: Optional[str] = model_provider_api_key_option,
     iac: Optional[CreateIACProvider] = iac_option,
+    memory: Optional[CreateMemoryType] = memory_option,
     non_interactive_flag: Optional[bool] = non_interactive_flag_opt,
     venv_option: bool = venv_option,
 ):
@@ -93,7 +98,7 @@ def create(
         return
 
     # Auto-set non-interactive mode
-    user_provided_args = any([project_name, sdk, model_provider, iac, template])
+    user_provided_args = any([project_name, sdk, model_provider, iac, template, memory])
     if user_provided_args and not non_interactive_flag:
         _handle_warn(
             "Automatically using non-interactive mode because flags were provided. "
@@ -137,12 +142,12 @@ def create(
             template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PRODUCTION
 
         # 3. Run specific flows
-        memory = None
         if template == TemplateDisplay.BASIC:
             sdk, model_provider, provider_api_key, memory = _handle_basic_runtime_flow(
-                sdk, model_provider, provider_api_key, non_interactive_flag
+                sdk, model_provider, provider_api_key, non_interactive_flag, memory
             )
         else:
+            memory = None
             sdk, model_provider, iac, agent_config = _handle_monorepo_flow(
                 sdk, model_provider, iac, non_interactive_flag
             )
@@ -216,6 +221,7 @@ def _handle_basic_runtime_flow(
     model_provider: CreateModelProvider,
     provider_api_key: Optional[str],
     non_interactive_flag: bool,
+    memory: Optional[str] = None,
 ) -> Tuple[CreateSDKProvider, CreateModelProvider, Optional[str], bool]:
     """Handles prompt logic for Runtime-only mode."""
     if not sdk:
@@ -248,9 +254,12 @@ def _handle_basic_runtime_flow(
                 redact=True,
             )
 
-    # Memory configuration - only for Strands SDK in interactive mode
-    memory = None
-    if sdk == SDKProvider.STRANDS and not non_interactive_flag:
+    # Memory configuration - for Strands SDK
+    if memory is not None:
+        # Memory was explicitly provided via CLI flag; validate SDK compatibility
+        if sdk != SDKProvider.STRANDS:
+            raise typer.BadParameter("--memory is only supported with the Strands agent framework.")
+    elif sdk == SDKProvider.STRANDS and not non_interactive_flag:
         memory = prompt_memory()
 
     return sdk, model_provider, provider_api_key, memory

@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+import typer
 import yaml
 
 from bedrock_agentcore_starter_toolkit.cli.create.commands import _handle_basic_runtime_flow
@@ -96,6 +97,88 @@ class TestHandleBasicRuntimeFlowMemory:
 
         assert sdk == "Strands"
         assert memory is None
+        mock_memory.assert_not_called()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
+    def test_memory_stm_only_in_non_interactive_mode(self, mock_model_provider, mock_memory):
+        """Test that --memory STM_ONLY is used in non-interactive mode."""
+        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
+
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
+            sdk="Strands",
+            model_provider=ModelProvider.Bedrock,
+            provider_api_key=None,
+            non_interactive_flag=True,
+            memory=MemoryConfig.STM,
+        )
+
+        assert memory == MemoryConfig.STM
+        mock_memory.assert_not_called()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
+    def test_memory_stm_and_ltm_in_non_interactive_mode(self, mock_model_provider, mock_memory):
+        """Test that --memory STM_AND_LTM is used in non-interactive mode."""
+        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
+
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
+            sdk="Strands",
+            model_provider=ModelProvider.Bedrock,
+            provider_api_key=None,
+            non_interactive_flag=True,
+            memory=MemoryConfig.STM_AND_LTM,
+        )
+
+        assert memory == MemoryConfig.STM_AND_LTM
+        mock_memory.assert_not_called()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
+    def test_memory_no_memory_in_non_interactive_mode(self, mock_model_provider, mock_memory):
+        """Test that --memory NO_MEMORY is used in non-interactive mode."""
+        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
+
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
+            sdk="Strands",
+            model_provider=ModelProvider.Bedrock,
+            provider_api_key=None,
+            non_interactive_flag=True,
+            memory=MemoryConfig.NONE,
+        )
+
+        assert memory == MemoryConfig.NONE
+        mock_memory.assert_not_called()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
+    def test_memory_flag_rejected_for_non_strands_sdk(self, mock_model_provider):
+        """Test that --memory raises error for non-Strands SDK."""
+        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
+
+        with pytest.raises(typer.BadParameter, match="--memory is only supported with the Strands agent framework"):
+            _handle_basic_runtime_flow(
+                sdk="LangChain_LangGraph",
+                model_provider=ModelProvider.Bedrock,
+                provider_api_key=None,
+                non_interactive_flag=True,
+                memory=MemoryConfig.STM,
+            )
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
+    @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
+    def test_memory_flag_overrides_interactive_prompt(self, mock_model_provider, mock_memory):
+        """Test that explicit --memory flag skips the interactive prompt even in interactive mode."""
+        mock_model_provider.get_providers_list.return_value = [ModelProvider.Bedrock]
+
+        sdk, model, api_key, memory = _handle_basic_runtime_flow(
+            sdk="Strands",
+            model_provider=ModelProvider.Bedrock,
+            provider_api_key=None,
+            non_interactive_flag=False,
+            memory=MemoryConfig.STM_AND_LTM,
+        )
+
+        assert memory == MemoryConfig.STM_AND_LTM
         mock_memory.assert_not_called()
 
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.prompt_memory")
