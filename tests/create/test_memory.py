@@ -52,7 +52,7 @@ class TestPromptMemory:
 
         result = prompt_memory()
 
-        assert result == MemoryConfig.NONE
+        assert result == MemoryConfig.NO_MEMORY
 
     @patch("bedrock_agentcore_starter_toolkit.cli.create.prompt_util.select_one")
     def test_raises_error_on_unknown_selection(self, mock_select_one):
@@ -144,10 +144,10 @@ class TestHandleBasicRuntimeFlowMemory:
             model_provider=ModelProvider.Bedrock,
             provider_api_key=None,
             non_interactive_flag=True,
-            memory=MemoryConfig.NONE,
+            memory=MemoryConfig.NO_MEMORY,
         )
 
-        assert memory == MemoryConfig.NONE
+        assert memory == MemoryConfig.NO_MEMORY
         mock_memory.assert_not_called()
 
     @patch("bedrock_agentcore_starter_toolkit.cli.create.commands.ModelProvider")
@@ -308,7 +308,7 @@ class TestGenerateProjectMemory:
             agent_config=None,
             use_venv=False,
             git_init=False,
-            memory=MemoryConfig.NONE,
+            memory=MemoryConfig.NO_MEMORY,
         )
 
         assert captured_context.memory_enabled is False

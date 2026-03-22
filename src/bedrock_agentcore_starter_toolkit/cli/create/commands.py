@@ -141,7 +141,11 @@ def create(
             is_basic = prompt_runtime_or_monorepo(runtime_only_text=basic_opt_text) == basic_opt_text
             template = TemplateDisplay.BASIC if is_basic else TemplateDisplay.PRODUCTION
 
-        # 3. Run specific flows
+        # 3. Validate memory + template combination
+        if memory is not None and template != TemplateDisplay.BASIC:
+            raise typer.BadParameter("--memory is only supported with the 'basic' template.")
+
+        # 4. Run specific flows
         if template == TemplateDisplay.BASIC:
             sdk, model_provider, provider_api_key, memory = _handle_basic_runtime_flow(
                 sdk, model_provider, provider_api_key, non_interactive_flag, memory

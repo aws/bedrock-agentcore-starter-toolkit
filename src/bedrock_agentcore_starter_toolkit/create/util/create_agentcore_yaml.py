@@ -59,7 +59,7 @@ def write_minimal_create_runtime_yaml(ctx: ProjectContext, memory: CreateMemoryT
     # Only add memory config if it's enabled
     if ctx.memory_enabled:
         memory_config = MemoryConfig()
-        memory_config.mode = memory or MemoryConfig.NONE
+        memory_config.mode = memory or MemoryConfig.NO_MEMORY
         memory_config.memory_name = ctx.memory_name
         memory_config.event_expiry_days = ctx.memory_event_expiry_days or 30
         agent_schema.memory = memory_config

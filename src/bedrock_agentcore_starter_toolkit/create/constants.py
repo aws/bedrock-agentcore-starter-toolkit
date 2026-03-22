@@ -58,14 +58,14 @@ class IACProvider:
 class MemoryConfig:
     """Constants and utilities related to memory."""
 
-    NONE = "NO_MEMORY"
+    NO_MEMORY = "NO_MEMORY"
     STM = "STM_ONLY"
     STM_AND_LTM = "STM_AND_LTM"
 
-    _DISPLAY_MAP = {NONE: "None", STM: "Short-term memory", STM_AND_LTM: "Long-term and short-term memory"}
+    _DISPLAY_MAP = {NO_MEMORY: "None", STM: "Short-term memory", STM_AND_LTM: "Long-term and short-term memory"}
     _REVERSE_DISPLAY_MAP = {v: k for k, v in _DISPLAY_MAP.items()}
 
-    _ORDER = [NONE, STM, STM_AND_LTM]
+    _ORDER = [NO_MEMORY, STM, STM_AND_LTM]
 
     @classmethod
     def get_memory_display_names_as_list(cls) -> list[str]:

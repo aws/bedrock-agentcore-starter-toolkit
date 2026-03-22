@@ -89,7 +89,7 @@ def generate_project(
         ctx.observability_enabled = True
 
     # honor memory passed in to generate
-    if memory and memory != MemoryConfig.NONE:
+    if memory and memory != MemoryConfig.NO_MEMORY:
         ctx.memory_enabled = True
         ctx.memory_name = name + "_Memory"
         ctx.memory_event_expiry_days = 30
