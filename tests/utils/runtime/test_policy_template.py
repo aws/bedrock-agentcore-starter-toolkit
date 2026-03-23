@@ -329,6 +329,31 @@ class TestPolicyTemplate:
             assert isinstance(policy["Statement"], list)
             assert len(policy["Statement"]) > 0
 
+    @pytest.mark.parametrize(
+        "region,expected_partition",
+        [
+            ("us-east-1", "aws"),
+            ("us-gov-west-1", "aws-us-gov"),
+            ("cn-north-1", "aws-cn"),
+        ],
+    )
+    def test_execution_policy_uses_correct_partition(self, region, expected_partition):
+        """Test that rendered execution policy ARNs use the correct partition for each region."""
+        policy = json.loads(
+            render_execution_policy_template(
+                region=region,
+                account_id="123456789012",
+                agent_name="test-agent",
+            )
+        )
+
+        policy_str = json.dumps(policy)
+        assert f"arn:{expected_partition}:" in policy_str
+        # Ensure no other partition other than expected
+        other_partitions = {"aws", "aws-us-gov", "aws-cn"} - {expected_partition}
+        for other in other_partitions:
+            assert f"arn:{other}:" not in policy_str, f"Found unexpected partition '{other}' in policy for {region}"
+
     def test_defaults_are_secure(self):
         """Test that default parameters result in minimal permissions (secure by default)."""
         policy = json.loads(

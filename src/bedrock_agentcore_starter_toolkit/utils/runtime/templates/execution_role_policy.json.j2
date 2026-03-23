@@ -11,9 +11,9 @@
       ],
       "Resource": [
         {% if has_ecr_repository %}
-        "arn:aws:ecr:{{ region }}:{{ account_id }}:repository/{{ ecr_repository_name }}"
+        "arn:{{ partition }}:ecr:{{ region }}:{{ account_id }}:repository/{{ ecr_repository_name }}"
         {% else %}
-        "arn:aws:ecr:{{ region }}:{{ account_id }}:repository/*"
+        "arn:{{ partition }}:ecr:{{ region }}:{{ account_id }}:repository/*"
         {% endif %}
       ]
     },
@@ -25,7 +25,7 @@
         "logs:CreateLogGroup"
       ],
       "Resource": [
-        "arn:aws:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/*"
+        "arn:{{ partition }}:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/*"
       ]
     },
     {
@@ -34,7 +34,7 @@
         "logs:DescribeLogGroups"
       ],
       "Resource": [
-        "arn:aws:logs:{{ region }}:{{ account_id }}:log-group:*"
+        "arn:{{ partition }}:logs:{{ region }}:{{ account_id }}:log-group:*"
       ]
     },
     {
@@ -44,7 +44,7 @@
         "logs:PutLogEvents"
       ],
       "Resource": [
-        "arn:aws:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
+        "arn:{{ partition }}:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
       ]
     },
     {% if deployment_type == "container" %}
@@ -99,7 +99,7 @@
         "bedrock-agentcore:InvokeAgentRuntimeForUser"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
       ]
     },
     {% endif %}
@@ -132,9 +132,9 @@
       ],
       "Resource": [
         {% if has_memory_id %}
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/{{ memory_id }}"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/{{ memory_id }}"
         {% else %}
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/*"
         {% endif %}
       ]
     },
@@ -146,10 +146,10 @@
         "bedrock-agentcore:GetResourceApiKey"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/apikeycredentialprovider/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/apikeycredentialprovider/*",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
       ]
     },
     {
@@ -159,8 +159,8 @@
         "secretsmanager:GetSecretValue"
       ],
       "Resource": [
-        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/oauth2/*",
-        "arn:aws:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/apikey/*"
+        "arn:{{ partition }}:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/oauth2/*",
+        "arn:{{ partition }}:secretsmanager:{{ region }}:{{ account_id }}:secret:bedrock-agentcore-identity!default/apikey/*"
       ]
     },
     {
@@ -170,10 +170,10 @@
         "bedrock-agentcore:GetResourceOauth2Token"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/oauth2credentialprovider/*",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:token-vault/default/oauth2credentialprovider/*",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
       ]
     },
     {
@@ -185,9 +185,9 @@
         "bedrock:ApplyGuardrail"
       ],
       "Resource": [
-        "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*",
-        "arn:aws:bedrock:{{ region }}:{{ account_id }}:*"
+        "arn:{{ partition }}:bedrock:*::foundation-model/*",
+        "arn:{{ partition }}:bedrock:*:*:inference-profile/*",
+        "arn:{{ partition }}:bedrock:{{ region }}:{{ account_id }}:*"
       ]
     },
     {
@@ -216,7 +216,7 @@
         "bedrock-agentcore:ListCodeInterpreterSessions"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:aws:code-interpreter/aws.codeinterpreter.v1"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:aws:code-interpreter/aws.codeinterpreter.v1"
       ]
     },
     {
@@ -227,8 +227,8 @@
         "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
       ],
       "Resource": [
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:aws:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
       ]
     },
     {
