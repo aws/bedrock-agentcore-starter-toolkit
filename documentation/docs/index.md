@@ -7,11 +7,24 @@ Amazon Bedrock AgentCore is a comprehensive platform for deploying and operating
 [![PyPI version](https://img.shields.io/pypi/v/bedrock-agentcore)](https://pypi.org/project/bedrock-agentcore)
 
 <div style="display: flex; gap: 10px; margin: 20px 0;">
+  <a href="https://github.com/aws/agentcore-cli" class="md-button md-button--primary">AgentCore CLI (Recommended)</a>
   <a href="https://github.com/aws/bedrock-agentcore-sdk-python" class="md-button">Python SDK</a>
   <a href="https://github.com/aws/bedrock-agentcore-starter-toolkit" class="md-button">Starter Toolkit</a>
   <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples" class="md-button">Samples</a>
 </div>
 
+!!! tip "Recommendation: Use the AgentCore CLI for new projects"
+
+    The **[AgentCore CLI (`@aws/agentcore-cli`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
+
+    **Get started:**
+    ```bash
+    npx @aws/agentcore-cli create
+    ```
+
+    **See the [AgentCore CLI docs](https://github.com/aws/agentcore-cli/tree/main/docs)** for the full commands reference, supported frameworks, configuration, and migration guidance.
+
+    This starter toolkit remains available for existing Python-based workflows.
 
 ## 🚀 From Local Development to Bedrock AgentCore
 

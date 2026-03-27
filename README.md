@@ -24,7 +24,25 @@
 </div>
 
 <br/>
-<b>Note: The AgentCore Starter Toolkit is an experimental offering and features are subject to change in future releases.</b>
+
+> **⚠️ Recommendation: Use the AgentCore CLI for new projects**
+>
+> The **[AgentCore CLI (`@aws/agentcore-cli`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
+>
+> **For new projects**, get started with the AgentCore CLI:
+> ```bash
+> npx @aws/agentcore-cli create
+> ```
+>
+> **Migrating from this toolkit?** See the [AgentCore CLI documentation](https://github.com/aws/agentcore-cli/tree/main/docs) for:
+> - [Commands reference](https://github.com/aws/agentcore-cli/blob/main/docs/commands.md) — create, deploy, dev, invoke, add, remove, logs, traces, evals
+> - [Supported frameworks](https://github.com/aws/agentcore-cli/blob/main/docs/frameworks.md) — Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, BYO, and import from existing projects
+> - [Configuration guide](https://github.com/aws/agentcore-cli/blob/main/docs/configuration.md) — agentcore.json, mcp.json, environment setup
+> - [Local development](https://github.com/aws/agentcore-cli/blob/main/docs/local-development.md) — hot reload dev server
+> - [Memory](https://github.com/aws/agentcore-cli/blob/main/docs/memory.md), [Gateway](https://github.com/aws/agentcore-cli/blob/main/docs/gateway.md), [Evaluations](https://github.com/aws/agentcore-cli/blob/main/docs/evals.md)
+> - [IAM permissions](https://github.com/aws/agentcore-cli/blob/main/docs/PERMISSIONS.md)
+>
+> This starter toolkit remains available for existing Python-based workflows but is no longer the recommended starting point.
 
 ## Overview
 Amazon Bedrock AgentCore enables you to deploy and operate highly effective agents securely, at scale using any framework and model. With Amazon Bedrock AgentCore, developers can accelerate AI agents into production with the scale, reliability, and security, critical to real-world deployment. AgentCore provides tools and capabilities to make agents more effective and capable, purpose-built infrastructure to securely scale agents, and controls to operate trustworthy agents. Amazon Bedrock AgentCore services are composable and work with popular open-source frameworks and any model, so you don’t have to choose between open-source flexibility and enterprise-grade security and reliability.
@@ -32,11 +50,14 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly effective agen
 Amazon Bedrock AgentCore includes the following modular Services that you can use together or independently:
 
 ## 🚀 Jump Into AgentCore
-Get started quickly with `agentcore create`.
+
+> **New projects should use the [AgentCore CLI](https://github.com/aws/agentcore-cli):** `npx @aws/agentcore-cli create`
+
+If you prefer a Python-based workflow, you can still get started with this toolkit using `agentcore create`.
 
 Pick your favorite Agent SDK framework and model provider like Strands with Amazon Bedrock. You'll get a brand new project ready to be deployed onto AgentCore.
 
-**[Create Quick Start](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.html)**
+**[Create Quick Start (Starter Toolkit)](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.html)** · **[Create Quick Start (AgentCore CLI)](https://github.com/aws/agentcore-cli/blob/main/docs/commands.md)**
 
 ## 🛠️ Amazon Bedrock AgentCore Runtime
 AgentCore Runtime is a secure, serverless runtime purpose-built for deploying and scaling dynamic AI agents and tools using any open-source framework including LangGraph, CrewAI, and Strands Agents, any protocol, and any model. Runtime was built to work for agentic workloads with industry-leading extended runtime support, fast cold starts, true session isolation, built-in identity, and support for multi-modal payloads. Developers can focus on innovation while Amazon Bedrock AgentCore Runtime handles infrastructure and security -- accelerating time-to-market
@@ -92,7 +113,22 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 
 ## Installation
 
-### Quick Start
+### Recommended: AgentCore CLI
+
+```bash
+# No install needed — run directly with npx
+npx @aws/agentcore-cli create
+
+# Or install globally
+npm install -g @aws/agentcore-cli
+agentcore create
+```
+
+See the [AgentCore CLI README](https://github.com/aws/agentcore-cli) and [docs](https://github.com/aws/agentcore-cli/tree/main/docs) for full usage.
+
+### Starter Toolkit (Python)
+
+If you prefer a Python-based workflow:
 
 ```bash
 # Install uv if you haven't already
