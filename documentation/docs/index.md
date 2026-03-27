@@ -19,7 +19,7 @@ Amazon Bedrock AgentCore is a comprehensive platform for deploying and operating
 
     **Get started:**
     ```bash
-    npx @aws/agentcore-cli create
+    npm i @aws/agentcore-cli
     ```
 
     **See the [AgentCore CLI docs](https://github.com/aws/agentcore-cli/tree/main/docs)** for the full commands reference, supported frameworks, configuration, and migration guidance.

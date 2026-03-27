@@ -29,9 +29,9 @@
 >
 > The **[AgentCore CLI (`@aws/agentcore-cli`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
 >
-> **For new projects**, get started with the AgentCore CLI:
+> **For new projects**, install the AgentCore CLI:
 > ```bash
-> npx @aws/agentcore-cli create
+> npm i @aws/agentcore-cli
 > ```
 >
 > **Migrating from this toolkit?** See the [AgentCore CLI documentation](https://github.com/aws/agentcore-cli/tree/main/docs) for:
@@ -51,7 +51,7 @@ Amazon Bedrock AgentCore includes the following modular Services that you can us
 
 ## 🚀 Jump Into AgentCore
 
-> **New projects should use the [AgentCore CLI](https://github.com/aws/agentcore-cli):** `npx @aws/agentcore-cli create`
+> **New projects should use the [AgentCore CLI](https://github.com/aws/agentcore-cli):** `npm i @aws/agentcore-cli`
 
 If you prefer a Python-based workflow, you can still get started with this toolkit using `agentcore create`.
 
@@ -116,12 +116,7 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 ### Recommended: AgentCore CLI
 
 ```bash
-# No install needed — run directly with npx
-npx @aws/agentcore-cli create
-
-# Or install globally
-npm install -g @aws/agentcore-cli
-agentcore create
+npm i @aws/agentcore-cli
 ```
 
 See the [AgentCore CLI README](https://github.com/aws/agentcore-cli) and [docs](https://github.com/aws/agentcore-cli/tree/main/docs) for full usage.
