@@ -13,19 +13,6 @@ Amazon Bedrock AgentCore is a comprehensive platform for deploying and operating
   <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples" class="md-button">Samples</a>
 </div>
 
-!!! tip "Recommendation: Use the AgentCore CLI for new projects"
-
-    The **[AgentCore CLI (`@aws/agentcore-cli`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
-
-    **Get started:**
-    ```bash
-    npm i @aws/agentcore-cli
-    ```
-
-    **See the [Migration Guide](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md)** for step-by-step instructions to migrate your existing projects. The [AgentCore CLI docs](https://github.com/aws/agentcore-cli/tree/main/docs) cover the full commands reference, supported frameworks, and configuration.
-
-    This starter toolkit remains available for existing Python-based workflows.
-
 ## 🚀 From Local Development to Bedrock AgentCore
 
 ```python
