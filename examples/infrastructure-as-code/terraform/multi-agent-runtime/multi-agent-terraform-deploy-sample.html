@@ -2342,7 +2342,7 @@
   <span class="md-ellipsis">
     
   
-    AgentCore CLI
+    Starter Toolkit CLI
   
 
     
@@ -2619,6 +2619,21 @@
               
               <article class="md-content__inner md-typeset">
                 
+<div class="agentcore-cli-banner">
+  <strong>Recommendation: Use the AgentCore CLI for new projects</strong>
+  <p>
+    The <a href="https://github.com/aws/agentcore-cli"><strong>AgentCore CLI (<code>@aws/agentcore-cli</code>)</strong></a>
+    is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore.
+    It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
+  </p>
+  <p><strong>Get started:</strong> <code>npm i @aws/agentcore-cli</code></p>
+  <p>
+    See the <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md"><strong>Migration Guide</strong></a>
+    for step-by-step instructions to migrate existing projects.
+    The <a href="https://github.com/aws/agentcore-cli/tree/main/docs">AgentCore CLI docs</a> cover the full commands reference, supported frameworks, and configuration.
+  </p>
+</div>
+
                   
 
 
@@ -3904,24 +3919,25 @@
 <span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
 
 <span class="c1"># Environment variable for Specialist Agent ARN (required - set by Terraform)</span>
-<span class="n">SPECIALIST_ARN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;SPECIALIST_ARN&#39;</span><span class="p">)</span>
+<span class="n">SPECIALIST_ARN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SPECIALIST_ARN&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="ow">not</span> <span class="n">SPECIALIST_ARN</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">EnvironmentError</span><span class="p">(</span><span class="s2">&quot;SPECIALIST_ARN environment variable is required&quot;</span><span class="p">)</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">invoke_specialist</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to invoke specialist agent using boto3&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Get region from environment (set by AgentCore runtime)</span>
-        <span class="n">region</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;AWS_REGION&#39;</span><span class="p">)</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">region</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">EnvironmentError</span><span class="p">(</span><span class="s2">&quot;AWS_REGION environment variable is required&quot;</span><span class="p">)</span>
-        <span class="n">agentcore_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;bedrock-agentcore&#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
+        <span class="n">agentcore_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;bedrock-agentcore&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
 
         <span class="c1"># Invoke specialist agent runtime (using AWS sample format)</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">agentcore_client</span><span class="o">.</span><span class="n">invoke_agent_runtime</span><span class="p">(</span>
             <span class="n">agentRuntimeArn</span><span class="o">=</span><span class="n">SPECIALIST_ARN</span><span class="p">,</span>
             <span class="n">qualifier</span><span class="o">=</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">,</span>
-            <span class="n">payload</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+            <span class="n">payload</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">}),</span>
         <span class="p">)</span>
 
         <span class="c1"># Handle streaming response (text/event-stream)</span>
@@ -3940,19 +3956,21 @@
         <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contentType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;application/json&quot;</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response&quot;</span><span class="p">,</span> <span class="p">[]):</span>
-                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
-            <span class="n">response_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response_data</span><span class="p">)</span>
 
         <span class="c1"># Handle other response types</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">response_body</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">response_body</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">response_body</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">response_body</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+
         <span class="n">error_details</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error invoking specialist agent: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">Details: </span><span class="si">{</span><span class="n">error_details</span><span class="si">}</span><span class="s2">&quot;</span>
+
 
 <span class="nd">@tool</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">call_specialist_agent</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -3967,10 +3985,8 @@
 <span class="sd">        The specialist agent&#39;s response</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">invoke_specialist</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}]</span>
-    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}]}</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_orchestrator_agent</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Agent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the orchestrator agent with the tool to call specialist agent&quot;&quot;&quot;</span>
@@ -3988,15 +4004,20 @@
     <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span>
         <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">call_specialist_agent</span><span class="p">],</span>
         <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;OrchestratorAgent&quot;</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;OrchestratorAgent&quot;</span><span class="p">,</span>
     <span class="p">)</span>
+
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entrypoint for orchestrator agent&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Get the query from payload</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, how are you?&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">payload</span> <span class="k">else</span> <span class="s2">&quot;Hello, how are you?&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, how are you?&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">payload</span>
+            <span class="k">else</span> <span class="s2">&quot;Hello, how are you?&quot;</span>
+        <span class="p">)</span>
 
         <span class="c1"># Create and use the orchestrator agent</span>
         <span class="n">agent</span> <span class="o">=</span> <span class="n">create_orchestrator_agent</span><span class="p">()</span>
@@ -4005,15 +4026,12 @@
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
             <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;orchestrator&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+            <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
         <span class="p">}</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;orchestrator&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;orchestrator&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -4049,6 +4067,7 @@ bedrock-agentcore
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
 
+
 <span class="k">def</span><span class="w"> </span><span class="nf">create_specialist_agent</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Agent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a specialist agent that handles specific analytical tasks&quot;&quot;&quot;</span>
     <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are a specialist analytical agent.</span>
@@ -4056,10 +4075,8 @@ bedrock-agentcore
 <span class="s2">    When asked questions, provide thorough, well-reasoned responses with specific details.</span>
 <span class="s2">    Focus on accuracy and completeness in your answers.&quot;&quot;&quot;</span>
 
-    <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span>
-        <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SpecialistAgent&quot;</span>
-    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span><span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;SpecialistAgent&quot;</span><span class="p">)</span>
+
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -4075,15 +4092,12 @@ bedrock-agentcore
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
             <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;specialist&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+            <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
         <span class="p">}</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;specialist&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;specialist&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -4107,6 +4121,7 @@ bedrock-agentcore
 
 
                 
+
               </article>
             </div>
           

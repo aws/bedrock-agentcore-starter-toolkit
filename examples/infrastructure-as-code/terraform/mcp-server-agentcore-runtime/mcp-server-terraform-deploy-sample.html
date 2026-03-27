@@ -2342,7 +2342,7 @@
   <span class="md-ellipsis">
     
   
-    AgentCore CLI
+    Starter Toolkit CLI
   
 
     
@@ -2564,6 +2564,21 @@
               
               <article class="md-content__inner md-typeset">
                 
+<div class="agentcore-cli-banner">
+  <strong>Recommendation: Use the AgentCore CLI for new projects</strong>
+  <p>
+    The <a href="https://github.com/aws/agentcore-cli"><strong>AgentCore CLI (<code>@aws/agentcore-cli</code>)</strong></a>
+    is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore.
+    It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
+  </p>
+  <p><strong>Get started:</strong> <code>npm i @aws/agentcore-cli</code></p>
+  <p>
+    See the <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md"><strong>Migration Guide</strong></a>
+    for step-by-step instructions to migrate existing projects.
+    The <a href="https://github.com/aws/agentcore-cli/tree/main/docs">AgentCore CLI docs</a> cover the full commands reference, supported frameworks, and configuration.
+  </p>
+</div>
+
                   
 
 
@@ -3432,20 +3447,24 @@
 
 <span class="n">mcp</span> <span class="o">=</span> <span class="n">FastMCP</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">stateless_http</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+
 <span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_numbers</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Add two numbers together&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
 
 <span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">multiply_numbers</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Multiply two numbers together&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span>
 
+
 <span class="nd">@mcp</span><span class="o">.</span><span class="n">tool</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">greet_user</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Greet a user by name&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">! Nice to meet you.&quot;</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">mcp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">transport</span><span class="o">=</span><span class="s2">&quot;streamable-http&quot;</span><span class="p">)</span>
@@ -3468,6 +3487,7 @@ bedrock-agentcore
 
 
                 
+
               </article>
             </div>
           

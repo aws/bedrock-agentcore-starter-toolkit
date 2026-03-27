@@ -24,9 +24,6 @@ class IdentityClient:
         self.cp_client = boto3.client(
             "bedrock-agentcore-control", region_name=region, endpoint_url=get_control_plane_endpoint(region)
         )
-        self.identity_client = boto3.client(
-            "bedrock-agentcore-control", region_name=region, endpoint_url=get_data_plane_endpoint(region)
-        )
         self.dp_client = boto3.client(
             "bedrock-agentcore", region_name=region, endpoint_url=get_data_plane_endpoint(region)
         )
@@ -68,7 +65,7 @@ class IdentityClient:
         self.logger.info("Creating workload identity...")
         if not name:
             name = f"workload-{uuid.uuid4().hex[:8]}"
-        return self.identity_client.create_workload_identity(
+        return self.cp_client.create_workload_identity(
             name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls or []
         )
 
@@ -77,7 +74,7 @@ class IdentityClient:
         self.logger.info(
             "Updating workload identity '%s' with callback urls: %s", name, allowed_resource_oauth_2_return_urls
         )
-        return self.identity_client.update_workload_identity(
+        return self.cp_client.update_workload_identity(
             name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls
         )
 
@@ -210,9 +207,6 @@ def __init__(self, region: str):
     self.cp_client = boto3.client(
         "bedrock-agentcore-control", region_name=region, endpoint_url=get_control_plane_endpoint(region)
     )
-    self.identity_client = boto3.client(
-        "bedrock-agentcore-control", region_name=region, endpoint_url=get_data_plane_endpoint(region)
-    )
     self.dp_client = boto3.client(
         "bedrock-agentcore", region_name=region, endpoint_url=get_data_plane_endpoint(region)
     )
@@ -283,7 +277,7 @@ def create_workload_identity(
     self.logger.info("Creating workload identity...")
     if not name:
         name = f"workload-{uuid.uuid4().hex[:8]}"
-    return self.identity_client.create_workload_identity(
+    return self.cp_client.create_workload_identity(
         name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls or []
     )
 ```
@@ -477,7 +471,7 @@ def update_workload_identity(self, name: str, allowed_resource_oauth_2_return_ur
     self.logger.info(
         "Updating workload identity '%s' with callback urls: %s", name, allowed_resource_oauth_2_return_urls
     )
-    return self.identity_client.update_workload_identity(
+    return self.cp_client.update_workload_identity(
         name=name, allowedResourceOauth2ReturnUrls=allowed_resource_oauth_2_return_urls
     )
 ```

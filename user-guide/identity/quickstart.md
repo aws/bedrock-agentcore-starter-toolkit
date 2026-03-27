@@ -251,7 +251,7 @@ async def handle_auth_url(url):
     scopes=["openid"],
     auth_flow="USER_FEDERATION",
     on_auth_url=handle_auth_url, # streams authorization URL to client
-    force_authentication=True
+    force_authentication=True,
     callback_url='<insert_oauth2_callback_url_for_session_binding; not required for *local* agent launch and invocations>'
 )
 async def introspect_with_decorator(*, access_token: str):

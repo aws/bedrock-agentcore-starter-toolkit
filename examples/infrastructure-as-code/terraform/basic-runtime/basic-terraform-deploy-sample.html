@@ -2342,7 +2342,7 @@
   <span class="md-ellipsis">
     
   
-    AgentCore CLI
+    Starter Toolkit CLI
   
 
     
@@ -2553,6 +2553,21 @@
               
               <article class="md-content__inner md-typeset">
                 
+<div class="agentcore-cli-banner">
+  <strong>Recommendation: Use the AgentCore CLI for new projects</strong>
+  <p>
+    The <a href="https://github.com/aws/agentcore-cli"><strong>AgentCore CLI (<code>@aws/agentcore-cli</code>)</strong></a>
+    is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore.
+    It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
+  </p>
+  <p><strong>Get started:</strong> <code>npm i @aws/agentcore-cli</code></p>
+  <p>
+    See the <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md"><strong>Migration Guide</strong></a>
+    for step-by-step instructions to migrate existing projects.
+    The <a href="https://github.com/aws/agentcore-cli/tree/main/docs">AgentCore CLI docs</a> cover the full commands reference, supported frameworks, and configuration.
+  </p>
+</div>
+
                   
 
 
@@ -3287,36 +3302,36 @@
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">BedrockAgentCoreApp</span><span class="p">()</span>
 
+
 <span class="k">def</span><span class="w"> </span><span class="nf">create_basic_agent</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Agent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a basic agent with simple functionality&quot;&quot;&quot;</span>
-    <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are a helpful assistant. Answer questions clearly and concisely.&quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span>
-        <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BasicAgent&quot;</span>
+    <span class="n">system_prompt</span> <span class="o">=</span> <span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;You are a helpful assistant. Answer questions clearly and concisely.&quot;&quot;&quot;</span>
     <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Agent</span><span class="p">(</span><span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BasicAgent&quot;</span><span class="p">)</span>
+
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">entrypoint</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">payload</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entrypoint for the agent&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Get the query from payload</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, how are you?&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">payload</span> <span class="k">else</span> <span class="s2">&quot;Hello, how are you?&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, how are you?&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">payload</span>
+            <span class="k">else</span> <span class="s2">&quot;Hello, how are you?&quot;</span>
+        <span class="p">)</span>
 
         <span class="c1"># Create and use the agent</span>
         <span class="n">agent</span> <span class="o">=</span> <span class="n">create_basic_agent</span><span class="p">()</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">agent</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
-        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]}</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}</span>
+
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -3339,6 +3354,7 @@ bedrock-agentcore
 
 
                 
+
               </article>
             </div>
           

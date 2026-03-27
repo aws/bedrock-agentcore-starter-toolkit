@@ -42,8 +42,6 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 - [Runtime Framework Agents](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/runtime-framework-agents.md)
 - [Semantic Search](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/semantic_search.md)
 - [Session Management](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/session-management.md)
-- [Basic cdk deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cdk/basic-runtime/basic-cdk-deploy-readme.md)
-- [Basic cdk deploy sample](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cdk/basic-runtime/basic-cdk-deploy-sample.md)
 - [Basic cfn deploy readme](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-deploy-readme.md)
 - [Basic cfn template](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-template.md)
 - [Basic deploy bash script](https://aws.github.io/bedrock-agentcore-starter-toolkit/examples/infrastructure-as-code/cloudformation/basic-runtime/basic-deploy-bash-script.md)
@@ -87,7 +85,7 @@ Amazon Bedrock AgentCore enables you to deploy and operate highly capable AI age
 
 ## API Reference
 
-- [AgentCore CLI](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/cli.md)
+- [Starter Toolkit CLI](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/cli.md)
 - [Identity](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/identity.md)
 - [Memory](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/memory.md)
 - [Runtime](https://aws.github.io/bedrock-agentcore-starter-toolkit/api-reference/runtime.md)

@@ -113,3 +113,31 @@
 [data-md-color-scheme="slate"] .md-button {
   color: rgb(140, 140, 140) !important;
 }
+
+/* AgentCore CLI recommendation banner */
+.agentcore-cli-banner {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4caf50;
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+  font-size: .8rem;
+}
+.agentcore-cli-banner strong:first-child {
+  font-size: .85rem;
+}
+.agentcore-cli-banner p {
+  margin: .4rem 0 0;
+}
+.agentcore-cli-banner code {
+  background-color: rgba(0,0,0,.05);
+  padding: .1rem .3rem;
+  border-radius: 3px;
+  font-size: .78rem;
+}
+[data-md-color-scheme="slate"] .agentcore-cli-banner {
+  background-color: rgba(76, 175, 80, .12);
+}
+[data-md-color-scheme="slate"] .agentcore-cli-banner code {
+  background-color: rgba(255,255,255,.08);
+}

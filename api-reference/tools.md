@@ -634,14 +634,15 @@ class CodeInterpreter:
     def download_file(
         self,
         path: str,
-    ) -> str:
+    ) -> Union[str, bytes]:
         """Download/read a file from the code interpreter environment.
 
         Args:
             path: Path to the file to read.
 
         Returns:
-            File content as string.
+            File content as string, or bytes if the file contains binary content
+            (images, PDFs, etc.).
 
         Raises:
             FileNotFoundError: If the file doesn't exist.
@@ -665,21 +666,26 @@ class CodeInterpreter:
                             if "text" in resource:
                                 return resource["text"]
                             elif "blob" in resource:
-                                return base64.b64decode(resource["blob"]).decode("utf-8")
+                                raw = base64.b64decode(resource["blob"])
+                                try:
+                                    return raw.decode("utf-8")
+                                except (UnicodeDecodeError, ValueError):
+                                    return raw
 
         raise FileNotFoundError(f"Could not read file: {path}")
 
     def download_files(
         self,
         paths: List[str],
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Union[str, bytes]]:
         """Download/read multiple files from the code interpreter environment.
 
         Args:
             paths: List of file paths to read.
 
         Returns:
-            Dict mapping file paths to their contents.
+            Dict mapping file paths to their contents. Values are strings for
+            text files, or bytes for binary files (images, PDFs, etc.).
 
         Example:
             >>> files = client.download_files(['data.csv', 'results.json'])
@@ -701,7 +707,11 @@ class CodeInterpreter:
                             if "text" in resource:
                                 files[file_path] = resource["text"]
                             elif "blob" in resource:
-                                files[file_path] = base64.b64decode(resource["blob"]).decode("utf-8")
+                                raw = base64.b64decode(resource["blob"])
+                                try:
+                                    files[file_path] = raw.decode("utf-8")
+                                except (UnicodeDecodeError, ValueError):
+                                    files[file_path] = raw
 
         return files
 
@@ -1099,9 +1109,10 @@ Parameters:
 
 Returns:
 
-| Type  | Description             |
-| ----- | ----------------------- |
-| `str` | File content as string. |
+| Type                | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| `Union[str, bytes]` | File content as string, or bytes if the file contains binary content |
+| `Union[str, bytes]` | (images, PDFs, etc.).                                                |
 
 Raises:
 
@@ -1121,14 +1132,15 @@ Source code in `bedrock_agentcore/tools/code_interpreter_client.py`
 def download_file(
     self,
     path: str,
-) -> str:
+) -> Union[str, bytes]:
     """Download/read a file from the code interpreter environment.
 
     Args:
         path: Path to the file to read.
 
     Returns:
-        File content as string.
+        File content as string, or bytes if the file contains binary content
+        (images, PDFs, etc.).
 
     Raises:
         FileNotFoundError: If the file doesn't exist.
@@ -1152,7 +1164,11 @@ def download_file(
                         if "text" in resource:
                             return resource["text"]
                         elif "blob" in resource:
-                            return base64.b64decode(resource["blob"]).decode("utf-8")
+                            raw = base64.b64decode(resource["blob"])
+                            try:
+                                return raw.decode("utf-8")
+                            except (UnicodeDecodeError, ValueError):
+                                return raw
 
     raise FileNotFoundError(f"Could not read file: {path}")
 ```
@@ -1169,9 +1185,10 @@ Parameters:
 
 Returns:
 
-| Type             | Description                                |
-| ---------------- | ------------------------------------------ |
-| `Dict[str, str]` | Dict mapping file paths to their contents. |
+| Type                           | Description                                                       |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `Dict[str, Union[str, bytes]]` | Dict mapping file paths to their contents. Values are strings for |
+| `Dict[str, Union[str, bytes]]` | text files, or bytes for binary files (images, PDFs, etc.).       |
 
 Example
 
@@ -1183,14 +1200,15 @@ Source code in `bedrock_agentcore/tools/code_interpreter_client.py`
 def download_files(
     self,
     paths: List[str],
-) -> Dict[str, str]:
+) -> Dict[str, Union[str, bytes]]:
     """Download/read multiple files from the code interpreter environment.
 
     Args:
         paths: List of file paths to read.
 
     Returns:
-        Dict mapping file paths to their contents.
+        Dict mapping file paths to their contents. Values are strings for
+        text files, or bytes for binary files (images, PDFs, etc.).
 
     Example:
         >>> files = client.download_files(['data.csv', 'results.json'])
@@ -1212,7 +1230,11 @@ def download_files(
                         if "text" in resource:
                             files[file_path] = resource["text"]
                         elif "blob" in resource:
-                            files[file_path] = base64.b64decode(resource["blob"]).decode("utf-8")
+                            raw = base64.b64decode(resource["blob"])
+                            try:
+                                files[file_path] = raw.decode("utf-8")
+                            except (UnicodeDecodeError, ValueError):
+                                files[file_path] = raw
 
     return files
 ```
@@ -2186,6 +2208,8 @@ class BrowserClient:
         description: Optional[str] = None,
         recording: Optional[Dict] = None,
         browser_signing: Optional[Dict] = None,
+        enterprise_policies: Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]] = None,
+        certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
         tags: Optional[Dict[str, str]] = None,
         client_token: Optional[str] = None,
     ) -> Dict:
@@ -2218,6 +2242,11 @@ class BrowserClient:
                 {
                     "enabled": True
                 }
+            enterprise_policies (Optional[List[Union[EnterprisePolicy, Dict]]]): Chromium
+                enterprise policies at managed enforcement level. Up to 10 policy files,
+                each .json and max 5MB, from a same-region S3 bucket.
+            certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+                from Secrets Manager for the browser to trust.
             tags (Optional[Dict[str, str]]): Tags for the browser
             client_token (Optional[str]): Idempotency token
 
@@ -2263,6 +2292,12 @@ class BrowserClient:
         if browser_signing:
             request_params["browserSigning"] = browser_signing
             self.logger.info("🔐 Web Bot Auth (browserSigning) enabled")
+
+        if enterprise_policies:
+            request_params["enterprisePolicies"] = [_to_dict(p) for p in enterprise_policies]
+
+        if certificates:
+            request_params["certificates"] = [_to_dict(c) for c in certificates]
 
         if tags:
             request_params["tags"] = tags
@@ -2365,7 +2400,12 @@ class BrowserClient:
         identifier: Optional[str] = DEFAULT_IDENTIFIER,
         name: Optional[str] = None,
         session_timeout_seconds: Optional[int] = DEFAULT_SESSION_TIMEOUT,
-        viewport: Optional[Dict[str, int]] = None,
+        viewport: Optional[Union[ViewportConfiguration, Dict[str, int]]] = None,
+        proxy_configuration: Optional[Union[ProxyConfiguration, Dict[str, Any]]] = None,
+        extensions: Optional[List[Union[BrowserExtension, Dict[str, Any]]]] = None,
+        profile_configuration: Optional[Union[ProfileConfiguration, Dict[str, Any]]] = None,
+        enterprise_policies: Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]] = None,
+        certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
     ) -> str:
         """Start a browser sandbox session.
 
@@ -2377,8 +2417,25 @@ class BrowserClient:
             name (Optional[str]): A name for this session.
             session_timeout_seconds (Optional[int]): The timeout for the session in seconds.
                 Range: 1-28800 (8 hours). Default: 3600 (1 hour).
-            viewport (Optional[Dict[str, int]]): The viewport dimensions:
+            viewport (Optional[Union[ViewportConfiguration, Dict[str, int]]]): The viewport
+                dimensions. Can be a ViewportConfiguration dataclass or a plain dict:
                 {'width': 1920, 'height': 1080}
+            proxy_configuration (Optional[Union[ProxyConfiguration, Dict[str, Any]]]): Proxy
+                configuration for routing browser traffic through external proxy servers.
+                Can be a ProxyConfiguration dataclass or a plain dict matching the API shape.
+            extensions (Optional[List[Union[BrowserExtension, Dict[str, Any]]]]): List of
+                browser extensions to load into the session. Each element can be a
+                BrowserExtension dataclass or a plain dict:
+                [{"location": {"s3": {"bucket": "...", "prefix": "..."}}}]
+            profile_configuration (Optional[Union[ProfileConfiguration, Dict[str, Any]]]): Profile
+                configuration for persisting browser state across sessions. Can be a
+                ProfileConfiguration dataclass or a plain dict:
+                {"profileIdentifier": "my-profile-id"}
+            enterprise_policies (Optional[List[Union[EnterprisePolicy, Dict]]]): Chromium
+                enterprise policies at recommended enforcement level. Up to 10 policy files,
+                each .json and max 5MB, from a same-region S3 bucket.
+            certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+                from Secrets Manager for the browser session to trust.
 
         Returns:
             str: The session ID of the newly created session.
@@ -2393,6 +2450,20 @@ class BrowserClient:
             ...     viewport={'width': 1920, 'height': 1080},
             ...     session_timeout_seconds=7200  # 2 hours
             ... )
+            >>>
+            >>> # Use proxy configuration
+            >>> session_id = client.start(
+            ...     proxy_configuration={
+            ...         "proxies": [{
+            ...             "externalProxy": {
+            ...                 "server": "proxy.example.com",
+            ...                 "port": 8080,
+            ...                 "domainPatterns": [".example.com"],
+            ...             }
+            ...         }],
+            ...         "bypass": {"domainPatterns": [".amazonaws.com"]}
+            ...     }
+            ... )
         """
         self.logger.info("Starting browser session...")
 
@@ -2403,7 +2474,22 @@ class BrowserClient:
         }
 
         if viewport is not None:
-            request_params["viewPort"] = viewport
+            request_params["viewPort"] = _to_dict(viewport)
+
+        if proxy_configuration is not None:
+            request_params["proxyConfiguration"] = _to_dict(proxy_configuration)
+
+        if extensions is not None:
+            request_params["extensions"] = [_to_dict(e) for e in extensions]
+
+        if profile_configuration is not None:
+            request_params["profileConfiguration"] = _to_dict(profile_configuration)
+
+        if enterprise_policies is not None:
+            request_params["enterprisePolicies"] = [_to_dict(p) for p in enterprise_policies]
+
+        if certificates is not None:
+            request_params["certificates"] = [_to_dict(c) for c in certificates]
 
         response = self.data_plane_client.start_browser_session(**request_params)
 
@@ -2715,7 +2801,7 @@ def __init__(self, region: str, integration_source: Optional[str] = None) -> Non
     self._session_id = None
 ```
 
-#### `create_browser(name, execution_role_arn, network_configuration=None, description=None, recording=None, browser_signing=None, tags=None, client_token=None)`
+#### `create_browser(name, execution_role_arn, network_configuration=None, description=None, recording=None, browser_signing=None, enterprise_policies=None, certificates=None, tags=None, client_token=None)`
 
 Create a custom browser with specific configuration.
 
@@ -2723,16 +2809,18 @@ This is a control plane operation that provisions a new browser with custom sett
 
 Parameters:
 
-| Name                    | Type                       | Description                                                                                                                                                            | Default    |
-| ----------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `name`                  | `str`                      | The name for the browser. Must match pattern a-zA-Z                                                                                                                    | *required* |
-| `execution_role_arn`    | `str`                      | IAM role ARN with permissions for browser operations                                                                                                                   | *required* |
-| `network_configuration` | `Optional[Dict]`           | Network configuration: { "networkMode": "PUBLIC" or "VPC", "vpcConfig": { # Required if networkMode is VPC "securityGroups": ["sg-xxx"], "subnets": ["subnet-xxx"] } } | `None`     |
-| `description`           | `Optional[str]`            | Description of the browser (1-4096 chars)                                                                                                                              | `None`     |
-| `recording`             | `Optional[Dict]`           | Recording configuration: { "enabled": True, "s3Location": { "bucket": "bucket-name", "keyPrefix": "path/prefix" } }                                                    | `None`     |
-| `browser_signing`       | `Optional[Dict]`           | Web Bot Auth configuration (NEW FEATURE): { "enabled": True }                                                                                                          | `None`     |
-| `tags`                  | `Optional[Dict[str, str]]` | Tags for the browser                                                                                                                                                   | `None`     |
-| `client_token`          | `Optional[str]`            | Idempotency token                                                                                                                                                      | `None`     |
+| Name                    | Type                                            | Description                                                                                                                                                            | Default    |
+| ----------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `name`                  | `str`                                           | The name for the browser. Must match pattern a-zA-Z                                                                                                                    | *required* |
+| `execution_role_arn`    | `str`                                           | IAM role ARN with permissions for browser operations                                                                                                                   | *required* |
+| `network_configuration` | `Optional[Dict]`                                | Network configuration: { "networkMode": "PUBLIC" or "VPC", "vpcConfig": { # Required if networkMode is VPC "securityGroups": ["sg-xxx"], "subnets": ["subnet-xxx"] } } | `None`     |
+| `description`           | `Optional[str]`                                 | Description of the browser (1-4096 chars)                                                                                                                              | `None`     |
+| `recording`             | `Optional[Dict]`                                | Recording configuration: { "enabled": True, "s3Location": { "bucket": "bucket-name", "keyPrefix": "path/prefix" } }                                                    | `None`     |
+| `browser_signing`       | `Optional[Dict]`                                | Web Bot Auth configuration (NEW FEATURE): { "enabled": True }                                                                                                          | `None`     |
+| `enterprise_policies`   | `Optional[List[Union[EnterprisePolicy, Dict]]]` | Chromium enterprise policies at managed enforcement level. Up to 10 policy files, each .json and max 5MB, from a same-region S3 bucket.                                | `None`     |
+| `certificates`          | `Optional[List[Union[Certificate, Dict]]]`      | Root CA certificates from Secrets Manager for the browser to trust.                                                                                                    | `None`     |
+| `tags`                  | `Optional[Dict[str, str]]`                      | Tags for the browser                                                                                                                                                   | `None`     |
+| `client_token`          | `Optional[str]`                                 | Idempotency token                                                                                                                                                      | `None`     |
 
 Returns:
 
@@ -2759,6 +2847,8 @@ def create_browser(
     description: Optional[str] = None,
     recording: Optional[Dict] = None,
     browser_signing: Optional[Dict] = None,
+    enterprise_policies: Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]] = None,
+    certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
     tags: Optional[Dict[str, str]] = None,
     client_token: Optional[str] = None,
 ) -> Dict:
@@ -2791,6 +2881,11 @@ def create_browser(
             {
                 "enabled": True
             }
+        enterprise_policies (Optional[List[Union[EnterprisePolicy, Dict]]]): Chromium
+            enterprise policies at managed enforcement level. Up to 10 policy files,
+            each .json and max 5MB, from a same-region S3 bucket.
+        certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+            from Secrets Manager for the browser to trust.
         tags (Optional[Dict[str, str]]): Tags for the browser
         client_token (Optional[str]): Idempotency token
 
@@ -2836,6 +2931,12 @@ def create_browser(
     if browser_signing:
         request_params["browserSigning"] = browser_signing
         self.logger.info("🔐 Web Bot Auth (browserSigning) enabled")
+
+    if enterprise_policies:
+        request_params["enterprisePolicies"] = [_to_dict(p) for p in enterprise_policies]
+
+    if certificates:
+        request_params["certificates"] = [_to_dict(c) for c in certificates]
 
     if tags:
         request_params["tags"] = tags
@@ -3297,7 +3398,7 @@ def release_control(self):
     self.update_stream("ENABLED")
 ```
 
-#### `start(identifier=DEFAULT_IDENTIFIER, name=None, session_timeout_seconds=DEFAULT_SESSION_TIMEOUT, viewport=None)`
+#### `start(identifier=DEFAULT_IDENTIFIER, name=None, session_timeout_seconds=DEFAULT_SESSION_TIMEOUT, viewport=None, proxy_configuration=None, extensions=None, profile_configuration=None, enterprise_policies=None, certificates=None)`
 
 Start a browser sandbox session.
 
@@ -3305,12 +3406,17 @@ This method initializes a new browser session with the provided parameters.
 
 Parameters:
 
-| Name                      | Type                       | Description                                                                                                  | Default                   |
-| ------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------- |
-| `identifier`              | `Optional[str]`            | The browser sandbox identifier to use. Can be DEFAULT_IDENTIFIER or a custom browser ID from create_browser. | `DEFAULT_IDENTIFIER`      |
-| `name`                    | `Optional[str]`            | A name for this session.                                                                                     | `None`                    |
-| `session_timeout_seconds` | `Optional[int]`            | The timeout for the session in seconds. Range: 1-28800 (8 hours). Default: 3600 (1 hour).                    | `DEFAULT_SESSION_TIMEOUT` |
-| `viewport`                | `Optional[Dict[str, int]]` | The viewport dimensions:                                                                                     | `None`                    |
+| Name                      | Type                                                      | Description                                                                                                                                                                       | Default                   |
+| ------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `identifier`              | `Optional[str]`                                           | The browser sandbox identifier to use. Can be DEFAULT_IDENTIFIER or a custom browser ID from create_browser.                                                                      | `DEFAULT_IDENTIFIER`      |
+| `name`                    | `Optional[str]`                                           | A name for this session.                                                                                                                                                          | `None`                    |
+| `session_timeout_seconds` | `Optional[int]`                                           | The timeout for the session in seconds. Range: 1-28800 (8 hours). Default: 3600 (1 hour).                                                                                         | `DEFAULT_SESSION_TIMEOUT` |
+| `viewport`                | `Optional[Union[ViewportConfiguration, Dict[str, int]]]`  | The viewport dimensions. Can be a ViewportConfiguration dataclass or a plain dict:                                                                                                | `None`                    |
+| `proxy_configuration`     | `Optional[Union[ProxyConfiguration, Dict[str, Any]]]`     | Proxy configuration for routing browser traffic through external proxy servers. Can be a ProxyConfiguration dataclass or a plain dict matching the API shape.                     | `None`                    |
+| `extensions`              | `Optional[List[Union[BrowserExtension, Dict[str, Any]]]]` | List of browser extensions to load into the session. Each element can be a BrowserExtension dataclass or a plain dict: [{"location": {"s3": {"bucket": "...", "prefix": "..."}}}] | `None`                    |
+| `profile_configuration`   | `Optional[Union[ProfileConfiguration, Dict[str, Any]]]`   | Profile configuration for persisting browser state across sessions. Can be a ProfileConfiguration dataclass or a plain dict:                                                      | `None`                    |
+| `enterprise_policies`     | `Optional[List[Union[EnterprisePolicy, Dict]]]`           | Chromium enterprise policies at recommended enforcement level. Up to 10 policy files, each .json and max 5MB, from a same-region S3 bucket.                                       | `None`                    |
+| `certificates`            | `Optional[List[Union[Certificate, Dict]]]`                | Root CA certificates from Secrets Manager for the browser session to trust.                                                                                                       | `None`                    |
 
 Returns:
 
@@ -3327,6 +3433,10 @@ Example
 > > > ##### Use custom browser with Web Bot Auth
 > > >
 > > > session_id = client.start( ... identifier="my-browser-abc123", ... viewport={'width': 1920, 'height': 1080}, ... session_timeout_seconds=7200 # 2 hours ... )
+> > >
+> > > ##### Use proxy configuration
+> > >
+> > > session_id = client.start( ... proxy_configuration={ ... "proxies": \[{ ... "externalProxy": { ... "server": "proxy.example.com", ... "port": 8080, ... "domainPatterns": [".example.com"], ... } ... }\], ... "bypass": {"domainPatterns": [".amazonaws.com"]} ... } ... )
 
 Source code in `bedrock_agentcore/tools/browser_client.py`
 
@@ -3336,7 +3446,12 @@ def start(
     identifier: Optional[str] = DEFAULT_IDENTIFIER,
     name: Optional[str] = None,
     session_timeout_seconds: Optional[int] = DEFAULT_SESSION_TIMEOUT,
-    viewport: Optional[Dict[str, int]] = None,
+    viewport: Optional[Union[ViewportConfiguration, Dict[str, int]]] = None,
+    proxy_configuration: Optional[Union[ProxyConfiguration, Dict[str, Any]]] = None,
+    extensions: Optional[List[Union[BrowserExtension, Dict[str, Any]]]] = None,
+    profile_configuration: Optional[Union[ProfileConfiguration, Dict[str, Any]]] = None,
+    enterprise_policies: Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]] = None,
+    certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
 ) -> str:
     """Start a browser sandbox session.
 
@@ -3348,8 +3463,25 @@ def start(
         name (Optional[str]): A name for this session.
         session_timeout_seconds (Optional[int]): The timeout for the session in seconds.
             Range: 1-28800 (8 hours). Default: 3600 (1 hour).
-        viewport (Optional[Dict[str, int]]): The viewport dimensions:
+        viewport (Optional[Union[ViewportConfiguration, Dict[str, int]]]): The viewport
+            dimensions. Can be a ViewportConfiguration dataclass or a plain dict:
             {'width': 1920, 'height': 1080}
+        proxy_configuration (Optional[Union[ProxyConfiguration, Dict[str, Any]]]): Proxy
+            configuration for routing browser traffic through external proxy servers.
+            Can be a ProxyConfiguration dataclass or a plain dict matching the API shape.
+        extensions (Optional[List[Union[BrowserExtension, Dict[str, Any]]]]): List of
+            browser extensions to load into the session. Each element can be a
+            BrowserExtension dataclass or a plain dict:
+            [{"location": {"s3": {"bucket": "...", "prefix": "..."}}}]
+        profile_configuration (Optional[Union[ProfileConfiguration, Dict[str, Any]]]): Profile
+            configuration for persisting browser state across sessions. Can be a
+            ProfileConfiguration dataclass or a plain dict:
+            {"profileIdentifier": "my-profile-id"}
+        enterprise_policies (Optional[List[Union[EnterprisePolicy, Dict]]]): Chromium
+            enterprise policies at recommended enforcement level. Up to 10 policy files,
+            each .json and max 5MB, from a same-region S3 bucket.
+        certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+            from Secrets Manager for the browser session to trust.
 
     Returns:
         str: The session ID of the newly created session.
@@ -3364,6 +3496,20 @@ def start(
         ...     viewport={'width': 1920, 'height': 1080},
         ...     session_timeout_seconds=7200  # 2 hours
         ... )
+        >>>
+        >>> # Use proxy configuration
+        >>> session_id = client.start(
+        ...     proxy_configuration={
+        ...         "proxies": [{
+        ...             "externalProxy": {
+        ...                 "server": "proxy.example.com",
+        ...                 "port": 8080,
+        ...                 "domainPatterns": [".example.com"],
+        ...             }
+        ...         }],
+        ...         "bypass": {"domainPatterns": [".amazonaws.com"]}
+        ...     }
+        ... )
     """
     self.logger.info("Starting browser session...")
 
@@ -3374,7 +3520,22 @@ def start(
     }
 
     if viewport is not None:
-        request_params["viewPort"] = viewport
+        request_params["viewPort"] = _to_dict(viewport)
+
+    if proxy_configuration is not None:
+        request_params["proxyConfiguration"] = _to_dict(proxy_configuration)
+
+    if extensions is not None:
+        request_params["extensions"] = [_to_dict(e) for e in extensions]
+
+    if profile_configuration is not None:
+        request_params["profileConfiguration"] = _to_dict(profile_configuration)
+
+    if enterprise_policies is not None:
+        request_params["enterprisePolicies"] = [_to_dict(p) for p in enterprise_policies]
+
+    if certificates is not None:
+        request_params["certificates"] = [_to_dict(c) for c in certificates]
 
     response = self.data_plane_client.start_browser_session(**request_params)
 
@@ -3500,17 +3661,23 @@ def update_stream(
     )
 ```
 
-### `browser_session(region, viewport=None, identifier=None)`
+### `browser_session(region, viewport=None, identifier=None, name=None, proxy_configuration=None, extensions=None, profile_configuration=None, enterprise_policies=None, certificates=None)`
 
 Context manager for creating and managing a browser sandbox session.
 
 Parameters:
 
-| Name         | Type                       | Description                            | Default    |
-| ------------ | -------------------------- | -------------------------------------- | ---------- |
-| `region`     | `str`                      | AWS region.                            | *required* |
-| `viewport`   | `Optional[Dict[str, int]]` | Viewport dimensions.                   | `None`     |
-| `identifier` | `Optional[str]`            | Browser identifier (system or custom). | `None`     |
+| Name                    | Type                                                      | Description                                                                                      | Default    |
+| ----------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------- |
+| `region`                | `str`                                                     | AWS region.                                                                                      | *required* |
+| `viewport`              | `Optional[Union[ViewportConfiguration, Dict[str, int]]]`  | Viewport dimensions. Can be a ViewportConfiguration dataclass or a plain dict.                   | `None`     |
+| `identifier`            | `Optional[str]`                                           | Browser identifier (system or custom).                                                           | `None`     |
+| `name`                  | `Optional[str]`                                           | A name for this session.                                                                         | `None`     |
+| `proxy_configuration`   | `Optional[Union[ProxyConfiguration, Dict[str, Any]]]`     | Proxy configuration. Can be a ProxyConfiguration dataclass or a plain dict.                      | `None`     |
+| `extensions`            | `Optional[List[Union[BrowserExtension, Dict[str, Any]]]]` | Browser extensions. Each element can be a BrowserExtension dataclass or a plain dict.            | `None`     |
+| `profile_configuration` | `Optional[Union[ProfileConfiguration, Dict[str, Any]]]`   | Profile configuration. Can be a ProfileConfiguration dataclass or a plain dict.                  | `None`     |
+| `enterprise_policies`   | `Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]]` | Chromium enterprise policies. Each element can be an EnterprisePolicy dataclass or a plain dict. | `None`     |
+| `certificates`          | `Optional[List[Union[Certificate, Dict[str, Any]]]]`      | Root CA certificates. Each element can be a Certificate dataclass or a plain dict.               | `None`     |
 
 Yields:
 
@@ -3526,21 +3693,49 @@ Example
 > > >
 > > > #### Use custom browser with Web Bot Auth
 > > >
-> > > with browser_session('us-west-2', identifier='my-signed-browser') as client: ... # Automation with reduced CAPTCHA friction ... pass
+> > > with browser_session('us-west-2', identifier='my-signed-browser') as client: ... # Automation with reduced CAPTCHA friction ... pass ...
+> > >
+> > > #### Use named session
+> > >
+> > > with browser_session('us-west-2', name='my-research-session') as client: ... ws_url, headers = client.generate_ws_headers() ...
+> > >
+> > > #### Use proxy configuration
+> > >
+> > > with browser_session('us-west-2', proxy_configuration={ ... "proxies": [{"externalProxy": {"server": "proxy.corp.com", "port": 8080}}], ... "bypass": {"domainPatterns": [".amazonaws.com"]} ... }) as client: ... ws_url, headers = client.generate_ws_headers()
 
 Source code in `bedrock_agentcore/tools/browser_client.py`
 
 ```
 @contextmanager
 def browser_session(
-    region: str, viewport: Optional[Dict[str, int]] = None, identifier: Optional[str] = None
+    region: str,
+    viewport: Optional[Union[ViewportConfiguration, Dict[str, int]]] = None,
+    identifier: Optional[str] = None,
+    name: Optional[str] = None,
+    proxy_configuration: Optional[Union[ProxyConfiguration, Dict[str, Any]]] = None,
+    extensions: Optional[List[Union[BrowserExtension, Dict[str, Any]]]] = None,
+    profile_configuration: Optional[Union[ProfileConfiguration, Dict[str, Any]]] = None,
+    enterprise_policies: Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]] = None,
+    certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
 ) -> Generator[BrowserClient, None, None]:
     """Context manager for creating and managing a browser sandbox session.
 
     Args:
         region (str): AWS region.
-        viewport (Optional[Dict[str, int]]): Viewport dimensions.
+        viewport (Optional[Union[ViewportConfiguration, Dict[str, int]]]): Viewport dimensions.
+            Can be a ViewportConfiguration dataclass or a plain dict.
         identifier (Optional[str]): Browser identifier (system or custom).
+        name (Optional[str]): A name for this session.
+        proxy_configuration (Optional[Union[ProxyConfiguration, Dict[str, Any]]]): Proxy
+            configuration. Can be a ProxyConfiguration dataclass or a plain dict.
+        extensions (Optional[List[Union[BrowserExtension, Dict[str, Any]]]]): Browser
+            extensions. Each element can be a BrowserExtension dataclass or a plain dict.
+        profile_configuration (Optional[Union[ProfileConfiguration, Dict[str, Any]]]): Profile
+            configuration. Can be a ProfileConfiguration dataclass or a plain dict.
+        enterprise_policies (Optional[List[Union[EnterprisePolicy, Dict[str, Any]]]]): Chromium
+            enterprise policies. Each element can be an EnterprisePolicy dataclass or a plain dict.
+        certificates (Optional[List[Union[Certificate, Dict[str, Any]]]]): Root CA certificates.
+            Each element can be a Certificate dataclass or a plain dict.
 
     Yields:
         BrowserClient: An initialized and started browser client.
@@ -3554,6 +3749,17 @@ def browser_session(
         >>> with browser_session('us-west-2', identifier='my-signed-browser') as client:
         ...     # Automation with reduced CAPTCHA friction
         ...     pass
+        ...
+        >>> # Use named session
+        >>> with browser_session('us-west-2', name='my-research-session') as client:
+        ...     ws_url, headers = client.generate_ws_headers()
+        ...
+        >>> # Use proxy configuration
+        >>> with browser_session('us-west-2', proxy_configuration={
+        ...     "proxies": [{"externalProxy": {"server": "proxy.corp.com", "port": 8080}}],
+        ...     "bypass": {"domainPatterns": [".amazonaws.com"]}
+        ... }) as client:
+        ...     ws_url, headers = client.generate_ws_headers()
     """
     client = BrowserClient(region)
     start_kwargs = {}
@@ -3561,6 +3767,18 @@ def browser_session(
         start_kwargs["viewport"] = viewport
     if identifier is not None:
         start_kwargs["identifier"] = identifier
+    if name is not None:
+        start_kwargs["name"] = name
+    if proxy_configuration is not None:
+        start_kwargs["proxy_configuration"] = proxy_configuration
+    if extensions is not None:
+        start_kwargs["extensions"] = extensions
+    if profile_configuration is not None:
+        start_kwargs["profile_configuration"] = profile_configuration
+    if enterprise_policies is not None:
+        start_kwargs["enterprise_policies"] = enterprise_policies
+    if certificates is not None:
+        start_kwargs["certificates"] = certificates
 
     client.start(**start_kwargs)
 

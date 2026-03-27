@@ -2595,7 +2595,7 @@
   <span class="md-ellipsis">
     
   
-    AgentCore CLI
+    Starter Toolkit CLI
   
 
     
@@ -2826,6 +2826,21 @@
               
               <article class="md-content__inner md-typeset">
                 
+<div class="agentcore-cli-banner">
+  <strong>Recommendation: Use the AgentCore CLI for new projects</strong>
+  <p>
+    The <a href="https://github.com/aws/agentcore-cli"><strong>AgentCore CLI (<code>@aws/agentcore-cli</code>)</strong></a>
+    is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore.
+    It offers broader framework support, local development with hot reload, built-in evaluations, gateway management, and more.
+  </p>
+  <p><strong>Get started:</strong> <code>npm i @aws/agentcore-cli</code></p>
+  <p>
+    See the <a href="https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md"><strong>Migration Guide</strong></a>
+    for step-by-step instructions to migrate existing projects.
+    The <a href="https://github.com/aws/agentcore-cli/tree/main/docs">AgentCore CLI docs</a> cover the full commands reference, supported frameworks, and configuration.
+  </p>
+</div>
+
                   
 
 
@@ -3050,7 +3065,7 @@ aws<span class="w"> </span>cognito-idp<span class="w"> </span>update-user-pool-c
     <span class="n">scopes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;openid&quot;</span><span class="p">],</span>
     <span class="n">auth_flow</span><span class="o">=</span><span class="s2">&quot;USER_FEDERATION&quot;</span><span class="p">,</span>
     <span class="n">on_auth_url</span><span class="o">=</span><span class="n">handle_auth_url</span><span class="p">,</span> <span class="c1"># streams authorization URL to client</span>
-    <span class="n">force_authentication</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">force_authentication</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">callback_url</span><span class="o">=</span><span class="s1">&#39;&lt;insert_oauth2_callback_url_for_session_binding; not required for *local* agent launch and invocations&gt;&#39;</span>
 <span class="p">)</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">introspect_with_decorator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">access_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
@@ -3175,6 +3190,7 @@ rm<span class="w"> </span>agentcore-identity-policy.json
 
 
                 
+
               </article>
             </div>
           

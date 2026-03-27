@@ -91,6 +91,13 @@ class MemoryClient:
         "get_event",
         "delete_event",
         "list_events",
+        "batch_create_memory_records",
+        "batch_delete_memory_records",
+        "batch_update_memory_records",
+        "start_memory_extraction_job",
+        "list_memory_extraction_jobs",
+        "list_sessions",
+        "list_actors",
     }
 
     # AgentCore Memory control plane methods
@@ -100,20 +107,34 @@ class MemoryClient:
         "list_memories",
         "update_memory",
         "delete_memory",
-        "list_memory_strategies",
     }
 
-    def __init__(self, region_name: Optional[str] = None, integration_source: Optional[str] = None):
-        """Initialize the Memory client."""
-        self.region_name = region_name or boto3.Session().region_name or "us-west-2"
+    def __init__(
+        self,
+        region_name: Optional[str] = None,
+        integration_source: Optional[str] = None,
+        boto3_session: Optional[boto3.Session] = None,
+    ):
+        """Initialize the Memory client.
+
+        Args:
+            region_name: AWS region name. If not provided, uses the session's region or "us-west-2".
+            integration_source: Optional integration source for user-agent telemetry.
+            boto3_session: Optional boto3 Session to use. If not provided, a default session
+                          is created. Useful for named profiles or custom credentials.
+        """
+        session = boto3_session if boto3_session else boto3.Session()
+        self.region_name = region_name or session.region_name or "us-west-2"
         self.integration_source = integration_source
 
         # Build config with user-agent for telemetry
         user_agent_extra = build_user_agent_suffix(integration_source)
         client_config = Config(user_agent_extra=user_agent_extra)
 
-        self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name, config=client_config)
-        self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
+        self.gmcp_client = session.client(
+            "bedrock-agentcore-control", region_name=self.region_name, config=client_config
+        )
+        self.gmdp_client = session.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
 
         logger.info(
             "Initialized MemoryClient for control plane: %s, data plane: %s",
@@ -149,12 +170,12 @@ class MemoryClient:
         if name in self._ALLOWED_GMDP_METHODS and hasattr(self.gmdp_client, name):
             method = getattr(self.gmdp_client, name)
             logger.debug("Forwarding method '%s' to gmdp_client", name)
-            return method
+            return accept_snake_case_kwargs(method)
 
         if name in self._ALLOWED_GMCP_METHODS and hasattr(self.gmcp_client, name):
             method = getattr(self.gmcp_client, name)
             logger.debug("Forwarding method '%s' to gmcp_client", name)
-            return method
+            return accept_snake_case_kwargs(method)
 
         # Method not found on either client
         raise AttributeError(
@@ -171,6 +192,7 @@ class MemoryClient:
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        stream_delivery_resources: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Create a memory with simplified configuration."""
         if strategies is None:
@@ -192,6 +214,9 @@ class MemoryClient:
             if memory_execution_role_arn is not None:
                 params["memoryExecutionRoleArn"] = memory_execution_role_arn
 
+            if stream_delivery_resources is not None:
+                params["streamDeliveryResources"] = stream_delivery_resources
+
             response = self.gmcp_client.create_memory(**params)
 
             memory = response["memory"]
@@ -212,6 +237,7 @@ class MemoryClient:
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        stream_delivery_resources: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Create a memory resource or fetch the existing memory details if it already exists.
 
@@ -225,6 +251,7 @@ class MemoryClient:
                 description=description,
                 event_expiry_days=event_expiry_days,
                 memory_execution_role_arn=memory_execution_role_arn,
+                stream_delivery_resources=stream_delivery_resources,
             )
             return memory
         except ClientError as e:
@@ -246,6 +273,7 @@ class MemoryClient:
         description: Optional[str] = None,
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
+        stream_delivery_resources: Optional[Dict[str, Any]] = None,
         max_wait: int = 300,
         poll_interval: int = 10,
     ) -> Dict[str, Any]:
@@ -260,6 +288,7 @@ class MemoryClient:
             description: Optional description
             event_expiry_days: How long to retain events (default: 90 days)
             memory_execution_role_arn: IAM role ARN for memory execution
+            stream_delivery_resources: Optional delivery configuration for streaming memory records
             max_wait: Maximum seconds to wait (default: 300)
             poll_interval: Seconds between status checks (default: 10)
 
@@ -277,6 +306,7 @@ class MemoryClient:
             description=description,
             event_expiry_days=event_expiry_days,
             memory_execution_role_arn=memory_execution_role_arn,
+            stream_delivery_resources=stream_delivery_resources,
         )
 
         memory_id = memory.get("memoryId", memory.get("id"))  # Handle both field names
@@ -658,78 +688,6 @@ class MemoryClient:
             logger.error("Failed to create event: %s", e)
             raise
 
-    def save_turn(
-        self,
-        memory_id: str,
-        actor_id: str,
-        session_id: str,
-        user_input: str,
-        agent_response: str,
-        event_timestamp: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
-        """DEPRECATED: Use save_conversation() for more flexibility.
-
-        This method will be removed in v1.0.0.
-        """
-        warnings.warn(
-            "save_turn() is deprecated and will be removed in v1.0.0. "
-            "Use save_conversation() for flexible message handling.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        messages = [(user_input, "USER"), (agent_response, "ASSISTANT")]
-
-        return self.create_event(
-            memory_id=memory_id,
-            actor_id=actor_id,
-            session_id=session_id,
-            messages=messages,
-            event_timestamp=event_timestamp,
-        )
-
-    def process_turn(
-        self,
-        memory_id: str,
-        actor_id: str,
-        session_id: str,
-        user_input: str,
-        agent_response: str,
-        event_timestamp: Optional[datetime] = None,
-        retrieval_namespace: Optional[str] = None,
-        retrieval_query: Optional[str] = None,
-        top_k: int = 3,
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """DEPRECATED: Use retrieve_memories() and save_conversation() separately.
-
-        This method will be removed in v1.0.0.
-        """
-        warnings.warn(
-            "process_turn() is deprecated and will be removed in v1.0.0. "
-            "Use retrieve_memories() and save_conversation() separately, or use process_turn_with_llm().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        retrieved_memories = []
-
-        if retrieval_namespace:
-            search_query = retrieval_query or user_input
-            retrieved_memories = self.retrieve_memories(
-                memory_id=memory_id, namespace=retrieval_namespace, query=search_query, top_k=top_k
-            )
-
-        event = self.save_turn(
-            memory_id=memory_id,
-            actor_id=actor_id,
-            session_id=session_id,
-            user_input=user_input,
-            agent_response=agent_response,
-            event_timestamp=event_timestamp,
-        )
-
-        return retrieved_memories, event
-
     def process_turn_with_llm(
         self,
         memory_id: str,
@@ -871,7 +829,7 @@ class MemoryClient:
                     "memoryId": memory_id,
                     "actorId": actor_id,
                     "sessionId": session_id,
-                    "maxResults": min(100, max_results - len(all_events)),
+                    "maxResults": 100,
                     "includePayloads": include_payload,
                 }
 
@@ -898,6 +856,7 @@ class MemoryClient:
                 all_events.extend(events)
 
                 next_token = response.get("nextToken")
+                # Break if: no more pages or reached max
                 if not next_token or len(all_events) >= max_results:
                     break
 
@@ -2029,6 +1988,20 @@ class MemoryClient:
         for namespace in namespaces:
             self._validate_namespace(namespace)
 
+    def _try_get_override_type(self, override_type: Optional[str]) -> Optional[OverrideType]:
+        """Safely convert override_type string to OverrideType enum.
+
+        Returns None if override_type is None or not a valid OverrideType value
+        (e.g., 'SELF_MANAGED' which is a valid configuration type but not in the enum).
+        """
+        if override_type is None:
+            return None
+        try:
+            return OverrideType(override_type)
+        except ValueError:
+            # Unknown override type (e.g., SELF_MANAGED), return None
+            return None
+
     def _wrap_configuration(
         self, config: Dict[str, Any], strategy_type: str, override_type: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -2041,8 +2014,8 @@ class MemoryClient:
             builtin_config_keys = ["triggerEveryNMessages", "historicalContextWindowSize"]
 
             if strategy_type == "CUSTOM" and override_type:
-                override_enum = OverrideType(override_type)
-                if override_enum in CUSTOM_EXTRACTION_WRAPPER_KEYS:
+                override_enum = self._try_get_override_type(override_type)
+                if override_enum and override_enum in CUSTOM_EXTRACTION_WRAPPER_KEYS:
                     wrapped_config["extraction"] = {
                         "customExtractionConfiguration": {CUSTOM_EXTRACTION_WRAPPER_KEYS[override_enum]: extraction}
                     }
@@ -2070,13 +2043,16 @@ class MemoryClient:
                             }
                         }
                 elif strategy_type == "CUSTOM" and override_type:
-                    override_enum = OverrideType(override_type)
-                    if override_enum in CUSTOM_CONSOLIDATION_WRAPPER_KEYS:
+                    override_enum = self._try_get_override_type(override_type)
+                    if override_enum and override_enum in CUSTOM_CONSOLIDATION_WRAPPER_KEYS:
                         wrapped_config["consolidation"] = {
                             "customConsolidationConfiguration": {
                                 CUSTOM_CONSOLIDATION_WRAPPER_KEYS[override_enum]: consolidation
                             }
                         }
+                    else:
+                        # Unknown override type (e.g., SELF_MANAGED), pass through as-is
+                        wrapped_config["consolidation"] = consolidation
             else:
                 wrapped_config["consolidation"] = consolidation
 
@@ -2084,13 +2060,21 @@ class MemoryClient:
             reflection = config["reflection"]
 
             if strategy_type == "CUSTOM" and override_type:
-                override_enum = OverrideType(override_type)
-                if override_enum in CUSTOM_REFLECTION_WRAPPER_KEYS:
+                override_enum = self._try_get_override_type(override_type)
+                if override_enum and override_enum in CUSTOM_REFLECTION_WRAPPER_KEYS:
                     wrapped_config["reflection"] = {
                         "customReflectionConfiguration": {CUSTOM_REFLECTION_WRAPPER_KEYS[override_enum]: reflection}
                     }
+                else:
+                    # Unknown override type (e.g., SELF_MANAGED), pass through as-is
+                    wrapped_config["reflection"] = reflection
             else:
                 wrapped_config["reflection"] = reflection
+
+        # Pass through any keys the SDK doesn't know about (e.g., selfManagedConfiguration)
+        for key in config:
+            if key not in wrapped_config:
+                wrapped_config[key] = config[key]
 
         return wrapped_config
 ```
@@ -2163,12 +2147,12 @@ def __getattr__(self, name: str):
     if name in self._ALLOWED_GMDP_METHODS and hasattr(self.gmdp_client, name):
         method = getattr(self.gmdp_client, name)
         logger.debug("Forwarding method '%s' to gmdp_client", name)
-        return method
+        return accept_snake_case_kwargs(method)
 
     if name in self._ALLOWED_GMCP_METHODS and hasattr(self.gmcp_client, name):
         method = getattr(self.gmcp_client, name)
         logger.debug("Forwarding method '%s' to gmcp_client", name)
-        return method
+        return accept_snake_case_kwargs(method)
 
     # Method not found on either client
     raise AttributeError(
@@ -2179,24 +2163,47 @@ def __getattr__(self, name: str):
     )
 ```
 
-#### `__init__(region_name=None, integration_source=None)`
+#### `__init__(region_name=None, integration_source=None, boto3_session=None)`
 
 Initialize the Memory client.
+
+Parameters:
+
+| Name                 | Type                | Description                                                                                                                    | Default |
+| -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `region_name`        | `Optional[str]`     | AWS region name. If not provided, uses the session's region or "us-west-2".                                                    | `None`  |
+| `integration_source` | `Optional[str]`     | Optional integration source for user-agent telemetry.                                                                          | `None`  |
+| `boto3_session`      | `Optional[Session]` | Optional boto3 Session to use. If not provided, a default session is created. Useful for named profiles or custom credentials. | `None`  |
 
 Source code in `bedrock_agentcore/memory/client.py`
 
 ```
-def __init__(self, region_name: Optional[str] = None, integration_source: Optional[str] = None):
-    """Initialize the Memory client."""
-    self.region_name = region_name or boto3.Session().region_name or "us-west-2"
+def __init__(
+    self,
+    region_name: Optional[str] = None,
+    integration_source: Optional[str] = None,
+    boto3_session: Optional[boto3.Session] = None,
+):
+    """Initialize the Memory client.
+
+    Args:
+        region_name: AWS region name. If not provided, uses the session's region or "us-west-2".
+        integration_source: Optional integration source for user-agent telemetry.
+        boto3_session: Optional boto3 Session to use. If not provided, a default session
+                      is created. Useful for named profiles or custom credentials.
+    """
+    session = boto3_session if boto3_session else boto3.Session()
+    self.region_name = region_name or session.region_name or "us-west-2"
     self.integration_source = integration_source
 
     # Build config with user-agent for telemetry
     user_agent_extra = build_user_agent_suffix(integration_source)
     client_config = Config(user_agent_extra=user_agent_extra)
 
-    self.gmcp_client = boto3.client("bedrock-agentcore-control", region_name=self.region_name, config=client_config)
-    self.gmdp_client = boto3.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
+    self.gmcp_client = session.client(
+        "bedrock-agentcore-control", region_name=self.region_name, config=client_config
+    )
+    self.gmdp_client = session.client("bedrock-agentcore", region_name=self.region_name, config=client_config)
 
     logger.info(
         "Initialized MemoryClient for control plane: %s, data plane: %s",
@@ -2955,7 +2962,7 @@ def create_event(
         raise
 ```
 
-#### `create_memory(name, strategies=None, description=None, event_expiry_days=90, memory_execution_role_arn=None)`
+#### `create_memory(name, strategies=None, description=None, event_expiry_days=90, memory_execution_role_arn=None, stream_delivery_resources=None)`
 
 Create a memory with simplified configuration.
 
@@ -2969,6 +2976,7 @@ def create_memory(
     description: Optional[str] = None,
     event_expiry_days: int = 90,
     memory_execution_role_arn: Optional[str] = None,
+    stream_delivery_resources: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create a memory with simplified configuration."""
     if strategies is None:
@@ -2990,6 +2998,9 @@ def create_memory(
         if memory_execution_role_arn is not None:
             params["memoryExecutionRoleArn"] = memory_execution_role_arn
 
+        if stream_delivery_resources is not None:
+            params["streamDeliveryResources"] = stream_delivery_resources
+
         response = self.gmcp_client.create_memory(**params)
 
         memory = response["memory"]
@@ -3004,7 +3015,7 @@ def create_memory(
         raise
 ```
 
-#### `create_memory_and_wait(name, strategies, description=None, event_expiry_days=90, memory_execution_role_arn=None, max_wait=300, poll_interval=10)`
+#### `create_memory_and_wait(name, strategies, description=None, event_expiry_days=90, memory_execution_role_arn=None, stream_delivery_resources=None, max_wait=300, poll_interval=10)`
 
 Create a memory and wait for it to become ACTIVE.
 
@@ -3012,15 +3023,16 @@ This method creates a memory and polls until it reaches ACTIVE status, providing
 
 Parameters:
 
-| Name                        | Type                   | Description                                  | Default    |
-| --------------------------- | ---------------------- | -------------------------------------------- | ---------- |
-| `name`                      | `str`                  | Name for the memory resource                 | *required* |
-| `strategies`                | `List[Dict[str, Any]]` | List of strategy configurations              | *required* |
-| `description`               | `Optional[str]`        | Optional description                         | `None`     |
-| `event_expiry_days`         | `int`                  | How long to retain events (default: 90 days) | `90`       |
-| `memory_execution_role_arn` | `Optional[str]`        | IAM role ARN for memory execution            | `None`     |
-| `max_wait`                  | `int`                  | Maximum seconds to wait (default: 300)       | `300`      |
-| `poll_interval`             | `int`                  | Seconds between status checks (default: 10)  | `10`       |
+| Name                        | Type                       | Description                                                  | Default    |
+| --------------------------- | -------------------------- | ------------------------------------------------------------ | ---------- |
+| `name`                      | `str`                      | Name for the memory resource                                 | *required* |
+| `strategies`                | `List[Dict[str, Any]]`     | List of strategy configurations                              | *required* |
+| `description`               | `Optional[str]`            | Optional description                                         | `None`     |
+| `event_expiry_days`         | `int`                      | How long to retain events (default: 90 days)                 | `90`       |
+| `memory_execution_role_arn` | `Optional[str]`            | IAM role ARN for memory execution                            | `None`     |
+| `stream_delivery_resources` | `Optional[Dict[str, Any]]` | Optional delivery configuration for streaming memory records | `None`     |
+| `max_wait`                  | `int`                      | Maximum seconds to wait (default: 300)                       | `300`      |
+| `poll_interval`             | `int`                      | Seconds between status checks (default: 10)                  | `10`       |
 
 Returns:
 
@@ -3045,6 +3057,7 @@ def create_memory_and_wait(
     description: Optional[str] = None,
     event_expiry_days: int = 90,
     memory_execution_role_arn: Optional[str] = None,
+    stream_delivery_resources: Optional[Dict[str, Any]] = None,
     max_wait: int = 300,
     poll_interval: int = 10,
 ) -> Dict[str, Any]:
@@ -3059,6 +3072,7 @@ def create_memory_and_wait(
         description: Optional description
         event_expiry_days: How long to retain events (default: 90 days)
         memory_execution_role_arn: IAM role ARN for memory execution
+        stream_delivery_resources: Optional delivery configuration for streaming memory records
         max_wait: Maximum seconds to wait (default: 300)
         poll_interval: Seconds between status checks (default: 10)
 
@@ -3076,6 +3090,7 @@ def create_memory_and_wait(
         description=description,
         event_expiry_days=event_expiry_days,
         memory_execution_role_arn=memory_execution_role_arn,
+        stream_delivery_resources=stream_delivery_resources,
     )
 
     memory_id = memory.get("memoryId", memory.get("id"))  # Handle both field names
@@ -3113,7 +3128,7 @@ def create_memory_and_wait(
     raise TimeoutError("Memory %s did not become ACTIVE within %d seconds" % (memory_id, max_wait))
 ```
 
-#### `create_or_get_memory(name, strategies=None, description=None, event_expiry_days=90, memory_execution_role_arn=None)`
+#### `create_or_get_memory(name, strategies=None, description=None, event_expiry_days=90, memory_execution_role_arn=None, stream_delivery_resources=None)`
 
 Create a memory resource or fetch the existing memory details if it already exists.
 
@@ -3133,6 +3148,7 @@ def create_or_get_memory(
     description: Optional[str] = None,
     event_expiry_days: int = 90,
     memory_execution_role_arn: Optional[str] = None,
+    stream_delivery_resources: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create a memory resource or fetch the existing memory details if it already exists.
 
@@ -3146,6 +3162,7 @@ def create_or_get_memory(
             description=description,
             event_expiry_days=event_expiry_days,
             memory_execution_role_arn=memory_execution_role_arn,
+            stream_delivery_resources=stream_delivery_resources,
         )
         return memory
     except ClientError as e:
@@ -3825,7 +3842,7 @@ def list_events(
                 "memoryId": memory_id,
                 "actorId": actor_id,
                 "sessionId": session_id,
-                "maxResults": min(100, max_results - len(all_events)),
+                "maxResults": 100,
                 "includePayloads": include_payload,
             }
 
@@ -3852,6 +3869,7 @@ def list_events(
             all_events.extend(events)
 
             next_token = response.get("nextToken")
+            # Break if: no more pages or reached max
             if not next_token or len(all_events) >= max_results:
                 break
 
@@ -4002,58 +4020,6 @@ def modify_strategy(
         modify_config["configuration"] = configuration
 
     return self.update_memory_strategies(memory_id=memory_id, modify_strategies=[modify_config])
-```
-
-#### `process_turn(memory_id, actor_id, session_id, user_input, agent_response, event_timestamp=None, retrieval_namespace=None, retrieval_query=None, top_k=3)`
-
-DEPRECATED: Use retrieve_memories() and save_conversation() separately.
-
-This method will be removed in v1.0.0.
-
-Source code in `bedrock_agentcore/memory/client.py`
-
-```
-def process_turn(
-    self,
-    memory_id: str,
-    actor_id: str,
-    session_id: str,
-    user_input: str,
-    agent_response: str,
-    event_timestamp: Optional[datetime] = None,
-    retrieval_namespace: Optional[str] = None,
-    retrieval_query: Optional[str] = None,
-    top_k: int = 3,
-) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    """DEPRECATED: Use retrieve_memories() and save_conversation() separately.
-
-    This method will be removed in v1.0.0.
-    """
-    warnings.warn(
-        "process_turn() is deprecated and will be removed in v1.0.0. "
-        "Use retrieve_memories() and save_conversation() separately, or use process_turn_with_llm().",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    retrieved_memories = []
-
-    if retrieval_namespace:
-        search_query = retrieval_query or user_input
-        retrieved_memories = self.retrieve_memories(
-            memory_id=memory_id, namespace=retrieval_namespace, query=search_query, top_k=top_k
-        )
-
-    event = self.save_turn(
-        memory_id=memory_id,
-        actor_id=actor_id,
-        session_id=session_id,
-        user_input=user_input,
-        agent_response=agent_response,
-        event_timestamp=event_timestamp,
-    )
-
-    return retrieved_memories, event
 ```
 
 #### `process_turn_with_llm(memory_id, actor_id, session_id, user_input, llm_callback, retrieval_namespace=None, retrieval_query=None, top_k=3, event_timestamp=None)`
@@ -4423,46 +4389,6 @@ def save_conversation(
         raise
 ```
 
-#### `save_turn(memory_id, actor_id, session_id, user_input, agent_response, event_timestamp=None)`
-
-DEPRECATED: Use save_conversation() for more flexibility.
-
-This method will be removed in v1.0.0.
-
-Source code in `bedrock_agentcore/memory/client.py`
-
-```
-def save_turn(
-    self,
-    memory_id: str,
-    actor_id: str,
-    session_id: str,
-    user_input: str,
-    agent_response: str,
-    event_timestamp: Optional[datetime] = None,
-) -> Dict[str, Any]:
-    """DEPRECATED: Use save_conversation() for more flexibility.
-
-    This method will be removed in v1.0.0.
-    """
-    warnings.warn(
-        "save_turn() is deprecated and will be removed in v1.0.0. "
-        "Use save_conversation() for flexible message handling.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    messages = [(user_input, "USER"), (agent_response, "ASSISTANT")]
-
-    return self.create_event(
-        memory_id=memory_id,
-        actor_id=actor_id,
-        session_id=session_id,
-        messages=messages,
-        event_timestamp=event_timestamp,
-    )
-```
-
 #### `update_memory_strategies(memory_id, add_strategies=None, modify_strategies=None, delete_strategy_ids=None)`
 
 Update memory strategies - add, modify, or delete.
@@ -4711,6 +4637,7 @@ class MemoryControlPlaneClient:
         description: Optional[str] = None,
         memory_execution_role_arn: Optional[str] = None,
         strategies: Optional[List[Dict[str, Any]]] = None,
+        stream_delivery_resources: Optional[Dict[str, Any]] = None,
         wait_for_active: bool = False,
         max_wait: int = 300,
         poll_interval: int = 10,
@@ -4723,6 +4650,7 @@ class MemoryControlPlaneClient:
             description: Optional description
             memory_execution_role_arn: IAM role ARN for memory execution
             strategies: Optional list of strategy configurations
+            stream_delivery_resources: Optional delivery configuration for streaming memory records
             wait_for_active: Whether to wait for memory to become ACTIVE
             max_wait: Maximum seconds to wait if wait_for_active is True
             poll_interval: Seconds between status checks if wait_for_active is True
@@ -4744,6 +4672,9 @@ class MemoryControlPlaneClient:
 
         if strategies:
             params["memoryStrategies"] = strategies
+
+        if stream_delivery_resources is not None:
+            params["streamDeliveryResources"] = stream_delivery_resources
 
         try:
             response = self.client.create_memory(**params)
@@ -4834,6 +4765,7 @@ class MemoryControlPlaneClient:
         add_strategies: Optional[List[Dict[str, Any]]] = None,
         modify_strategies: Optional[List[Dict[str, Any]]] = None,
         delete_strategy_ids: Optional[List[str]] = None,
+        stream_delivery_resources: Optional[Dict[str, Any]] = None,
         wait_for_active: bool = False,
         max_wait: int = 300,
         poll_interval: int = 10,
@@ -4848,6 +4780,7 @@ class MemoryControlPlaneClient:
             add_strategies: Optional list of strategies to add
             modify_strategies: Optional list of strategies to modify
             delete_strategy_ids: Optional list of strategy IDs to delete
+            stream_delivery_resources: Optional delivery configuration for streaming memory records
             wait_for_active: Whether to wait for memory to become ACTIVE
             max_wait: Maximum seconds to wait if wait_for_active is True
             poll_interval: Seconds between status checks if wait_for_active is True
@@ -4869,6 +4802,9 @@ class MemoryControlPlaneClient:
 
         if memory_execution_role_arn is not None:
             params["memoryExecutionRoleArn"] = memory_execution_role_arn
+
+        if stream_delivery_resources is not None:
+            params["streamDeliveryResources"] = stream_delivery_resources
 
         # Add strategy operations if provided
         memory_strategies = {}
@@ -5400,22 +5336,23 @@ def add_strategy(
     return memory
 ```
 
-#### `create_memory(name, event_expiry_days=90, description=None, memory_execution_role_arn=None, strategies=None, wait_for_active=False, max_wait=300, poll_interval=10)`
+#### `create_memory(name, event_expiry_days=90, description=None, memory_execution_role_arn=None, strategies=None, stream_delivery_resources=None, wait_for_active=False, max_wait=300, poll_interval=10)`
 
 Create a memory resource with optional strategies.
 
 Parameters:
 
-| Name                        | Type                             | Description                                              | Default    |
-| --------------------------- | -------------------------------- | -------------------------------------------------------- | ---------- |
-| `name`                      | `str`                            | Name for the memory resource                             | *required* |
-| `event_expiry_days`         | `int`                            | How long to retain events (default: 90 days)             | `90`       |
-| `description`               | `Optional[str]`                  | Optional description                                     | `None`     |
-| `memory_execution_role_arn` | `Optional[str]`                  | IAM role ARN for memory execution                        | `None`     |
-| `strategies`                | `Optional[List[Dict[str, Any]]]` | Optional list of strategy configurations                 | `None`     |
-| `wait_for_active`           | `bool`                           | Whether to wait for memory to become ACTIVE              | `False`    |
-| `max_wait`                  | `int`                            | Maximum seconds to wait if wait_for_active is True       | `300`      |
-| `poll_interval`             | `int`                            | Seconds between status checks if wait_for_active is True | `10`       |
+| Name                        | Type                             | Description                                                  | Default    |
+| --------------------------- | -------------------------------- | ------------------------------------------------------------ | ---------- |
+| `name`                      | `str`                            | Name for the memory resource                                 | *required* |
+| `event_expiry_days`         | `int`                            | How long to retain events (default: 90 days)                 | `90`       |
+| `description`               | `Optional[str]`                  | Optional description                                         | `None`     |
+| `memory_execution_role_arn` | `Optional[str]`                  | IAM role ARN for memory execution                            | `None`     |
+| `strategies`                | `Optional[List[Dict[str, Any]]]` | Optional list of strategy configurations                     | `None`     |
+| `stream_delivery_resources` | `Optional[Dict[str, Any]]`       | Optional delivery configuration for streaming memory records | `None`     |
+| `wait_for_active`           | `bool`                           | Whether to wait for memory to become ACTIVE                  | `False`    |
+| `max_wait`                  | `int`                            | Maximum seconds to wait if wait_for_active is True           | `300`      |
+| `poll_interval`             | `int`                            | Seconds between status checks if wait_for_active is True     | `10`       |
 
 Returns:
 
@@ -5433,6 +5370,7 @@ def create_memory(
     description: Optional[str] = None,
     memory_execution_role_arn: Optional[str] = None,
     strategies: Optional[List[Dict[str, Any]]] = None,
+    stream_delivery_resources: Optional[Dict[str, Any]] = None,
     wait_for_active: bool = False,
     max_wait: int = 300,
     poll_interval: int = 10,
@@ -5445,6 +5383,7 @@ def create_memory(
         description: Optional description
         memory_execution_role_arn: IAM role ARN for memory execution
         strategies: Optional list of strategy configurations
+        stream_delivery_resources: Optional delivery configuration for streaming memory records
         wait_for_active: Whether to wait for memory to become ACTIVE
         max_wait: Maximum seconds to wait if wait_for_active is True
         poll_interval: Seconds between status checks if wait_for_active is True
@@ -5466,6 +5405,9 @@ def create_memory(
 
     if strategies:
         params["memoryStrategies"] = strategies
+
+    if stream_delivery_resources is not None:
+        params["streamDeliveryResources"] = stream_delivery_resources
 
     try:
         response = self.client.create_memory(**params)
@@ -5786,24 +5728,25 @@ def remove_strategy(
     )
 ```
 
-#### `update_memory(memory_id, description=None, event_expiry_days=None, memory_execution_role_arn=None, add_strategies=None, modify_strategies=None, delete_strategy_ids=None, wait_for_active=False, max_wait=300, poll_interval=10)`
+#### `update_memory(memory_id, description=None, event_expiry_days=None, memory_execution_role_arn=None, add_strategies=None, modify_strategies=None, delete_strategy_ids=None, stream_delivery_resources=None, wait_for_active=False, max_wait=300, poll_interval=10)`
 
 Update a memory resource properties and/or strategies.
 
 Parameters:
 
-| Name                        | Type                             | Description                                              | Default    |
-| --------------------------- | -------------------------------- | -------------------------------------------------------- | ---------- |
-| `memory_id`                 | `str`                            | Memory resource ID                                       | *required* |
-| `description`               | `Optional[str]`                  | Optional new description                                 | `None`     |
-| `event_expiry_days`         | `Optional[int]`                  | Optional new event expiry duration                       | `None`     |
-| `memory_execution_role_arn` | `Optional[str]`                  | Optional new execution role ARN                          | `None`     |
-| `add_strategies`            | `Optional[List[Dict[str, Any]]]` | Optional list of strategies to add                       | `None`     |
-| `modify_strategies`         | `Optional[List[Dict[str, Any]]]` | Optional list of strategies to modify                    | `None`     |
-| `delete_strategy_ids`       | `Optional[List[str]]`            | Optional list of strategy IDs to delete                  | `None`     |
-| `wait_for_active`           | `bool`                           | Whether to wait for memory to become ACTIVE              | `False`    |
-| `max_wait`                  | `int`                            | Maximum seconds to wait if wait_for_active is True       | `300`      |
-| `poll_interval`             | `int`                            | Seconds between status checks if wait_for_active is True | `10`       |
+| Name                        | Type                             | Description                                                  | Default    |
+| --------------------------- | -------------------------------- | ------------------------------------------------------------ | ---------- |
+| `memory_id`                 | `str`                            | Memory resource ID                                           | *required* |
+| `description`               | `Optional[str]`                  | Optional new description                                     | `None`     |
+| `event_expiry_days`         | `Optional[int]`                  | Optional new event expiry duration                           | `None`     |
+| `memory_execution_role_arn` | `Optional[str]`                  | Optional new execution role ARN                              | `None`     |
+| `add_strategies`            | `Optional[List[Dict[str, Any]]]` | Optional list of strategies to add                           | `None`     |
+| `modify_strategies`         | `Optional[List[Dict[str, Any]]]` | Optional list of strategies to modify                        | `None`     |
+| `delete_strategy_ids`       | `Optional[List[str]]`            | Optional list of strategy IDs to delete                      | `None`     |
+| `stream_delivery_resources` | `Optional[Dict[str, Any]]`       | Optional delivery configuration for streaming memory records | `None`     |
+| `wait_for_active`           | `bool`                           | Whether to wait for memory to become ACTIVE                  | `False`    |
+| `max_wait`                  | `int`                            | Maximum seconds to wait if wait_for_active is True           | `300`      |
+| `poll_interval`             | `int`                            | Seconds between status checks if wait_for_active is True     | `10`       |
 
 Returns:
 
@@ -5823,6 +5766,7 @@ def update_memory(
     add_strategies: Optional[List[Dict[str, Any]]] = None,
     modify_strategies: Optional[List[Dict[str, Any]]] = None,
     delete_strategy_ids: Optional[List[str]] = None,
+    stream_delivery_resources: Optional[Dict[str, Any]] = None,
     wait_for_active: bool = False,
     max_wait: int = 300,
     poll_interval: int = 10,
@@ -5837,6 +5781,7 @@ def update_memory(
         add_strategies: Optional list of strategies to add
         modify_strategies: Optional list of strategies to modify
         delete_strategy_ids: Optional list of strategy IDs to delete
+        stream_delivery_resources: Optional delivery configuration for streaming memory records
         wait_for_active: Whether to wait for memory to become ACTIVE
         max_wait: Maximum seconds to wait if wait_for_active is True
         poll_interval: Seconds between status checks if wait_for_active is True
@@ -5858,6 +5803,9 @@ def update_memory(
 
     if memory_execution_role_arn is not None:
         params["memoryExecutionRoleArn"] = memory_execution_role_arn
+
+    if stream_delivery_resources is not None:
+        params["streamDeliveryResources"] = stream_delivery_resources
 
     # Add strategy operations if provided
     memory_strategies = {}
@@ -6720,7 +6668,7 @@ class MemorySessionManager:
         if name in self._ALLOWED_DATA_PLANE_METHODS and hasattr(self._data_plane_client, name):
             method = getattr(self._data_plane_client, name)
             logger.debug("Forwarding method '%s' to _data_plane_client", name)
-            return method
+            return accept_snake_case_kwargs(method)
 
         # Method not found on client
         raise AttributeError(
@@ -7385,7 +7333,7 @@ class MemorySessionManager:
         logger.info("  -> Querying long-term memory in namespace '%s' with query: '%s'...", namespace_prefix, query)
         search_criteria = {"searchQuery": query, "topK": top_k}
         if strategy_id:
-            search_criteria["strategyId"] = strategy_id
+            search_criteria["memoryStrategyId"] = strategy_id
 
         namespace = namespace_prefix
         params = {
@@ -7628,7 +7576,7 @@ def __getattr__(self, name: str):
     if name in self._ALLOWED_DATA_PLANE_METHODS and hasattr(self._data_plane_client, name):
         method = getattr(self._data_plane_client, name)
         logger.debug("Forwarding method '%s' to _data_plane_client", name)
-        return method
+        return accept_snake_case_kwargs(method)
 
     # Method not found on client
     raise AttributeError(
@@ -8840,7 +8788,7 @@ def search_long_term_memories(
     logger.info("  -> Querying long-term memory in namespace '%s' with query: '%s'...", namespace_prefix, query)
     search_criteria = {"searchQuery": query, "topK": top_k}
     if strategy_id:
-        search_criteria["strategyId"] = strategy_id
+        search_criteria["memoryStrategyId"] = strategy_id
 
     namespace = namespace_prefix
     params = {

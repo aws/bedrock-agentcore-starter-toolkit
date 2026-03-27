@@ -833,10 +833,15 @@ class BedrockAgentCoreApp(Starlette):
         self.handlers: Dict[str, Callable] = {}
         self._ping_handler: Optional[Callable] = None
         self._websocket_handler: Optional[Callable] = None
+        self._prompt_key: Optional[str] = None
+        self._response_key: Optional[str] = None
         self._active_tasks: Dict[int, Dict[str, Any]] = {}
         self._task_counter_lock: threading.Lock = threading.Lock()
         self._forced_ping_status: Optional[PingStatus] = None
         self._last_status_update_time: float = time.time()
+        self._worker_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._worker_thread: Optional[threading.Thread] = None
+        self._worker_loop_lock: threading.Lock = threading.Lock()
 
         routes = [
             Route("/invocations", self._handle_invocation, methods=["POST"]),
@@ -854,18 +859,44 @@ class BedrockAgentCoreApp(Starlette):
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.DEBUG if self.debug else logging.INFO)
 
-    def entrypoint(self, func: Callable) -> Callable:
+    def entrypoint(
+        self, func: Callable = None, *, prompt_key: Optional[str] = None, response_key: Optional[str] = None
+    ) -> Callable:
         """Decorator to register a function as the main entrypoint.
 
         Args:
             func: The function to register as entrypoint
+            prompt_key: Optional key to extract user prompt from the payload dict.
+                If not specified, tries common keys in order (prompt, input, query,
+                message, question, user_input) then falls back to JSON serialization.
+            response_key: Optional key to extract agent response from the result dict.
+                If not specified, the full result is used.
 
         Returns:
             The decorated function with added serve method
+
+        Examples:
+            @app.entrypoint
+            def handler(payload):
+                ...
+
+            @app.entrypoint(prompt_key="user_input")
+            def handler(payload):
+                ...
         """
-        self.handlers["main"] = func
-        func.run = lambda port=8080, host=None: self.run(port, host)
-        return func
+
+        def decorator(f: Callable) -> Callable:
+            self.handlers["main"] = f
+            self._prompt_key = prompt_key
+            self._response_key = response_key
+            f.run = lambda port=8080, host=None: self.run(port, host)
+            return f
+
+        if func is not None:
+            # Called as @app.entrypoint without arguments
+            return decorator(func)
+        # Called as @app.entrypoint(...) with arguments
+        return decorator
 
     def ping(self, func: Callable) -> Callable:
         """Decorator to register a custom ping status handler.
@@ -904,7 +935,7 @@ class BedrockAgentCoreApp(Starlette):
         - Set ping status to HEALTHY_BUSY while running
         - Revert to HEALTHY when complete
         """
-        if not asyncio.iscoroutinefunction(func):
+        if not _is_async_callable(func):
             raise ValueError("@async_task can only be applied to async functions")
 
         async def wrapper(*args, **kwargs):
@@ -1094,6 +1125,78 @@ class BedrockAgentCoreApp(Starlette):
         except Exception:
             return False
 
+    def _emit_invocation_otel_attributes(self, payload: Any, result: Any) -> None:
+        """Emit OTEL span attributes with the invocation input and output.
+
+        These attributes provide a canonical, framework-agnostic source of the
+        user's prompt and the agent's response for AgentCore Evaluation. They
+        enable evaluation of agents that use custom state schemas (e.g. workflow
+        agents with TypedDict states) where the default MessagesState-based
+        extraction in the evaluation mapper would fail.
+
+        The attributes are set on the current active span (typically the root
+        POST /invocations span created by ADOT auto-instrumentation).
+
+        When prompt_key or response_key is configured via @app.entrypoint(),
+        those specific keys are used to extract from dict payloads/results.
+        Otherwise, a heuristic tries common keys in priority order.
+        """
+        try:
+            from opentelemetry import trace as otel_trace
+
+            span = otel_trace.get_current_span()
+            if not span or not span.is_recording():
+                return
+
+            # Extract user prompt from payload
+            user_prompt = None
+            if isinstance(payload, dict):
+                if self._prompt_key is not None:
+                    value = payload.get(self._prompt_key)
+                    if isinstance(value, str):
+                        user_prompt = value
+                else:
+                    for key in ("prompt", "input", "query", "message", "question", "user_input"):
+                        if key in payload and isinstance(payload[key], str):
+                            user_prompt = payload[key]
+                            break
+                if user_prompt is None:
+                    user_prompt = json.dumps(payload, ensure_ascii=False, default=str)
+            elif isinstance(payload, str):
+                user_prompt = payload
+            else:
+                user_prompt = str(payload)
+
+            # Extract agent response from result
+            agent_response = None
+            if isinstance(result, str):
+                agent_response = result
+            elif isinstance(result, Response):
+                pass  # Skip for streaming/custom responses — cannot capture full output
+            elif isinstance(result, dict) and self._response_key is not None:
+                value = result.get(self._response_key)
+                if isinstance(value, str):
+                    agent_response = value
+                elif value is not None:
+                    try:
+                        agent_response = json.dumps(value, ensure_ascii=False, default=str)
+                    except Exception:
+                        agent_response = str(value)
+            elif result is not None:
+                try:
+                    agent_response = json.dumps(result, ensure_ascii=False, default=str)
+                except Exception:
+                    agent_response = str(result)
+
+            if user_prompt:
+                span.set_attribute("agentcore.invocation.user_prompt", user_prompt[:16384])
+            if agent_response:
+                span.set_attribute("agentcore.invocation.agent_response", agent_response[:16384])
+        except ImportError:
+            pass  # OpenTelemetry not installed — silently skip
+        except Exception:
+            self.logger.debug("Failed to emit invocation OTEL attributes", exc_info=True)
+
     async def _handle_invocation(self, request):
         request_context = self._build_request_context(request)
 
@@ -1121,6 +1224,8 @@ class BedrockAgentCoreApp(Starlette):
             self.logger.debug("Invoking handler: %s", handler_name)
             result = await self._invoke_handler(handler, request_context, takes_context, payload)
 
+            self._emit_invocation_otel_attributes(payload, result)
+
             duration = time.time() - start_time
             if inspect.isgenerator(result):
                 self.logger.info("Returning streaming response (generator) (%.3fs)", duration)
@@ -1128,6 +1233,18 @@ class BedrockAgentCoreApp(Starlette):
             elif inspect.isasyncgen(result):
                 self.logger.info("Returning streaming response (async generator) (%.3fs)", duration)
                 return StreamingResponse(self._stream_with_error_handling(result), media_type="text/event-stream")
+
+            # If handler returned a Starlette Response directly, pass it through.
+            # This lets handlers control status codes (e.g. JSONResponse(data, status_code=404)).
+            if isinstance(result, Response):
+                status = getattr(result, "status_code", 200)
+                # Log at warning level for error responses so operators can distinguish
+                # intentional error responses from successful invocations in logs.
+                if status >= 400:
+                    self.logger.warning("Invocation returned HTTP %d (%.3fs)", status, duration)
+                else:
+                    self.logger.info("Invocation completed successfully (%.3fs)", duration)
+                return result
 
             self.logger.info("Invocation completed successfully (%.3fs)", duration)
             # Use safe serialization for consistency with streaming paths
@@ -1138,6 +1255,20 @@ class BedrockAgentCoreApp(Starlette):
             duration = time.time() - start_time
             self.logger.warning("Invalid JSON in request (%.3fs): %s", duration, e)
             return JSONResponse({"error": "Invalid JSON", "details": str(e)}, status_code=400)
+        except UnicodeDecodeError as e:
+            duration = time.time() - start_time
+            self.logger.warning("Invalid encoding in request (%.3fs): %s", duration, e)
+            return JSONResponse({"error": "Invalid encoding", "details": str(e)}, status_code=400)
+        except HTTPException as e:
+            duration = time.time() - start_time
+            # Use error level for 5xx to match the generic Exception handler's severity,
+            # since server errors warrant the same urgency regardless of how they're raised.
+            # Use warning for 4xx since those are intentional client-error responses.
+            if e.status_code >= 500:
+                self.logger.error("HTTP %d (%.3fs): %s", e.status_code, duration, e.detail)
+            else:
+                self.logger.warning("HTTP %d (%.3fs): %s", e.status_code, duration, e.detail)
+            return JSONResponse({"error": e.detail}, status_code=e.status_code)
         except Exception as e:
             duration = time.time() - start_time
             self.logger.exception("Invocation failed (%.3fs)", duration)
@@ -1204,16 +1335,92 @@ class BedrockAgentCoreApp(Starlette):
 
         uvicorn.run(self, **uvicorn_params)
 
-    async def _invoke_handler(self, handler, request_context, takes_context, payload):
+    def _ensure_worker_loop(self) -> asyncio.AbstractEventLoop:
+        """Lazily create and start a dedicated worker event loop in a background thread.
+
+        The worker loop isolates async handler execution from the main event loop,
+        ensuring that blocking async handlers do not prevent /ping from responding.
+        """
+        if self._worker_loop is not None and self._worker_loop.is_running():
+            return self._worker_loop
+        with self._worker_loop_lock:
+            if self._worker_loop is None or not self._worker_loop.is_running():
+                self._worker_loop = asyncio.new_event_loop()
+                self._worker_thread = threading.Thread(
+                    target=self._run_worker_loop,
+                    daemon=True,
+                    name="agentcore-worker-loop",
+                )
+                self._worker_thread.start()
+        return self._worker_loop
+
+    def _run_worker_loop(self) -> None:
+        """Entry point for the worker loop background thread."""
+        asyncio.set_event_loop(self._worker_loop)
+        self._worker_loop.run_forever()
+
+    @staticmethod
+    async def _run_with_context(coro: Any, ctx: contextvars.Context) -> Any:
+        """Run a coroutine after restoring context variables from a snapshot."""
+        _restore_context(ctx)
+        return await coro
+
+    def _async_gen_to_sync_gen(self, async_gen: Any, ctx: contextvars.Context) -> Any:
+        """Bridge an async generator through the worker loop as a sync generator.
+
+        The async generator is iterated on the worker loop. Chunks are sent to
+        a thread-safe queue and yielded synchronously. Starlette's StreamingResponse
+        iterates this sync generator via iterate_in_threadpool, so the main event
+        loop is never blocked.
+        """
+        worker_loop = self._ensure_worker_loop()
+        q: queue.Queue = queue.Queue(maxsize=100)
+        _DONE = object()
+
+        async def _produce() -> None:
+            _restore_context(ctx)
+            try:
+                async for chunk in async_gen:
+                    q.put((True, chunk))
+                q.put((True, _DONE))
+            except BaseException as e:
+                q.put((False, e))
+
+        worker_loop.call_soon_threadsafe(lambda: worker_loop.create_task(_produce()))
+
+        while True:
+            ok, value = q.get()
+            if not ok:
+                raise value
+            if value is _DONE:
+                break
+            yield value
+
+    async def _invoke_handler(self, handler: Callable, request_context: Any, takes_context: bool, payload: Any) -> Any:
+        """Dispatch handler execution based on handler type.
+
+        - Async generator functions: bridged through the worker loop as a sync generator
+        - Regular async functions: run on the dedicated worker event loop
+        - Sync functions (including sync generators): run in the thread pool
+
+        This ensures the main event loop stays responsive for /ping health checks
+        regardless of whether handlers contain blocking operations.
+        """
         try:
             args = (payload, request_context) if takes_context else (payload,)
+            ctx = contextvars.copy_context()
 
-            if asyncio.iscoroutinefunction(handler):
-                return await handler(*args)
+            if _is_async_gen_callable(handler):
+                return self._async_gen_to_sync_gen(handler(*args), ctx)
+            elif _is_async_callable(handler):
+                worker_loop = self._ensure_worker_loop()
+                future = asyncio.run_coroutine_threadsafe(self._run_with_context(handler(*args), ctx), worker_loop)
+                result = await asyncio.wrap_future(future)
+                if inspect.isasyncgen(result):
+                    return self._async_gen_to_sync_gen(result, ctx)
+                return result
             else:
-                loop = asyncio.get_event_loop()
-                ctx = contextvars.copy_context()
-                return await loop.run_in_executor(None, ctx.run, handler, *args)
+                return await run_in_threadpool(ctx.run, handler, *args)
         except Exception:
             handler_name = getattr(handler, "__name__", "unknown")
             self.logger.debug("Handler '%s' execution failed", handler_name)
@@ -1366,10 +1573,15 @@ def __init__(
     self.handlers: Dict[str, Callable] = {}
     self._ping_handler: Optional[Callable] = None
     self._websocket_handler: Optional[Callable] = None
+    self._prompt_key: Optional[str] = None
+    self._response_key: Optional[str] = None
     self._active_tasks: Dict[int, Dict[str, Any]] = {}
     self._task_counter_lock: threading.Lock = threading.Lock()
     self._forced_ping_status: Optional[PingStatus] = None
     self._last_status_update_time: float = time.time()
+    self._worker_loop: Optional[asyncio.AbstractEventLoop] = None
+    self._worker_thread: Optional[threading.Thread] = None
+    self._worker_loop_lock: threading.Lock = threading.Lock()
 
     routes = [
         Route("/invocations", self._handle_invocation, methods=["POST"]),
@@ -1470,7 +1682,7 @@ def async_task(self, func: Callable) -> Callable:
     - Set ping status to HEALTHY_BUSY while running
     - Revert to HEALTHY when complete
     """
-    if not asyncio.iscoroutinefunction(func):
+    if not _is_async_callable(func):
         raise ValueError("@async_task can only be applied to async functions")
 
     async def wrapper(*args, **kwargs):
@@ -1566,15 +1778,17 @@ def complete_async_task(self, task_id: int) -> bool:
             return False
 ```
 
-#### `entrypoint(func)`
+#### `entrypoint(func=None, *, prompt_key=None, response_key=None)`
 
 Decorator to register a function as the main entrypoint.
 
 Parameters:
 
-| Name   | Type       | Description                            | Default    |
-| ------ | ---------- | -------------------------------------- | ---------- |
-| `func` | `Callable` | The function to register as entrypoint | *required* |
+| Name           | Type            | Description                                                                                                                                                                                          | Default |
+| -------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `func`         | `Callable`      | The function to register as entrypoint                                                                                                                                                               | `None`  |
+| `prompt_key`   | `Optional[str]` | Optional key to extract user prompt from the payload dict. If not specified, tries common keys in order (prompt, input, query, message, question, user_input) then falls back to JSON serialization. | `None`  |
+| `response_key` | `Optional[str]` | Optional key to extract agent response from the result dict. If not specified, the full result is used.                                                                                              | `None`  |
 
 Returns:
 
@@ -1582,21 +1796,53 @@ Returns:
 | ---------- | ---------------------------------------------- |
 | `Callable` | The decorated function with added serve method |
 
+Examples:
+
+@app.entrypoint def handler(payload): ...
+
+@app.entrypoint(prompt_key="user_input") def handler(payload): ...
+
 Source code in `bedrock_agentcore/runtime/app.py`
 
 ```
-def entrypoint(self, func: Callable) -> Callable:
+def entrypoint(
+    self, func: Callable = None, *, prompt_key: Optional[str] = None, response_key: Optional[str] = None
+) -> Callable:
     """Decorator to register a function as the main entrypoint.
 
     Args:
         func: The function to register as entrypoint
+        prompt_key: Optional key to extract user prompt from the payload dict.
+            If not specified, tries common keys in order (prompt, input, query,
+            message, question, user_input) then falls back to JSON serialization.
+        response_key: Optional key to extract agent response from the result dict.
+            If not specified, the full result is used.
 
     Returns:
         The decorated function with added serve method
+
+    Examples:
+        @app.entrypoint
+        def handler(payload):
+            ...
+
+        @app.entrypoint(prompt_key="user_input")
+        def handler(payload):
+            ...
     """
-    self.handlers["main"] = func
-    func.run = lambda port=8080, host=None: self.run(port, host)
-    return func
+
+    def decorator(f: Callable) -> Callable:
+        self.handlers["main"] = f
+        self._prompt_key = prompt_key
+        self._response_key = response_key
+        f.run = lambda port=8080, host=None: self.run(port, host)
+        return f
+
+    if func is not None:
+        # Called as @app.entrypoint without arguments
+        return decorator(func)
+    # Called as @app.entrypoint(...) with arguments
+    return decorator
 ```
 
 #### `force_ping_status(status)`
@@ -2048,4 +2294,28 @@ class Config:
     """Allow non-serializable types like Starlette Request."""
 
     arbitrary_types_allowed = True
+```
+
+### `__getattr__(name)`
+
+Lazy imports for A2A and AG-UI symbols so optional dependencies are not required at import time.
+
+Source code in `bedrock_agentcore/runtime/__init__.py`
+
+```
+def __getattr__(name: str):
+    """Lazy imports for A2A and AG-UI symbols so optional dependencies are not required at import time."""
+    _a2a_exports = {"BedrockCallContextBuilder", "build_a2a_app", "build_runtime_url", "serve_a2a"}
+    if name in _a2a_exports:
+        from . import a2a as _a2a_module
+
+        return getattr(_a2a_module, name)
+
+    _ag_ui_exports = {"AGUIApp", "build_ag_ui_app", "serve_ag_ui"}
+    if name in _ag_ui_exports:
+        from . import ag_ui as _ag_ui_module
+
+        return getattr(_ag_ui_module, name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 ```
