@@ -18,6 +18,7 @@ from ...operations.evaluation.formatters import (
     save_evaluation_results,
     save_json_output,
 )
+from ...operations.evaluation.models import ReferenceInputs
 from ...operations.evaluation.on_demand_processor import EvaluationProcessor
 from ...utils.aws import ensure_valid_aws_creds
 from ...utils.runtime.config import load_config_if_exists
@@ -95,6 +96,15 @@ def run_evaluation(
     ),
     days: int = typer.Option(7, "--days", "-d", help="Number of days to look back for session data (default: 7)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+    assertions: List[str] = typer.Option(  # noqa: B008
+        [], "--assertion", "-A", help="Assertion(s) for reference input (can specify multiple)"
+    ),
+    expected_response: Optional[str] = typer.Option(
+        None, "--expected-response", help="Expected response string for reference input"
+    ),
+    expected_trajectory: List[str] = typer.Option(  # noqa: B008
+        [], "--expected-trajectory", help="Expected tool trajectory step(s) (can specify multiple)"
+    ),
 ):
     """Run evaluation on a session.
 
@@ -116,6 +126,9 @@ def run_evaluation(
 
         # Use multiple evaluators
         agentcore eval run -e Builtin.Helpfulness -e Builtin.Accuracy
+
+        # With reference inputs (assertions, expected response, trajectory)
+        agentcore eval run -A "response is polite" -A "answer is accurate" --expected-response "Hello!"
 
         # Save results to file
         agentcore eval run -o results.json
@@ -169,13 +182,36 @@ def run_evaluation(
     # Convert evaluators to list (Typer returns list or None)
     evaluator_list = evaluators if evaluators else ["Builtin.GoalSuccessRate"]
 
+    # Expand comma-separated expected_trajectory entries
+    if expected_trajectory:
+        expected_trajectory = [item.strip() for raw in expected_trajectory for item in raw.split(",") if item.strip()]
+
+    # Build ReferenceInputs from CLI flags
+    reference_inputs = None
+    if assertions or expected_response or expected_trajectory:
+        reference_inputs = ReferenceInputs(
+            assertions=assertions or None,
+            expected_trajectory=expected_trajectory or None,
+            expected_response=expected_response,
+        )
+
     # Display what we're doing
     console.print(f"\n[cyan]Evaluating session:[/cyan] {session_id}")
     if trace_id:
         console.print(f"[cyan]Trace:[/cyan] {trace_id} (with previous traces for context)")
     else:
         console.print("[cyan]Mode:[/cyan] All traces (most recent 1000 spans)")
-    console.print(f"[cyan]Evaluators:[/cyan] {', '.join(evaluator_list)}\n")
+    console.print(f"[cyan]Evaluators:[/cyan] {', '.join(evaluator_list)}")
+    if reference_inputs:
+        parts = []
+        if assertions:
+            parts.append(f"{len(assertions)} assertion(s)")
+        if expected_response:
+            parts.append("expected response")
+        if expected_trajectory:
+            parts.append(f"{len(expected_trajectory)} trajectory step(s)")
+        console.print(f"[cyan]Reference inputs:[/cyan] {', '.join(parts)}")
+    console.print()
 
     try:
         # Create evaluation clients and processor
@@ -192,6 +228,7 @@ def run_evaluation(
                 region=region,
                 trace_id=trace_id,
                 days=days,
+                reference_inputs=reference_inputs,
             )
 
         # Display results

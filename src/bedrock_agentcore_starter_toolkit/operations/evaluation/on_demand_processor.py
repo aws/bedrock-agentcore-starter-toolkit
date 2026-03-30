@@ -3,6 +3,7 @@
 Separates business logic from API client calls for better testability and reusability.
 """
 
+import copy
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -12,7 +13,7 @@ from botocore.exceptions import ClientError
 from ..constants import DEFAULT_RUNTIME_SUFFIX, InstrumentationScopes
 from ..observability.client import ObservabilityClient
 from ..observability.telemetry import TraceData
-from .models import EvaluationResult, EvaluationResults
+from .models import EvaluationResult, EvaluationResults, ReferenceInputs
 
 logger = logging.getLogger(__name__)
 
@@ -345,6 +346,8 @@ class EvaluationProcessor:
         otel_spans: List[Dict[str, Any]],
         session_id: str,
         evaluation_target: Optional[Dict[str, Any]] = None,
+        reference_inputs: Optional[ReferenceInputs] = None,
+        trace_id: Optional[str] = None,
     ) -> List[EvaluationResult]:
         """Execute evaluators and return results.
 
@@ -355,17 +358,36 @@ class EvaluationProcessor:
             otel_spans: OTel-formatted spans/logs to evaluate
             session_id: Session ID for context
             evaluation_target: Optional dict specifying which traces/spans to evaluate
+            reference_inputs: Optional reference inputs (ground truth / assertions)
+            trace_id: Optional trace ID to use for expected_response targeting
 
         Returns:
             List of EvaluationResult objects (including errors)
         """
+        # Serialize reference inputs once for all evaluators.
+        # Deep-copy to avoid mutating the caller's object when resolving
+        # str expected_response into a dict.
+        eval_ref_inputs = None
+        if reference_inputs:
+            resolved = copy.deepcopy(reference_inputs)
+            if isinstance(resolved.expected_response, str):
+                target_trace = trace_id or next(
+                    (s.get("traceId") for s in reversed(otel_spans) if s.get("traceId")), None
+                )
+                if target_trace:
+                    resolved.expected_response = {target_trace: resolved.expected_response}
+            eval_ref_inputs = resolved.to_api_dict(session_id)
+
         results = []
 
         for evaluator in evaluators:
             try:
                 # Call API with single evaluator
                 response = self.data_plane_client.evaluate(
-                    evaluator_id=evaluator, session_spans=otel_spans, evaluation_target=evaluation_target
+                    evaluator_id=evaluator,
+                    session_spans=otel_spans,
+                    evaluation_target=evaluation_target,
+                    evaluation_reference_inputs=eval_ref_inputs,
                 )
 
                 # API returns {evaluationResults: [...]}
@@ -401,6 +423,7 @@ class EvaluationProcessor:
         region: str,
         trace_id: Optional[str] = None,
         days: int = DEFAULT_LOOKBACK_DAYS,
+        reference_inputs: Optional[ReferenceInputs] = None,
     ) -> EvaluationResults:
         """Evaluate a session using multiple evaluators.
 
@@ -418,6 +441,7 @@ class EvaluationProcessor:
             region: AWS region
             trace_id: Optional trace ID to evaluate
             days: Number of days to look back for session data (default: 7)
+            reference_inputs: Optional reference inputs (ground truth / assertions)
 
         Returns:
             EvaluationResults containing all evaluation results
@@ -476,7 +500,9 @@ class EvaluationProcessor:
                 input_spans = otel_spans
 
             # Execute evaluators
-            eval_results = self.execute_evaluators(eval_list, otel_spans, session_id, evaluation_target)
+            eval_results = self.execute_evaluators(
+                eval_list, otel_spans, session_id, evaluation_target, reference_inputs, trace_id
+            )
             for result in eval_results:
                 results.add_result(result)
 

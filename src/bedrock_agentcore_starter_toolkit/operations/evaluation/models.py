@@ -1,7 +1,52 @@
 """Data models for evaluation requests and results."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+
+
+@dataclass
+class ReferenceInputs:
+    """Reference inputs for evaluation (ground truth / assertions).
+
+    expected_response accepts:
+        - str: response text (trace_id resolved from evaluate_session or last trace)
+        - Dict[str, str]: {trace_id: response_text} to target specific traces
+    """
+
+    assertions: Optional[List[str]] = None
+    expected_trajectory: Optional[List[str]] = None
+    expected_response: Optional[Union[str, Dict[str, str]]] = None
+
+    def to_api_dict(self, session_id: str) -> List[Dict[str, Any]]:
+        """Convert to API format (list of EvaluationReferenceInput structs).
+
+        - assertions and expected_trajectory are session-level (sessionId only)
+        - expected_response is trace-level (sessionId + traceId); str values are
+          skipped (caller must resolve str to Dict[str, str] before calling)
+        """
+        items: List[Dict[str, Any]] = []
+
+        # Session-level item: assertions + expected_trajectory
+        has_session_fields = self.assertions is not None or self.expected_trajectory is not None
+        if has_session_fields:
+            session_item: Dict[str, Any] = {"context": {"spanContext": {"sessionId": session_id}}}
+            if self.assertions is not None:
+                session_item["assertions"] = [{"text": a} for a in self.assertions]
+            if self.expected_trajectory is not None:
+                session_item["expectedTrajectory"] = {"toolNames": self.expected_trajectory}
+            items.append(session_item)
+
+        # Trace-level items: expected_response (must be dict at this point)
+        if self.expected_response is not None and isinstance(self.expected_response, dict):
+            for resp_trace_id, resp_text in self.expected_response.items():
+                items.append(
+                    {
+                        "context": {"spanContext": {"sessionId": session_id, "traceId": resp_trace_id}},
+                        "expectedResponse": {"text": resp_text},
+                    }
+                )
+
+        return items
 
 
 @dataclass
@@ -14,6 +59,7 @@ class EvaluationRequest:
     evaluator_id: str
     session_spans: List[Dict[str, Any]]
     evaluation_target: Optional[Dict[str, Any]] = None
+    evaluation_reference_inputs: Optional[List[Dict[str, Any]]] = None
 
     def to_api_request(self) -> tuple[str, Dict[str, Any]]:
         """Convert to API request format.
@@ -26,6 +72,8 @@ class EvaluationRequest:
         }
         if self.evaluation_target:
             request_body["evaluationTarget"] = self.evaluation_target
+        if self.evaluation_reference_inputs:
+            request_body["evaluationReferenceInputs"] = self.evaluation_reference_inputs
         return self.evaluator_id, request_body
 
 

@@ -9,6 +9,7 @@ from bedrock_agentcore_starter_toolkit.operations.evaluation.models import (
     EvaluationRequest,
     EvaluationResult,
     EvaluationResults,
+    ReferenceInputs,
 )
 
 # =============================================================================
@@ -120,6 +121,138 @@ class TestEvaluationRequest:
         _, api_body = request.to_api_request()
 
         assert api_body["evaluationInput"]["sessionSpans"] == []
+
+    def test_to_api_request_with_evaluation_reference_inputs(self, sample_spans):
+        """Test API request includes evaluationReferenceInputs when provided."""
+        ref_items = [
+            {
+                "context": {"spanContext": {"sessionId": "session-123"}},
+                "assertions": [{"text": "response is polite"}],
+                "expectedTrajectory": {"toolNames": ["tool_a", "tool_b"]},
+            },
+            {
+                "context": {"spanContext": {"sessionId": "session-123", "traceId": "trace-456"}},
+                "expectedResponse": {"text": "Hello!"},
+            },
+        ]
+        request = EvaluationRequest(
+            evaluator_id="Builtin.Helpfulness",
+            session_spans=sample_spans,
+            evaluation_reference_inputs=ref_items,
+        )
+
+        _, api_body = request.to_api_request()
+
+        assert "evaluationReferenceInputs" in api_body
+        assert api_body["evaluationReferenceInputs"] == ref_items
+
+    def test_to_api_request_without_reference_inputs(self, sample_spans):
+        """Test API request excludes evaluationReferenceInputs when not provided (backward compat)."""
+        request = EvaluationRequest(
+            evaluator_id="Builtin.Helpfulness",
+            session_spans=sample_spans,
+        )
+
+        _, api_body = request.to_api_request()
+
+        assert "evaluationReferenceInputs" not in api_body
+
+
+# =============================================================================
+# ReferenceInputs Tests
+# =============================================================================
+
+
+class TestReferenceInputs:
+    """Test ReferenceInputs model."""
+
+    def test_defaults(self):
+        """Test all fields default to None."""
+        ref = ReferenceInputs()
+
+        assert ref.assertions is None
+        assert ref.expected_trajectory is None
+        assert ref.expected_response is None
+
+    def test_to_api_dict_all_fields(self):
+        """Test to_api_dict with all fields produces session-level + trace-level items."""
+        ref = ReferenceInputs(
+            assertions=["is polite", "mentions greeting"],
+            expected_trajectory=["search_tool", "summarize_tool"],
+            expected_response={"trace-456": "Hello, how can I help?"},
+        )
+
+        result = ref.to_api_dict("session-123")
+
+        assert isinstance(result, list)
+        assert len(result) == 2
+        # Session-level item: assertions + trajectory
+        session_item = result[0]
+        assert session_item["context"] == {"spanContext": {"sessionId": "session-123"}}
+        assert session_item["assertions"] == [{"text": "is polite"}, {"text": "mentions greeting"}]
+        assert session_item["expectedTrajectory"] == {"toolNames": ["search_tool", "summarize_tool"]}
+        assert "expectedResponse" not in session_item
+        # Trace-level item: expected response
+        trace_item = result[1]
+        assert trace_item["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-456"}}
+        assert trace_item["expectedResponse"] == {"text": "Hello, how can I help?"}
+
+    def test_to_api_dict_partial(self):
+        """Test to_api_dict with only assertions; others absent from item."""
+        ref = ReferenceInputs(assertions=["must be concise"])
+
+        result = ref.to_api_dict("session-123")
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        item = result[0]
+        assert item["context"] == {"spanContext": {"sessionId": "session-123"}}
+        assert item["assertions"] == [{"text": "must be concise"}]
+        assert "expectedTrajectory" not in item
+        assert "expectedResponse" not in item
+
+    def test_to_api_dict_empty(self):
+        """Test to_api_dict returns empty list when no fields set."""
+        ref = ReferenceInputs()
+
+        result = ref.to_api_dict("session-123")
+
+        assert result == []
+
+    def test_expected_response_str_skipped(self):
+        """Test plain str expected_response is skipped (needs dict)."""
+        ref = ReferenceInputs(expected_response="Hello!")
+
+        result = ref.to_api_dict("session-123")
+
+        assert result == []
+
+    def test_expected_response_dict(self):
+        """Test dict expected_response serializes with its own trace_id."""
+        ref = ReferenceInputs(expected_response={"trace-456": "Hello!"})
+
+        result = ref.to_api_dict("session-123")
+
+        assert len(result) == 1
+        assert result[0]["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-456"}}
+        assert result[0]["expectedResponse"] == {"text": "Hello!"}
+
+    def test_expected_response_dict_multiple_traces(self):
+        """Test dict expected_response with multiple traces produces multiple trace-level items."""
+        ref = ReferenceInputs(
+            expected_response={
+                "trace-001": "Hello!",
+                "trace-002": "Goodbye!",
+            }
+        )
+
+        result = ref.to_api_dict("session-123")
+
+        assert len(result) == 2
+        assert result[0]["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-001"}}
+        assert result[0]["expectedResponse"] == {"text": "Hello!"}
+        assert result[1]["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-002"}}
+        assert result[1]["expectedResponse"] == {"text": "Goodbye!"}
 
 
 # =============================================================================
