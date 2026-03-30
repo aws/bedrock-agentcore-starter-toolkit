@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.4] - 2026-03-30
+
+### Changes
+
+- chore: modify execution role templates to support multiple partitions (#485) (2d5dbff)
+- fix: block minor and major releases, allow only patch (#494) (87aeae6)
+- feat: added GT support to Evaluations (#493) (d879b87)
+- docs: change banner color to warning yellow/amber (#491) (00a8fef)
+- fix: remove broken CDK basic-runtime doc includes (#490) (8a2c4d6)
+- docs: recommend AgentCore CLI for new projects (#489) (0fbfa95)
+- feat(create): add --memory flag for non-interactive mode (#484) (56af283)
+- Add CRT extra to botocore dependency (#465) (c7e38e2)
+- chore: bump version to 0.3.3 (#481) (1d53aad)
+
 ## [0.3.3] - 2026-03-11
 
 ### Changes
