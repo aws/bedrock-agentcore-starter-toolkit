@@ -75,11 +75,7 @@ def bump_version(current: str, bump_type: str) -> str:
     """Bump version based on type."""
     major, minor, patch, pre_release = parse_version(current)
 
-    if bump_type == "major":
-        return f"{major + 1}.0.0"
-    elif bump_type == "minor":
-        return f"{major}.{minor + 1}.0"
-    elif bump_type == "patch":
+    if bump_type == "patch":
         return f"{major}.{minor}.{patch + 1}"
     elif bump_type == "pre":
         if pre_release:
@@ -180,7 +176,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Bump Toolkit version")
-    parser.add_argument("bump_type", choices=["major", "minor", "patch", "pre"], help="Type of version bump")
+    parser.add_argument("bump_type", choices=["patch", "pre"], help="Type of version bump (major/minor blocked)")
     parser.add_argument("--changelog", help="Custom changelog entry")
     parser.add_argument("--update-sdk", help="Update SDK to specific version")
     parser.add_argument("--wait-for-sdk", action="store_true", help="Wait for SDK version on PyPI")

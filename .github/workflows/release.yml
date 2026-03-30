@@ -4,13 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       bump_type:
-        description: 'Version bump type'
+        description: 'Version bump type (only patch allowed)'
         required: true
         type: choice
         options:
           - patch
-          - minor
-          - major
           - pre
       sdk_version:
         description: 'SDK version to depend on (optional)'
@@ -40,6 +38,12 @@ jobs:
       pr_created: ${{ steps.create-pr.outputs.pull-request-number }}
 
     steps:
+      - name: Block minor and major releases
+        if: ${{ github.event.inputs.bump_type == 'minor' || github.event.inputs.bump_type == 'major' }}
+        run: |
+          echo "::error::Minor and major releases are blocked. Only patch and pre releases are allowed."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v5
         with:
