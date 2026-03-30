@@ -14,7 +14,7 @@ from ...operations.evaluation.formatters import (
     save_evaluation_results,
     save_json_output,
 )
-from ...operations.evaluation.models import EvaluationResults
+from ...operations.evaluation.models import EvaluationResults, ReferenceInputs
 from ...operations.evaluation.on_demand_processor import EvaluationProcessor
 
 
@@ -160,6 +160,7 @@ class Evaluation:
         evaluators: Optional[List[str]] = None,
         trace_id: Optional[str] = None,
         output: Optional[str] = None,
+        reference_inputs: Optional[ReferenceInputs] = None,
     ) -> EvaluationResults:
         """Run evaluation on a session (mirrors: agentcore eval run).
 
@@ -172,6 +173,7 @@ class Evaluation:
             evaluators: List of evaluators to use (default: ["Builtin.GoalSuccessRate"])
             trace_id: Optional trace ID - evaluates only this trace, with previous traces for context
             output: Optional path to save results to JSON file
+            reference_inputs: Optional reference inputs (ground truth / assertions)
 
         Returns:
             EvaluationResults with scores and explanations
@@ -239,6 +241,7 @@ class Evaluation:
                 agent_id=agent_id,
                 region=self.region,
                 trace_id=trace_id,
+                reference_inputs=reference_inputs,
             )
 
         # Save to file if requested

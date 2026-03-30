@@ -55,7 +55,11 @@ class EvaluationDataPlaneClient:
             )
 
     def evaluate(
-        self, evaluator_id: str, session_spans: List[Dict[str, Any]], evaluation_target: Optional[Dict[str, Any]] = None
+        self,
+        evaluator_id: str,
+        session_spans: List[Dict[str, Any]],
+        evaluation_target: Optional[Dict[str, Any]] = None,
+        evaluation_reference_inputs: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Call evaluation API with transformed spans.
 
@@ -65,6 +69,7 @@ class EvaluationDataPlaneClient:
             evaluator_id: Single evaluator identifier (e.g., "Builtin.Helpfulness")
             session_spans: List of OpenTelemetry-formatted span documents
             evaluation_target: Optional dict with spanIds or traceIds to evaluate
+            evaluation_reference_inputs: Optional reference inputs
 
         Returns:
             Raw API response with evaluationResults
@@ -73,7 +78,10 @@ class EvaluationDataPlaneClient:
             RuntimeError: If API call fails
         """
         request = EvaluationRequest(
-            evaluator_id=evaluator_id, session_spans=session_spans, evaluation_target=evaluation_target
+            evaluator_id=evaluator_id,
+            session_spans=session_spans,
+            evaluation_target=evaluation_target,
+            evaluation_reference_inputs=evaluation_reference_inputs,
         )
 
         evaluator_id_param, request_body = request.to_api_request()

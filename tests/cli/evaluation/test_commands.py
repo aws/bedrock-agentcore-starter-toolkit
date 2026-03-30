@@ -16,6 +16,7 @@ from bedrock_agentcore_starter_toolkit.cli.evaluation.commands import (
 from bedrock_agentcore_starter_toolkit.operations.evaluation.models import (
     EvaluationResult,
     EvaluationResults,
+    ReferenceInputs,
 )
 
 # Apply mock_boto3_clients fixture to prevent real AWS calls
@@ -196,6 +197,93 @@ class TestRunEvaluationCommand:
 
         assert result.exit_code != 0
         assert "config" in result.stdout.lower() or "agent" in result.stdout.lower()
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands.EvaluationProcessor")
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands._get_agent_config_from_file")
+    def test_run_evaluation_with_reference_inputs(
+        self, mock_get_config, mock_processor_class, runner, sample_evaluation_results
+    ):
+        """Test running evaluation with --assertion, --expected-response, --expected-trajectory flags."""
+        mock_get_config.return_value = {"agent_id": "agent-123", "region": "us-west-2", "session_id": "session-456"}
+
+        mock_processor = Mock()
+        mock_processor.evaluate_session.return_value = sample_evaluation_results
+        mock_processor_class.return_value = mock_processor
+
+        result = runner.invoke(
+            evaluation_app,
+            [
+                "run",
+                "-e",
+                "Builtin.Helpfulness",
+                "-A",
+                "response is polite",
+                "-A",
+                "answer is accurate",
+                "--expected-response",
+                "Hello!",
+                "--expected-trajectory",
+                "tool_a",
+                "--expected-trajectory",
+                "tool_b",
+            ],
+        )
+
+        assert result.exit_code == 0
+        call_args = mock_processor.evaluate_session.call_args
+        ref = call_args.kwargs.get("reference_inputs")
+        assert ref is not None
+        assert isinstance(ref, ReferenceInputs)
+        assert ref.assertions == ["response is polite", "answer is accurate"]
+        assert ref.expected_response == "Hello!"
+        assert ref.expected_trajectory == ["tool_a", "tool_b"]
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands.EvaluationProcessor")
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands._get_agent_config_from_file")
+    def test_run_evaluation_with_comma_separated_trajectory(
+        self, mock_get_config, mock_processor_class, runner, sample_evaluation_results
+    ):
+        """Test --expected-trajectory accepts comma-separated values."""
+        mock_get_config.return_value = {"agent_id": "agent-123", "region": "us-west-2", "session_id": "session-456"}
+
+        mock_processor = Mock()
+        mock_processor.evaluate_session.return_value = sample_evaluation_results
+        mock_processor_class.return_value = mock_processor
+
+        result = runner.invoke(
+            evaluation_app,
+            [
+                "run",
+                "-e",
+                "Builtin.Helpfulness",
+                "--expected-trajectory",
+                "tool_a,tool_b,tool_c",
+            ],
+        )
+
+        assert result.exit_code == 0
+        call_args = mock_processor.evaluate_session.call_args
+        ref = call_args.kwargs.get("reference_inputs")
+        assert ref is not None
+        assert ref.expected_trajectory == ["tool_a", "tool_b", "tool_c"]
+
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands.EvaluationProcessor")
+    @patch("bedrock_agentcore_starter_toolkit.cli.evaluation.commands._get_agent_config_from_file")
+    def test_run_evaluation_without_reference_inputs(
+        self, mock_get_config, mock_processor_class, runner, sample_evaluation_results
+    ):
+        """Test running evaluation without reference inputs passes None (backward compat)."""
+        mock_get_config.return_value = {"agent_id": "agent-123", "region": "us-west-2", "session_id": "session-456"}
+
+        mock_processor = Mock()
+        mock_processor.evaluate_session.return_value = sample_evaluation_results
+        mock_processor_class.return_value = mock_processor
+
+        result = runner.invoke(evaluation_app, ["run", "-e", "Builtin.Helpfulness"])
+
+        assert result.exit_code == 0
+        call_args = mock_processor.evaluate_session.call_args
+        assert call_args.kwargs.get("reference_inputs") is None
 
 
 # =============================================================================

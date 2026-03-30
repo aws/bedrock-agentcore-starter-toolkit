@@ -12,6 +12,7 @@ from bedrock_agentcore_starter_toolkit.operations.constants import Instrumentati
 from bedrock_agentcore_starter_toolkit.operations.evaluation.models import (
     EvaluationResult,
     EvaluationResults,
+    ReferenceInputs,
 )
 from bedrock_agentcore_starter_toolkit.operations.evaluation.on_demand_processor import (
     EvaluationProcessor,
@@ -500,6 +501,116 @@ class TestEvaluatorExecution:
         # Should return empty list (warning logged)
         assert len(results) == 0
 
+    def test_execute_evaluators_with_reference_inputs(self, processor, mock_data_plane_client):
+        """Test reference_inputs is serialized and forwarded to data plane client."""
+        mock_data_plane_client.evaluate.return_value = {
+            "evaluationResults": [
+                {
+                    "evaluatorId": "Builtin.Helpfulness",
+                    "evaluatorName": "Helpfulness",
+                    "evaluatorArn": "arn:test",
+                    "explanation": "Good",
+                    "context": {},
+                    "value": 4.5,
+                }
+            ]
+        }
+
+        ref = ReferenceInputs(assertions=["is polite"])
+        processor.execute_evaluators(
+            evaluators=["Builtin.Helpfulness"],
+            otel_spans=[{"spanId": "span-123"}],
+            session_id="session-123",
+            reference_inputs=ref,
+        )
+
+        call_args = mock_data_plane_client.evaluate.call_args
+        ref_items = call_args.kwargs["evaluation_reference_inputs"]
+        assert isinstance(ref_items, list)
+        assert len(ref_items) == 1
+        assert ref_items[0]["assertions"] == [{"text": "is polite"}]
+        assert ref_items[0]["context"] == {"spanContext": {"sessionId": "session-123"}}
+
+    def test_execute_evaluators_expected_response_str_resolves_to_last_trace(self, processor, mock_data_plane_client):
+        """String expected_response resolves to last trace ID from spans."""
+        mock_data_plane_client.evaluate.return_value = {
+            "evaluationResults": [
+                {
+                    "evaluatorId": "Builtin.Correctness",
+                    "evaluatorName": "Correctness",
+                    "evaluatorArn": "arn:test",
+                    "explanation": "Good",
+                    "context": {},
+                    "value": 1.0,
+                }
+            ]
+        }
+
+        ref = ReferenceInputs(expected_response="Hello!")
+        processor.execute_evaluators(
+            evaluators=["Builtin.Correctness"],
+            otel_spans=[
+                {"spanId": "span-1", "traceId": "trace-first"},
+                {"spanId": "span-2", "traceId": "trace-last"},
+            ],
+            session_id="session-123",
+            reference_inputs=ref,
+        )
+
+        call_args = mock_data_plane_client.evaluate.call_args
+        ref_items = call_args.kwargs["evaluation_reference_inputs"]
+        assert len(ref_items) == 1
+        # Should use last trace ID, not any passed trace_id
+        assert ref_items[0]["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-last"}}
+        assert ref_items[0]["expectedResponse"] == {"text": "Hello!"}
+
+    def test_execute_evaluators_expected_response_dict_uses_own_trace_id(self, processor, mock_data_plane_client):
+        """Dict expected_response uses its own trace_id, ignores span trace IDs."""
+        mock_data_plane_client.evaluate.return_value = {
+            "evaluationResults": [
+                {
+                    "evaluatorId": "Builtin.Correctness",
+                    "evaluatorName": "Correctness",
+                    "evaluatorArn": "arn:test",
+                    "explanation": "Good",
+                    "context": {},
+                    "value": 1.0,
+                }
+            ]
+        }
+
+        ref = ReferenceInputs(expected_response={"trace-explicit": "Hello!"})
+        processor.execute_evaluators(
+            evaluators=["Builtin.Correctness"],
+            otel_spans=[
+                {"spanId": "span-1", "traceId": "trace-first"},
+                {"spanId": "span-2", "traceId": "trace-last"},
+            ],
+            session_id="session-123",
+            reference_inputs=ref,
+        )
+
+        call_args = mock_data_plane_client.evaluate.call_args
+        ref_items = call_args.kwargs["evaluation_reference_inputs"]
+        assert len(ref_items) == 1
+        assert ref_items[0]["context"] == {"spanContext": {"sessionId": "session-123", "traceId": "trace-explicit"}}
+
+    def test_execute_evaluators_expected_response_str_no_spans_skipped(self, processor, mock_data_plane_client):
+        """String expected_response with no traceId in spans produces no reference inputs."""
+        mock_data_plane_client.evaluate.return_value = {"evaluationResults": []}
+
+        ref = ReferenceInputs(expected_response="Hello!")
+        processor.execute_evaluators(
+            evaluators=["Builtin.Correctness"],
+            otel_spans=[{"spanId": "span-1"}],  # no traceId
+            session_id="session-123",
+            reference_inputs=ref,
+        )
+
+        call_args = mock_data_plane_client.evaluate.call_args
+        # No trace ID found, so expected_response can't be serialized — empty list
+        assert call_args.kwargs["evaluation_reference_inputs"] == []
+
 
 # =============================================================================
 # Evaluate Session Tests
@@ -581,6 +692,117 @@ class TestEvaluateSession:
 
         # Should return results with no evaluations
         assert len(results.results) == 0
+
+    @patch.object(EvaluationProcessor, "fetch_session_data")
+    @patch.object(EvaluationProcessor, "execute_evaluators")
+    def test_evaluate_session_with_reference_inputs(self, mock_execute, mock_fetch, processor):
+        """Test reference_inputs is threaded through evaluate_session to execute_evaluators."""
+        mock_trace_data = Mock(spec=TraceData)
+        mock_trace_data.spans = [
+            Mock(
+                trace_id="trace-123",
+                span_id="span-456",
+                start_time_unix_nano=1234567890000000000,
+                raw_message={
+                    "spanId": "span-456",
+                    "startTimeUnixNano": 1234567890000000000,
+                    "scope": {"name": InstrumentationScopes.OTEL_LANGCHAIN},
+                },
+            )
+        ]
+        mock_trace_data.runtime_logs = []
+        mock_fetch.return_value = mock_trace_data
+
+        mock_execute.return_value = [
+            EvaluationResult(
+                evaluator_id="Builtin.Helpfulness",
+                evaluator_name="Helpfulness",
+                evaluator_arn="arn:test",
+                explanation="Good",
+                context={},
+                value=4.5,
+            )
+        ]
+
+        ref = ReferenceInputs(assertions=["is polite"], expected_response="Hello!")
+        results = processor.evaluate_session(
+            session_id="session-123",
+            evaluators=["Builtin.Helpfulness"],
+            agent_id="agent-456",
+            region="us-west-2",
+            reference_inputs=ref,
+        )
+
+        assert isinstance(results, EvaluationResults)
+        # Verify reference_inputs was passed to execute_evaluators
+        call_args = mock_execute.call_args
+        assert call_args[1].get("reference_inputs") is ref or call_args[0][4] is ref
+
+    @patch.object(EvaluationProcessor, "fetch_session_data")
+    def test_evaluate_session_trace_id_does_not_leak_into_reference_inputs(
+        self, mock_fetch, processor, mock_data_plane_client
+    ):
+        """trace_id on evaluate_session scopes evaluation, but expected_response resolves to explicit trace_id."""
+        mock_trace_data = Mock(spec=TraceData)
+        mock_trace_data.spans = [
+            Mock(
+                trace_id="trace-AAA",
+                span_id="span-1",
+                start_time_unix_nano=1000000000,
+                raw_message={
+                    "spanId": "span-1",
+                    "traceId": "trace-AAA",
+                    "startTimeUnixNano": 1000000000,
+                    "scope": {"name": InstrumentationScopes.OTEL_LANGCHAIN},
+                },
+            ),
+            Mock(
+                trace_id="trace-BBB",
+                span_id="span-2",
+                start_time_unix_nano=2000000000,
+                raw_message={
+                    "spanId": "span-2",
+                    "traceId": "trace-BBB",
+                    "startTimeUnixNano": 2000000000,
+                    "scope": {"name": InstrumentationScopes.OTEL_LANGCHAIN},
+                },
+            ),
+        ]
+        mock_trace_data.runtime_logs = []
+        mock_fetch.return_value = mock_trace_data
+
+        mock_data_plane_client.evaluate.return_value = {
+            "evaluationResults": [
+                {
+                    "evaluatorId": "Builtin.Correctness",
+                    "evaluatorName": "Correctness",
+                    "evaluatorArn": "arn:test",
+                    "explanation": "Good",
+                    "context": {},
+                    "value": 1.0,
+                }
+            ]
+        }
+
+        # trace_id="trace-AAA" scopes which traces to evaluate, but
+        # expected_response="Hello!" should resolve using trace_id (trace-AAA)
+        # since an explicit trace_id is provided.
+        ref = ReferenceInputs(expected_response="Hello!")
+        processor.evaluate_session(
+            session_id="session-123",
+            evaluators=["Builtin.Correctness"],
+            agent_id="agent-456",
+            region="us-west-2",
+            trace_id="trace-AAA",
+            reference_inputs=ref,
+        )
+
+        # Verify the serialized reference input targets trace-AAA (the explicit trace_id)
+        call_args = mock_data_plane_client.evaluate.call_args
+        ref_items = call_args.kwargs["evaluation_reference_inputs"]
+        assert len(ref_items) == 1
+        assert ref_items[0]["context"]["spanContext"]["traceId"] == "trace-AAA"
+        assert ref_items[0]["expectedResponse"] == {"text": "Hello!"}
 
 
 # =============================================================================

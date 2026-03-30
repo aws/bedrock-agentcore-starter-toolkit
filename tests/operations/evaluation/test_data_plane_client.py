@@ -227,6 +227,28 @@ class TestEvaluate:
         call_args = mock_boto_client.evaluate.call_args
         assert call_args.kwargs["evaluationInput"]["sessionSpans"] == []
 
+    def test_evaluate_with_evaluation_reference_inputs(self, mock_boto_client, sample_spans):
+        """Test evaluation with pre-serialized reference inputs forwarded to API."""
+        mock_boto_client.evaluate.return_value = {"evaluationResults": []}
+        client = EvaluationDataPlaneClient(region_name="us-west-2", boto_client=mock_boto_client)
+
+        ref_items = [
+            {
+                "context": {"spanContext": {"sessionId": "session-123"}},
+                "assertions": [{"text": "is polite"}],
+                "expectedTrajectory": {"toolNames": ["tool_a"]},
+            },
+        ]
+        client.evaluate(
+            evaluator_id="Builtin.Helpfulness",
+            session_spans=sample_spans,
+            evaluation_reference_inputs=ref_items,
+        )
+
+        call_args = mock_boto_client.evaluate.call_args
+        assert "evaluationReferenceInputs" in call_args.kwargs
+        assert call_args.kwargs["evaluationReferenceInputs"] == ref_items
+
     def test_evaluate_multiple_results(self, mock_boto_client, sample_spans):
         """Test handling multiple evaluation results."""
         response = {
