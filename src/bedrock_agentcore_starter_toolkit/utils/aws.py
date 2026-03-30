@@ -3,6 +3,7 @@
 from typing import Optional
 
 import boto3
+import botocore.session
 from botocore.exceptions import (
     ClientError,
     NoCredentialsError,
@@ -41,6 +42,11 @@ def get_account_id() -> str:
 def get_region() -> str:
     """Get AWS region."""
     return boto3.Session().region_name or DEFAULT_REGION
+
+
+def get_partition(region: str) -> str:
+    """Get AWS partition for a given region."""
+    return botocore.session.Session().get_partition_for_region(region)
 
 
 def ensure_valid_aws_creds() -> tuple[bool, Optional[str]]:

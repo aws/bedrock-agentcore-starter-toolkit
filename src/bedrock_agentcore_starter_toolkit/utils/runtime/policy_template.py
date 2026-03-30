@@ -7,6 +7,8 @@ from typing import Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader
 
+from ...utils.aws import get_partition
+
 
 def _get_template_dir() -> Path:
     """Get the templates directory path."""
@@ -31,10 +33,7 @@ def render_trust_policy_template(region: str, account_id: str) -> str:
     Returns:
         Rendered trust policy as JSON string
     """
-    variables = {
-        "region": region,
-        "account_id": account_id,
-    }
+    variables = {"region": region, "account_id": account_id, "partition": get_partition(region)}
     return _render_template("execution_role_trust_policy.json.j2", variables)
 
 
@@ -64,6 +63,7 @@ def render_execution_policy_template(
     variables = {
         "region": region,
         "account_id": account_id,
+        "partition": get_partition(region),
         "agent_name": agent_name,
         "deployment_type": deployment_type,
         "is_a2a_protocol": protocol == "A2A" if protocol else False,
