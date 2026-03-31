@@ -161,8 +161,13 @@ class GatewayClient:
             "credentialProviderConfigurations": [{"credentialProviderType": "GATEWAY_IAM_ROLE"}],
         }
         # handle cases of missing target payloads across smithy and lambda (default to something)
-        if not target_payload and target_type == "lambda":
-            create_request |= self.__handle_lambda_target_creation(gateway["roleArn"])
+        if target_type == "lambda":
+            if not target_payload:
+                create_request |= self.__handle_lambda_target_creation(gateway["roleArn"])
+            else:
+                create_request |= {
+                    "credentialProviderConfigurations": [{"credentialProviderType": "GATEWAY_IAM_ROLE"}],
+                }
         if not target_payload and target_type == "smithyModel":
             region_bucket = API_MODEL_BUCKETS.get(self.region)
             if not region_bucket:
