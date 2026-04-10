@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5] - 2026-04-10
+
+### Changes
+
+- fix: update IAM trust policies (#500) (9b5bd36)
+- chore: bump version to 0.3.4 (#495) (4b9387f)
+
 ## [0.3.4] - 2026-03-30
 
 ### Changes
