@@ -12,11 +12,11 @@ from bedrock_agentcore_starter_toolkit.operations.gateway.constants import (
     POLICIES,
     POLICIES_TO_CREATE,
 )
-from bedrock_agentcore_starter_toolkit.utils.runtime.policy_template import render_trust_policy_template
 from bedrock_agentcore_starter_toolkit.operations.gateway.create_role import (
     _attach_policy,
     create_gateway_execution_role,
 )
+from bedrock_agentcore_starter_toolkit.utils.runtime.policy_template import render_trust_policy_template
 
 
 class TestCreateGatewayExecutionRole:

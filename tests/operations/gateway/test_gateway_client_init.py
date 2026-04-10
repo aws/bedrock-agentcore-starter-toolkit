@@ -208,7 +208,9 @@ class TestCreateMCPGateway:
                         self.client.create_mcp_gateway()
 
                         # Verify role creation was called
-                        mock_create_role.assert_called_once_with(self.client.session, self.client.logger, region=self.client.region)
+                        mock_create_role.assert_called_once_with(
+                            self.client.session, self.client.logger, region=self.client.region
+                        )
 
                         # Verify authorizer creation was called
                         mock_create_auth.assert_called_once_with("TestGateway12345678")
