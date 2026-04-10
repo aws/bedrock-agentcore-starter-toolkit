@@ -35,9 +35,7 @@ class TestCreateGatewayExecutionRole:
         self.logger = logging.getLogger(__name__)
         self.role_name = "TestGatewayRole"
         self.role_arn = f"arn:aws:iam::123456789012:role/{self.role_name}"
-        self.expected_trust_policy = render_trust_policy_template(
-            region="us-east-1", account_id="123456789012"
-        )
+        self.expected_trust_policy = render_trust_policy_template(region="us-east-1", account_id="123456789012")
 
     def test_create_gateway_execution_role_success(self):
         """Test successful role creation."""
