@@ -44,23 +44,6 @@ CREATE_OPENAPI_TARGET_INVALID_CREDENTIALS_SHAPE_EXCEPTION_MESSAGE = """
             }
 """
 
-BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE = {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {"aws:SourceAccount": "{account_id}"},
-                "ArnLike": {
-                    "aws:SourceArn": "arn:aws:bedrock-agentcore:{region}:{account_id}:*"
-                },
-            },
-        }
-    ],
-}
-
 AGENTCORE_FULL_ACCESS = {
     "Version": "2012-10-17",
     "Statement": [

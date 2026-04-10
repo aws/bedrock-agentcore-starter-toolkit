@@ -9,10 +9,10 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 from ...operations.gateway.constants import (
-    BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE,
     POLICIES,
     POLICIES_TO_CREATE,
 )
+from ...utils.runtime.policy_template import render_trust_policy_template
 
 
 def create_gateway_execution_role(
@@ -33,11 +33,7 @@ def create_gateway_execution_role(
     sts = session.client("sts")
     account_id = sts.get_caller_identity()["Account"]
     region = region or session.region_name
-    trust_policy = (
-        json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE)
-        .replace("{account_id}", account_id)
-        .replace("{region}", region)
-    )
+    trust_policy = render_trust_policy_template(region=region, account_id=account_id)
     # Create the role
     try:
         role = iam.create_role(

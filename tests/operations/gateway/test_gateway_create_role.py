@@ -9,10 +9,10 @@ from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.gateway.constants import (
     AGENTCORE_FULL_ACCESS,
-    BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE,
     POLICIES,
     POLICIES_TO_CREATE,
 )
+from bedrock_agentcore_starter_toolkit.utils.runtime.policy_template import render_trust_policy_template
 from bedrock_agentcore_starter_toolkit.operations.gateway.create_role import (
     _attach_policy,
     create_gateway_execution_role,
@@ -35,10 +35,8 @@ class TestCreateGatewayExecutionRole:
         self.logger = logging.getLogger(__name__)
         self.role_name = "TestGatewayRole"
         self.role_arn = f"arn:aws:iam::123456789012:role/{self.role_name}"
-        self.expected_trust_policy = (
-            json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE)
-            .replace("{account_id}", "123456789012")
-            .replace("{region}", "us-east-1")
+        self.expected_trust_policy = render_trust_policy_template(
+            region="us-east-1", account_id="123456789012"
         )
 
     def test_create_gateway_execution_role_success(self):

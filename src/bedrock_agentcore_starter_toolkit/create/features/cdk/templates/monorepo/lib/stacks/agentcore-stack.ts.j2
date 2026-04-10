@@ -38,7 +38,7 @@ export class AgentCoreStack extends cdk.Stack {
             assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
                 conditions: {
                     StringEquals: { 'aws:SourceAccount': accountId },
-                    ArnLike: { 'aws:SourceArn': `arn:aws:bedrock-agentcore:${region}:${accountId}:*` },
+                    ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
                 },
             }),
             description: 'IAM role for Bedrock AgentCore Gateway',
@@ -318,7 +318,7 @@ export class AgentCoreStack extends cdk.Stack {
             assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
                 conditions: {
                     StringEquals: { 'aws:SourceAccount': accountId },
-                    ArnLike: { 'aws:SourceArn': `arn:aws:bedrock-agentcore:${region}:${accountId}:*` },
+                    ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
                 },
             }),
             description: 'IAM role for Bedrock AgentCore Runtime',
