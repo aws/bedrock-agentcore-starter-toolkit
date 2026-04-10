@@ -163,8 +163,13 @@
               });
       
               const agentCoreGatewayRole = new iam.Role(this, `${props.appName}-AgentCoreGatewayRole`, {
-                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
-                  description: 'IAM role for Bedrock AgentCore Runtime',
+                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
+                      conditions: {
+                          StringEquals: { 'aws:SourceAccount': accountId },
+                          ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
+                      },
+                  }),
+                  description: 'IAM role for Bedrock AgentCore Gateway',
               });
       
               this.mcpLambda.grantInvoke(agentCoreGatewayRole);
@@ -426,7 +431,12 @@
               });
       
               const runtimeRole = new iam.Role(this, `${props.appName}-AgentCoreRuntimeRole`, {
-                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
+                      conditions: {
+                          StringEquals: { 'aws:SourceAccount': accountId },
+                          ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
+                      },
+                  }),
                   description: 'IAM role for Bedrock AgentCore Runtime',
                   inlinePolicies: {
                       RuntimeAccessPolicy: runtimePolicy
@@ -998,8 +1008,13 @@
               });
       
               const agentCoreGatewayRole = new iam.Role(this, `${props.appName}-AgentCoreGatewayRole`, {
-                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
-                  description: 'IAM role for Bedrock AgentCore Runtime',
+                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
+                      conditions: {
+                          StringEquals: { 'aws:SourceAccount': accountId },
+                          ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
+                      },
+                  }),
+                  description: 'IAM role for Bedrock AgentCore Gateway',
               });
       
               this.mcpLambda.grantInvoke(agentCoreGatewayRole);
@@ -1261,7 +1276,12 @@
               });
       
               const runtimeRole = new iam.Role(this, `${props.appName}-AgentCoreRuntimeRole`, {
-                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+                  assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com', {
+                      conditions: {
+                          StringEquals: { 'aws:SourceAccount': accountId },
+                          ArnLike: { 'aws:SourceArn': `arn:${cdk.Stack.of(this).partition}:bedrock-agentcore:${region}:${accountId}:*` },
+                      },
+                  }),
                   description: 'IAM role for Bedrock AgentCore Runtime',
                   inlinePolicies: {
                       RuntimeAccessPolicy: runtimePolicy

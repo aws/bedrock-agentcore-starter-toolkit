@@ -9,7 +9,6 @@ from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.gateway.constants import (
     AGENTCORE_FULL_ACCESS,
-    BEDROCK_AGENTCORE_TRUST_POLICY,
     POLICIES,
     POLICIES_TO_CREATE,
 )
@@ -17,6 +16,7 @@ from bedrock_agentcore_starter_toolkit.operations.gateway.create_role import (
     _attach_policy,
     create_gateway_execution_role,
 )
+from bedrock_agentcore_starter_toolkit.utils.runtime.policy_template import render_trust_policy_template
 
 
 class TestCreateGatewayExecutionRole:
@@ -26,10 +26,16 @@ class TestCreateGatewayExecutionRole:
         """Setup test fixtures."""
         self.mock_session = Mock()
         self.mock_iam_client = Mock()
-        self.mock_session.client.return_value = self.mock_iam_client
+        self.mock_sts_client = Mock()
+        self.mock_sts_client.get_caller_identity.return_value = {"Account": "123456789012"}
+        self.mock_session.client.side_effect = lambda svc, **kw: (
+            self.mock_sts_client if svc == "sts" else self.mock_iam_client
+        )
+        self.mock_session.region_name = "us-east-1"
         self.logger = logging.getLogger(__name__)
         self.role_name = "TestGatewayRole"
         self.role_arn = f"arn:aws:iam::123456789012:role/{self.role_name}"
+        self.expected_trust_policy = render_trust_policy_template(region="us-east-1", account_id="123456789012")
 
     def test_create_gateway_execution_role_success(self):
         """Test successful role creation."""
@@ -49,7 +55,7 @@ class TestCreateGatewayExecutionRole:
         # Verify role creation
         self.mock_iam_client.create_role.assert_called_once_with(
             RoleName=self.role_name,
-            AssumeRolePolicyDocument=json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY),
+            AssumeRolePolicyDocument=self.expected_trust_policy,
             Description="Execution role for AgentCore Gateway",
         )
 
@@ -75,7 +81,7 @@ class TestCreateGatewayExecutionRole:
         # Verify default role name was used
         self.mock_iam_client.create_role.assert_called_once_with(
             RoleName=default_role_name,
-            AssumeRolePolicyDocument=json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY),
+            AssumeRolePolicyDocument=self.expected_trust_policy,
             Description="Execution role for AgentCore Gateway",
         )
 
