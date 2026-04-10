@@ -90,7 +90,7 @@ class GatewayClient:
             name = f"TestGateway{GatewayClient.generate_random_id()}"
         if not role_arn:
             self.logger.info("Role not provided, creating an execution role to use")
-            role_arn = create_gateway_execution_role(self.session, self.logger)
+            role_arn = create_gateway_execution_role(self.session, self.logger, region=self.region)
             self.logger.info("✓ Successfully created execution role for Gateway")
         if not authorizer_config:
             self.logger.info("Authorizer config not provided, creating an authorizer to use")

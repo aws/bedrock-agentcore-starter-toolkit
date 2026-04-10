@@ -9,26 +9,40 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 from ...operations.gateway.constants import (
-    BEDROCK_AGENTCORE_TRUST_POLICY,
+    BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE,
     POLICIES,
     POLICIES_TO_CREATE,
 )
 
 
 def create_gateway_execution_role(
-    session: Session, logger: logging.Logger, role_name: str = "AgentCoreGatewayExecutionRole"
+    session: Session,
+    logger: logging.Logger,
+    role_name: str = "AgentCoreGatewayExecutionRole",
+    region: Optional[str] = None,
 ) -> str:
     """Create the Gateway execution role.
 
+    :param session: the boto3 session to use.
     :param logger: the logger to use.
+    :param role_name: the name of the role to create.
+    :param region: the AWS region for the SourceArn condition. Defaults to the session region.
     :return: the role ARN.
     """
     iam = session.client("iam")
+    sts = session.client("sts")
+    account_id = sts.get_caller_identity()["Account"]
+    region = region or session.region_name
+    trust_policy = (
+        json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY_TEMPLATE)
+        .replace("{account_id}", account_id)
+        .replace("{region}", region)
+    )
     # Create the role
     try:
         role = iam.create_role(
             RoleName=role_name,
-            AssumeRolePolicyDocument=json.dumps(BEDROCK_AGENTCORE_TRUST_POLICY),
+            AssumeRolePolicyDocument=trust_policy,
             Description="Execution role for AgentCore Gateway",
         )
         for policy_name, policy in POLICIES_TO_CREATE:
