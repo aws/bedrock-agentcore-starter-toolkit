@@ -297,6 +297,9 @@ class BedrockAgentCoreAgentSchema(BaseModel):
     api_key_credential_provider_name: Optional[str] = Field(
         default=None, description="Name of the API Key Credential Provider created in AgentCore Identity"
     )
+    tags: Optional[Dict[str, str]] = Field(
+        default=None, description="Tags to apply to all AWS resources created for this agent"
+    )
     is_generated_by_agentcore_create: Optional[bool] = Field(
         default=False, description="True if the agent is created with agentcore create"
     )
