@@ -1195,6 +1195,20 @@ class TestLaunchBedrockAgentCore:
             # Check that env_vars parameter was passed to _launch_with_codebuild
             assert mock_launch_with_codebuild.call_args.kwargs["env_vars"] == test_env_vars
 
+    def test_launch_codebuild_blocked_in_govcloud(self, tmp_path):
+        """Test that CodeBuild deployment is blocked in GovCloud regions."""
+        config_path = create_test_config(
+            tmp_path,
+            region="us-gov-west-1",
+            execution_role="arn:aws-us-gov:iam::123456789012:role/TestRole",
+            ecr_repository="123456789012.dkr.ecr.us-gov-west-1.amazonaws.com/test-repo",
+            deployment_type="container",
+        )
+        create_test_agent_file(tmp_path)
+
+        with pytest.raises(RuntimeError, match="ARM_CONTAINER.*not available"):
+            launch_bedrock_agentcore(config_path, local=False, use_codebuild=True)
+
     def test_launch_with_memory_creation_codebuild(self, mock_boto3_clients, mock_container_runtime, tmp_path):
         """Test launch with memory creation in CodeBuild mode."""
         from bedrock_agentcore_starter_toolkit.utils.runtime.schema import MemoryConfig

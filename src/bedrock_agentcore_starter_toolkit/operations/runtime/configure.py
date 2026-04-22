@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import boto3
 
 from ...cli.runtime.configuration_manager import ConfigurationManager
-from ...utils.aws import get_account_id, get_region
+from ...utils.aws import get_account_id, get_partition, get_region
 from ...utils.paths import expand_source_path_for_dependencies
 from ...utils.runtime.config import load_config_if_exists, merge_agent_config, save_config
 from ...utils.runtime.container import ContainerRuntime
@@ -244,14 +244,15 @@ def configure_bedrock_agentcore(
 
     # Handle execution role - convert to ARN if provided, otherwise use auto-create setting
     execution_role_arn = None
-    execution_role_auto_create = auto_create_execution_role
+    execution_role_auto_create = False if execution_role else auto_create_execution_role
 
     if execution_role:
         # User provided a role - convert to ARN format if needed
-        if execution_role.startswith("arn:aws:iam::"):
+        if re.match(r"^arn:aws[\w-]*:iam::\d{12}", execution_role):
             execution_role_arn = execution_role
         else:
-            execution_role_arn = f"arn:aws:iam::{account_id}:role/{execution_role}"
+            partition = get_partition(region)
+            execution_role_arn = f"arn:{partition}:iam::{account_id}:role/{execution_role}"
 
         if verbose:
             log.debug("Using execution role: %s", execution_role_arn)
@@ -344,13 +345,17 @@ def configure_bedrock_agentcore(
             log.debug("Unable to read existing memory configuration: %s", e)
 
     # Handle CodeBuild execution role - use separate role if provided, otherwise use execution_role
+    # Currently cannot use codebuild in govcloud due to ARM container not being available in region
+    # but in the future it may be supported so duplicate execution_role logic
+    # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html
     codebuild_execution_role_arn = None
     if code_build_execution_role:
         # User provided a separate CodeBuild role
-        if code_build_execution_role.startswith("arn:aws:iam::"):
+        if re.match(r"^arn:aws[\w-]*:iam::\d{12}:role", code_build_execution_role):
             codebuild_execution_role_arn = code_build_execution_role
         else:
-            codebuild_execution_role_arn = f"arn:aws:iam::{account_id}:role/{code_build_execution_role}"
+            partition = get_partition(region)
+            codebuild_execution_role_arn = f"arn:{partition}:iam::{account_id}:role/{code_build_execution_role}"
 
         if verbose:
             log.debug("Using separate CodeBuild execution role: %s", codebuild_execution_role_arn)

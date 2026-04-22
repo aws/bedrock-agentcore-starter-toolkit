@@ -15,6 +15,7 @@ from ...services.codebuild import CodeBuildService
 from ...services.ecr import deploy_to_ecr, generate_image_tag, get_or_create_ecr_repository
 from ...services.runtime import BedrockAgentCoreClient
 from ...services.xray import enable_traces_delivery_for_runtime, enable_transaction_search_if_needed
+from ...utils.aws import get_partition
 from ...utils.runtime.agentcore_identity import _load_api_key_from_env_if_configured
 from ...utils.runtime.config import load_config, save_config
 from ...utils.runtime.container import ContainerRuntime
@@ -859,8 +860,19 @@ def launch_bedrock_agentcore(
         env_vars["BEDROCK_AGENTCORE_MEMORY_ID"] = agent_config.memory.memory_id
         env_vars["BEDROCK_AGENTCORE_MEMORY_NAME"] = agent_config.memory.memory_name
 
+    region = agent_config.aws.region
+    if not region:
+        raise ValueError("Region not found in configuration")
+
     # Handle CodeBuild deployment (container deployments, not for local mode)
     if use_codebuild and not local:
+        partition = get_partition(region)
+        if partition != "aws":
+            raise RuntimeError(
+                f"CodeBuild ARM_CONTAINER environment type is not available in the '{partition}' partition.\n"
+                "Use '--local-build' to build the container image locally and deploy to cloud instead"
+            )
+
         return _launch_with_codebuild(
             config_path=config_path,
             agent_name=agent_config.name,
@@ -951,10 +963,6 @@ def launch_bedrock_agentcore(
             runtime=runtime,
             env_vars=env_vars,
         )
-
-    region = agent_config.aws.region
-    if not region:
-        raise ValueError("Region not found in configuration")
 
     account_id = agent_config.aws.account
 
