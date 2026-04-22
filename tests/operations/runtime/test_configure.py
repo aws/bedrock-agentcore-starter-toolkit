@@ -311,7 +311,7 @@ bedrock_agentcore = BedrockAgentCoreApp()
             ):
                 # Test role name (should be converted to full ARN)
                 result1 = configure_bedrock_agentcore(
-                    agent_name="test_agent", entrypoint_path=agent_file, execution_role="MyRole"
+                    agent_name="test_agent", entrypoint_path=agent_file, execution_role="MyRole", region="us-east-1"
                 )
                 assert result1.execution_role == "arn:aws:iam::123456789012:role/MyRole"
 
@@ -321,6 +321,21 @@ bedrock_agentcore = BedrockAgentCoreApp()
                     agent_name="test_agent", entrypoint_path=agent_file, execution_role=full_arn
                 )
                 assert result2.execution_role == full_arn
+
+                gov_arn = "arn:aws-us-gov:iam::123456789012:role/MyCustomRole"
+                result3 = configure_bedrock_agentcore(
+                    agent_name="test_agent", entrypoint_path=agent_file, execution_role=gov_arn, region="us-gov-west-1"
+                )
+                assert result3.execution_role == gov_arn
+
+                # Test that correct arn partition is resolved given region in generated role ARN
+                result4 = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="MyCustomRole",
+                    region="us-gov-east-1",
+                )
+                assert result4.execution_role == "arn:aws-us-gov:iam::123456789012:role/MyCustomRole"
 
         finally:
             os.chdir(original_cwd)
@@ -541,6 +556,7 @@ def handler(payload):
                     entrypoint_path=agent_file,
                     execution_role="ExecutionRole",
                     code_build_execution_role="CodeBuildRole",
+                    region="us-west-2",
                 )
 
                 # Load and verify the configuration
@@ -551,6 +567,20 @@ def handler(payload):
 
                 assert agent_config.aws.execution_role == "arn:aws:iam::123456789012:role/ExecutionRole"
                 assert agent_config.codebuild.execution_role == "arn:aws:iam::123456789012:role/CodeBuildRole"
+
+                result2 = configure_bedrock_agentcore(
+                    agent_name="test_agent",
+                    entrypoint_path=agent_file,
+                    execution_role="ExecutionRole",
+                    code_build_execution_role="CodeBuildRole",
+                    region="us-gov-west-1",
+                )
+
+                config2 = load_config(result2.config_path)
+                agent_config2 = config2.get_agent_config("test_agent")
+
+                assert agent_config2.aws.execution_role == "arn:aws-us-gov:iam::123456789012:role/ExecutionRole"
+                assert agent_config2.codebuild.execution_role == "arn:aws-us-gov:iam::123456789012:role/CodeBuildRole"
 
         finally:
             os.chdir(original_cwd)
