@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6] - 2026-04-22
+
+### Changes
+
+- fix: modify execution role naming and disallow codebuild for govcloud (#503) (af69275)
+- chore: bump version to 0.3.5 (#501) (f4d318b)
+
 ## [0.3.5] - 2026-04-10
 
 ### Changes
