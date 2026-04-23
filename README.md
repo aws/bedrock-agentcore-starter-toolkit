@@ -27,11 +27,11 @@
 
 > **⚠️ Recommendation: Use the AgentCore CLI for new projects**
 >
-> The **[AgentCore CLI (`@aws/agentcore-cli`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
+> The **[AgentCore CLI (`@aws/agentcore`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
 >
 > **For new projects**, install the AgentCore CLI:
 > ```bash
-> npm i @aws/agentcore-cli
+> npm install -g @aws/agentcore
 > ```
 >
 > **Migrating from this toolkit?** See the [Migration Guide](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md) for step-by-step instructions, and the [AgentCore CLI documentation](https://github.com/aws/agentcore-cli/tree/main/docs) for:
@@ -51,7 +51,7 @@ Amazon Bedrock AgentCore includes the following modular Services that you can us
 
 ## 🚀 Jump Into AgentCore
 
-> **New projects should use the [AgentCore CLI](https://github.com/aws/agentcore-cli):** `npm i @aws/agentcore-cli`
+> **New projects should use the [AgentCore CLI](https://github.com/aws/agentcore-cli):** `npm install -g @aws/agentcore`
 
 If you prefer a Python-based workflow, you can still get started with this toolkit using `agentcore create`.
 
@@ -116,7 +116,7 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 ### Recommended: AgentCore CLI
 
 ```bash
-npm i @aws/agentcore-cli
+npm install -g @aws/agentcore
 ```
 
 See the [AgentCore CLI README](https://github.com/aws/agentcore-cli) and [docs](https://github.com/aws/agentcore-cli/tree/main/docs) for full usage.
