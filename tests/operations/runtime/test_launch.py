@@ -3751,6 +3751,9 @@ class TestCodeZipDeployment:
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_transaction_search_if_needed"
             ) as mock_enable_xray,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.launch.enable_traces_delivery_for_runtime"
+            ) as mock_enable_traces,
             patch("shutil.which") as mock_which,
         ):
             mock_which.side_effect = lambda cmd: f"/usr/bin/{cmd}" if cmd in ["uv", "zip"] else None
@@ -3779,6 +3782,13 @@ class TestCodeZipDeployment:
 
             # Verify observability was enabled
             mock_enable_xray.assert_called_once_with("us-west-2", "123456789012")
+
+            # Verify traces delivery was enabled for the runtime
+            mock_enable_traces.assert_called_once()
+            call_kwargs = mock_enable_traces.call_args.kwargs
+            assert "agent_id" in call_kwargs
+            assert "agent_arn" in call_kwargs
+            assert call_kwargs["region"] == "us-west-2"
 
     def test_launch_with_direct_code_deploy_session_id_reset(self, mock_boto3_clients, tmp_path):
         """Test direct_code_deploy deployment resets existing session_id with warning."""

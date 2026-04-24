@@ -77,6 +77,8 @@ def enable_transaction_search_if_needed(region: str, account_id: str) -> bool:
             steps_run.append("trace_destination")
         else:
             logger.info("X-Ray trace destination already configured")
+            # Destination may be set but still PENDING from a previous run
+            _log_trace_destination_status(xray_client)
 
         # Step 3: Indexing rule (only if needed)
         if _need_indexing_rule(xray_client):
@@ -187,7 +189,11 @@ def _create_cloudwatch_logs_resource_policy(logs_client, account_id: str, region
 
 
 def _configure_trace_segment_destination(xray_client) -> None:
-    """Configure X-Ray trace segment destination to CloudWatch Logs (idempotent)."""
+    """Configure X-Ray trace segment destination to CloudWatch Logs (idempotent).
+
+    Logs a warning if the destination is still PENDING after configuration,
+    since OTEL trace exports will fail until it becomes ACTIVE (~10-15 minutes).
+    """
     try:
         # Configure trace segments to be sent to CloudWatch Logs
         # This enables Transaction Search functionality
@@ -199,6 +205,26 @@ def _configure_trace_segment_destination(xray_client) -> None:
             logger.info("X-Ray trace segment destination already configured")
         else:
             raise
+
+    # Check status — warn if still PENDING
+    _log_trace_destination_status(xray_client)
+
+
+def _log_trace_destination_status(xray_client):
+    """Check and log the trace segment destination status."""
+    try:
+        resp = xray_client.get_trace_segment_destination()
+        status = resp.get("Status")
+        if status == "ACTIVE":
+            logger.info("X-Ray trace segment destination is ACTIVE")
+        else:
+            logger.info(
+                "⏳ X-Ray trace segment destination is %s — "
+                "OTEL trace exports may fail until it becomes ACTIVE (typically 10-15 minutes)",
+                status,
+            )
+    except Exception as e:
+        logger.warning("Could not check trace destination status: %s", e)
 
 
 def _configure_indexing_rule(xray_client) -> None:

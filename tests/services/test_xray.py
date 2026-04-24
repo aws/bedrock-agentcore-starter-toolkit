@@ -478,3 +478,30 @@ class TestEdgeCasesAndErrorHandling:
         result = enable_transaction_search_if_needed("us-east-1", "123456789012")
 
         assert result is False
+
+
+class TestConfigureTraceSegmentDestinationChecksStatus:
+    """Test that _configure_trace_segment_destination checks status after update."""
+
+    @patch("bedrock_agentcore_starter_toolkit.services.xray._log_trace_destination_status")
+    def test_checks_status_after_update(self, mock_log_status):
+        """Test that _configure_trace_segment_destination checks status after update."""
+        mock_xray_client = Mock()
+
+        _configure_trace_segment_destination(mock_xray_client)
+
+        mock_xray_client.update_trace_segment_destination.assert_called_once_with(Destination="CloudWatchLogs")
+        mock_log_status.assert_called_once_with(mock_xray_client)
+
+    @patch("bedrock_agentcore_starter_toolkit.services.xray._log_trace_destination_status")
+    def test_checks_status_even_when_already_configured(self, mock_log_status):
+        """Test status check runs even when destination was already configured."""
+        mock_xray_client = Mock()
+        error_response = {"Error": {"Code": "InvalidRequestException", "Message": "Already configured"}}
+        mock_xray_client.update_trace_segment_destination.side_effect = ClientError(
+            error_response, "UpdateTraceSegmentDestination"
+        )
+
+        _configure_trace_segment_destination(mock_xray_client)
+
+        mock_log_status.assert_called_once_with(mock_xray_client)
