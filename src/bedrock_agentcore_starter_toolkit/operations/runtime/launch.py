@@ -1475,6 +1475,12 @@ def _launch_with_direct_code_deploy(
         if agent_config.aws.observability.enabled:
             log.info("Enabling observability...")
             enable_transaction_search_if_needed(region, account_id)
+            enable_traces_delivery_for_runtime(
+                agent_id=agent_info["id"],
+                agent_arn=agent_info["arn"],
+                region=region,
+                logger=log,
+            )
             console_url = get_genai_observability_url(region)
             log.info("🔍 GenAI Observability Dashboard: %s", console_url)
 
