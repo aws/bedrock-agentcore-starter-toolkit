@@ -21,12 +21,14 @@ class IdentityClient:
     def __init__(self, region: str):
         """Initialize the identity client with the specified region."""
         self.region = region
-        self.cp_client = boto3.client(
-            "bedrock-agentcore-control", region_name=region, endpoint_url=get_control_plane_endpoint(region)
-        )
-        self.dp_client = boto3.client(
-            "bedrock-agentcore", region_name=region, endpoint_url=get_data_plane_endpoint(region)
-        )
+        cp_kwargs: dict = {"region_name": region}
+        if CP_ENDPOINT_OVERRIDE:
+            cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+        self.cp_client = boto3.client("bedrock-agentcore-control", **cp_kwargs)
+        dp_kwargs: dict = {"region_name": region}
+        if DP_ENDPOINT_OVERRIDE:
+            dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+        self.dp_client = boto3.client("bedrock-agentcore", **dp_kwargs)
         self.logger = logging.getLogger("bedrock_agentcore.identity_client")
 
     def create_oauth2_credential_provider(self, req):
@@ -204,12 +206,14 @@ Source code in `bedrock_agentcore/services/identity.py`
 def __init__(self, region: str):
     """Initialize the identity client with the specified region."""
     self.region = region
-    self.cp_client = boto3.client(
-        "bedrock-agentcore-control", region_name=region, endpoint_url=get_control_plane_endpoint(region)
-    )
-    self.dp_client = boto3.client(
-        "bedrock-agentcore", region_name=region, endpoint_url=get_data_plane_endpoint(region)
-    )
+    cp_kwargs: dict = {"region_name": region}
+    if CP_ENDPOINT_OVERRIDE:
+        cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+    self.cp_client = boto3.client("bedrock-agentcore-control", **cp_kwargs)
+    dp_kwargs: dict = {"region_name": region}
+    if DP_ENDPOINT_OVERRIDE:
+        dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+    self.dp_client = boto3.client("bedrock-agentcore", **dp_kwargs)
     self.logger = logging.getLogger("bedrock_agentcore.identity_client")
 ```
 

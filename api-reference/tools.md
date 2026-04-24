@@ -122,21 +122,18 @@ class CodeInterpreter:
         # Data plane config (preserve existing read_timeout)
         data_config = Config(read_timeout=300, user_agent_extra=user_agent_extra)
 
-        # Control plane client for interpreter management
-        self.control_plane_client = session.client(
-            "bedrock-agentcore-control",
-            region_name=region,
-            endpoint_url=get_control_plane_endpoint(region),
-            config=control_config,
-        )
+        # Control plane client — let boto3 resolve endpoint natively (includes region validation).
+        # Only pass endpoint_url when an environment override is set.
+        cp_kwargs: dict = {"region_name": region, "config": control_config}
+        if CP_ENDPOINT_OVERRIDE:
+            cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+        self.control_plane_client = session.client("bedrock-agentcore-control", **cp_kwargs)
 
-        # Data plane client for session operations
-        self.data_plane_client = session.client(
-            "bedrock-agentcore",
-            region_name=region,
-            endpoint_url=get_data_plane_endpoint(region),
-            config=data_config,
-        )
+        # Data plane client — same pattern.
+        dp_kwargs: dict = {"region_name": region, "config": data_config}
+        if DP_ENDPOINT_OVERRIDE:
+            dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+        self.data_plane_client = session.client("bedrock-agentcore", **dp_kwargs)
 
         self._identifier = None
         self._session_id = None
@@ -168,6 +165,7 @@ class CodeInterpreter:
         execution_role_arn: str,
         network_configuration: Optional[Dict] = None,
         description: Optional[str] = None,
+        certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
         tags: Optional[Dict[str, str]] = None,
         client_token: Optional[str] = None,
     ) -> Dict:
@@ -189,6 +187,8 @@ class CodeInterpreter:
                     }
                 }
             description (Optional[str]): Description of the interpreter (1-4096 chars)
+            certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+                from Secrets Manager for the code interpreter to trust.
             tags (Optional[Dict[str, str]]): Tags for the interpreter
             client_token (Optional[str]): Idempotency token
 
@@ -226,6 +226,9 @@ class CodeInterpreter:
 
         if description:
             request_params["description"] = description
+
+        if certificates:
+            request_params["certificates"] = [_to_dict(c) for c in certificates]
 
         if tags:
             request_params["tags"] = tags
@@ -619,10 +622,10 @@ class CodeInterpreter:
         if not packages:
             raise ValueError("At least one package name must be provided")
 
-        # Sanitize package names (basic validation)
+        # Validate package names against allowlist pattern
         for pkg in packages:
-            if any(char in pkg for char in [";", "&", "|", "`", "$"]):
-                raise ValueError(f"Invalid characters in package name: {pkg}")
+            if not VALID_PACKAGE_NAME.match(pkg):
+                raise ValueError(f"Invalid package name: {pkg}")
 
         packages_str = " ".join(packages)
         upgrade_flag = "--upgrade " if upgrade else ""
@@ -867,21 +870,18 @@ def __init__(
     # Data plane config (preserve existing read_timeout)
     data_config = Config(read_timeout=300, user_agent_extra=user_agent_extra)
 
-    # Control plane client for interpreter management
-    self.control_plane_client = session.client(
-        "bedrock-agentcore-control",
-        region_name=region,
-        endpoint_url=get_control_plane_endpoint(region),
-        config=control_config,
-    )
+    # Control plane client — let boto3 resolve endpoint natively (includes region validation).
+    # Only pass endpoint_url when an environment override is set.
+    cp_kwargs: dict = {"region_name": region, "config": control_config}
+    if CP_ENDPOINT_OVERRIDE:
+        cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+    self.control_plane_client = session.client("bedrock-agentcore-control", **cp_kwargs)
 
-    # Data plane client for session operations
-    self.data_plane_client = session.client(
-        "bedrock-agentcore",
-        region_name=region,
-        endpoint_url=get_data_plane_endpoint(region),
-        config=data_config,
-    )
+    # Data plane client — same pattern.
+    dp_kwargs: dict = {"region_name": region, "config": data_config}
+    if DP_ENDPOINT_OVERRIDE:
+        dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+    self.data_plane_client = session.client("bedrock-agentcore", **dp_kwargs)
 
     self._identifier = None
     self._session_id = None
@@ -938,7 +938,7 @@ def clear_context(self) -> Dict[str, Any]:
     )
 ```
 
-#### `create_code_interpreter(name, execution_role_arn, network_configuration=None, description=None, tags=None, client_token=None)`
+#### `create_code_interpreter(name, execution_role_arn, network_configuration=None, description=None, certificates=None, tags=None, client_token=None)`
 
 Create a custom code interpreter with specific configuration.
 
@@ -946,14 +946,15 @@ This is a control plane operation that provisions a new code interpreter with cu
 
 Parameters:
 
-| Name                    | Type                       | Description                                                                                                                                                            | Default    |
-| ----------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `name`                  | `str`                      | The name for the code interpreter. Must match pattern a-zA-Z                                                                                                           | *required* |
-| `execution_role_arn`    | `str`                      | IAM role ARN with permissions for interpreter operations                                                                                                               | *required* |
-| `network_configuration` | `Optional[Dict]`           | Network configuration: { "networkMode": "PUBLIC" or "VPC", "vpcConfig": { # Required if networkMode is VPC "securityGroups": ["sg-xxx"], "subnets": ["subnet-xxx"] } } | `None`     |
-| `description`           | `Optional[str]`            | Description of the interpreter (1-4096 chars)                                                                                                                          | `None`     |
-| `tags`                  | `Optional[Dict[str, str]]` | Tags for the interpreter                                                                                                                                               | `None`     |
-| `client_token`          | `Optional[str]`            | Idempotency token                                                                                                                                                      | `None`     |
+| Name                    | Type                                       | Description                                                                                                                                                            | Default    |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `name`                  | `str`                                      | The name for the code interpreter. Must match pattern a-zA-Z                                                                                                           | *required* |
+| `execution_role_arn`    | `str`                                      | IAM role ARN with permissions for interpreter operations                                                                                                               | *required* |
+| `network_configuration` | `Optional[Dict]`                           | Network configuration: { "networkMode": "PUBLIC" or "VPC", "vpcConfig": { # Required if networkMode is VPC "securityGroups": ["sg-xxx"], "subnets": ["subnet-xxx"] } } | `None`     |
+| `description`           | `Optional[str]`                            | Description of the interpreter (1-4096 chars)                                                                                                                          | `None`     |
+| `certificates`          | `Optional[List[Union[Certificate, Dict]]]` | Root CA certificates from Secrets Manager for the code interpreter to trust.                                                                                           | `None`     |
+| `tags`                  | `Optional[Dict[str, str]]`                 | Tags for the interpreter                                                                                                                                               | `None`     |
+| `client_token`          | `Optional[str]`                            | Idempotency token                                                                                                                                                      | `None`     |
 
 Returns:
 
@@ -978,6 +979,7 @@ def create_code_interpreter(
     execution_role_arn: str,
     network_configuration: Optional[Dict] = None,
     description: Optional[str] = None,
+    certificates: Optional[List[Union[Certificate, Dict[str, Any]]]] = None,
     tags: Optional[Dict[str, str]] = None,
     client_token: Optional[str] = None,
 ) -> Dict:
@@ -999,6 +1001,8 @@ def create_code_interpreter(
                 }
             }
         description (Optional[str]): Description of the interpreter (1-4096 chars)
+        certificates (Optional[List[Union[Certificate, Dict]]]): Root CA certificates
+            from Secrets Manager for the code interpreter to trust.
         tags (Optional[Dict[str, str]]): Tags for the interpreter
         client_token (Optional[str]): Idempotency token
 
@@ -1036,6 +1040,9 @@ def create_code_interpreter(
 
     if description:
         request_params["description"] = description
+
+    if certificates:
+        request_params["certificates"] = [_to_dict(c) for c in certificates]
 
     if tags:
         request_params["tags"] = tags
@@ -1547,10 +1554,10 @@ def install_packages(
     if not packages:
         raise ValueError("At least one package name must be provided")
 
-    # Sanitize package names (basic validation)
+    # Validate package names against allowlist pattern
     for pkg in packages:
-        if any(char in pkg for char in [";", "&", "|", "`", "$"]):
-            raise ValueError(f"Invalid characters in package name: {pkg}")
+        if not VALID_PACKAGE_NAME.match(pkg):
+            raise ValueError(f"Invalid package name: {pkg}")
 
     packages_str = " ".join(packages)
     upgrade_flag = "--upgrade " if upgrade else ""
@@ -2153,6 +2160,9 @@ class BrowserClient:
                 for telemetry (e.g., 'langchain', 'crewai'). Used to track
                 customer acquisition from different integrations.
         """
+        from bedrock_agentcore._utils.endpoints import CP_ENDPOINT_OVERRIDE, DP_ENDPOINT_OVERRIDE, validate_region
+
+        validate_region(region)
         self.region = region
         self.logger = logging.getLogger(__name__)
         self.integration_source = integration_source
@@ -2161,21 +2171,17 @@ class BrowserClient:
         user_agent_extra = build_user_agent_suffix(integration_source)
         client_config = Config(user_agent_extra=user_agent_extra)
 
-        # Control plane client for browser management
-        self.control_plane_client = boto3.client(
-            "bedrock-agentcore-control",
-            region_name=region,
-            endpoint_url=get_control_plane_endpoint(region),
-            config=client_config,
-        )
+        # Control plane client — let boto3 resolve endpoint natively.
+        cp_kwargs: dict = {"region_name": region, "config": client_config}
+        if CP_ENDPOINT_OVERRIDE:
+            cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+        self.control_plane_client = boto3.client("bedrock-agentcore-control", **cp_kwargs)
 
-        # Data plane client for session operations
-        self.data_plane_client = boto3.client(
-            "bedrock-agentcore",
-            region_name=region,
-            endpoint_url=get_data_plane_endpoint(region),
-            config=client_config,
-        )
+        # Data plane client — same pattern.
+        dp_kwargs: dict = {"region_name": region, "config": client_config}
+        if DP_ENDPOINT_OVERRIDE:
+            dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+        self.data_plane_client = boto3.client("bedrock-agentcore", **dp_kwargs)
 
         self._identifier = None
         self._session_id = None
@@ -2773,6 +2779,9 @@ def __init__(self, region: str, integration_source: Optional[str] = None) -> Non
             for telemetry (e.g., 'langchain', 'crewai'). Used to track
             customer acquisition from different integrations.
     """
+    from bedrock_agentcore._utils.endpoints import CP_ENDPOINT_OVERRIDE, DP_ENDPOINT_OVERRIDE, validate_region
+
+    validate_region(region)
     self.region = region
     self.logger = logging.getLogger(__name__)
     self.integration_source = integration_source
@@ -2781,21 +2790,17 @@ def __init__(self, region: str, integration_source: Optional[str] = None) -> Non
     user_agent_extra = build_user_agent_suffix(integration_source)
     client_config = Config(user_agent_extra=user_agent_extra)
 
-    # Control plane client for browser management
-    self.control_plane_client = boto3.client(
-        "bedrock-agentcore-control",
-        region_name=region,
-        endpoint_url=get_control_plane_endpoint(region),
-        config=client_config,
-    )
+    # Control plane client — let boto3 resolve endpoint natively.
+    cp_kwargs: dict = {"region_name": region, "config": client_config}
+    if CP_ENDPOINT_OVERRIDE:
+        cp_kwargs["endpoint_url"] = CP_ENDPOINT_OVERRIDE
+    self.control_plane_client = boto3.client("bedrock-agentcore-control", **cp_kwargs)
 
-    # Data plane client for session operations
-    self.data_plane_client = boto3.client(
-        "bedrock-agentcore",
-        region_name=region,
-        endpoint_url=get_data_plane_endpoint(region),
-        config=client_config,
-    )
+    # Data plane client — same pattern.
+    dp_kwargs: dict = {"region_name": region, "config": client_config}
+    if DP_ENDPOINT_OVERRIDE:
+        dp_kwargs["endpoint_url"] = DP_ENDPOINT_OVERRIDE
+    self.data_plane_client = boto3.client("bedrock-agentcore", **dp_kwargs)
 
     self._identifier = None
     self._session_id = None

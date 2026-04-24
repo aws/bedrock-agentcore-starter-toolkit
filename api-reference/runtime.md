@@ -48,6 +48,9 @@ class AgentCoreRuntimeClient:
             session (Optional[boto3.Session]): Optional boto3 session. If not provided,
                 a new session will be created using default credentials.
         """
+        from .._utils.endpoints import validate_region
+
+        validate_region(region)
         self.region = region
         self.logger = logging.getLogger(__name__)
 
@@ -74,7 +77,7 @@ class AgentCoreRuntimeClient:
         if len(parts) != 6:
             raise ValueError(f"Invalid runtime ARN format: {runtime_arn}")
 
-        if parts[0] != "arn" or parts[1] != "aws" or parts[2] != "bedrock-agentcore":
+        if parts[0] != "arn" or not is_valid_partition(parts[1]) or parts[2] != "bedrock-agentcore":
             raise ValueError(f"Invalid runtime ARN format: {runtime_arn}")
 
         # Parse the resource part (runtime/{runtime_id})
@@ -427,6 +430,9 @@ def __init__(self, region: str, session: Optional[boto3.Session] = None) -> None
         session (Optional[boto3.Session]): Optional boto3 session. If not provided,
             a new session will be created using default credentials.
     """
+    from .._utils.endpoints import validate_region
+
+    validate_region(region)
     self.region = region
     self.logger = logging.getLogger(__name__)
 
@@ -833,8 +839,6 @@ class BedrockAgentCoreApp(Starlette):
         self.handlers: Dict[str, Callable] = {}
         self._ping_handler: Optional[Callable] = None
         self._websocket_handler: Optional[Callable] = None
-        self._prompt_key: Optional[str] = None
-        self._response_key: Optional[str] = None
         self._active_tasks: Dict[int, Dict[str, Any]] = {}
         self._task_counter_lock: threading.Lock = threading.Lock()
         self._forced_ping_status: Optional[PingStatus] = None
@@ -859,44 +863,18 @@ class BedrockAgentCoreApp(Starlette):
             self.logger.addHandler(handler)
             self.logger.setLevel(logging.DEBUG if self.debug else logging.INFO)
 
-    def entrypoint(
-        self, func: Callable = None, *, prompt_key: Optional[str] = None, response_key: Optional[str] = None
-    ) -> Callable:
+    def entrypoint(self, func: Callable) -> Callable:
         """Decorator to register a function as the main entrypoint.
 
         Args:
             func: The function to register as entrypoint
-            prompt_key: Optional key to extract user prompt from the payload dict.
-                If not specified, tries common keys in order (prompt, input, query,
-                message, question, user_input) then falls back to JSON serialization.
-            response_key: Optional key to extract agent response from the result dict.
-                If not specified, the full result is used.
 
         Returns:
             The decorated function with added serve method
-
-        Examples:
-            @app.entrypoint
-            def handler(payload):
-                ...
-
-            @app.entrypoint(prompt_key="user_input")
-            def handler(payload):
-                ...
         """
-
-        def decorator(f: Callable) -> Callable:
-            self.handlers["main"] = f
-            self._prompt_key = prompt_key
-            self._response_key = response_key
-            f.run = lambda port=8080, host=None: self.run(port, host)
-            return f
-
-        if func is not None:
-            # Called as @app.entrypoint without arguments
-            return decorator(func)
-        # Called as @app.entrypoint(...) with arguments
-        return decorator
+        self.handlers["main"] = func
+        func.run = lambda port=8080, host=None: self.run(port, host)
+        return func
 
     def ping(self, func: Callable) -> Callable:
         """Decorator to register a custom ping status handler.
@@ -1125,78 +1103,6 @@ class BedrockAgentCoreApp(Starlette):
         except Exception:
             return False
 
-    def _emit_invocation_otel_attributes(self, payload: Any, result: Any) -> None:
-        """Emit OTEL span attributes with the invocation input and output.
-
-        These attributes provide a canonical, framework-agnostic source of the
-        user's prompt and the agent's response for AgentCore Evaluation. They
-        enable evaluation of agents that use custom state schemas (e.g. workflow
-        agents with TypedDict states) where the default MessagesState-based
-        extraction in the evaluation mapper would fail.
-
-        The attributes are set on the current active span (typically the root
-        POST /invocations span created by ADOT auto-instrumentation).
-
-        When prompt_key or response_key is configured via @app.entrypoint(),
-        those specific keys are used to extract from dict payloads/results.
-        Otherwise, a heuristic tries common keys in priority order.
-        """
-        try:
-            from opentelemetry import trace as otel_trace
-
-            span = otel_trace.get_current_span()
-            if not span or not span.is_recording():
-                return
-
-            # Extract user prompt from payload
-            user_prompt = None
-            if isinstance(payload, dict):
-                if self._prompt_key is not None:
-                    value = payload.get(self._prompt_key)
-                    if isinstance(value, str):
-                        user_prompt = value
-                else:
-                    for key in ("prompt", "input", "query", "message", "question", "user_input"):
-                        if key in payload and isinstance(payload[key], str):
-                            user_prompt = payload[key]
-                            break
-                if user_prompt is None:
-                    user_prompt = json.dumps(payload, ensure_ascii=False, default=str)
-            elif isinstance(payload, str):
-                user_prompt = payload
-            else:
-                user_prompt = str(payload)
-
-            # Extract agent response from result
-            agent_response = None
-            if isinstance(result, str):
-                agent_response = result
-            elif isinstance(result, Response):
-                pass  # Skip for streaming/custom responses — cannot capture full output
-            elif isinstance(result, dict) and self._response_key is not None:
-                value = result.get(self._response_key)
-                if isinstance(value, str):
-                    agent_response = value
-                elif value is not None:
-                    try:
-                        agent_response = json.dumps(value, ensure_ascii=False, default=str)
-                    except Exception:
-                        agent_response = str(value)
-            elif result is not None:
-                try:
-                    agent_response = json.dumps(result, ensure_ascii=False, default=str)
-                except Exception:
-                    agent_response = str(result)
-
-            if user_prompt:
-                span.set_attribute("agentcore.invocation.user_prompt", user_prompt[:16384])
-            if agent_response:
-                span.set_attribute("agentcore.invocation.agent_response", agent_response[:16384])
-        except ImportError:
-            pass  # OpenTelemetry not installed — silently skip
-        except Exception:
-            self.logger.debug("Failed to emit invocation OTEL attributes", exc_info=True)
-
     async def _handle_invocation(self, request):
         request_context = self._build_request_context(request)
 
@@ -1223,8 +1129,6 @@ class BedrockAgentCoreApp(Starlette):
             handler_name = handler.__name__ if hasattr(handler, "__name__") else "unknown"
             self.logger.debug("Invoking handler: %s", handler_name)
             result = await self._invoke_handler(handler, request_context, takes_context, payload)
-
-            self._emit_invocation_otel_attributes(payload, result)
 
             duration = time.time() - start_time
             if inspect.isgenerator(result):
@@ -1345,19 +1249,37 @@ class BedrockAgentCoreApp(Starlette):
             return self._worker_loop
         with self._worker_loop_lock:
             if self._worker_loop is None or not self._worker_loop.is_running():
-                self._worker_loop = asyncio.new_event_loop()
+                ready = threading.Event()
                 self._worker_thread = threading.Thread(
                     target=self._run_worker_loop,
+                    args=(ready,),
                     daemon=True,
                     name="agentcore-worker-loop",
                 )
                 self._worker_thread.start()
+                if not ready.wait(timeout=10):
+                    raise RuntimeError("agentcore-worker-loop failed to start")
         return self._worker_loop
 
-    def _run_worker_loop(self) -> None:
-        """Entry point for the worker loop background thread."""
-        asyncio.set_event_loop(self._worker_loop)
-        self._worker_loop.run_forever()
+    def _run_worker_loop(self, ready: threading.Event) -> None:
+        """Entry point for the worker loop background thread.
+
+        The event loop is created here (inside the worker thread) rather than in
+        the parent thread to avoid conflicts with OpenTelemetry's threading
+        instrumentation, which propagates context from the parent thread and can
+        cause ``RuntimeError: Cannot run the event loop while another loop is
+        running``.
+        """
+        # Clear any running-loop state that leaked from the parent thread
+        # (e.g. via OpenTelemetry's threading instrumentation context propagation).
+        # Without this, run_forever() raises RuntimeError because
+        # asyncio._get_running_loop() still returns the parent's loop.
+        asyncio._set_running_loop(None)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self._worker_loop = loop
+        loop.call_soon(ready.set)
+        loop.run_forever()
 
     @staticmethod
     async def _run_with_context(coro: Any, ctx: contextvars.Context) -> Any:
@@ -1573,8 +1495,6 @@ def __init__(
     self.handlers: Dict[str, Callable] = {}
     self._ping_handler: Optional[Callable] = None
     self._websocket_handler: Optional[Callable] = None
-    self._prompt_key: Optional[str] = None
-    self._response_key: Optional[str] = None
     self._active_tasks: Dict[int, Dict[str, Any]] = {}
     self._task_counter_lock: threading.Lock = threading.Lock()
     self._forced_ping_status: Optional[PingStatus] = None
@@ -1778,17 +1698,15 @@ def complete_async_task(self, task_id: int) -> bool:
             return False
 ```
 
-#### `entrypoint(func=None, *, prompt_key=None, response_key=None)`
+#### `entrypoint(func)`
 
 Decorator to register a function as the main entrypoint.
 
 Parameters:
 
-| Name           | Type            | Description                                                                                                                                                                                          | Default |
-| -------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `func`         | `Callable`      | The function to register as entrypoint                                                                                                                                                               | `None`  |
-| `prompt_key`   | `Optional[str]` | Optional key to extract user prompt from the payload dict. If not specified, tries common keys in order (prompt, input, query, message, question, user_input) then falls back to JSON serialization. | `None`  |
-| `response_key` | `Optional[str]` | Optional key to extract agent response from the result dict. If not specified, the full result is used.                                                                                              | `None`  |
+| Name   | Type       | Description                            | Default    |
+| ------ | ---------- | -------------------------------------- | ---------- |
+| `func` | `Callable` | The function to register as entrypoint | *required* |
 
 Returns:
 
@@ -1796,53 +1714,21 @@ Returns:
 | ---------- | ---------------------------------------------- |
 | `Callable` | The decorated function with added serve method |
 
-Examples:
-
-@app.entrypoint def handler(payload): ...
-
-@app.entrypoint(prompt_key="user_input") def handler(payload): ...
-
 Source code in `bedrock_agentcore/runtime/app.py`
 
 ```
-def entrypoint(
-    self, func: Callable = None, *, prompt_key: Optional[str] = None, response_key: Optional[str] = None
-) -> Callable:
+def entrypoint(self, func: Callable) -> Callable:
     """Decorator to register a function as the main entrypoint.
 
     Args:
         func: The function to register as entrypoint
-        prompt_key: Optional key to extract user prompt from the payload dict.
-            If not specified, tries common keys in order (prompt, input, query,
-            message, question, user_input) then falls back to JSON serialization.
-        response_key: Optional key to extract agent response from the result dict.
-            If not specified, the full result is used.
 
     Returns:
         The decorated function with added serve method
-
-    Examples:
-        @app.entrypoint
-        def handler(payload):
-            ...
-
-        @app.entrypoint(prompt_key="user_input")
-        def handler(payload):
-            ...
     """
-
-    def decorator(f: Callable) -> Callable:
-        self.handlers["main"] = f
-        self._prompt_key = prompt_key
-        self._response_key = response_key
-        f.run = lambda port=8080, host=None: self.run(port, host)
-        return f
-
-    if func is not None:
-        # Called as @app.entrypoint without arguments
-        return decorator(func)
-    # Called as @app.entrypoint(...) with arguments
-    return decorator
+    self.handlers["main"] = func
+    func.run = lambda port=8080, host=None: self.run(port, host)
+    return func
 ```
 
 #### `force_ping_status(status)`
