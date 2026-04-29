@@ -39,7 +39,7 @@ _stderr_console = Console(stderr=True)
 @app.callback(invoke_without_command=True)
 def _deprecation_banner(ctx: typer.Context) -> None:
     """Show deprecation warning before every command."""
-    if os.environ.get("AGENTCORE_SUPPRESS_DEPRECATION", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("AGENTCORE_SUPPRESS_RECOMMENDATION", "").lower() in ("1", "true", "yes"):
         return
     if ctx.invoked_subcommand is None and not ctx.protected_args:
         return
@@ -48,7 +48,7 @@ def _deprecation_banner(ctx: typer.Context) -> None:
         " and deploy agents on Amazon Bedrock AgentCore.[/yellow bold]\n"
         "[yellow]   We recommend migrating to the new CLI:[/yellow] [cyan]npm install -g @aws/agentcore[/cyan]\n"
         "[yellow]   To import existing agents, run:[/yellow] [cyan]agentcore create import[/cyan]\n"
-        "[dim]   Set AGENTCORE_SUPPRESS_DEPRECATION=1 to silence this warning.[/dim]\n"
+        "[dim]   Set AGENTCORE_SUPPRESS_RECOMMENDATION=1 to silence this warning.[/dim]\n"
     )
 
 app.command("create")(create)
