@@ -1,6 +1,9 @@
 """BedrockAgentCore CLI main module."""
 
+import os
+
 import typer
+from rich.console import Console
 
 from ..cli.evaluation.commands import evaluation_app
 from ..cli.gateway.commands import (
@@ -29,6 +32,25 @@ app = typer.Typer(name="agentcore", help="BedrockAgentCore CLI", add_completion=
 
 # Setup centralized logging for CLI
 setup_toolkit_logging(mode="cli")
+
+MIGRATION_GUIDE_URL = "https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md"
+
+_stderr_console = Console(stderr=True)
+
+
+@app.callback(invoke_without_command=True)
+def _deprecation_banner(ctx: typer.Context) -> None:
+    """Show deprecation warning before every command."""
+    if os.environ.get("AGENTCORE_SUPPRESS_DEPRECATION"):
+        return
+    if ctx.invoked_subcommand is None and not ctx.protected_args:
+        return
+    _stderr_console.print(
+        "\n[yellow bold]⚠️  This toolkit is no longer actively developed.[/yellow bold]\n"
+        "[yellow]   Use the AgentCore CLI instead:[/yellow] [cyan]npm install -g @aws/agentcore[/cyan]\n"
+        f"[yellow]   Migration guide:[/yellow] [underline]{MIGRATION_GUIDE_URL}[/underline]\n"
+        "[dim]   Set AGENTCORE_SUPPRESS_DEPRECATION=1 to silence this warning.[/dim]\n"
+    )
 
 app.command("create")(create)
 app.add_typer(create_app, name="create")
