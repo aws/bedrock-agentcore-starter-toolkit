@@ -67,13 +67,16 @@ class ObservabilityDeliveryManager:
         self,
         region_name: Optional[str] = None,
         boto3_session: Optional[boto3.Session] = None,
+        tags: Optional[Dict[str, str]] = None,
     ):
         """Initialize the ObservabilityDeliveryManager.
 
         Args:
             region_name: AWS region name. If not provided, uses session default.
             boto3_session: Optional boto3 Session. Creates new one if not provided.
+            tags: Optional tags to apply to created observability resources.
         """
+        self._tags = tags
         self._session = boto3_session or boto3.Session()
         self.region = region_name or self._session.region_name
 
@@ -271,7 +274,10 @@ class ObservabilityDeliveryManager:
             log_group_name: Name of the log group to create
         """
         try:
-            self._logs_client.create_log_group(logGroupName=log_group_name)
+            create_params: Dict[str, Any] = {"logGroupName": log_group_name}
+            if self._tags is not None:
+                create_params["tags"] = self._tags
+            self._logs_client.create_log_group(**create_params)
             logger.info("Created log group: %s", log_group_name)
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceAlreadyExistsException":
@@ -305,9 +311,12 @@ class ObservabilityDeliveryManager:
 
         # Step 1: Create delivery source for logs
         try:
-            logs_source = self._logs_client.put_delivery_source(
-                name=source_name, logType="APPLICATION_LOGS", resourceArn=resource_arn
-            )
+            source_params: Dict[str, Any] = {
+                "name": source_name, "logType": "APPLICATION_LOGS", "resourceArn": resource_arn
+            }
+            if self._tags is not None:
+                source_params["tags"] = self._tags
+            logs_source = self._logs_client.put_delivery_source(**source_params)
             logger.debug("Created logs delivery source: %s", source_name)
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceAlreadyExistsException":
@@ -318,13 +327,16 @@ class ObservabilityDeliveryManager:
 
         # Step 2: Create delivery destination (CloudWatch Logs)
         try:
-            logs_dest = self._logs_client.put_delivery_destination(
-                name=dest_name,
-                deliveryDestinationType="CWL",
-                deliveryDestinationConfiguration={
+            dest_params: Dict[str, Any] = {
+                "name": dest_name,
+                "deliveryDestinationType": "CWL",
+                "deliveryDestinationConfiguration": {
                     "destinationResourceArn": log_group_arn,
                 },
-            )
+            }
+            if self._tags is not None:
+                dest_params["tags"] = self._tags
+            logs_dest = self._logs_client.put_delivery_destination(**dest_params)
             dest_arn = logs_dest["deliveryDestination"]["arn"]
             logger.debug("Created logs delivery destination: %s", dest_name)
         except ClientError as e:
@@ -380,9 +392,12 @@ class ObservabilityDeliveryManager:
 
         # Step 1: Create delivery source for traces
         try:
-            traces_source = self._logs_client.put_delivery_source(
-                name=source_name, logType="TRACES", resourceArn=resource_arn
-            )
+            traces_source_params: Dict[str, Any] = {
+                "name": source_name, "logType": "TRACES", "resourceArn": resource_arn
+            }
+            if self._tags is not None:
+                traces_source_params["tags"] = self._tags
+            traces_source = self._logs_client.put_delivery_source(**traces_source_params)
             logger.debug("Created traces delivery source: %s", source_name)
         except ClientError as e:
             if e.response["Error"]["Code"] == "ResourceAlreadyExistsException":
