@@ -47,7 +47,7 @@ def _deprecation_banner(ctx: typer.Context) -> None:
         "\n[yellow bold]⚠️  The AgentCore CLI (@aws/agentcore) is now the recommended way to create, develop,"
         " and deploy agents on Amazon Bedrock AgentCore.[/yellow bold]\n"
         "[yellow]   We recommend migrating to the new CLI:[/yellow] [cyan]npm install -g @aws/agentcore[/cyan]\n"
-        "[yellow]   To import existing agents, run:[/yellow] [cyan]agentcore create import[/cyan]\n"
+        "[yellow]   To import existing agents, run:[/yellow] [cyan]agentcore import[/cyan]\n"
         "[dim]   Set AGENTCORE_SUPPRESS_RECOMMENDATION=1 to silence this warning.[/dim]\n"
     )
 
