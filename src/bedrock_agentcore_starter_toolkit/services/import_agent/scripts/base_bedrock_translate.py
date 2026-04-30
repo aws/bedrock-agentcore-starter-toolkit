@@ -1472,6 +1472,11 @@ def lambda_handler(event, context):
 
         self.create_lambda(lambda_code, function_name)
 
+        # Now create gateway targets after the proxy Lambda exists
+        for tools, target_name in self._pending_gateway_targets:
+            time.sleep(10)  # Sleep to avoid throttling issues with the Gateway API
+            self.create_gateway_lambda_target(tools, lambda_arn, target_name)
+
     def _update_gateway_role_with_lambda_permission(self, function_name):
         """Update the gateway role with lambda invoke permission."""
         if not self.created_gateway or not self.created_gateway.get("roleArn"):
