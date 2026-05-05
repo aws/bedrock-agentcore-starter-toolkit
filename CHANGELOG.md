@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.7] - 2026-05-05
+
+### Changes
+
+- fix: correct import command in deprecation banner (#510) (d0b36ce)
+- fix: soften deprecation banner and fix env var check (#508) (c17e3c9)
+- feat: add deprecation banner recommending AgentCore CLI (#507) (c7c836d)
+- fix: log Transaction Search PENDING status + add missing traces delivery in direct-code-deploy (#506) (419c267)
+- fix: update download instructions to include correct npm package (#505) (8231e3f)
+- chore: bump version to 0.3.6 (#504) (0f350f2)
+
 ## [0.3.6] - 2026-04-22
 
 ### Changes
