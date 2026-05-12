@@ -1176,8 +1176,6 @@ class BaseBedrockTranslator:
         deferred_targets = []
 
         for ag in action_groups:
-            time.sleep(10)  # Sleep to avoid throttling issues with the Gateway API
-
             if "lambda" not in ag.get("actionGroupExecutor", {}):
                 continue
 
