@@ -478,7 +478,8 @@ class BaseBedrockTranslator:
             lambda_arn = ag.get("actionGroupExecutor", {}).get("lambda", "")
             lambda_region = lambda_arn.split(":")[3] if lambda_arn else "us-west-2"
 
-        openapi_schema = ag.get("apiSchema", {}).get("payload", {})
+        api_schema = ag.get("apiSchema", {})
+        openapi_schema = api_schema.get("payload", {}) if isinstance(api_schema, dict) else {}
 
         for func_name, func_spec in openapi_schema.get("paths", {}).items():
             # Function metadata
@@ -1172,6 +1173,7 @@ class BaseBedrockTranslator:
 
         # Aggregate info from the action_groups
         tool_mappings = {}
+        deferred_targets = []
 
         for ag in action_groups:
             time.sleep(10)  # Sleep to avoid throttling issues with the Gateway API
@@ -1186,7 +1188,8 @@ class BaseBedrockTranslator:
             tools = []
 
             if ag.get("apiSchema", False):
-                openapi_schema = ag.get("apiSchema", {}).get("payload", {})
+                api_schema = ag.get("apiSchema", {})
+                openapi_schema = api_schema.get("payload", {}) if isinstance(api_schema, dict) else {}
 
                 for func_name, func_spec in openapi_schema.get("paths", {}).items():
                     clean_func_name = clean_variable_name(func_name)
@@ -1358,7 +1361,7 @@ class BaseBedrockTranslator:
                     )
 
             if tools:
-                self.create_gateway_lambda_target(tools, lambda_arn, clean_action_group_name)
+                deferred_targets.append((tools, clean_action_group_name))
 
         agent_metadata = {
             "name": self.agent_info.get("agentName", ""),
@@ -1471,6 +1474,10 @@ def lambda_handler(event, context):
     """
 
         self.create_lambda(lambda_code, function_name)
+
+        for tools, clean_action_group_name in deferred_targets:
+            time.sleep(10)  # Sleep to avoid throttling issues with the Gateway API
+            self.create_gateway_lambda_target(tools, lambda_arn, clean_action_group_name)
 
     def _update_gateway_role_with_lambda_permission(self, function_name):
         """Update the gateway role with lambda invoke permission."""
