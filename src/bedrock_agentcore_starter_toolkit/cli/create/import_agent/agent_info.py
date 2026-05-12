@@ -139,6 +139,10 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
         action_group["actionGroupName"] = clean_variable_name(action_group["actionGroupName"])
 
         if action_group.get("apiSchema", False):
+            api_schema = action_group["apiSchema"]
+            if isinstance(api_schema, str):
+                yaml = YAML(typ="safe")
+                action_group["apiSchema"] = {"payload": yaml.load(api_schema)}
             open_api_schema = action_group["apiSchema"].get("payload", False)
             if open_api_schema:
                 yaml = YAML(typ="safe")
