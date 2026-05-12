@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9] - 2026-05-12
+
+### Changes
+
+- fix(import-agent): create gateway Lambda before targets and handle string apiSchema (#515) (3216fc8)
+- chore: bump version to 0.3.8 (#514) (550bddf)
+
 ## [0.3.8] - 2026-05-12
 
 ### Changes
