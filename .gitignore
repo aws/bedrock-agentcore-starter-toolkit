@@ -32,3 +32,4 @@ mise.toml
 !tests/create/fixtures/scenarios/
 !tests/create/fixtures/scenarios/**
 .kiro/
+.omc/
