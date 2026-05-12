@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8] - 2026-05-12
+
+### Changes
+
+- fix: update Discord invite link to strands community (#512) (abeeb3e)
+- Release v0.3.7 (#511) (2d3cb0d)
+
 ## [0.3.7] - 2026-05-05
 
 ### Changes
