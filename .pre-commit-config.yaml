@@ -33,6 +33,7 @@ repos:
       - id: check-toml
         stages: [pre-commit]
       - id: check-json
+        exclude: ^src/bedrock_agentcore_starter_toolkit/ui/frontend/
         stages: [pre-commit]
       - id: check-yaml
         exclude: ^documentation/mkdocs\.yaml$
@@ -40,7 +41,7 @@ repos:
       - id: check-merge-conflict
         stages: [pre-commit]
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: ["--maxkb=1000"]
         stages: [pre-commit]
       - id: debug-statements
         stages: [pre-commit]
@@ -52,10 +53,10 @@ repos:
 
   # Security scanning
   - repo: https://github.com/PyCQA/bandit
-    rev: '1.7.9'
+    rev: "1.7.9"
     hooks:
       - id: bandit
-        args: ['-r', 'src/', '-ll']
+        args: ["-r", "src/", "-ll"]
         pass_filenames: false
         types: [python]
         stages: [pre-push]
@@ -70,15 +71,16 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
-        stages: [pre-push]  # Moved from pre-commit to pre-push
-        args: [
-          --cov=src,
-          --cov-report=term-missing,
-          --cov-report=html,
-          --cov-branch,
-          --cov-precision=2,
-          tests/
-        ]
+        stages: [pre-push] # Moved from pre-commit to pre-push
+        args:
+          [
+            --cov=src,
+            --cov-report=term-missing,
+            --cov-report=html,
+            --cov-branch,
+            --cov-precision=2,
+            tests/,
+          ]
 
 # ========================================
 # Configuration
@@ -93,8 +95,8 @@ ci:
 
     for more information, see https://pre-commit.ci
   autofix_prs: true
-  autoupdate_branch: ''
-  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
   autoupdate_schedule: weekly
   skip: []
   submodules: false
