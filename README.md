@@ -25,7 +25,7 @@
 
 <br/>
 
-> **⚠️ Recommendation: Use the AgentCore CLI for new projects**
+> **⚠️ Recommendation: The Starter Toolkit CLI is no longer supported. Please use the AgentCore CLI.**
 >
 > The **[AgentCore CLI (`@aws/agentcore`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
 >
