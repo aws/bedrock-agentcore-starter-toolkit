@@ -62,6 +62,7 @@ class GatewayClient:
         enable_semantic_search=True,
         enable_observability: bool = True,
         policy_engine_config=None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> dict:
         """Creates an MCP Gateway with optional observability.
 
@@ -110,6 +111,8 @@ class GatewayClient:
         if policy_engine_config:
             create_request["policyEngineConfiguration"] = policy_engine_config
             self.logger.info("Policy engine configuration will be attached at creation")
+        if tags is not None:
+            create_request["tags"] = tags
         self.logger.info("Creating Gateway")
         self.logger.debug("Creating gateway with params: %s", json.dumps(create_request, indent=2))
         gateway = self.client.create_gateway(**create_request)
@@ -138,6 +141,7 @@ class GatewayClient:
         target_type="lambda",
         target_payload=None,
         credentials=None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> dict:
         """Creates an MCP Gateway Target.
 
@@ -184,6 +188,8 @@ class GatewayClient:
             create_request |= self.__handle_openapi_target_credential_provider_creation(
                 name=name, credentials=credentials
             )
+        if tags is not None:
+            create_request["tags"] = tags
         # create the target
         self.logger.info("Creating Target")
         self.logger.info(create_request)

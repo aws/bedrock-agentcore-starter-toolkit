@@ -204,6 +204,7 @@ class MemoryManager:
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
         encryption_key_arn: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Memory:
         """Create a memory resource and return the raw response.
 
@@ -229,6 +230,9 @@ class MemoryManager:
             if encryption_key_arn is not None:
                 params["encryptionKeyArn"] = encryption_key_arn
 
+            if tags is not None:
+                params["tags"] = tags
+
             response = self._control_plane_client.create_memory(**params)
 
             memory = response["memory"]
@@ -253,6 +257,7 @@ class MemoryManager:
         poll_interval: int = 10,
         encryption_key_arn: Optional[str] = None,
         enable_observability: bool = True,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE.
 
@@ -285,6 +290,7 @@ class MemoryManager:
             event_expiry_days=event_expiry_days,
             memory_execution_role_arn=memory_execution_role_arn,
             encryption_key_arn=encryption_key_arn,
+            tags=tags,
         )
 
         memory_id = memory.id
@@ -312,6 +318,7 @@ class MemoryManager:
         max_wait: int = 300,
         poll_interval: int = 10,
         enable_observability: bool = True,  # NEW PARAMETER - defaults to True
+        tags: Optional[Dict[str, str]] = None,
     ) -> Memory:
         """Create a memory and wait for it to become ACTIVE - public method.
 
@@ -359,6 +366,7 @@ class MemoryManager:
             max_wait=max_wait,
             poll_interval=poll_interval,
             enable_observability=enable_observability,  # Pass through
+            tags=tags,
         )
 
     def get_or_create_memory(
@@ -369,6 +377,7 @@ class MemoryManager:
         event_expiry_days: int = 90,
         memory_execution_role_arn: Optional[str] = None,
         encryption_key_arn: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> Memory:
         """Fetch an existing memory resource or create the memory.
 
@@ -413,6 +422,7 @@ class MemoryManager:
                     event_expiry_days=event_expiry_days,
                     memory_execution_role_arn=memory_execution_role_arn,
                     encryption_key_arn=encryption_key_arn,
+                    tags=tags,
                 )
             else:
                 logger.info("Memory already exists. Using existing memory ID: %s", memory_summary.id)
