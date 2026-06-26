@@ -34,6 +34,11 @@
 > npm install -g @aws/agentcore
 > ```
 >
+> **Already installed this toolkit?** Once you've migrated, uninstall it:
+> ```bash
+> pip uninstall bedrock-agentcore-starter-toolkit
+> ```
+>
 > **Migrating from this toolkit?** See the [Migration Guide](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md) for step-by-step instructions, and the [AgentCore CLI documentation](https://github.com/aws/agentcore-cli/tree/main/docs) for:
 > - [Commands reference](https://github.com/aws/agentcore-cli/blob/main/docs/commands.md) — create, deploy, dev, invoke, add, remove, logs, traces, evals
 > - [Supported frameworks](https://github.com/aws/agentcore-cli/blob/main/docs/frameworks.md) — Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, BYO, and import from existing projects

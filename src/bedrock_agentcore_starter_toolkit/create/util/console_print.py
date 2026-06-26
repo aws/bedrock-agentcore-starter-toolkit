@@ -2,6 +2,7 @@
 
 from ...cli.cli_ui import _pause_and_new_line_on_finish, sandwich_text_ui
 from ...cli.common import console
+from ...cli.recommendation import print_recommendation
 from ..constants import IACProvider
 from ..types import ProjectContext
 
@@ -11,7 +12,15 @@ def emit_create_completed_message(ctx: ProjectContext):
     # end of progress sandwhich
     console.print("✓ Agent initialized.")
     _pause_and_new_line_on_finish(sleep_override=0.3)
+    _emit_next_steps(ctx)
+    # Repeat the migration recommendation last so it survives the create output
+    # flood (welcome box + prompts + generation logs) the top-level banner
+    # scrolls past — this is the final thing a `create` user sees.
+    print_recommendation(console)
 
+
+def _emit_next_steps(ctx: ProjectContext):
+    """Emit the green next-steps panel for the freshly created project."""
     # Common "Next Steps" styling to match the screenshot
     next_steps_header = "[bold]Next Steps[/bold]"
     deployment_header = "[bold]Deployment[/bold]"
