@@ -10,7 +10,6 @@ import os
 
 from rich.console import Console
 
-AGENTCORE_CLI_PACKAGE = "@aws/agentcore"
 INSTALL_CMD = "npm install -g @aws/agentcore"
 UNINSTALL_CMD = "pip uninstall bedrock-agentcore-starter-toolkit"
 IMPORT_CMD = "agentcore import"
@@ -26,8 +25,9 @@ def is_recommendation_suppressed() -> bool:
 def recommendation_text() -> str:
     """Rich-markup recommendation block recommending the AgentCore CLI."""
     return (
-        f"\n[yellow bold]⚠️  The AgentCore CLI ({AGENTCORE_CLI_PACKAGE}) is now the recommended way to create,"
-        " develop, and deploy agents on Amazon Bedrock AgentCore.[/yellow bold]\n"
+        "\n[yellow bold]⚠️  Recommendation: The Starter Toolkit CLI is no longer supported."
+        " Please use the AgentCore CLI (@aws/agentcore) to create, develop, and deploy agents on"
+        " Amazon Bedrock AgentCore.[/yellow bold]\n"
         f"[yellow]   We recommend migrating to the new CLI:[/yellow] [cyan]{INSTALL_CMD}[/cyan]\n"
         f"[yellow]   To import existing agents, run:[/yellow] [cyan]{IMPORT_CMD}[/cyan]\n"
         f"[yellow]   To uninstall this starter toolkit, run:[/yellow] [cyan]{UNINSTALL_CMD}[/cyan]\n"

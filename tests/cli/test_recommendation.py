@@ -44,6 +44,11 @@ class TestRecommendationModule:
         assert recommendation.IMPORT_CMD in text
         assert recommendation.SUPPRESS_ENV_VAR in text
 
+    def test_text_leads_with_no_longer_supported_headline(self):
+        text = recommendation.recommendation_text()
+        assert "The Starter Toolkit CLI is no longer supported. Please use the AgentCore CLI" in text
+        assert "(@aws/agentcore)" in text
+
     def test_uninstall_command_targets_the_starter_toolkit(self):
         assert recommendation.UNINSTALL_CMD == "pip uninstall bedrock-agentcore-starter-toolkit"
 
@@ -82,6 +87,11 @@ def _flat(text: str) -> str:
     return " ".join(text.split())
 
 
+# Stable phrase from the banner headline; used as the presence sentinel so
+# wording tweaks elsewhere in the message don't break these tests.
+BANNER_SENTINEL = "no longer supported"
+
+
 class TestBannerAcrossCommands:
     """The banner is a top-level callback; it must fire for every command path."""
 
@@ -91,28 +101,28 @@ class TestBannerAcrossCommands:
         return _flat(result.stderr)
 
     def test_banner_shown_for_top_level_command_help(self):
-        assert "now the recommended way" in self._stderr("dev", "--help")
+        assert BANNER_SENTINEL in self._stderr("dev", "--help")
 
     def test_banner_shown_for_create_help(self):
-        assert "now the recommended way" in self._stderr("create", "--help")
+        assert BANNER_SENTINEL in self._stderr("create", "--help")
 
     def test_banner_shown_for_subgroup_help(self):
         for group in ("memory", "gateway", "identity", "obs", "policy", "eval"):
-            assert "now the recommended way" in self._stderr(group, "--help"), group
+            assert BANNER_SENTINEL in self._stderr(group, "--help"), group
 
     def test_banner_shown_for_nested_subcommand_help(self):
-        assert "now the recommended way" in self._stderr("create", "import", "--help")
+        assert BANNER_SENTINEL in self._stderr("create", "import", "--help")
 
     def test_banner_includes_uninstall_command(self):
         assert "pip uninstall bedrock-agentcore-starter-toolkit" in self._stderr("dev", "--help")
 
     def test_banner_suppressed_by_env_var(self):
         stderr = self._stderr("dev", "--help", env={"AGENTCORE_SUPPRESS_RECOMMENDATION": "1"})
-        assert "now the recommended way" not in stderr
+        assert BANNER_SENTINEL not in stderr
 
     def test_banner_not_shown_for_bare_invocation(self):
         # Bare `agentcore` with no subcommand shows help only; no banner clutter.
-        assert "now the recommended way" not in self._stderr()
+        assert BANNER_SENTINEL not in self._stderr()
 
     def test_banner_fires_on_every_command_path(self):
         """Hermetic coverage: the top banner must fire for EVERY command path.
@@ -123,7 +133,7 @@ class TestBannerAcrossCommands:
         missing = []
         for path in _all_command_paths():
             stderr = self._stderr(*path, "--help")
-            if "now the recommended way" not in stderr:
+            if BANNER_SENTINEL not in stderr:
                 missing.append(" ".join(path))
         assert not missing, f"Banner missing for command paths: {missing}"
 
