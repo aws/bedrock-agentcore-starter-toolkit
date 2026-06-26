@@ -171,6 +171,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.print_recommendation") as mock_reco,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_result = MagicMock()
             mock_result.mode = "cloud"
@@ -191,6 +192,7 @@ agents:
         with (
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.launch_bedrock_agentcore") as mock_launch,
             patch("bedrock_agentcore_starter_toolkit.cli.runtime.commands.print_recommendation") as mock_reco,
+            patch("bedrock_agentcore_starter_toolkit.cli.common.ensure_valid_aws_creds", return_value=(True, None)),
         ):
             mock_launch.side_effect = ValueError("boom")
             monkeypatch.chdir(tmp_path)
