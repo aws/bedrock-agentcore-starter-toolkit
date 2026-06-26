@@ -29,6 +29,7 @@ from ...utils.runtime.config import load_config
 from ...utils.runtime.logs import get_agent_log_paths, get_aws_tail_commands, get_genai_observability_url
 from ...utils.server_addresses import build_server_urls
 from ..common import _handle_error, _print_success, console, requires_aws_creds
+from ..recommendation import print_recommendation
 from ._configure_impl import configure_impl
 
 # Create a module-specific logger
@@ -213,6 +214,11 @@ def configure(
         runtime=runtime,
         language=language,
     )
+
+    # Re-emit the migration recommendation last so it survives the configure
+    # output flood (interactive prompts + configuration summary panel) the
+    # top-level banner scrolls past.
+    print_recommendation(console)
 
 
 @requires_aws_creds
@@ -603,6 +609,11 @@ def deploy(
                     border_style="bright_blue",
                 )
             )
+
+        # Re-emit the migration recommendation last so it survives the deploy
+        # output flood (build/CodeBuild logs + success panel) the top-level
+        # banner scrolls past.
+        print_recommendation(console)
 
     except FileNotFoundError:
         _handle_error(".bedrock_agentcore.yaml not found. Run 'agentcore configure --entrypoint <file>' first")
