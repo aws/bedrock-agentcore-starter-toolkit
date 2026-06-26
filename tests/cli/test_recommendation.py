@@ -46,8 +46,9 @@ class TestRecommendationModule:
 
     def test_text_leads_with_no_longer_supported_headline(self):
         text = recommendation.recommendation_text()
-        assert "The Starter Toolkit CLI is no longer supported. Please use the AgentCore CLI" in text
-        assert "(@aws/agentcore)" in text
+        assert "The Starter Toolkit CLI is no longer supported." in text
+        assert "Please use the AgentCore CLI (@aws/agentcore)" in text
+        assert "New Bedrock AgentCore features are only accessible in the AgentCore CLI." in text
 
     def test_uninstall_command_targets_the_starter_toolkit(self):
         assert recommendation.UNINSTALL_CMD == "pip uninstall bedrock-agentcore-starter-toolkit"
