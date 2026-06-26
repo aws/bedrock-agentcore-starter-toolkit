@@ -25,14 +25,14 @@ def is_recommendation_suppressed() -> bool:
 def recommendation_text() -> str:
     """Rich-markup recommendation block recommending the AgentCore CLI."""
     return (
-        "\n[yellow bold]⚠️  Recommendation: The Starter Toolkit CLI is no longer supported.[/yellow bold]\n"
+        "\n[yellow bold]⚠️ Recommendation: The Starter Toolkit CLI is no longer supported.[/yellow bold]\n"
         "[yellow bold]   Please use the AgentCore CLI (@aws/agentcore) to create, develop, and deploy agents on"
         " Amazon Bedrock AgentCore.[/yellow bold]\n"
         "[yellow bold]   New Bedrock AgentCore features are only accessible in the AgentCore CLI.[/yellow bold]\n"
         "\n"
+        f"[yellow]   To uninstall this starter toolkit, run:[/yellow] [cyan]{UNINSTALL_CMD}[/cyan]\n"
         f"[yellow]   To install the AgentCore CLI:[/yellow] [cyan]{INSTALL_CMD}[/cyan]\n"
         f"[yellow]   To import existing agents, run:[/yellow] [cyan]{IMPORT_CMD}[/cyan]\n"
-        f"[yellow]   To uninstall this starter toolkit, run:[/yellow] [cyan]{UNINSTALL_CMD}[/cyan]\n"
         f"[dim]   Set {SUPPRESS_ENV_VAR}=1 to silence this warning.[/dim]\n"
     )
 
