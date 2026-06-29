@@ -16,6 +16,7 @@ from bedrock_agentcore_starter_toolkit.services.runtime import generate_session_
 from ....services.import_agent.scripts.bedrock_to_langchain import BedrockLangchainTranslation
 from ....services.import_agent.scripts.bedrock_to_strands import BedrockStrandsTranslation
 from ...common import console, requires_aws_creds
+from ...recommendation import print_recommendation
 from .agent_info import auth_and_get_info, get_agent_aliases, get_agents, get_clients
 
 
@@ -487,3 +488,8 @@ def import_agent(
                 border_style="green",
             )
         )
+
+    # Re-emit the migration recommendation last so it survives the import flow's
+    # output flood (region/agent/alias tables + generation logs + summary panel)
+    # the top-level banner scrolls past.
+    print_recommendation(console)

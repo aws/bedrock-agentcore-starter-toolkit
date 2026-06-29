@@ -1,7 +1,5 @@
 """BedrockAgentCore CLI main module."""
 
-import os
-
 import typer
 from rich.console import Console
 
@@ -15,9 +13,10 @@ from ..cli.memory.commands import memory_app
 from ..cli.observability.commands import observability_app
 from ..cli.policy.commands import policy_app
 from ..utils.logging_config import setup_toolkit_logging
-from .create.commands import create, create_app
+from .create.commands import create_app
 from .create.import_agent.commands import import_agent
 from .identity.commands import identity_app
+from .recommendation import print_recommendation
 from .runtime.commands import (
     configure_app,
     deploy,
@@ -39,20 +38,11 @@ _stderr_console = Console(stderr=True)
 @app.callback(invoke_without_command=True)
 def _deprecation_banner(ctx: typer.Context) -> None:
     """Show deprecation warning before every command."""
-    if os.environ.get("AGENTCORE_SUPPRESS_RECOMMENDATION", "").lower() in ("1", "true", "yes"):
-        return
     if ctx.invoked_subcommand is None and not ctx.protected_args:
         return
-    _stderr_console.print(
-        "\n[yellow bold]⚠️  The AgentCore CLI (@aws/agentcore) is now the recommended way to create, develop,"
-        " and deploy agents on Amazon Bedrock AgentCore.[/yellow bold]\n"
-        "[yellow]   We recommend migrating to the new CLI:[/yellow] [cyan]npm install -g @aws/agentcore[/cyan]\n"
-        "[yellow]   To import existing agents, run:[/yellow] [cyan]agentcore import[/cyan]\n"
-        "[dim]   Set AGENTCORE_SUPPRESS_RECOMMENDATION=1 to silence this warning.[/dim]\n"
-    )
+    print_recommendation(_stderr_console)
 
 
-app.command("create")(create)
 app.add_typer(create_app, name="create")
 create_app.command("import")(import_agent)
 app.command("dev")(dev)
