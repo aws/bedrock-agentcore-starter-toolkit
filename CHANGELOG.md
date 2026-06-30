@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.10] - 2026-06-30
+
+### Changes
+
+- fix(ci): prevent script injection in GitHub Actions workflows (#525) (e9de14e)
+- fix(cli): re-emit deprecation recommendation after high-output commands + add uninstall command (#520) (881004a)
+- Revise CLI recommendation in README (#519) (d238a77)
+- feat(workflows): add closed-PR comment redirect (#517) (0e1cad2)
+- chore: replace all github.token/GITHUB_TOKEN with GitHub App token (#513) (5fae651)
+- chore: bump version to 0.3.9 (#516) (77cf62e)
+
 ## [0.3.9] - 2026-05-12
 
 ### Changes
