@@ -89,31 +89,37 @@ jobs:
 
       - name: Bump version
         id: bump
+        env:
+          BUMP_TYPE: ${{ github.event.inputs.bump_type }}
+          SDK_VERSION: ${{ github.event.inputs.sdk_version }}
+          WAIT_FOR_SDK: ${{ github.event.inputs.wait_for_sdk }}
+          CHANGELOG_INPUT: ${{ github.event.inputs.changelog }}
         run: |
           source .venv/bin/activate
 
           # Make script executable
           chmod +x scripts/bump-version.py
 
-          # Build command with all options
-          CMD="python scripts/bump-version.py ${{ github.event.inputs.bump_type }}"
+          # Build command as an array so untrusted inputs are passed as
+          # distinct argv entries and never re-parsed by the shell.
+          CMD=(python scripts/bump-version.py "$BUMP_TYPE")
 
           # Add SDK update if specified
-          if [ -n "${{ github.event.inputs.sdk_version }}" ]; then
-            CMD="$CMD --update-sdk ${{ github.event.inputs.sdk_version }}"
-            if [ "${{ github.event.inputs.wait_for_sdk }}" = "true" ]; then
-              CMD="$CMD --wait-for-sdk"
+          if [ -n "$SDK_VERSION" ]; then
+            CMD+=(--update-sdk "$SDK_VERSION")
+            if [ "$WAIT_FOR_SDK" = "true" ]; then
+              CMD+=(--wait-for-sdk)
             fi
           fi
 
           # Add changelog if specified
-          if [ -n "${{ github.event.inputs.changelog }}" ]; then
-            CMD="$CMD --changelog \"${{ github.event.inputs.changelog }}\""
+          if [ -n "$CHANGELOG_INPUT" ]; then
+            CMD+=(--changelog "$CHANGELOG_INPUT")
           fi
 
           # Run version bump
-          echo "Running: $CMD"
-          eval $CMD
+          echo "Running: ${CMD[*]}"
+          "${CMD[@]}"
 
           # Update lockfile after all changes
           uv lock --no-progress
@@ -124,8 +130,10 @@ jobs:
           echo "New version: $NEW_VERSION"
 
       - name: Create release branch
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          BRANCH_NAME="release/v${{ steps.bump.outputs.version }}"
+          BRANCH_NAME="release/v${VERSION}"
 
           # Clean up any existing branch from previous attempts
           if git ls-remote --exit-code --heads origin $BRANCH_NAME; then
@@ -145,7 +153,7 @@ jobs:
           git add -A
 
           # Commit with co-author
-          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}
+          git commit -m "chore: bump version to ${VERSION}
 
           Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
 
@@ -154,7 +162,7 @@ jobs:
 
           # Verify the version was committed
           COMMITTED_VERSION=$(git show HEAD:pyproject.toml | grep -m1 -oP '^version = "\K[^"]+')
-          if [ "$COMMITTED_VERSION" != "${{ steps.bump.outputs.version }}" ]; then
+          if [ "$COMMITTED_VERSION" != "${VERSION}" ]; then
             echo "❌ ERROR: Version not committed correctly!"
             exit 1
           fi
@@ -163,30 +171,42 @@ jobs:
         id: create-pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          CURRENT_VERSION: ${{ steps.current.outputs.version }}
+          SDK_VERSION: ${{ github.event.inputs.sdk_version }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
-          BRANCH_NAME="release/v${{ steps.bump.outputs.version }}"
+          BRANCH_NAME="release/v${VERSION}"
+
+          # Build optional SDK lines only when an SDK version was provided.
+          SDK_CHANGE_LINE=""
+          SDK_CHECKLIST_LINE=""
+          if [ -n "$SDK_VERSION" ]; then
+            SDK_CHANGE_LINE="- Updated SDK dependency to >=${SDK_VERSION}"
+            SDK_CHECKLIST_LINE="- [ ] Verify SDK version is available on PyPI"
+          fi
 
           # Create PR using GitHub CLI
           PR_URL=$(gh pr create \
             --base main \
-            --head $BRANCH_NAME \
-            --title "Release v${{ steps.bump.outputs.version }}" \
-            --body "## 🚀 Release v${{ steps.bump.outputs.version }}
+            --head "$BRANCH_NAME" \
+            --title "Release v${VERSION}" \
+            --body "## 🚀 Release v${VERSION}
 
           This PR was automatically created by the release workflow.
 
           ### Changes
-          - Version bumped from ${{ steps.current.outputs.version }} to ${{ steps.bump.outputs.version }}
+          - Version bumped from ${CURRENT_VERSION} to ${VERSION}
           - Updated CHANGELOG.md
           - Updated uv.lock
-          ${{ github.event.inputs.sdk_version && format('- Updated SDK dependency to >={0}', github.event.inputs.sdk_version) || '' }}
+          ${SDK_CHANGE_LINE}
 
           ### Pre-release Checklist
           - [ ] Review CHANGELOG.md entries
           - [ ] Verify version numbers are correct
           - [ ] All tests passing
           - [ ] Documentation updated (if needed)
-          ${{ github.event.inputs.sdk_version && '- [ ] Verify SDK version is available on PyPI' || '' }}
+          ${SDK_CHECKLIST_LINE}
 
           ### Release Process
           1. Approve and merge this PR
@@ -197,7 +217,7 @@ jobs:
              - Tag the release
 
           ---
-          *Triggered by @${{ github.actor }}*")
+          *Triggered by @${GITHUB_ACTOR}*")
 
           # Extract PR number from URL
           PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
@@ -255,8 +275,9 @@ jobs:
           ref: release/v${{ needs.prepare-release.outputs.version }}
 
       - name: Verify version before build
+        env:
+          EXPECTED_VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
-          EXPECTED_VERSION="${{ needs.prepare-release.outputs.version }}"
           ACTUAL_VERSION=$(grep -m1 -oP '^version = "\K[^"]+' pyproject.toml)
 
           echo "Expected version: $EXPECTED_VERSION"
@@ -281,11 +302,13 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build package
+        env:
+          VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
           uv build
 
           ls -la dist/
-          if ! ls dist/*-${{ needs.prepare-release.outputs.version }}-*.whl; then
+          if ! ls dist/*-"${VERSION}"-*.whl; then
             echo "❌ ERROR: Built package has wrong version!"
             exit 1
           fi
@@ -334,9 +357,9 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Wait for PyPI availability
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-
           echo "Waiting for package to be available on PyPI..."
           for i in {1..10}; do
             if pip index versions bedrock-agentcore-starter-toolkit | grep -q "$VERSION"; then
@@ -348,12 +371,14 @@ jobs:
           done
 
       - name: Create and push tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a v${{ steps.version.outputs.version }} \
-            -m "Release v${{ steps.version.outputs.version }}"
-          git push origin v${{ steps.version.outputs.version }}
+          git tag -a "v${VERSION}" \
+            -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -381,10 +406,12 @@ jobs:
 
     steps:
       - name: Summary
+        env:
+          PUBLISH_RESULT: ${{ needs.publish-pypi.result }}
         run: |
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.publish-pypi.result }}" == "success" ]; then
+          if [ "$PUBLISH_RESULT" == "success" ]; then
             echo "✅ **PyPI Release Successful**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Package published to: https://pypi.org/project/bedrock-agentcore-starter-toolkit/" >> $GITHUB_STEP_SUMMARY
