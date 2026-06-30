@@ -35,8 +35,9 @@ jobs:
         pip install build twine toml
 
     - name: Update version
+      env:
+        VERSION: ${{ github.event.inputs.version }}
       run: |
-        VERSION="${{ github.event.inputs.version }}"
         sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
         echo "Updated to version $VERSION"
 
@@ -74,8 +75,9 @@ jobs:
         twine upload --repository testpypi dist/*
 
     - name: Create installation instructions
+      env:
+        VERSION: ${{ github.event.inputs.version }}
       run: |
-        VERSION="${{ github.event.inputs.version }}"
         echo "# Test PyPI Release Successful! 🎉" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Version \`$VERSION\` has been published to Test PyPI." >> $GITHUB_STEP_SUMMARY
