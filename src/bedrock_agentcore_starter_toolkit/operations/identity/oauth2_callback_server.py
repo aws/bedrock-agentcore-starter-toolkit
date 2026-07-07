@@ -66,7 +66,8 @@ class BedrockAgentCoreIdentity3loCallback(Starlette):
             console.print(f"Missing {WORKLOAD_USER_ID} in Agent OAuth2 Config")
             return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
 
-        console.print(f"Handling 3LO callback for workload_user_id={user_id} | session_id={session_id}", soft_wrap=True)
+        redacted_session_id = f"...{session_id[-4:]}" if len(session_id) > 4 else "****"
+        console.print(f"Handling 3LO callback for workload_user_id={user_id} | session_id={redacted_session_id}", soft_wrap=True)
 
         region = agent_config.aws.region
         if not region:
