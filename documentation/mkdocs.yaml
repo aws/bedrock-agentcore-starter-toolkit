@@ -235,56 +235,56 @@ plugins:
         'user-guide/import-agent/design.md': https://github.com/aws/agentcore-cli/tree/main/docs  # DROP: internal design doc, not user-facing; redirect to avoid stale page
         'user-guide/import-agent/overview.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: see above
         'user-guide/import-agent/quickstart.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: import-from-Bedrock-Agents has no devguide page; confirm support
-        # --- Examples -> awslabs/amazon-bedrock-agentcore-samples ---
-        'examples/README.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/agentcore-quickstart-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/async-processing.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/gateway-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudfomation-deploy-with-mcp-tool-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/adk/adk-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/adk/adk-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/autogen/autogen-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/autogen/autogen-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/llamaindex/llama-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/llamaindex/llama-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/openai/openai-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/openai/openai-agent-handoff-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/openai/openai-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/pydanticai/pydanticai-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/strands/strands-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/strands/strands-agent-openai-identity-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/integrations/agentic-frameworks/strands/strands-agent-streaming-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/memory_gateway_agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/observability/dynatrace/observability-agent-and-dynatrace-init.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/observability/dynatrace/observability-basic-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/observability/dynatrace/observability-dynatrace.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/policy-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/runtime-framework-agents.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/semantic_search.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
-        'examples/session-management.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples
+        # --- Examples -> awslabs/amazon-bedrock-agentcore-samples (1:1 dir where the page's include-markdown pulls from) ---
+        'examples/README.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/agentcore-quickstart-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/async-processing.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/gateway-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudfomation-deploy-with-mcp-tool-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/basic-runtime
+        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/basic-runtime
+        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/end-to-end-weather-agent
+        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/end-to-end-weather-agent
+        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/multi-agent-runtime
+        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/multi-agent-runtime
+        'examples/integrations/agentic-frameworks/adk/adk-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/adk
+        'examples/integrations/agentic-frameworks/adk/adk-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/adk
+        'examples/integrations/agentic-frameworks/autogen/autogen-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/autogen
+        'examples/integrations/agentic-frameworks/autogen/autogen-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/autogen
+        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/claude-agent/claude-sdk
+        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/claude-agent/claude-sdk
+        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/langgraph
+        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/langgraph
+        'examples/integrations/agentic-frameworks/llamaindex/llama-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/llamaindex
+        'examples/integrations/agentic-frameworks/llamaindex/llama-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/llamaindex
+        'examples/integrations/agentic-frameworks/openai/openai-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/openai/openai-agent-handoff-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/openai/openai-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/pydanticai/pydanticai-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/pydanticai-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-openai-identity-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-streaming-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/memory_gateway_agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/observability/dynatrace/observability-agent-and-dynatrace-init.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/observability/dynatrace/observability-basic-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/observability/dynatrace/observability-dynatrace.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/policy-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/runtime-framework-agents.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/semantic_search.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/session-management.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
 
 extra:
   social:
