@@ -22,13 +22,6 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for proper versioning
 
-      - name: Checkout SDK repository
-        uses: actions/checkout@v5
-        with:
-          repository: aws/bedrock-agentcore-sdk-python
-          path: bedrock-agentcore-sdk-python
-          fetch-depth: 1
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -41,14 +34,13 @@ jobs:
         run: |
           uv venv
           source .venv/bin/activate
-          uv pip install mkdocs-material mkdocstrings-python pymdown-extensions
-          uv pip install mike mkdocs-macros-plugin mkdocs-llmstxt mkdocs-include-markdown-plugin mkdocs-redirects
-
-          # Install the SDK package from PyPI
-          uv pip install bedrock-agentcore
-
-          # Install the toolkit package in development mode
-          uv pip install -e .
+          # SITE DEPRECATION: the site is now redirect-only. Only mkdocs-material
+          # (theme), mike (versioning), mkdocs-redirects (the redirects), and
+          # pymdown-extensions (markdown_extensions) are needed. The SDK checkout,
+          # mkdocstrings, macros, llmstxt and include-markdown were removed so the
+          # build is hermetic (no network fetches, no SDK) and can't fail on an
+          # upstream 404.
+          uv pip install mkdocs-material mike mkdocs-redirects pymdown-extensions
 
       - name: Setup Git for mike versioning
         run: |
