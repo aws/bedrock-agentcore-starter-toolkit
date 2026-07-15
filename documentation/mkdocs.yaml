@@ -211,7 +211,7 @@ plugins:
         'user-guide/builtin-tools/quickstart-code-interpreter.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-getting-started.html
         'user-guide/gateway/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-quick-start.html
         'user-guide/identity/quickstart-aws-jwt.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started.html  # INTERIM: AWS IAM JWT federation; no exact devguide page yet
-        'user-guide/identity/quickstart-with-cli.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started.html  # INTERIM: CLI Cognito flow; confirm coverage vs inbound-jwt-authorizer.html
+        'user-guide/identity/quickstart-with-cli.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: CLI Cognito flow; devguide coverage unconfirmed -> devguide root for now
         'user-guide/identity/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started.html
         'user-guide/memory/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-get-started.html
         'user-guide/observability/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html
@@ -219,7 +219,7 @@ plugins:
         'user-guide/policy/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html
         'user-guide/runtime/a2a.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-a2a.html
         'user-guide/runtime/async.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-long-run.html
-        'user-guide/runtime/notebook.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-how-it-works.html  # INTERIM: no devguide equivalent; page was 'not production-ready' -> confirm drop
+        'user-guide/runtime/notebook.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # DROP: notebook support not pitched / no devguide equivalent; redirect to devguide root
         'user-guide/runtime/overview.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-how-it-works.html
         'user-guide/runtime/permissions.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html
         'user-guide/runtime/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-getting-started.html
@@ -228,13 +228,13 @@ plugins:
         'user-guide/security/vpc-interface-endpoints.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/vpc-interface-endpoints.html
         # --- Toolkit-CLI content -> new aws/agentcore-cli docs ---
         'api-reference/cli.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: old toolkit-CLI ref; re-point to agentcore-cli commands doc / EOL note
-        'user-guide/create/quickstart.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: agentcore-cli has no getting-started.md yet; points to docs index
+        'user-guide/create/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: agentcore-cli has no getting-started.md yet; re-point once it exists
         'user-guide/dev/quickstart.md': https://github.com/aws/agentcore-cli/blob/main/docs/local-development.md
         'user-guide/evaluation/quickstart.md': https://github.com/aws/agentcore-cli/blob/main/docs/evals.md
-        'user-guide/import-agent/configuration.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: see above
-        'user-guide/import-agent/design.md': https://github.com/aws/agentcore-cli/tree/main/docs  # DROP: internal design doc, not user-facing; redirect to avoid stale page
-        'user-guide/import-agent/overview.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: see above
-        'user-guide/import-agent/quickstart.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: import-from-Bedrock-Agents has no devguide page; confirm support
+        'user-guide/import-agent/configuration.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: no agentcore-cli import.md / devguide page yet; re-point once it exists
+        'user-guide/import-agent/design.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # DROP: internal design doc, not user-facing; redirect to devguide root
+        'user-guide/import-agent/overview.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: see above
+        'user-guide/import-agent/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: import-from-Bedrock-Agents has no devguide page yet; re-point once it exists
         # --- Examples -> awslabs/amazon-bedrock-agentcore-samples (1:1 dir where the page's include-markdown pulls from) ---
         'examples/README.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
         'examples/agentcore-quickstart-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
