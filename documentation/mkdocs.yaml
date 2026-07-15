@@ -182,6 +182,109 @@ plugins:
           - examples/*.md
         "API Reference":
           - api-reference/*.md
+  # ---------------------------------------------------------------------------
+  # SITE DEPRECATION (see design doc: Starter Toolkit Docs Site Deprecation).
+  # The starter toolkit is heading to EOL in favor of the new AgentCore CLI,
+  # and this GitHub Pages site is being deprecated. mkdocs-redirects emits a
+  # meta-refresh HTML page for each old slug so existing deep links keep
+  # working and readers land where the content now lives:
+  #   * Platform / SDK guides -> AWS Bedrock AgentCore Developer Guide (docs.aws)
+  #   * Toolkit-CLI pages      -> new aws/agentcore-cli docs
+  #   * Examples               -> awslabs/amazon-bedrock-agentcore-samples
+  # Redirects are written in on_post_build, AFTER the normal build, and
+  # OVERWRITE the built page at each mapped path -- so every page below now
+  # serves a redirect. Source .md files are left in place for now and deleted
+  # in a follow-up (~30 days) with the redirect_maps kept on gh-pages forever.
+  # Entries tagged INTERIM point at the best live target today and are a
+  # one-line re-point once the final destination (e.g. devguide SDK API-ref
+  # .adoc pages) is published.
+  - redirects:
+      redirect_maps:
+        # --- Platform / SDK content -> AWS Bedrock AgentCore Developer Guide ---
+        'api-reference/identity.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: re-point to devguide SDK API-ref .adoc once published
+        'api-reference/memory.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: re-point to devguide SDK API-ref .adoc once published
+        'api-reference/runtime.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: re-point to devguide SDK API-ref .adoc once published
+        'api-reference/tools.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: re-point to devguide SDK API-ref .adoc once published
+        'index.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html
+        'mcp/agentcore_runtime_deployment.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-getting-started.html
+        'user-guide/builtin-tools/quickstart-browser.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/browser-quickstart.html
+        'user-guide/builtin-tools/quickstart-code-interpreter.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/code-interpreter-getting-started.html
+        'user-guide/gateway/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-quick-start.html
+        'user-guide/identity/quickstart-aws-jwt.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started.html  # INTERIM: AWS IAM JWT federation; no exact devguide page yet
+        'user-guide/identity/quickstart-with-cli.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: CLI Cognito flow; devguide coverage unconfirmed -> devguide root for now
+        'user-guide/identity/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/identity-getting-started.html
+        'user-guide/memory/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-get-started.html
+        'user-guide/observability/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-get-started.html
+        'user-guide/policy/overview.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html
+        'user-guide/policy/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html
+        'user-guide/runtime/a2a.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-a2a.html
+        'user-guide/runtime/async.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-long-run.html
+        'user-guide/runtime/notebook.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # DROP: notebook support not pitched / no devguide equivalent; redirect to devguide root
+        'user-guide/runtime/overview.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-how-it-works.html
+        'user-guide/runtime/permissions.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html
+        'user-guide/runtime/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-getting-started.html
+        'user-guide/security/agentcore-vpc.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-vpc.html
+        'user-guide/security/security-vpc-condition.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/security-vpc-condition.html
+        'user-guide/security/vpc-interface-endpoints.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/vpc-interface-endpoints.html
+        # --- Toolkit-CLI content -> new aws/agentcore-cli docs ---
+        'api-reference/cli.md': https://github.com/aws/agentcore-cli/tree/main/docs  # INTERIM: old toolkit-CLI ref; re-point to agentcore-cli commands doc / EOL note
+        'user-guide/create/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: agentcore-cli has no getting-started.md yet; re-point once it exists
+        'user-guide/dev/quickstart.md': https://github.com/aws/agentcore-cli/blob/main/docs/local-development.md
+        'user-guide/evaluation/quickstart.md': https://github.com/aws/agentcore-cli/blob/main/docs/evals.md
+        'user-guide/import-agent/configuration.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: no agentcore-cli import.md / devguide page yet; re-point once it exists
+        'user-guide/import-agent/design.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # DROP: internal design doc, not user-facing; redirect to devguide root
+        'user-guide/import-agent/overview.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: see above
+        'user-guide/import-agent/quickstart.md': https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html  # INTERIM: import-from-Bedrock-Agents has no devguide page yet; re-point once it exists
+        # --- Examples -> awslabs/amazon-bedrock-agentcore-samples (1:1 dir where the page's include-markdown pulls from) ---
+        'examples/README.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/agentcore-quickstart-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/async-processing.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/gateway-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-cfn-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/basic-runtime/basic-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/basic-runtime
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/end-to-end-weather-agent/cloudformation-deploy-with-tools-and-memory-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudfomation-deploy-with-mcp-tool-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/mcp-server-runtime/cloudformation-deploy-with-mcp-tool-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-bash-script.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/cloudformation/multi-agent-runtime/cloudformation-multi-agent-template.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/cloudformation/multi-agent-runtime
+        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/basic-runtime
+        'examples/infrastructure-as-code/terraform/basic-runtime/basic-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/basic-runtime
+        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/end-to-end-weather-agent
+        'examples/infrastructure-as-code/terraform/end-to-end-weather-agent/weather-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/end-to-end-weather-agent
+        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/terraform/mcp-server-agentcore-runtime/mcp-server-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/mcp-server-agentcore-runtime
+        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/multi-agent-runtime
+        'examples/infrastructure-as-code/terraform/multi-agent-runtime/multi-agent-terraform-deploy-sample.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/04-infrastructure-as-code/terraform/multi-agent-runtime
+        'examples/integrations/agentic-frameworks/adk/adk-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/adk
+        'examples/integrations/agentic-frameworks/adk/adk-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/adk
+        'examples/integrations/agentic-frameworks/autogen/autogen-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/autogen
+        'examples/integrations/agentic-frameworks/autogen/autogen-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/autogen
+        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/claude-agent/claude-sdk
+        'examples/integrations/agentic-frameworks/claude-sdk/claude-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/claude-agent/claude-sdk
+        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/langgraph
+        'examples/integrations/agentic-frameworks/langgraph/langgraph-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/langgraph
+        'examples/integrations/agentic-frameworks/llamaindex/llama-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/llamaindex
+        'examples/integrations/agentic-frameworks/llamaindex/llama-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/llamaindex
+        'examples/integrations/agentic-frameworks/openai/openai-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/openai/openai-agent-handoff-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/openai/openai-agent-readme.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/openai-agents
+        'examples/integrations/agentic-frameworks/pydanticai/pydanticai-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/pydanticai-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-basic-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-openai-identity-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/integrations/agentic-frameworks/strands/strands-agent-streaming-example.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/agentic-frameworks/strands-agents
+        'examples/memory_gateway_agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/observability/dynatrace/observability-agent-and-dynatrace-init.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/observability/dynatrace/observability-basic-agent.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/observability/dynatrace/observability-dynatrace.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples/tree/main/03-integrations/3p-observability/dynatrace  # source include path '03-integrations/observability/dynatrace' is stale (404); samples repo moved it to '03-integrations/3p-observability/dynatrace'
+        'examples/policy-integration.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/runtime-framework-agents.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/semantic_search.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
+        'examples/session-management.md': https://github.com/awslabs/amazon-bedrock-agentcore-samples  # no include source; hand-written page with no 1:1 sample
 
 extra:
   social:
