@@ -1,5 +1,0 @@
-```yaml
-{% raw %}
-{% include "https://raw.githubusercontent.com/awslabs/amazon-bedrock-agentcore-samples/refs/heads/main/04-infrastructure-as-code/cloudformation/end-to-end-weather-agent/end-to-end-weather-agent.yaml" %}
-{% endraw %}
-```
