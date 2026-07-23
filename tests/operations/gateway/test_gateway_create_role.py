@@ -8,15 +8,22 @@ import pytest
 from botocore.exceptions import ClientError
 
 from bedrock_agentcore_starter_toolkit.operations.gateway.constants import (
-    AGENTCORE_FULL_ACCESS,
     POLICIES,
     POLICIES_TO_CREATE,
+    build_gateway_access_policy,
 )
 from bedrock_agentcore_starter_toolkit.operations.gateway.create_role import (
     _attach_policy,
+    append_credential_provider_permissions,
+    append_lambda_target_permission,
     create_gateway_execution_role,
 )
 from bedrock_agentcore_starter_toolkit.utils.runtime.policy_template import render_trust_policy_template
+
+# The base gateway policy is built dynamically; use a concrete instance where tests need a document.
+AGENTCORE_FULL_ACCESS = build_gateway_access_policy(
+    region="us-east-1", account_id="123456789012", gateway_name="testgateway"
+)
 
 
 class TestCreateGatewayExecutionRole:
@@ -59,8 +66,7 @@ class TestCreateGatewayExecutionRole:
             Description="Execution role for AgentCore Gateway",
         )
 
-        # Verify policies were attached
-        expected_calls = len(POLICIES_TO_CREATE) + len(POLICIES)
+        expected_calls = 1 + len(POLICIES_TO_CREATE) + len(POLICIES)
         assert mock_attach.call_count == expected_calls
 
         # Verify return value
@@ -154,13 +160,27 @@ class TestCreateGatewayExecutionRole:
         with patch("bedrock_agentcore_starter_toolkit.operations.gateway.create_role._attach_policy") as mock_attach:
             create_gateway_execution_role(self.mock_session, self.logger, self.role_name)
 
-            # Verify policy creation calls (POLICIES_TO_CREATE)
             policy_creation_calls = [
                 call for call in mock_attach.call_args_list if call.kwargs.get("policy_document") is not None
             ]
-            assert len(policy_creation_calls) == len(POLICIES_TO_CREATE)
+            assert len(policy_creation_calls) == 1 + len(POLICIES_TO_CREATE)
 
-            # Verify policy ARN attachment calls (POLICIES)
+            base_call = policy_creation_calls[0]
+            doc = json.loads(base_call.kwargs["policy_document"])
+            base_actions = []
+            for stmt in doc["Statement"]:
+                res = stmt["Resource"] if isinstance(stmt["Resource"], list) else [stmt["Resource"]]
+                assert "*" not in res, f"base gateway policy has Resource:* in {stmt.get('Sid')}"
+                acts = stmt["Action"] if isinstance(stmt["Action"], list) else [stmt["Action"]]
+                base_actions.extend(acts)
+                assert "bedrock-agentcore:*" not in acts
+                assert "secretsmanager:GetSecretValue" not in acts
+                assert "lambda:InvokeFunction" not in acts
+            assert base_actions == [
+                "bedrock-agentcore:GetGateway",
+                "bedrock-agentcore:GetConfigurationBundleVersion",
+            ]
+
             policy_arn_calls = [
                 call for call in mock_attach.call_args_list if call.kwargs.get("policy_arn") is not None
             ]
@@ -181,9 +201,8 @@ class TestCreateGatewayExecutionRole:
         # Verify role was created successfully
         assert result == self.role_arn
 
-        # Verify policies were created and attached
-        assert self.mock_iam_client.create_policy.call_count == len(POLICIES_TO_CREATE)
-        assert self.mock_iam_client.attach_role_policy.call_count == len(POLICIES_TO_CREATE) + len(POLICIES)
+        assert self.mock_iam_client.create_policy.call_count == 1 + len(POLICIES_TO_CREATE)
+        assert self.mock_iam_client.attach_role_policy.call_count == 1 + len(POLICIES_TO_CREATE) + len(POLICIES)
 
 
 class TestAttachPolicy:
@@ -468,3 +487,108 @@ class TestAttachPolicy:
 
             # Verify create_policy was not called for managed policies
             self.mock_iam_client.create_policy.assert_not_called()
+
+
+class TestDeferredAppendHelpers:
+    """Test append_lambda_target_permission and append_credential_provider_permissions."""
+
+    def setup_method(self):
+        """Setup test fixtures."""
+        self.mock_session = Mock()
+        self.mock_iam_client = Mock()
+        self.mock_sts_client = Mock()
+        self.mock_sts_client.get_caller_identity.return_value = {"Account": "123456789012"}
+        self.mock_session.client.side_effect = lambda svc, **kw: (
+            self.mock_sts_client if svc == "sts" else self.mock_iam_client
+        )
+        self.mock_session.region_name = "us-east-1"
+        self.logger = logging.getLogger(__name__)
+        self.role_arn = "arn:aws:iam::123456789012:role/AgentCoreGatewayExecutionRole"
+
+    def test_append_lambda_target_permission_scoped_to_function(self):
+        """Lambda invoke is scoped to the exact function ARN with a ResourceAccount condition."""
+        function_arn = "arn:aws:lambda:us-east-1:123456789012:function:AgentCoreLambdaTestFunction"
+
+        append_lambda_target_permission(
+            session=self.mock_session,
+            logger=self.logger,
+            role_arn=self.role_arn,
+            function_arn=function_arn,
+        )
+
+        self.mock_iam_client.put_role_policy.assert_called_once()
+        kwargs = self.mock_iam_client.put_role_policy.call_args.kwargs
+        assert kwargs["RoleName"] == "AgentCoreGatewayExecutionRole"
+        doc = json.loads(kwargs["PolicyDocument"])
+        stmt = doc["Statement"][0]
+        assert stmt["Action"] == ["lambda:InvokeFunction"]
+        assert stmt["Resource"] == [function_arn]
+        assert stmt["Condition"] == {"StringEquals": {"aws:ResourceAccount": "123456789012"}}
+        assert "*" not in stmt["Resource"]
+
+    def test_append_credential_provider_permissions_oauth2_scoped(self):
+        """OAuth2 provider access is scoped to that provider's token-vault and secret ARNs."""
+        append_credential_provider_permissions(
+            session=self.mock_session,
+            logger=self.logger,
+            role_arn=self.role_arn,
+            provider_name="MyProvider",
+            provider_kind="oauth2",
+        )
+
+        self.mock_iam_client.put_role_policy.assert_called_once()
+        doc = json.loads(self.mock_iam_client.put_role_policy.call_args.kwargs["PolicyDocument"])
+        actions = [a for s in doc["Statement"] for a in s["Action"]]
+        assert "bedrock-agentcore:GetResourceOauth2Token" in actions
+        assert "secretsmanager:GetSecretValue" in actions
+        all_res = [
+            r for s in doc["Statement"] for r in (s["Resource"] if isinstance(s["Resource"], list) else [s["Resource"]])
+        ]
+        assert "*" not in all_res
+        expected_provider_arn = (
+            "arn:aws:bedrock-agentcore:us-east-1:123456789012:token-vault/default/oauth2credentialprovider/MyProvider*"
+        )
+        expected_secret_arn = (
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:"
+            "bedrock-agentcore-identity!default/oauth2/MyProvider-*"
+        )
+        assert expected_provider_arn in all_res
+        assert expected_secret_arn in all_res
+        non_provider = [r for r in all_res if "MyProvider" not in r]
+        assert non_provider == ["arn:aws:bedrock-agentcore:us-east-1:123456789012:token-vault/default"]
+
+    def test_append_credential_provider_permissions_apikey_scoped(self):
+        """API-key provider access is scoped to that provider's token-vault and secret ARNs."""
+        append_credential_provider_permissions(
+            session=self.mock_session,
+            logger=self.logger,
+            role_arn=self.role_arn,
+            provider_name="MyApiKey",
+            provider_kind="apikey",
+        )
+        doc = json.loads(self.mock_iam_client.put_role_policy.call_args.kwargs["PolicyDocument"])
+        actions = [a for s in doc["Statement"] for a in s["Action"]]
+        assert "bedrock-agentcore:GetResourceApiKey" in actions
+        secret_res = [
+            r
+            for s in doc["Statement"]
+            for r in (s["Resource"] if isinstance(s["Resource"], list) else [s["Resource"]])
+            if "secretsmanager" in r
+        ]
+        assert secret_res == [
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:bedrock-agentcore-identity!default/apikey/MyApiKey-*"
+        ]
+
+    def test_append_is_best_effort_on_failure(self):
+        """A put_role_policy failure is swallowed (logged) so target creation is not blocked."""
+        self.mock_iam_client.put_role_policy.side_effect = ClientError(
+            error_response={"Error": {"Code": "AccessDenied", "Message": "denied"}},
+            operation_name="PutRolePolicy",
+        )
+        # Should not raise
+        append_lambda_target_permission(
+            session=self.mock_session,
+            logger=self.logger,
+            role_arn=self.role_arn,
+            function_arn="arn:aws:lambda:us-east-1:123456789012:function:F",
+        )

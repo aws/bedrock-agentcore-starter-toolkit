@@ -18,7 +18,11 @@ from .constants import (
     LAMBDA_CONFIG,
 )
 from .create_lambda import create_test_lambda
-from .create_role import create_gateway_execution_role
+from .create_role import (
+    append_credential_provider_permissions,
+    append_lambda_target_permission,
+    create_gateway_execution_role,
+)
 from .exceptions import GatewaySetupException
 
 
@@ -90,7 +94,9 @@ class GatewayClient:
             name = f"TestGateway{GatewayClient.generate_random_id()}"
         if not role_arn:
             self.logger.info("Role not provided, creating an execution role to use")
-            role_arn = create_gateway_execution_role(self.session, self.logger, region=self.region)
+            role_arn = create_gateway_execution_role(
+                self.session, self.logger, region=self.region, gateway_name=name.lower()
+            )
             self.logger.info("✓ Successfully created execution role for Gateway")
         if not authorizer_config:
             self.logger.info("Authorizer config not provided, creating an authorizer to use")
@@ -182,7 +188,7 @@ class GatewayClient:
         # handle open api schema
         if target_type == "openApiSchema":
             create_request |= self.__handle_openapi_target_credential_provider_creation(
-                name=name, credentials=credentials
+                name=name, credentials=credentials, role_arn=gateway.get("roleArn")
             )
         # create the target
         self.logger.info("Creating Target")
@@ -703,30 +709,49 @@ class GatewayClient:
         """
         lambda_arn = create_test_lambda(self.session, logger=self.logger, gateway_role_arn=role_arn)
 
+        append_lambda_target_permission(
+            session=self.session,
+            logger=self.logger,
+            role_arn=role_arn,
+            function_arn=lambda_arn,
+            region=self.region,
+        )
+
         return {
             "targetConfiguration": {"mcp": {"lambda": {"lambdaArn": lambda_arn, "toolSchema": LAMBDA_CONFIG}}},
         }
 
     def __handle_openapi_target_credential_provider_creation(
-        self, name: str, credentials: Dict[str, Any]
+        self, name: str, credentials: Dict[str, Any], role_arn: Optional[str] = None
     ) -> Dict[str, Any]:
         """Generate the credential provider config for open api target.
 
         :param name: the name of the target.
         :param credentials: credentials to use in setting up this target.
+        :param role_arn: the gateway execution role ARN, to scope credential access to this provider.
         :return: the credential provider config.
         """
         acps = self.session.client(service_name="bedrock-agentcore-control")
         if "api_key" in credentials:
             self.logger.info("Creating credential provider")
+            provider_name = f"{name}-ApiKey-{self.generate_random_id()}"
             credential_provider = acps.create_api_key_credential_provider(
-                name=f"{name}-ApiKey-{self.generate_random_id()}",
+                name=provider_name,
                 apiKey=credentials["api_key"],
             )
             self.logger.info(
                 "✓ Added credential provider successfully (ARN: %s)",
                 credential_provider["credentialProviderArn"],
             )
+            if role_arn:
+                append_credential_provider_permissions(
+                    session=self.session,
+                    logger=self.logger,
+                    role_arn=role_arn,
+                    provider_name=provider_name,
+                    provider_kind="apikey",
+                    region=self.region,
+                )
             target_cred_provider_config = {
                 "credentialProviderType": "API_KEY",
                 "credentialProvider": {
@@ -739,8 +764,9 @@ class GatewayClient:
             }
         elif "oauth2_provider_config" in credentials:
             self.logger.info("Creating credential provider")
+            provider_name = f"{name}-OAuth-Credentials-{self.generate_random_id()}"
             credential_provider = acps.create_oauth2_credential_provider(
-                name=f"{name}-OAuth-Credentials-{self.generate_random_id()}",
+                name=provider_name,
                 credentialProviderVendor="CustomOauth2",
                 oauth2ProviderConfigInput=credentials["oauth2_provider_config"],
             )
@@ -748,6 +774,15 @@ class GatewayClient:
                 "✓ Added credential provider successfully (ARN: %s)",
                 credential_provider["credentialProviderArn"],
             )
+            if role_arn:
+                append_credential_provider_permissions(
+                    session=self.session,
+                    logger=self.logger,
+                    role_arn=role_arn,
+                    provider_name=provider_name,
+                    provider_kind="oauth2",
+                    region=self.region,
+                )
             target_cred_provider_config = {
                 "credentialProviderType": "OAUTH",
                 "credentialProvider": {

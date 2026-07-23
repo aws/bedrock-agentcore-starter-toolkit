@@ -209,7 +209,10 @@ class TestCreateMCPGateway:
 
                         # Verify role creation was called
                         mock_create_role.assert_called_once_with(
-                            self.client.session, self.client.logger, region=self.client.region
+                            self.client.session,
+                            self.client.logger,
+                            region=self.client.region,
+                            gateway_name="testgateway12345678",
                         )
 
                         # Verify authorizer creation was called
@@ -432,8 +435,9 @@ class TestCreateMCPGatewayTarget:
                     credentials=credentials,
                 )
 
-                # Verify OpenAPI handler was called
-                mock_handle_openapi.assert_called_once_with(name="OpenAPITarget", credentials=credentials)
+                mock_handle_openapi.assert_called_once_with(
+                    name="OpenAPITarget", credentials=credentials, role_arn=self.gateway["roleArn"]
+                )
 
                 # Verify create_gateway_target was called
                 call_args = self.client.client.create_gateway_target.call_args[1]
@@ -506,9 +510,14 @@ class TestHandleLambdaTargetCreation:
         role_arn = "arn:aws:iam::123456789012:role/TestRole"
         lambda_arn = "arn:aws:lambda:us-west-2:123456789012:function:TestFunction"
 
-        with patch(
-            "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_test_lambda"
-        ) as mock_create_lambda:
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.gateway.client.create_test_lambda"
+            ) as mock_create_lambda,
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.gateway.client.append_lambda_target_permission"
+            ) as mock_append,
+        ):
             mock_create_lambda.return_value = lambda_arn
 
             result = self.client._GatewayClient__handle_lambda_target_creation(role_arn)
@@ -516,6 +525,14 @@ class TestHandleLambdaTargetCreation:
             # Verify create_test_lambda was called with correct parameters
             mock_create_lambda.assert_called_once_with(
                 self.client.session, logger=self.client.logger, gateway_role_arn=role_arn
+            )
+
+            mock_append.assert_called_once_with(
+                session=self.client.session,
+                logger=self.client.logger,
+                role_arn=role_arn,
+                function_arn=lambda_arn,
+                region=self.client.region,
             )
 
             # Verify return value structure

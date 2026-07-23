@@ -78,17 +78,14 @@
       }
     },
     {
-        "Effect": "Allow",
-        "Action": [
-            "logs:CreateLogGroup",
-            "logs:PutDeliverySource",
-            "logs:PutDeliveryDestination",
-            "logs:CreateDelivery",
-            "logs:GetDeliverySource",
-            "logs:DeleteDeliverySource",
-            "logs:DeleteDeliveryDestination"
-        ],
-        "Resource": "*"
+      "Sid": "CloudWatchLogsPutResourcePolicy",
+      "Effect": "Allow",
+      "Action": [
+        "logs:PutResourcePolicy"
+      ],
+      "Resource": [
+        "arn:{{ partition }}:logs:{{ region }}:{{ account_id }}:log-group:/aws/bedrock-agentcore/runtimes/{{ agent_name }}-*"
+      ]
     },
     {% if is_a2a_protocol %}
     {
@@ -99,21 +96,11 @@
         "bedrock-agentcore:InvokeAgentRuntimeForUser"
       ],
       "Resource": [
-        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:runtime/{{ agent_name }}-*"
       ]
     },
     {% endif %}
     {% if memory_enabled %}
-    {% if not has_memory_id %}
-    {
-      "Sid": "BedrockAgentCoreMemoryCreateMemory",
-      "Effect": "Allow",
-      "Action": [
-        "bedrock-agentcore:CreateMemory"
-      ],
-      "Resource": "*"
-    },
-    {% endif %}
     {
       "Sid": "BedrockAgentCoreMemory",
       "Effect": "Allow",
@@ -134,7 +121,7 @@
         {% if has_memory_id %}
         "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/{{ memory_id }}"
         {% else %}
-        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:memory/{{ agent_name }}_mem-*"
         {% endif %}
       ]
     },
@@ -186,7 +173,6 @@
       ],
       "Resource": [
         "arn:{{ partition }}:bedrock:*::foundation-model/*",
-        "arn:{{ partition }}:bedrock:*:*:inference-profile/*",
         "arn:{{ partition }}:bedrock:{{ region }}:{{ account_id }}:*"
       ]
     },
@@ -223,12 +209,11 @@
       "Sid": "BedrockAgentCoreIdentity",
       "Effect": "Allow",
       "Action": [
-        "bedrock-agentcore:CreateWorkloadIdentity",
         "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
       ],
       "Resource": [
         "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default",
-        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/*"
+        "arn:{{ partition }}:bedrock-agentcore:{{ region }}:{{ account_id }}:workload-identity-directory/default/workload-identity/{{ agent_name }}-*"
       ]
     },
     {

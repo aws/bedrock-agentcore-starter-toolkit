@@ -193,6 +193,13 @@ class TestGetOrCreateEvaluationExecutionRole:
         assert "logs:StartQuery" in actions
         assert "bedrock:InvokeModel" in actions
 
+        bedrock_stmt = next(s for s in policy["Statement"] if s.get("Sid") == "BedrockInvokeStatement")
+        assert bedrock_stmt["Resource"] == [
+            "arn:aws:bedrock:*::foundation-model/*",
+            "arn:aws:bedrock:us-east-1:123456789012:*",
+        ]
+        assert "*" not in bedrock_stmt["Resource"]
+
     @patch("time.sleep")
     def test_handles_entity_already_exists_race_condition(self, mock_sleep):
         """Test handles race condition when role is created between checks."""

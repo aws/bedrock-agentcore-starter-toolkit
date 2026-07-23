@@ -89,6 +89,7 @@ class TestGatewayClient:
             session_client.exceptions.ResourceConflictException = ValueError
             session_client.create_role.return_value = {"Role": {"Arn": "arn"}}
             session_client.create_function.return_value = {"FunctionArn": "arn"}
+            session_client.get_caller_identity.return_value = {"Account": "123456789012"}
             # Test Lambda target
             gateway = gateway_client.create_mcp_gateway(
                 name="test-lambda",
@@ -150,6 +151,7 @@ class TestGatewayClient:
             acps_client = Mock()
             mock_acps.return_value = acps_client
             acps_client.create_api_key_credential_provider.return_value = {"credentialProviderArn": "arn"}
+            acps_client.get_caller_identity.return_value = {"Account": "123456789012"}
             # Test OpenAPI from S3
             gateway = gateway_client.create_mcp_gateway(
                 name="test-lambda",

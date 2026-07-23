@@ -148,7 +148,10 @@ def get_or_create_evaluation_execution_role(
                         "Sid": "BedrockInvokeStatement",
                         "Effect": "Allow",
                         "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-                        "Resource": "*",
+                        "Resource": [
+                            "arn:aws:bedrock:*::foundation-model/*",
+                            f"arn:aws:bedrock:{region}:{account_id}:*",
+                        ],
                     },
                 ],
             }

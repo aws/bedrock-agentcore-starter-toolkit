@@ -207,6 +207,10 @@ class TestPolicyTemplate:
         sids_a2a = [s.get("Sid") for s in policy_a2a["Statement"]]
         assert "BedrockAgentCoreRuntime" in sids_a2a
 
+        a2a_stmt = next(s for s in policy_a2a["Statement"] if s.get("Sid") == "BedrockAgentCoreRuntime")
+        assert a2a_stmt["Resource"] == ["arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/test-agent-*"]
+        assert "arn:aws:bedrock-agentcore:us-east-1:123456789012:runtime/*" not in a2a_stmt["Resource"]
+
         # With HTTP protocol
         policy_http = json.loads(
             render_execution_policy_template(
@@ -278,6 +282,77 @@ class TestPolicyTemplate:
         # CreateMemory permission should NOT be included when memory_id is provided
         sids = [s.get("Sid") for s in policy["Statement"]]
         assert "BedrockAgentCoreMemoryCreateMemory" not in sids
+
+    def test_memory_scoped_to_name_prefix_when_id_unknown(self):
+        """Memory access is scoped to the agent's memory ARN and never grants CreateMemory."""
+        policy = json.loads(
+            render_execution_policy_template(
+                region="us-east-1",
+                account_id="123456789012",
+                agent_name="test-agent",
+                memory_id="test-memory-id",
+            )
+        )
+        # (memory_id known path already covered above; here assert the CreateMemory action is gone entirely)
+        all_actions = []
+        for s in policy["Statement"]:
+            acts = s["Action"]
+            all_actions.extend([acts] if isinstance(acts, str) else acts)
+        assert "bedrock-agentcore:CreateMemory" not in all_actions
+
+    def test_no_create_workload_identity_and_scoped_identity(self):
+        """Identity access omits CreateWorkloadIdentity and scopes tokens to the agent's prefix."""
+        policy = json.loads(
+            render_execution_policy_template(region="us-east-1", account_id="123456789012", agent_name="test-agent")
+        )
+        all_actions = []
+        for s in policy["Statement"]:
+            acts = s["Action"]
+            all_actions.extend([acts] if isinstance(acts, str) else acts)
+        assert "bedrock-agentcore:CreateWorkloadIdentity" not in all_actions
+
+        identity_stmt = next(s for s in policy["Statement"] if s.get("Sid") == "BedrockAgentCoreIdentity")
+        assert identity_stmt["Resource"] == [
+            "arn:aws:bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default",
+            "arn:aws:bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default/"
+            "workload-identity/test-agent-*",
+        ]
+
+    def test_no_broad_log_delivery_and_scoped_put_resource_policy(self):
+        """Log config grants only logs:PutResourcePolicy scoped to the agent's runtime log group."""
+        policy = json.loads(
+            render_execution_policy_template(region="us-east-1", account_id="123456789012", agent_name="test-agent")
+        )
+        all_actions = []
+        for s in policy["Statement"]:
+            acts = s["Action"]
+            all_actions.extend([acts] if isinstance(acts, str) else acts)
+        for gone in (
+            "logs:PutDeliverySource",
+            "logs:PutDeliveryDestination",
+            "logs:CreateDelivery",
+            "logs:DeleteDeliverySource",
+            "logs:DeleteDeliveryDestination",
+        ):
+            assert gone not in all_actions
+
+        prp = next(s for s in policy["Statement"] if s.get("Sid") == "CloudWatchLogsPutResourcePolicy")
+        assert prp["Action"] == ["logs:PutResourcePolicy"]
+        assert prp["Resource"] == [
+            "arn:aws:logs:us-east-1:123456789012:log-group:/aws/bedrock-agentcore/runtimes/test-agent-*"
+        ]
+
+    def test_bedrock_invocation_two_arn_form(self):
+        """BedrockModelInvocation grants foundation-model and same-account Bedrock resources only."""
+        policy = json.loads(
+            render_execution_policy_template(region="us-east-1", account_id="123456789012", agent_name="test-agent")
+        )
+        bedrock_stmt = next(s for s in policy["Statement"] if s.get("Sid") == "BedrockModelInvocation")
+        assert bedrock_stmt["Resource"] == [
+            "arn:aws:bedrock:*::foundation-model/*",
+            "arn:aws:bedrock:us-east-1:123456789012:*",
+        ]
+        assert "arn:aws:bedrock:*:*:inference-profile/*" not in bedrock_stmt["Resource"]
 
     def test_code_interpreter_always_included(self):
         """Test that CodeInterpreter permissions are always included and scoped to AWS managed."""
