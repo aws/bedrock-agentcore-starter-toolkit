@@ -526,6 +526,7 @@ def _ensure_memory_for_agent(
                 max_wait=300,  # 5 minutes
                 poll_interval=5,
                 enable_observability=agent_config.aws.observability.enabled,
+                tags=agent_config.tags,
             )
             log.info("Memory created and active: %s", memory.id)
             # END CHANGE
@@ -631,6 +632,7 @@ def _deploy_to_bedrock_agentcore(
             env_vars=env_vars,
             auto_update_on_conflict=auto_update_on_conflict,
             lifecycle_config=lifecycle_config,
+            tags=agent_config.tags,
         ),
         execution_role_arn=agent_config.aws.execution_role,
     )
@@ -1442,6 +1444,7 @@ def _launch_with_direct_code_deploy(
                 protocol_config=agent_config.aws.protocol_configuration.to_aws_dict(),
                 env_vars=env_vars,
                 auto_update_on_conflict=auto_update_on_conflict,
+                tags=agent_config.tags,
             ),
             execution_role_arn=agent_config.aws.execution_role,
         )
