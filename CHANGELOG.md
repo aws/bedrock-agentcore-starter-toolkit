@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.11] - 2026-07-28
+
+### Changes
+
+- fix: update execution role policies for runtime, gateway, and evaluation (#554) (98bf2f8)
+- docs: make deprecated docs build redirect-only so deploy stops failing (#551) (4f90432)
+- docs: deprecate GitHub Pages site via mkdocs-redirects (#550) (cb3e17f)
+- chore(deps-dev): bump wheel from 0.45.1 to 0.46.2 (#538) (9b1f1c2)
+- chore(deps): bump soupsieve from 2.8 to 2.8.4 (#539) (bde62f0)
+- chore(deps): bump mcp from 1.20.0 to 1.23.0 (#537) (0437e15)
+- chore(deps): bump pyjwt from 2.10.1 to 2.13.0 (#527) (8e36797)
+- chore(deps): bump starlette from 0.50.0 to 1.3.1 (#529) (7b1f8ce)
+- chore(deps): bump cryptography from 46.0.3 to 48.0.1 (#528) (70294b5)
+- chore(deps): bump python-multipart from 0.0.20 to 0.0.31 (#530) (f5342f6)
+- chore(deps): bump urllib3 from 2.5.0 to 2.7.0 (#536) (197887d)
+- chore: bump version to 0.3.10 (#531) (e08dc91)
+
 ## [0.3.10] - 2026-06-30
 
 ### Changes
