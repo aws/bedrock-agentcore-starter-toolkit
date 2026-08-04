@@ -1,8 +1,37 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
+import re
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+# Memory identifiers are rendered verbatim into the generated Dockerfile's ENV block, so they must
+# not be able to carry newlines or quotes that would break out into new Dockerfile instructions.
+# Matched with re.fullmatch, so a trailing newline cannot slip past the anchor.
+MEMORY_FIELD_REGEX = r"[a-zA-Z0-9_-]{1,128}"
+
+
+def validate_memory_field(field_name: str, value: Optional[str]) -> Optional[str]:
+    """Validate a memory identifier that gets rendered into build artifacts.
+
+    Args:
+        field_name: Field name to use in the error message
+        value: Value to validate; None and empty are passed through as "unset"
+
+    Returns:
+        The validated value
+
+    Raises:
+        ValueError: If the value contains characters outside MEMORY_FIELD_REGEX
+    """
+    if not value:
+        return value
+    if not re.fullmatch(MEMORY_FIELD_REGEX, value):
+        raise ValueError(
+            f"Invalid {field_name}: {value!r}. Must match {MEMORY_FIELD_REGEX} "
+            "(letters, digits, underscores and hyphens, up to 128 characters)"
+        )
+    return value
 
 
 class NetworkModeConfig(BaseModel):
@@ -28,6 +57,12 @@ class MemoryConfig(BaseModel):
     was_created_by_toolkit: bool = Field(
         default=False, description="Whether memory was created by toolkit (vs reused existing)"
     )
+
+    @field_validator("memory_id", "memory_name")
+    @classmethod
+    def validate_memory_identifiers(cls, v: Optional[str], info) -> Optional[str]:
+        """Reject memory identifiers that could inject into generated build artifacts."""
+        return validate_memory_field(info.field_name, v)
 
     @property
     def is_enabled(self) -> bool:

