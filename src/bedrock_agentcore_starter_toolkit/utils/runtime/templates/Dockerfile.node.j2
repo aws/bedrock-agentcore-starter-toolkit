@@ -4,9 +4,13 @@ WORKDIR /app
 # Environment variables (NODE_ENV set after build to allow devDependencies install)
 ENV DOCKER_CONTAINER=1{% if aws_region %} \
     AWS_REGION={{ aws_region }} \
-    AWS_DEFAULT_REGION={{ aws_region }}{% endif %}{% if memory_id %} \
-    BEDROCK_AGENTCORE_MEMORY_ID={{ memory_id }}{% endif %}{% if memory_name %} \
-    BEDROCK_AGENTCORE_MEMORY_NAME={{ memory_name }}{% endif %}
+    AWS_DEFAULT_REGION={{ aws_region }}{% endif %}
+{% if memory_id %}
+ENV BEDROCK_AGENTCORE_MEMORY_ID="{{ memory_id }}"
+{% endif %}
+{% if memory_name %}
+ENV BEDROCK_AGENTCORE_MEMORY_NAME="{{ memory_name }}"
+{% endif %}
 
 # Copy source files
 COPY . .

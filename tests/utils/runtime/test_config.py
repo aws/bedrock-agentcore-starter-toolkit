@@ -29,6 +29,21 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
 class TestProjectConfiguration:
     """Test project configuration functionality."""
 
+    def test_load_config_rejects_unsafe_memory_value(self, tmp_path):
+        """Test malicious memory values cannot be reloaded from project YAML."""
+        fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "project_config_single.yaml"
+        config_data = yaml.safe_load(fixture_path.read_text())
+        config_data["agents"]["test-agent"]["memory"] = {
+            "mode": "STM_ONLY",
+            "memory_id": "memory-id_123",
+            "memory_name": 'x"\nRUN touch /tmp/injected',
+        }
+        config_path = tmp_path / ".bedrock_agentcore.yaml"
+        config_path.write_text(yaml.safe_dump(config_data))
+
+        with pytest.raises(RuntimeToolkitException, match="memory_name"):
+            load_config(config_path, autofill_missing_aws=False)
+
     def test_load_project_config_single_agent(self):
         """Test loading project config with single agent."""
 

@@ -1,8 +1,9 @@
 """Typed configuration schema for Bedrock AgentCore SDK."""
 
+import re
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class NetworkModeConfig(BaseModel):
@@ -14,6 +15,8 @@ class NetworkModeConfig(BaseModel):
 
 class MemoryConfig(BaseModel):
     """Memory configuration for BedrockAgentCore."""
+
+    model_config = ConfigDict(validate_assignment=True)
 
     mode: Literal["STM_ONLY", "STM_AND_LTM", "NO_MEMORY"] = Field(
         default="NO_MEMORY", description="Memory mode - opt-in feature"
@@ -28,6 +31,22 @@ class MemoryConfig(BaseModel):
     was_created_by_toolkit: bool = Field(
         default=False, description="Whether memory was created by toolkit (vs reused existing)"
     )
+
+    @field_validator("memory_id", "memory_name")
+    @classmethod
+    def validate_memory_identifier(cls, v: Optional[str], info) -> Optional[str]:
+        """Reject characters that can alter generated Dockerfile instructions."""
+        if v is not None and re.fullmatch(r"[a-zA-Z0-9_-]*", v) is None:
+            raise ValueError(f"Invalid {info.field_name}: only letters, numbers, hyphens, and underscores are allowed")
+        return v
+
+    @field_validator("memory_arn")
+    @classmethod
+    def validate_memory_arn(cls, v: Optional[str]) -> Optional[str]:
+        """Reject characters outside the safe ARN character set."""
+        if v is not None and re.fullmatch(r"[a-zA-Z0-9_:/.-]*", v) is None:
+            raise ValueError("Invalid memory_arn")
+        return v
 
     @property
     def is_enabled(self) -> bool:

@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
 
 from bedrock_agentcore_starter_toolkit.utils.runtime.container import ContainerRuntime
 
@@ -693,6 +694,57 @@ CMD ["python", "/app/{{ agent_file }}"]
 
                 assert context.get("memory_id") == "mem_123456"
                 assert context.get("memory_name") == "test_agent_memory"
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("memory_id", "memory-id\nRUN touch /tmp/injected"),
+            ("memory_name", 'memory"\nRUN touch /tmp/injected'),
+        ],
+    )
+    def test_generate_dockerfile_rejects_unsafe_memory_values(self, tmp_path, field, value):
+        """Test direct renderer calls cannot inject Dockerfile instructions."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+            agent_file = tmp_path / "index.ts"
+            agent_file.write_text("// TypeScript agent")
+
+            with (
+                patch.object(runtime, "_get_current_platform", return_value="linux/arm64"),
+                pytest.raises(ValidationError, match=field),
+            ):
+                runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    language="typescript",
+                    **{field: value},
+                )
+
+    @pytest.mark.parametrize(
+        ("language", "entrypoint"),
+        [("python", "agent.py"), ("typescript", "index.ts")],
+    )
+    def test_generated_dockerfile_quotes_memory_env_values(self, tmp_path, language, entrypoint):
+        """Test memory values use separate quoted Dockerfile ENV instructions."""
+        with patch.object(ContainerRuntime, "_is_runtime_installed", return_value=True):
+            runtime = ContainerRuntime("docker")
+            agent_file = tmp_path / entrypoint
+            agent_file.write_text("# test agent")
+
+            with patch.object(runtime, "_get_current_platform", return_value="linux/arm64"):
+                dockerfile_path = runtime.generate_dockerfile(
+                    agent_path=agent_file,
+                    output_dir=tmp_path,
+                    agent_name="test_agent",
+                    memory_id="memory-id_123",
+                    memory_name="test_agent_memory",
+                    language=language,
+                )
+
+            content = dockerfile_path.read_text()
+            assert 'ENV BEDROCK_AGENTCORE_MEMORY_ID="memory-id_123"' in content
+            assert 'ENV BEDROCK_AGENTCORE_MEMORY_NAME="test_agent_memory"' in content
 
     def test_validate_module_path_with_hyphens(self, tmp_path):
         """Test _validate_module_path with directory containing hyphens."""

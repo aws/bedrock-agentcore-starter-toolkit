@@ -13,6 +13,7 @@ from rich.console import Console
 from ...cli.common import _handle_warn, _print_success
 from ..paths import _relative_to_build_context
 from .entrypoint import detect_dependencies, get_python_version
+from .schema import MemoryConfig
 
 console = Console()
 
@@ -193,6 +194,10 @@ class ContainerRuntime:
         if dockerfile_path.exists():
             console.print(f"📄 Using existing Dockerfile: {dockerfile_path}")
             return dockerfile_path
+
+        validated_memory = MemoryConfig(memory_id=memory_id, memory_name=memory_name)
+        memory_id = validated_memory.memory_id
+        memory_name = validated_memory.memory_name
 
         # Select template based on language
         template_path = self._get_template_path(language, "dockerfile")

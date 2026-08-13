@@ -8,11 +8,50 @@ from bedrock_agentcore_starter_toolkit.utils.runtime.schema import (
     BedrockAgentCoreAgentSchema,
     BedrockAgentCoreConfigSchema,
     BedrockAgentCoreDeploymentInfo,
+    MemoryConfig,
     NetworkConfiguration,
     NetworkModeConfig,
     ObservabilityConfig,
     ProtocolConfiguration,
 )
+
+
+class TestMemoryConfig:
+    """Test memory configuration validation."""
+
+    def test_safe_memory_values_are_allowed(self):
+        """Test values used by existing configurations remain valid."""
+        config = MemoryConfig(
+            memory_id="memory-id_123",
+            memory_name="test-agent_memory",
+            memory_arn="arn:aws:bedrock-agentcore:us-east-1:123456789012:memory/memory-id_123",
+        )
+
+        assert config.memory_id == "memory-id_123"
+        assert config.memory_name == "test-agent_memory"
+        assert config.memory_arn.endswith("memory/memory-id_123")
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("memory_id", "memory id"),
+            ("memory_id", "memory\nRUN touch /tmp/injected"),
+            ("memory_name", "memory\tname"),
+            ("memory_name", "memory$(touch /tmp/injected)"),
+            ("memory_arn", "arn:aws:memory/example; touch /tmp/injected"),
+        ],
+    )
+    def test_unsafe_memory_values_are_rejected(self, field, value):
+        """Test whitespace and Dockerfile or shell metacharacters are rejected."""
+        with pytest.raises(ValidationError, match=field):
+            MemoryConfig(**{field: value})
+
+    def test_assignment_is_validated(self):
+        """Test values assigned after model creation cannot bypass validation."""
+        config = MemoryConfig()
+
+        with pytest.raises(ValidationError, match="memory_name"):
+            config.memory_name = 'x"\nRUN touch /tmp/injected'
 
 
 class TestNetworkConfiguration:
