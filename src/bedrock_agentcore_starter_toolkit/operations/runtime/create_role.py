@@ -9,6 +9,7 @@ from boto3 import Session
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
+from ...utils.aws import validate_iam_role_trust_policy
 from ...utils.runtime.policy_template import (
     render_execution_policy_template,
     render_trust_policy_template,
@@ -92,18 +93,24 @@ def get_or_create_runtime_execution_role(
     logger.info("Role name: %s", role_name)
 
     iam = session.client("iam")
+    trust_policy_json = render_trust_policy_template(region, account_id)
+    trust_policy = validate_rendered_policy(trust_policy_json)
 
     try:
         # Step 1: Check if role already exists
         logger.debug("Checking if role exists: %s", role_name)
         role = iam.get_role(RoleName=role_name)
+        validate_iam_role_trust_policy(
+            role["Role"],
+            trust_policy,
+            role_name,
+            required_by="Bedrock AgentCore Runtime",
+            remediation="Delete the conflicting role or provide a customer-managed role with --execution-role.",
+        )
         existing_role_arn = role["Role"]["Arn"]
 
         logger.info("✅ Reusing existing execution role: %s", existing_role_arn)
         logger.debug("Role creation date: %s", role["Role"].get("CreateDate", "Unknown"))
-
-        # TODO: In future, we could add validation here to ensure the role has correct policies
-        # For now, we trust that if the role exists with our naming pattern, it's compatible
 
         return existing_role_arn
 
@@ -117,10 +124,6 @@ def get_or_create_runtime_execution_role(
             logger.info("✓ Role creating: %s", role_name)
 
             try:
-                # Render the trust policy template
-                trust_policy_json = render_trust_policy_template(region, account_id)
-                trust_policy = validate_rendered_policy(trust_policy_json)
-
                 # Render the execution policy template with conditional parameters
                 ecr_repo_name = None
                 if agent_config and agent_config.aws.ecr_repository:
@@ -174,6 +177,15 @@ def get_or_create_runtime_execution_role(
                     try:
                         logger.info("Role %s already exists, retrieving existing role...", role_name)
                         role = iam.get_role(RoleName=role_name)
+                        validate_iam_role_trust_policy(
+                            role["Role"],
+                            trust_policy,
+                            role_name,
+                            required_by="Bedrock AgentCore Runtime",
+                            remediation=(
+                                "Delete the conflicting role or provide a customer-managed role with --execution-role."
+                            ),
+                        )
                         logger.info("✓ Role already exists: %s", role["Role"]["Arn"])
                         return role["Role"]["Arn"]
                     except ClientError as get_error:

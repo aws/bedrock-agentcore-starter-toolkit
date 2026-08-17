@@ -10,6 +10,8 @@ from boto3 import Session
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
+from ...utils.aws import validate_iam_role_trust_policy
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,11 +65,41 @@ def get_or_create_evaluation_execution_role(
     logger.info("Role name: %s", role_name)
 
     iam = session.client("iam")
+    trust_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "TrustPolicyStatement",
+                "Effect": "Allow",
+                "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                    "StringEquals": {
+                        "aws:SourceAccount": account_id,
+                        "aws:ResourceAccount": account_id,
+                    },
+                    "ArnLike": {
+                        "aws:SourceArn": [
+                            f"arn:aws:bedrock-agentcore:{region}:{account_id}:evaluator/*",
+                            f"arn:aws:bedrock-agentcore:{region}:{account_id}:online-evaluation-config/*",
+                        ]
+                    },
+                },
+            }
+        ],
+    }
 
     try:
         # Step 1: Check if role already exists
         logger.debug("Checking if role exists: %s", role_name)
         role = iam.get_role(RoleName=role_name)
+        validate_iam_role_trust_policy(
+            role["Role"],
+            trust_policy,
+            role_name,
+            required_by="Bedrock AgentCore Evaluation",
+            remediation="Delete the conflicting role or provide a customer-managed role with --execution-role.",
+        )
         existing_role_arn = role["Role"]["Arn"]
 
         logger.info("✅ Reusing existing evaluation execution role: %s", existing_role_arn)
@@ -79,31 +111,6 @@ def get_or_create_evaluation_execution_role(
         if e.response["Error"]["Code"] == "NoSuchEntity":
             # Step 2: Role doesn't exist, create it
             logger.info("Role doesn't exist, creating new evaluation execution role: %s", role_name)
-
-            # Define trust policy for AgentCore Evaluation service
-            trust_policy = {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Sid": "TrustPolicyStatement",
-                        "Effect": "Allow",
-                        "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
-                        "Action": "sts:AssumeRole",
-                        "Condition": {
-                            "StringEquals": {
-                                "aws:SourceAccount": account_id,
-                                "aws:ResourceAccount": account_id,
-                            },
-                            "ArnLike": {
-                                "aws:SourceArn": [
-                                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:evaluator/*",
-                                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:online-evaluation-config/*",
-                                ]
-                            },
-                        },
-                    }
-                ],
-            }
 
             # Define permissions policy for evaluation operations
             permissions_policy = {
@@ -194,6 +201,15 @@ def get_or_create_evaluation_execution_role(
                     try:
                         logger.info("Role %s already exists, retrieving existing role...", role_name)
                         role = iam.get_role(RoleName=role_name)
+                        validate_iam_role_trust_policy(
+                            role["Role"],
+                            trust_policy,
+                            role_name,
+                            required_by="Bedrock AgentCore Evaluation",
+                            remediation=(
+                                "Delete the conflicting role or provide a customer-managed role with --execution-role."
+                            ),
+                        )
                         logger.info("✓ Role already exists: %s", role["Role"]["Arn"])
                         return role["Role"]["Arn"]
                     except ClientError as get_error:

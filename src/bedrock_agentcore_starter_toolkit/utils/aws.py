@@ -1,6 +1,8 @@
 """Generic aws utilities."""
 
-from typing import Optional
+import json
+from typing import Any, Optional
+from urllib.parse import unquote
 
 import boto3
 import botocore.session
@@ -12,6 +14,42 @@ from botocore.exceptions import (
 
 # Default AWS region
 DEFAULT_REGION = "us-west-2"
+
+
+def validate_iam_role_trust_policy(
+    role: dict[str, Any],
+    expected_policy: dict[str, Any],
+    role_name: str,
+    *,
+    required_by: str,
+    remediation: str,
+) -> None:
+    """Reject an IAM role whose trust policy does not match the expected policy.
+
+    Args:
+        role: IAM role returned by GetRole
+        expected_policy: Trust policy required for safe role reuse
+        role_name: Name of the role being validated
+        required_by: Component that requires the expected trust policy
+        remediation: Guidance included when validation fails
+
+    Raises:
+        RuntimeError: If the role's trust policy does not match
+    """
+    actual_policy = role.get("AssumeRolePolicyDocument")
+    if isinstance(actual_policy, str):
+        try:
+            actual_policy = json.loads(unquote(actual_policy))
+        except (json.JSONDecodeError, TypeError):
+            actual_policy = None
+
+    if isinstance(actual_policy, dict) and actual_policy == expected_policy:
+        return
+
+    raise RuntimeError(
+        f"Refusing to reuse existing IAM role '{role_name}' because its trust policy does not match "
+        f"the policy required by {required_by}. {remediation}"
+    )
 
 
 def extract_id_from_arn(arn_or_id: str) -> str:

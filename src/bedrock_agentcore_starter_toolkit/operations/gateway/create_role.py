@@ -16,8 +16,8 @@ from ...operations.gateway.constants import (
     build_gateway_credential_provider_policy,
     build_gateway_lambda_invoke_policy,
 )
-from ...utils.aws import get_partition
-from ...utils.runtime.policy_template import render_trust_policy_template
+from ...utils.aws import get_partition, validate_iam_role_trust_policy
+from ...utils.runtime.policy_template import render_trust_policy_template, validate_rendered_policy
 
 
 def create_gateway_execution_role(
@@ -41,12 +41,13 @@ def create_gateway_execution_role(
     account_id = sts.get_caller_identity()["Account"]
     region = region or session.region_name
     partition = get_partition(region)
-    trust_policy = render_trust_policy_template(region=region, account_id=account_id)
+    trust_policy_json = render_trust_policy_template(region=region, account_id=account_id)
+    trust_policy = validate_rendered_policy(trust_policy_json)
     # Create the role
     try:
         role = iam.create_role(
             RoleName=role_name,
-            AssumeRolePolicyDocument=trust_policy,
+            AssumeRolePolicyDocument=trust_policy_json,
             Description="Execution role for AgentCore Gateway",
         )
 
@@ -76,6 +77,13 @@ def create_gateway_execution_role(
         if e.response["Error"]["Code"] == "EntityAlreadyExists":
             try:
                 role = iam.get_role(RoleName=role_name)
+                validate_iam_role_trust_policy(
+                    role["Role"],
+                    trust_policy,
+                    role_name,
+                    required_by="Bedrock AgentCore Gateway",
+                    remediation="Delete the conflicting role or provide a customer-managed role with --role-arn.",
+                )
                 logger.info("✓ Role already exists: %s", role["Role"]["Arn"])
                 return role["Role"]["Arn"]
             except ClientError as get_error:

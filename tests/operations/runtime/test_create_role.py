@@ -1,8 +1,10 @@
 """Tests for create_role module."""
 
+import copy
 import json
 import logging
 from unittest.mock import MagicMock, patch
+from urllib.parse import quote
 
 import boto3
 import pytest
@@ -15,6 +17,26 @@ from bedrock_agentcore_starter_toolkit.operations.runtime.create_role import (
     get_or_create_codebuild_execution_role,
     get_or_create_runtime_execution_role,
 )
+
+
+def _runtime_trust_policy(account_id="123456789012", region="us-east-1"):
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "AssumeRolePolicy",
+                "Effect": "Allow",
+                "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                    "StringEquals": {"aws:SourceAccount": account_id},
+                    "ArnLike": {
+                        "aws:SourceArn": f"arn:aws:bedrock-agentcore:{region}:{account_id}:*",
+                    },
+                },
+            }
+        ],
+    }
 
 
 class TestCreateRole:
@@ -121,7 +143,12 @@ class TestCreateRole:
         session, mock_iam = mock_session
 
         # Mock the get_role response (role exists)
-        mock_iam.get_role.return_value = {"Role": {"Arn": "arn:aws:iam::123456789012:role/ExistingRole"}}
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                "AssumeRolePolicyDocument": _runtime_trust_policy(),
+            }
+        }
 
         result = get_or_create_runtime_execution_role(
             session=session,
@@ -137,6 +164,96 @@ class TestCreateRole:
         # create_role should not be called since role already exists
         mock_iam.create_role.assert_not_called()
         mock_logger.info.assert_called()
+
+    def test_get_or_create_runtime_execution_role_accepts_url_encoded_trust_policy(self, mock_session, mock_logger):
+        """Test reusing a role when IAM returns a URL-encoded trust policy."""
+        session, mock_iam = mock_session
+        encoded_policy = quote(json.dumps(_runtime_trust_policy()), safe="")
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                "AssumeRolePolicyDocument": encoded_policy,
+            }
+        }
+
+        result = get_or_create_runtime_execution_role(
+            session=session,
+            logger=mock_logger,
+            region="us-east-1",
+            account_id="123456789012",
+            agent_name="test-agent",
+            role_name="ExistingRole",
+        )
+
+        assert result == "arn:aws:iam::123456789012:role/ExistingRole"
+        mock_iam.create_role.assert_not_called()
+
+    def test_get_or_create_runtime_execution_role_rejects_additional_trusted_principal(self, mock_session, mock_logger):
+        """Test rejecting an existing role that trusts another principal."""
+        session, mock_iam = mock_session
+        trust_policy = _runtime_trust_policy()
+        trust_policy["Statement"].append(
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:user/attacker"},
+                "Action": "sts:AssumeRole",
+            }
+        )
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            get_or_create_runtime_execution_role(
+                session=session,
+                logger=mock_logger,
+                region="us-east-1",
+                account_id="123456789012",
+                agent_name="test-agent",
+                role_name="ExistingRole",
+            )
+
+        mock_iam.create_role.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("condition_operator", "condition_key"),
+        [
+            ("StringEquals", "aws:SourceAccount"),
+            ("ArnLike", "aws:SourceArn"),
+        ],
+    )
+    def test_get_or_create_runtime_execution_role_rejects_weakened_condition(
+        self,
+        mock_session,
+        mock_logger,
+        condition_operator,
+        condition_key,
+    ):
+        """Test rejecting an existing role with a weakened trust-policy condition."""
+        session, mock_iam = mock_session
+        trust_policy = copy.deepcopy(_runtime_trust_policy())
+        trust_policy["Statement"][0]["Condition"][condition_operator][condition_key] = "*"
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            get_or_create_runtime_execution_role(
+                session=session,
+                logger=mock_logger,
+                region="us-east-1",
+                account_id="123456789012",
+                agent_name="test-agent",
+                role_name="ExistingRole",
+            )
+
+        mock_iam.create_role.assert_not_called()
 
     def test_get_or_create_runtime_execution_role_check_error(self, mock_session, mock_logger):
         """Test error when checking role existence (other than NoSuchEntity)."""
@@ -489,12 +606,19 @@ class TestCreateRole:
     ):
         """Test EntityAlreadyExists during runtime role creation."""
         session, mock_iam = mock_session
+        trust_policy = _runtime_trust_policy()
+        execution_policy = {"Version": "2012-10-17", "Statement": []}
 
         # First call (check if exists) - role doesn't exist
         error_response = {"Error": {"Code": "NoSuchEntity"}}
         mock_iam.get_role.side_effect = [
             ClientError(error_response, "GetRole"),  # First call fails
-            {"Role": {"Arn": "arn:aws:iam::123456789012:role/ExistingRole"}},  # Second call succeeds
+            {
+                "Role": {
+                    "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                    "AssumeRolePolicyDocument": trust_policy,
+                }
+            },  # Second call succeeds
         ]
 
         # Role creation fails with EntityAlreadyExists
@@ -504,15 +628,15 @@ class TestCreateRole:
         with (
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.render_trust_policy_template",
-                return_value='{"Version": "2012-10-17", "Statement": []}',
+                return_value=json.dumps(trust_policy),
             ),
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.render_execution_policy_template",
-                return_value='{"Version": "2012-10-17", "Statement": []}',
+                return_value=json.dumps(execution_policy),
             ),
             patch(
                 "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.validate_rendered_policy",
-                return_value={"Version": "2012-10-17", "Statement": []},
+                side_effect=[trust_policy, execution_policy],
             ),
         ):
             result = get_or_create_runtime_execution_role(
@@ -526,6 +650,62 @@ class TestCreateRole:
             assert result == "arn:aws:iam::123456789012:role/ExistingRole"
             mock_iam.create_role.assert_called_once()
             assert mock_iam.get_role.call_count == 2
+
+    def test_get_or_create_runtime_execution_role_rejects_invalid_role_created_during_race(
+        self, mock_session, mock_logger
+    ):
+        """Test rejecting an untrusted role created between the existence check and creation."""
+        session, mock_iam = mock_session
+        trust_policy = _runtime_trust_policy()
+        malicious_trust_policy = copy.deepcopy(trust_policy)
+        malicious_trust_policy["Statement"].append(
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:user/attacker"},
+                "Action": "sts:AssumeRole",
+            }
+        )
+        execution_policy = {"Version": "2012-10-17", "Statement": []}
+        error_response = {"Error": {"Code": "NoSuchEntity"}}
+        mock_iam.get_role.side_effect = [
+            ClientError(error_response, "GetRole"),
+            {
+                "Role": {
+                    "Arn": "arn:aws:iam::123456789012:role/ExistingRole",
+                    "AssumeRolePolicyDocument": malicious_trust_policy,
+                }
+            },
+        ]
+        mock_iam.create_role.side_effect = ClientError(
+            {"Error": {"Code": "EntityAlreadyExists"}},
+            "CreateRole",
+        )
+
+        with (
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.render_trust_policy_template",
+                return_value=json.dumps(trust_policy),
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.render_execution_policy_template",
+                return_value=json.dumps(execution_policy),
+            ),
+            patch(
+                "bedrock_agentcore_starter_toolkit.operations.runtime.create_role.validate_rendered_policy",
+                side_effect=[trust_policy, execution_policy],
+            ),
+        ):
+            with pytest.raises(RuntimeError, match="trust policy does not match"):
+                get_or_create_runtime_execution_role(
+                    session=session,
+                    logger=mock_logger,
+                    region="us-east-1",
+                    account_id="123456789012",
+                    agent_name="test-agent",
+                )
+
+        mock_iam.create_role.assert_called_once()
+        assert mock_iam.get_role.call_count == 2
 
     def test_get_or_create_runtime_execution_role_limit_exceeded_error(self, mock_session, mock_logger):
         """Test LimitExceeded error during runtime role creation."""

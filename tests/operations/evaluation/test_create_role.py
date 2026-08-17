@@ -1,6 +1,9 @@
 """Tests for IAM role creation for evaluation."""
 
+import copy
+import json
 from unittest.mock import Mock, patch
+from urllib.parse import quote
 
 import pytest
 from botocore.exceptions import ClientError
@@ -10,6 +13,33 @@ from bedrock_agentcore_starter_toolkit.operations.evaluation.create_role import 
     _generate_deterministic_suffix,
     get_or_create_evaluation_execution_role,
 )
+
+
+def _evaluation_trust_policy(account_id="123456789012", region="us-east-1"):
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "TrustPolicyStatement",
+                "Effect": "Allow",
+                "Principal": {"Service": "bedrock-agentcore.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                    "StringEquals": {
+                        "aws:SourceAccount": account_id,
+                        "aws:ResourceAccount": account_id,
+                    },
+                    "ArnLike": {
+                        "aws:SourceArn": [
+                            f"arn:aws:bedrock-agentcore:{region}:{account_id}:evaluator/*",
+                            f"arn:aws:bedrock-agentcore:{region}:{account_id}:online-evaluation-config/*",
+                        ]
+                    },
+                },
+            }
+        ],
+    }
+
 
 # =============================================================================
 # _generate_deterministic_suffix Tests
@@ -86,7 +116,11 @@ class TestGetOrCreateEvaluationExecutionRole:
 
         # Role already exists
         mock_iam.get_role.return_value = {
-            "Role": {"Arn": "arn:aws:iam::123:role/existing-role", "CreateDate": "2024-01-01"}
+            "Role": {
+                "Arn": "arn:aws:iam::123:role/existing-role",
+                "CreateDate": "2024-01-01",
+                "AssumeRolePolicyDocument": _evaluation_trust_policy(),
+            }
         }
 
         result = get_or_create_evaluation_execution_role(
@@ -96,6 +130,81 @@ class TestGetOrCreateEvaluationExecutionRole:
         assert result == "arn:aws:iam::123:role/existing-role"
         mock_iam.create_role.assert_not_called()
         mock_iam.put_role_policy.assert_not_called()
+
+    def test_reuses_existing_role_with_url_encoded_trust_policy(self):
+        """Test reuses a role when IAM returns a URL-encoded trust policy."""
+        mock_session = Mock()
+        mock_iam = Mock()
+        mock_session.client.return_value = mock_iam
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123:role/existing-role",
+                "AssumeRolePolicyDocument": quote(json.dumps(_evaluation_trust_policy()), safe=""),
+            }
+        }
+
+        result = get_or_create_evaluation_execution_role(
+            session=mock_session, region="us-east-1", account_id="123456789012", config_name="my-config"
+        )
+
+        assert result == "arn:aws:iam::123:role/existing-role"
+        mock_iam.create_role.assert_not_called()
+
+    def test_rejects_existing_role_with_additional_trusted_principal(self):
+        """Test rejects an existing role that trusts another principal."""
+        mock_session = Mock()
+        mock_iam = Mock()
+        mock_session.client.return_value = mock_iam
+        trust_policy = _evaluation_trust_policy()
+        trust_policy["Statement"].append(
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:user/attacker"},
+                "Action": "sts:AssumeRole",
+            }
+        )
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123:role/existing-role",
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            get_or_create_evaluation_execution_role(
+                session=mock_session, region="us-east-1", account_id="123456789012", config_name="my-config"
+            )
+
+        mock_iam.create_role.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("condition_operator", "condition_key"),
+        [
+            ("StringEquals", "aws:SourceAccount"),
+            ("StringEquals", "aws:ResourceAccount"),
+            ("ArnLike", "aws:SourceArn"),
+        ],
+    )
+    def test_rejects_existing_role_with_weakened_condition(self, condition_operator, condition_key):
+        """Test rejects an existing role with a weakened trust-policy condition."""
+        mock_session = Mock()
+        mock_iam = Mock()
+        mock_session.client.return_value = mock_iam
+        trust_policy = copy.deepcopy(_evaluation_trust_policy())
+        trust_policy["Statement"][0]["Condition"][condition_operator][condition_key] = "*"
+        mock_iam.get_role.return_value = {
+            "Role": {
+                "Arn": "arn:aws:iam::123:role/existing-role",
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            get_or_create_evaluation_execution_role(
+                session=mock_session, region="us-east-1", account_id="123456789012", config_name="my-config"
+            )
+
+        mock_iam.create_role.assert_not_called()
 
     @patch("time.sleep")
     def test_uses_custom_role_name(self, mock_sleep):
@@ -159,8 +268,6 @@ class TestGetOrCreateEvaluationExecutionRole:
 
         # Verify trust policy
         call_kwargs = mock_iam.create_role.call_args[1]
-        import json
-
         trust_policy = json.loads(call_kwargs["AssumeRolePolicyDocument"])
         assert trust_policy["Statement"][0]["Principal"]["Service"] == "bedrock-agentcore.amazonaws.com"
         assert trust_policy["Statement"][0]["Action"] == "sts:AssumeRole"
@@ -183,8 +290,6 @@ class TestGetOrCreateEvaluationExecutionRole:
         # Verify put_role_policy was called
         mock_iam.put_role_policy.assert_called_once()
         call_kwargs = mock_iam.put_role_policy.call_args[1]
-        import json
-
         policy = json.loads(call_kwargs["PolicyDocument"])
         # Verify key permissions are included
         actions = []
@@ -215,7 +320,12 @@ class TestGetOrCreateEvaluationExecutionRole:
 
         mock_iam.get_role.side_effect = [
             ClientError(error_response_nosuch, "GetRole"),
-            {"Role": {"Arn": "arn:aws:iam::123:role/test-role"}},
+            {
+                "Role": {
+                    "Arn": "arn:aws:iam::123:role/test-role",
+                    "AssumeRolePolicyDocument": _evaluation_trust_policy(),
+                }
+            },
         ]
         mock_iam.create_role.side_effect = ClientError(error_response_exists, "CreateRole")
 
@@ -224,6 +334,40 @@ class TestGetOrCreateEvaluationExecutionRole:
         )
 
         assert result == "arn:aws:iam::123:role/test-role"
+        assert mock_iam.get_role.call_count == 2
+
+    def test_rejects_invalid_role_created_during_race_condition(self):
+        """Test rejects an untrusted role created between the existence check and creation."""
+        mock_session = Mock()
+        mock_iam = Mock()
+        mock_session.client.return_value = mock_iam
+        trust_policy = _evaluation_trust_policy()
+        trust_policy["Statement"].append(
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:user/attacker"},
+                "Action": "sts:AssumeRole",
+            }
+        )
+        error_response_nosuch = {"Error": {"Code": "NoSuchEntity"}}
+        error_response_exists = {"Error": {"Code": "EntityAlreadyExists"}}
+        mock_iam.get_role.side_effect = [
+            ClientError(error_response_nosuch, "GetRole"),
+            {
+                "Role": {
+                    "Arn": "arn:aws:iam::123:role/test-role",
+                    "AssumeRolePolicyDocument": trust_policy,
+                }
+            },
+        ]
+        mock_iam.create_role.side_effect = ClientError(error_response_exists, "CreateRole")
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            get_or_create_evaluation_execution_role(
+                session=mock_session, region="us-east-1", account_id="123456789012", config_name="my-config"
+            )
+
+        mock_iam.create_role.assert_called_once()
         assert mock_iam.get_role.call_count == 2
 
     def test_handles_entity_already_exists_but_get_fails(self):

@@ -1,8 +1,10 @@
 """Tests for Bedrock AgentCore Gateway create_role functionality."""
 
+import copy
 import json
 import logging
 from unittest.mock import Mock, patch
+from urllib.parse import quote
 
 import pytest
 from botocore.exceptions import ClientError
@@ -43,6 +45,7 @@ class TestCreateGatewayExecutionRole:
         self.role_name = "TestGatewayRole"
         self.role_arn = f"arn:aws:iam::123456789012:role/{self.role_name}"
         self.expected_trust_policy = render_trust_policy_template(region="us-east-1", account_id="123456789012")
+        self.expected_trust_policy_document = json.loads(self.expected_trust_policy)
 
     def test_create_gateway_execution_role_success(self):
         """Test successful role creation."""
@@ -103,7 +106,13 @@ class TestCreateGatewayExecutionRole:
         self.mock_iam_client.create_role.side_effect = already_exists_error
 
         # Mock successful get_role
-        self.mock_iam_client.get_role.return_value = {"Role": {"Arn": self.role_arn, "RoleName": self.role_name}}
+        self.mock_iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": self.role_arn,
+                "RoleName": self.role_name,
+                "AssumeRolePolicyDocument": self.expected_trust_policy_document,
+            }
+        }
 
         result = create_gateway_execution_role(self.mock_session, self.logger, self.role_name)
 
@@ -115,6 +124,75 @@ class TestCreateGatewayExecutionRole:
 
         # Verify return value
         assert result == self.role_arn
+
+    def test_create_gateway_execution_role_accepts_url_encoded_trust_policy(self):
+        """Test handling a matching URL-encoded trust policy on role collision."""
+        self.mock_iam_client.create_role.side_effect = ClientError(
+            error_response={"Error": {"Code": "EntityAlreadyExists", "Message": "Role already exists"}},
+            operation_name="CreateRole",
+        )
+        self.mock_iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": self.role_arn,
+                "RoleName": self.role_name,
+                "AssumeRolePolicyDocument": quote(self.expected_trust_policy, safe=""),
+            }
+        }
+
+        result = create_gateway_execution_role(self.mock_session, self.logger, self.role_name)
+
+        assert result == self.role_arn
+
+    def test_create_gateway_execution_role_rejects_additional_trusted_principal(self):
+        """Test rejecting a colliding role that trusts another principal."""
+        trust_policy = copy.deepcopy(self.expected_trust_policy_document)
+        trust_policy["Statement"].append(
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "arn:aws:iam::123456789012:user/attacker"},
+                "Action": "sts:AssumeRole",
+            }
+        )
+        self.mock_iam_client.create_role.side_effect = ClientError(
+            error_response={"Error": {"Code": "EntityAlreadyExists", "Message": "Role already exists"}},
+            operation_name="CreateRole",
+        )
+        self.mock_iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": self.role_arn,
+                "RoleName": self.role_name,
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            create_gateway_execution_role(self.mock_session, self.logger, self.role_name)
+
+    @pytest.mark.parametrize(
+        ("condition_operator", "condition_key"),
+        [
+            ("StringEquals", "aws:SourceAccount"),
+            ("ArnLike", "aws:SourceArn"),
+        ],
+    )
+    def test_create_gateway_execution_role_rejects_weakened_condition(self, condition_operator, condition_key):
+        """Test rejecting a colliding role with a weakened trust-policy condition."""
+        trust_policy = copy.deepcopy(self.expected_trust_policy_document)
+        trust_policy["Statement"][0]["Condition"][condition_operator][condition_key] = "*"
+        self.mock_iam_client.create_role.side_effect = ClientError(
+            error_response={"Error": {"Code": "EntityAlreadyExists", "Message": "Role already exists"}},
+            operation_name="CreateRole",
+        )
+        self.mock_iam_client.get_role.return_value = {
+            "Role": {
+                "Arn": self.role_arn,
+                "RoleName": self.role_name,
+                "AssumeRolePolicyDocument": trust_policy,
+            }
+        }
+
+        with pytest.raises(RuntimeError, match="trust policy does not match"):
+            create_gateway_execution_role(self.mock_session, self.logger, self.role_name)
 
     def test_create_gateway_execution_role_exists_but_get_fails(self):
         """Test handling when role exists but get_role fails."""
