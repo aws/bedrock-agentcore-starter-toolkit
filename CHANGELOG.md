@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.12] - 2026-08-19
+
+### Changes
+
+- fix: add input validation to memory fields (#571) (e3fe8a2)
+- fix: validate trust policy on automanaged execution role (#570) (be24ff2)
+- chore: bump version to 0.3.11 (#555) (d149aa8)
+
 ## [0.3.11] - 2026-07-28
 
 ### Changes
