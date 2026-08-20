@@ -32,7 +32,7 @@ permissions:
 jobs:
   prepare-release:
     name: Prepare Release
-    runs-on: ubuntu-latest
+    runs-on: aws-release-4-core
     outputs:
       version: ${{ steps.bump.outputs.version }}
       pr_created: ${{ steps.create-pr.outputs.pull-request-number }}
@@ -226,7 +226,7 @@ jobs:
   test:
     name: Test
     needs: prepare-release
-    runs-on: ubuntu-latest
+    runs-on: aws-release-4-core
     if: needs.prepare-release.result == 'success'
     outputs:
       version: ${{ needs.prepare-release.outputs.version }}
@@ -266,7 +266,7 @@ jobs:
   build:
     name: Build Distribution
     needs: prepare-release
-    runs-on: ubuntu-latest
+    runs-on: aws-release-4-core
     if: needs.prepare-release.result == 'success'
 
     steps:
@@ -329,7 +329,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     needs: [test, build]
-    runs-on: ubuntu-latest
+    runs-on: aws-release-4-core
     environment:
       name: pypi
       url: https://pypi.org/project/bedrock-agentcore-starter-toolkit/
@@ -401,7 +401,7 @@ jobs:
   summary:
     name: Release Summary
     needs: publish-pypi
-    runs-on: ubuntu-latest
+    runs-on: aws-release-4-core
     if: always()
 
     steps:
