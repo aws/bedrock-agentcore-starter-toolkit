@@ -8,7 +8,7 @@ import time
 import zipfile
 from importlib.resources import files
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -163,6 +163,7 @@ class CodeBuildService:
         execution_role: str,
         source_location: str,
         image_tag: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> str:
         """Create or update CodeBuild project for ARM64 builds."""
         # Generate tag if not provided
@@ -194,6 +195,9 @@ class CodeBuildService:
             },
             "serviceRole": execution_role,
         }
+
+        if tags is not None:
+            project_config["tags"] = [{"key": k, "value": v} for k, v in tags.items()]
 
         try:
             self.client.create_project(**project_config)
