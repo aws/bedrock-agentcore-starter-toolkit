@@ -29,7 +29,7 @@ RUN uv pip install -r {{ dependencies_file }}
 {% endif %}
 
 {% if observability_enabled %}
-RUN uv pip install aws-opentelemetry-distro==0.12.2
+RUN uv pip install "aws-opentelemetry-distro>=0.18.0,<1.0.0"
 {% endif %}
 
 # Signal that this is running in Docker for host binding logic
