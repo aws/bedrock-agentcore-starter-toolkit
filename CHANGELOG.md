@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.13] - 2026-09-15
+
+### Changes
+
+- fix(runtime): bump aws-opentelemetry-distro to >=0.18.0 so unified-telemetry traces render in CloudWatch (#576) (759258c)
+- ci: use dedicated release runners (#573) (5e8a1c9)
+- chore: bump version to 0.3.12 (#572) (39c957e)
+
 ## [0.3.12] - 2026-08-19
 
 ### Changes
