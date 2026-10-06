@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14] - 2026-10-06
+
+### Changes
+
+- fix: harden generated configuration handling (#585) (38545b1)
+- chore: bump version to 0.3.13 (#577) (c5e1e2e)
+
 ## [0.3.13] - 2026-09-15
 
 ### Changes
