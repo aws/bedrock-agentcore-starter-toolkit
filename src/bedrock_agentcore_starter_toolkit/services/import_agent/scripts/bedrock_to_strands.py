@@ -6,8 +6,8 @@ This script translates AWS Bedrock Agent configurations into equivalent Strands 
 """
 
 import os
-import textwrap
 
+from ..utils import python_string_literal
 from .base_bedrock_translate import BaseBedrockTranslator
 
 
@@ -27,10 +27,6 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
         self.agent_setup_code = self.generate_agent_setup()
         self.usage_code = self.generate_example_usage()
 
-        # make prompts more readable
-        self.prompts_code = textwrap.fill(
-            self.prompts_code, width=150, break_long_words=False, replace_whitespace=False
-        )
         self.code_sections = [
             self.imports_code,
             self.models_code,
@@ -67,8 +63,8 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
             # Build model config string using string formatting
             model_config = f"""
     llm_{prompt_type} = BedrockModel(
-        model_id="{self.model_id}",
-        region_name="{self.agent_region}",
+        model_id={python_string_literal(self.model_id)},
+        region_name={python_string_literal(self.agent_region)},
         temperature={inference_config.get("temperature", 0)},
         max_tokens={inference_config.get("maximumLength", 2048)},
         stop_sequences={repr(inference_config.get("stopSequences", []))},
@@ -98,8 +94,7 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
 
         kb_code = ""
 
-        for kb in self.knowledge_bases:
-            kb_name = kb.get("name", "").replace(" ", "_")
+        for kb_name, kb in zip(self.knowledge_base_code_names, self.knowledge_bases, strict=True):
             kb_description = kb.get("description", "")
             kb_id = kb.get("knowledgeBaseId", "")
             kb_region_name = kb.get("knowledgeBaseArn", "").split(":")[3]
@@ -107,11 +102,11 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
             kb_code += f"""
     @tool
     def retrieve_{kb_name}(query: str):
-        \"""This is a knowledge base with the following description: {kb_description}. Invoke it with a query to get relevant results.\"""
-        client = boto3.client("bedrock-agent-runtime", region_name="{kb_region_name}")
+        {python_string_literal(f"This is a knowledge base with the following description: {kb_description}. Invoke it with a query to get relevant results.")}
+        client = boto3.client("bedrock-agent-runtime", region_name={python_string_literal(kb_region_name)})
         return client.retrieve(
             retrievalQuery={{"text": query}},
-            knowledgeBaseId="{kb_id}",
+            knowledgeBaseId={python_string_literal(kb_id)},
             retrievalConfiguration={{
                 "vectorSearchConfiguration": {{"numberOfResults": 10}},
             }},
@@ -130,13 +125,16 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
 
         # create the collaborators
         for i, collaborator in enumerate(self.collaborators):
-            collaborator_file_name = f"strands_collaborator_{collaborator.get('collaboratorName', '')}"
+            collaborator_name = self.collaborator_code_names[i]
+            collaborator_file_name = f"strands_collaborator_{collaborator_name}"
             collaborator_path = os.path.join(self.output_dir, f"{collaborator_file_name}.py")
             BedrockStrandsTranslation(
                 collaborator, debug=self.debug, output_dir=self.output_dir, enabled_primitives=self.enabled_primitives
             ).translate_bedrock_to_strands(collaborator_path)
 
-            self.imports_code += f"\nfrom {collaborator_file_name} import invoke_agent as invoke_{collaborator.get('collaboratorName', '')}_collaborator"
+            self.imports_code += (
+                f"\nfrom {collaborator_file_name} import invoke_agent as invoke_{collaborator_name}_collaborator"
+            )
 
             # conversation relay
             relay_conversation_history = collaborator.get("relayConversationHistory", "DISABLED") == "TO_COLLABORATOR"
@@ -144,14 +142,14 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
             # create the collaboration code
             collaborator_code += f"""
     @tool
-    def invoke_{collaborator.get("collaboratorName", "")}(query: str) -> str:
-        \"""Invoke the collaborator agent/specialist with the following description: {self.collaborator_descriptions[i]}\"""
+    def invoke_{collaborator_name}(query: str) -> str:
+        {python_string_literal(f"Invoke the collaborator agent/specialist with the following description: {self.collaborator_descriptions[i]}")}
         {"relay_history = get_agent().messages[:-2]" if relay_conversation_history else ""}
-        invoke_agent_response = invoke_{collaborator.get("collaboratorName", "")}_collaborator(query{", relay_history" if relay_conversation_history else ""})
+        invoke_agent_response = invoke_{collaborator_name}_collaborator(query{", relay_history" if relay_conversation_history else ""})
         return invoke_agent_response
         """
 
-            self.tools.append("invoke_" + collaborator.get("collaboratorName", ""))
+            self.tools.append("invoke_" + collaborator_name)
 
         return collaborator_code
 
@@ -289,7 +287,7 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
         # KB optimization code if enabled
         kb_code = ""
         if self.single_kb_optimization_enabled:
-            kb_name = self.knowledge_bases[0]["name"]
+            kb_name = self.knowledge_base_code_names[0]
             kb_code = f"""
         if first_turn:
             search_results = retrieve_{kb_name}(question)
@@ -356,11 +354,10 @@ class BedrockStrandsTranslation(BaseBedrockTranslator):
         if choice == "undecidable":
             pass"""
 
-        for agent in self.collaborators:
-            agent_name = agent.get("collaboratorName", "")
+        for agent_name in self.collaborator_code_names:
             code += f"""
-        elif choice == "{agent_name}":
-            last_agent = "{agent_name}"
+        elif choice == {python_string_literal(agent_name)}:
+            last_agent = {python_string_literal(agent_name)}
             return invoke_{agent_name}_collaborator(question)"""
 
         code += """

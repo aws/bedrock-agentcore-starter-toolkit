@@ -1,10 +1,12 @@
 """Utility functions for Bedrock Agent import service."""
 
+import hashlib
 import json
+import keyword
 import os
 import re
-import secrets
 import textwrap
+from collections.abc import Hashable
 from typing import Any, Dict, List, Union
 
 
@@ -46,8 +48,87 @@ def clean_variable_name(text):
 
     if not cleaned:
         cleaned = "variable"
+    if keyword.iskeyword(cleaned):
+        cleaned += "_"
 
     return cleaned
+
+
+IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+class IdentifierAllocator:
+    """Allocate unique Python identifiers within one scope.
+
+    Bedrock names are free-form, so several distinct names ("user-id", "user id",
+    "user_id") can clean down to the same identifier. Generated code needs unique
+    identifiers, while Lambda payloads need the original names.
+    """
+
+    def __init__(self) -> None:
+        """Create an empty allocator scope."""
+        self._by_key: Dict[Hashable, str] = {}
+        self._used_names: set[str] = set()
+
+    def allocate(self, key: Hashable, preferred_name: Any = None) -> str:
+        """Return the identifier for ``key``, using ``preferred_name`` as its source."""
+        if key in self._by_key:
+            return self._by_key[key]
+
+        base_name = clean_variable_name(key if preferred_name is None else preferred_name)
+        if not IDENTIFIER_PATTERN.match(base_name):
+            base_name = "variable"
+
+        candidate = base_name
+        suffix = 2
+        while candidate in self._used_names:
+            candidate = f"{base_name}_{suffix}"
+            suffix += 1
+
+        self._used_names.add(candidate)
+        self._by_key[key] = candidate
+        return candidate
+
+    def reserve(self, *names: str) -> None:
+        """Mark identifiers as taken so allocation never collides with them."""
+        self._used_names.update(names)
+
+
+def python_string_literal(value: Any) -> str:
+    """Encode a value as an inert Python string literal for generated source."""
+    return repr(str(value))
+
+
+def python_data_literal(value: Any) -> str:
+    """Encode JSON-compatible data as an inert Python literal for generated source.
+
+    JSON normalization rejects values that would require constructors in generated
+    source, while ``repr`` emits Python spellings for booleans and null values.
+    """
+    normalized = json.loads(json.dumps(value, ensure_ascii=False))
+    return repr(normalized)
+
+
+def assert_local_references_only(node, path: str = "$") -> None:
+    """Reject any OpenAPI ``$ref`` that is not a fragment-only reference.
+
+    External references make the parser fetch attacker-controlled URLs and local
+    files while importing an agent. Only in-document pointers such as
+    ``#/components/schemas/Request`` are permitted.
+    """
+    if isinstance(node, dict):
+        reference = node.get("$ref")
+        if isinstance(reference, str) and not reference.startswith("#/"):
+            raise ValueError(
+                f"External OpenAPI references are not supported: {reference!r} at {path}. "
+                "Inline the referenced schema, or replace it with an in-document "
+                "reference such as '#/components/schemas/Name'."
+            )
+        for key, child in node.items():
+            assert_local_references_only(child, f"{path}.{key}")
+    elif isinstance(node, list):
+        for index, child in enumerate(node):
+            assert_local_references_only(child, f"{path}[{index}]")
 
 
 def clean_gateway_or_target_name(text):
@@ -126,7 +207,27 @@ def generate_pydantic_models(
         if cleaned and not cleaned[0].isalpha():
             cleaned = "Model_" + cleaned
         # Convert to CamelCase
-        return "".join(word.capitalize() for word in cleaned.split("_"))
+        class_name = "".join(word.capitalize() for word in cleaned.split("_"))
+        return class_name or "Model"
+
+    def get_field_definition(
+        original_name: str,
+        field_name: str,
+        is_required: bool,
+        description: Any = None,
+    ) -> str:
+        """Build a Pydantic Field expression with safe literals and wire-name aliases."""
+        field_args = ["..." if is_required else "None"]
+        if description is not None:
+            field_args.append(f"description={python_string_literal(description)}")
+        if field_name != original_name:
+            field_args.append(f"alias={python_string_literal(original_name)}")
+
+        if len(field_args) == 1 and is_required:
+            return ""
+        if len(field_args) == 1:
+            return " = None"
+        return f" = Field({', '.join(field_args)})"
 
     def process_schema(schema_obj: Dict[str, Any], name: str) -> str:
         """Process a schema object and return the model class name."""
@@ -158,38 +259,38 @@ def generate_pydantic_models(
 
             class_def = f"class {class_name}(BaseModel):\n"
 
+            if "description" in schema_obj:
+                class_def += f"    {python_string_literal(schema_obj['description'])}\n"
+
             # Add content type annotation if provided
             if content_type_annotation:
-                class_def += f'    content_type_annotation: Literal["{content_type_annotation}"]\n'
-
-            if "description" in schema_obj:
-                class_def += f'    """{schema_obj["description"]}"""\n'
+                class_def += f"    content_type_annotation: Literal[{python_string_literal(content_type_annotation)}]\n"
 
             if not properties:
                 class_def += "    pass\n"
                 models[class_name] = class_def
                 return class_name
 
+            field_names = IdentifierAllocator()
+            field_names.reserve("content_type_annotation")
             for prop_name, prop_schema in properties.items():
+                field_name = field_names.allocate(prop_name)
                 field_type = get_type_hint(prop_schema, f"{name}_{prop_name}")
 
                 # Check if required
                 is_required = prop_name in required
 
                 # Build the field definition
-                if is_required:
-                    if "description" in prop_schema:
-                        field_def = f' = Field(description="{prop_schema["description"]}")'
-                    else:
-                        field_def = ""
-                else:
+                if not is_required:
                     field_type = f"Optional[{field_type}]"
-                    if "description" in prop_schema:
-                        field_def = f' = Field(None, description="{prop_schema["description"]}")'
-                    else:
-                        field_def = " = None"
+                field_def = get_field_definition(
+                    prop_name,
+                    field_name,
+                    is_required,
+                    prop_schema.get("description"),
+                )
 
-                class_def += f"    {prop_name}: {field_type}{field_def}\n"
+                class_def += f"    {field_name}: {field_type}{field_def}\n"
 
             models[class_name] = class_def
             return class_name
@@ -257,10 +358,12 @@ def generate_pydantic_models(
 
         # If only one type or specifically requested, create a single model
         if len(param_groups) == 1 or name != "RequestModel":
+            field_names = IdentifierAllocator()
             for param in params:
                 param_name = param.get("name", "")
                 if not param_name:
                     continue
+                field_name = field_names.allocate(param_name)
 
                 # Get the parameter type
                 if "schema" in param:
@@ -274,25 +377,24 @@ def generate_pydantic_models(
                 is_required = param.get("required", False)
 
                 # Build the field definition
-                if is_required:
-                    if "description" in param:
-                        field_def = f' = Field(description="{param["description"]}")'
-                    else:
-                        field_def = ""
-                else:
+                if not is_required:
                     field_type = f"Optional[{field_type}]"
-                    if "description" in param:
-                        field_def = f' = Field(None, description="{param["description"]}")'
-                    else:
-                        field_def = " = None"
+                field_def = get_field_definition(
+                    param_name,
+                    field_name,
+                    is_required,
+                    param.get("description"),
+                )
 
-                class_def += f"    {param_name}: {field_type}{field_def}\n"
+                class_def += f"    {field_name}: {field_type}{field_def}\n"
         else:
             # Create separate models for each parameter type
+            field_names = IdentifierAllocator()
             for param_in, param_list in param_groups.items():
                 in_type_name = f"{name}_{param_in.capitalize()}Params"
                 in_class_name = process_parameter_list(param_list, in_type_name)
-                class_def += f"    {param_in}_params: {in_class_name}\n"
+                field_name = field_names.allocate(f"{param_in}_params")
+                class_def += f"    {field_name}: {in_class_name}\n"
 
         models[class_name] = class_def
         return class_name
@@ -310,7 +412,9 @@ def generate_pydantic_models(
             models[class_name] = class_def
             return class_name
 
+        field_names = IdentifierAllocator()
         for param_name, param_def in params.items():
+            field_name = field_names.allocate(param_name)
             # Get the parameter type
             if "schema" in param_def:
                 # OpenAPI 3.0 style
@@ -323,19 +427,16 @@ def generate_pydantic_models(
             is_required = param_def.get("required", False)
 
             # Build the field definition
-            if is_required:
-                if "description" in param_def:
-                    field_def = f' = Field(description="{param_def["description"]}")'
-                else:
-                    field_def = ""
-            else:
+            if not is_required:
                 field_type = f"Optional[{field_type}]"
-                if "description" in param_def:
-                    field_def = f' = Field(None, description="{param_def["description"]}")'
-                else:
-                    field_def = " = None"
+            field_def = get_field_definition(
+                param_name,
+                field_name,
+                is_required,
+                param_def.get("description"),
+            )
 
-            class_def += f"    {param_name}: {field_type}{field_def}\n"
+            class_def += f"    {field_name}: {field_type}{field_def}\n"
 
         models[class_name] = class_def
         return class_name
@@ -370,10 +471,14 @@ def generate_pydantic_models(
 
 
 def prune_tool_name(tool_name: str, length=50) -> str:
-    """Prune tool name to avoid maxiumum of 64 characters. If it exceeds, truncate and append a random suffix."""
+    """Prune tool name to avoid maxiumum of 64 characters. If it exceeds, truncate and append a suffix.
+
+    The suffix is derived from the full name so that re-importing the same agent
+    produces the same tool names; these names key the Gateway target tool mappings.
+    """
     if len(tool_name) > length:
-        tool_name = tool_name[:length]
-        tool_name += f"_{secrets.token_hex(3)}"
+        digest = hashlib.sha256(tool_name.encode("utf-8")).hexdigest()[:6]
+        tool_name = f"{tool_name[:length]}_{digest}"
     return tool_name
 
 

@@ -5,9 +5,10 @@ import os
 
 import boto3
 from prance import ResolvingParser
+from prance.util.resolver import RESOLVE_INTERNAL
 from ruamel.yaml import YAML  # pylint: disable=import-error # type: ignore
 
-from ....services.import_agent.utils import clean_variable_name, fix_field
+from ....services.import_agent.utils import assert_local_references_only, fix_field
 
 
 def get_clients(credentials, region_name="us-west-2"):
@@ -136,7 +137,6 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
             actionGroupId=action_group["actionGroupId"],
         )["agentActionGroup"]
         action_group.update(action_group_info)
-        action_group["actionGroupName"] = clean_variable_name(action_group["actionGroupName"])
 
         if action_group.get("apiSchema", False):
             api_schema = action_group["apiSchema"]
@@ -161,8 +161,12 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
                 yaml_content = response["Body"].read().decode("utf-8")
                 yaml = YAML(typ="safe")
                 action_group["apiSchema"]["payload"] = yaml.load(yaml_content)
-            # resolve the openapi schema references
-            parser = ResolvingParser(spec_string=json.dumps(action_group["apiSchema"]["payload"]))
+            assert_local_references_only(action_group["apiSchema"]["payload"])
+
+            parser = ResolvingParser(
+                spec_string=json.dumps(action_group["apiSchema"]["payload"]),
+                resolve_types=RESOLVE_INTERNAL,
+            )
             action_group["apiSchema"]["payload"] = parser.specification
 
     # get agent knowledge bases
@@ -173,7 +177,6 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
         knowledge_base_info = bedrock_agent_client.get_knowledge_base(
             knowledgeBaseId=knowledge_base["knowledgeBaseId"],
         )["knowledgeBase"]
-        knowledge_base_info["name"] = clean_variable_name(knowledge_base_info["name"])
         for key, value in knowledge_base_info.items():
             if key not in knowledge_base:
                 knowledge_base[key] = value
@@ -201,7 +204,7 @@ def get_agent_info(agent_id: str, agent_alias_id: str, bedrock_client, bedrock_a
             if collab_alias_id == agent_alias_id:
                 continue
             collaborator_info = get_agent_info(collab_id, collab_alias_id, bedrock_client, bedrock_agent_client)
-            collaborator_info["collaboratorName"] = clean_variable_name(collaborator["collaboratorName"])
+            collaborator_info["collaboratorName"] = collaborator["collaboratorName"]
             collaborator_info["collaborationInstruction"] = collaborator.get("collaborationInstruction", "")
             collaborator_info["relayConversationHistory"] = collaborator.get("relayConversationHistory", "DISABLED")
 

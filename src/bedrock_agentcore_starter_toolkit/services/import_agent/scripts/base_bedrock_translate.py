@@ -21,12 +21,15 @@ from openapi_schema_to_json_schema import to_json_schema
 
 from ....operations.gateway import GatewayClient
 from ..utils import (
+    IdentifierAllocator,
     clean_gateway_or_target_name,
     clean_variable_name,
     generate_pydantic_models,
     get_base_dir,
     get_template_fixtures,
     prune_tool_name,
+    python_data_literal,
+    python_string_literal,
     safe_substitute_placeholders,
     unindent_by_one,
 )
@@ -48,7 +51,7 @@ class BaseBedrockTranslator:
         self.debug = debug
         self.output_dir = output_dir
         self.user_id = uuid.uuid4().hex[:8]
-        self.cleaned_agent_name = self.agent_info["agentName"].replace(" ", "_").replace("-", "_").lower()[:30]
+        self.cleaned_agent_name = clean_variable_name(self.agent_info["agentName"])[:30]
 
         # agent metadata
         self.model_id = self.agent_info.get("foundationModel", "")
@@ -67,6 +70,14 @@ class BaseBedrockTranslator:
         self.single_kb = len(self.knowledge_bases) == 1
         self.kb_generation_prompt_enabled = False
         self.single_kb_optimization_enabled = False
+        self.knowledge_base_identifiers = IdentifierAllocator()
+        self.knowledge_base_code_names = [
+            self.knowledge_base_identifiers.allocate(
+                ("knowledge_base", knowledge_base.get("knowledgeBaseId", ""), index),
+                knowledge_base.get("name", ""),
+            )
+            for index, knowledge_base in enumerate(self.knowledge_bases)
+        ]
 
         # multi agent collaboration
         self.multi_agent_enabled = (
@@ -74,12 +85,33 @@ class BaseBedrockTranslator:
         )
         self.supervision_type = self.agent_info.get("agentCollaboration", "SUPERVISOR")
         self.collaborators = agent_config.get("collaborators", [])
+
+        self.collaborator_identifiers = IdentifierAllocator()
+        self.collaborator_code_names = [
+            self.collaborator_identifiers.allocate(
+                (
+                    "collaborator",
+                    collaborator.get("agent", {}).get("agentId", ""),
+                    collaborator.get("agent", {}).get("alias", ""),
+                    index,
+                ),
+                collaborator.get("collaboratorName", ""),
+            )
+            for index, collaborator in enumerate(self.collaborators)
+        ]
         self.collaborator_map = {
-            collaborator.get("collaboratorName", ""): collaborator for collaborator in self.collaborators
+            code_name: collaborator
+            for code_name, collaborator in zip(self.collaborator_code_names, self.collaborators, strict=True)
         }
         self.collaborator_descriptions = [
-            f"{{'agentName': '{collaborator['agent'].get('agentName', '')}', 'collaboratorName (for invocation)': 'invoke_{collaborator.get('collaboratorName', '')}', 'collaboratorInstruction': '{collaborator.get('collaborationInstruction', '')}}}"
-            for collaborator in self.collaborators
+            str(
+                {
+                    "agentName": collaborator["agent"].get("agentName", ""),
+                    "collaboratorName (for invocation)": f"invoke_{code_name}",
+                    "collaboratorInstruction": collaborator.get("collaborationInstruction", ""),
+                }
+            )
+            for code_name, collaborator in zip(self.collaborator_code_names, self.collaborators, strict=True)
         ]
         self.is_collaborator = "collaboratorName" in agent_config
         self.is_accepting_relays = agent_config.get("relayConversationHistory", "DISABLED") == "TO_COLLABORATOR"
@@ -97,15 +129,20 @@ class BaseBedrockTranslator:
         self.mcp_tools = []
         self.action_group_tools = []
 
-        # user input and code interpreter
+        # user input and code interpreter; normalise before comparing against the built-in names
         self.code_interpreter_enabled = any(
-            group["actionGroupName"] == "codeinterpreteraction" and group["actionGroupState"] == "ENABLED"
+            clean_variable_name(group.get("actionGroupName", "")) == "codeinterpreteraction"
+            and group["actionGroupState"] == "ENABLED"
             for group in self.action_groups
         )
         self.user_input_enabled = any(
-            group["actionGroupName"] == "userinputaction" and group["actionGroupState"] == "ENABLED"
+            clean_variable_name(group.get("actionGroupName", "")) == "userinputaction"
+            and group["actionGroupState"] == "ENABLED"
             for group in self.action_groups
         )
+
+        # Tool functions share one module-level namespace across all action groups
+        self.tool_identifiers = IdentifierAllocator()
 
         # orchestration steps
         self.prompt_configs = self.agent_info.get("promptOverrideConfiguration", {}).get("promptConfigurations", [])
@@ -235,35 +272,23 @@ class BaseBedrockTranslator:
                 "using the AgentCommunication__sendMessage tool", ""
             )
 
-            self.prompts_code += f"""
-    ORCHESTRATION_TEMPLATE=\"""\n{injected_orchestration_prompt}\""" """
+            prompt = f"\n{injected_orchestration_prompt}"
+            self.prompts_code += f"\n    ORCHESTRATION_TEMPLATE={python_string_literal(prompt)} "
 
         elif prompt_type == "MEMORY_SUMMARIZATION":
-            self.prompts_code += f"""
-    MEMORY_TEMPLATE=\"""\n
-    {config["basePromptTemplate"]["messages"][0]["content"]}
-    \"""
-"""
+            prompt = f"\n\n    {config['basePromptTemplate']['messages'][0]['content']}\n    "
+            self.prompts_code += f"\n    MEMORY_TEMPLATE={python_string_literal(prompt)}\n"
         elif prompt_type == "PRE_PROCESSING":
-            self.prompts_code += f"""
-    PRE_PROCESSING_TEMPLATE=\"""\n
-    {config["basePromptTemplate"]["system"]}
-    \"""
-"""
+            prompt = f"\n\n    {config['basePromptTemplate']['system']}\n    "
+            self.prompts_code += f"\n    PRE_PROCESSING_TEMPLATE={python_string_literal(prompt)}\n"
         elif prompt_type == "POST_PROCESSING":
-            self.prompts_code += f"""
-    POST_PROCESSING_TEMPLATE=\"""\n
-    {config["basePromptTemplate"]["messages"][0]["content"][0]["text"]}
-    \"""
-"""
+            prompt = f"\n\n    {config['basePromptTemplate']['messages'][0]['content'][0]['text']}\n    "
+            self.prompts_code += f"\n    POST_PROCESSING_TEMPLATE={python_string_literal(prompt)}\n"
         elif prompt_type == "KNOWLEDGE_BASE_RESPONSE_GENERATION" and self.knowledge_bases:
             self.kb_generation_prompt_enabled = True
 
-            self.prompts_code += f"""
-    KB_GENERATION_TEMPLATE=\"""\n
-    {config["basePromptTemplate"]}
-    \"""
-"""
+            prompt = f"\n\n    {config['basePromptTemplate']}\n    "
+            self.prompts_code += f"\n    KB_GENERATION_TEMPLATE={python_string_literal(prompt)}\n"
         elif prompt_type == "ROUTING_CLASSIFIER" and self.supervision_type == "SUPERVISOR_ROUTER":
             routing_fixtures = get_template_fixtures("routingClassifierBasePrompt", "")
             routing_template: str = config.get("basePromptTemplate", "")
@@ -279,10 +304,8 @@ class BaseBedrockTranslator:
                 injected_routing_template, {"$knowledge_bases_for_routing$": str(self.knowledge_bases)}
             )
 
-            self.prompts_code += f"""
-    ROUTING_TEMPLATE=\"""\n
-    {injected_routing_template}\"""
-    """
+            prompt = f"\n\n    {injected_routing_template}"
+            self.prompts_code += f"\n    ROUTING_TEMPLATE={python_string_literal(prompt)}\n"
 
     def generate_memory_configuration(self, memory_saver: str) -> str:
         """Generate memory configuration for LangChain agent."""
@@ -312,8 +335,8 @@ class BaseBedrockTranslator:
             memory_id = memory["id"]
 
             output += f"""
-    memory_client = MemoryClient(region_name='{self.agent_region}')
-    memory_id = "{memory_id}"
+    memory_client = MemoryClient(region_name={python_string_literal(self.agent_region)})
+    memory_id = {python_string_literal(memory_id)}
         """
 
         elif self.memory_enabled:
@@ -340,8 +363,13 @@ class BaseBedrockTranslator:
                 self.imports_code += """
     from .LTM_memory_manager import LongTermMemoryManager"""
 
+                storage_path = os.path.join(
+                    self.output_dir,
+                    f"session_summaries_{self.agent_info['agentName']}.json",
+                )
+                platform = "langchain" if memory_saver == "InMemorySaver" else "strands"
                 output += f"""
-    memory_manager =  LongTermMemoryManager(llm_MEMORY_SUMMARIZATION, max_sessions = {max_sessions}, summarization_prompt = MEMORY_TEMPLATE, max_days = {max_days}, platform = {'"langchain"' if memory_saver == "InMemorySaver" else '"strands"'}, storage_path = "{self.output_dir}/session_summaries_{self.agent_info["agentName"]}.json")
+    memory_manager = LongTermMemoryManager(llm_MEMORY_SUMMARIZATION, max_sessions={max_sessions}, summarization_prompt=MEMORY_TEMPLATE, max_days={max_days}, platform={python_string_literal(platform)}, storage_path={python_string_literal(storage_path)})
 """
 
         return output
@@ -360,7 +388,7 @@ class BaseBedrockTranslator:
 
             self.imports_code += "\nfrom bedrock_agentcore_starter_toolkit.operations.gateway import GatewayClient\n"
             tool_code += f"""
-    gateway_client = GatewayClient(region_name="{self.agent_region}")
+    gateway_client = GatewayClient(region_name={python_string_literal(self.agent_region)})
     client_info = {{
         "client_id": os.environ.get("cognito_client_id", ""),
         "client_secret": os.environ.get("cognito_client_secret", ""),
@@ -471,8 +499,11 @@ class BaseBedrockTranslator:
         tool_instances = []
 
         executor_is_lambda = bool(ag["actionGroupExecutor"].get("lambda", False))
+        # action_group_name is the wire value sent to Lambda; action_group_code_name is
+        # only ever used to build Python identifiers
         action_group_name = ag.get("actionGroupName", "")
-        action_group_desc = ag.get("description", "").replace('"', '\\"')
+        action_group_code_name = clean_variable_name(action_group_name)
+        action_group_desc = ag.get("description", "")
 
         if executor_is_lambda:
             lambda_arn = ag.get("actionGroupExecutor", {}).get("lambda", "")
@@ -487,7 +518,12 @@ class BaseBedrockTranslator:
 
             for method, method_spec in func_spec.items():
                 # Naming
-                tool_name = prune_tool_name(f"{action_group_name}_{clean_func_name}_{method}")
+                tool_name = prune_tool_name(
+                    self.tool_identifiers.allocate(
+                        ("openapi", action_group_name, func_name, method),
+                        f"{action_group_code_name}_{clean_func_name}_{method}",
+                    )
+                )
                 param_model_name = f"{tool_name}_Params"
                 input_model_name = f"{tool_name}_Input"
                 request_model_name = ""
@@ -541,20 +577,22 @@ class BaseBedrockTranslator:
                     input_model_name = "None"
 
                 func_desc = method_spec.get("description", method_spec.get("summary", "No Description Provided."))
-                func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                 schema_code_strands = (
                     f"inputSchema={input_model_name}.model_json_schema()" if input_model_name != "None" else ""
                 )
                 schema_code_langchain = f"args_schema={input_model_name}" if input_model_name != "None" else ""
-                tool_code += f"@tool({schema_code_strands if platform == 'strands' else schema_code_langchain})\n"
+                # Start a fresh line: the previous tool's block leaves trailing
+                # indentation that would otherwise prefix this decorator
+                tool_code += f"\n    @tool({schema_code_strands if platform == 'strands' else schema_code_langchain})\n"
 
                 if executor_is_lambda:
                     tool_code += f"""
 
     def {tool_name}({f"input_data: {input_model_name}" if input_model_name != "None" else ""}) -> str:
-        \"\"\"{func_desc}\"\"\"
-        lambda_client = boto3.client('lambda', region_name="{lambda_region}")
+        {python_string_literal(func_desc)}
+        lambda_client = boto3.client('lambda', region_name={python_string_literal(lambda_region)})
     """
                     nested_code = """
         request_body_dump = model_dump.get("request_body", model_dump)
@@ -570,7 +608,7 @@ class BaseBedrockTranslator:
         """
 
                     param_code = (
-                        f"""model_dump = input_data.model_dump(exclude_unset = True)
+                        f"""model_dump = input_data.model_dump(exclude_unset=True, by_alias=True)
         model_dump = model_dump.get("parameters", model_dump)
 
         for param_name, param_value in model_dump.items():
@@ -598,25 +636,25 @@ class BaseBedrockTranslator:
             payload = {{
                 "messageVersion": "1.0",
                 "agent": {{
-                    "name": "{self.agent_info.get("agentName", "")}",
-                    "id": "{self.agent_info.get("agentId", "")}",
-                    "alias": "{self.agent_info.get("alias", "")}",
-                    "version": "{self.agent_info.get("version", "")}"
+                    "name": {python_string_literal(self.agent_info.get("agentName", ""))},
+                    "id": {python_string_literal(self.agent_info.get("agentId", ""))},
+                    "alias": {python_string_literal(self.agent_info.get("alias", ""))},
+                    "version": {python_string_literal(self.agent_info.get("version", ""))}
                 }},
                 "sessionId": "",
                 "sessionAttributes": {{}},
                 "promptSessionAttributes": {{}},
-                "actionGroup": "{action_group_name}",
-                "apiPath": "{func_name}",
+                "actionGroup": {python_string_literal(action_group_name)},
+                "apiPath": {python_string_literal(func_name)},
                 "inputText": last_input,
-                "httpMethod": "{method.upper()}",
-                "parameters": {"parameters" if param_model_name else "{}"}
+                "httpMethod": {python_string_literal(method.upper())},
+                "parameters": {"parameters" if params else "{}"}
             }}
 
             {content_model_code if content_models else ""}
 
             response = lambda_client.invoke(
-                FunctionName="{lambda_arn}",
+                FunctionName={python_string_literal(lambda_arn)},
                 InvocationType='RequestResponse',
                 Payload=json.dumps(payload)
             )
@@ -626,13 +664,17 @@ class BaseBedrockTranslator:
             return str(response_payload)
 
         except Exception as e:
-            return f"Error executing {clean_func_name}/{method}: {{str(e)}}"
+            return {python_string_literal(f"Error executing {clean_func_name}/{method}: ")} + str(e)
 """
                 else:
+                    return_prompt = (
+                        f"Return of control: {tool_name} was called with the input "
+                        f"{{input_data}}, enter desired output:"
+                    )
                     tool_code += f"""
     def {tool_name}(input_data) -> str:
-        \"\"\"{func_desc}\"\"\"
-        return input(f"Return of control: {tool_name} was called with the input {{input_data}}, enter desired output:")
+        {python_string_literal(func_desc)}
+        return input({python_string_literal(return_prompt)}.format(input_data=input_data))
         """
                 tool_instances.append(tool_name)
 
@@ -644,8 +686,11 @@ class BaseBedrockTranslator:
         tool_instances = []
 
         executor_is_lambda = bool(ag["actionGroupExecutor"].get("lambda", False))
+        # action_group_name is the wire value sent to Lambda; action_group_code_name is
+        # only ever used to build Python identifiers
         action_group_name = ag.get("actionGroupName", "")
-        action_group_desc = ag.get("description", "").replace('"', '\\"')
+        action_group_code_name = clean_variable_name(action_group_name)
+        action_group_desc = ag.get("description", "")
 
         if executor_is_lambda:
             lambda_arn = ag.get("actionGroupExecutor", {}).get("lambda", "")
@@ -657,26 +702,34 @@ class BaseBedrockTranslator:
             # Function metadata
             func_name = func.get("name", "")
             clean_func_name = clean_variable_name(func_name)
-            func_desc = func.get("description", "").replace('"', '\\"')
-            func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}" + (
+            func_desc = func.get("description", "")
+            func_desc += f"\nThis tool is part of the group of tools called {action_group_name}" + (
                 f" (description: {action_group_desc})" if action_group_desc else ""
             )
 
             # Naming
-            tool_name = prune_tool_name(f"{action_group_name}_{clean_func_name}")
-            model_name = f"{action_group_name}_{clean_func_name}_Input"
+            tool_name = prune_tool_name(
+                self.tool_identifiers.allocate(
+                    ("structured", action_group_name, func_name),
+                    f"{action_group_code_name}_{clean_func_name}",
+                )
+            )
+            model_name = "Model" + "".join(part.capitalize() for part in tool_name.split("_")) + "Input"
 
             # Parameter Signature Generation
             params = func.get("parameters", {})
             param_list = []
+            param_bindings = []
+            param_identifiers = IdentifierAllocator()
 
             tool_code += f"""
     class {model_name}(BaseModel):"""
 
             if params:
                 for param_name, param_info in params.items():
+                    variable_name = param_identifiers.allocate(param_name)
                     param_type = param_info.get("type", "string")
-                    param_desc = param_info.get("description", "").replace('"', '\\"')
+                    param_desc = param_info.get("description", "")
                     required = param_info.get("required", False)
 
                     # Map JSON Schema types to Python types
@@ -689,14 +742,13 @@ class BaseBedrockTranslator:
                         "object": "dict",
                     }
                     py_type = type_mapping.get(param_type, "str")
-                    param_list.append(f"{param_name}: {py_type} = None")
+                    param_list.append(f"{variable_name}: {py_type} = None")
+                    param_bindings.append((param_name, variable_name, param_info))
 
-                    if required:
-                        tool_code += f"""
-        {param_name}: {py_type} = Field(..., description="{param_desc}")"""
-                    else:
-                        tool_code += f"""
-        {param_name}: {py_type} = Field(None, description="{param_desc}")"""
+                    field_args = ["..." if required else "None", f"description={python_string_literal(param_desc)}"]
+
+                    tool_code += f"""
+        {variable_name}: {py_type} = Field({", ".join(field_args)})"""
             else:
                 tool_code += """
         pass"""
@@ -704,8 +756,12 @@ class BaseBedrockTranslator:
             param_signature = ", ".join(param_list)
             params_input = ", ".join(
                 [
-                    f"{{'name': '{param_name}', 'type': '{param_info.get('type', 'string')}', 'value': {param_name}}}"
-                    for param_name, param_info in params.items()
+                    (
+                        f"{{'name': {python_string_literal(param_name)}, "
+                        f"'type': {python_string_literal(param_info.get('type', 'string'))}, "
+                        f"'value': {variable_name}}}"
+                    )
+                    for param_name, variable_name, param_info in param_bindings
                 ]
             )
 
@@ -719,8 +775,8 @@ class BaseBedrockTranslator:
             if executor_is_lambda:
                 tool_code += f"""
     def {tool_name}({param_signature}) -> str:
-        \"\"\"{func_desc}\"\"\"
-        lambda_client = boto3.client('lambda', region_name="{lambda_region}")
+        {python_string_literal(func_desc)}
+        lambda_client = boto3.client('lambda', region_name={python_string_literal(lambda_region)})
 
         # Prepare parameters
         parameters = [{params_input}]"""
@@ -731,15 +787,15 @@ class BaseBedrockTranslator:
         # Invoke Lambda function
         try:
             payload = {{
-                "actionGroup": "{action_group_name}",
-                "function": "{func_name}",
+                "actionGroup": {python_string_literal(action_group_name)},
+                "function": {python_string_literal(func_name)},
                 "inputText": last_input,
                 "parameters": parameters,
                 "agent": {{
-                    "name": "{self.agent_info.get("agentName", "")}",
-                    "id": "{self.agent_info.get("agentId", "")}",
-                    "alias": "{self.agent_info.get("alias", "")}",
-                    "version": "{self.agent_info.get("version", "")}"
+                    "name": {python_string_literal(self.agent_info.get("agentName", ""))},
+                    "id": {python_string_literal(self.agent_info.get("agentId", ""))},
+                    "alias": {python_string_literal(self.agent_info.get("alias", ""))},
+                    "version": {python_string_literal(self.agent_info.get("version", ""))}
                 }},
                 "sessionId": "",
                 "sessionAttributes": {{}},
@@ -748,7 +804,7 @@ class BaseBedrockTranslator:
             }}
 
             response = lambda_client.invoke(
-                FunctionName="{lambda_arn}",
+                FunctionName={python_string_literal(lambda_arn)},
                 InvocationType='RequestResponse',
                 Payload=json.dumps(payload)
             )
@@ -758,14 +814,19 @@ class BaseBedrockTranslator:
             return str(response_payload)
 
         except Exception as e:
-            return f"Error executing {func_name}: {{str(e)}}"
+            return {python_string_literal(f"Error executing {func_name}: ")} + str(e)
     """
 
             else:
+                return_prompt_prefix = f"Return of control: {action_group_name}_{func_name} was called with the input "
+                displayed_params = ", ".join(
+                    f"{python_string_literal(param_name)}: {variable_name}"
+                    for param_name, variable_name, _ in param_bindings
+                )
                 tool_code += f"""
     def {tool_name}({param_signature}) -> str:
-        \"\"\"{func_desc}\"\"\"
-        return input(f"Return of control: {action_group_name}_{func_name} was called with the input {{{", ".join(params.keys())}}}, enter desired output:")
+        {python_string_literal(func_desc)}
+        return input({python_string_literal(return_prompt_prefix)} + str({{{displayed_params}}}) + ", enter desired output:")
         """
 
             tool_instances.append(tool_name)
@@ -836,7 +897,7 @@ class BaseBedrockTranslator:
             return f"""
 
     # Code Interpreter Tool
-    interpreter.llm.model = "bedrock/{self.model_id}"
+    interpreter.llm.model = {python_string_literal(f"bedrock/{self.model_id}")}
     interpreter.llm.supports_functions = True
     interpreter.computer.emit_images = True
     interpreter.llm.supports_vision = True
@@ -1180,10 +1241,12 @@ class BaseBedrockTranslator:
                 continue
 
             action_group_name = ag.get("actionGroupName", "AG")
+            action_group_code_name = clean_variable_name(action_group_name)
             clean_action_group_name = clean_gateway_or_target_name(action_group_name)
-            action_group_desc = ag.get("description", "").replace('"', '\\"')
+            action_group_desc = ag.get("description", "")
             end_lambda_arn = ag.get("actionGroupExecutor", {}).get("lambda", "")
             tools = []
+            gateway_tool_identifiers = IdentifierAllocator()
 
             if ag.get("apiSchema", False):
                 api_schema = ag.get("apiSchema", {})
@@ -1192,9 +1255,12 @@ class BaseBedrockTranslator:
                 for func_name, func_spec in openapi_schema.get("paths", {}).items():
                     clean_func_name = clean_variable_name(func_name)
                     for method, method_spec in func_spec.items():
-                        tool_name_unpruned = f"{action_group_name}_{clean_func_name}_{method}"
                         tool_name = prune_tool_name(
-                            tool_name_unpruned, length=(54 - len(clean_action_group_name))
+                            gateway_tool_identifiers.allocate(
+                                ("openapi", action_group_name, func_name, method),
+                                f"{action_group_code_name}_{clean_func_name}_{method}",
+                            ),
+                            length=(54 - len(clean_action_group_name)),
                         )  # to ensure the tool is below 64 characters
 
                         tool_mappings[f"{clean_action_group_name}___{tool_name}"] = {
@@ -1209,7 +1275,7 @@ class BaseBedrockTranslator:
                         func_desc = method_spec.get(
                             "description", method_spec.get("summary", "No Description Provided.")
                         )
-                        func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                        func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                         # Convert AG OpenAPI Schema to JSON Schema
 
@@ -1243,7 +1309,7 @@ class BaseBedrockTranslator:
                         required_params = []
                         for parameter in parameters:
                             param_name = parameter.get("name", "")
-                            param_desc = parameter.get("description", "").replace('"', '\\"')
+                            param_desc = parameter.get("description", "")
                             param_required = parameter.get("required", False)
                             if "schema" in parameter:
                                 param_type = parameter.get("schema", {}).get("type", "string")
@@ -1315,7 +1381,12 @@ class BaseBedrockTranslator:
                 for func in function_schema:
                     func_name = func.get("name", "")
                     clean_func_name = clean_variable_name(func_name)
-                    tool_name = prune_tool_name(f"{action_group_name}_{clean_func_name}")
+                    tool_name = prune_tool_name(
+                        gateway_tool_identifiers.allocate(
+                            ("structured", action_group_name, func_name),
+                            f"{action_group_code_name}_{clean_func_name}",
+                        )
+                    )
 
                     tool_mappings[f"{clean_action_group_name}___{tool_name}"] = {
                         "actionGroup": action_group_name,
@@ -1326,7 +1397,7 @@ class BaseBedrockTranslator:
                     }
 
                     func_desc = func.get("description", "No Description Provided.")
-                    func_desc += f"\\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
+                    func_desc += f"\nThis tool is part of the group of tools called {action_group_name}{f' (description: {action_group_desc})' if action_group_desc else ''}."
 
                     func_parameters = func.get("parameters", {})
 
@@ -1335,7 +1406,7 @@ class BaseBedrockTranslator:
                     required_params = []
                     for param_name, param_info in func_parameters.items():
                         param_type = param_info.get("type", "string")
-                        param_desc = param_info.get("description", "").replace('"', '\\"')
+                        param_desc = param_info.get("description", "")
                         param_required = param_info.get("required", False)
 
                         new_properties[param_name] = {
@@ -1372,8 +1443,8 @@ class BaseBedrockTranslator:
 import boto3
 import json
 
-agent_metadata = {agent_metadata}
-tool_mappings = {tool_mappings}
+agent_metadata = {python_data_literal(agent_metadata)}
+tool_mappings = {python_data_literal(tool_mappings)}
 
 def get_json_type(value):
     if isinstance(value, str):

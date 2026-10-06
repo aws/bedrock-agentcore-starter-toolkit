@@ -6,8 +6,8 @@ This script translates AWS Bedrock Agent configurations into equivalent LangChai
 """
 
 import os
-import textwrap
 
+from ..utils import python_string_literal
 from .base_bedrock_translate import BaseBedrockTranslator
 
 
@@ -33,11 +33,6 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
     from opentelemetry.instrumentation.langchain import LangchainInstrumentor
     LangchainInstrumentor().instrument()
     """
-
-        # Format prompts code
-        self.prompts_code = textwrap.fill(
-            self.prompts_code, width=150, break_long_words=False, replace_whitespace=False
-        )
 
         self.code_sections = [
             self.imports_code,
@@ -84,9 +79,9 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
             model_config = f"""
     # {prompt_type} LLM configuration
     llm_{prompt_type} = ChatBedrock(
-        model_id="{self.model_id}",
-        region_name="{self.agent_region}",
-        provider="{self.agent_info["model"]["providerName"].lower()}",
+        model_id={python_string_literal(self.model_id)},
+        region_name={python_string_literal(self.agent_region)},
+        provider={python_string_literal(self.agent_info["model"]["providerName"].lower())},
         model_kwargs={{
             {f'"top_k": {inference_config.get("topK", 250)},' if self.agent_info["model"]["providerName"].lower() in ["anthropic", "amazon"] else ""}
             "top_p":{inference_config.get("topP", 1.0)},
@@ -114,19 +109,21 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
 
         kb_code = ""
 
-        for kb in self.knowledge_bases:
-            kb_name = kb.get("name", "")
+        for kb_name, kb in zip(self.knowledge_base_code_names, self.knowledge_bases, strict=True):
             kb_description = kb.get("description", "")
             kb_id = kb.get("knowledgeBaseId", "")
             kb_region_name = kb.get("knowledgeBaseArn", "").split(":")[3]
 
             kb_code += f"""retriever_{kb_name} = AmazonKnowledgeBasesRetriever(
-        knowledge_base_id="{kb_id}",
+        knowledge_base_id={python_string_literal(kb_id)},
         retrieval_config={{"vectorSearchConfiguration": {{"numberOfResults": 5}}}},
-        region_name="{kb_region_name}"
+        region_name={python_string_literal(kb_region_name)}
     )
 
-    retriever_tool_{kb_name} = retriever_{kb_name}.as_tool(name="kb_{kb_name}", description="{kb_description}")
+    retriever_tool_{kb_name} = retriever_{kb_name}.as_tool(
+        name={python_string_literal(f"kb_{kb_name}")},
+        description={python_string_literal(kb_description)},
+    )
 
     """
             self.tools.append(f"retriever_tool_{kb_name}")
@@ -142,7 +139,7 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
 
         # Create the collaborators
         for i, collaborator in enumerate(self.collaborators):
-            collaborator_name = collaborator.get("collaboratorName", "")
+            collaborator_name = self.collaborator_code_names[i]
             collaborator_file_name = f"langchain_collaborator_{collaborator_name}"
             collaborator_path = os.path.join(self.output_dir, f"{collaborator_file_name}.py")
 
@@ -162,14 +159,17 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
             collaborator_code += """
     @tool
     def invoke_{0}(query: str, state: Annotated[dict, InjectedState]) -> str:
-        \"\"\"Invoke the collaborator agent/specialist with the following description: {1}\"\"\"
+        {1}
         {2}
         invoke_agent_response = invoke_{0}_collaborator(query{3})
         tools_used.update([msg.name for msg in invoke_agent_response if isinstance(msg, ToolMessage)])
         return invoke_agent_response
         """.format(
                 collaborator_name,
-                self.collaborator_descriptions[i],
+                python_string_literal(
+                    "Invoke the collaborator agent/specialist with the following description: "
+                    + self.collaborator_descriptions[i]
+                ),
                 "relay_history = state.get('messages', [])[:-1]" if relay_conversation_history else "",
                 ", relay_history" if relay_conversation_history else "",
             )
@@ -292,7 +292,7 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
         # KB optimization code if enabled
         kb_code = ""
         if self.single_kb_optimization_enabled:
-            kb_name = self.knowledge_bases[0]["name"]
+            kb_name = self.knowledge_base_code_names[0]
             kb_code = f"""
         if first_turn:
             search_results = retriever_{kb_name}.invoke(question)
@@ -358,8 +358,7 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
         if choice == "undecidable":
             pass"""
 
-        for agent in self.collaborators:
-            agent_name = agent.get("collaboratorName", "")
+        for agent_name in self.collaborator_code_names:
             relay_param = (
                 ", messages"
                 if self.collaborator_map.get(agent_name, {}).get("relayConversationHistory", "DISABLED")
@@ -367,8 +366,8 @@ class BedrockLangchainTranslation(BaseBedrockTranslator):
                 else ""
             )
             code += f"""
-        elif choice == "{agent_name}":
-            last_agent = "{agent_name}"
+        elif choice == {python_string_literal(agent_name)}:
+            last_agent = {python_string_literal(agent_name)}
             return invoke_{agent_name}_collaborator(question{relay_param})"""
 
         code += """
