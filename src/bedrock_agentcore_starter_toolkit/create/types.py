@@ -63,7 +63,7 @@ class ProjectContext:
     # observability (use opentelemetry-instrument at Docker entry CMD)
     observability_enabled: bool = True
     # api key authentication
-    api_key_env_var_name: Optional[str] = False
+    api_key_env_var_name: Optional[str] = None
 
     def dict(self):
         """Return dataclass as dictionary."""
