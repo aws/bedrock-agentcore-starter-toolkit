@@ -1,0 +1,211 @@
+name: Release Publish
+
+# Stage 2 of 2 of the release process.
+#
+# Triggers when a release PR (head branch release/v*) created by
+# release-prepare.yml is MERGED into main. Because publication is gated on the
+# merge, the version-bump commit is guaranteed to be on main before the package
+# is built, tagged, and released - so the tag and generated release notes point
+# at the correct commit. A manual-approval environment adds an explicit human
+# gate before anything is pushed to PyPI.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build from Main
+    # Only run for merged release PRs, never for closed-without-merge PRs or
+    # non-release branches.
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: aws-release-4-core
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify version matches release branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          EXPECTED_VERSION="${HEAD_REF#release/v}"
+          ACTUAL_VERSION=$(grep -m1 -oP '^version = "\K[^"]+' pyproject.toml)
+
+          echo "Expected version (from branch): $EXPECTED_VERSION"
+          echo "Actual version (on main):       $ACTUAL_VERSION"
+
+          if [ "$ACTUAL_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "❌ ERROR: main is at $ACTUAL_VERSION but release branch is $EXPECTED_VERSION"
+            exit 1
+          fi
+          echo "✓ Version verified on main: $ACTUAL_VERSION"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Build package
+        run: |
+          uv build
+
+          ls -la dist/
+          # Check with twine using tool run
+          uv tool run twine check dist/*
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(ls dist/*.whl | sed -n 's/.*-\([0-9.]*\)-.*/\1/p')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  release-approval:
+    name: Release Approval
+    needs: build
+    runs-on: aws-release-4-core
+    # Gated by the manual-approval environment (configured with required
+    # reviewers in repo settings). The job pauses here until a reviewer
+    # approves the deployment.
+    environment:
+      name: manual-approval
+
+    steps:
+      - name: Approval checkpoint
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          echo "✅ Build successful for v$VERSION"
+          echo "📦 Package ready for PyPI publication"
+          echo ""
+          echo "⚠  MANUAL APPROVAL REQUIRED"
+          echo "Verify version and changelog before approving."
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [build, release-approval]
+    runs-on: aws-release-4-core
+    environment:
+      name: pypi
+      url: https://pypi.org/project/bedrock-agentcore-starter-toolkit/
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - name: Check if version already exists on PyPI
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          PYPI_VERSIONS=$(curl -sf https://pypi.org/pypi/bedrock-agentcore-starter-toolkit/json \
+            | python3 -c "import sys, json; releases = json.load(sys.stdin)['releases']; print('\n'.join(releases.keys()))")
+
+          if echo "$PYPI_VERSIONS" | grep -qx "$VERSION"; then
+            echo "❌ ERROR: Version $VERSION already exists on PyPI!"
+            exit 1
+          fi
+          echo "✓ Version $VERSION is not on PyPI, safe to publish"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Wait for PyPI availability
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          echo "Waiting for package to be available on PyPI..."
+          for i in {1..10}; do
+            PYPI_VERSIONS=$(curl -sf https://pypi.org/pypi/bedrock-agentcore-starter-toolkit/json \
+              | python3 -c "import sys, json; releases = json.load(sys.stdin)['releases']; print('\n'.join(releases.keys()))" 2>/dev/null)
+            if echo "$PYPI_VERSIONS" | grep -qx "$VERSION"; then
+              echo "✓ Package version $VERSION is now available on PyPI"
+              break
+            fi
+            echo "Attempt $i/10: Package not yet available, waiting 30s..."
+            sleep 30
+          done
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" \
+            -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Bedrock AgentCore Starter Toolkit v${{ needs.build.outputs.version }}
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## Installation
+            ```bash
+            pip install bedrock-agentcore-starter-toolkit==${{ needs.build.outputs.version }}
+            ```
+
+            ## What's Changed
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/v${{ needs.build.outputs.version }}/CHANGELOG.md) for details.
+
+  summary:
+    name: Release Summary
+    needs: publish-pypi
+    runs-on: aws-release-4-core
+    if: always()
+
+    steps:
+      - name: Summary
+        env:
+          PUBLISH_RESULT: ${{ needs.publish-pypi.result }}
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "$PUBLISH_RESULT" == "success" ]; then
+            echo "✅ **PyPI Release Successful**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Package published to: https://pypi.org/project/bedrock-agentcore-starter-toolkit/" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To install:" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "pip install bedrock-agentcore-starter-toolkit" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Release Failed**" >> $GITHUB_STEP_SUMMARY
+            echo "Check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
