@@ -25,7 +25,7 @@
 
 <br/>
 
-> **⚠️ Recommendation: The Starter Toolkit CLI is no longer supported. Please use the AgentCore CLI.**
+> **🚨 The Starter Toolkit CLI is no longer supported. Please use the AgentCore CLI.**
 >
 > The **[AgentCore CLI (`@aws/agentcore`)](https://github.com/aws/agentcore-cli)** is now the recommended way to create, develop, and deploy AI agents on Amazon Bedrock AgentCore. It supports a broader set of frameworks (Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, and BYO), provides local development with hot reload, built-in evaluations, gateway management, and more.
 >
@@ -39,13 +39,7 @@
 > pip uninstall bedrock-agentcore-starter-toolkit
 > ```
 >
-> **Migrating from this toolkit?** See the [Migration Guide](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md) for step-by-step instructions, and the [AgentCore CLI documentation](https://github.com/aws/agentcore-cli/tree/main/docs) for:
-> - [Commands reference](https://github.com/aws/agentcore-cli/blob/main/docs/commands.md) — create, deploy, dev, invoke, add, remove, logs, traces, evals
-> - [Supported frameworks](https://github.com/aws/agentcore-cli/blob/main/docs/frameworks.md) — Strands, LangGraph, LangChain, Google ADK, OpenAI Agents, BYO, and import from existing projects
-> - [Configuration guide](https://github.com/aws/agentcore-cli/blob/main/docs/configuration.md) — agentcore.json, mcp.json, environment setup
-> - [Local development](https://github.com/aws/agentcore-cli/blob/main/docs/local-development.md) — hot reload dev server
-> - [Memory](https://github.com/aws/agentcore-cli/blob/main/docs/memory.md), [Gateway](https://github.com/aws/agentcore-cli/blob/main/docs/gateway.md), [Evaluations](https://github.com/aws/agentcore-cli/blob/main/docs/evals.md)
-> - [IAM permissions](https://github.com/aws/agentcore-cli/blob/main/docs/PERMISSIONS.md)
+> **Migrating from this toolkit?** See the [Migration Guide](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/MIGRATION.md) for step-by-step instructions, and the [Amazon Bedrock AgentCore Developer Guide](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html) for AgentCore CLI documentation.
 >
 > This starter toolkit remains available for existing Python-based workflows but is no longer the recommended starting point.
 
@@ -62,7 +56,7 @@ If you prefer a Python-based workflow, you can still get started with this toolk
 
 Pick your favorite Agent SDK framework and model provider like Strands with Amazon Bedrock. You'll get a brand new project ready to be deployed onto AgentCore.
 
-**[Create Quick Start (Starter Toolkit)](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.html)** · **[Create Quick Start (AgentCore CLI)](https://github.com/aws/agentcore-cli/blob/main/docs/commands.md)**
+**[Create Quick Start (Starter Toolkit)](https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/create/quickstart.html)** · **[Create Quick Start (AgentCore CLI)](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html)**
 
 ## 🛠️ Amazon Bedrock AgentCore Runtime
 AgentCore Runtime is a secure, serverless runtime purpose-built for deploying and scaling dynamic AI agents and tools using any open-source framework including LangGraph, CrewAI, and Strands Agents, any protocol, and any model. Runtime was built to work for agentic workloads with industry-leading extended runtime support, fast cold starts, true session isolation, built-in identity, and support for multi-modal payloads. Developers can focus on innovation while Amazon Bedrock AgentCore Runtime handles infrastructure and security -- accelerating time-to-market
@@ -124,7 +118,7 @@ AgentCore Import-Agent enables seamless migration of existing Amazon Bedrock Age
 npm install -g @aws/agentcore
 ```
 
-See the [AgentCore CLI README](https://github.com/aws/agentcore-cli) and [docs](https://github.com/aws/agentcore-cli/tree/main/docs) for full usage.
+See the [AgentCore CLI README](https://github.com/aws/agentcore-cli) and the [Amazon Bedrock AgentCore Developer Guide](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html) for full usage.
 
 ### Starter Toolkit (Python)
 
