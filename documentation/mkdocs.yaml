@@ -90,6 +90,7 @@ nav:
     - Identity:
       - Identity Quickstart: user-guide/identity/quickstart.md
       - Identity CLI Quickstart: user-guide/identity/quickstart-with-cli.md
+      - Identity OAuth Self-Hosted Quickstart: user-guide/identity/quickstart-oauth-self-hosted.md
     - Built-in Tools:
       - Quickstart Browser Tool: user-guide/builtin-tools/quickstart-browser.md
       - Quickstart Code Interpreter: user-guide/builtin-tools/quickstart-code-interpreter.md
